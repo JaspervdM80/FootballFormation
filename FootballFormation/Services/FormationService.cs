@@ -48,15 +48,163 @@ public class FormationService : IFormationService
         var keeper1 = keepers.FirstOrDefault();
         var keeper2 = keepers.Count > 1 ? keepers[1] : keeper1;
 
-        var rotationGroups = CreateRotationGroups(fieldPlayers);
+        // Create equal groups based on number of players and required minutes
+        var equalPlayingGroups = CreateEqualPlayingGroups(fieldPlayers);
 
-        CreateFormation(rotationGroups[0], keeper1, "Eerste Helft - Start", 0, 15);
-        CreateFormation(rotationGroups[1], keeper1, "Eerste Helft - Na wissels", 15, 30);
-        CreateFormation(rotationGroups[2], keeper2, "Tweede Helft - Start", 30, 45);
-        CreateFormation(rotationGroups[3], keeper2, "Tweede Helft - Na wissels", 45, 60);
+        // Create formations using these groups
+        CreateFormation(equalPlayingGroups[0], keeper1, "Eerste Helft - Start", 0, 15);
+        CreateFormation(equalPlayingGroups[1], keeper1, "Eerste Helft - Na wissels", 15, 30);
+        CreateFormation(equalPlayingGroups[2], keeper2, "Tweede Helft - Start", 30, 45);
+        CreateFormation(equalPlayingGroups[3], keeper2, "Tweede Helft - Na wissels", 45, 60);
 
-        BalancePlayingTime(fieldPlayers);
+        // Remove substitutions that would reduce playing time equality
+        OptimizeSubstitutions();
         CalculateMinutesPlayed();
+    }
+
+    private List<List<Player>> CreateEqualPlayingGroups(List<Player> fieldPlayers)
+    {
+        var groups = new List<List<Player>>();
+        for (int i = 0; i < 4; i++)
+        {
+            groups.Add(new List<Player>());
+        }
+
+        // Calculate how many quarters each player should play to achieve equal time
+        int totalQuarters = 4 * REQUIRED_FIELD_PLAYERS; // 40 player-quarters available
+        int quartersPerPlayer = totalQuarters / fieldPlayers.Count;
+        int extraQuarters = totalQuarters % fieldPlayers.Count;
+
+        // Sort players by their current minutes played
+        var sortedPlayers = fieldPlayers
+            .OrderBy(p => p.MinutesPlayed)
+            .ToList();
+
+        // Create a schedule for each player
+        var playerSchedule = sortedPlayers.ToDictionary(
+            p => p,
+            p => quartersPerPlayer + (extraQuarters-- > 0 ? 1 : 0)
+        );
+
+        // Fill groups ensuring each player gets their allocated quarters
+        foreach (var player in sortedPlayers)
+        {
+            var quartersToPlay = playerSchedule[player];
+            var possibleGroups = Enumerable.Range(0, 4)
+                .Where(i => groups[i].Count < REQUIRED_FIELD_PLAYERS)
+                .OrderBy(i => groups[i].Count)
+                .Take(quartersToPlay)
+                .ToList();
+
+            foreach (var groupIndex in possibleGroups)
+            {
+                groups[groupIndex].Add(player);
+            }
+        }
+
+        // Balance positions within each group
+        foreach (var group in groups)
+        {
+            BalancePositionsInGroup(group);
+        }
+
+        return groups;
+    }
+
+    private void BalancePositionsInGroup(List<Player> group)
+    {
+        var positions = new[] {
+            Position.CB, Position.CB,
+            Position.LB, Position.RB,
+            Position.CDM, Position.CDM,
+            Position.CAM,
+            Position.LW, Position.ST, Position.RW
+        };
+
+        var originalGroup = new List<Player>(group);
+        var balancedGroup = new List<Player>();
+
+        foreach (var position in positions)
+        {
+            var bestPlayer = originalGroup
+                .OrderByDescending(p => p.GetPositionScore(position))
+                .FirstOrDefault();
+
+            if (bestPlayer != null)
+            {
+                balancedGroup.Add(bestPlayer);
+                originalGroup.Remove(bestPlayer);
+            }
+        }
+
+        group.Clear();
+        group.AddRange(balancedGroup);
+    }
+
+    private void OptimizeSubstitutions()
+    {
+        // Remove all existing substitutions
+        _substitutions.Clear();
+
+        // Only create substitutions for players who haven't played enough
+        var playerMinutes = _players
+            .Where(p => !p.IsKeeper && !p.IsAbsent)
+            .ToDictionary(p => p, p => CalculateActualMinutesPlayed(p));
+
+        var targetMinutes = TOTAL_GAME_MINUTES / Math.Ceiling((double)playerMinutes.Count / REQUIRED_FIELD_PLAYERS);
+
+        foreach (var formation in _formations.Skip(1)) // Skip first formation
+        {
+            var playersNeedingTime = playerMinutes
+                .Where(kv => kv.Value < targetMinutes - 5) // Allow 5 minutes variance
+                .OrderBy(kv => kv.Value)
+                .Select(kv => kv.Key)
+                .Take(3) // Limit to 3 substitutions per period
+                .ToList();
+
+            foreach (var playerIn in playersNeedingTime)
+            {
+                var playerOut = formation.PositionedPlayers
+                    .Where(kvp => kvp.Value != null && 
+                                playerMinutes[kvp.Value] > targetMinutes)
+                    .OrderByDescending(kvp => playerMinutes[kvp.Value])
+                    .FirstOrDefault();
+
+                if (!playerOut.Equals(default(KeyValuePair<string, Player>)))
+                {
+                    // Make substitution
+                    var position = playerOut.Key;
+                    formation.PositionedPlayers[position] = playerIn;
+
+                    _substitutions.Add(new Substitution
+                    {
+                        Minute = formation.StartMinute,
+                        PlayerOut = playerOut.Value!,
+                        PlayerIn = playerIn,
+                        FromPosition = position,
+                        ToPosition = position
+                    });
+
+                    // Update minutes
+                    var minutesInPeriod = formation.EndMinute - formation.StartMinute;
+                    playerMinutes[playerOut.Value!] -= minutesInPeriod;
+                    playerMinutes[playerIn] += minutesInPeriod;
+                }
+            }
+        }
+    }
+
+    private int CalculateActualMinutesPlayed(Player player)
+    {
+        int minutes = 0;
+        foreach (var formation in _formations)
+        {
+            if (formation.PositionedPlayers.Values.Contains(player))
+            {
+                minutes += formation.EndMinute - formation.StartMinute;
+            }
+        }
+        return minutes;
     }
 
     private void CreateFormation(List<Player> availablePlayers, Player? keeper, string period, int startMinute, int endMinute)
@@ -315,6 +463,7 @@ public class FormationService : IFormationService
 
     private void BalancePlayingTime(List<Player> fieldPlayers)
     {
+        // First handle players with no playing time
         var playersWithNoTime = fieldPlayers
             .Where(p => p.MinutesPlayed == 0)
             .OrderBy(p => p.MinutesPlayed)
@@ -325,13 +474,12 @@ public class FormationService : IFormationService
             foreach (var formation in _formations.OrderByDescending(f => f.StartMinute))
             {
                 var playerToReplace = formation.PositionedPlayers
-                    .FirstOrDefault(kvp => kvp.Value?.MinutesPlayed > TARGET_MINUTES_PER_PLAYER);
+                    .OrderByDescending(kvp => kvp.Value?.MinutesPlayed)
+                    .FirstOrDefault(kvp => kvp.Value?.MinutesPlayed > MIN_MINUTES_PER_PLAYER);
 
                 if (playerToReplace.Value != null)
                 {
                     var position = playerToReplace.Key;
-
-                    // Make the substitution
                     formation.PositionedPlayers[position] = player;
 
                     _substitutions.Add(new Substitution
@@ -343,10 +491,43 @@ public class FormationService : IFormationService
                         ToPosition = position
                     });
 
-                    // Validate formation after balance adjustment
                     if (formation.PositionedPlayers.Values.Any(p => p == null))
                         throw new InvalidOperationException("All positions must remain filled after balancing");
+                    break;
+                }
+            }
+        }
 
+        // Then balance players with less than minimum minutes
+        var underplayedPlayers = fieldPlayers
+            .Where(p => p.MinutesPlayed < MIN_MINUTES_PER_PLAYER && p.MinutesPlayed > 0)
+            .OrderBy(p => p.MinutesPlayed)
+            .ToList();
+
+        foreach (var player in underplayedPlayers)
+        {
+            foreach (var formation in _formations.OrderByDescending(f => f.StartMinute))
+            {
+                var playerToReplace = formation.PositionedPlayers
+                    .OrderByDescending(kvp => kvp.Value?.MinutesPlayed)
+                    .FirstOrDefault(kvp => kvp.Value?.MinutesPlayed > TARGET_MINUTES_PER_PLAYER);
+
+                if (playerToReplace.Value != null)
+                {
+                    var position = playerToReplace.Key;
+                    formation.PositionedPlayers[position] = player;
+
+                    _substitutions.Add(new Substitution
+                    {
+                        Minute = formation.StartMinute,
+                        PlayerOut = playerToReplace.Value,
+                        PlayerIn = player,
+                        FromPosition = position,
+                        ToPosition = position
+                    });
+
+                    if (formation.PositionedPlayers.Values.Any(p => p == null))
+                        throw new InvalidOperationException("All positions must remain filled after balancing");
                     break;
                 }
             }
@@ -356,52 +537,42 @@ public class FormationService : IFormationService
     private List<List<Player>> CreateRotationGroups(List<Player> fieldPlayers)
     {
         var groups = new List<List<Player>>();
-
-        // Create 4 empty groups
         for (int i = 0; i < 4; i++)
         {
             groups.Add(new List<Player>());
         }
 
-        // Distribute players evenly across groups
+        // Sort players primarily by minutes played, then by skill
         var sortedPlayers = fieldPlayers
-            .OrderByDescending(p => p.Skills.AverageSkill)
+            .OrderBy(p => p.MinutesPlayed)
+            .ThenByDescending(p => p.Skills.AverageSkill)
             .ToList();
 
+        // Distribute players evenly across groups ensuring equal playing time distribution
         for (int i = 0; i < sortedPlayers.Count; i++)
         {
-            groups[i % 4].Add(sortedPlayers[i]);
+            var targetGroup = i % 4;
+            groups[targetGroup].Add(sortedPlayers[i]);
         }
 
         return groups;
-    }
-
-    private void AssignPositionWithPriority(Formation formation, List<Player> players, string positionKey, Position position, HashSet<Player> usedPlayers)
-    {
-        var player = players
-            .Where(p => !usedPlayers.Contains(p))
-            .OrderBy(p => p.MinutesPlayed)
-            .ThenByDescending(p => CalculatePositionPriority(p, position))
-            .FirstOrDefault();
-
-        if (player != null)
-        {
-            formation.PositionedPlayers[positionKey] = player;
-            usedPlayers.Add(player);
-        }
     }
 
     private double CalculatePositionPriority(Player player, Position position)
     {
         var baseScore = player.GetPositionScore(position);
 
+        // Heavily weight minutes played to ensure equal distribution
         if (player.MinutesPlayed < MIN_MINUTES_PER_PLAYER)
-            baseScore *= 2.0;
+            baseScore *= 4.0; // Increased from 2.0 to give more priority
+        else if (player.MinutesPlayed < TARGET_MINUTES_PER_PLAYER)
+            baseScore *= 2.0; // Added medium priority tier
         else if (player.MinutesPlayed >= TARGET_MINUTES_PER_PLAYER)
-            baseScore *= 0.5;
+            baseScore *= 0.25; // Decreased from 0.5 to more strongly discourage overplaying
 
+        // Reduce the impact of preferred positions to prioritize playing time
         if (player.PreferredPositions.Contains(position))
-            baseScore *= 1.5;
+            baseScore *= 1.2; // Reduced from 1.5
 
         return baseScore;
     }
