@@ -37,32 +37,79 @@ public class FormationService : IFormationService
         var keepers = availablePlayers.Where(p => p.IsKeeper).ToList();
         Console.WriteLine($"Keepers: {keepers.Count}");
 
-        var fieldPlayers = availablePlayers.Where(p => !p.IsKeeper).ToList();
-        Console.WriteLine($"Field players: {fieldPlayers.Count}");
+        var fieldPlayers = availablePlayers
+            .Where(p => !p.IsAbsent)
+            .ToList(); // Include all players, even keepers
 
         foreach (var player in availablePlayers)
         {
             player.MinutesPlayed = 0;
         }
 
-        var keeper1 = keepers.FirstOrDefault();
-        var keeper2 = keepers.Count > 1 ? keepers[1] : keeper1;
+        // Calculate keeper rotations to ensure each plays a full half
+        var keeperSchedule = CalculateKeeperSchedule(keepers);
 
-        // Create equal groups based on number of players and required minutes
+        // Create groups with all players, keepers will be removed from groups where they are keeping
         var equalPlayingGroups = CreateEqualPlayingGroups(fieldPlayers);
 
-        // Create formations using these groups
-        CreateFormation(equalPlayingGroups[0], keeper1, "Eerste Helft - Start", 0, 15);
-        CreateFormation(equalPlayingGroups[1], keeper1, "Eerste Helft - Na wissels", 15, 30);
-        CreateFormation(equalPlayingGroups[2], keeper2, "Tweede Helft - Start", 30, 45);
-        CreateFormation(equalPlayingGroups[3], keeper2, "Tweede Helft - Na wissels", 45, 60);
+        // Remove keepers from groups where they are scheduled as goalkeeper
+        if (keepers.Count > 0)
+        {
+            var firstHalfKeeper = keeperSchedule[0]; // Same as keeperSchedule[1]
+            var secondHalfKeeper = keeperSchedule[2]; // Same as keeperSchedule[3]
 
-        // Remove substitutions that would reduce playing time equality
+            // Remove first half keeper from first half groups
+            equalPlayingGroups[0].Remove(firstHalfKeeper);
+            equalPlayingGroups[1].Remove(firstHalfKeeper);
+
+            // Remove second half keeper from second half groups
+            if (secondHalfKeeper != firstHalfKeeper) // Only if we have two keepers
+            {
+                equalPlayingGroups[2].Remove(secondHalfKeeper);
+                equalPlayingGroups[3].Remove(secondHalfKeeper);
+            }
+        }
+
+        CreateFormation(equalPlayingGroups[0], keeperSchedule[0], "Eerste Helft - Start", 0, 15);
+        CreateFormation(equalPlayingGroups[1], keeperSchedule[1], "Eerste Helft - Na wissels", 15, 30);
+        CreateFormation(equalPlayingGroups[2], keeperSchedule[2], "Tweede Helft - Start", 30, 45);
+        CreateFormation(equalPlayingGroups[3], keeperSchedule[3], "Tweede Helft - Na wissels", 45, 60);
+
         OptimizeSubstitutions();
         CalculateMinutesPlayed();
     }
 
-    private List<List<Player>> CreateEqualPlayingGroups(List<Player> fieldPlayers)
+    private Player[] CalculateKeeperSchedule(List<Player> keepers)
+    {
+        var schedule = new Player[4];
+        
+        if (keepers.Count == 0)
+            throw new InvalidOperationException("No goalkeepers available");
+        
+        if (keepers.Count == 1)
+        {
+            // Single keeper plays all periods as goalkeeper
+            for (int i = 0; i < 4; i++)
+                schedule[i] = keepers[0];
+        }
+        else
+        {
+            // Sort keepers by minutes played
+            var sortedKeepers = keepers.OrderBy(k => k.MinutesPlayed).ToList();
+            
+            // First keeper gets first half (periods 0 and 1)
+            schedule[0] = sortedKeepers[0];
+            schedule[1] = sortedKeepers[0];
+            
+            // Second keeper gets second half (periods 2 and 3)
+            schedule[2] = sortedKeepers[1];
+            schedule[3] = sortedKeepers[1];
+        }
+
+        return schedule;
+    }
+
+    private List<List<Player>> CreateEqualPlayingGroups(List<Player> allPlayers)
     {
         var groups = new List<List<Player>>();
         for (int i = 0; i < 4; i++)
@@ -70,35 +117,73 @@ public class FormationService : IFormationService
             groups.Add(new List<Player>());
         }
 
-        // Calculate how many quarters each player should play to achieve equal time
-        int totalQuarters = 4 * REQUIRED_FIELD_PLAYERS; // 40 player-quarters available
-        int quartersPerPlayer = totalQuarters / fieldPlayers.Count;
-        int extraQuarters = totalQuarters % fieldPlayers.Count;
+        // Calculate how many players we need per group
+        int playersPerGroup = REQUIRED_FIELD_PLAYERS;
+        
+        // Calculate target minutes per player
+        int totalMinutesAvailable = TOTAL_GAME_MINUTES * REQUIRED_FIELD_PLAYERS;
+        int targetMinutesPerPlayer = totalMinutesAvailable / allPlayers.Count;
 
-        // Sort players by their current minutes played
-        var sortedPlayers = fieldPlayers
+        // Track assigned minutes for each player
+        var playerMinutes = allPlayers.ToDictionary(p => p, _ => 0);
+        
+        // Sort players by minutes already played
+        var availablePlayers = allPlayers
             .OrderBy(p => p.MinutesPlayed)
             .ToList();
 
-        // Create a schedule for each player
-        var playerSchedule = sortedPlayers.ToDictionary(
-            p => p,
-            p => quartersPerPlayer + (extraQuarters-- > 0 ? 1 : 0)
-        );
-
-        // Fill groups ensuring each player gets their allocated quarters
-        foreach (var player in sortedPlayers)
+        // First, ensure each player gets at least minimum playing time
+        foreach (var player in availablePlayers)
         {
-            var quartersToPlay = playerSchedule[player];
-            var possibleGroups = Enumerable.Range(0, 4)
-                .Where(i => groups[i].Count < REQUIRED_FIELD_PLAYERS)
-                .OrderBy(i => groups[i].Count)
-                .Take(quartersToPlay)
-                .ToList();
+            int periodsNeeded = Math.Max(1, MIN_MINUTES_PER_PLAYER / 15);
+            int periodsAssigned = 0;
 
-            foreach (var groupIndex in possibleGroups)
+            for (int i = 0; i < 4 && periodsAssigned < periodsNeeded; i++)
             {
-                groups[groupIndex].Add(player);
+                if (groups[i].Count < playersPerGroup)
+                {
+                    groups[i].Add(player);
+                    playerMinutes[player] += 15;
+                    periodsAssigned++;
+                }
+            }
+        }
+
+        // Then distribute remaining time to reach target minutes
+        for (int i = 0; i < 4; i++)
+        {
+            while (groups[i].Count < playersPerGroup)
+            {
+                var eligiblePlayers = availablePlayers
+                    .Where(p => !groups[i].Contains(p) && 
+                               playerMinutes[p] < targetMinutesPerPlayer)
+                    .OrderBy(p => playerMinutes[p])
+                    .ToList();
+
+                if (!eligiblePlayers.Any())
+                    break;
+
+                var player = eligiblePlayers.First();
+                groups[i].Add(player);
+                playerMinutes[player] += 15;
+            }
+        }
+
+        // If we still have spots to fill, use players with least total time
+        for (int i = 0; i < 4; i++)
+        {
+            while (groups[i].Count < playersPerGroup)
+            {
+                var player = availablePlayers
+                    .Where(p => !groups[i].Contains(p))
+                    .OrderBy(p => playerMinutes[p])
+                    .FirstOrDefault();
+
+                if (player == null)
+                    break;
+
+                groups[i].Add(player);
+                playerMinutes[player] += 15;
             }
         }
 
@@ -143,36 +228,40 @@ public class FormationService : IFormationService
 
     private void OptimizeSubstitutions()
     {
-        // Remove all existing substitutions
         _substitutions.Clear();
-
-        // Only create substitutions for players who haven't played enough
+        
+        // Calculate current minutes for each player
         var playerMinutes = _players
-            .Where(p => !p.IsKeeper && !p.IsAbsent)
+            .Where(p => !p.IsAbsent)
             .ToDictionary(p => p, p => CalculateActualMinutesPlayed(p));
 
-        var targetMinutes = TOTAL_GAME_MINUTES / Math.Ceiling((double)playerMinutes.Count / REQUIRED_FIELD_PLAYERS);
-
-        foreach (var formation in _formations.Skip(1)) // Skip first formation
+        // Calculate target minutes
+        int totalMinutesAvailable = TOTAL_GAME_MINUTES * REQUIRED_FIELD_PLAYERS;
+        int targetMinutesPerPlayer = totalMinutesAvailable / playerMinutes.Count;
+        
+        // Process each formation after the first one
+        foreach (var formation in _formations.Skip(1))
         {
-            var playersNeedingTime = playerMinutes
-                .Where(kv => kv.Value < targetMinutes - 5) // Allow 5 minutes variance
+            // Find players who are significantly below target minutes
+            var underplayedPlayers = playerMinutes
+                .Where(kv => kv.Value < targetMinutesPerPlayer - 5)
                 .OrderBy(kv => kv.Value)
                 .Select(kv => kv.Key)
-                .Take(3) // Limit to 3 substitutions per period
+                .Where(p => !formation.PositionedPlayers.Values.Contains(p))
+                .Take(3)
                 .ToList();
 
-            foreach (var playerIn in playersNeedingTime)
+            foreach (var playerIn in underplayedPlayers)
             {
+                // Find player to substitute who has played more than target
                 var playerOut = formation.PositionedPlayers
-                    .Where(kvp => kvp.Value != null && 
-                                playerMinutes[kvp.Value] > targetMinutes)
+                    .Where(kvp => kvp.Value != null &&
+                                playerMinutes[kvp.Value] > targetMinutesPerPlayer + 5)
                     .OrderByDescending(kvp => playerMinutes[kvp.Value])
                     .FirstOrDefault();
 
                 if (!playerOut.Equals(default(KeyValuePair<string, Player>)))
                 {
-                    // Make substitution
                     var position = playerOut.Key;
                     formation.PositionedPlayers[position] = playerIn;
 
@@ -185,7 +274,7 @@ public class FormationService : IFormationService
                         ToPosition = position
                     });
 
-                    // Update minutes
+                    // Update minutes tracking
                     var minutesInPeriod = formation.EndMinute - formation.StartMinute;
                     playerMinutes[playerOut.Value!] -= minutesInPeriod;
                     playerMinutes[playerIn] += minutesInPeriod;
@@ -584,20 +673,25 @@ public class FormationService : IFormationService
             player.MinutesPlayed = 0;
         }
 
+        // First calculate base minutes from formations
         foreach (var formation in _formations)
         {
             var duration = formation.EndMinute - formation.StartMinute;
 
-            // Count minutes for all 10 field players
+            // Count field player minutes
             foreach (var player in formation.PositionedPlayers.Values)
             {
                 player!.MinutesPlayed += duration;
             }
 
-            // Count minutes for goalkeeper
-            formation.Goalkeeper!.MinutesPlayed += duration;
+            // Count goalkeeper minutes
+            if (formation.Goalkeeper != null)
+            {
+                formation.Goalkeeper.MinutesPlayed += duration;
+            }
         }
 
+        // Then adjust for substitutions
         foreach (var sub in _substitutions.OrderBy(s => s.Minute))
         {
             var formation = _formations.First(f => f.StartMinute <= sub.Minute && f.EndMinute > sub.Minute);
@@ -605,6 +699,16 @@ public class FormationService : IFormationService
 
             sub.PlayerOut.MinutesPlayed -= minutesLeftInPeriod;
             sub.PlayerIn.MinutesPlayed += minutesLeftInPeriod;
+        }
+
+        // Verify and log playing time distribution
+        var totalMinutes = _players.Sum(p => p.MinutesPlayed);
+        var averageMinutes = totalMinutes / _players.Count(p => !p.IsAbsent);
+        Console.WriteLine($"Average minutes per player: {averageMinutes}");
+        
+        foreach (var player in _players.Where(p => !p.IsAbsent).OrderByDescending(p => p.MinutesPlayed))
+        {
+            Console.WriteLine($"{player.Name}: {player.MinutesPlayed} minutes");
         }
     }
 }
