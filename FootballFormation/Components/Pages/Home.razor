@@ -1,0 +1,218 @@
+﻿@page "/"
+@using FootballFormation.Services
+@inject IFormationService FormationService
+
+<PageTitle>Voetbal Opstelling Generator</PageTitle>
+
+<div class="container">
+    <h1>⚽ Voetbal Opstelling Generator</h1>
+    <div class="subtitle">4-3-3 Formatie (1 CAM, 2 CDM) • 2 x 30 minuten</div>
+
+    @if (!_dataLoaded)
+    {
+        <div class="data-input">
+            <h2>Speelsters Data Invoeren</h2>
+            <button class="btn btn-primary" @onclick="LoadSampleData">Laad Voorbeeld Data</button>
+            <div class="mt-3">
+                <h3>Of voer JSON data in:</h3>
+                <textarea @bind="_jsonInput" class="form-control" rows="10"
+                          placeholder='[{"name":"Lieke","skills":{"attacking":3,"midfield":2,"defense":5,"passing":3,"speed":5,"shooting":3,"insight":3,"fierceness":5}}]'>
+                    </textarea>
+                <button class="btn btn-success mt-2" @onclick="LoadJsonData">Laad JSON Data</button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <button class="btn btn-secondary mb-3" @onclick="ResetData">Nieuwe Data Laden</button>
+
+        <div class="players-overview">
+            <h2>👥 Speelsters Overzicht</h2>
+            <div class="players-grid">
+                @foreach (var player in FormationService.Players.Where(p => !p.IsAbsent).OrderByDescending(p => p.Skills.AverageSkill))
+                {
+                    <div class="player-card">
+                        <div class="player-header">
+                            <span class="player-name">@player.Name</span>
+                            @if (player.IsKeeper)
+                            {
+                                <span class="keeper-badge">🧤</span>
+                            }
+                        </div>
+                        <div class="skills-grid">
+                            <div class="skill-item">
+                                <span class="skill-label">⚔️ Aanval</span>
+                                <div class="skill-bar">
+                                    <div class="skill-fill" style="width: @(player.Skills.Attacking * 20)%"></div>
+                                </div>
+                                <span class="skill-value">@player.Skills.Attacking</span>
+                            </div>
+                            <div class="skill-item">
+                                <span class="skill-label">⚡ Snelheid</span>
+                                <div class="skill-bar">
+                                    <div class="skill-fill" style="width: @(player.Skills.Speed * 20)%"></div>
+                                </div>
+                                <span class="skill-value">@player.Skills.Speed</span>
+                            </div>
+                            <div class="skill-item">
+                                <span class="skill-label">🛡️ Verdediging</span>
+                                <div class="skill-bar">
+                                    <div class="skill-fill" style="width: @(player.Skills.Defense * 20)%"></div>
+                                </div>
+                                <span class="skill-value">@player.Skills.Defense</span>
+                            </div>
+                            <div class="skill-item">
+                                <span class="skill-label">🎯 Schieten</span>
+                                <div class="skill-bar">
+                                    <div class="skill-fill" style="width: @(player.Skills.Shooting * 20)%"></div>
+                                </div>
+                                <span class="skill-value">@player.Skills.Shooting</span>
+                            </div>
+                            <div class="skill-item">
+                                <span class="skill-label">⚙️ Middenveld</span>
+                                <div class="skill-bar">
+                                    <div class="skill-fill" style="width: @(player.Skills.Midfield * 20)%"></div>
+                                </div>
+                                <span class="skill-value">@player.Skills.Midfield</span>
+                            </div>
+                            <div class="skill-item">
+                                <span class="skill-label">👁️ Inzicht</span>
+                                <div class="skill-bar">
+                                    <div class="skill-fill" style="width: @(player.Skills.Insight * 20)%"></div>
+                                </div>
+                                <span class="skill-value">@player.Skills.Insight</span>
+                            </div>
+                            <div class="skill-item">
+                                <span class="skill-label">📍 Passing</span>
+                                <div class="skill-bar">
+                                    <div class="skill-fill" style="width: @(player.Skills.Passing * 20)%"></div>
+                                </div>
+                                <span class="skill-value">@player.Skills.Passing</span>
+                            </div>
+                            <div class="skill-item">
+                                <span class="skill-label">💪 Felheid</span>
+                                <div class="skill-bar">
+                                    <div class="skill-fill" style="width: @(player.Skills.Fierceness * 20)%"></div>
+                                </div>
+                                <span class="skill-value">@player.Skills.Fierceness</span>
+                            </div>
+                        </div>
+                        <div class="player-avg">
+                            Gemiddeld: <strong>@player.Skills.AverageSkill.ToString("F1")</strong>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="formations-grid">
+            @foreach (var formation in FormationService.Formations)
+            {
+                <div class="formation-box">
+                    <h2>@formation.Period (@formation.StartMinute-@formation.EndMinute min)</h2>
+                    <div class="team-strength">Team Sterkte: @formation.TeamStrength.ToString("F1")</div>
+                    <div class="field">
+                        <div class="formation-row">
+                            <div class="position-label">Aanval</div>
+                            <div class="players-row">
+                                @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("LW"), "LW")
+                                @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("ST"), "ST")
+                                @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("RW"), "RW")
+                            </div>
+                        </div>
+
+                        <div class="formation-row">
+                            <div class="position-label">Aanvallende Middenvelder</div>
+                            <div class="players-row center">
+                                @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("CAM"), "CAM")
+                            </div>
+                        </div>
+
+                        <div class="formation-row">
+                            <div class="position-label">Verdedigende Middenvelders</div>
+                            <div class="players-row center">
+                                @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("CDM1"), "CDM")
+                                @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("CDM2"), "CDM")
+                            </div>
+                        </div>
+
+                        <div class="formation-row">
+                            <div class="position-label">Verdediging</div>
+                            <div class="players-row">
+                                @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("LB"), "LB")
+                                @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("CB1"), "CB")
+                                @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("CB2"), "CB")
+                                @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("RB"), "RB")
+                            </div>
+                        </div>
+
+                        <div class="formation-row">
+                            <div class="position-label">Keeper</div>
+                            <div class="players-row center">
+                                @RenderPlayer(formation.Goalkeeper, "GK", true)
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (formation.Bench.Any())
+                    {
+                        <div class="bench">
+                            <div class="bench-title">🪑 Wisselbank:</div>
+                            <div class="bench-players">
+                                @foreach (var player in formation.Bench)
+                                {
+                                    <div class="bench-player">@player.Name</div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (FormationService.Substitutions.Any())
+        {
+            <div class="substitutions">
+                <h2>🔄 Wisselschema</h2>
+                <div class="sub-grid">
+                    @foreach (var sub in FormationService.Substitutions.GroupBy(s => s.Minute))
+                    {
+                        <div class="sub-moment">
+                            <div class="sub-time">@sub.Key'</div>
+                            <div class="sub-changes">
+                                @foreach (var change in sub)
+                                {
+                                    <div class="sub-item">
+                                        <span class="out">⬇️ @change.PlayerOut.Name</span>
+                                        <span class="arrow">→</span>
+                                        <span class="in">⬆️ @change.PlayerIn.Name</span>
+                                        <span class="position">(@change.ToPosition)</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="playing-time">
+            <h2>⏱️ Speeltijd Overzicht</h2>
+            <div class="time-grid">
+                @foreach (var player in FormationService.Players.Where(p => !p.IsAbsent).OrderByDescending(p => p.MinutesPlayed))
+                {
+                    <div class="time-item">
+                        <span class="time-name">@player.Name</span>
+                        <span class="time-minutes">
+                            @player.MinutesPlayed min
+                            @if (player.IsKeeper)
+                            {
+                                <span>🧤</span>
+                            }
+                        </span>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
