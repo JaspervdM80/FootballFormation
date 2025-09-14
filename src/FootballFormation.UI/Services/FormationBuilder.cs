@@ -88,8 +88,8 @@ public class FormationBuilder : IFormationBuilder
     {
         var positions = new[]
         {
-            ("CB1", Position.CB), ("CB2", Position.CB),
-            ("LB", Position.LB), ("RB", Position.RB),
+            ("DC1", Position.DC), ("DC2", Position.DC),
+            ("DL", Position.DL), ("DR", Position.DR),
             ("CDM1", Position.CDM), ("CDM2", Position.CDM),
             ("CAM", Position.CAM),
             ("LW", Position.LW), ("ST", Position.ST), ("RW", Position.RW)
@@ -135,7 +135,7 @@ public class FormationBuilder : IFormationBuilder
         foreach (var (key, position) in positions.OrderByDescending(p => GetPositionImportance(p.Pos)))
         {
             var preferredPlayer = availablePlayers
-                .Where(p => !assignedPlayers.Contains(p) && p.PreferredPositions.Contains(position))
+                .Where(p => !assignedPlayers.Contains(p) && p.SecondaryPositions.Contains(position))
                 .OrderByDescending(p => p.GetPositionScore(position))
                 .FirstOrDefault();
 
@@ -182,11 +182,11 @@ public class FormationBuilder : IFormationBuilder
     {
         return position switch
         {
-            Position.CB => 10,
+            Position.DC => 10,
             Position.ST => 9,
             Position.CDM => 8,
             Position.CAM => 7,
-            Position.LB or Position.RB => 6,
+            Position.DL or Position.DR => 6,
             Position.LW or Position.RW => 5,
             _ => 1
         };

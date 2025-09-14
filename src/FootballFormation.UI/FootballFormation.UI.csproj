@@ -8,6 +8,13 @@
 		<PublishTrimmed>false</PublishTrimmed>
 		<DebugType>portable</DebugType>
 		<DebugSymbols>true</DebugSymbols>
+		<BlazorEnableTimeZoneSupport>false</BlazorEnableTimeZoneSupport>
+		<BlazorWebAssemblyPreserveCollationData>false</BlazorWebAssemblyPreserveCollationData>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+		<BlazorEnableCompression>false</BlazorEnableCompression>
+		<BlazorWebAssemblyDebugging>true</BlazorWebAssemblyDebugging>
 	</PropertyGroup>
 
 	<ItemGroup>

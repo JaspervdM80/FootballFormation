@@ -1,14 +1,17 @@
 @page "/"
-@using FootballFormation.UI.Models
-@using FootballFormation.UI.Services
-@inject IFormationService FormationService
-@inject IGameSetupService GameSetupService
 
 <PageTitle>Voetbal Opstelling Generator</PageTitle>
 
 <div class="container">
     <h1>⚽ Voetbal Opstelling Generator</h1>
     <div class="subtitle">4-3-3 Formatie (1 CAM, 2 CDM) • 2 x 30 minuten</div>
+    
+    <!-- Navigation to new squad creator -->
+    <div class="alert alert-info mb-4">
+        <h5>🆕 Nieuw: Verbeterde Squad Creator</h5>
+        <p>Probeer de nieuwe squad creator waar je gemakkelijk kunt instellen wie keeper is, wie afwezig is, en hoeveel minuten elke speler moet spelen.</p>
+        <a href="/squad-creator" class="btn btn-primary">Ga naar Squad Creator</a>
+    </div>
 
     @if (!_dataLoaded)
     {
@@ -133,9 +136,9 @@
                                         <div class="skill-item">
                                             <span class="skill-label">👁️ Inzicht</span>
                                             <div class="skill-bar">
-                                                <div class="skill-fill" style="width: @(player.Skills.Insight * 20)%"></div>
+                                                <div class="skill-fill" style="width: @(player.Skills.Vision * 20)%"></div>
                                             </div>
-                                            <span class="skill-value">@player.Skills.Insight</span>
+                                            <span class="skill-value">@player.Skills.Vision</span>
                                         </div>
                                         <div class="skill-item">
                                             <span class="skill-label">📍 Passing</span>
@@ -164,65 +167,13 @@
                     <div class="formations-grid">
                         @foreach (var formation in GameSetupService.SelectedGameSetup.Formations)
                         {
-                            <div class="formation-box">
-                                <h3>@formation.Period (@formation.StartMinute-@formation.EndMinute min)</h3>
-                                <div class="team-strength">Team Sterkte: @formation.TeamStrength.ToString("F1")</div>
-                                <div class="field">
-                                    <div class="formation-row">
-                                        <div class="position-label">Aanval</div>
-                                        <div class="players-row">
-                                            @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("LW"), "LW")
-                                            @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("ST"), "ST")
-                                            @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("RW"), "RW")
-                                        </div>
-                                    </div>
-
-                                    <div class="formation-row">
-                                        <div class="position-label">Aanvallende Middenvelder</div>
-                                        <div class="players-row center">
-                                            @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("CAM"), "CAM")
-                                        </div>
-                                    </div>
-
-                                    <div class="formation-row">
-                                        <div class="position-label">Verdedigende Middenvelders</div>
-                                        <div class="players-row center">
-                                            @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("CDM1"), "CDM")
-                                            @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("CDM2"), "CDM")
-                                        </div>
-                                    </div>
-
-                                    <div class="formation-row">
-                                        <div class="position-label">Verdediging</div>
-                                        <div class="players-row">
-                                            @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("LB"), "LB")
-                                            @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("CB1"), "CB")
-                                            @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("CB2"), "CB")
-                                            @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("RB"), "RB")
-                                        </div>
-                                    </div>
-
-                                    <div class="formation-row">
-                                        <div class="position-label">Keeper</div>
-                                        <div class="players-row center">
-                                            @RenderPlayer(formation.Goalkeeper, "GK", true)
-                                        </div>
-                                    </div>
-                                </div>
-
-                                @if (formation.Bench.Any())
-                                {
-                                    <div class="bench">
-                                        <div class="bench-title">🪑 Wisselbank:</div>
-                                        <div class="bench-players">
-                                            @foreach (var player in formation.Bench)
-                                            {
-                                                <div class="bench-player">@player.Name</div>
-                                            }
-                                        </div>
-                                    </div>
-                                }
-                            </div>
+                            <FormationDisplay
+                                FormationTitle="@($"{formation.Period} ({formation.StartMinute}-{formation.EndMinute} min)")"
+                                TeamStrength="@formation.TeamStrength"
+                                GoalkeeperPlayer="@formation.Goalkeeper"
+                                PositionedPlayers="@GetFormationPositionedPlayers(formation)"
+                                BenchPlayers="@formation.Bench"
+                                PlayerTemplate="@RenderHomePlayer" />
                         }
                     </div>
 
@@ -309,9 +260,9 @@
                                 <div class="skill-item">
                                     <span class="skill-label">👁️ Inzicht</span>
                                     <div class="skill-bar">
-                                        <div class="skill-fill" style="width: @(player.Skills.Insight * 20)%"></div>
+                                        <div class="skill-fill" style="width: @(player.Skills.Vision * 20)%"></div>
                                     </div>
-                                    <span class="skill-value">@player.Skills.Insight</span>
+                                    <span class="skill-value">@player.Skills.Vision</span>
                                 </div>
                                 <div class="skill-item">
                                     <span class="skill-label">📍 Passing</span>
@@ -339,65 +290,13 @@
             <div class="formations-grid">
                 @foreach (var formation in FormationService.Formations)
                 {
-                    <div class="formation-box">
-                        <h2>@formation.Period (@formation.StartMinute-@formation.EndMinute min)</h2>
-                        <div class="team-strength">Team Sterkte: @formation.TeamStrength.ToString("F1")</div>
-                        <div class="field">
-                            <div class="formation-row">
-                                <div class="position-label">Aanval</div>
-                                <div class="players-row">
-                                    @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("LW"), "LW")
-                                    @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("ST"), "ST")
-                                    @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("RW"), "RW")
-                                </div>
-                            </div>
-
-                            <div class="formation-row">
-                                <div class="position-label">Aanvallende Middenvelder</div>
-                                <div class="players-row center">
-                                    @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("CAM"), "CAM")
-                                </div>
-                            </div>
-
-                            <div class="formation-row">
-                                <div class="position-label">Verdedigende Middenvelders</div>
-                                <div class="players-row center">
-                                    @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("CDM1"), "CDM")
-                                    @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("CDM2"), "CDM")
-                                </div>
-                            </div>
-
-                            <div class="formation-row">
-                                <div class="position-label">Verdediging</div>
-                                <div class="players-row">
-                                    @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("LB"), "LB")
-                                    @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("CB1"), "CB")
-                                    @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("CB2"), "CB")
-                                    @RenderPlayer(formation.PositionedPlayers.GetValueOrDefault("RB"), "RB")
-                                </div>
-                            </div>
-
-                            <div class="formation-row">
-                                <div class="position-label">Keeper</div>
-                                <div class="players-row center">
-                                    @RenderPlayer(formation.Goalkeeper, "GK", true)
-                                </div>
-                            </div>
-                        </div>
-
-                        @if (formation.Bench.Any())
-                        {
-                            <div class="bench">
-                                <div class="bench-title">🪑 Wisselbank:</div>
-                                <div class="bench-players">
-                                    @foreach (var player in formation.Bench)
-                                    {
-                                        <div class="bench-player">@player.Name</div>
-                                    }
-                                </div>
-                            </div>
-                        }
-                    </div>
+                    <FormationDisplay
+                        FormationTitle="@($"{formation.Period} ({formation.StartMinute}-{formation.EndMinute} min)")"
+                        TeamStrength="@formation.TeamStrength"
+                        GoalkeeperPlayer="@formation.Goalkeeper"
+                        PositionedPlayers="@GetFormationPositionedPlayers(formation)"
+                        BenchPlayers="@formation.Bench"
+                        PlayerTemplate="@RenderHomePlayer" />
                 }
             </div>
 

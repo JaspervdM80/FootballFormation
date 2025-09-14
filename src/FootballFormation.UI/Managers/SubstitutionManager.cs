@@ -43,7 +43,7 @@ public class SubstitutionManager : ISubstitutionManager
         var firstHalfKeeper = formations[1].Goalkeeper; // End of first half
         var secondHalfKeeper = formations[2].Goalkeeper; // Start of second half
 
-        if (firstHalfKeeper != secondHalfKeeper)
+        if (firstHalfKeeper != null && secondHalfKeeper != null && firstHalfKeeper != secondHalfKeeper)
         {
             substitutions.Add(new Substitution
             {

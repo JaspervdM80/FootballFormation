@@ -25,6 +25,22 @@
         <a href="" class="reload">Reload</a>
         <a class="dismiss">🗙</a>
     </div>
+
+    <script>
+        window.blazorCulture = {
+            get: () => window.localStorage['BlazorCulture'],
+            set: (value) => window.localStorage['BlazorCulture'] = value
+        };
+
+        // Enhanced error logging for debugging
+        window.addEventListener('unhandledrejection', function (event) {
+            console.error('Unhandled promise rejection:', event.reason);
+        });
+
+        window.addEventListener('error', function (event) {
+            console.error('Global error:', event.error);
+        });
+    </script>
     <script src="_framework/blazor.webassembly.js"></script>
 </body>
 

@@ -41,6 +41,7 @@ project:
     - Use dependency injection for service resolution
     - Models should be POCOs
     - UI logic in Blazor components only
+    - Code behind and css in separate files
   testing:
     framework: T-UNT
     conventions:
