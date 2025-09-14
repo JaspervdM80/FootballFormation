@@ -1,5 +1,6 @@
 ﻿using FootballFormation.Enums;
 using FootballFormation.Models;
+using FootballFormation.Services;
 using Microsoft.AspNetCore.Components;
 
 namespace FootballFormation.Components.Pages;
@@ -8,6 +9,7 @@ public partial class Home
 {
     private bool _dataLoaded = false;
     private string _jsonInput = string.Empty;
+    private bool _useMultipleSetups = false;
 
     private RenderFragment RenderPlayer(Player? player, string position, bool isKeeper = false)
     {
@@ -126,7 +128,15 @@ public partial class Home
             }
         };
 
-        FormationService.LoadPlayers(players);
+        if (_useMultipleSetups)
+        {
+            GameSetupService.GenerateGameSetups(players);
+        }
+        else
+        {
+            FormationService.LoadPlayers(players);
+        }
+
         _dataLoaded = true;
     }
 
@@ -137,7 +147,14 @@ public partial class Home
             var players = System.Text.Json.JsonSerializer.Deserialize<List<Player>>(_jsonInput);
             if (players != null && players.Any())
             {
-                FormationService.LoadPlayers(players);
+                if (_useMultipleSetups)
+                {
+                    GameSetupService.GenerateGameSetups(players);
+                }
+                else
+                {
+                    FormationService.LoadPlayers(players);
+                }
                 _dataLoaded = true;
             }
         }
@@ -152,5 +169,64 @@ public partial class Home
     {
         _dataLoaded = false;
         _jsonInput = string.Empty;
+        _useMultipleSetups = false;
+    }
+
+    private void SelectGameSetup(int setupId)
+    {
+        GameSetupService.SelectGameSetup(setupId);
+        StateHasChanged();
+    }
+
+    private void ToggleSetupMode()
+    {
+        _useMultipleSetups = !_useMultipleSetups;
+        if (_dataLoaded)
+        {
+            // Regenerate with new mode if data is already loaded
+            if (_useMultipleSetups)
+            {
+                var players = FormationService.Players.ToList();
+                GameSetupService.GenerateGameSetups(players);
+            }
+            else
+            {
+                var players = GameSetupService.SelectedGameSetup?.Formations
+                    .SelectMany(f => f.PositionedPlayers.Values.Concat(new[] { f.Goalkeeper }))
+                    .Where(p => p != null)
+                    .Distinct()
+                    .ToList() ?? [];
+
+                if (players.Any())
+                {
+                    FormationService.LoadPlayers(players);
+                }
+            }
+        }
+    }
+
+    private List<Player> GetAllPlayersFromSetup(GameSetup setup)
+    {
+        var allPlayers = new HashSet<Player>();
+
+        foreach (var formation in setup.Formations)
+        {
+            foreach (var player in formation.PositionedPlayers.Values.Where(p => p != null))
+            {
+                allPlayers.Add(player!);
+            }
+
+            if (formation.Goalkeeper != null)
+            {
+                allPlayers.Add(formation.Goalkeeper);
+            }
+
+            foreach (var benchPlayer in formation.Bench)
+            {
+                allPlayers.Add(benchPlayer);
+            }
+        }
+
+        return allPlayers.Where(p => !p.IsAbsent).ToList();
     }
 }

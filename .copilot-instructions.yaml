@@ -1,0 +1,57 @@
+project:
+  name: FootballFormation
+  description: >
+    A Blazor WebAssembly app for managing a football team of 15 girls, supporting formation planning, substitutions, and goalkeeper rotation.
+  principles:
+    - SOLID
+    - Separation of concerns
+    - Domain-driven design
+    - Testable code (T-UNT)
+  domain:
+    team:
+      size: 15
+      gender: female
+    formation:
+      default: 4-3-3
+      positions:
+        - Defenders: 4
+        - DefensiveMidfielders: 2
+        - AttackingMidfielder: 1
+        - Striker: 1
+        - Wingers: 2
+    match:
+      halves: 2
+      half_duration: 30 # minutes
+      substitution_interval: 15 # minutes
+    goalkeeper:
+      min: 1
+      max: 2
+      rules:
+        - If 2 goalkeepers, each plays one half as GK, other half as field player
+        - If 1 goalkeeper, she plays both halves as GK
+  architecture:
+    - Use interfaces for managers/services
+    - Each responsibility in a separate class
+    - Avoid direct dependencies between managers/services
+    - Use dependency injection for service resolution
+    - Models should be POCOs
+    - UI logic in Blazor components only
+  testing:
+    framework: T-UNT
+    conventions:
+      - Test all public methods
+      - Use Arrange-Act-Assert pattern
+      - Mock dependencies for unit tests
+      - Place tests in /FootballFormation.Tests/
+      - Name test classes {ClassName}Tests
+      - Name test methods {MethodName}_Should{ExpectedBehavior}
+  code_style:
+    - Use C# 12 features where appropriate
+    - Prefer explicit types over var except in LINQ
+    - Use XML documentation for public APIs
+    - Use PascalCase for class, method, and property names
+    - Use camelCase for local variables and parameters
+  contribution:
+    - All new features must include unit tests
+    - All code must pass T-UNT before PR approval
+    - Follow SOLID and domain rules above
