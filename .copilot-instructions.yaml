@@ -7,6 +7,11 @@ project:
     - Separation of concerns
     - Domain-driven design
     - Testable code (T-UNT)
+  codingstyle:
+    - Consistent naming conventions
+    - Avoid deep nesting
+    - Use meaningful variable and method names
+    - IDE2090,IDE0011
   domain:
     team:
       size: 15
