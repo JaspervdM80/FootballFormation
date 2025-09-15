@@ -39,12 +39,12 @@ public class Player
 
     private double GetSkillScoreForPosition(Position position) => position switch
     {
-        Position.DC => (Skills.Defense * 2 + Skills.Fierceness + Skills.Passing) / 4.0,
+        Position.DC => (Skills.Defense * 2 + Skills.Fierceness + Skills.Concentration) / 4.0,
         Position.DL or Position.DR => (Skills.Defense + Skills.Speed + Skills.Passing + Skills.Fierceness) / 4.0,
-        Position.CDM => (Skills.Defense + Skills.Midfield + Skills.Passing + Skills.Vision) / 4.0,
+        Position.CDM => (Skills.Defense + Skills.Midfield + Skills.Passing + Skills.Vision + Skills.BallControl + Skills.Concentration) / 6.0,
         Position.CAM => (Skills.Attacking + Skills.Midfield + Skills.Passing + Skills.Vision) / 4.0,
         Position.LW or Position.RW => (Skills.Attacking + Skills.Speed + Skills.Shooting) / 3.0,
-        Position.ST => (Skills.Attacking + Skills.Shooting + Skills.Speed) / 3.0,
+        Position.ST => (Skills.Attacking * 2 + Skills.Shooting + Skills.Speed + Skills.Fierceness) / 5.0,
         _ => 0
     };
 

@@ -5,7 +5,7 @@
     margin-bottom: 40px;
 }
 
-::deep .formation-box {
+.formation-box {
     border: none;
     border-radius: 16px;
     padding: 20px;
@@ -16,7 +16,7 @@
     overflow: hidden;
 }
 
-    ::deep .formation-box::before {
+    .formation-box::before {
         content: '';
         position: absolute;
         top: 0;
@@ -26,12 +26,12 @@
         background: linear-gradient(90deg, #28a745, #20c997, #17a2b8);
     }
 
-    ::deep .formation-box:hover {
+    .formation-box:hover {
         transform: translateY(-2px);
         box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
     }
 
-    ::deep .formation-box h3 {
+    .formation-box h3 {
         margin-bottom: 15px;
         font-size: 1.4em;
         color: #2c3e50;
@@ -43,10 +43,10 @@
         gap: 10px;
     }
 
-        ::deep .formation-box h3::before {
-            content: '⚽';
+        .formation-box h3::before {
+            content: '\F4F5'; /* bi-diagram-3 */
+            font-family: 'bootstrap-icons';
             font-size: 0.8em;
-            font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
         }
 
 ::deep .team-strength {
@@ -170,7 +170,7 @@
     }
 
         ::deep .player.keeper::before {
-            content: '🥅';
+            content: '\F62D'; /* bi-shield-fill-check */
             position: absolute;
             top: -5px;
             right: -5px;
@@ -184,7 +184,7 @@
             align-items: center;
             justify-content: center;
             line-height: 1;
-            font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+            font-family: 'bootstrap-icons';
         }
 
     /* Empty player slot */

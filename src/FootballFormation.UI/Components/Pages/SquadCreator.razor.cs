@@ -170,34 +170,45 @@ public partial class SquadCreator
 
         if (player != null)
         {
-            // Find the assignment to check if it's preferred
-            var assignment = _createdSquads.SelectMany(s => s.PlayerAssignments)
-                .FirstOrDefault(pa => pa.Player == player && pa.PositionKey == position);
+            // Parse position to Position enum for scoring calculation
+            Position positionEnum = ParsePositionFromString(position);
+            
+            // Find the assignment from the current context (we need to pass squad context)
+            var assignment = GetPlayerAssignmentForPosition(player, position);
             
             var cssClass = isKeeper ? "player keeper" : "player";
-            if (assignment?.IsPreferredPosition == true)
+            if (assignment?.IsPreferredPosition == true || 
+                (assignment == null && (player.MainPosition == positionEnum || player.SecondaryPositions.Contains(positionEnum))))
             {
                 cssClass += " preferred";
             }
             
             builder.AddAttribute(1, "class", cssClass);
 
-            // Enhanced tooltip with more information
-            var tooltip = $"{player.Name}\nPositie: {position}\nSterkte: {player.Skills.AverageSkill:F1}\n" +
-                         $"Hoofd positie: {player.MainPosition}";
-            
+            // Calculate the actual position-specific rating
+            double rating;
             if (assignment != null)
             {
-                tooltip += $"\nPositie match: {assignment.PositionMatchQuality:F1}";
-                if (assignment.IsPreferredPosition)
-                {
-                    tooltip += "\n? Preferred positie!";
-                }
+                rating = assignment.PositionMatchQuality;
             }
+            else
+            {
+                // Calculate position score directly if assignment not found
+                rating = player.GetPositionScore(positionEnum);
+            }
+
+            // Enhanced tooltip with more information
+            var tooltip = $"{player.Name}\nPositie: {position}\nSterkte: {player.Skills.AverageSkill:F1}\n" +
+                         $"Hoofd positie: {player.MainPosition}\nPositie score: {rating:F1}";
             
             if (player.SecondaryPositions?.Any() == true)
             {
                 tooltip += $"\nExtra posities: {string.Join(", ", player.SecondaryPositions)}";
+            }
+
+            if (player.MainPosition == positionEnum || player.SecondaryPositions.Contains(positionEnum))
+            {
+                tooltip += "\n? Preferred positie!";
             }
             
             builder.AddAttribute(2, "title", tooltip);
@@ -214,8 +225,10 @@ public partial class SquadCreator
 
             builder.OpenElement(9, "div");
             builder.AddAttribute(10, "class", "player-rating");
-            var rating = assignment?.PositionMatchQuality ?? player.Skills.AverageSkill;
-            builder.AddContent(11, $"? {rating:F1}");
+            builder.OpenElement(11, "i");
+            builder.AddAttribute(12, "class", "bi bi-star-fill");
+            builder.CloseElement();
+            builder.AddContent(13, $" {rating:F1}");
             builder.CloseElement();
         }
         else
@@ -236,6 +249,37 @@ public partial class SquadCreator
 
         builder.CloseElement();
     };
+
+    private PlayerAssignment? GetPlayerAssignmentForPosition(Player player, string position)
+    {
+        // Look through all created squads to find the assignment
+        // This could be improved by passing squad context, but for now this works
+        foreach (var squad in _createdSquads)
+        {
+            var assignment = squad.PlayerAssignments.FirstOrDefault(pa => 
+                pa.Player == player && pa.PositionKey == position);
+            if (assignment != null)
+                return assignment;
+        }
+        return null;
+    }
+
+    private Position ParsePositionFromString(string positionString)
+    {
+        return positionString switch
+        {
+            "GK" => Position.GK,
+            "DC1" or "DC2" or "DC" => Position.DC,
+            "DL" => Position.DL,
+            "DR" => Position.DR,
+            "CDM1" or "CDM2" or "CDM" => Position.CDM,
+            "CAM" => Position.CAM,
+            "LW" => Position.LW,
+            "ST" => Position.ST,
+            "RW" => Position.RW,
+            _ => Position.None
+        };
+    }
 
     private static string GetTruncatedName(string name)
     {

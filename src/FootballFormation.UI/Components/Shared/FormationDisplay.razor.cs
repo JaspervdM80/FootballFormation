@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using FootballFormation.UI.Enums;
 
 namespace FootballFormation.UI.Components.Shared;
 
@@ -24,7 +25,7 @@ public partial class FormationDisplay
             return PlayerTemplate((player, position, isKeeper));
         }
 
-        // Enhanced default template
+        // Enhanced default template with position-specific rating
         return builder =>
         {
             builder.OpenElement(0, "div");
@@ -32,13 +33,22 @@ public partial class FormationDisplay
 
             if (player != null)
             {
-                // Add tooltip with detailed player information
+                // Calculate position-specific rating instead of just average skill
+                var positionEnum = ParsePositionFromString(position);
+                var positionRating = player.GetPositionScore(positionEnum);
+                
+                // Add tooltip with detailed player information including position rating
                 var tooltip = $"{player.Name}\nPositie: {position}\nSterkte: {player.Skills.AverageSkill:F1}\n" +
-                             $"Hoofd positie: {player.MainPosition}";
+                             $"Positie score: {positionRating:F1}\nHoofd positie: {player.MainPosition}";
                 
                 if (player.SecondaryPositions?.Any() == true)
                 {
                     tooltip += $"\nExtra posities: {string.Join(", ", player.SecondaryPositions)}";
+                }
+
+                if (player.MainPosition == positionEnum || player.SecondaryPositions.Contains(positionEnum))
+                {
+                    tooltip += "\n⭐ Preferred positie!";
                 }
                 
                 builder.AddAttribute(2, "title", tooltip);
@@ -55,7 +65,11 @@ public partial class FormationDisplay
 
                 builder.OpenElement(9, "div");
                 builder.AddAttribute(10, "class", "player-rating");
-                builder.AddContent(11, $"★ {player.Skills.AverageSkill:F1}");
+                builder.OpenElement(11, "i");
+                builder.AddAttribute(12, "class", "bi bi-star-fill");
+                builder.CloseElement();
+                // Use position-specific rating instead of average skill
+                builder.AddContent(13, $" {positionRating:F1}");
                 builder.CloseElement();
             }
             else
@@ -73,6 +87,23 @@ public partial class FormationDisplay
             }
 
             builder.CloseElement();
+        };
+    }
+
+    private Position ParsePositionFromString(string positionString)
+    {
+        return positionString switch
+        {
+            "GK" => Position.GK,
+            "DC1" or "DC2" or "DC" => Position.DC,
+            "DL" => Position.DL,
+            "DR" => Position.DR,
+            "CDM1" or "CDM2" or "CDM" => Position.CDM,
+            "CAM" => Position.CAM,
+            "LW" => Position.LW,
+            "ST" => Position.ST,
+            "RW" => Position.RW,
+            _ => Position.None
         };
     }
 

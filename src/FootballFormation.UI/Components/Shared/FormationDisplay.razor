@@ -4,11 +4,11 @@
 <div class="formation-box">
     <h3>@FormationTitle</h3>
     <div class="team-strength">
-        <span>★ Team Sterkte: @TeamStrength.ToString("F1")</span>
+        <i class="bi bi-star-fill"></i> Team Sterkte: @TeamStrength.ToString("F1")
     </div>
     <div class="field">
         <div class="formation-row">
-            <div class="position-label">⚡ Aanval</div>
+            <div class="position-label"><i class="bi bi-lightning-fill"></i> Aanval</div>
             <div class="players-row">
                 @RenderPlayer(GetPlayerInPosition("LW"), "LW")
                 @RenderPlayer(GetPlayerInPosition("ST"), "ST") 
@@ -17,14 +17,14 @@
         </div>
 
         <div class="formation-row">
-            <div class="position-label">⇈ Aanvallende Middenvelder</div>
+            <div class="position-label"><i class="bi bi-arrow-up-circle-fill"></i> Aanvallende Middenvelder</div>
             <div class="players-row center">
                 @RenderPlayer(GetPlayerInPosition("CAM"), "CAM")
             </div>
         </div>
 
         <div class="formation-row">
-            <div class="position-label">⚙ Verdedigende Middenvelders</div>
+            <div class="position-label"><i class="bi bi-gear-fill"></i> Verdedigende Middenvelders</div>
             <div class="players-row center">
                 @RenderPlayer(GetPlayerInPosition("CDM1"), "CDM")
                 @RenderPlayer(GetPlayerInPosition("CDM2"), "CDM")
@@ -32,7 +32,7 @@
         </div>
 
         <div class="formation-row">
-            <div class="position-label">⛨ Verdediging</div>
+            <div class="position-label"><i class="bi bi-shield-fill"></i> Verdediging</div>
             <div class="players-row">
                 @RenderPlayer(GetPlayerInPosition("DL"), "DL")
                 @RenderPlayer(GetPlayerInPosition("DC1"), "DC")
@@ -42,7 +42,7 @@
         </div>
 
         <div class="formation-row">
-            <div class="position-label">◉ Keeper</div>
+            <div class="position-label"><i class="bi bi-shield-fill-check"></i> Keeper</div>
             <div class="players-row center">
                 @RenderPlayer(GoalkeeperPlayer, "GK", true)
             </div>
@@ -53,7 +53,7 @@
     {
         <div class="bench">
             <div class="bench-title">
-                <span>♦</span>
+                <i class="bi bi-people-fill"></i>
                 <span>Wisselbank (@BenchPlayers.Count spelers)</span>
             </div>
             <div class="bench-players">

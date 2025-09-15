@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Options;
 using FootballFormation.UI.Models;
 using FootballFormation.UI.Services;
+using FootballFormation.UI.Enums;
 
 namespace FootballFormation.UI.Components.Pages;
 
@@ -35,6 +36,10 @@ public partial class Home
 
         if (player != null)
         {
+            // Calculate position-specific rating
+            var positionEnum = ParsePositionFromString(position);
+            var positionRating = player.GetPositionScore(positionEnum);
+
             builder.OpenElement(2, "div");
             builder.AddAttribute(3, "class", "player-name");
             builder.AddContent(4, player.Name);
@@ -47,7 +52,8 @@ public partial class Home
 
             builder.OpenElement(8, "div");
             builder.AddAttribute(9, "class", "player-rating");
-            builder.AddContent(10, player.Skills.AverageSkill.ToString("F1"));
+            // Show position-specific rating instead of average skill
+            builder.AddContent(10, positionRating.ToString("F1"));
             builder.CloseElement();
         }
         else
@@ -58,9 +64,21 @@ public partial class Home
         builder.CloseElement();
     };
 
-    private RenderFragment RenderPlayer(Player? player, string position, bool isKeeper = false)
+    private Position ParsePositionFromString(string positionString)
     {
-        return RenderHomePlayer((player, position, isKeeper));
+        return positionString switch
+        {
+            "GK" => Position.GK,
+            "DC1" or "DC2" or "DC" => Position.DC,
+            "DL" => Position.DL,
+            "DR" => Position.DR,
+            "CDM1" or "CDM2" or "CDM" => Position.CDM,
+            "CAM" => Position.CAM,
+            "LW" => Position.LW,
+            "ST" => Position.ST,
+            "RW" => Position.RW,
+            _ => Position.None
+        };
     }
 
     private Dictionary<string, Player?> GetFormationPositionedPlayers(Formation formation)

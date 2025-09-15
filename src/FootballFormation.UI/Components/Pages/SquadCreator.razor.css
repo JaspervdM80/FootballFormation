@@ -25,9 +25,9 @@
     }
 
         .page-header h1::before {
-            content: '??';
+            content: '\F4D5'; /* bi-people-fill */
             font-size: 0.8em;
-            font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+            font-family: 'bootstrap-icons';
         }
 
     .page-header p {
@@ -87,9 +87,9 @@
         }
 
             .config-panel .card-header h5::before {
-                content: '?';
+                content: '\F3E5'; /* bi-gear-fill */
                 font-size: 0.9em;
-                font-family: 'Segoe UI Symbol', 'Segoe UI', sans-serif;
+                font-family: 'bootstrap-icons';
             }
 
     .config-panel .card-body {
@@ -152,9 +152,9 @@
     }
 
         .player-info .player-name::before {
-            content: '??';
+            content: '\F4DA'; /* bi-person-fill */
             font-size: 0.8em;
-            font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+            font-family: 'bootstrap-icons';
         }
 
     .player-info .player-position {
@@ -227,9 +227,9 @@
     }
 
         .strategy-section label::before {
-            content: '??';
+            content: '\F68A'; /* bi-bullseye */
             font-size: 0.9em;
-            font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+            font-family: 'bootstrap-icons';
         }
 
     .strategy-section select {
@@ -274,9 +274,9 @@
             }
 
             .action-buttons .btn-success::before {
-                content: '?';
+                content: '\F26B'; /* bi-trophy-fill */
                 font-size: 0.9em;
-                font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+                font-family: 'bootstrap-icons';
             }
 
         .action-buttons .btn-info {
@@ -291,9 +291,9 @@
             }
 
             .action-buttons .btn-info::before {
-                content: '?';
+                content: '\F1DA'; /* bi-arrow-repeat */
                 font-size: 0.9em;
-                font-family: 'Segoe UI Symbol', 'Segoe UI', sans-serif;
+                font-family: 'bootstrap-icons';
             }
 
 /* Squad Results Section */
@@ -334,9 +334,9 @@
         }
 
             .squad-card .card-header h6::before {
-                content: '??';
+                content: '\F26B'; /* bi-trophy-fill */
                 font-size: 0.8em;
-                font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+                font-family: 'bootstrap-icons';
             }
 
 .squad-stats {
@@ -356,15 +356,15 @@
     }
 
         .squad-stats .badge.bg-success::before {
-            content: '?';
+            content: '\F586'; /* bi-star-fill */
             font-size: 0.8em;
-            font-family: 'Segoe UI Symbol', 'Segoe UI', sans-serif;
+            font-family: 'bootstrap-icons';
         }
 
         .squad-stats .badge.bg-info::before {
-            content: '??';
+            content: '\F68A'; /* bi-bullseye */
             font-size: 0.8em;
-            font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+            font-family: 'bootstrap-icons';
         }
 
 /* Ready State */
@@ -390,9 +390,9 @@
     }
 
         .ready-state h5::before {
-            content: '??';
+            content: '\F5A2'; /* bi-rocket-takeoff-fill */
             font-size: 0.8em;
-            font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+            font-family: 'bootstrap-icons';
         }
 
     .ready-state p {
@@ -409,7 +409,7 @@
 }
 
     ::deep .player.preferred::after {
-        content: '?';
+        content: '\F586'; /* bi-star-fill */
         position: absolute;
         top: -8px;
         left: -8px;
@@ -423,7 +423,7 @@
         justify-content: center;
         font-size: 0.7em;
         border: 2px solid white;
-        font-family: 'Segoe UI Symbol', 'Segoe UI', sans-serif;
+        font-family: 'bootstrap-icons';
     }
 
 /* Responsive Design */

@@ -1,10 +1,8 @@
-using FootballFormation.UI;
-using FootballFormation.UI.Managers;
-using FootballFormation.UI.Services;
-using Microsoft.AspNetCore.Components.Web;
-using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using FootballFormation.UI;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
