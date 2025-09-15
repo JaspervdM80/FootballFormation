@@ -22,16 +22,6 @@ builder.Services.AddScoped(sp =>
     return httpClient;
 });
 
-// Register managers
-builder.Services.AddScoped<ISquadManager, SquadManager>();
-builder.Services.AddScoped<IPlayingTimeManager, PlayingTimeManager>();
-builder.Services.AddScoped<ISubstitutionManager, SubstitutionManager>();
-builder.Services.AddScoped<IFormationBuilder, FormationBuilder>();
-
-// Register services
-builder.Services.AddScoped<IFormationService, FormationService>();
-builder.Services.AddScoped<IGameSetupService, GameSetupService>();
-
 // Register new squad creation services
 builder.Services.AddScoped<ISquadCreationService, SquadCreationService>();
 builder.Services.AddScoped<IPlayerAvailabilityService, PlayerAvailabilityService>();

@@ -1,0 +1,232 @@
+@using FootballFormation.UI.Models
+@using FootballFormation.UI.Enums
+
+<div class="full-game-squad-analysis">
+    <!-- Always show dual formation view -->
+    <div class="dual-formation-container">
+        <div class="row g-3">
+            <!-- First Half Formation -->
+            <div class="col-lg-6">
+                <div class="half-formation-card first-half">
+                    <div class="half-header">
+                        <h5><i class="bi bi-play-circle-fill"></i> First Half</h5>
+                        <div class="time-display">0' - 30'</div>
+                    </div>
+                    <div class="formation-content">
+                        <FormationDisplay
+                            FormationTitle=""
+                            TeamStrength="@GetFirstHalfAverageRating()"
+                            GoalkeeperPlayer="@GetFirstHalfGoalkeeper()"
+                            PositionedPlayers="@GetFirstHalfPositionedPlayers()"
+                            BenchPlayers="@(new List<Player>())"
+                            PlayerTemplate="@RenderPlayerWithTime" />
+                    </div>
+                    <div class="half-stats">
+                        <div class="stat"><span class="value">@GetFirstHalfPlayers().Count</span><span class="label">Players</span>
+                        </div>
+                        <div class="stat"><span class="value">@GetMinutesPlayedInFirstHalf()</span><span class="label">Total Min
+                            </span></div>
+                        <div class="stat"><span class="value">@GetFirstHalfAverageRating().ToString("F1")</span><span class="label">Avg
+                                Rating</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Second Half Formation -->
+            <div class="col-lg-6">
+                <div class="half-formation-card second-half">
+                    <div class="half-header">
+                        <h5><i class="bi bi-arrow-repeat"></i> Second Half</h5>
+                        <div class="time-display">30' - 60'</div>
+                    </div>
+                    <div class="formation-content">
+                        <FormationDisplay
+                            FormationTitle=""
+                            TeamStrength="@GetSecondHalfAverageRating()"
+                            GoalkeeperPlayer="@GetSecondHalfGoalkeeper()"
+                            PositionedPlayers="@GetSecondHalfPositionedPlayers()"
+                            BenchPlayers="@(new List<Player>())"
+                            PlayerTemplate="@RenderPlayerWithTime" />
+                    </div>
+                    <div class="half-stats">
+                        <div class="stat"><span class="value">@GetSecondHalfPlayers().Count</span><span class="label">Players</span>
+                        </div>
+                        <div class="stat"><span class="value">@GetMinutesPlayedInSecondHalf()</span><span class="label">Total Min
+                            </span></div>
+                        <div class="stat"><span class="value">@GetSecondHalfAverageRating().ToString("F1")</span><span class="label">Avg
+                                Rating</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Playing Time Summary -->
+    <div class="playing-time-summary mt-4">
+        <div class="row g-3">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="bi bi-clock-fill"></i> Player Minutes Summary</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="players-time-grid">
+                            @foreach (var playerTime in GetAllPlayersWithTime().OrderByDescending(pt => pt.TotalMinutes))
+                            {
+                                <div class="player-time-card">
+                                    <div class="player-info">
+                                        <div class="player-name">
+                                            @playerTime.Player.Name
+                                            @if (playerTime.Player.MainPosition == Position.GK || playerTime.IsGoalkeeper)
+                                            {
+                                                <i class="bi bi-shield-fill text-primary"></i>
+                                            }
+                                        </div>
+                                        <div class="player-position">@playerTime.Player.MainPosition</div>
+                                    </div>
+                                    <div class="time-breakdown">
+                                        @if (playerTime.FirstHalfMinutes > 0)
+                                        {
+                                            <div class="time-segment first-half">
+                                                <span class="segment-label">1st</span>
+                                                <span class="segment-time">@playerTime.FirstHalfMinutes'</span>
+                                            </div>
+                                        }
+                                        @if (playerTime.SecondHalfMinutes > 0)
+                                        {
+                                            <div class="time-segment second-half">
+                                                <span class="segment-label">2nd</span>
+                                                <span class="segment-time">@playerTime.SecondHalfMinutes'</span>
+                                            </div>
+                                        }
+                                        <div class="total-time">
+                                            <span class="total-minutes">@playerTime.TotalMinutes min</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h6><i class="bi bi-arrow-left-right"></i> Substitutions Made</h6>
+                    </div>
+                    <div class="card-body">
+                        @if (GetSubstitutions().Any())
+                        {
+                            <div class="substitutions-list">
+                                @foreach (var substitution in GetSubstitutions())
+                                {
+                                    <div class="substitution-item">
+                                        <div class="substitution-time">30'</div>
+                                        <div class="substitution-details">
+                                            <div class="player-out">
+                                                <i class="bi bi-arrow-left text-danger"></i>
+                                                @substitution.PlayerOut
+                                                @if (substitution.IsGoalkeeperChange)
+                                                {
+                                                    <span class="badge bg-primary">GK</span>
+                                                }
+                                            </div>
+                                            <div class="player-in">
+                                                <i class="bi bi-arrow-right text-success"></i>
+                                                @substitution.PlayerIn
+                                                @if (substitution.IsGoalkeeperChange)
+                                                {
+                                                    <span class="badge bg-primary">GK</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-muted text-center">
+                                <i class="bi bi-info-circle"></i>
+                                No substitutions made
+                            </div>
+                        }
+
+                        <div class="substitution-summary mt-3">
+                            <div class="summary-stat">
+                                <span class="value">@GetSubstitutionCount()</span>
+                                <span class="label">Total Subs</span>
+                            </div>
+                            <div class="summary-stat">
+                                <span class="value">@GetGoalkeeperChangeCount()</span>
+                                <span class="label">GK Changes</span>
+                            </div>
+                            <div class="summary-stat">
+                                <span class="value">@GetAllUniquePlayersUsed().Count</span>
+                                <span class="label">Players Used</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Summary -->
+    <div class="game-summary mt-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="summary-metric">
+                            <div class="metric-value">@GetTotalGameMinutes()</div>
+                            <div class="metric-label">Total Minutes</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="summary-metric">
+                            <div class="metric-value">@GetAveragePlayingTime().ToString("F0")</div>
+                            <div class="metric-label">Avg per Player</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="summary-metric">
+                            <div class="metric-value">@GetPlayingTimeBalance().ToString("F1")</div>
+                            <div class="metric-label">Balance Score</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="summary-metric">
+                            <div class="metric-value">@GetStrategyDisplayName(Squad.Config.Strategy)</div>
+                            <div class="metric-label">Strategy Used</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unused Players (if any) -->
+    @if (Squad?.BenchPlayers?.Any() == true)
+    {
+        <div class="unused-players-section mt-3">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="bi bi-person-x"></i> Players Not Used (@Squad.BenchPlayers.Count)</h6>
+                </div>
+                <div class="card-body">
+                    <div class="unused-players-grid">
+                        @foreach (var player in Squad.BenchPlayers)
+                        {
+                            <div class="unused-player-card">
+                                <span class="player-name">@player.Player.Name</span>
+                                <span class="player-position">(@player.Player.MainPosition)</span>
+                                <span class="player-rating">@player.Player.Skills.AverageSkill.ToString("F1")</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

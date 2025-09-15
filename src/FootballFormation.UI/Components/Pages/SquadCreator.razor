@@ -2,6 +2,7 @@
 @using FootballFormation.UI.Models
 @using FootballFormation.UI.Services
 @using FootballFormation.UI.Enums
+@using FootballFormation.UI.Components
 @inject ISquadCreationService SquadCreationService
 @inject IPlayerAvailabilityService PlayerAvailabilityService
 @inject HttpClient HttpClient
@@ -90,13 +91,98 @@
                                 </select>
                             </div>
                             
+                            <!-- Goalkeeper Configuration -->
+                            <div class="goalkeeper-config-section mt-3">
+                                <h6 class="mb-2">Goalkeeper Settings</h6>
+                                <div class="row g-2">
+                                    <div class="col-12">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   @bind="_config.AllowGoalkeeperRotation" 
+                                                   id="allowGoalkeeperRotation">
+                                            <label class="form-check-label" for="allowGoalkeeperRotation">
+                                                Allow goalkeeper rotation
+                                            </label>
+                                        </div>
+                                        <small class="text-muted">When enabled, goalkeepers share playing time</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Game Configuration -->
+                            <div class="game-config-section mt-3">
+                                <h6 class="mb-2">Game Settings</h6>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <label class="form-label">Game Duration</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control form-control-sm" 
+                                                   @bind="_config.GameDurationMinutes" 
+                                                   min="30" max="120" step="5">
+                                            <span class="input-group-text">min</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label">Min Playing Time</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control form-control-sm" 
+                                                   @bind="_config.MinimumPlayingTimeMinutes" 
+                                                   min="5" max="60" step="5">
+                                            <span class="input-group-text">min</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Configuration Summary -->
+                            <div class="config-summary-section mt-3">
+                                <h6 class="mb-2">Squad Summary</h6>
+                                <div class="summary-stats">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Available Players:</span>
+                                        <span class="fw-bold">@GetAvailablePlayersCount()</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Available Goalkeepers:</span>
+                                        <span class="fw-bold">@GetGoalkeeperCount()</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Target Squad Size:</span>
+                                        <span class="fw-bold">@_config.PlayersOnField</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Bench Players:</span>
+                                        <span class="fw-bold">@Math.Max(0, GetAvailablePlayersCount() - _config.PlayersOnField)</span>
+                                    </div>
+                                </div>
+                                
+                                @if (GetAvailablePlayersCount() < _config.PlayersOnField)
+                                {
+                                    <div class="alert alert-warning alert-sm mt-2">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                        Not enough players for a full squad
+                                    </div>
+                                }
+                                else if (GetGoalkeeperCount() == 0)
+                                {
+                                    <div class="alert alert-danger alert-sm mt-2">
+                                        <i class="bi bi-exclamation-circle"></i>
+                                        No goalkeepers available
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="alert alert-success alert-sm mt-2">
+                                        <i class="bi bi-check-circle"></i>
+                                        Ready to create squad
+                                    </div>
+                                }
+                            </div>
+                            
                             <!-- Action Buttons -->
                             <div class="action-buttons d-grid gap-2">
                                 <button class="btn btn-success" @onclick="CreateSingleSquad">
                                     Create Optimal Squad
-                                </button>
-                                <button class="btn btn-info" @onclick="CreateMultipleSquads">
-                                    Generate Multiple Options
                                 </button>
                             </div>
                         </div>
@@ -115,21 +201,49 @@
                                         <div class="d-flex justify-content-between align-items-center flex-wrap">
                                             <h6>@squad.Name</h6>
                                             <div class="squad-stats">
-                                                <span class="badge bg-success">@squad.OverallStrength.ToString("F1") Sterkte</span>
-                                                <span class="badge bg-info">@squad.PreferredPositionPercentage.ToString("F0")% Preferred</span>
+                                                <span class="badge bg-success">@squad.OverallStrength.ToString("F1") Strength</span>
+                                                <span class="badge bg-info">@GetAllUniquePlayersUsed(squad).Count Players</span>
+                                                <span class="badge bg-warning">@GetSubstitutionCount(squad) Subs</span>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="card-body p-0">
-                                        <FormationDisplay
-                                            FormationTitle="@squad.Name"
-                                            TeamStrength="@squad.OverallStrength"
-                                            GoalkeeperPlayer="@squad.Goalkeeper?.Player"
-                                            PositionedPlayers="@GetPositionedPlayersDict(squad)"
-                                            BenchPlayers="@squad.BenchPlayers.Select(bp => bp.Player).ToList()"
-                                            PlayerTemplate="@RenderSquadPlayer" />
+                                        <div class="formations-container">
+                                            <!-- First Half Formation -->
+                                            <div class="formation-section">
+                                                <div class="formation-title">
+                                                    <h6><i class="bi bi-play-circle"></i> First Half (0-30 min)</h6>
+                                                </div>
+                                                <FormationDisplay
+                                                    FormationTitle=""
+                                                    TeamStrength="@squad.OverallStrength"
+                                                    GoalkeeperPlayer="@GetFirstHalfGoalkeeper(squad)"
+                                                    PositionedPlayers="@GetPositionedPlayersDict(squad)"
+                                                    BenchPlayers="@(new List<Player>())"
+                                                    PlayerTemplate="@RenderSquadPlayer" />
+                                            </div>
+                                            
+                                            <!-- Second Half Formation -->
+                                            <div class="formation-section second-half">
+                                                <div class="formation-title">
+                                                    <h6><i class="bi bi-arrow-repeat"></i> Second Half (30-60 min)</h6>
+                                                </div>
+                                                <FormationDisplay
+                                                    FormationTitle=""
+                                                    TeamStrength="@squad.OverallStrength"
+                                                    GoalkeeperPlayer="@GetSecondHalfGoalkeeper(squad)"
+                                                    PositionedPlayers="@GetSecondHalfPositionedPlayersDict(squad)"
+                                                    BenchPlayers="@(new List<Player>())"
+                                                    PlayerTemplate="@RenderSquadPlayer" />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
+                                
+                                <!-- Squad Analysis Component -->
+                                <SquadAnalysis 
+                                    Squad="@squad" 
+                                    AvailableGoalkeepers="@GetAvailableGoalkeepers()" />
                             }
                         }
                         else

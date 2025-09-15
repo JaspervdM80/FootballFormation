@@ -1,10 +1,7 @@
-using Microsoft.AspNetCore.Components;
-using FootballFormation.UI.Models;
-using FootballFormation.UI.Services;
-using FootballFormation.UI.Enums;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Components;
 
 namespace FootballFormation.UI.Components.Pages;
 
@@ -48,7 +45,7 @@ public partial class SquadCreator
                 _statusMessage = $"Successfully loaded {players.Count} players!";
                 
                 // Clear status message after a delay
-                await Task.Delay(2000);
+                await Task.Delay(500);
                 _statusMessage = string.Empty;
                 StateHasChanged();
             }
@@ -99,17 +96,47 @@ public partial class SquadCreator
         }
     }
 
-    private async Task CreateMultipleSquads()
+    private async Task ApplyHalfTimeSubstitutions(EnhancedSquad squad)
     {
         _isLoading = true;
-        _statusMessage = "Generating multiple squad options...";
+        _statusMessage = "Applying half-time substitutions...";
         StateHasChanged();
 
         try
         {
             await Task.Delay(100); // Small delay for UI feedback
-            _createdSquads = SquadCreationService.CreateMultipleSquads(_playerAvailabilities, _config, 3);
-            _statusMessage = $"Generated {_createdSquads.Count} squad options!";
+            
+            // Debug: Log before applying substitutions
+            Console.WriteLine($"Before substitutions: {squad.PlayerAssignments.Count} assignments");
+            Console.WriteLine($"Position keys before: {string.Join(", ", squad.PlayerAssignments.Select(pa => pa.PositionKey))}");
+            Console.WriteLine($"Bench players before: {squad.BenchPlayers.Count}");
+            
+            SquadCreationService.ApplyHalfTimeSubstitutions(squad);
+            
+            // Debug: Log after applying substitutions
+            Console.WriteLine($"After substitutions: {squad.PlayerAssignments.Count} assignments");
+            Console.WriteLine($"Position keys after: {string.Join(", ", squad.PlayerAssignments.Select(pa => pa.PositionKey))}");
+            Console.WriteLine($"Bench players after: {squad.BenchPlayers.Count}");
+            
+            // Force a complete UI refresh by recreating the squad list
+            var updatedSquads = new List<EnhancedSquad>();
+            foreach (var existingSquad in _createdSquads)
+            {
+                if (existingSquad == squad)
+                {
+                    // This is the updated squad - add it with all its changes
+                    updatedSquads.Add(squad);
+                }
+                else
+                {
+                    // Other squads remain unchanged
+                    updatedSquads.Add(existingSquad);
+                }
+            }
+            _createdSquads = updatedSquads;
+            
+            _statusMessage = "Half-time substitutions applied successfully!";
+            StateHasChanged(); // Force UI update
             
             // Clear status message after delay
             await Task.Delay(2000);
@@ -118,8 +145,9 @@ public partial class SquadCreator
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error creating squads: {ex.Message}");
-            _statusMessage = $"Error creating squads: {ex.Message}";
+            Console.WriteLine($"Error applying half-time substitutions: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            _statusMessage = $"Error applying substitutions: {ex.Message}";
         }
         finally
         {
@@ -144,12 +172,84 @@ public partial class SquadCreator
     {
         var dict = new Dictionary<string, Player?>();
         
-        foreach (var assignment in squad.PlayerAssignments)
+        // For the formation display, we want to show the starting eleven (first half players)
+        // If half-time substitutions have been applied, show first half, otherwise show all current assignments
+        var playersToShow = squad.PlayerAssignments;
+        
+        if (HasHalfTimeSubstitutions(squad))
         {
-            dict[assignment.PositionKey] = assignment.Player;
+            // Show first half players in the formation
+            playersToShow = squad.PlayerAssignments
+                .Where(pa => !pa.PositionKey.EndsWith("_2H") && !pa.PositionKey.EndsWith("_SUB"))
+                .ToList();
+        }
+        
+        foreach (var assignment in playersToShow)
+        {
+            // Clean the position key for display
+            var displayKey = assignment.PositionKey.Replace("_2H", "").Replace("_SUB", "");
+            dict[displayKey] = assignment.Player;
         }
 
         return dict;
+    }
+
+    private Dictionary<string, Player?> GetSecondHalfPositionedPlayersDict(EnhancedSquad squad)
+    {
+        var dict = new Dictionary<string, Player?>();
+        
+        if (!HasHalfTimeSubstitutions(squad))
+            return dict;
+        
+        // Show second half players in the formation
+        var secondHalfPlayers = squad.PlayerAssignments
+            .Where(pa => pa.PositionKey.EndsWith("_2H") || pa.PositionKey.EndsWith("_SUB"))
+            .ToList();
+        
+        foreach (var assignment in secondHalfPlayers)
+        {
+            // Clean the position key for display
+            var displayKey = assignment.PositionKey.Replace("_2H", "").Replace("_SUB", "");
+            dict[displayKey] = assignment.Player;
+        }
+
+        return dict;
+    }
+
+    private Player? GetSecondHalfGoalkeeper(EnhancedSquad squad)
+    {
+        if (!HasHalfTimeSubstitutions(squad))
+            return null;
+        
+        return squad.PlayerAssignments
+            .Where(pa => pa.AssignedPosition == Position.GK && 
+                        (pa.PositionKey.EndsWith("_2H") || pa.PositionKey.EndsWith("_SUB")))
+            .FirstOrDefault()?.Player;
+    }
+
+    private Player? GetFirstHalfGoalkeeper(EnhancedSquad squad)
+    {
+        return squad.PlayerAssignments
+            .Where(pa => pa.AssignedPosition == Position.GK && 
+                        !pa.PositionKey.EndsWith("_2H") && !pa.PositionKey.EndsWith("_SUB"))
+            .FirstOrDefault()?.Player;
+    }
+
+    private List<Player> GetAllUniquePlayersUsed(EnhancedSquad squad)
+    {
+        return squad.PlayerAssignments.Select(pa => pa.Player).Distinct().ToList();
+    }
+
+    private int GetSubstitutionCount(EnhancedSquad squad)
+    {
+        return squad.PlayerAssignments.Count(pa => pa.PositionKey.EndsWith("_2H") || pa.PositionKey.EndsWith("_SUB"));
+    }
+
+    private bool HasHalfTimeSubstitutions(EnhancedSquad squad)
+    {
+        return squad.PlayerAssignments.Any(pa => 
+            pa.PositionKey.EndsWith("_2H") || 
+            pa.PositionKey.EndsWith("_SUB"));
     }
 
     private int GetAvailablePlayersCount()
@@ -264,7 +364,7 @@ public partial class SquadCreator
         return null;
     }
 
-    private Position ParsePositionFromString(string positionString)
+    private Position ParsePositionFromString(String positionString)
     {
         return positionString switch
         {
@@ -300,5 +400,13 @@ public partial class SquadCreator
         }
         
         return name;
+    }
+
+    private List<PlayerAvailability> GetAvailableGoalkeepers()
+    {
+        return _playerAvailabilities
+            .Where(pa => pa.CanPlayKeeper && pa.IsAvailable)
+            .OrderByDescending(pa => pa.Player.GetPositionScore(Position.GK))
+            .ToList();
     }
 }

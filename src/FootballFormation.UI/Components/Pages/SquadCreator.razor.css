@@ -426,6 +426,136 @@
         font-family: 'bootstrap-icons';
     }
 
+/* Half-time Substitutions Styles */
+.planned-substitutions {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 15px;
+    border: 1px solid #dee2e6;
+}
+
+.substitution-preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    font-size: 0.85rem;
+}
+
+    .substitution-preview.gk-change {
+        border: 2px solid #ffc107;
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        font-weight: 600;
+    }
+
+    .substitution-preview i.bi-arrow-right-circle {
+        color: #dc3545;
+        font-size: 1rem;
+    }
+
+    .substitution-preview i.bi-arrow-right {
+        color: #6c757d;
+    }
+
+    .substitution-preview .player-out {
+        color: #dc3545;
+        font-weight: 600;
+    }
+
+    .substitution-preview .player-in {
+        color: #28a745;
+        font-weight: 600;
+    }
+
+.btn-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #ffca2c 100%);
+    border: none;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+    transition: all 0.3s ease;
+}
+
+    .btn-warning:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 193, 7, 0.4);
+        background: linear-gradient(135deg, #ffca2c 0%, #ffd43b 100%);
+    }
+
+/* Formations Container */
+.formations-container {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    padding: 20px;
+}
+
+.formation-section {
+    flex: 1;
+    min-width: 400px;
+}
+
+.formation-section.second-half {
+    border-left: 3px solid #28a745;
+    padding-left: 15px;
+    margin-left: 15px;
+}
+
+.formation-title {
+    text-align: center;
+    margin-bottom: 15px;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+}
+
+.formation-title h6 {
+    margin: 0;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #495057;
+}
+
+.formation-section.second-half .formation-title {
+    background: rgba(40, 167, 69, 0.1);
+}
+
+.formation-section.second-half .formation-title h6 {
+    color: #28a745;
+}
+
+/* Single formation view when no substitutions */
+.formations-container:has(.formation-section:only-child) {
+    justify-content: center;
+}
+
+.formations-container:has(.formation-section:only-child) .formation-section {
+    max-width: 600px;
+}
+
+/* Half-time substitution specific styles */
+.player-minutes-card.first-half {
+    border-left: 4px solid #007bff;
+    background: linear-gradient(135deg, #e7f3ff 0%, #f8f9fa 100%);
+}
+
+.player-minutes-card.second-half {
+    border-left: 4px solid #28a745;
+    background: linear-gradient(135deg, #e8f5e8 0%, #f8f9fa 100%);
+}
+
+.badge.bg-warning.text-dark {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .page-header h1 {
@@ -454,6 +584,25 @@
 
     .squad-stats {
         justify-content: center;
+    }
+
+    .formations-container {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px;
+    }
+    
+    .formation-section {
+        min-width: unset;
+    }
+    
+    .formation-section.second-half {
+        border-left: none;
+        border-top: 3px solid #28a745;
+        padding-left: 0;
+        padding-top: 15px;
+        margin-left: 0;
+        margin-top: 15px;
     }
 }
 

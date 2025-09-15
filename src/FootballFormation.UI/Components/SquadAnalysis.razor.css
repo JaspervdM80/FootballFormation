@@ -1,0 +1,474 @@
+/* Full Game Squad Analysis Styles */
+.full-game-squad-analysis {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin: 20px 0;
+}
+
+/* Dual Formation Container */
+.dual-formation-container {
+    margin-bottom: 20px;
+}
+
+.half-formation-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    height: 100%;
+}
+
+.half-formation-card.first-half {
+    border-left: 4px solid #007bff;
+}
+
+.half-formation-card.second-half {
+    border-left: 4px solid #28a745;
+}
+
+.half-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 15px 20px;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.half-header h5 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.first-half .half-header h5 {
+    color: #007bff;
+}
+
+.second-half .half-header h5 {
+    color: #28a745;
+}
+
+.time-display {
+    background: rgba(0, 0, 0, 0.1);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+.formation-content {
+    padding: 15px;
+}
+
+.half-stats {
+    display: flex;
+    justify-content: space-around;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.02);
+    border-top: 1px solid #f1f3f4;
+}
+
+.half-stats .stat {
+    text-align: center;
+}
+
+.half-stats .stat .value {
+    display: block;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #2c3e50;
+    line-height: 1.2;
+}
+
+.half-stats .stat .label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Playing Time Summary */
+.playing-time-summary .card {
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+}
+
+.players-time-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 12px;
+}
+
+.player-time-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.player-time-card:hover {
+    background: #e9ecef;
+    border-color: #ced4da;
+    transform: translateY(-1px);
+}
+
+.player-time-card .player-info .player-name {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.player-time-card .player-info .player-position {
+    font-size: 0.8rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.time-breakdown {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.time-segment {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 6px;
+    min-width: 40px;
+}
+
+.time-segment.first-half {
+    background: rgba(0, 123, 255, 0.1);
+    border: 1px solid rgba(0, 123, 255, 0.2);
+}
+
+.time-segment.second-half {
+    background: rgba(40, 167, 69, 0.1);
+    border: 1px solid rgba(40, 167, 69, 0.2);
+}
+
+.time-segment .segment-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #495057;
+    line-height: 1;
+}
+
+.time-segment .segment-time {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #2c3e50;
+    line-height: 1.2;
+}
+
+.total-time {
+    margin-left: 8px;
+    padding-left: 8px;
+    border-left: 2px solid #dee2e6;
+}
+
+.total-time .total-minutes {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #495057;
+}
+
+/* Substitutions List */
+.substitutions-list {
+    space-y: 8px;
+}
+
+.substitution-item {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.substitution-time {
+    background: #ffc107;
+    color: #000;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    min-width: 30px;
+    text-align: center;
+}
+
+.substitution-details {
+    flex: 1;
+}
+
+.player-out, .player-in {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    margin: 2px 0;
+}
+
+.player-out {
+    color: #dc3545;
+    font-weight: 500;
+}
+
+.player-in {
+    color: #28a745;
+    font-weight: 500;
+}
+
+.substitution-summary {
+    display: flex;
+    justify-content: space-around;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
+.substitution-summary .summary-stat {
+    text-align: center;
+}
+
+.substitution-summary .summary-stat .value {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #2c3e50;
+    line-height: 1.2;
+}
+
+.substitution-summary .summary-stat .label {
+    font-size: 0.7rem;
+    color: #6c757d;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Game Summary */
+.game-summary .card {
+    border: none;
+    background: linear-gradient(135deg, #495057 0%, #6c757d 100%);
+    color: white;
+    border-radius: 10px;
+}
+
+.summary-metric {
+    padding: 10px;
+}
+
+.summary-metric .metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.summary-metric .metric-label {
+    font-size: 0.8rem;
+    opacity: 0.8;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+}
+
+/* Unused Players */
+.unused-players-section .card {
+    border: 2px dashed #dee2e6;
+    background: #f8f9fa;
+}
+
+.unused-players-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.unused-player-card {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 10px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.unused-player-card .player-name {
+    font-weight: 600;
+    color: #6c757d;
+}
+
+.unused-player-card .player-position {
+    font-size: 0.8rem;
+    color: #9ba3a8;
+}
+
+.unused-player-card .player-rating {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #28a745;
+}
+
+/* Enhanced Player Display for FormationDisplay */
+::deep .player.with-time {
+    min-height: 55px;
+    padding: 8px;
+    border-radius: 8px;
+    border: 2px solid #dee2e6;
+    position: relative;
+}
+
+::deep .player.with-time.preferred {
+    border-color: #ffc107;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+}
+
+::deep .player-name-display {
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: 2px;
+}
+
+::deep .player-rating-display {
+    font-size: 0.7rem;
+    color: #28a745;
+    font-weight: 600;
+    line-height: 1;
+}
+
+::deep .player-time-display {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #17a2b8;
+    color: white;
+    font-size: 0.6rem;
+    padding: 2px 5px;
+    border-radius: 6px;
+    font-weight: 700;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+::deep .player.with-time.empty {
+    background: #f8f9fa;
+    border-style: dashed;
+    opacity: 0.6;
+}
+
+/* Hide formation titles and bench in full game view */
+::deep .full-game-squad-analysis .formation-box h3,
+::deep .full-game-squad-analysis .team-strength,
+::deep .full-game-squad-analysis .bench {
+    display: none;
+}
+
+::deep .full-game-squad-analysis .formation-box {
+    margin: 0;
+    padding: 0;
+}
+
+::deep .full-game-squad-analysis .field {
+    padding: 10px;
+}
+
+::deep .full-game-squad-analysis .formation-row {
+    margin-bottom: 10px;
+}
+
+::deep .full-game-squad-analysis .position-label {
+    font-size: 0.75rem;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .dual-formation-container .col-lg-6:first-child {
+        margin-bottom: 20px;
+    }
+    
+    .players-time-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .time-breakdown {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .substitution-summary {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    .full-game-squad-analysis {
+        padding: 15px;
+    }
+    
+    .half-header {
+        padding: 12px 15px;
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
+    
+    .half-stats {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .half-stats .stat {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .unused-players-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 576px) {
+    .game-summary .col-md-3 {
+        margin-bottom: 15px;
+    }
+    
+    .summary-metric .metric-value {
+        font-size: 1.2rem;
+    }
+    
+    .player-time-card {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
+}
