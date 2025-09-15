@@ -1,0 +1,69 @@
+﻿@using FootballFormation.UI.Models
+@using FootballFormation.UI.Enums
+
+<div class="formation-box">
+    <h3>@FormationTitle</h3>
+    <div class="team-strength">
+        <i class="bi bi-star-fill"></i> Team Sterkte: @TeamStrength.ToString("F1")
+    </div>
+    <div class="field">
+        <div class="formation-row">
+            <div class="position-label"><i class="bi bi-lightning-fill"></i> Aanval</div>
+            <div class="players-row">
+                @RenderPlayer(GetPlayerInPosition("LW"), "LW")
+                @RenderPlayer(GetPlayerInPosition("ST"), "ST") 
+                @RenderPlayer(GetPlayerInPosition("RW"), "RW")
+            </div>
+        </div>
+
+        <div class="formation-row">
+            <div class="position-label"><i class="bi bi-arrow-up-circle-fill"></i> Aanvallende Middenvelder</div>
+            <div class="players-row center">
+                @RenderPlayer(GetPlayerInPosition("CAM"), "CAM")
+            </div>
+        </div>
+
+        <div class="formation-row">
+            <div class="position-label"><i class="bi bi-gear-fill"></i> Verdedigende Middenvelders</div>
+            <div class="players-row center">
+                @RenderPlayer(GetPlayerInPosition("CDM1"), "CDM")
+                @RenderPlayer(GetPlayerInPosition("CDM2"), "CDM")
+            </div>
+        </div>
+
+        <div class="formation-row">
+            <div class="position-label"><i class="bi bi-shield-fill"></i> Verdediging</div>
+            <div class="players-row">
+                @RenderPlayer(GetPlayerInPosition("DL"), "DL")
+                @RenderPlayer(GetPlayerInPosition("DC1"), "DC")
+                @RenderPlayer(GetPlayerInPosition("DC2"), "DC")
+                @RenderPlayer(GetPlayerInPosition("DR"), "DR")
+            </div>
+        </div>
+
+        <div class="formation-row">
+            <div class="position-label"><i class="bi bi-shield-fill-check"></i> Keeper</div>
+            <div class="players-row center">
+                @RenderPlayer(GoalkeeperPlayer, "GK", true)
+            </div>
+        </div>
+    </div>
+
+    @if (BenchPlayers?.Any() == true)
+    {
+        <div class="bench">
+            <div class="bench-title">
+                <i class="bi bi-people-fill"></i>
+                <span>Wisselbank (@BenchPlayers.Count spelers)</span>
+            </div>
+            <div class="bench-players">
+                @foreach (var player in BenchPlayers)
+                {
+                    <div class="bench-player" title="@($"Sterkte: {player.Skills.AverageSkill:F1}")">
+                        @player.Name
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,35 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch and Debug Blazor WebAssembly in Chrome",
+            "type": "blazorwasm",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/src/FootballFormation.UI",
+            "browser": "chrome",
+            "url": "https://localhost:7214",
+            "webRoot": "${workspaceFolder}/src/FootballFormation.UI/wwwroot",
+            "inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/_framework/debug/ws-proxy?browser={browserInspectUri}",
+            "timeout": 120000
+        },
+        {
+            "name": "Launch and Debug Blazor WebAssembly in Edge",
+            "type": "blazorwasm",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/src/FootballFormation.UI",
+            "browser": "edge",
+            "url": "https://localhost:7214",
+            "webRoot": "${workspaceFolder}/src/FootballFormation.UI/wwwroot",
+            "inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/_framework/debug/ws-proxy?browser={browserInspectUri}",
+            "timeout": 120000
+        },
+        {
+            "name": "Attach to Blazor WebAssembly",
+            "type": "blazorwasm",
+            "request": "attach",
+            "cwd": "${workspaceFolder}/src/FootballFormation.UI",
+            "url": "https://localhost:7214",
+            "webRoot": "${workspaceFolder}/src/FootballFormation.UI/wwwroot"
+        }
+    ]
+}

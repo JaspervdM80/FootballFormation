@@ -1,0 +1,287 @@
+[
+  {
+    "name": "Lieke",
+    "mainPosition": "ST",
+    "secondaryPositions": [ "DC", "DL" ],
+    "preferredFoot": "Right",
+    "skills": {
+      "attacking": 3,
+      "midfield": 2,
+      "defense": 5,
+      "passing": 3,
+      "speed": 5,
+      "shooting": 3,
+      "vision": 3,
+      "fierceness": 5,
+      "ballControl": 2,
+      "concentration": 3,
+      "insight": 1
+    }
+  },
+  {
+    "name": "Fiene",
+    "mainPosition": "RW",
+    "secondaryPositions": [ "CAM", "LW", "ST" ],
+    "preferredFoot": "Right",
+    "skills": {
+      "attacking": 4,
+      "midfield": 3,
+      "defense": 2,
+      "passing": 3,
+      "speed": 4,
+      "shooting": 4,
+      "vision": 2,
+      "fierceness": 2,
+      "ballControl": 2,
+      "concentration": 2,
+      "insight": 1
+    }
+  },
+  {
+    "name": "Feline",
+    "mainPosition": "GK",
+    "secondaryPositions": [ "DC" ],
+    "preferredFoot": "Right",
+    "skills": {
+      "attacking": 2,
+      "midfield": 2,
+      "defense": 5,
+      "passing": 4,
+      "speed": 2,
+      "shooting": 1,
+      "vision": 3,
+      "fierceness": 3,
+      "ballControl": 3,
+      "concentration": 3,
+      "insight": 1
+    }
+  },
+  {
+    "name": "Fenna",
+    "mainPosition": "CDM",
+    "secondaryPositions": [ "CAM", "ST" ],
+    "preferredFoot": "Right",
+    "skills": {
+      "attacking": 3,
+      "midfield": 3,
+      "defense": 2,
+      "passing": 3,
+      "speed": 2,
+      "shooting": 2,
+      "vision": 4,
+      "fierceness": 1,
+      "ballControl": 3,
+      "concentration": 3,
+      "insight": 1
+    }
+  },
+  {
+    "name": "Roos",
+    "mainPosition": "DC",
+    "secondaryPositions": [ "GK", "DL", "DR" ],
+    "preferredFoot": "Right",
+    "skills": {
+      "attacking": 2,
+      "midfield": 2,
+      "defense": 4,
+      "passing": 2,
+      "speed": 4,
+      "shooting": 1,
+      "vision": 2,
+      "fierceness": 4,
+      "ballControl": 2,
+      "concentration": 2,
+      "insight": 1
+    }
+  },
+  {
+    "name": "Elena",
+    "mainPosition": "DL",
+    "secondaryPositions": [ "DC", "DR" ],
+    "preferredFoot": "Right",
+    "skills": {
+      "attacking": 1,
+      "midfield": 1,
+      "defense": 2,
+      "passing": 1,
+      "speed": 3,
+      "shooting": 1,
+      "vision": 2,
+      "fierceness": 2,
+      "ballControl": 1,
+      "concentration": 3,
+      "insight": 1
+    }
+  },
+  {
+    "name": "Suus",
+    "mainPosition": "ST",
+    "secondaryPositions": [ "LW", "RW", "DC" ],
+    "preferredFoot": "Right",
+    "skills": {
+      "attacking": 3,
+      "midfield": 2,
+      "defense": 2,
+      "passing": 2,
+      "speed": 3,
+      "shooting": 3,
+      "vision": 2,
+      "fierceness": 3,
+      "ballControl": 1,
+      "concentration": 3,
+      "insight": 1
+    }
+  },
+  {
+    "name": "Lize",
+    "mainPosition": "CDM",
+    "secondaryPositions": [ "DC" ],
+    "preferredFoot": "Right",
+    "skills": {
+      "attacking": 1,
+      "midfield": 3,
+      "defense": 3,
+      "passing": 4,
+      "speed": 1,
+      "shooting": 2,
+      "vision": 4,
+      "fierceness": 2,
+      "ballControl": 3,
+      "concentration": 4,
+      "insight": 1
+    }
+  },
+  {
+    "name": "Fleur",
+    "mainPosition": "LW",
+    "secondaryPositions": [ "CAM", "ST", "GK" ],
+    "preferredFoot": "Right",
+    "skills": {
+      "attacking": 3,
+      "midfield": 3,
+      "defense": 2,
+      "passing": 3,
+      "speed": 4,
+      "shooting": 2,
+      "vision": 2,
+      "fierceness": 3,
+      "ballControl": 2,
+      "concentration": 3,
+      "insight": 1
+    }
+  },
+  {
+    "name": "Suze",
+    "mainPosition": "DC",
+    "secondaryPositions": [ "DR", "DL", "CDM" ],
+    "preferredFoot": "Right",
+    "skills": {
+      "attacking": 1,
+      "midfield": 2,
+      "defense": 4,
+      "passing": 2,
+      "speed": 5,
+      "shooting": 1,
+      "vision": 3,
+      "fierceness": 4,
+      "ballControl": 2,
+      "concentration": 4,
+      "insight": 1
+    }
+  },
+  {
+    "name": "Kim",
+    "mainPosition": "CDM",
+    "secondaryPositions": [ "CAM", "DR" ],
+    "preferredFoot": "Right",
+    "skills": {
+      "attacking": 3,
+      "midfield": 4,
+      "defense": 2,
+      "passing": 4,
+      "speed": 3,
+      "shooting": 4,
+      "vision": 4,
+      "fierceness": 2,
+      "ballControl": 4,
+      "concentration": 3,
+      "insight": 1
+    }
+  },
+  {
+    "name": "Liv",
+    "mainPosition": "DR",
+    "secondaryPositions": [ "CAM", "DL", "CDM" ],
+    "preferredFoot": "Right",
+    "skills": {
+      "attacking": 2,
+      "midfield": 3,
+      "defense": 3,
+      "passing": 3,
+      "speed": 3,
+      "shooting": 3,
+      "vision": 3,
+      "fierceness": 4,
+      "ballControl": 2,
+      "concentration": 2,
+      "insight": 1
+    }
+  },
+  {
+    "name": "Lotte",
+    "mainPosition": "DL",
+    "secondaryPositions": [ "DC", "CDM" ],
+    "preferredFoot": "Right",
+    "skills": {
+      "attacking": 1,
+      "midfield": 2,
+      "defense": 2,
+      "passing": 1,
+      "speed": 1,
+      "shooting": 1,
+      "vision": 1,
+      "fierceness": 1,
+      "ballControl": 2,
+      "concentration": 1,
+      "insight": 1
+    }
+  },
+  {
+    "name": "Julia",
+    "mainPosition": "DL",
+    "secondaryPositions": [ "CDM" ],
+    "preferredFoot": "Right",
+    "skills": {
+      "attacking": 1,
+      "midfield": 2,
+      "defense": 2,
+      "passing": 1,
+      "speed": 1,
+      "shooting": 1,
+      "vision": 1,
+      "fierceness": 3,
+      "concentration": 3,
+      "ballControl": 1,
+      "insight": 1
+    }
+  },
+  {
+    "name": "Jula",
+    "mainPosition": "CAM",
+    "secondaryPositions": [ "ST", "LW", "RW" ],
+    "preferredFoot": "Right",
+    "skills": {
+      "attacking": 4,
+      "midfield": 5,
+      "defense": 1,
+      "passing": 5,
+      "speed": 3,
+      "shooting": 4,
+      "vision": 5,
+      "fierceness": 2,
+      "concentration": 4,
+      "ballControl": 4,
+      "insight": 1
+    }
+  }
+]

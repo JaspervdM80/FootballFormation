@@ -1,0 +1,472 @@
+/* Squad Creator Page Styles */
+.squad-creator-container {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    min-height: 100vh;
+    padding: 20px 0;
+}
+
+.page-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 30px 0;
+    margin-bottom: 30px;
+    border-radius: 0 0 20px 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+    .page-header h1 {
+        font-weight: 700;
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+        .page-header h1::before {
+            content: '\F4D5'; /* bi-people-fill */
+            font-size: 0.8em;
+            font-family: 'bootstrap-icons';
+        }
+
+    .page-header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        margin: 0;
+    }
+
+.load-data-section {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+    .load-data-section .btn {
+        padding: 15px 40px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        transition: all 0.3s ease;
+    }
+
+        .load-data-section .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+
+/* Player Configuration Panel */
+.config-panel {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+}
+
+    .config-panel .card-header {
+        background: linear-gradient(135deg, #495057 0%, #343a40 100%);
+        color: white;
+        padding: 20px;
+        border: none;
+    }
+
+        .config-panel .card-header h5 {
+            font-weight: 700;
+            font-size: 1.3rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .config-panel .card-header h5::before {
+                content: '\F3E5'; /* bi-gear-fill */
+                font-size: 0.9em;
+                font-family: 'bootstrap-icons';
+            }
+
+    .config-panel .card-body {
+        padding: 20px;
+    }
+
+/* Player Availability List */
+.player-availability-container {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 15px;
+    background: #f8f9fa;
+}
+
+    .player-availability-container::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .player-availability-container::-webkit-scrollbar-track {
+        background: #f1f3f4;
+        border-radius: 3px;
+    }
+
+    .player-availability-container::-webkit-scrollbar-thumb {
+        background: #20c997;
+        border-radius: 3px;
+    }
+
+.player-row {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+    .player-row:hover {
+        transform: translateX(5px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border-color: #20c997;
+    }
+
+.player-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+    .player-info .player-name {
+        font-weight: 700;
+        color: #2c3e50;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .player-info .player-name::before {
+            content: '\F4DA'; /* bi-person-fill */
+            font-size: 0.8em;
+            font-family: 'bootstrap-icons';
+        }
+
+    .player-info .player-position {
+        color: #6c757d;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+.player-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+    .control-group label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #495057;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 0;
+    }
+
+.form-check-input:checked {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.minutes-input {
+    width: 80px;
+}
+
+    .minutes-input input {
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+        transition: border-color 0.3s ease;
+    }
+
+        .minutes-input input:focus {
+            border-color: #20c997;
+            box-shadow: 0 0 0 0.2rem rgba(32, 201, 151, 0.25);
+        }
+
+/* Strategy Selection */
+.strategy-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 12px;
+    margin: 20px 0;
+    border: 2px solid #e9ecef;
+}
+
+    .strategy-section label {
+        font-weight: 700;
+        color: #495057;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+        .strategy-section label::before {
+            content: '\F68A'; /* bi-bullseye */
+            font-size: 0.9em;
+            font-family: 'bootstrap-icons';
+        }
+
+    .strategy-section select {
+        border-radius: 10px;
+        border: 2px solid #dee2e6;
+        padding: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+        .strategy-section select:focus {
+            border-color: #20c997;
+            box-shadow: 0 0 0 0.2rem rgba(32, 201, 151, 0.25);
+        }
+
+/* Action Buttons */
+.action-buttons {
+    margin-top: 20px;
+}
+
+    .action-buttons .btn {
+        font-weight: 700;
+        padding: 15px 25px;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+        .action-buttons .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+            .action-buttons .btn-success:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+            }
+
+            .action-buttons .btn-success::before {
+                content: '\F26B'; /* bi-trophy-fill */
+                font-size: 0.9em;
+                font-family: 'bootstrap-icons';
+            }
+
+        .action-buttons .btn-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
+            border: none;
+            box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+        }
+
+            .action-buttons .btn-info:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(23, 162, 184, 0.4);
+            }
+
+            .action-buttons .btn-info::before {
+                content: '\F1DA'; /* bi-arrow-repeat */
+                font-size: 0.9em;
+                font-family: 'bootstrap-icons';
+            }
+
+/* Squad Results Section */
+.squads-section {
+    padding-left: 20px;
+}
+
+.squad-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+    .squad-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        border-color: #20c997;
+    }
+
+    .squad-card .card-header {
+        background: linear-gradient(135deg, #495057 0%, #6c757d 100%);
+        color: white;
+        padding: 20px;
+        border: none;
+    }
+
+        .squad-card .card-header h6 {
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .squad-card .card-header h6::before {
+                content: '\F26B'; /* bi-trophy-fill */
+                font-size: 0.8em;
+                font-family: 'bootstrap-icons';
+            }
+
+.squad-stats {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+    .squad-stats .badge {
+        font-size: 0.9rem;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+        .squad-stats .badge.bg-success::before {
+            content: '\F586'; /* bi-star-fill */
+            font-size: 0.8em;
+            font-family: 'bootstrap-icons';
+        }
+
+        .squad-stats .badge.bg-info::before {
+            content: '\F68A'; /* bi-bullseye */
+            font-size: 0.8em;
+            font-family: 'bootstrap-icons';
+        }
+
+/* Ready State */
+.ready-state {
+    text-align: center;
+    padding: 60px 30px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 3px dashed #dee2e6;
+    margin: 30px 0;
+}
+
+    .ready-state h5 {
+        color: #495057;
+        font-weight: 700;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+        .ready-state h5::before {
+            content: '\F5A2'; /* bi-rocket-takeoff-fill */
+            font-size: 0.8em;
+            font-family: 'bootstrap-icons';
+        }
+
+    .ready-state p {
+        color: #6c757d;
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+
+/* Enhanced player display for preferred positions */
+::deep .player.preferred {
+    border-color: #ffc107 !important;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%) !important;
+    position: relative;
+}
+
+    ::deep .player.preferred::after {
+        content: '\F586'; /* bi-star-fill */
+        position: absolute;
+        top: -8px;
+        left: -8px;
+        background: #ffc107;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7em;
+        border: 2px solid white;
+        font-family: 'bootstrap-icons';
+    }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-header h1 {
+        font-size: 2rem;
+    }
+
+    .config-panel {
+        position: static;
+        margin-bottom: 30px;
+    }
+
+    .squads-section {
+        padding-left: 0;
+    }
+
+    .player-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .control-group {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    .squad-stats {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 576px) {
+    .player-row {
+        padding: 12px;
+    }
+
+    .player-controls {
+        gap: 8px;
+    }
+
+    .minutes-input {
+        width: 70px;
+    }
+}

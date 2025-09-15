@@ -1,0 +1,153 @@
+@page "/squad-creator"
+@using FootballFormation.UI.Models
+@using FootballFormation.UI.Services
+@using FootballFormation.UI.Enums
+@inject ISquadCreationService SquadCreationService
+@inject IPlayerAvailabilityService PlayerAvailabilityService
+@inject HttpClient HttpClient
+
+<PageTitle>Squad Creator</PageTitle>
+
+<div class="squad-creator-container">
+    <div class="page-header">
+        <div class="container-fluid">
+            <h1>Squad Creator</h1>
+            <p>Create optimal squads based on player positions, availability, and strategic preferences</p>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        @if (!_dataLoaded)
+        {
+            <div class="load-data-section">
+                <h3><i class="bi bi-rocket-takeoff-fill"></i> Ready to Get Started?</h3>
+                <p class="mb-4">Load your player data to begin creating optimal squad formations</p>
+                <button class="btn btn-primary btn-lg" @onclick="LoadSampleData">
+                    Load Sample Players
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                <!-- Configuration Panel -->
+                <div class="col-xl-4 col-lg-5">
+                    <div class="config-panel card">
+                        <div class="card-header">
+                            <h5>Player Configuration</h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Player Availability Section -->
+                            <div class="player-availability-container">
+                                @foreach (var playerAvail in _playerAvailabilities)
+                                {
+                                    <div class="player-row">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="player-info">
+                                                <div class="player-name">@playerAvail.Player.Name</div>
+                                                <div class="player-position">@playerAvail.Player.MainPosition</div>
+                                            </div>
+                                            <div class="player-controls">
+                                                <div class="control-group">
+                                                    <label>Keeper</label>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               @bind="playerAvail.IsKeeper" 
+                                                               id="keeper_@playerAvail.Player.Name">
+                                                    </div>
+                                                </div>
+                                                <div class="control-group">
+                                                    <label>Absent</label>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" 
+                                                               @bind="playerAvail.IsAbsent" 
+                                                               id="absent_@playerAvail.Player.Name">
+                                                    </div>
+                                                </div>
+                                                <div class="control-group">
+                                                    <label>Target Minutes</label>
+                                                    <div class="input-group minutes-input">
+                                                        <input type="number" class="form-control form-control-sm" 
+                                                               @bind="playerAvail.TargetMinutes" 
+                                                               min="0" max="60" placeholder="Min">
+                                                        <span class="input-group-text">min</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                            
+                            <!-- Strategy Selection -->
+                            <div class="strategy-section">
+                                <label class="form-label">Squad Creation Strategy</label>
+                                <select class="form-select" @bind="_config.Strategy">
+                                    @foreach (var strategy in Enum.GetValues<SquadCreationStrategy>())
+                                    {
+                                        <option value="@strategy">@GetStrategyDisplayName(strategy)</option>
+                                    }
+                                </select>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="action-buttons d-grid gap-2">
+                                <button class="btn btn-success" @onclick="CreateSingleSquad">
+                                    Create Optimal Squad
+                                </button>
+                                <button class="btn btn-info" @onclick="CreateMultipleSquads">
+                                    Generate Multiple Options
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Results Section -->
+                <div class="col-xl-8 col-lg-7">
+                    <div class="squads-section">
+                        @if (_createdSquads.Any())
+                        {
+                            @foreach (var squad in _createdSquads)
+                            {
+                                <div class="squad-card">
+                                    <div class="card-header">
+                                        <div class="d-flex justify-content-between align-items-center flex-wrap">
+                                            <h6>@squad.Name</h6>
+                                            <div class="squad-stats">
+                                                <span class="badge bg-success">@squad.OverallStrength.ToString("F1") Sterkte</span>
+                                                <span class="badge bg-info">@squad.PreferredPositionPercentage.ToString("F0")% Preferred</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <FormationDisplay
+                                            FormationTitle="@squad.Name"
+                                            TeamStrength="@squad.OverallStrength"
+                                            GoalkeeperPlayer="@squad.Goalkeeper?.Player"
+                                            PositionedPlayers="@GetPositionedPlayersDict(squad)"
+                                            BenchPlayers="@squad.BenchPlayers.Select(bp => bp.Player).ToList()"
+                                            PlayerTemplate="@RenderSquadPlayer" />
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="ready-state">
+                                <h5>Ready to Create Your Squad!</h5>
+                                <p>Configure player availability and preferences on the left, then click "Create Squad" to generate optimal formations based on your chosen strategy.</p>
+                                <div class="mt-4">
+                                    <small class="text-muted">
+                                        <i class="bi bi-lightbulb-fill"></i> <strong>Pro Tip:</strong> Try different strategies to see various squad compositions. 
+                                        The system considers player positions, skills, and availability to create balanced teams.
+                                    </small>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

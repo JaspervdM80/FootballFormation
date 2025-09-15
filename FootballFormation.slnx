@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/Solution Files/">
+    <File Path=".copilot-instructions.yaml" />
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/Src/">
+    <Project Path="src/FootballFormation.UI/FootballFormation.UI.csproj" />
+  </Folder>
+  <Folder Name="/Tests/" />
+</Solution>

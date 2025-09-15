@@ -1,0 +1,314 @@
+﻿.formations-grid {
+    display: grid;
+    gap: 30px;
+    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+    margin-bottom: 40px;
+}
+
+.formation-box {
+    border: none;
+    border-radius: 16px;
+    padding: 20px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+    .formation-box::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #28a745, #20c997, #17a2b8);
+    }
+
+    .formation-box:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .formation-box h3 {
+        margin-bottom: 15px;
+        font-size: 1.4em;
+        color: #2c3e50;
+        font-weight: 700;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+        .formation-box h3::before {
+            content: '\F4F5'; /* bi-diagram-3 */
+            font-family: 'bootstrap-icons';
+            font-size: 0.8em;
+        }
+
+::deep .team-strength {
+    margin-bottom: 20px;
+    font-weight: 600;
+    color: #28a745;
+    text-align: center;
+    padding: 8px 16px;
+    background: rgba(40, 167, 69, 0.1);
+    border-radius: 20px;
+    border: 2px solid rgba(40, 167, 69, 0.2);
+    font-size: 1.1em;
+    display: inline-block;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+::deep .field {
+    background: 
+        radial-gradient(circle at 50% 0%, rgba(255,255,255,0.1) 0%, transparent 70%),
+        radial-gradient(circle at 50% 100%, rgba(255,255,255,0.1) 0%, transparent 70%),
+        linear-gradient(to bottom, #2e7d32 0%, #1b5e20 50%, #2e7d32 100%);
+    border-radius: 15px;
+    padding: 25px 20px;
+    position: relative;
+    min-height: 480px;
+    border: 3px solid #1b5e20;
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.2);
+}
+
+    /* Football field markings */
+    ::deep .field::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 20px;
+        right: 20px;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.8);
+        transform: translateY(-50%);
+    }
+
+    ::deep .field::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 80px;
+        height: 80px;
+        border: 2px solid rgba(255, 255, 255, 0.6);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+::deep .formation-row {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+::deep .position-label {
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 12px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px 12px;
+    border-radius: 12px;
+    display: inline-block;
+    margin: 0 auto 12px auto;
+}
+
+::deep .players-row {
+    display: flex;
+    justify-content: space-around;
+    gap: 15px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+    ::deep .players-row.center {
+        justify-content: center;
+    }
+
+::deep .player, ::deep .player.keeper {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: 3px solid #495057;
+    border-radius: 12px;
+    padding: 10px 8px;
+    text-align: center;
+    min-width: 80px;
+    min-height: 70px;
+    box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    color: #2c3e50;
+    transition: all 0.3s ease;
+    position: relative;
+    cursor: default;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+}
+
+    ::deep .player:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    ::deep .player.keeper {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border-color: #856404;
+        position: relative;
+    }
+
+        ::deep .player.keeper::before {
+            content: '\F62D'; /* bi-shield-fill-check */
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            font-size: 0.7em;
+            background: #856404;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            font-family: 'bootstrap-icons';
+        }
+
+    /* Empty player slot */
+    ::deep .player:empty::after {
+        content: '+';
+        color: #6c757d;
+        font-size: 1.4em;
+        font-weight: bold;
+        opacity: 0.5;
+    }
+
+::deep .player-name {
+    font-weight: 700;
+    font-size: 0.85em;
+    margin-bottom: 2px;
+    line-height: 1.1;
+    color: #2c3e50;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+::deep .player-position {
+    font-size: 0.7em;
+    color: #6c757d;
+    margin-bottom: 3px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+::deep .player-rating {
+    font-size: 0.75em;
+    color: #28a745;
+    font-weight: 700;
+    background: rgba(40, 167, 69, 0.1);
+    padding: 2px 6px;
+    border-radius: 8px;
+    border: 1px solid rgba(40, 167, 69, 0.2);
+}
+
+::deep .bench {
+    margin-top: 25px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    border: 2px solid #dee2e6;
+}
+
+::deep .bench-title {
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #495057;
+    font-size: 1.1em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+::deep .bench-players {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+::deep .bench-player {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85em;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+    ::deep .bench-player:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+    }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .formations-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    ::deep .formation-box {
+        padding: 15px;
+    }
+
+    ::deep .field {
+        min-height: 400px;
+        padding: 20px 15px;
+    }
+
+    ::deep .player, ::deep .player.keeper {
+        min-width: 70px;
+        min-height: 60px;
+        padding: 8px 6px;
+    }
+
+    ::deep .players-row {
+        gap: 10px;
+    }
+
+    ::deep .player-name {
+        font-size: 0.8em;
+    }
+}
+
+/* Animation for when formations are loaded */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+::deep .formation-box {
+    animation: fadeInUp 0.6s ease-out;
+}
