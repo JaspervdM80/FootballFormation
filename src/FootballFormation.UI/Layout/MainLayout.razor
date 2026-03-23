@@ -1,0 +1,27 @@
+@inherits LayoutComponentBase
+
+<MudThemeProvider Theme="Theme" IsDarkMode="true" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="0" Fixed="true" Dense="true" Style="background: linear-gradient(to right, #13131f, #1a1a2e); border-bottom: 1px solid rgba(255,255,255,0.05);">
+        <MudText Typo="Typo.h6" Class="ml-2 mr-8" Style="font-weight: 700; white-space: nowrap;">
+            ⚽ <span style="background: linear-gradient(135deg, #f59e0b, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Formation Planner</span>
+        </MudText>
+        <div class="d-flex gap-1">
+            <MudNavLink Href="/players" Match="NavLinkMatch.Prefix"
+                        Class="topbar-nav-link">Squad</MudNavLink>
+            <MudNavLink Href="/games" Match="NavLinkMatch.Prefix"
+                        Class="topbar-nav-link">Games</MudNavLink>
+            <MudNavLink Href="/settings" Match="NavLinkMatch.All"
+                        Class="topbar-nav-link">Preferences</MudNavLink>
+        </div>
+        <MudSpacer />
+    </MudAppBar>
+
+    <MudMainContent Style="padding: 76px 24px 40px; max-width: 1100px; margin: 0 auto;">
+        @Body
+    </MudMainContent>
+</MudLayout>

@@ -1,0 +1,44 @@
+<MudPaper Class="pa-3" Elevation="2"
+          @ondragover:preventDefault="true"
+          @ondrop="() => OnPlayerDroppedToSub.InvokeAsync()">
+    <MudText Typo="Typo.subtitle2" GutterBottom="true">Substitutes</MudText>
+
+    @if (DraggedPlayerId is not null)
+    {
+        <div class="sub-drop-zone">
+            <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Size="Size.Small" />
+            <MudText Typo="Typo.caption">Drop here to add as sub</MudText>
+        </div>
+    }
+
+    @{
+        var subs = Lineup.Where(p => p.IsSubstitute).ToList();
+    }
+
+    @if (subs.Count > 0)
+    {
+        <MudList T="GamePlayerPosition" Dense="true">
+            @foreach (var sub in subs)
+            {
+                <MudListItem T="GamePlayerPosition">
+                    <div class="d-flex align-center justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.body2">
+                                @(sub.Player?.ShirtNumber.HasValue == true ? $"#{sub.Player.ShirtNumber} " : "")@sub.Player?.DisplayName
+                            </MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                @sub.Position.ToString()
+                            </MudText>
+                        </div>
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small"
+                                       OnClick="() => OnSubRemoved.InvokeAsync(sub)" />
+                    </div>
+                </MudListItem>
+            }
+        </MudList>
+    }
+    else if (DraggedPlayerId is null)
+    {
+        <MudText Typo="Typo.caption" Color="Color.Tertiary">Drag players here to add as subs</MudText>
+    }
+</MudPaper>

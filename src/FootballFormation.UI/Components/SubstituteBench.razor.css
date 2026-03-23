@@ -1,0 +1,16 @@
+.sub-drop-zone {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px;
+    margin-bottom: 8px;
+    border: 2px dashed rgba(251,191,36,0.3);
+    border-radius: 10px;
+    color: rgba(251,191,36,0.6);
+    transition: all 0.15s;
+}
+
+.sub-drop-zone:hover {
+    border-color: rgba(251,191,36,0.5);
+    background: rgba(251,191,36,0.04);
+}

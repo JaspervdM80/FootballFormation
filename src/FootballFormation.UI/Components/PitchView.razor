@@ -1,0 +1,49 @@
+<div class="pitch">
+    <div class="pitch-center-line"></div>
+    <div class="pitch-center-circle"></div>
+    <div class="pitch-penalty-area-top"></div>
+    <div class="pitch-penalty-area-bottom"></div>
+    <div class="pitch-goal-top"></div>
+    <div class="pitch-goal-bottom"></div>
+
+    @RenderSlot(PlayerPosition.GK)
+
+    @foreach (var pos in Formation.DefaultPositions())
+    {
+        @RenderSlot(pos)
+    }
+</div>
+
+@code {
+    private RenderFragment RenderSlot(PlayerPosition position) => __builder =>
+    {
+        var assigned = Positions.FirstOrDefault(p => p.Position == position && !p.IsSubstitute);
+        var style = GetSlotStyle(position);
+        var isDropTarget = DraggedPlayerId is not null;
+
+        if (assigned?.Player is not null)
+        {
+            <div class="position-slot" style="@style">
+                <div class="@GetChipCssClass(position, assigned.Player)"
+                     draggable="true"
+                     @ondragstart="() => OnPlayerDragStart.InvokeAsync(position)"
+                     @ondragover:preventDefault="true"
+                     @ondrop="() => OnPlayerDropped.InvokeAsync(position)"
+                     @onclick="() => OnPlayerRemoved.InvokeAsync(position)">
+                    <span class="slot-number">@(assigned.Player.ShirtNumber?.ToString() ?? "")</span>
+                    <span class="slot-name">@assigned.Player.ShortName</span>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="position-slot" style="@style">
+                <div class="empty-circle @(isDropTarget ? "drop-ready" : "")"
+                     @ondragover:preventDefault="true"
+                     @ondrop="() => OnPlayerDropped.InvokeAsync(position)">
+                    <span class="slot-label">@position.ToString()</span>
+                </div>
+            </div>
+        }
+    };
+}

@@ -1,0 +1,56 @@
+@page "/settings"
+
+<PageTitle>Match Preferences</PageTitle>
+
+<MudText Typo="Typo.h4" Style="color: white; font-weight: 700;" GutterBottom="true">
+    Match Preferences
+</MudText>
+<MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.35);" Class="mb-6">
+    These defaults are applied when creating new games.
+</MudText>
+
+@if (_prefs is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+    return;
+}
+
+<MudPaper Class="pa-6" MaxWidth="500px" Elevation="2" Style="border-radius: 16px;">
+    <div class="card-label">Defaults</div>
+    <MudForm @ref="_form">
+        <MudNumericField T="int" @bind-Value="_prefs.GameDurationMinutes"
+                         Label="Game Duration (minutes)" Min="10" Max="120" Step="5"
+                         Class="mb-4" />
+
+        <MudSelect T="GameSplitType" @bind-Value="_prefs.DefaultSplitType"
+                   Label="Default Game Split" Class="mb-4">
+            <MudSelectItem Value="GameSplitType.Halves">Halves (2 periods)</MudSelectItem>
+            <MudSelectItem Value="GameSplitType.Quarters">Quarters (4 periods)</MudSelectItem>
+        </MudSelect>
+
+        <MudSelect T="FormationType" @bind-Value="_prefs.DefaultFormation"
+                   Label="Default Formation" Class="mb-4">
+            @foreach (var f in Enum.GetValues<FormationType>())
+            {
+                <MudSelectItem Value="f">@f.DisplayName()</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSelect T="DayOfWeek" @bind-Value="_prefs.MatchDay"
+                   Label="Match Day" Class="mb-4">
+            @foreach (var day in Enum.GetValues<DayOfWeek>())
+            {
+                <MudSelectItem Value="day">@day</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.35);" Class="mb-4">
+            Next calculated match date: <strong style="color: #fbbf24;">@_nextMatchDate?.ToString("dddd dd MMM yyyy")</strong>
+        </MudText>
+    </MudForm>
+
+    <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Save"
+               OnClick="Save" FullWidth="true">
+        Save Preferences
+    </MudButton>
+</MudPaper>

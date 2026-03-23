@@ -1,0 +1,153 @@
+.pitch-overview {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    background: linear-gradient(
+        to bottom,
+        #2d5a1e 0%, #3a7a28 8%,
+        #2d5a1e 16%, #3a7a28 24%,
+        #2d5a1e 32%, #3a7a28 40%,
+        #2d5a1e 48%, #3a7a28 56%,
+        #2d5a1e 64%, #3a7a28 72%,
+        #2d5a1e 80%, #3a7a28 88%,
+        #2d5a1e 100%
+    );
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 6px;
+}
+
+/* Pitch markings */
+.po-center-line {
+    position: absolute;
+    top: 50%;
+    left: 5%;
+    right: 5%;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.po-center-circle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20%;
+    aspect-ratio: 1;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.po-penalty-top {
+    position: absolute;
+    top: 0;
+    left: 22%;
+    width: 56%;
+    height: 14%;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-top: none;
+}
+
+.po-penalty-bottom {
+    position: absolute;
+    bottom: 0;
+    left: 22%;
+    width: 56%;
+    height: 14%;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-bottom: none;
+}
+
+.po-goal-top {
+    position: absolute;
+    top: 0;
+    left: 38%;
+    width: 24%;
+    height: 4%;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-top: none;
+}
+
+.po-goal-bottom {
+    position: absolute;
+    bottom: 0;
+    left: 38%;
+    width: 24%;
+    height: 4%;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-bottom: none;
+}
+
+/* Position slots */
+.po-slot {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+}
+
+.po-player,
+.po-empty {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.po-empty {
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px dashed rgba(255, 255, 255, 0.35);
+}
+
+.po-preferred {
+    background: #1b5e20;
+    border: 2px solid #4caf50;
+}
+
+.po-natural {
+    background: #388e3c;
+    border: 2px solid #81c784;
+}
+
+.po-alternative {
+    background: #1565c0;
+    border: 2px solid #42a5f5;
+}
+
+.po-compatible {
+    background: #e65100;
+    border: 2px solid #ff9800;
+}
+
+.po-out-of-position {
+    background: #b71c1c;
+    border: 2px solid #ef5350;
+}
+
+.po-number {
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.po-name {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.55rem;
+    font-weight: 600;
+    line-height: 1;
+    margin-top: 2px;
+    max-width: 48px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.po-label {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.55rem;
+    font-weight: 600;
+}

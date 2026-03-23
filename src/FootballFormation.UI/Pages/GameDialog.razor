@@ -1,0 +1,46 @@
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="Form">
+            <MudTextField @bind-Value="Opponent" Label="Opponent" Required="true"
+                          RequiredError="Opponent is required" Class="mb-3" />
+            <MudDatePicker @bind-Date="Date" Label="Date" Class="mb-3" />
+            <MudSelect T="FormationType" @bind-Value="SelectedFormationType" Label="Formation" Class="mb-3">
+                @foreach (var f in Enum.GetValues<FormationType>())
+                {
+                    <MudSelectItem Value="f">@f.DisplayName()</MudSelectItem>
+                }
+            </MudSelect>
+            <MudNumericField T="int" @bind-Value="GameDurationMinutes"
+                             Label="Game Duration (minutes)" Min="10" Max="120" Step="5"
+                             Class="mb-3" />
+            <MudSelect T="GameSplitType" @bind-Value="SplitType" Label="Game Split" Class="mb-3">
+                <MudSelectItem Value="GameSplitType.Halves">Halves (2 periods)</MudSelectItem>
+                <MudSelectItem Value="GameSplitType.Quarters">Quarters (4 periods)</MudSelectItem>
+            </MudSelect>
+            <MudText Typo="Typo.caption" Color="Color.Tertiary" Class="mb-3">
+                @{
+                    var periods = SplitType == GameSplitType.Halves ? 2 : 4;
+                    var periodLength = GameDurationMinutes / periods;
+                    var periodLabel = SplitType == GameSplitType.Halves ? "half" : "quarter";
+                }
+                @periods x @periodLength min per @periodLabel
+            </MudText>
+            <MudSelect T="int" Label="Unavailable Players" MultiSelection="true"
+                       @bind-SelectedValues="UnavailablePlayerIds"
+                       MultiSelectionTextFunc="@(ids => $"{ids.Count()} player(s) unavailable")"
+                       Class="mb-3">
+                @foreach (var player in AllPlayers)
+                {
+                    <MudSelectItem T="int" Value="player.Id">
+                        @(player.ShirtNumber is not null ? $"#{player.ShirtNumber} " : "")@player.DisplayName
+                    </MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField @bind-Value="Notes" Label="Notes" Lines="3" Class="mb-3" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">Save</MudButton>
+    </DialogActions>
+</MudDialog>

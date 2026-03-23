@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Layout 3 — Glass + Gradient</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Material+Symbols+Outlined" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0a0a12; color: #d4d4dc; min-height: 100vh; position: relative; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; top: -50%; left: -20%; width: 600px; height: 600px; background: radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%); pointer-events: none; }
+  body::after { content: ''; position: fixed; bottom: -30%; right: -10%; width: 500px; height: 500px; background: radial-gradient(circle, rgba(99,102,241,0.06) 0%, transparent 70%); pointer-events: none; }
+
+  /* === TOP NAV === */
+  .topnav { position: fixed; top: 0; left: 0; right: 0; height: 52px; background: rgba(10,10,18,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; align-items: center; padding: 0 24px; z-index: 10; }
+  .topnav-brand { font-weight: 800; font-size: 0.95rem; background: linear-gradient(135deg, #10b981, #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-right: 32px; }
+  .topnav-links { display: flex; gap: 2px; }
+  .topnav-link { padding: 6px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 500; color: rgba(255,255,255,0.35); cursor: pointer; transition: all 0.15s; }
+  .topnav-link:hover { color: rgba(255,255,255,0.6); }
+  .topnav-link.active { color: #10b981; background: rgba(16,185,129,0.08); }
+
+  .main { padding: 72px 28px 40px; max-width: 960px; margin: 0 auto; }
+
+  .page-title { font-size: 1.4rem; font-weight: 800; color: white; margin-bottom: 4px; }
+  .page-sub { color: rgba(255,255,255,0.3); font-size: 0.8rem; margin-bottom: 24px; }
+
+  /* Glass cards */
+  .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 20px; position: relative; }
+  .glass::after { content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 1px; background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent); }
+
+  .section-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 14px; background: linear-gradient(90deg, #10b981, #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+  /* Badges */
+  .tag { font-size: 0.65rem; font-weight: 600; padding: 3px 8px; border-radius: 4px; }
+  .tag-emerald { background: rgba(16,185,129,0.1); color: #34d399; border: 1px solid rgba(16,185,129,0.15); }
+  .tag-violet { background: rgba(99,102,241,0.1); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.15); }
+
+  /* Score */
+  .result-grid { display: grid; grid-template-columns: 220px 1fr; gap: 16px; align-items: start; }
+
+  .score-block { text-align: center; padding: 16px 0; }
+  .score-row { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 16px 0; }
+  .score-team-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.25); margin-bottom: 8px; }
+  .score-value { width: 56px; height: 56px; border-radius: 14px; font-size: 2rem; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .score-value.home { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); color: #34d399; }
+  .score-value.away { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.6); }
+  .score-mid { color: rgba(255,255,255,0.12); font-size: 1.2rem; padding-top: 20px; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px; border-radius: 10px; font-size: 0.78rem; font-weight: 600; cursor: pointer; border: none; font-family: inherit; transition: all 0.2s; }
+  .btn-gradient { background: linear-gradient(135deg, #10b981, #059669); color: white; box-shadow: 0 4px 12px rgba(16,185,129,0.2); }
+  .btn-gradient:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(16,185,129,0.3); }
+  .btn-dim { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
+
+  /* Goals */
+  .goal-card { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; margin-bottom: 6px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.03); transition: all 0.15s; }
+  .goal-card:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.06); }
+  .goal-dot { width: 8px; height: 8px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 0 8px rgba(16,185,129,0.3); flex-shrink: 0; }
+  .goal-t { font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.3); min-width: 24px; font-variant-numeric: tabular-nums; }
+  .goal-who { flex: 1; }
+  .goal-name { font-weight: 600; font-size: 0.82rem; color: white; }
+  .goal-from { font-size: 0.68rem; color: rgba(255,255,255,0.3); margin-top: 1px; }
+  .goal-x { width: 22px; height: 22px; border: none; background: none; color: rgba(255,255,255,0.12); font-size: 14px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+  .goal-x:hover { color: #f87171; background: rgba(248,113,113,0.1); }
+
+  .add-area { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.04); display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+  .input-group { display: flex; flex-direction: column; gap: 3px; }
+  .input-group label { font-size: 0.58rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255,255,255,0.2); }
+  .input-group input, .input-group select { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; color: white; padding: 7px 10px; font-size: 0.78rem; outline: none; font-family: inherit; }
+  .input-group input:focus, .input-group select:focus { border-color: rgba(16,185,129,0.3); }
+  .input-group select option { background: #0a0a12; }
+
+  /* Game list */
+  .game-list { display: flex; flex-direction: column; gap: 6px; }
+  .game-item { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.03); transition: all 0.15s; }
+  .game-item:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.06); }
+  .game-d { font-size: 0.72rem; color: rgba(255,255,255,0.3); min-width: 55px; font-variant-numeric: tabular-nums; }
+  .game-o { font-weight: 600; font-size: 0.85rem; color: white; flex: 1; }
+  .game-s { font-weight: 700; font-size: 0.85rem; min-width: 46px; text-align: center; padding: 4px 8px; border-radius: 6px; }
+  .game-s.w { color: #34d399; background: rgba(16,185,129,0.08); }
+  .game-s.l { color: #f87171; background: rgba(248,113,113,0.08); }
+  .game-s.d { color: rgba(255,255,255,0.4); }
+  .game-btns { display: flex; gap: 2px; }
+  .ibtn { width: 26px; height: 26px; border: none; background: none; color: rgba(255,255,255,0.2); border-radius: 6px; cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; }
+  .ibtn:hover { color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.04); }
+
+  .divider { height: 1px; background: linear-gradient(to right, transparent, rgba(16,185,129,0.08), rgba(99,102,241,0.08), transparent); margin: 36px 0; }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="topnav-brand">⚽ FormationPlanner</div>
+  <div class="topnav-links">
+    <div class="topnav-link">Squad</div>
+    <div class="topnav-link active">Games</div>
+    <div class="topnav-link">Settings</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- GAMES -->
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+    <div>
+      <div class="page-title">Games</div>
+      <div class="page-sub">Season 2025/26</div>
+    </div>
+    <button class="btn btn-gradient">+ New Game</button>
+  </div>
+
+  <div class="game-list" style="margin-bottom: 16px;">
+    <div class="game-item">
+      <span class="game-d">22 Mar</span>
+      <span class="game-o">HSSC</span>
+      <span class="tag tag-emerald">4-2-3-1</span>
+      <span class="game-s w">4 – 1</span>
+      <div class="game-btns">
+        <button class="ibtn"><span class="material-symbols-outlined" style="font-size:15px">grid_view</span></button>
+        <button class="ibtn"><span class="material-symbols-outlined" style="font-size:15px">share</span></button>
+        <button class="ibtn"><span class="material-symbols-outlined" style="font-size:15px">scoreboard</span></button>
+        <button class="ibtn"><span class="material-symbols-outlined" style="font-size:15px">edit</span></button>
+        <button class="ibtn"><span class="material-symbols-outlined" style="font-size:15px">delete</span></button>
+      </div>
+    </div>
+    <div class="game-item">
+      <span class="game-d">29 Mar</span>
+      <span class="game-o">FC Utrecht JO10</span>
+      <span class="tag tag-emerald">4-3-3</span>
+      <span class="game-s l">1 – 3</span>
+      <div class="game-btns">
+        <button class="ibtn"><span class="material-symbols-outlined" style="font-size:15px">grid_view</span></button>
+        <button class="ibtn"><span class="material-symbols-outlined" style="font-size:15px">share</span></button>
+        <button class="ibtn"><span class="material-symbols-outlined" style="font-size:15px">scoreboard</span></button>
+        <button class="ibtn"><span class="material-symbols-outlined" style="font-size:15px">edit</span></button>
+        <button class="ibtn"><span class="material-symbols-outlined" style="font-size:15px">delete</span></button>
+      </div>
+    </div>
+    <div class="game-item">
+      <span class="game-d">5 Apr</span>
+      <span class="game-o">VV De Meern</span>
+      <span class="tag tag-emerald">4-4-2</span>
+      <span class="game-s d">2 – 2</span>
+      <div class="game-btns">
+        <button class="ibtn"><span class="material-symbols-outlined" style="font-size:15px">grid_view</span></button>
+        <button class="ibtn"><span class="material-symbols-outlined" style="font-size:15px">share</span></button>
+        <button class="ibtn"><span class="material-symbols-outlined" style="font-size:15px">scoreboard</span></button>
+        <button class="ibtn"><span class="material-symbols-outlined" style="font-size:15px">edit</span></button>
+        <button class="ibtn"><span class="material-symbols-outlined" style="font-size:15px">delete</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- MATCH RESULT -->
+  <div class="page-title">vs HSSC</div>
+  <div class="page-sub">22 March 2026 · 4-2-3-1 · Quarters</div>
+
+  <div class="result-grid">
+    <div class="glass">
+      <div class="section-label">Final Score</div>
+      <div class="score-block">
+        <div class="score-row">
+          <div>
+            <div class="score-team-label">Home</div>
+            <div class="score-value home">4</div>
+          </div>
+          <div class="score-mid">–</div>
+          <div>
+            <div class="score-team-label">HSSC</div>
+            <div class="score-value away">1</div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-gradient" style="width: 100%;">Save Score</button>
+    </div>
+
+    <div class="glass">
+      <div class="section-label">Goals (4)</div>
+
+      <div class="goal-card">
+        <div class="goal-dot"></div>
+        <span class="goal-t">8'</span>
+        <div class="goal-who">
+          <div class="goal-name">Lieke van Dam</div>
+          <div class="goal-from">↳ assist: Fleur Bakker</div>
+        </div>
+        <button class="goal-x">×</button>
+      </div>
+      <div class="goal-card">
+        <div class="goal-dot"></div>
+        <span class="goal-t">23'</span>
+        <div class="goal-who">
+          <div class="goal-name">Julia de Vries</div>
+          <div class="goal-from">↳ assist: Roos Jansen</div>
+        </div>
+        <button class="goal-x">×</button>
+      </div>
+      <div class="goal-card">
+        <div class="goal-dot"></div>
+        <span class="goal-t">31'</span>
+        <div class="goal-who">
+          <div class="goal-name">Suus Hendriks</div>
+        </div>
+        <button class="goal-x">×</button>
+      </div>
+      <div class="goal-card">
+        <div class="goal-dot"></div>
+        <span class="goal-t">44'</span>
+        <div class="goal-who">
+          <div class="goal-name">Fleur Bakker</div>
+          <div class="goal-from">↳ assist: Kim Peters</div>
+        </div>
+        <button class="goal-x">×</button>
+      </div>
+
+      <div class="add-area">
+        <div class="input-group" style="width: 50px;">
+          <label>Min</label>
+          <input type="number" placeholder="—">
+        </div>
+        <div class="input-group" style="flex: 1; min-width: 100px;">
+          <label>Scorer</label>
+          <select><option>Select player...</option></select>
+        </div>
+        <div class="input-group" style="flex: 1; min-width: 100px;">
+          <label>Assist</label>
+          <select><option>Optional</option></select>
+        </div>
+        <button class="btn btn-gradient">+ Add</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

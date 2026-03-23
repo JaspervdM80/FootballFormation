@@ -1,0 +1,71 @@
+@page "/players"
+
+<PageTitle>Players</PageTitle>
+
+<div class="d-flex align-center justify-space-between mb-6">
+    <div>
+        <MudText Typo="Typo.h4" Style="color: white; font-weight: 700;">Squad</MudText>
+        <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.35);">
+            @if (_players is not null)
+            {
+                @($"{_players.Count} player{(_players.Count != 1 ? "s" : "")}")
+            }
+        </MudText>
+    </div>
+    <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.PersonAdd"
+               OnClick="OpenAddDialog">
+        Add Player
+    </MudButton>
+</div>
+
+@if (_players is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else if (_players.Count == 0)
+{
+    <MudPaper Class="pa-6" Elevation="2" Style="border-radius: 16px; text-align: center;">
+        <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Style="color: rgba(255,255,255,0.15);" />
+        <MudText Typo="Typo.body1" Class="mt-3" Style="color: rgba(255,255,255,0.4);">
+            No players yet. Add your first player!
+        </MudText>
+    </MudPaper>
+}
+else
+{
+    <MudTable Items="_players" Hover="true" Dense="true" Elevation="2"
+              Style="border-radius: 16px;">
+        <HeaderContent>
+            <MudTh><MudTableSortLabel SortBy="new Func<Player, object>(p => p.ShirtNumber ?? 999)">#</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Player, object>(p => p.FirstName)">Name</MudTableSortLabel></MudTh>
+            <MudTh>Preferred Position</MudTh>
+            <MudTh>Alternative Positions</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="#">
+                <span style="font-weight: 700; color: #fbbf24;">@context.ShirtNumber</span>
+            </MudTd>
+            <MudTd DataLabel="Name">
+                <span style="font-weight: 600; color: white;">@context.DisplayName</span>
+            </MudTd>
+            <MudTd DataLabel="Preferred">
+                <span class="badge-gold">@context.PreferredPosition.ToString()</span>
+            </MudTd>
+            <MudTd DataLabel="Alternatives">
+                @foreach (var pos in context.AlternativePositions)
+                {
+                    <span class="badge-teal" style="margin-right: 4px;">@pos.ToString()</span>
+                }
+            </MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                               Style="color: rgba(255,255,255,0.3);"
+                               OnClick="() => OpenEditDialog(context)" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                               Style="color: rgba(255,255,255,0.3);"
+                               OnClick="() => DeletePlayer(context)" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}

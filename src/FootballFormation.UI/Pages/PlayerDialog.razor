@@ -1,0 +1,27 @@
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="Form">
+            <MudTextField @bind-Value="FirstName" Label="First Name" Required="true"
+                          RequiredError="First name is required" Class="mb-3" />
+            <MudTextField @bind-Value="Surname" Label="Surname" Class="mb-3" />
+            <MudNumericField @bind-Value="ShirtNumber" Label="Shirt Number" Min="1" Max="99" Class="mb-3" />
+            <MudSelect T="PlayerPosition" @bind-Value="PreferredPosition" Label="Preferred Position" Class="mb-3">
+                @foreach (var pos in Enum.GetValues<PlayerPosition>())
+                {
+                    <MudSelectItem Value="pos">@pos.ToString() - @pos.DisplayName()</MudSelectItem>
+                }
+            </MudSelect>
+            <MudSelect T="PlayerPosition" Label="Alternative Positions" MultiSelection="true"
+                       @bind-SelectedValues="AlternativePositions" Class="mb-3">
+                @foreach (var pos in Enum.GetValues<PlayerPosition>().Where(p => p != PreferredPosition))
+                {
+                    <MudSelectItem Value="pos">@pos.ToString() - @pos.DisplayName()</MudSelectItem>
+                }
+            </MudSelect>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">Save</MudButton>
+    </DialogActions>
+</MudDialog>

@@ -1,0 +1,125 @@
+@page "/games/{GameId:int}/result"
+
+<PageTitle>Match Result</PageTitle>
+
+@if (GameData is null || AllPlayers is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+    return;
+}
+
+<div class="d-flex align-center gap-2 mb-2">
+    <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="NavigateBack" Size="Size.Small"
+                   Style="color: rgba(255,255,255,0.3);" />
+    <div>
+        <MudText Typo="Typo.h5" Style="color: white; font-weight: 700;">vs @GameData.Opponent</MudText>
+        <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.35);">
+            @GameData.Date.ToString("dd MMMM yyyy") · @GameData.FormationType.DisplayName() · @GameData.SplitType
+        </MudText>
+    </div>
+</div>
+
+<div class="result-layout">
+    <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">
+        <div class="card-label">Final Score</div>
+        <div class="score-visual">
+            <div class="score-side">
+                <span class="score-name">Home</span>
+                <input type="number" class="score-big-input" min="0" max="99"
+                       value="@ScoreHome"
+                       @onchange="e => ScoreHome = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)" />
+            </div>
+            <span class="score-vs">–</span>
+            <div class="score-side">
+                <span class="score-name">@GameData.Opponent</span>
+                <input type="number" class="score-big-input score-away" min="0" max="99"
+                       value="@ScoreAway"
+                       @onchange="e => ScoreAway = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)" />
+            </div>
+        </div>
+        <MudButton Variant="Variant.Filled" Class="btn-gold mt-4" FullWidth="true"
+                   OnClick="SaveScore">
+            Save Score
+        </MudButton>
+    </MudPaper>
+
+    <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">
+        <div class="card-label">Goals (@GameData.Goals.Count)</div>
+
+        @if (GameData.Goals.Count > 0)
+        {
+            <div class="goal-timeline">
+                @foreach (var goal in GameData.Goals.OrderBy(g => g.Minute))
+                {
+                    <div class="goal-entry @(goal.IsOwnGoal ? "own-goal" : "")">
+                        <span class="goal-time">
+                            @(goal.Minute.HasValue ? $"{goal.Minute}'" : "—")
+                        </span>
+                        <div class="goal-info">
+                            <div class="goal-player">
+                                @goal.Scorer.DisplayName
+                                @if (goal.IsOwnGoal)
+                                {
+                                    <span class="own-goal-tag">(OG)</span>
+                                }
+                            </div>
+                            @if (goal.Assister is not null)
+                            {
+                                <div class="goal-assist">↳ @goal.Assister.DisplayName</div>
+                            }
+                        </div>
+                        <button class="goal-remove" @onclick="() => RemoveGoal(goal)">×</button>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.25);" Class="mb-3">
+                No goals recorded yet
+            </MudText>
+        }
+
+        <div class="add-section">
+            <div class="add-row">
+                <div class="field" style="width: 60px;">
+                    <label>Min</label>
+                    <input type="number" min="1" max="@GameData.GameDurationMinutes"
+                           value="@NewGoalMinute"
+                           @onchange="e => NewGoalMinute = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)" />
+                </div>
+                <div class="field" style="flex: 1; min-width: 110px;">
+                    <label>Scorer</label>
+                    <select @onchange="e => NewGoalScorerId = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)">
+                        <option value="">Select player...</option>
+                        @foreach (var player in SquadPlayers)
+                        {
+                            <option value="@player.Id">
+                                @(player.ShirtNumber.HasValue ? $"#{player.ShirtNumber} " : "")@player.DisplayName
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="field" style="flex: 1; min-width: 110px;">
+                    <label>Assist</label>
+                    <select @onchange="e => NewGoalAssisterId = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)">
+                        <option value="">Optional</option>
+                        @foreach (var player in SquadPlayers.Where(p => p.Id != NewGoalScorerId))
+                        {
+                            <option value="@player.Id">
+                                @(player.ShirtNumber.HasValue ? $"#{player.ShirtNumber} " : "")@player.DisplayName
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="field og-check">
+                    <label>OG</label>
+                    <input type="checkbox" @bind="NewGoalIsOwnGoal" />
+                </div>
+                <button class="btn-add-goal" disabled="@(NewGoalScorerId is null)" @onclick="AddGoal">
+                    + Add
+                </button>
+            </div>
+        </div>
+    </MudPaper>
+</div>

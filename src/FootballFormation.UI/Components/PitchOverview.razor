@@ -1,0 +1,41 @@
+<div class="pitch-overview">
+    <div class="po-center-line"></div>
+    <div class="po-center-circle"></div>
+    <div class="po-penalty-top"></div>
+    <div class="po-penalty-bottom"></div>
+    <div class="po-goal-top"></div>
+    <div class="po-goal-bottom"></div>
+
+    @RenderSlot(PlayerPosition.GK)
+
+    @foreach (var pos in Formation.DefaultPositions())
+    {
+        @RenderSlot(pos)
+    }
+</div>
+
+@code {
+    private RenderFragment RenderSlot(PlayerPosition position) => __builder =>
+    {
+        var assigned = Positions.FirstOrDefault(p => p.Position == position && !p.IsSubstitute);
+        var style = GetSlotStyle(position);
+
+        if (assigned?.Player is not null)
+        {
+            <div class="po-slot" style="@style">
+                <div class="@GetChipCssClass(position, assigned.Player)">
+                    <span class="po-number">@(assigned.Player.ShirtNumber?.ToString() ?? "")</span>
+                    <span class="po-name">@assigned.Player.ShortName</span>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="po-slot" style="@style">
+                <div class="po-empty">
+                    <span class="po-label">@position.ToString()</span>
+                </div>
+            </div>
+        }
+    };
+}

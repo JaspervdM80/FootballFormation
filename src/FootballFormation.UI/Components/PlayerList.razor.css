@@ -1,0 +1,59 @@
+.draggable-player {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    margin-bottom: 4px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255,255,255,0.04);
+    cursor: grab;
+    transition: background 0.15s, transform 0.1s, border-color 0.15s;
+    user-select: none;
+}
+
+.draggable-player:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255,255,255,0.08);
+    transform: translateX(2px);
+}
+
+.draggable-player:active {
+    cursor: grabbing;
+    opacity: 0.6;
+}
+
+.player-shirt {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(245,158,11,0.15);
+    color: #fbbf24;
+    font-size: 0.7rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    border: 1px solid rgba(245,158,11,0.2);
+}
+
+.player-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.player-name-text {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.85);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player-pos-text {
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.35);
+}

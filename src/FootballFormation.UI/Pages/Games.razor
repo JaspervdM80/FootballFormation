@@ -1,0 +1,72 @@
+@page "/games"
+
+<PageTitle>Games</PageTitle>
+
+<div class="d-flex align-center justify-space-between mb-6">
+    <div>
+        <MudText Typo="Typo.h4" Style="color: white; font-weight: 700;">Games</MudText>
+        <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.35);">
+            @if (_games is not null)
+            {
+                @($"{_games.Count} match{(_games.Count != 1 ? "es" : "")}")
+            }
+        </MudText>
+    </div>
+    <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Add"
+               OnClick="OpenAddDialog">
+        New Game
+    </MudButton>
+</div>
+
+@if (_games is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else if (_games.Count == 0)
+{
+    <MudPaper Class="pa-6" Elevation="2" Style="border-radius: 16px; text-align: center;">
+        <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Size="Size.Large" Style="color: rgba(255,255,255,0.15);" />
+        <MudText Typo="Typo.body1" Class="mt-3" Style="color: rgba(255,255,255,0.4);">
+            No games yet. Create your first game!
+        </MudText>
+    </MudPaper>
+}
+else
+{
+    <div class="game-cards">
+        @foreach (var game in _games.OrderByDescending(g => g.Date))
+        {
+            <div class="game-row" @onclick="() => OpenFormation(game.Id)">
+                <span class="game-date">@game.Date.ToString("dd MMM")</span>
+                <span class="game-opponent">@game.Opponent</span>
+                <span class="badge-gold">@game.FormationType.DisplayName()</span>
+                @if (game.UnavailablePlayerIds.Count > 0)
+                {
+                    <span class="badge-unavailable">@game.UnavailablePlayerIds.Count out</span>
+                }
+                @if (game.ScoreHome.HasValue && game.ScoreAway.HasValue)
+                {
+                    var scoreClass = game.ScoreHome > game.ScoreAway ? "win" : game.ScoreHome < game.ScoreAway ? "loss" : "draw";
+                    <span class="game-score @scoreClass">@game.ScoreHome – @game.ScoreAway</span>
+                }
+                <div class="game-actions" @onclick:stopPropagation="true">
+                    <button class="action-btn" title="Formation" @onclick="() => OpenFormation(game.Id)">
+                        <MudIcon Icon="@Icons.Material.Filled.ViewModule" Size="Size.Small" />
+                    </button>
+                    <button class="action-btn" title="Overview" @onclick="() => OpenOverview(game.Id)">
+                        <MudIcon Icon="@Icons.Material.Filled.Share" Size="Size.Small" />
+                    </button>
+                    <button class="action-btn" title="Result" @onclick="() => OpenResult(game.Id)">
+                        <MudIcon Icon="@Icons.Material.Filled.Scoreboard" Size="Size.Small" />
+                    </button>
+                    <button class="action-btn" title="Edit" @onclick="() => OpenEditDialog(game)">
+                        <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                    </button>
+                    <button class="action-btn action-delete" title="Delete" @onclick="() => DeleteGame(game)">
+                        <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+}

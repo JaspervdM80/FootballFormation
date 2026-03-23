@@ -1,0 +1,156 @@
+.formation-layout {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.player-list-panel {
+    flex: 0 0 180px;
+    min-width: 160px;
+}
+
+.pitch-panel {
+    flex: 0 0 420px;
+    max-width: 420px;
+}
+
+.subs-panel {
+    flex: 1 1 200px;
+    min-width: 180px;
+    max-width: 280px;
+}
+
+.pitch-legend {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.legend-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.legend-dot.chip-preferred {
+    background: #1b5e20;
+    border: 2px solid #4caf50;
+}
+
+.legend-dot.chip-natural {
+    background: #388e3c;
+    border: 2px solid #81c784;
+}
+
+.legend-dot.chip-alternative {
+    background: #1565c0;
+    border: 2px solid #42a5f5;
+}
+
+.legend-dot.chip-compatible {
+    background: #e65100;
+    border: 2px solid #ff9800;
+}
+
+.legend-dot.chip-out-of-position {
+    background: #b71c1c;
+    border: 2px solid #ef5350;
+}
+
+.unavailable-player {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 4px;
+    font-size: 0.75rem;
+    text-decoration: line-through;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.player-shirt.unavailable {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(239,68,68,0.15);
+    color: rgba(255, 255, 255, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+/* Playing time overview dots */
+.overview-dot {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: white;
+    letter-spacing: 0.3px;
+}
+
+.overview-dot.fit-preferred {
+    background: #1b5e20;
+    border: 1px solid #4caf50;
+}
+
+.overview-dot.fit-natural {
+    background: #388e3c;
+    border: 1px solid #81c784;
+}
+
+.overview-dot.fit-alternative {
+    background: #1565c0;
+    border: 1px solid #42a5f5;
+}
+
+.overview-dot.fit-compatible {
+    background: #e65100;
+    border: 1px solid #ff9800;
+}
+
+.overview-dot.fit-out-of-position {
+    background: #b71c1c;
+    border: 1px solid #ef5350;
+}
+
+.overview-dot.overview-sub {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px dashed rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.overview-dot.overview-none {
+    background: none;
+    color: rgba(255, 255, 255, 0.1);
+    border: none;
+}
+
+@media (max-width: 900px) {
+    .formation-layout {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .player-list-panel,
+    .pitch-panel,
+    .subs-panel {
+        flex: 1 1 auto;
+        max-width: 100%;
+    }
+}

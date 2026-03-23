@@ -1,0 +1,230 @@
+html, body {
+    font-family: 'DM Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* === Premium Dark Theme Overrides === */
+
+/* MudBlazor AppBar customization */
+.mud-appbar {
+    background: linear-gradient(to right, #13131f, #1a1a2e) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+/* MudBlazor Paper/Card styling */
+.mud-paper {
+    background: linear-gradient(135deg, #141420, #18182a) !important;
+    border: 1px solid rgba(255,255,255,0.05) !important;
+    position: relative;
+}
+
+/* Gold top-line effect on elevated papers */
+.mud-paper.mud-elevation-2::before,
+.mud-paper.mud-elevation-1::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(251,191,36,0.2), transparent);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Table overrides */
+.mud-table .mud-table-head .mud-table-row .mud-table-cell {
+    color: rgba(251,191,36,0.6) !important;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom-color: rgba(255,255,255,0.06) !important;
+}
+
+.mud-table .mud-table-body .mud-table-row .mud-table-cell {
+    border-bottom-color: rgba(255,255,255,0.04) !important;
+}
+
+.mud-table .mud-table-body .mud-table-row:hover {
+    background: rgba(255,255,255,0.03) !important;
+}
+
+.mud-table .mud-table-body .mud-table-row.mud-table-row-striped:nth-child(even) {
+    background: rgba(255,255,255,0.015) !important;
+}
+
+/* Tab overrides */
+.mud-tabs .mud-tab.mud-tab-active {
+    color: #fbbf24 !important;
+}
+
+.mud-tabs .mud-tab-slider {
+    background: #fbbf24 !important;
+}
+
+/* Dialog styling */
+.mud-dialog {
+    background: linear-gradient(135deg, #141420, #18182a) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+/* Input field focus */
+.mud-input.mud-input-underline::after {
+    border-bottom-color: #fbbf24 !important;
+}
+
+/* Progress linear */
+.mud-progress-linear .mud-progress-linear-bar {
+    border-radius: 4px;
+}
+
+/* Chip overrides for formation badge */
+.mud-chip.mud-chip-color-secondary {
+    background: rgba(245,158,11,0.12) !important;
+    color: #fbbf24 !important;
+    border: 1px solid rgba(245,158,11,0.2) !important;
+}
+
+/* Snackbar */
+.mud-snackbar.mud-alert-filled-success {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    color: #0c0c14 !important;
+}
+
+/* Separator line */
+.gold-separator {
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(251,191,36,0.1), transparent);
+    margin: 24px 0;
+}
+
+/* Navigation links in top bar */
+.topbar-nav-link {
+    padding: 6px 14px !important;
+    border-radius: 6px !important;
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+    color: rgba(255,255,255,0.45) !important;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none !important;
+    min-height: auto !important;
+}
+
+.topbar-nav-link:hover {
+    color: rgba(255,255,255,0.7) !important;
+    background: rgba(255,255,255,0.04) !important;
+}
+
+.topbar-nav-link.active,
+.topbar-nav-link[aria-current="page"] {
+    color: #fbbf24 !important;
+    background: rgba(245,158,11,0.1) !important;
+}
+
+/* Hide MudNavLink default icon area in top bar */
+.topbar-nav-link .mud-nav-link-icon {
+    display: none;
+}
+
+/* Gold button style */
+.btn-gold {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    color: #0c0c14 !important;
+    font-weight: 600 !important;
+    border: none !important;
+}
+
+.btn-gold:hover {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+}
+
+/* Ghost button */
+.btn-ghost {
+    background: transparent !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    color: rgba(255,255,255,0.5) !important;
+}
+
+.btn-ghost:hover {
+    border-color: rgba(255,255,255,0.2) !important;
+    color: white !important;
+}
+
+/* Badge styles */
+.badge-gold {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 4px;
+    background: rgba(245,158,11,0.12);
+    color: #fbbf24;
+    border: 1px solid rgba(245,158,11,0.2);
+}
+
+.badge-teal {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 4px;
+    background: rgba(20,184,166,0.12);
+    color: #2dd4bf;
+    border: 1px solid rgba(20,184,166,0.2);
+}
+
+/* Page header styling */
+.page-header-subtitle {
+    color: rgba(255,255,255,0.35);
+    font-size: 0.85rem;
+}
+
+/* Card label */
+.card-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(251,191,36,0.6);
+    margin-bottom: 16px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.02);
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+/* Blazor error UI */
+#blazor-error-ui {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}

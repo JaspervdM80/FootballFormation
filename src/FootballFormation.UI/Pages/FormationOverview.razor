@@ -1,0 +1,69 @@
+@page "/games/{GameId:int}/overview"
+
+<PageTitle>Formation Overview</PageTitle>
+
+@if (GameData is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+    return;
+}
+
+<div class="overview-capture" id="formation-overview">
+    <div class="overview-header">
+        <div class="overview-header-left">
+            <span class="overview-title">vs @GameData.Opponent</span>
+            <span class="overview-date">@GameData.Date.ToString("dd MMM yyyy")</span>
+            <span class="overview-formation">@GameData.FormationType.DisplayName()</span>
+        </div>
+    </div>
+
+    <div class="overview-periods">
+        @foreach (var period in GameData.Periods.OrderBy(p => p.PeriodType))
+        {
+            var formation = period.FormationTypeOverride ?? GameData.FormationType;
+            var lineup = PeriodLineups.GetValueOrDefault(period.Id, []);
+            var starters = lineup.Where(p => !p.IsSubstitute).ToList();
+            var subs = lineup.Where(p => p.IsSubstitute).ToList();
+
+            <div class="overview-period-card">
+                <div class="period-label">@period.PeriodType.DisplayName()</div>
+                <PitchOverview Formation="formation" Positions="starters" />
+                @if (subs.Count > 0)
+                {
+                    <div class="subs-row">
+                        <span class="subs-label">Subs:</span>
+                        @foreach (var sub in subs)
+                        {
+                            <span class="sub-badge">
+                                @if (sub.Player?.ShirtNumber is not null)
+                                {
+                                    <span class="sub-number">#@sub.Player.ShirtNumber</span>
+                                }
+                                @(sub.Player?.ShortName ?? $"Player {sub.PlayerId}")
+                            </span>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="subs-row">
+                        <span class="subs-label subs-none">No subs</span>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<div class="overview-actions">
+    <MudButton Variant="Variant.Outlined" Size="Size.Small" Class="btn-ghost"
+               StartIcon="@Icons.Material.Filled.ArrowBack"
+               OnClick="NavigateBack">
+        Back to editor
+    </MudButton>
+    <MudButton Variant="Variant.Filled" Size="Size.Small" Class="btn-gold"
+               StartIcon="@Icons.Material.Filled.CameraAlt"
+               OnClick="CaptureScreenshot">
+        Save as image
+    </MudButton>
+</div>

@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/Solution Files/" />
+  <Folder Name="/Solution Files/Instructions/">
+    <File Path="docs/architecture.md" />
+    <File Path="docs/known_issues.md" />
+    <File Path="docs/models.md" />
+    <File Path="docs/patterns.md" />
+    <File Path="docs/project_overview.md" />
+    <File Path="docs/ui_components.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/FootballFormation.Core/FootballFormation.Core.csproj" />
+    <Project Path="src/FootballFormation.UI/FootballFormation.UI.csproj" />
+    <Project Path="src/FootballFormation.Web/FootballFormation.Web.csproj" />
+  </Folder>
+</Solution>

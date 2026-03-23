@@ -1,0 +1,88 @@
+.game-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.game-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 12px;
+    transition: all 0.15s;
+    cursor: pointer;
+}
+
+.game-row:hover {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.08);
+}
+
+.game-date {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.35);
+    min-width: 56px;
+    font-variant-numeric: tabular-nums;
+}
+
+.game-opponent {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: white;
+    flex: 1;
+}
+
+.game-score {
+    font-weight: 700;
+    font-size: 0.9rem;
+    min-width: 50px;
+    text-align: center;
+}
+
+.game-score.win { color: #4ade80; }
+.game-score.loss { color: #f87171; }
+.game-score.draw { color: rgba(255,255,255,0.4); }
+
+.badge-unavailable {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(239,68,68,0.1);
+    color: #f87171;
+    border: 1px solid rgba(239,68,68,0.15);
+}
+
+.game-actions {
+    display: flex;
+    gap: 2px;
+}
+
+/* Action buttons — visible, clear icons */
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: none;
+    color: rgba(255,255,255,0.4);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    padding: 0;
+}
+
+.action-btn:hover {
+    color: #fbbf24;
+    background: rgba(251,191,36,0.1);
+}
+
+.action-btn.action-delete:hover {
+    color: #f87171;
+    background: rgba(239,68,68,0.1);
+}

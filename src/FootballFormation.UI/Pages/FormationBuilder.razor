@@ -1,0 +1,162 @@
+@page "/games/{GameId:int}/formation"
+
+<PageTitle>Formation Builder</PageTitle>
+
+@if (GameData is null || AllPlayers is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+    return;
+}
+
+<div class="d-flex align-center gap-2 mb-2">
+    <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="NavigateBack" Size="Size.Small"
+                   Style="color: rgba(255,255,255,0.3);" />
+    <MudText Typo="Typo.h6" Style="color: white; font-weight: 700;">vs @GameData.Opponent</MudText>
+    <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.35);">@GameData.Date.ToString("dd MMM yyyy")</MudText>
+    <span class="badge-gold">@GameData.FormationType.DisplayName()</span>
+    <MudSpacer />
+    <MudButton Variant="Variant.Outlined" Size="Size.Small"
+               StartIcon="@Icons.Material.Filled.Share" Class="btn-ghost"
+               Href="@($"/games/{GameId}/overview")">
+        Overview
+    </MudButton>
+</div>
+
+<MudTabs @bind-ActivePanelIndex="ActivePeriodIndex" Elevation="0" Rounded="true" ApplyEffectsToContainer="true"
+         Class="mb-2">
+    @foreach (var period in GameData.Periods.OrderBy(p => p.PeriodType))
+    {
+        var periodFormation = period.FormationTypeOverride ?? GameData.FormationType;
+        <MudTabPanel Text="@period.PeriodType.DisplayName()">
+            <div class="formation-layout mt-2">
+                <div class="player-list-panel">
+                    <PlayerList Players="GetAvailablePlayers(period.Id)"
+                                OnDragStart="OnPlayerDragStart" />
+                    @if (GetUnavailablePlayers().Count > 0)
+                    {
+                        <MudPaper Class="pa-2 mt-2" Elevation="1" Style="opacity: 0.6; border-radius: 10px;">
+                            <MudText Typo="Typo.subtitle2" Class="mb-1" Style="color: #f87171;">
+                                <MudIcon Icon="@Icons.Material.Filled.PersonOff" Size="Size.Small" Class="mr-1" />
+                                Unavailable (@GetUnavailablePlayers().Count)
+                            </MudText>
+                            @foreach (var player in GetUnavailablePlayers())
+                            {
+                                <div class="unavailable-player">
+                                    <span class="player-shirt unavailable">@(player.ShirtNumber?.ToString() ?? "-")</span>
+                                    <span class="player-name-text">@player.DisplayName</span>
+                                </div>
+                            }
+                        </MudPaper>
+                    }
+                </div>
+                <div class="pitch-panel">
+                    <PitchView Formation="periodFormation"
+                               Positions="PeriodLineups[period.Id]"
+                               DraggedPlayerId="DraggedPlayerId"
+                               OnPlayerDropped="(pos) => OnPlayerDropped(period.Id, pos)"
+                               OnPlayerRemoved="(pos) => OnPlayerRemoved(period.Id, pos)"
+                               OnPlayerDragStart="(pos) => OnPitchPlayerDragStart(period.Id, pos)" />
+                    <div class="pitch-legend">
+                        <span class="legend-item"><span class="legend-dot chip-preferred"></span> Exact</span>
+                        <span class="legend-item"><span class="legend-dot chip-natural"></span> Natural fit</span>
+                        <span class="legend-item"><span class="legend-dot chip-alternative"></span> Alternative</span>
+                        <span class="legend-item"><span class="legend-dot chip-compatible"></span> Compatible</span>
+                        <span class="legend-item"><span class="legend-dot chip-out-of-position"></span> Out of position</span>
+                    </div>
+                </div>
+                <div class="subs-panel">
+                    <SubstituteBench Lineup="PeriodLineups[period.Id]"
+                                     DraggedPlayerId="DraggedPlayerId"
+                                     OnSubRemoved="(pp) => RemoveSub(period.Id, pp)"
+                                     OnPlayerDroppedToSub="() => OnPlayerDroppedToSub(period.Id)" />
+                </div>
+            </div>
+        </MudTabPanel>
+    }
+</MudTabs>
+
+<div class="d-flex gap-2 mt-2 mb-4">
+    <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Save"
+               OnClick="SaveAll" Size="Size.Small">
+        Save All Lineups
+    </MudButton>
+
+    @if (!IsLastPeriodSelected)
+    {
+        <MudButton Variant="Variant.Outlined" Class="btn-ghost"
+                   StartIcon="@Icons.Material.Filled.ContentCopy"
+                   OnClick="CopyToNextPeriod" Size="Size.Small">
+            Copy to next @PeriodLabel
+        </MudButton>
+    }
+</div>
+
+@if (AllPlayers.Count > 0)
+{
+    <MudPaper Class="pa-5 mb-4" Elevation="2" Style="border-radius: 16px;">
+        <div class="card-label">Playing Time Overview</div>
+        <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.3);" Class="mb-3">
+            @GameData.GameDurationMinutes min total — @PeriodCount x @PeriodDurationMinutes min per @PeriodLabel
+        </MudText>
+        <MudTable Items="GetPlayingTimeData()" Dense="true" Hover="true"
+                  SortLabel="Sort By" Elevation="0">
+            <HeaderContent>
+                <MudTh><MudTableSortLabel SortBy="new Func<PlayingTimeRow, object>(r => r.ShirtNumber ?? 99)">
+                    #</MudTableSortLabel></MudTh>
+                <MudTh><MudTableSortLabel SortBy="new Func<PlayingTimeRow, object>(r => r.PlayerName)">
+                    Player</MudTableSortLabel></MudTh>
+                @foreach (var period in GameData.Periods.OrderBy(p => p.PeriodType))
+                {
+                    <MudTh Style="text-align:center">@period.PeriodType.DisplayName()</MudTh>
+                }
+                <MudTh Style="text-align:center">
+                    <MudTableSortLabel InitialDirection="SortDirection.Descending"
+                                       SortBy="new Func<PlayingTimeRow, object>(r => r.TotalMinutes)">
+                        Total</MudTableSortLabel></MudTh>
+                <MudTh Style="text-align:center; min-width:140px">
+                    <MudTableSortLabel SortBy="new Func<PlayingTimeRow, object>(r => r.Percentage)">
+                        %</MudTableSortLabel></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="#">
+                    <span style="font-weight: 700; color: #fbbf24;">@(context.ShirtNumber?.ToString() ?? "-")</span>
+                </MudTd>
+                <MudTd DataLabel="Player">
+                    <span style="font-weight: 500; color: white;">@context.PlayerName</span>
+                </MudTd>
+                @foreach (var period in GameData.Periods.OrderBy(p => p.PeriodType))
+                {
+                    var detail = context.PeriodDetails[period.Id];
+                    <MudTd Style="text-align:center">
+                        @if (detail.Status == PeriodPlayStatus.Starting && detail.Fit.HasValue)
+                        {
+                            <span class="overview-dot @GetFitCssClass(detail.Fit.Value)"
+                                  title="@detail.Position?.ToString()">
+                                @detail.Position?.ToString()
+                            </span>
+                        }
+                        else if (detail.Status == PeriodPlayStatus.Substitute)
+                        {
+                            <span class="overview-dot overview-sub" title="Sub: @detail.Position?.ToString()">
+                                SUB
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="overview-dot overview-none">—</span>
+                        }
+                    </MudTd>
+                }
+                <MudTd DataLabel="Total" Style="text-align:center">
+                    <strong style="color: white;">@context.TotalMinutes min</strong>
+                </MudTd>
+                <MudTd DataLabel="%" Style="text-align:center">
+                    <MudProgressLinear Value="@context.Percentage" Color="@GetTimeColor(context.Percentage)"
+                                       Size="Size.Medium" Rounded="true" Style="min-width:100px">
+                        <MudText Typo="Typo.caption"><b>@context.Percentage.ToString("0")%</b></MudText>
+                    </MudProgressLinear>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudPaper>
+}

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Layout 2 — Premium Dark</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Material+Symbols+Outlined" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'DM Sans', sans-serif; background: #0c0c14; color: #c8c8d0; min-height: 100vh; }
+
+  /* === TOP BAR === */
+  .topbar { position: fixed; top: 0; left: 0; right: 0; height: 56px; background: linear-gradient(to right, #13131f, #1a1a2e); border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; padding: 0 24px; z-index: 10; }
+  .topbar-logo { font-weight: 700; font-size: 1.1rem; color: white; display: flex; align-items: center; gap: 8px; }
+  .topbar-logo span { background: linear-gradient(135deg, #f59e0b, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .topbar-nav { display: flex; gap: 4px; margin-left: 40px; }
+  .topbar-link { padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 500; color: rgba(255,255,255,0.45); cursor: pointer; transition: all 0.15s; }
+  .topbar-link:hover { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.04); }
+  .topbar-link.active { color: #fbbf24; background: rgba(245,158,11,0.1); }
+
+  /* === MAIN === */
+  .main { padding: 80px 32px 40px; max-width: 1000px; margin: 0 auto; }
+
+  .page-header { margin-bottom: 28px; }
+  .page-header h1 { font-size: 1.6rem; font-weight: 700; color: white; margin-bottom: 4px; }
+  .page-header p { color: rgba(255,255,255,0.35); font-size: 0.85rem; }
+  .page-header-row { display: flex; align-items: center; justify-content: space-between; }
+
+  .badge { font-size: 0.7rem; font-weight: 600; padding: 4px 10px; border-radius: 4px; }
+  .badge-gold { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
+  .badge-teal { background: rgba(20,184,166,0.12); color: #2dd4bf; border: 1px solid rgba(20,184,166,0.2); }
+
+  /* === CARDS === */
+  .card { background: linear-gradient(135deg, #141420, #18182a); border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); padding: 24px; position: relative; overflow: hidden; }
+  .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(to right, transparent, rgba(251,191,36,0.2), transparent); }
+  .card-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: rgba(251,191,36,0.6); margin-bottom: 16px; }
+
+  /* Score */
+  .result-grid { display: grid; grid-template-columns: 240px 1fr; gap: 20px; align-items: start; }
+
+  .score-visual { display: flex; align-items: center; justify-content: center; gap: 20px; margin: 24px 0; }
+  .score-side { text-align: center; }
+  .score-name { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.3); margin-bottom: 10px; }
+  .score-big { font-size: 2.8rem; font-weight: 800; color: white; line-height: 1; }
+  .score-big.gold { background: linear-gradient(to bottom, #fbbf24, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .score-vs { font-size: 1rem; color: rgba(255,255,255,0.15); font-weight: 300; padding-top: 18px; }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: none; font-family: inherit; transition: all 0.2s; }
+  .btn-gold { background: linear-gradient(135deg, #f59e0b, #d97706); color: #0c0c14; }
+  .btn-gold:hover { filter: brightness(1.15); transform: translateY(-1px); }
+  .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); }
+  .btn-ghost:hover { border-color: rgba(255,255,255,0.2); color: white; }
+
+  /* Goals */
+  .goal-timeline { position: relative; padding-left: 24px; }
+  .goal-timeline::before { content: ''; position: absolute; left: 8px; top: 4px; bottom: 4px; width: 1px; background: rgba(251,191,36,0.15); }
+
+  .goal-entry { position: relative; padding: 10px 12px 10px 16px; margin-bottom: 8px; border-radius: 10px; background: rgba(255,255,255,0.02); transition: background 0.15s; display: flex; align-items: center; gap: 12px; }
+  .goal-entry:hover { background: rgba(255,255,255,0.04); }
+  .goal-entry::before { content: ''; position: absolute; left: -20px; top: 50%; width: 10px; height: 10px; border-radius: 50%; background: #d97706; border: 2px solid #0c0c14; transform: translateY(-50%); }
+
+  .goal-time { font-size: 0.7rem; font-weight: 700; color: #fbbf24; min-width: 28px; }
+  .goal-info { flex: 1; }
+  .goal-player { font-weight: 600; font-size: 0.85rem; color: white; }
+  .goal-by { font-size: 0.7rem; color: rgba(255,255,255,0.3); margin-top: 2px; }
+
+  .goal-remove { width: 24px; height: 24px; border: none; background: none; color: rgba(255,255,255,0.15); cursor: pointer; border-radius: 4px; font-size: 16px; transition: all 0.15s; }
+  .goal-remove:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+
+  .add-section { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.04); }
+  .add-row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255,255,255,0.25); }
+  .field input, .field select { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: white; padding: 8px 10px; font-size: 0.8rem; outline: none; font-family: inherit; transition: border-color 0.15s; }
+  .field input:focus, .field select:focus { border-color: rgba(251,191,36,0.4); }
+  .field select option { background: #141420; }
+
+  /* === GAMES TABLE === */
+  .game-cards { display: flex; flex-direction: column; gap: 8px; }
+  .game-row { display: flex; align-items: center; gap: 16px; padding: 14px 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; transition: all 0.15s; cursor: pointer; }
+  .game-row:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+  .game-date { font-size: 0.75rem; color: rgba(255,255,255,0.35); min-width: 80px; font-variant-numeric: tabular-nums; }
+  .game-opponent { font-weight: 600; font-size: 0.9rem; color: white; flex: 1; }
+  .game-score { font-weight: 700; font-size: 0.9rem; min-width: 50px; text-align: center; }
+  .game-score.win { color: #4ade80; }
+  .game-score.loss { color: #f87171; }
+  .game-score.draw { color: rgba(255,255,255,0.4); }
+  .game-actions { display: flex; gap: 4px; }
+  .icon-btn { width: 28px; height: 28px; border: none; background: none; color: rgba(255,255,255,0.25); border-radius: 6px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .icon-btn:hover { color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.06); }
+
+  .separator { height: 1px; background: linear-gradient(to right, transparent, rgba(251,191,36,0.1), transparent); margin: 40px 0; }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="topbar-logo">⚽ <span>Formation Planner</span></div>
+  <div class="topbar-nav">
+    <div class="topbar-link">Squad</div>
+    <div class="topbar-link active">Games</div>
+    <div class="topbar-link">Preferences</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- GAMES LIST -->
+  <div class="page-header">
+    <div class="page-header-row">
+      <div>
+        <h1>Games</h1>
+        <p>Season 2025/26 · 3 matches</p>
+      </div>
+      <button class="btn btn-gold">+ New Game</button>
+    </div>
+  </div>
+
+  <div class="game-cards" style="margin-bottom: 20px;">
+    <div class="game-row">
+      <span class="game-date">22 Mar</span>
+      <span class="game-opponent">HSSC</span>
+      <span class="badge badge-gold">4-2-3-1</span>
+      <span class="game-score win">4 – 1</span>
+      <div class="game-actions">
+        <button class="icon-btn"><span class="material-symbols-outlined" style="font-size:16px">grid_view</span></button>
+        <button class="icon-btn"><span class="material-symbols-outlined" style="font-size:16px">share</span></button>
+        <button class="icon-btn"><span class="material-symbols-outlined" style="font-size:16px">scoreboard</span></button>
+        <button class="icon-btn"><span class="material-symbols-outlined" style="font-size:16px">edit</span></button>
+        <button class="icon-btn"><span class="material-symbols-outlined" style="font-size:16px">delete</span></button>
+      </div>
+    </div>
+    <div class="game-row">
+      <span class="game-date">29 Mar</span>
+      <span class="game-opponent">FC Utrecht JO10</span>
+      <span class="badge badge-gold">4-3-3</span>
+      <span class="game-score loss">1 – 3</span>
+      <div class="game-actions">
+        <button class="icon-btn"><span class="material-symbols-outlined" style="font-size:16px">grid_view</span></button>
+        <button class="icon-btn"><span class="material-symbols-outlined" style="font-size:16px">share</span></button>
+        <button class="icon-btn"><span class="material-symbols-outlined" style="font-size:16px">scoreboard</span></button>
+        <button class="icon-btn"><span class="material-symbols-outlined" style="font-size:16px">edit</span></button>
+        <button class="icon-btn"><span class="material-symbols-outlined" style="font-size:16px">delete</span></button>
+      </div>
+    </div>
+    <div class="game-row">
+      <span class="game-date">5 Apr</span>
+      <span class="game-opponent">VV De Meern</span>
+      <span class="badge badge-gold">4-4-2</span>
+      <span class="game-score draw">2 – 2</span>
+      <div class="game-actions">
+        <button class="icon-btn"><span class="material-symbols-outlined" style="font-size:16px">grid_view</span></button>
+        <button class="icon-btn"><span class="material-symbols-outlined" style="font-size:16px">share</span></button>
+        <button class="icon-btn"><span class="material-symbols-outlined" style="font-size:16px">scoreboard</span></button>
+        <button class="icon-btn"><span class="material-symbols-outlined" style="font-size:16px">edit</span></button>
+        <button class="icon-btn"><span class="material-symbols-outlined" style="font-size:16px">delete</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="separator"></div>
+
+  <!-- MATCH RESULT -->
+  <div class="page-header">
+    <h1>vs HSSC</h1>
+    <p>22 March 2026 · 4-2-3-1 · Quarters</p>
+  </div>
+
+  <div class="result-grid">
+    <div class="card">
+      <div class="card-label">Final Score</div>
+      <div class="score-visual">
+        <div class="score-side">
+          <div class="score-name">Home</div>
+          <div class="score-big gold">4</div>
+        </div>
+        <div class="score-vs">–</div>
+        <div class="score-side">
+          <div class="score-name">HSSC</div>
+          <div class="score-big">1</div>
+        </div>
+      </div>
+      <button class="btn btn-gold" style="width: 100%;">Save Score</button>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Goals (4)</div>
+
+      <div class="goal-timeline">
+        <div class="goal-entry">
+          <span class="goal-time">8'</span>
+          <div class="goal-info">
+            <div class="goal-player">Lieke van Dam</div>
+            <div class="goal-by">↳ Fleur Bakker</div>
+          </div>
+          <button class="goal-remove">×</button>
+        </div>
+        <div class="goal-entry">
+          <span class="goal-time">23'</span>
+          <div class="goal-info">
+            <div class="goal-player">Julia de Vries</div>
+            <div class="goal-by">↳ Roos Jansen</div>
+          </div>
+          <button class="goal-remove">×</button>
+        </div>
+        <div class="goal-entry">
+          <span class="goal-time">31'</span>
+          <div class="goal-info">
+            <div class="goal-player">Suus Hendriks</div>
+          </div>
+          <button class="goal-remove">×</button>
+        </div>
+        <div class="goal-entry">
+          <span class="goal-time">44'</span>
+          <div class="goal-info">
+            <div class="goal-player">Fleur Bakker</div>
+            <div class="goal-by">↳ Kim Peters</div>
+          </div>
+          <button class="goal-remove">×</button>
+        </div>
+      </div>
+
+      <div class="add-section">
+        <div class="add-row">
+          <div class="field" style="width: 55px;">
+            <label>Min</label>
+            <input type="number" placeholder="—">
+          </div>
+          <div class="field" style="flex: 1; min-width: 110px;">
+            <label>Scorer</label>
+            <select><option>Select player...</option></select>
+          </div>
+          <div class="field" style="flex: 1; min-width: 110px;">
+            <label>Assist</label>
+            <select><option>Optional</option></select>
+          </div>
+          <button class="btn btn-gold">+ Add</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
