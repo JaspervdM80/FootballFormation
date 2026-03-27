@@ -37,18 +37,18 @@ public static class FormationTypeExtensions
 
     public static PlayerPosition[] DefaultPositions(this FormationType formation) => formation switch
     {
-        FormationType.F442 =>  [PlayerPosition.LB, PlayerPosition.LCB, PlayerPosition.RCB, PlayerPosition.RB, PlayerPosition.LM, PlayerPosition.LCM, PlayerPosition.RCM, PlayerPosition.RM, PlayerPosition.LST, PlayerPosition.RST],
-        FormationType.F433 =>  [PlayerPosition.LB, PlayerPosition.LCB, PlayerPosition.RCB, PlayerPosition.RB, PlayerPosition.LCM, PlayerPosition.CM, PlayerPosition.RCM, PlayerPosition.LW, PlayerPosition.ST, PlayerPosition.RW],
-        FormationType.F4231 => [PlayerPosition.LB, PlayerPosition.LCB, PlayerPosition.RCB, PlayerPosition.RB, PlayerPosition.LCDM, PlayerPosition.RCDM, PlayerPosition.LW, PlayerPosition.CAM, PlayerPosition.RW, PlayerPosition.ST],
-        FormationType.F352 =>  [PlayerPosition.LCB, PlayerPosition.CB, PlayerPosition.RCB, PlayerPosition.LM, PlayerPosition.LCM, PlayerPosition.CM, PlayerPosition.RCM, PlayerPosition.RM, PlayerPosition.LST, PlayerPosition.RST],
-        FormationType.F343 =>  [PlayerPosition.LCB, PlayerPosition.CB, PlayerPosition.RCB, PlayerPosition.LM, PlayerPosition.LCM, PlayerPosition.RCM, PlayerPosition.RM, PlayerPosition.LW, PlayerPosition.ST, PlayerPosition.RW],
-        FormationType.F4141 => [PlayerPosition.LB, PlayerPosition.LCB, PlayerPosition.RCB, PlayerPosition.RB, PlayerPosition.CDM, PlayerPosition.LM, PlayerPosition.LCM, PlayerPosition.RCM, PlayerPosition.RM, PlayerPosition.ST],
-        FormationType.F4411 => [PlayerPosition.LB, PlayerPosition.LCB, PlayerPosition.RCB, PlayerPosition.RB, PlayerPosition.LM, PlayerPosition.LCM, PlayerPosition.RCM, PlayerPosition.RM, PlayerPosition.CAM, PlayerPosition.ST],
-        FormationType.F532 =>  [PlayerPosition.LWB, PlayerPosition.LCB, PlayerPosition.CB, PlayerPosition.RCB, PlayerPosition.RWB, PlayerPosition.LCM, PlayerPosition.CM, PlayerPosition.RCM, PlayerPosition.LST, PlayerPosition.RST],
-        FormationType.F541 =>  [PlayerPosition.LWB, PlayerPosition.LCB, PlayerPosition.CB, PlayerPosition.RCB, PlayerPosition.RWB, PlayerPosition.LM, PlayerPosition.LCM, PlayerPosition.RCM, PlayerPosition.RM, PlayerPosition.ST],
-        FormationType.F4321 => [PlayerPosition.LB, PlayerPosition.LCB, PlayerPosition.RCB, PlayerPosition.RB, PlayerPosition.LCM, PlayerPosition.CM, PlayerPosition.RCM, PlayerPosition.LF, PlayerPosition.RF, PlayerPosition.ST],
-        FormationType.F3421 => [PlayerPosition.LCB, PlayerPosition.CB, PlayerPosition.RCB, PlayerPosition.LM, PlayerPosition.LCM, PlayerPosition.RCM, PlayerPosition.RM, PlayerPosition.LF, PlayerPosition.RF, PlayerPosition.ST],
-        FormationType.F3511 => [PlayerPosition.LCB, PlayerPosition.CB, PlayerPosition.RCB, PlayerPosition.LM, PlayerPosition.LCM, PlayerPosition.CM, PlayerPosition.RCM, PlayerPosition.RM, PlayerPosition.CAM, PlayerPosition.ST],
+        FormationType.F442 =>  [PlayerPosition.LB, PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.RB, PlayerPosition.LM, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.RM, PlayerPosition.ST, PlayerPosition.ST],
+        FormationType.F433 =>  [PlayerPosition.LB, PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.RB, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.LW, PlayerPosition.ST, PlayerPosition.RW],
+        FormationType.F4231 => [PlayerPosition.LB, PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.RB, PlayerPosition.CDM, PlayerPosition.CDM, PlayerPosition.LW, PlayerPosition.CAM, PlayerPosition.RW, PlayerPosition.ST],
+        FormationType.F352 =>  [PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.LM, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.RM, PlayerPosition.ST, PlayerPosition.ST],
+        FormationType.F343 =>  [PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.LM, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.RM, PlayerPosition.LW, PlayerPosition.ST, PlayerPosition.RW],
+        FormationType.F4141 => [PlayerPosition.LB, PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.RB, PlayerPosition.CDM, PlayerPosition.LM, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.RM, PlayerPosition.ST],
+        FormationType.F4411 => [PlayerPosition.LB, PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.RB, PlayerPosition.LM, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.RM, PlayerPosition.CAM, PlayerPosition.ST],
+        FormationType.F532 =>  [PlayerPosition.LB, PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.RB, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.ST, PlayerPosition.ST],
+        FormationType.F541 =>  [PlayerPosition.LB, PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.RB, PlayerPosition.LM, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.RM, PlayerPosition.ST],
+        FormationType.F4321 => [PlayerPosition.LB, PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.RB, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.LW, PlayerPosition.RW, PlayerPosition.ST],
+        FormationType.F3421 => [PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.LM, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.RM, PlayerPosition.LW, PlayerPosition.RW, PlayerPosition.ST],
+        FormationType.F3511 => [PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.LM, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.RM, PlayerPosition.CAM, PlayerPosition.ST],
         _ => []
     };
 }
