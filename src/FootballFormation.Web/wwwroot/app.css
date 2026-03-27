@@ -209,6 +209,29 @@ html, body {
     background: rgba(255,255,255,0.2);
 }
 
+/* Fix: MudPopoverProvider sits before MudLayout in DOM — collapse it to zero height
+   so it doesn't push content down when popovers open. Do NOT set position or z-index
+   here, as that creates a stacking context that traps popovers behind the dialog. */
+.mud-popover-provider {
+    height: 0 !important;
+    overflow: visible;
+}
+
+/* Fix: MudPopoverProvider has no CSS in MudBlazor v9 — it's an unstyled div in normal
+   flow that pushes content down when popovers render inside it. Collapse to zero height. */
+.mud-popover-provider {
+    height: 0 !important;
+    overflow: visible;
+}
+
+/* Fix: MudSelect dropdown double scrollbar — MudBlazor v9 only sets overflow:hidden on
+   menu popovers (:has(>.mud-menu-list)) but not select popovers. The .mud-popover gets
+   a scrollbar AND .mud-popover .mud-list also has overflow-y:auto, producing two nested
+   scrollbars. Mirror the menu fix for select lists. */
+.mud-popover:has(> .mud-list) {
+    overflow: hidden;
+}
+
 /* Blazor error UI */
 #blazor-error-ui {
     background: lightyellow;
