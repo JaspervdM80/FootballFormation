@@ -26,11 +26,12 @@
                 <div class="d-flex align-center gap-2">
                     <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Size="Size.Small" Style="color: #fbbf24;" />
                     <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.5);">@context.User.Identity?.Name</MudText>
-                    <MudButton Variant="Variant.Text" Size="Size.Small"
-                               Href="/logout" Target="_self"
-                               Style="color: rgba(255,255,255,0.3); text-transform: none; min-width: auto;">
-                        Logout
-                    </MudButton>
+                    <form method="post" action="/auth/logout" data-enhance="false" style="margin: 0;">
+                        <button type="submit"
+                                style="background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; font-size: 0.875rem; padding: 4px 8px; text-transform: none;">
+                            Logout
+                        </button>
+                    </form>
                 </div>
             </Authorized>
             <NotAuthorized>

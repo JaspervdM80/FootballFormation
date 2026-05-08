@@ -55,3 +55,20 @@
         Save Preferences
     </MudButton>
 </MudPaper>
+
+<MudPaper Class="pa-6 mt-6" MaxWidth="500px" Elevation="2" Style="border-radius: 16px;">
+    <div class="card-label">Change Password</div>
+    <MudForm @ref="_passwordForm">
+        <MudTextField T="string" @bind-Value="_currentPassword" Label="Current Password"
+                      InputType="InputType.Password" Required="true" Class="mb-4" />
+        <MudTextField T="string" @bind-Value="_newPassword" Label="New Password"
+                      InputType="InputType.Password" Required="true" Class="mb-4" />
+        <MudTextField T="string" @bind-Value="_confirmPassword" Label="Confirm New Password"
+                      InputType="InputType.Password" Required="true" Class="mb-4" />
+    </MudForm>
+
+    <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Lock"
+               OnClick="ChangePassword" FullWidth="true">
+        Change Password
+    </MudButton>
+</MudPaper>

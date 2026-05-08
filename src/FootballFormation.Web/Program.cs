@@ -1,9 +1,11 @@
 using System.Security.Claims;
+using System.Threading.RateLimiting;
 using FootballFormation.Core.Data;
 using FootballFormation.Core.Services;
 using FootballFormation.Web.Components;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
@@ -57,14 +59,33 @@ try
         .AddCookie(options =>
         {
             options.LoginPath = "/login";
-            options.LogoutPath = "/logout";
+            options.LogoutPath = "/auth/logout";
             options.ExpireTimeSpan = TimeSpan.FromHours(8);
             options.SlidingExpiration = true;
+            options.Cookie.Name = "ff.auth";
             options.Cookie.HttpOnly = true;
             options.Cookie.SameSite = SameSiteMode.Strict;
+            options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+                ? CookieSecurePolicy.SameAsRequest
+                : CookieSecurePolicy.Always;
         });
     builder.Services.AddAuthorization();
     builder.Services.AddCascadingAuthenticationState();
+
+    // Rate limit login attempts: 5 per minute per IP, then queue/reject
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        options.AddPolicy("login", httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 5,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0
+                }));
+    });
 
     var app = builder.Build();
 
@@ -90,20 +111,29 @@ try
     app.UseHttpsRedirection();
     app.UseAuthentication();
     app.UseAuthorization();
+    app.UseRateLimiter();
     app.UseAntiforgery();
 
-    app.MapPost("/login", async (HttpContext context, AdminAuthService authService) =>
+    app.MapPost("/auth/login", async (
+        HttpContext context,
+        AdminAuthService authService,
+        ILoggerFactory loggerFactory) =>
     {
+        var logger = loggerFactory.CreateLogger("Auth");
         var form = await context.Request.ReadFormAsync();
         var username = form["username"].ToString();
         var password = form["password"].ToString();
         var returnUrl = form["returnUrl"].ToString();
+        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
         var user = await authService.ValidateCredentialsAsync(username, password);
         if (user is null)
         {
+            logger.LogWarning("Failed login attempt for user '{Username}' from {Ip}", username, ip);
             return Results.Redirect("/login?error=true");
         }
+
+        logger.LogInformation("Successful login for user '{Username}' from {Ip}", username, ip);
 
         var claims = new List<Claim>
         {
@@ -115,10 +145,12 @@ try
             CookieAuthenticationDefaults.AuthenticationScheme,
             new ClaimsPrincipal(identity));
 
-        return Results.Redirect(string.IsNullOrEmpty(returnUrl) ? "/" : returnUrl);
-    }).DisableAntiforgery();
+        return Results.Redirect(IsLocalUrl(returnUrl) ? returnUrl : "/");
+    })
+    .DisableAntiforgery()
+    .RequireRateLimiting("login");
 
-    app.Map("/logout", async (HttpContext context) =>
+    app.MapPost("/auth/logout", async (HttpContext context) =>
     {
         await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return Results.Redirect("/");
@@ -138,4 +170,12 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
+}
+
+static bool IsLocalUrl(string? url)
+{
+    if (string.IsNullOrEmpty(url)) return false;
+    if (url.StartsWith("//") || url.StartsWith("/\\")) return false;
+    if (url.StartsWith('/')) return true;
+    return false;
 }
