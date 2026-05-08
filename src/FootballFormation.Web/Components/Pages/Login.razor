@@ -1,5 +1,7 @@
 @page "/login"
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.WebUtilities
+@inject NavigationManager Navigation
 @attribute [AllowAnonymous]
 
 <PageTitle>Login</PageTitle>
@@ -12,15 +14,15 @@
             <p style="color: rgba(255,255,255,0.35); font-size: 0.875rem;">Sign in to manage formations</p>
         </div>
 
-        @if (HttpContext.Request.Query.ContainsKey("error"))
+        @if (_showError)
         {
             <div style="background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 12px; margin-bottom: 20px; color: #fca5a5; font-size: 0.875rem; text-align: center;">
                 Invalid username or password
             </div>
         }
 
-        <form method="post" action="/login">
-            <input type="hidden" name="returnUrl" value="@HttpContext.Request.Query["returnUrl"]" />
+        <form method="post" action="/login" data-enhance="false">
+            <input type="hidden" name="returnUrl" value="@_returnUrl" />
 
             <div style="margin-bottom: 16px;">
                 <label style="display: block; color: rgba(255,255,255,0.5); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Username</label>
@@ -47,6 +49,15 @@
 </div>
 
 @code {
-    [CascadingParameter]
-    public HttpContext HttpContext { get; set; } = default!;
+    private bool _showError;
+    private string _returnUrl = "";
+
+    protected override void OnInitialized()
+    {
+        var uri = new Uri(Navigation.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        _showError = query.ContainsKey("error");
+        if (query.TryGetValue("returnUrl", out var returnUrl))
+            _returnUrl = returnUrl.ToString();
+    }
 }
