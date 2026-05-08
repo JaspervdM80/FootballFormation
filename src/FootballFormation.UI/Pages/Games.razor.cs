@@ -2,6 +2,7 @@ using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Components;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
 
@@ -15,12 +16,19 @@ public partial class Games
     [Inject] private NavigationManager Navigation { get; set; } = null!;
     [Inject] private ILogger<Games> Logger { get; set; } = null!;
 
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; } = null!;
+
+    private bool _isAdmin;
+
     private static readonly DialogOptions NoBackdropClose = new() { BackdropClick = false };
 
     private List<Game>? _games;
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthStateTask;
+        _isAdmin = authState.User.Identity?.IsAuthenticated == true;
         await LoadGames();
     }
 
@@ -89,8 +97,10 @@ public partial class Games
     {
         if (game.ScoreHome.HasValue && game.ScoreAway.HasValue)
             Navigation.NavigateTo($"/games/{game.Id}/result");
-        else
+        else if (_isAdmin)
             Navigation.NavigateTo($"/games/{game.Id}/formation");
+        else
+            Navigation.NavigateTo($"/games/{game.Id}/overview");
     }
 
     private void OpenFormation(int gameId)

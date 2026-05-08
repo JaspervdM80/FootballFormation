@@ -12,10 +12,12 @@
             }
         </MudText>
     </div>
-    <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Add"
-               OnClick="OpenAddDialog">
-        New Game
-    </MudButton>
+    <AuthorizeView>
+        <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="OpenAddDialog">
+            New Game
+        </MudButton>
+    </AuthorizeView>
 </div>
 
 @if (_games is null)
@@ -50,21 +52,25 @@ else
                     <span class="game-score @scoreClass">@game.ScoreHome – @game.ScoreAway</span>
                 }
                 <div class="game-actions" @onclick:stopPropagation="true">
-                    <button class="action-btn" title="Formation" @onclick="() => OpenFormation(game.Id)">
-                        <MudIcon Icon="@Icons.Material.Filled.ViewModule" Size="Size.Small" />
-                    </button>
+                    <AuthorizeView>
+                        <button class="action-btn" title="Formation" @onclick="() => OpenFormation(game.Id)">
+                            <MudIcon Icon="@Icons.Material.Filled.ViewModule" Size="Size.Small" />
+                        </button>
+                    </AuthorizeView>
                     <button class="action-btn" title="Overview" @onclick="() => OpenOverview(game.Id)">
                         <MudIcon Icon="@Icons.Material.Filled.Share" Size="Size.Small" />
                     </button>
                     <button class="action-btn" title="Result" @onclick="() => OpenResult(game.Id)">
                         <MudIcon Icon="@Icons.Material.Filled.Scoreboard" Size="Size.Small" />
                     </button>
-                    <button class="action-btn" title="Edit" @onclick="() => OpenEditDialog(game)">
-                        <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
-                    </button>
-                    <button class="action-btn action-delete" title="Delete" @onclick="() => DeleteGame(game)">
-                        <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
-                    </button>
+                    <AuthorizeView>
+                        <button class="action-btn" title="Edit" @onclick="() => OpenEditDialog(game)">
+                            <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                        </button>
+                        <button class="action-btn action-delete" title="Delete" @onclick="() => DeleteGame(game)">
+                            <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                        </button>
+                    </AuthorizeView>
                 </div>
             </div>
         }

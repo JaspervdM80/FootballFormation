@@ -12,10 +12,12 @@
             }
         </MudText>
     </div>
-    <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.PersonAdd"
-               OnClick="OpenAddDialog">
-        Add Player
-    </MudButton>
+    <AuthorizeView>
+        <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.PersonAdd"
+                   OnClick="OpenAddDialog">
+            Add Player
+        </MudButton>
+    </AuthorizeView>
 </div>
 
 @if (_players is null)
@@ -38,9 +40,11 @@ else
         <HeaderContent>
             <MudTh><MudTableSortLabel SortBy="new Func<Player, object>(p => p.ShirtNumber ?? 999)">#</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel SortBy="new Func<Player, object>(p => p.FirstName)">Name</MudTableSortLabel></MudTh>
-            <MudTh>Preferred Position</MudTh>
-            <MudTh>Alternative Positions</MudTh>
-            <MudTh></MudTh>
+            <AuthorizeView Context="authHeader">
+                <MudTh>Preferred Position</MudTh>
+                <MudTh>Alternative Positions</MudTh>
+                <MudTh></MudTh>
+            </AuthorizeView>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="#">
@@ -49,23 +53,25 @@ else
             <MudTd DataLabel="Name">
                 <span style="font-weight: 600; color: white;">@context.DisplayName</span>
             </MudTd>
-            <MudTd DataLabel="Preferred">
-                <span class="badge-gold">@context.PreferredPosition.ToString()</span>
-            </MudTd>
-            <MudTd DataLabel="Alternatives">
-                @foreach (var pos in context.AlternativePositions)
-                {
-                    <span class="badge-teal" style="margin-right: 4px;">@pos.ToString()</span>
-                }
-            </MudTd>
-            <MudTd>
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
-                               Style="color: rgba(255,255,255,0.3);"
-                               OnClick="() => OpenEditDialog(context)" />
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
-                               Style="color: rgba(255,255,255,0.3);"
-                               OnClick="() => DeletePlayer(context)" />
-            </MudTd>
+            <AuthorizeView Context="authRow">
+                <MudTd DataLabel="Preferred">
+                    <span class="badge-gold">@context.PreferredPosition.ToString()</span>
+                </MudTd>
+                <MudTd DataLabel="Alternatives">
+                    @foreach (var pos in context.AlternativePositions)
+                    {
+                        <span class="badge-teal" style="margin-right: 4px;">@pos.ToString()</span>
+                    }
+                </MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                   Style="color: rgba(255,255,255,0.3);"
+                                   OnClick="() => OpenEditDialog(context)" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                   Style="color: rgba(255,255,255,0.3);"
+                                   OnClick="() => DeletePlayer(context)" />
+                </MudTd>
+            </AuthorizeView>
         </RowTemplate>
     </MudTable>
 }

@@ -12,6 +12,9 @@ public partial class PitchOverview
     [Parameter, EditorRequired]
     public List<GamePlayerPosition> Positions { get; set; } = [];
 
+    [Parameter]
+    public bool HidePositionFit { get; set; }
+
     private PlayerPosition[] AllSlots => [PlayerPosition.GK, .. Formation.DefaultPositions()];
 
     private GamePlayerPosition?[] BuildSlotAssignments()
@@ -45,9 +48,12 @@ public partial class PitchOverview
         return assignments;
     }
 
-    private static string GetChipCssClass(PlayerPosition position, Player player)
+    private string GetChipCssClass(PlayerPosition position, Player player)
     {
         var baseClass = "po-player";
+        if (HidePositionFit)
+            return $"{baseClass} po-preferred";
+
         var fit = PositionFitHelper.GetFit(player, position);
         return fit switch
         {

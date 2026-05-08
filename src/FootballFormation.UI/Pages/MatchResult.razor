@@ -25,22 +25,38 @@
         <div class="score-visual">
             <div class="score-side">
                 <span class="score-name">Home</span>
-                <input type="number" class="score-big-input" min="0" max="99"
-                       value="@ScoreHome"
-                       @onchange="e => ScoreHome = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)" />
+                <AuthorizeView>
+                    <Authorized>
+                        <input type="number" class="score-big-input" min="0" max="99"
+                               value="@ScoreHome"
+                               @onchange="e => ScoreHome = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)" />
+                    </Authorized>
+                    <NotAuthorized>
+                        <span class="score-big-input" style="pointer-events: none;">@(ScoreHome?.ToString() ?? "–")</span>
+                    </NotAuthorized>
+                </AuthorizeView>
             </div>
             <span class="score-vs">–</span>
             <div class="score-side">
                 <span class="score-name">@GameData.Opponent</span>
-                <input type="number" class="score-big-input score-away" min="0" max="99"
-                       value="@ScoreAway"
-                       @onchange="e => ScoreAway = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)" />
+                <AuthorizeView>
+                    <Authorized>
+                        <input type="number" class="score-big-input score-away" min="0" max="99"
+                               value="@ScoreAway"
+                               @onchange="e => ScoreAway = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)" />
+                    </Authorized>
+                    <NotAuthorized>
+                        <span class="score-big-input score-away" style="pointer-events: none;">@(ScoreAway?.ToString() ?? "–")</span>
+                    </NotAuthorized>
+                </AuthorizeView>
             </div>
         </div>
-        <MudButton Variant="Variant.Filled" Class="btn-gold mt-4" FullWidth="true"
-                   OnClick="SaveScore">
-            Save Score
-        </MudButton>
+        <AuthorizeView>
+            <MudButton Variant="Variant.Filled" Class="btn-gold mt-4" FullWidth="true"
+                       OnClick="SaveScore">
+                Save Score
+            </MudButton>
+        </AuthorizeView>
     </MudPaper>
 
     <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">
@@ -68,7 +84,9 @@
                                 <div class="goal-assist">↳ @goal.Assister.DisplayName</div>
                             }
                         </div>
-                        <button class="goal-remove" @onclick="() => RemoveGoal(goal)">×</button>
+                        <AuthorizeView>
+                            <button class="goal-remove" @onclick="() => RemoveGoal(goal)">×</button>
+                        </AuthorizeView>
                     </div>
                 }
             </div>
@@ -80,48 +98,50 @@
             </MudText>
         }
 
-        <div class="add-section">
-            <div class="add-row">
-                <div class="field" style="width: 60px;">
-                    <label>Min</label>
-                    <input type="number" min="1" max="@GameData.GameDurationMinutes"
-                           value="@NewGoalMinute"
-                           @onchange="e => NewGoalMinute = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)" />
+        <AuthorizeView>
+            <div class="add-section">
+                <div class="add-row">
+                    <div class="field" style="width: 60px;">
+                        <label>Min</label>
+                        <input type="number" min="1" max="@GameData.GameDurationMinutes"
+                               value="@NewGoalMinute"
+                               @onchange="e => NewGoalMinute = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)" />
+                    </div>
+                    <div class="field" style="flex: 1; min-width: 110px;">
+                        <label>Scorer</label>
+                        <select value="@(NewGoalScorerId?.ToString() ?? "")"
+                                @onchange="e => NewGoalScorerId = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)">
+                            <option value="">Select player...</option>
+                            @foreach (var player in SquadPlayers)
+                            {
+                                <option value="@player.Id">
+                                    @(player.ShirtNumber.HasValue ? $"#{player.ShirtNumber} " : "")@player.DisplayName
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="field" style="flex: 1; min-width: 110px;">
+                        <label>Assist</label>
+                        <select value="@(NewGoalAssisterId?.ToString() ?? "")"
+                                @onchange="e => NewGoalAssisterId = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)">
+                            <option value="">Optional</option>
+                            @foreach (var player in SquadPlayers.Where(p => p.Id != NewGoalScorerId))
+                            {
+                                <option value="@player.Id">
+                                    @(player.ShirtNumber.HasValue ? $"#{player.ShirtNumber} " : "")@player.DisplayName
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="field og-check">
+                        <label>OG</label>
+                        <input type="checkbox" @bind="NewGoalIsOwnGoal" />
+                    </div>
+                    <button class="btn-add-goal" disabled="@(NewGoalScorerId is null)" @onclick="AddGoal">
+                        + Add
+                    </button>
                 </div>
-                <div class="field" style="flex: 1; min-width: 110px;">
-                    <label>Scorer</label>
-                    <select value="@(NewGoalScorerId?.ToString() ?? "")"
-                            @onchange="e => NewGoalScorerId = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)">
-                        <option value="">Select player...</option>
-                        @foreach (var player in SquadPlayers)
-                        {
-                            <option value="@player.Id">
-                                @(player.ShirtNumber.HasValue ? $"#{player.ShirtNumber} " : "")@player.DisplayName
-                            </option>
-                        }
-                    </select>
-                </div>
-                <div class="field" style="flex: 1; min-width: 110px;">
-                    <label>Assist</label>
-                    <select value="@(NewGoalAssisterId?.ToString() ?? "")"
-                            @onchange="e => NewGoalAssisterId = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)">
-                        <option value="">Optional</option>
-                        @foreach (var player in SquadPlayers.Where(p => p.Id != NewGoalScorerId))
-                        {
-                            <option value="@player.Id">
-                                @(player.ShirtNumber.HasValue ? $"#{player.ShirtNumber} " : "")@player.DisplayName
-                            </option>
-                        }
-                    </select>
-                </div>
-                <div class="field og-check">
-                    <label>OG</label>
-                    <input type="checkbox" @bind="NewGoalIsOwnGoal" />
-                </div>
-                <button class="btn-add-goal" disabled="@(NewGoalScorerId is null)" @onclick="AddGoal">
-                    + Add
-                </button>
             </div>
-        </div>
+        </AuthorizeView>
     </MudPaper>
 </div>

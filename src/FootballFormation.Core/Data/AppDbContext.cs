@@ -12,6 +12,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<GamePlayerPosition> GamePlayerPositions => Set<GamePlayerPosition>();
     public DbSet<GameGoal> GameGoals => Set<GameGoal>();
     public DbSet<MatchPreferences> MatchPreferences => Set<MatchPreferences>();
+    public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -94,6 +95,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<MatchPreferences>(entity =>
         {
             entity.HasKey(m => m.Id);
+        });
+
+        modelBuilder.Entity<AdminUser>(entity =>
+        {
+            entity.HasKey(a => a.Id);
+            entity.Property(a => a.Username).IsRequired().HasMaxLength(50);
+            entity.Property(a => a.PasswordHash).IsRequired();
         });
     }
 }
