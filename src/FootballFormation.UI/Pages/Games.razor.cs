@@ -85,6 +85,14 @@ public partial class Games
         }
     }
 
+    private void OpenGame(Game game)
+    {
+        if (game.ScoreHome.HasValue && game.ScoreAway.HasValue)
+            Navigation.NavigateTo($"/games/{game.Id}/result");
+        else
+            Navigation.NavigateTo($"/games/{game.Id}/formation");
+    }
+
     private void OpenFormation(int gameId)
     {
         Navigation.NavigateTo($"/games/{gameId}/formation");

@@ -24,6 +24,7 @@ public partial class FormationBuilder
     private int ActivePeriodIndex { get; set; }
     private int? DraggedPlayerId { get; set; }
     private int? DraggedFromSlotIndex { get; set; }
+    private bool DraggedFromSub { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -116,6 +117,7 @@ public partial class FormationBuilder
     {
         DraggedPlayerId = playerId;
         DraggedFromSlotIndex = null;
+        DraggedFromSub = false;
     }
 
     private void OnPitchPlayerDragStart(int periodId, int slotIndex)
@@ -126,6 +128,14 @@ public partial class FormationBuilder
 
         DraggedPlayerId = existing.PlayerId;
         DraggedFromSlotIndex = slotIndex;
+        DraggedFromSub = false;
+    }
+
+    private void OnSubDragStart(int playerId)
+    {
+        DraggedPlayerId = playerId;
+        DraggedFromSlotIndex = null;
+        DraggedFromSub = true;
     }
 
     private void OnPlayerDropped(int periodId, int slotIndex)
@@ -159,6 +169,7 @@ public partial class FormationBuilder
 
             DraggedPlayerId = null;
             DraggedFromSlotIndex = null;
+            DraggedFromSub = false;
             StateHasChanged();
             return;
         }
@@ -166,14 +177,27 @@ public partial class FormationBuilder
         var player = AllPlayers.FirstOrDefault(p => p.Id == DraggedPlayerId);
         if (player is null) return;
 
+        var wasFromSub = DraggedFromSub;
+
         // Remove player from any current assignment
         lineup.RemoveAll(p => p.PlayerId == player.Id);
 
-        // Remove existing player at this specific slot
+        // Handle existing player at this specific slot
         var slotAssignments = BuildSlotAssignments(periodId);
         var existingAtSlot = slotAssignments[slotIndex];
         if (existingAtSlot is not null)
-            lineup.Remove(existingAtSlot);
+        {
+            if (wasFromSub)
+            {
+                existingAtSlot.IsSubstitute = true;
+                existingAtSlot.Position = existingAtSlot.Player?.PreferredPosition ?? existingAtSlot.Position;
+                existingAtSlot.SlotIndex = null;
+            }
+            else
+            {
+                lineup.Remove(existingAtSlot);
+            }
+        }
 
         lineup.Add(new GamePlayerPosition
         {
@@ -186,6 +210,7 @@ public partial class FormationBuilder
 
         DraggedPlayerId = null;
         DraggedFromSlotIndex = null;
+        DraggedFromSub = false;
         StateHasChanged();
     }
 
@@ -213,6 +238,7 @@ public partial class FormationBuilder
 
         DraggedPlayerId = null;
         DraggedFromSlotIndex = null;
+        DraggedFromSub = false;
         StateHasChanged();
     }
 
@@ -233,6 +259,38 @@ public partial class FormationBuilder
     }
 
     private void NavigateBack() => Navigation.NavigateTo("/games");
+
+    private void OnSwapFieldPlayerWithSub(int periodId, int subPlayerId)
+    {
+        if (DraggedPlayerId is null || AllPlayers is null) return;
+        if (DraggedPlayerId == subPlayerId) return;
+        if (DraggedFromSlotIndex is null) return;
+
+        var lineup = PeriodLineups[periodId];
+        var slots = GetAllSlots(periodId);
+        var slotIndex = DraggedFromSlotIndex.Value;
+        var position = slots[slotIndex];
+
+        var fieldEntry = lineup.FirstOrDefault(p => p.PlayerId == DraggedPlayerId && !p.IsSubstitute);
+        var subEntry = lineup.FirstOrDefault(p => p.PlayerId == subPlayerId && p.IsSubstitute);
+
+        if (fieldEntry is null || subEntry is null) return;
+
+        var subPlayer = subEntry.Player;
+
+        fieldEntry.IsSubstitute = true;
+        fieldEntry.Position = fieldEntry.Player?.PreferredPosition ?? fieldEntry.Position;
+        fieldEntry.SlotIndex = null;
+
+        subEntry.IsSubstitute = false;
+        subEntry.Position = position;
+        subEntry.SlotIndex = slotIndex;
+
+        DraggedPlayerId = null;
+        DraggedFromSlotIndex = null;
+        DraggedFromSub = false;
+        StateHasChanged();
+    }
 
     private void RemoveSub(int periodId, GamePlayerPosition sub)
     {
