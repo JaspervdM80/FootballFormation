@@ -90,7 +90,8 @@
                 </div>
                 <div class="field" style="flex: 1; min-width: 110px;">
                     <label>Scorer</label>
-                    <select @onchange="e => NewGoalScorerId = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)">
+                    <select value="@(NewGoalScorerId?.ToString() ?? "")"
+                            @onchange="e => NewGoalScorerId = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)">
                         <option value="">Select player...</option>
                         @foreach (var player in SquadPlayers)
                         {
@@ -102,7 +103,8 @@
                 </div>
                 <div class="field" style="flex: 1; min-width: 110px;">
                     <label>Assist</label>
-                    <select @onchange="e => NewGoalAssisterId = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)">
+                    <select value="@(NewGoalAssisterId?.ToString() ?? "")"
+                            @onchange="e => NewGoalAssisterId = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)">
                         <option value="">Optional</option>
                         @foreach (var player in SquadPlayers.Where(p => p.Id != NewGoalScorerId))
                         {

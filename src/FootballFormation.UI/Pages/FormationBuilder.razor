@@ -68,7 +68,9 @@
                     <SubstituteBench Lineup="PeriodLineups[period.Id]"
                                      DraggedPlayerId="DraggedPlayerId"
                                      OnSubRemoved="(pp) => RemoveSub(period.Id, pp)"
-                                     OnPlayerDroppedToSub="() => OnPlayerDroppedToSub(period.Id)" />
+                                     OnPlayerDroppedToSub="() => OnPlayerDroppedToSub(period.Id)"
+                                     OnSubDragStart="(playerId) => OnSubDragStart(playerId)"
+                                     OnSwapWithSub="(subPlayerId) => OnSwapFieldPlayerWithSub(period.Id, subPlayerId)" />
                 </div>
             </div>
         </MudTabPanel>

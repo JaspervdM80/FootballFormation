@@ -16,4 +16,10 @@ public partial class SubstituteBench
 
     [Parameter]
     public EventCallback OnPlayerDroppedToSub { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnSubDragStart { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnSwapWithSub { get; set; }
 }

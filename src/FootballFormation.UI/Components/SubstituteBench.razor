@@ -17,25 +17,30 @@
 
     @if (subs.Count > 0)
     {
-        <MudList T="GamePlayerPosition" Dense="true">
+        <div class="sub-list">
             @foreach (var sub in subs)
             {
-                <MudListItem T="GamePlayerPosition">
-                    <div class="d-flex align-center justify-space-between">
-                        <div>
-                            <MudText Typo="Typo.body2">
-                                @(sub.Player?.ShirtNumber.HasValue == true ? $"#{sub.Player.ShirtNumber} " : "")@sub.Player?.DisplayName
-                            </MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">
-                                @sub.Position.ToString()
-                            </MudText>
-                        </div>
-                        <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small"
-                                       OnClick="() => OnSubRemoved.InvokeAsync(sub)" />
+                <div class="sub-item d-flex align-center justify-space-between"
+                     draggable="true"
+                     @ondragstart="() => OnSubDragStart.InvokeAsync(sub.PlayerId)"
+                     @ondragstart:stopPropagation="true"
+                     @ondragover:preventDefault="true"
+                     @ondrop="() => OnSwapWithSub.InvokeAsync(sub.PlayerId)"
+                     @ondrop:stopPropagation="true"
+                     style="cursor: grab; padding: 4px 8px;">
+                    <div>
+                        <MudText Typo="Typo.body2">
+                            @(sub.Player?.ShirtNumber.HasValue == true ? $"#{sub.Player.ShirtNumber} " : "")@sub.Player?.DisplayName
+                        </MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            @sub.Position.ToString()
+                        </MudText>
                     </div>
-                </MudListItem>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small"
+                                   OnClick="() => OnSubRemoved.InvokeAsync(sub)" />
+                </div>
             }
-        </MudList>
+        </div>
     }
     else if (DraggedPlayerId is null)
     {
