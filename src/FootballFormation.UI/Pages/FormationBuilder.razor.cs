@@ -23,7 +23,7 @@ public partial class FormationBuilder
     private Dictionary<int, List<GamePlayerPosition>> PeriodLineups { get; set; } = new();
     private int ActivePeriodIndex { get; set; }
     private int? DraggedPlayerId { get; set; }
-    private PlayerPosition? DraggedFromPosition { get; set; }
+    private int? DraggedFromSlotIndex { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -59,6 +59,49 @@ public partial class FormationBuilder
 
     private HashSet<int> UnavailableIds => GameData?.UnavailablePlayerIds.ToHashSet() ?? [];
 
+    private PlayerPosition[] GetAllSlots(int periodId)
+    {
+        var period = GameData!.Periods.First(p => p.Id == periodId);
+        var formation = period.FormationTypeOverride ?? GameData.FormationType;
+        return [PlayerPosition.GK, .. formation.DefaultPositions()];
+    }
+
+    /// <summary>
+    /// Matches lineup entries to formation slots.
+    /// Uses SlotIndex as the source of truth; falls back to position matching for legacy data.
+    /// </summary>
+    private GamePlayerPosition?[] BuildSlotAssignments(int periodId)
+    {
+        var slots = GetAllSlots(periodId);
+        var lineup = PeriodLineups.GetValueOrDefault(periodId, []);
+        var assignments = new GamePlayerPosition?[slots.Length];
+        var starters = lineup.Where(p => !p.IsSubstitute).ToList();
+
+        // Pass 1: direct slot index assignment
+        foreach (var entry in starters.Where(p => p.SlotIndex is not null).ToList())
+        {
+            var idx = entry.SlotIndex!.Value;
+            if (idx >= 0 && idx < slots.Length && assignments[idx] is null)
+            {
+                assignments[idx] = entry;
+                starters.Remove(entry);
+            }
+        }
+
+        // Pass 2: position-based fallback for legacy data without SlotIndex
+        for (int i = 0; i < slots.Length; i++)
+        {
+            if (assignments[i] is not null) continue;
+            var match = starters.FirstOrDefault(p => p.Position == slots[i]);
+            if (match is not null)
+            {
+                assignments[i] = match;
+                starters.Remove(match);
+            }
+        }
+        return assignments;
+    }
+
     private List<Player> GetAvailablePlayers(int periodId)
     {
         if (AllPlayers is null) return [];
@@ -72,40 +115,50 @@ public partial class FormationBuilder
     private void OnPlayerDragStart(int playerId)
     {
         DraggedPlayerId = playerId;
-        DraggedFromPosition = null;
+        DraggedFromSlotIndex = null;
     }
 
-    private void OnPitchPlayerDragStart(int periodId, PlayerPosition position)
+    private void OnPitchPlayerDragStart(int periodId, int slotIndex)
     {
-        var lineup = PeriodLineups[periodId];
-        var existing = lineup.FirstOrDefault(p => p.Position == position && !p.IsSubstitute);
+        var assignments = BuildSlotAssignments(periodId);
+        var existing = assignments[slotIndex];
         if (existing is null) return;
 
         DraggedPlayerId = existing.PlayerId;
-        DraggedFromPosition = position;
+        DraggedFromSlotIndex = slotIndex;
     }
 
-    private void OnPlayerDropped(int periodId, PlayerPosition position)
+    private void OnPlayerDropped(int periodId, int slotIndex)
     {
         if (DraggedPlayerId is null || AllPlayers is null) return;
 
+        var slots = GetAllSlots(periodId);
+        var position = slots[slotIndex];
         var lineup = PeriodLineups[periodId];
 
-        if (DraggedFromPosition is not null)
+        if (DraggedFromSlotIndex is not null)
         {
-            var sourcePos = DraggedFromPosition.Value;
-            var target = lineup.FirstOrDefault(p => p.Position == position && !p.IsSubstitute);
-            var source = lineup.FirstOrDefault(p => p.Position == sourcePos && !p.IsSubstitute);
+            // Drag from one slot to another — swap
+            var sourceSlotIndex = DraggedFromSlotIndex.Value;
+            var sourcePosition = slots[sourceSlotIndex];
+            var assignments = BuildSlotAssignments(periodId);
+
+            var source = assignments[sourceSlotIndex];
+            var target = assignments[slotIndex];
 
             if (source is not null)
             {
                 source.Position = position;
+                source.SlotIndex = slotIndex;
                 if (target is not null)
-                    target.Position = sourcePos;
+                {
+                    target.Position = sourcePosition;
+                    target.SlotIndex = sourceSlotIndex;
+                }
             }
 
             DraggedPlayerId = null;
-            DraggedFromPosition = null;
+            DraggedFromSlotIndex = null;
             StateHasChanged();
             return;
         }
@@ -113,19 +166,26 @@ public partial class FormationBuilder
         var player = AllPlayers.FirstOrDefault(p => p.Id == DraggedPlayerId);
         if (player is null) return;
 
+        // Remove player from any current assignment
         lineup.RemoveAll(p => p.PlayerId == player.Id);
-        lineup.RemoveAll(p => p.Position == position && !p.IsSubstitute);
+
+        // Remove existing player at this specific slot
+        var slotAssignments = BuildSlotAssignments(periodId);
+        var existingAtSlot = slotAssignments[slotIndex];
+        if (existingAtSlot is not null)
+            lineup.Remove(existingAtSlot);
 
         lineup.Add(new GamePlayerPosition
         {
             PlayerId = player.Id,
             Player = player,
             Position = position,
+            SlotIndex = slotIndex,
             IsSubstitute = false
         });
 
         DraggedPlayerId = null;
-        DraggedFromPosition = null;
+        DraggedFromSlotIndex = null;
         StateHasChanged();
     }
 
@@ -152,13 +212,16 @@ public partial class FormationBuilder
         }
 
         DraggedPlayerId = null;
-        DraggedFromPosition = null;
+        DraggedFromSlotIndex = null;
         StateHasChanged();
     }
 
-    private void OnPlayerRemoved(int periodId, PlayerPosition position)
+    private void OnPlayerRemoved(int periodId, int slotIndex)
     {
-        PeriodLineups[periodId].RemoveAll(p => p.Position == position && !p.IsSubstitute);
+        var assignments = BuildSlotAssignments(periodId);
+        var existing = assignments[slotIndex];
+        if (existing is not null)
+            PeriodLineups[periodId].Remove(existing);
         StateHasChanged();
     }
 
@@ -228,6 +291,7 @@ public partial class FormationBuilder
             PlayerId = pp.PlayerId,
             Player = pp.Player,
             Position = pp.Position,
+            SlotIndex = pp.SlotIndex,
             IsSubstitute = pp.IsSubstitute
         }).ToList();
 

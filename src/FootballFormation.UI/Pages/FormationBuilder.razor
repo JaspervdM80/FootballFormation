@@ -53,9 +53,9 @@
                     <PitchView Formation="periodFormation"
                                Positions="PeriodLineups[period.Id]"
                                DraggedPlayerId="DraggedPlayerId"
-                               OnPlayerDropped="(pos) => OnPlayerDropped(period.Id, pos)"
-                               OnPlayerRemoved="(pos) => OnPlayerRemoved(period.Id, pos)"
-                               OnPlayerDragStart="(pos) => OnPitchPlayerDragStart(period.Id, pos)" />
+                               OnPlayerDropped="(slot) => OnPlayerDropped(period.Id, slot)"
+                               OnPlayerRemoved="(slot) => OnPlayerRemoved(period.Id, slot)"
+                               OnPlayerDragStart="(slot) => OnPitchPlayerDragStart(period.Id, slot)" />
                     <div class="pitch-legend">
                         <span class="legend-item"><span class="legend-dot chip-preferred"></span> Exact</span>
                         <span class="legend-item"><span class="legend-dot chip-natural"></span> Natural fit</span>

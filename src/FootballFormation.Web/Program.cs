@@ -1,6 +1,7 @@
 using FootballFormation.Core.Data;
 using FootballFormation.Core.Services;
 using FootballFormation.Web.Components;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using Serilog;
@@ -36,6 +37,12 @@ try
 
     builder.Services.AddMudServices();
 
+    // Compress SignalR WebSocket traffic (render diffs, events)
+    builder.Services.AddResponseCompression(opts =>
+    {
+        opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(["application/octet-stream"]);
+    });
+
     var dbPath = Path.Combine(appDataFolder, "footballformation.db");
 
     builder.Services.AddDbContext<AppDbContext>(options =>
@@ -62,6 +69,7 @@ try
         app.UseHsts();
     }
 
+    app.UseResponseCompression();
     app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
     app.UseHttpsRedirection();
     app.UseAntiforgery();

@@ -6,19 +6,16 @@
     <div class="po-goal-top"></div>
     <div class="po-goal-bottom"></div>
 
-    @RenderSlot(PlayerPosition.GK)
-
-    @foreach (var pos in Formation.DefaultPositions())
-    {
-        @RenderSlot(pos)
+    @{
+        var slots = AllSlots;
+        var assignments = BuildSlotAssignments();
     }
-</div>
-
-@code {
-    private RenderFragment RenderSlot(PlayerPosition position) => __builder =>
+    @for (int i = 0; i < slots.Length; i++)
     {
-        var assigned = Positions.FirstOrDefault(p => p.Position == position && !p.IsSubstitute);
-        var style = GetSlotStyle(position);
+        var slotIndex = i;
+        var position = slots[slotIndex];
+        var assigned = assignments[slotIndex];
+        var style = GetSlotStyle(slotIndex);
 
         if (assigned?.Player is not null)
         {
@@ -37,5 +34,5 @@
                 </div>
             </div>
         }
-    };
-}
+    }
+</div>
