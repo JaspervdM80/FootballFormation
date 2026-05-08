@@ -10,12 +10,7 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbConte
 {
     public AppDbContext CreateDbContext(string[] args)
     {
-        var appDataFolder = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "FootballFormation");
-        Directory.CreateDirectory(appDataFolder);
-
-        var dbPath = Path.Combine(appDataFolder, "footballformation.db");
+        var dbPath = DatabasePathHelper.GetDatabasePath();
 
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
         optionsBuilder.UseSqlite($"Data Source={dbPath}");

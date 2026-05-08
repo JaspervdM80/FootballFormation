@@ -9,10 +9,8 @@ using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using Serilog;
 
-var appDataFolder = Path.Combine(
-    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-    "FootballFormation");
-Directory.CreateDirectory(appDataFolder);
+var dbPath = DatabasePathHelper.GetDatabasePath();
+var appDataFolder = Path.GetDirectoryName(dbPath);
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
@@ -45,8 +43,6 @@ try
     {
         opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(["application/octet-stream"]);
     });
-
-    var dbPath = Path.Combine(appDataFolder, "footballformation.db");
 
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseSqlite($"Data Source={dbPath}",
