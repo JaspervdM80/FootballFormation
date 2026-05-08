@@ -36,7 +36,7 @@ else
     <div class="game-cards">
         @foreach (var game in _games.OrderByDescending(g => g.Date))
         {
-            <div class="game-row" @onclick="() => OpenFormation(game.Id)">
+            <div class="game-row" @onclick="() => OpenGame(game)">
                 <span class="game-date">@game.Date.ToString("dd MMM")</span>
                 <span class="game-opponent">@game.Opponent</span>
                 <span class="badge-gold">@game.FormationType.DisplayName()</span>
