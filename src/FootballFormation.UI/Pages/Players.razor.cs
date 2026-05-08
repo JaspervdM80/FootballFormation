@@ -14,7 +14,7 @@ public partial class Players
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private ILogger<Players> Logger { get; set; } = null!;
 
-    private static readonly DialogOptions NoBackdropClose = new() { BackdropClick = false };
+    private static readonly DialogOptions PlayerDialogOptions = new() { BackdropClick = false, MaxWidth = MaxWidth.Small, FullWidth = true };
 
     private List<Player>? _players;
 
@@ -40,7 +40,7 @@ public partial class Players
     private async Task OpenAddDialog()
     {
         var parameters = new DialogParameters<PlayerDialog>();
-        var dialog = await DialogService.ShowAsync<PlayerDialog>("Add Player", parameters, NoBackdropClose);
+        var dialog = await DialogService.ShowAsync<PlayerDialog>("Add Player", parameters, PlayerDialogOptions);
         var result = await dialog.Result;
 
         if (result is { Canceled: false, Data: Player player })
@@ -65,7 +65,7 @@ public partial class Players
         {
             { x => x.Player, player }
         };
-        var dialog = await DialogService.ShowAsync<PlayerDialog>("Edit Player", parameters, NoBackdropClose);
+        var dialog = await DialogService.ShowAsync<PlayerDialog>("Edit Player", parameters, PlayerDialogOptions);
         var result = await dialog.Result;
 
         if (result is { Canceled: false, Data: Player updated })
