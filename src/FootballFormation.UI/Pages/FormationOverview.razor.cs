@@ -1,6 +1,7 @@
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using MudBlazor;
@@ -15,14 +16,21 @@ public partial class FormationOverview
     [Inject] private IJSRuntime JS { get; set; } = null!;
     [Inject] private ILogger<FormationOverview> Logger { get; set; } = null!;
 
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; } = null!;
+
     [Parameter]
     public int GameId { get; set; }
 
     private Game? GameData { get; set; }
     private Dictionary<int, List<GamePlayerPosition>> PeriodLineups { get; set; } = new();
+    private bool IsAnonymous { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthStateTask;
+        IsAnonymous = authState.User.Identity?.IsAuthenticated != true;
+
         var result = await GameService.GetByIdAsync(GameId);
         if (result.IsFailure || result.Value is null)
         {
@@ -40,7 +48,8 @@ public partial class FormationOverview
         }
     }
 
-    private void NavigateBack() => Navigation.NavigateTo($"/games/{GameId}/formation");
+    private void NavigateToEditor() => Navigation.NavigateTo($"/games/{GameId}/formation");
+    private void NavigateToGames() => Navigation.NavigateTo("/games");
 
     private async Task CaptureScreenshot()
     {
