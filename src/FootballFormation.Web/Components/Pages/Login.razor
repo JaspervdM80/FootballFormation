@@ -1,0 +1,52 @@
+@page "/login"
+@using Microsoft.AspNetCore.Authorization
+@attribute [AllowAnonymous]
+
+<PageTitle>Login</PageTitle>
+
+<div style="display: flex; justify-content: center; align-items: center; min-height: calc(100vh - 120px);">
+    <div style="width: 100%; max-width: 380px; background: #1e1e2f; border-radius: 16px; padding: 40px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+        <div style="text-align: center; margin-bottom: 32px;">
+            <span style="font-size: 2rem;">&#9917;</span>
+            <h2 style="color: white; font-weight: 700; margin: 8px 0 4px;">Admin Login</h2>
+            <p style="color: rgba(255,255,255,0.35); font-size: 0.875rem;">Sign in to manage formations</p>
+        </div>
+
+        @if (HttpContext.Request.Query.ContainsKey("error"))
+        {
+            <div style="background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 12px; margin-bottom: 20px; color: #fca5a5; font-size: 0.875rem; text-align: center;">
+                Invalid username or password
+            </div>
+        }
+
+        <form method="post" action="/login">
+            <input type="hidden" name="returnUrl" value="@HttpContext.Request.Query["returnUrl"]" />
+
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; color: rgba(255,255,255,0.5); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Username</label>
+                <input type="text" name="username" required autocomplete="username" autofocus
+                       style="width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; font-size: 0.95rem; outline: none; box-sizing: border-box;" />
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <label style="display: block; color: rgba(255,255,255,0.5); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Password</label>
+                <input type="password" name="password" required autocomplete="current-password"
+                       style="width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; font-size: 0.95rem; outline: none; box-sizing: border-box;" />
+            </div>
+
+            <button type="submit"
+                    style="width: 100%; padding: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; border-radius: 8px; color: #1a1a2e; font-weight: 700; font-size: 0.95rem; cursor: pointer;">
+                Sign In
+            </button>
+        </form>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="/" style="color: rgba(255,255,255,0.3); font-size: 0.8rem; text-decoration: none;">Continue as viewer</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter]
+    public HttpContext HttpContext { get; set; } = default!;
+}

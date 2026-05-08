@@ -12,10 +12,12 @@
             }
         </MudText>
     </div>
-    <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.PersonAdd"
-               OnClick="OpenAddDialog">
-        Add Player
-    </MudButton>
+    <AuthorizeView>
+        <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.PersonAdd"
+                   OnClick="OpenAddDialog">
+            Add Player
+        </MudButton>
+    </AuthorizeView>
 </div>
 
 @if (_players is null)
@@ -59,12 +61,14 @@ else
                 }
             </MudTd>
             <MudTd>
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
-                               Style="color: rgba(255,255,255,0.3);"
-                               OnClick="() => OpenEditDialog(context)" />
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
-                               Style="color: rgba(255,255,255,0.3);"
-                               OnClick="() => DeletePlayer(context)" />
+                <AuthorizeView Context="auth">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                   Style="color: rgba(255,255,255,0.3);"
+                                   OnClick="() => OpenEditDialog(context)" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                   Style="color: rgba(255,255,255,0.3);"
+                                   OnClick="() => DeletePlayer(context)" />
+                </AuthorizeView>
             </MudTd>
         </RowTemplate>
     </MudTable>
