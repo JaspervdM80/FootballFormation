@@ -7,9 +7,8 @@ namespace FootballFormation.Core.Services;
 
 public class GameService(AppDbContext db, ILogger<GameService> logger)
 {
-    public async Task<Result<List<Game>>> GetAllAsync()
-    {
-        try
+    public Task<Result<List<Game>>> GetAllAsync() =>
+        ServiceOperation.RunAsync(logger, "load games", async () =>
         {
             var games = await db.Games
                 .Include(g => g.Periods)
@@ -19,17 +18,10 @@ public class GameService(AppDbContext db, ILogger<GameService> logger)
 
             logger.LogDebug("Retrieved {Count} games", games.Count);
             return Result.Success(games);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to retrieve games");
-            return Result.Failure<List<Game>>("Failed to load games");
-        }
-    }
+        });
 
-    public async Task<Result<Game>> GetByIdAsync(int id)
-    {
-        try
+    public Task<Result<Game>> GetByIdAsync(int id) =>
+        ServiceOperation.RunAsync(logger, "load game", async () =>
         {
             var game = await db.Games
                 .Include(g => g.Periods.OrderBy(p => p.PeriodType))
@@ -48,20 +40,12 @@ public class GameService(AppDbContext db, ILogger<GameService> logger)
             }
 
             return Result.Success(game);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to retrieve game {GameId}", id);
-            return Result.Failure<Game>("Failed to load game");
-        }
-    }
+        });
 
-    public async Task<Result<Game>> CreateAsync(Game game)
-    {
-        try
+    public Task<Result<Game>> CreateAsync(Game game) =>
+        ServiceOperation.RunAsync(logger, "create game", async () =>
         {
-            var periodTypes = PeriodTypeExtensions.ForSplitType(game.SplitType);
-            foreach (var periodType in periodTypes)
+            foreach (var periodType in PeriodTypeExtensions.ForSplitType(game.SplitType))
             {
                 game.Periods.Add(new GamePeriod { PeriodType = periodType });
             }
@@ -72,34 +56,20 @@ public class GameService(AppDbContext db, ILogger<GameService> logger)
             logger.LogInformation("Created game vs {Opponent} on {Date} (ID: {GameId})",
                 game.Opponent, game.Date.ToString("yyyy-MM-dd"), game.Id);
             return Result.Success(game);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to create game vs {Opponent}", game.Opponent);
-            return Result.Failure<Game>("Failed to create game");
-        }
-    }
+        });
 
-    public async Task<Result> UpdateAsync(Game game)
-    {
-        try
+    public Task<Result> UpdateAsync(Game game) =>
+        ServiceOperation.RunAsync(logger, "update game", async () =>
         {
             db.Games.Update(game);
             await db.SaveChangesAsync();
 
             logger.LogInformation("Updated game vs {Opponent} (ID: {GameId})", game.Opponent, game.Id);
             return Result.Success();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to update game {GameId}", game.Id);
-            return Result.Failure("Failed to update game");
-        }
-    }
+        });
 
-    public async Task<Result> DeleteAsync(int id)
-    {
-        try
+    public Task<Result> DeleteAsync(int id) =>
+        ServiceOperation.RunAsync(logger, "delete game", async () =>
         {
             var game = await db.Games.FindAsync(id);
             if (game is null)
@@ -113,21 +83,17 @@ public class GameService(AppDbContext db, ILogger<GameService> logger)
 
             logger.LogInformation("Deleted game vs {Opponent} (ID: {GameId})", game.Opponent, game.Id);
             return Result.Success();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to delete game {GameId}", id);
-            return Result.Failure("Failed to delete game");
-        }
-    }
+        });
 
-    public async Task<Result> SaveScoreAsync(int gameId, int? scoreHome, int? scoreAway)
-    {
-        try
+    public Task<Result> SaveScoreAsync(int gameId, int? scoreHome, int? scoreAway) =>
+        ServiceOperation.RunAsync(logger, "save score", async () =>
         {
             var game = await db.Games.FindAsync(gameId);
             if (game is null)
+            {
+                logger.LogWarning("Cannot save score for game {GameId}: not found", gameId);
                 return Result.Failure("Game not found");
+            }
 
             game.ScoreHome = scoreHome;
             game.ScoreAway = scoreAway;
@@ -136,17 +102,10 @@ public class GameService(AppDbContext db, ILogger<GameService> logger)
             logger.LogInformation("Saved score {Home}-{Away} for game {GameId}",
                 scoreHome, scoreAway, gameId);
             return Result.Success();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to save score for game {GameId}", gameId);
-            return Result.Failure("Failed to save score");
-        }
-    }
+        });
 
-    public async Task<Result<GameGoal>> AddGoalAsync(GameGoal goal)
-    {
-        try
+    public Task<Result<GameGoal>> AddGoalAsync(GameGoal goal) =>
+        ServiceOperation.RunAsync(logger, "add goal", async () =>
         {
             db.GameGoals.Add(goal);
             await db.SaveChangesAsync();
@@ -159,38 +118,27 @@ public class GameService(AppDbContext db, ILogger<GameService> logger)
             logger.LogInformation("Added goal by player {ScorerId} for game {GameId}",
                 goal.ScorerId, goal.GameId);
             return Result.Success(goal);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to add goal for game {GameId}", goal.GameId);
-            return Result.Failure<GameGoal>("Failed to add goal");
-        }
-    }
+        });
 
-    public async Task<Result> RemoveGoalAsync(int goalId)
-    {
-        try
+    public Task<Result> RemoveGoalAsync(int goalId) =>
+        ServiceOperation.RunAsync(logger, "remove goal", async () =>
         {
             var goal = await db.GameGoals.FindAsync(goalId);
             if (goal is null)
+            {
+                logger.LogWarning("Cannot remove goal {GoalId}: not found", goalId);
                 return Result.Failure("Goal not found");
+            }
 
             db.GameGoals.Remove(goal);
             await db.SaveChangesAsync();
 
             logger.LogInformation("Removed goal {GoalId}", goalId);
             return Result.Success();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to remove goal {GoalId}", goalId);
-            return Result.Failure("Failed to remove goal");
-        }
-    }
+        });
 
-    public async Task<Result> SavePeriodLineupAsync(int periodId, List<GamePlayerPosition> positions)
-    {
-        try
+    public Task<Result> SavePeriodLineupAsync(int periodId, List<GamePlayerPosition> positions) =>
+        ServiceOperation.RunAsync(logger, "save lineup", async () =>
         {
             var existing = await db.GamePlayerPositions
                 .Where(pp => pp.GamePeriodId == periodId)
@@ -199,6 +147,7 @@ public class GameService(AppDbContext db, ILogger<GameService> logger)
             db.GamePlayerPositions.RemoveRange(existing);
             await db.SaveChangesAsync();
 
+            // Fresh entities with Id = 0 — reusing tracked IDs trips the UNIQUE constraint.
             foreach (var pos in positions)
             {
                 db.GamePlayerPositions.Add(new GamePlayerPosition
@@ -215,11 +164,5 @@ public class GameService(AppDbContext db, ILogger<GameService> logger)
             logger.LogInformation("Saved lineup for period {PeriodId}: {Count} positions",
                 periodId, positions.Count);
             return Result.Success();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to save lineup for period {PeriodId}", periodId);
-            return Result.Failure("Failed to save lineup");
-        }
-    }
+        });
 }

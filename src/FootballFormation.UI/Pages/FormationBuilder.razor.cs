@@ -20,18 +20,16 @@ public partial class FormationBuilder
 
     private Game? GameData { get; set; }
     private List<Player>? AllPlayers { get; set; }
-    private Dictionary<int, List<GamePlayerPosition>> PeriodLineups { get; set; } = new();
+    private Dictionary<int, List<GamePlayerPosition>> PeriodLineups { get; } = [];
     private int ActivePeriodIndex { get; set; }
-    private int? DraggedPlayerId { get; set; }
-    private PlayerPosition? DraggedFromPosition { get; set; }
+    private LineupDragState Drag { get; } = new();
 
     protected override async Task OnInitializedAsync()
     {
         var gameResult = await GameService.GetByIdAsync(GameId);
-        if (gameResult.IsFailure)
+        if (!Snackbar.ReportFailure(gameResult))
         {
             Logger.LogWarning("Game {GameId} not found, redirecting to games list", GameId);
-            Snackbar.Add(gameResult.Error!, Severity.Error);
             Navigation.NavigateTo("/games");
             return;
         }
@@ -39,122 +37,88 @@ public partial class FormationBuilder
         GameData = gameResult.Value!;
 
         var playersResult = await PlayerService.GetAllAsync();
-        if (playersResult.IsFailure)
-        {
-            Snackbar.Add(playersResult.Error!, Severity.Error);
-            AllPlayers = [];
-            return;
-        }
+        AllPlayers = Snackbar.ReportFailure(playersResult) ? playersResult.Value! : [];
 
-        AllPlayers = playersResult.Value!;
-
-        foreach (var period in GameData.Periods)
-        {
-            PeriodLineups[period.Id] = period.PlayerPositions.ToList();
-        }
+        CacheLineups();
 
         Logger.LogDebug("Loaded formation builder for game {GameId} vs {Opponent}",
             GameId, GameData.Opponent);
     }
 
-    private HashSet<int> UnavailableIds => GameData?.UnavailablePlayerIds.ToHashSet() ?? [];
+    private void NavigateBack() => Navigation.NavigateTo("/games");
+
+    // --- Roster ---
 
     /// <summary>Squad players who are available, plus guests explicitly added to this game.</summary>
     private List<Player> RosterPlayers =>
         AllPlayers is null || GameData is null ? [] : GameData.SelectRoster(AllPlayers);
+
+    /// <summary>Squad players who opted out of this game. Guests are simply not added, not unavailable.</summary>
+    private List<Player> UnavailablePlayers
+    {
+        get
+        {
+            if (AllPlayers is null || GameData is null) return [];
+
+            var unavailable = GameData.UnavailablePlayerIds.ToHashSet();
+            return AllPlayers.Where(p => !p.IsGuest && unavailable.Contains(p.Id)).ToList();
+        }
+    }
 
     private List<Player> GetAvailablePlayers(int periodId)
     {
         var usedIds = PeriodLineups.TryGetValue(periodId, out var lineup)
             ? lineup.Select(p => p.PlayerId).ToHashSet()
             : [];
+
         return RosterPlayers.Where(p => !usedIds.Contains(p.Id)).ToList();
     }
 
-    private void OnPlayerDragStart(int playerId)
-    {
-        DraggedPlayerId = playerId;
-        DraggedFromPosition = null;
-    }
+    // --- Drag & drop ---
+
+    private void OnPlayerDragStart(int playerId) => Drag.StartFromList(playerId);
 
     private void OnPitchPlayerDragStart(int periodId, PlayerPosition position)
     {
-        var lineup = PeriodLineups[periodId];
-        var existing = lineup.FirstOrDefault(p => p.Position == position && !p.IsSubstitute);
+        var existing = FindStarter(PeriodLineups[periodId], position);
         if (existing is null) return;
 
-        DraggedPlayerId = existing.PlayerId;
-        DraggedFromPosition = position;
+        Drag.StartFromPitch(existing.PlayerId, position);
     }
 
     private void OnPlayerDropped(int periodId, PlayerPosition position)
     {
-        if (DraggedPlayerId is null || AllPlayers is null) return;
+        if (Drag.PlayerId is null || AllPlayers is null) return;
 
         var lineup = PeriodLineups[periodId];
 
-        if (DraggedFromPosition is not null)
+        if (Drag.FromPosition is { } sourcePosition)
         {
-            var sourcePos = DraggedFromPosition.Value;
-            var target = lineup.FirstOrDefault(p => p.Position == position && !p.IsSubstitute);
-            var source = lineup.FirstOrDefault(p => p.Position == sourcePos && !p.IsSubstitute);
-
-            if (source is not null)
-            {
-                source.Position = position;
-                if (target is not null)
-                    target.Position = sourcePos;
-            }
-
-            DraggedPlayerId = null;
-            DraggedFromPosition = null;
-            StateHasChanged();
-            return;
+            SwapStarters(lineup, sourcePosition, position);
+        }
+        else if (AllPlayers.FirstOrDefault(p => p.Id == Drag.PlayerId) is { } player)
+        {
+            lineup.RemoveAll(p => p.PlayerId == player.Id);
+            lineup.RemoveAll(p => p.Position == position && !p.IsSubstitute);
+            lineup.Add(CreateEntry(player, position, isSubstitute: false));
         }
 
-        var player = AllPlayers.FirstOrDefault(p => p.Id == DraggedPlayerId);
-        if (player is null) return;
-
-        lineup.RemoveAll(p => p.PlayerId == player.Id);
-        lineup.RemoveAll(p => p.Position == position && !p.IsSubstitute);
-
-        lineup.Add(new GamePlayerPosition
-        {
-            PlayerId = player.Id,
-            Player = player,
-            Position = position,
-            IsSubstitute = false
-        });
-
-        DraggedPlayerId = null;
-        DraggedFromPosition = null;
+        Drag.Clear();
         StateHasChanged();
     }
 
     private void OnPlayerDroppedToSub(int periodId)
     {
-        if (DraggedPlayerId is null || AllPlayers is null) return;
+        if (Drag.PlayerId is null || AllPlayers is null) return;
 
-        var player = AllPlayers.FirstOrDefault(p => p.Id == DraggedPlayerId);
-        if (player is null) return;
-
-        var lineup = PeriodLineups[periodId];
-
-        lineup.RemoveAll(p => p.PlayerId == player.Id);
-
-        if (!lineup.Any(p => p.PlayerId == player.Id && p.IsSubstitute))
+        if (AllPlayers.FirstOrDefault(p => p.Id == Drag.PlayerId) is { } player)
         {
-            lineup.Add(new GamePlayerPosition
-            {
-                PlayerId = player.Id,
-                Player = player,
-                Position = player.PreferredPosition,
-                IsSubstitute = true
-            });
+            var lineup = PeriodLineups[periodId];
+            lineup.RemoveAll(p => p.PlayerId == player.Id);
+            lineup.Add(CreateEntry(player, player.PreferredPosition, isSubstitute: true));
         }
 
-        DraggedPlayerId = null;
-        DraggedFromPosition = null;
+        Drag.Clear();
         StateHasChanged();
     }
 
@@ -164,57 +128,36 @@ public partial class FormationBuilder
         StateHasChanged();
     }
 
-    private List<Player> GetUnavailablePlayers()
+    private void RemoveSub(int periodId, GamePlayerPosition sub) => PeriodLineups[periodId].Remove(sub);
+
+    /// <summary>Moves the dragged starter to the target slot, sending any occupant back the other way.</summary>
+    private static void SwapStarters(List<GamePlayerPosition> lineup, PlayerPosition from, PlayerPosition to)
     {
-        if (AllPlayers is null || GameData is null) return [];
-        var unavailable = UnavailableIds;
-        return AllPlayers.Where(p => !p.IsGuest && unavailable.Contains(p.Id)).ToList();
+        var source = FindStarter(lineup, from);
+        if (source is null) return;
+
+        var target = FindStarter(lineup, to);
+
+        source.Position = to;
+        if (target is not null) target.Position = from;
     }
 
-    private void NavigateBack() => Navigation.NavigateTo("/games");
+    private static GamePlayerPosition? FindStarter(List<GamePlayerPosition> lineup, PlayerPosition position) =>
+        lineup.FirstOrDefault(p => p.Position == position && !p.IsSubstitute);
 
-    private void RemoveSub(int periodId, GamePlayerPosition sub)
-    {
-        PeriodLineups[periodId].Remove(sub);
-    }
-
-    private async Task SaveAll()
-    {
-        var failedPeriods = new List<string>();
-
-        foreach (var (periodId, lineup) in PeriodLineups)
+    private static GamePlayerPosition CreateEntry(Player player, PlayerPosition position, bool isSubstitute) =>
+        new()
         {
-            var result = await GameService.SavePeriodLineupAsync(periodId, lineup);
-            if (result.IsFailure)
-            {
-                failedPeriods.Add(result.Error!);
-            }
-        }
+            PlayerId = player.Id,
+            Player = player,
+            Position = position,
+            IsSubstitute = isSubstitute
+        };
 
-        if (failedPeriods.Count > 0)
-        {
-            Snackbar.Add($"Save failed: {string.Join("; ", failedPeriods)}", Severity.Error);
-            return;
-        }
-
-        Snackbar.Add("All lineups saved!", Severity.Success);
-        Logger.LogInformation("Saved all lineups for game {GameId}", GameId);
-
-        // Reload to get fresh data with DB-generated IDs
-        var gameResult = await GameService.GetByIdAsync(GameId);
-        if (gameResult.IsSuccess && gameResult.Value is not null)
-        {
-            GameData = gameResult.Value;
-            foreach (var period in GameData.Periods)
-            {
-                PeriodLineups[period.Id] = period.PlayerPositions.ToList();
-            }
-        }
-    }
+    // --- Periods ---
 
     private bool IsLastPeriodSelected =>
-        GameData is not null &&
-        ActivePeriodIndex >= GameData.Periods.Count - 1;
+        GameData is not null && ActivePeriodIndex >= GameData.Periods.Count - 1;
 
     private void CopyToNextPeriod()
     {
@@ -223,15 +166,17 @@ public partial class FormationBuilder
         var orderedPeriods = GameData.Periods.OrderBy(p => p.PeriodType).ToList();
         var sourcePeriod = orderedPeriods[ActivePeriodIndex];
         var nextPeriod = orderedPeriods[ActivePeriodIndex + 1];
-        var sourceLineup = PeriodLineups[sourcePeriod.Id];
 
-        PeriodLineups[nextPeriod.Id] = sourceLineup.Select(pp => new GamePlayerPosition
-        {
-            PlayerId = pp.PlayerId,
-            Player = pp.Player,
-            Position = pp.Position,
-            IsSubstitute = pp.IsSubstitute
-        }).ToList();
+        // Fresh entries with Id = 0 — the copy must not claim the source rows' identities.
+        PeriodLineups[nextPeriod.Id] = PeriodLineups[sourcePeriod.Id]
+            .Select(pp => new GamePlayerPosition
+            {
+                PlayerId = pp.PlayerId,
+                Player = pp.Player,
+                Position = pp.Position,
+                IsSubstitute = pp.IsSubstitute
+            })
+            .ToList();
 
         ActivePeriodIndex++;
 
@@ -240,96 +185,50 @@ public partial class FormationBuilder
         Snackbar.Add($"Lineup copied to {nextPeriod.PeriodType.DisplayName()}", Severity.Info);
     }
 
-    // --- Playing Time Overview ---
+    // --- Persistence ---
 
-    private int PeriodCount => GameData?.SplitType == GameSplitType.Halves ? 2 : 4;
-    private int PeriodDurationMinutes => (GameData?.GameDurationMinutes ?? 60) / PeriodCount;
-    private string PeriodLabel => GameData?.SplitType == GameSplitType.Halves ? "half" : "quarter";
-
-    private bool IsAllPeriodsFilledOut()
+    private async Task SaveAll()
     {
-        if (GameData is null) return false;
+        var failures = new List<string>();
+
+        foreach (var (periodId, lineup) in PeriodLineups)
+        {
+            var result = await GameService.SavePeriodLineupAsync(periodId, lineup);
+            if (result.IsFailure) failures.Add(result.Error!);
+        }
+
+        if (failures.Count > 0)
+        {
+            Snackbar.Add($"Save failed: {string.Join("; ", failures)}", Severity.Error);
+            return;
+        }
+
+        Snackbar.Add("All lineups saved!", Severity.Success);
+        Logger.LogInformation("Saved all lineups for game {GameId}", GameId);
+
+        // Reload so the cached entries carry the DB-generated IDs
+        var gameResult = await GameService.GetByIdAsync(GameId);
+        if (gameResult.IsSuccess)
+        {
+            GameData = gameResult.Value!;
+            CacheLineups();
+        }
+    }
+
+    private void CacheLineups()
+    {
+        if (GameData is null) return;
 
         foreach (var period in GameData.Periods)
         {
-            if (!PeriodLineups.TryGetValue(period.Id, out var lineup)) return false;
-
-            var formation = period.FormationTypeOverride ?? GameData.FormationType;
-            var requiredSlots = formation.DefaultPositions().Length;
-            var starters = lineup.Count(p => !p.IsSubstitute);
-            if (starters < requiredSlots) return false;
+            PeriodLineups[period.Id] = period.PlayerPositions.ToList();
         }
-        return true;
     }
 
-    private List<PlayingTimeRow> GetPlayingTimeData()
-    {
-        if (GameData is null || AllPlayers is null) return [];
+    // --- Playing time overview ---
 
-        var orderedPeriods = GameData.Periods.OrderBy(p => p.PeriodType).ToList();
-
-        var rows = new List<PlayingTimeRow>();
-        var gameDuration = GameData.GameDurationMinutes;
-
-        foreach (var player in RosterPlayers)
-        {
-            var row = new PlayingTimeRow
-            {
-                PlayerId = player.Id,
-                Player = player,
-                PlayerName = player.DisplayName,
-                ShirtNumber = player.ShirtNumber,
-                PeriodDetails = new Dictionary<int, PeriodDetail>()
-            };
-
-            var periodsPlaying = 0;
-
-            foreach (var period in orderedPeriods)
-            {
-                var lineup = PeriodLineups.GetValueOrDefault(period.Id, []);
-                var entry = lineup.FirstOrDefault(p => p.PlayerId == player.Id);
-
-                if (entry is null)
-                {
-                    row.PeriodDetails[period.Id] = new PeriodDetail
-                    {
-                        Status = PeriodPlayStatus.NotPlaying
-                    };
-                }
-                else if (entry.IsSubstitute)
-                {
-                    row.PeriodDetails[period.Id] = new PeriodDetail
-                    {
-                        Status = PeriodPlayStatus.Substitute,
-                        Position = entry.Position,
-                        Fit = PositionFitHelper.GetFit(player, entry.Position)
-                    };
-                }
-                else
-                {
-                    row.PeriodDetails[period.Id] = new PeriodDetail
-                    {
-                        Status = PeriodPlayStatus.Starting,
-                        Position = entry.Position,
-                        Fit = PositionFitHelper.GetFit(player, entry.Position)
-                    };
-                    periodsPlaying++;
-                }
-            }
-
-            row.TotalMinutes = periodsPlaying * PeriodDurationMinutes;
-            row.Percentage = gameDuration > 0
-                ? Math.Round((double)row.TotalMinutes / gameDuration * 100, 0)
-                : 0;
-
-            rows.Add(row);
-        }
-
-        return rows.OrderByDescending(r => r.TotalMinutes)
-                    .ThenBy(r => r.ShirtNumber ?? 99)
-                    .ThenBy(r => r.PlayerName)
-                    .ToList();
-    }
+    private List<PlayingTimeRow> GetPlayingTimeData() =>
+        GameData is null ? [] : PlayingTimeReport.Build(GameData, RosterPlayers, PeriodLineups);
 
     private static string GetFitCssClass(PositionFit fit) => fit switch
     {
@@ -347,29 +246,4 @@ public partial class FormationBuilder
         >= 25 => Color.Warning,
         _ => Color.Error
     };
-}
-
-public class PlayingTimeRow
-{
-    public int PlayerId { get; set; }
-    public Player Player { get; set; } = null!;
-    public string PlayerName { get; set; } = "";
-    public int? ShirtNumber { get; set; }
-    public Dictionary<int, PeriodDetail> PeriodDetails { get; set; } = new();
-    public int TotalMinutes { get; set; }
-    public double Percentage { get; set; }
-}
-
-public class PeriodDetail
-{
-    public PeriodPlayStatus Status { get; set; }
-    public PlayerPosition? Position { get; set; }
-    public PositionFit? Fit { get; set; }
-}
-
-public enum PeriodPlayStatus
-{
-    NotPlaying,
-    Starting,
-    Substitute
 }

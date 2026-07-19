@@ -35,14 +35,14 @@
                 <div class="player-list-panel">
                     <PlayerList Players="GetAvailablePlayers(period.Id)"
                                 OnDragStart="OnPlayerDragStart" />
-                    @if (GetUnavailablePlayers().Count > 0)
+                    @if (UnavailablePlayers.Count > 0)
                     {
                         <MudPaper Class="pa-2 mt-2" Elevation="1" Style="opacity: 0.6; border-radius: 10px;">
                             <MudText Typo="Typo.subtitle2" Class="mb-1" Style="color: #f87171;">
                                 <MudIcon Icon="@Icons.Material.Filled.PersonOff" Size="Size.Small" Class="mr-1" />
-                                Unavailable (@GetUnavailablePlayers().Count)
+                                Unavailable (@UnavailablePlayers.Count)
                             </MudText>
-                            @foreach (var player in GetUnavailablePlayers())
+                            @foreach (var player in UnavailablePlayers)
                             {
                                 <div class="unavailable-player">
                                     <span class="player-shirt unavailable">@(player.ShirtNumber?.ToString() ?? "-")</span>
@@ -55,7 +55,7 @@
                 <div class="pitch-panel">
                     <PitchView Formation="periodFormation"
                                Positions="PeriodLineups[period.Id]"
-                               DraggedPlayerId="DraggedPlayerId"
+                               DraggedPlayerId="Drag.PlayerId"
                                OnPlayerDropped="(pos) => OnPlayerDropped(period.Id, pos)"
                                OnPlayerRemoved="(pos) => OnPlayerRemoved(period.Id, pos)"
                                OnPlayerDragStart="(pos) => OnPitchPlayerDragStart(period.Id, pos)" />
@@ -69,7 +69,7 @@
                 </div>
                 <div class="subs-panel">
                     <SubstituteBench Lineup="PeriodLineups[period.Id]"
-                                     DraggedPlayerId="DraggedPlayerId"
+                                     DraggedPlayerId="Drag.PlayerId"
                                      OnSubRemoved="(pp) => RemoveSub(period.Id, pp)"
                                      OnPlayerDroppedToSub="() => OnPlayerDroppedToSub(period.Id)" />
                 </div>
@@ -89,7 +89,7 @@
         <MudButton Variant="Variant.Outlined" Class="btn-ghost"
                    StartIcon="@Icons.Material.Filled.ContentCopy"
                    OnClick="CopyToNextPeriod" Size="Size.Small">
-            Copy to next @PeriodLabel
+            Copy to next @GameData.SplitType.PeriodLabel()
         </MudButton>
     }
 </div>
@@ -99,7 +99,7 @@
     <MudPaper Class="pa-5 mb-4" Elevation="2" Style="border-radius: 16px;">
         <div class="card-label">Playing Time Overview</div>
         <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.3);" Class="mb-3">
-            @GameData.GameDurationMinutes min total — @PeriodCount x @PeriodDurationMinutes min per @PeriodLabel
+            @GameData.GameDurationMinutes min total — @GameData.PeriodCount x @GameData.PeriodDurationMinutes min per @GameData.SplitType.PeriodLabel()
         </MudText>
         <MudTable Items="GetPlayingTimeData()" Dense="true" Hover="true"
                   SortLabel="Sort By" Elevation="0">

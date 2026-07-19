@@ -13,6 +13,7 @@ Models/
 Data/
   AppDbContext.cs         — EF Core context, value converters for List<PlayerPosition> and List<int>
 Services/
+  ServiceOperation.cs     — Shared try/catch + error logging wrapper for all service methods
   PlayerService.cs        — CRUD, returns Result<T>
   GameService.cs          — CRUD + SavePeriodLineupAsync, returns Result<T>
   MatchPreferencesService.cs — Get/Save prefs, GetNextMatchDateAsync
@@ -37,6 +38,10 @@ Components/
 Helpers/
   PitchPositionHelper.cs      — Maps PlayerPosition → (left%, top%) coordinates
   PositionFitHelper.cs        — 5-tier position fit: Preferred, NaturalFit, Alternative, Compatible, OutOfPosition
+  UiFeedback.cs               — Snackbar.Report()/ReportFailure() over Result, shared LockedDialog options
+  DialogPrompts.cs            — DialogService.ConfirmDeleteAsync() wrapper over ConfirmDialog
+  PlayingTimeReport.cs        — Builds the playing-time table (PlayingTimeRow, PeriodDetail, PeriodPlayStatus)
+  LineupDragState.cs          — In-flight drag on the formation builder
 Layout/
   MainLayout.razor(.cs)       — MudBlazor layout with dark theme, drawer, providers
   NavMenu.razor               — Navigation: Home, Players, Games, Settings

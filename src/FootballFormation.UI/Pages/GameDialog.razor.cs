@@ -1,7 +1,6 @@
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
 using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Logging;
 using MudBlazor;
 
 namespace FootballFormation.UI.Pages;
@@ -13,7 +12,6 @@ public partial class GameDialog
 
     [Inject] private PlayerService PlayerService { get; set; } = null!;
     [Inject] private MatchPreferencesService PreferencesService { get; set; } = null!;
-    [Inject] private ILogger<GameDialog> Logger { get; set; } = null!;
 
     [Parameter]
     public Game? Game { get; set; }

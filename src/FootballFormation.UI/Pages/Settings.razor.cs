@@ -1,7 +1,7 @@
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
+using FootballFormation.UI.Helpers;
 using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Logging;
 using MudBlazor;
 
 namespace FootballFormation.UI.Pages;
@@ -10,7 +10,6 @@ public partial class Settings
 {
     [Inject] private MatchPreferencesService PreferencesService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
-    [Inject] private ILogger<Settings> Logger { get; set; } = null!;
 
     private MatchPreferences? _prefs;
     private MudForm _form = null!;
@@ -19,21 +18,10 @@ public partial class Settings
     protected override async Task OnInitializedAsync()
     {
         var prefsResult = await PreferencesService.GetAsync();
-        if (prefsResult.IsSuccess)
-        {
-            _prefs = prefsResult.Value;
-        }
-        else
-        {
-            Snackbar.Add(prefsResult.Error!, Severity.Error);
-            return;
-        }
+        if (!Snackbar.ReportFailure(prefsResult)) return;
 
-        var dateResult = await PreferencesService.GetNextMatchDateAsync();
-        if (dateResult.IsSuccess)
-        {
-            _nextMatchDate = dateResult.Value;
-        }
+        _prefs = prefsResult.Value;
+        await RefreshNextMatchDate();
     }
 
     private async Task Save()
@@ -41,19 +29,14 @@ public partial class Settings
         if (_prefs is null) return;
 
         var saveResult = await PreferencesService.SaveAsync(_prefs);
-        if (saveResult.IsSuccess)
-        {
-            Snackbar.Add("Preferences saved!", Severity.Success);
+        if (!Snackbar.Report(saveResult, "Preferences saved!")) return;
 
-            var dateResult = await PreferencesService.GetNextMatchDateAsync();
-            if (dateResult.IsSuccess)
-            {
-                _nextMatchDate = dateResult.Value;
-            }
-        }
-        else
-        {
-            Snackbar.Add(saveResult.Error!, Severity.Error);
-        }
+        await RefreshNextMatchDate();
+    }
+
+    private async Task RefreshNextMatchDate()
+    {
+        var dateResult = await PreferencesService.GetNextMatchDateAsync();
+        if (dateResult.IsSuccess) _nextMatchDate = dateResult.Value;
     }
 }

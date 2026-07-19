@@ -3,16 +3,19 @@
 ## Formation Builder (`/games/{id}/formation`)
 3-panel layout: Player List | Pitch | Substitutes
 - Tabs for each period (2 halves or 4 quarters)
-- Drag state tracked via `DraggedPlayerId` and `DraggedFromPosition`
-- Actions: Save All, Copy to All Periods
-- Playing time overview table appears when all periods are fully filled
+- Drag state lives in `LineupDragState` (`Drag.PlayerId` / `Drag.FromPosition`), cleared via `Drag.Clear()`
+- Actions: Save All, Copy to Next Period
+- Playing time table is built by `PlayingTimeReport.Build(...)`, not by the page; it renders
+  whenever there are players (it does not wait for every period to be filled)
 
 ## Drag & Drop (HTML5 API)
 - **Player list → Pitch**: Assigns player to position slot
 - **Player list → Sub bench**: Adds as substitute
-- **Pitch → Pitch**: Swaps two players' positions (uses `DraggedFromPosition`)
+- **Pitch → Pitch**: Swaps two players' positions (`Drag.FromPosition` is set ⇒ the drop is a swap)
 - **Pitch → Sub bench**: Moves player from pitch to bench
 - Click on assigned player = remove from position
+- `@ondragstart`/`@ondrop` sit on the **inner** circle (`.player-circle` / `.empty-circle`),
+  not on the `.position-slot` wrapper — relevant when scripting or testing a drag
 
 ## Position Fit Colors (5 tiers)
 | Tier | CSS class | Color | Example |
