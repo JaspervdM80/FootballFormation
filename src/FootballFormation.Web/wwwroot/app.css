@@ -175,6 +175,27 @@ html, body {
     border: 1px solid rgba(20,184,166,0.2);
 }
 
+.badge-guest {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(168,85,247,0.12);
+    color: #c084fc;
+    border: 1px solid rgba(168,85,247,0.2);
+}
+
+.badge-venue {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
 /* Page header styling */
 .page-header-subtitle {
     color: rgba(255,255,255,0.35);

@@ -50,6 +50,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                         (a, b) => a != null && b != null && a.SequenceEqual(b),
                         c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
                         c => c.ToList()));
+            entity.Property(g => g.GuestPlayerIds)
+                .HasConversion(
+                    v => string.Join(',', v),
+                    v => v.Length == 0
+                        ? new List<int>()
+                        : v.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(s => int.Parse(s))
+                            .ToList(),
+                    new ValueComparer<List<int>>(
+                        (a, b) => a != null && b != null && a.SequenceEqual(b),
+                        c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                        c => c.ToList()));
             entity.HasMany(g => g.Periods)
                 .WithOne(p => p.Game)
                 .HasForeignKey(p => p.GameId)

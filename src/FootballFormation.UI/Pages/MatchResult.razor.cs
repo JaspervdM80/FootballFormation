@@ -44,9 +44,9 @@ public partial class MatchResult
                 .Distinct()
                 .ToHashSet();
 
-            // If no lineup yet, show all players
+            // If no lineup yet, fall back to everyone selected for this game
             if (involvedIds.Count == 0)
-                return AllPlayers;
+                return GameData.SelectRoster(AllPlayers);
 
             return AllPlayers.Where(p => involvedIds.Contains(p.Id)).ToList();
         }

@@ -25,8 +25,13 @@ public partial class GameDialog
     private GameSplitType SplitType { get; set; } = GameSplitType.Halves;
     private string? Notes { get; set; }
     private int GameDurationMinutes { get; set; } = 60;
+    private bool IsHomeGame { get; set; } = true;
     private List<Player> AllPlayers { get; set; } = [];
     private IReadOnlyCollection<int> UnavailablePlayerIds { get; set; } = [];
+    private IReadOnlyCollection<int> GuestPlayerIds { get; set; } = [];
+
+    private List<Player> SquadPlayers => AllPlayers.Where(p => !p.IsGuest).ToList();
+    private List<Player> GuestPlayers => AllPlayers.Where(p => p.IsGuest).ToList();
 
     protected override async Task OnInitializedAsync()
     {
@@ -65,7 +70,9 @@ public partial class GameDialog
             SplitType = Game.SplitType;
             Notes = Game.Notes;
             GameDurationMinutes = Game.GameDurationMinutes;
+            IsHomeGame = Game.IsHomeGame;
             UnavailablePlayerIds = Game.UnavailablePlayerIds.ToList();
+            GuestPlayerIds = Game.GuestPlayerIds.ToList();
         }
     }
 
@@ -81,7 +88,9 @@ public partial class GameDialog
         game.SplitType = SplitType;
         game.Notes = Notes;
         game.GameDurationMinutes = GameDurationMinutes;
+        game.IsHomeGame = IsHomeGame;
         game.UnavailablePlayerIds = UnavailablePlayerIds.ToList();
+        game.GuestPlayerIds = GuestPlayerIds.ToList();
 
         MudDialog.Close(DialogResult.Ok(game));
     }

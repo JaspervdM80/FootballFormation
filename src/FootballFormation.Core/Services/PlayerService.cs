@@ -12,7 +12,8 @@ public class PlayerService(AppDbContext db, ILogger<PlayerService> logger)
         try
         {
             var players = await db.Players
-                .OrderBy(p => p.ShirtNumber ?? int.MaxValue)
+                .OrderBy(p => p.IsGuest)
+                .ThenBy(p => p.ShirtNumber ?? int.MaxValue)
                 .ThenBy(p => p.FirstName)
                 .ThenBy(p => p.Surname)
                 .ToListAsync();

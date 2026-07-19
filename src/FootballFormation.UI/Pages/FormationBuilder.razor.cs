@@ -59,14 +59,16 @@ public partial class FormationBuilder
 
     private HashSet<int> UnavailableIds => GameData?.UnavailablePlayerIds.ToHashSet() ?? [];
 
+    /// <summary>Squad players who are available, plus guests explicitly added to this game.</summary>
+    private List<Player> RosterPlayers =>
+        AllPlayers is null || GameData is null ? [] : GameData.SelectRoster(AllPlayers);
+
     private List<Player> GetAvailablePlayers(int periodId)
     {
-        if (AllPlayers is null) return [];
         var usedIds = PeriodLineups.TryGetValue(periodId, out var lineup)
             ? lineup.Select(p => p.PlayerId).ToHashSet()
             : [];
-        var unavailable = UnavailableIds;
-        return AllPlayers.Where(p => !usedIds.Contains(p.Id) && !unavailable.Contains(p.Id)).ToList();
+        return RosterPlayers.Where(p => !usedIds.Contains(p.Id)).ToList();
     }
 
     private void OnPlayerDragStart(int playerId)
@@ -166,7 +168,7 @@ public partial class FormationBuilder
     {
         if (AllPlayers is null || GameData is null) return [];
         var unavailable = UnavailableIds;
-        return AllPlayers.Where(p => unavailable.Contains(p.Id)).ToList();
+        return AllPlayers.Where(p => !p.IsGuest && unavailable.Contains(p.Id)).ToList();
     }
 
     private void NavigateBack() => Navigation.NavigateTo("/games");
@@ -265,12 +267,11 @@ public partial class FormationBuilder
         if (GameData is null || AllPlayers is null) return [];
 
         var orderedPeriods = GameData.Periods.OrderBy(p => p.PeriodType).ToList();
-        var unavailable = UnavailableIds;
 
         var rows = new List<PlayingTimeRow>();
         var gameDuration = GameData.GameDurationMinutes;
 
-        foreach (var player in AllPlayers.Where(p => !unavailable.Contains(p.Id)))
+        foreach (var player in RosterPlayers)
         {
             var row = new PlayingTimeRow
             {

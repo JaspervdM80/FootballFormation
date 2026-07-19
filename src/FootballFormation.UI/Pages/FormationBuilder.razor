@@ -11,7 +11,10 @@
 <div class="d-flex align-center gap-2 mb-2">
     <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="NavigateBack" Size="Size.Small"
                    Style="color: rgba(255,255,255,0.3);" />
-    <MudText Typo="Typo.h6" Style="color: white; font-weight: 700;">vs @GameData.Opponent</MudText>
+    <MudText Typo="Typo.h6" Style="color: white; font-weight: 700;">
+        @(GameData.IsHomeGame ? "vs" : "@") @GameData.Opponent
+    </MudText>
+    <span class="badge-venue">@(GameData.IsHomeGame ? "HOME" : "AWAY")</span>
     <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.35);">@GameData.Date.ToString("dd MMM yyyy")</MudText>
     <span class="badge-gold">@GameData.FormationType.DisplayName()</span>
     <MudSpacer />

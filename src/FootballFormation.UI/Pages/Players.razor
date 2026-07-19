@@ -8,7 +8,10 @@
         <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.35);">
             @if (_players is not null)
             {
-                @($"{_players.Count} player{(_players.Count != 1 ? "s" : "")}")
+                var squadCount = _players.Count(p => !p.IsGuest);
+                var guestCount = _players.Count - squadCount;
+                @($"{squadCount} player{(squadCount != 1 ? "s" : "")}")
+                @(guestCount > 0 ? $" · {guestCount} guest{(guestCount != 1 ? "s" : "")}" : "")
             }
         </MudText>
     </div>
@@ -48,6 +51,10 @@ else
             </MudTd>
             <MudTd DataLabel="Name">
                 <span style="font-weight: 600; color: white;">@context.DisplayName</span>
+                @if (context.IsGuest)
+                {
+                    <span class="badge-guest" style="margin-left: 6px;">GUEST</span>
+                }
             </MudTd>
             <MudTd DataLabel="Preferred">
                 <span class="badge-gold">@context.PreferredPosition.ToString()</span>

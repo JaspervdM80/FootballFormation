@@ -4,6 +4,10 @@
             <MudTextField @bind-Value="Opponent" Label="Opponent" Required="true"
                           RequiredError="Opponent is required" Class="mb-3" />
             <MudDatePicker @bind-Date="Date" Label="Date" Class="mb-3" />
+            <MudSelect T="bool" @bind-Value="IsHomeGame" Label="Venue" Class="mb-3">
+                <MudSelectItem Value="true">Home</MudSelectItem>
+                <MudSelectItem Value="false">Away</MudSelectItem>
+            </MudSelect>
             <MudSelect T="FormationType" @bind-Value="SelectedFormationType" Label="Formation" Class="mb-3">
                 @foreach (var f in Enum.GetValues<FormationType>())
                 {
@@ -29,13 +33,27 @@
                        @bind-SelectedValues="UnavailablePlayerIds"
                        MultiSelectionTextFunc="@(ids => $"{ids.Count()} player(s) unavailable")"
                        Class="mb-3">
-                @foreach (var player in AllPlayers)
+                @foreach (var player in SquadPlayers)
                 {
                     <MudSelectItem T="int" Value="player.Id">
                         @(player.ShirtNumber is not null ? $"#{player.ShirtNumber} " : "")@player.DisplayName
                     </MudSelectItem>
                 }
             </MudSelect>
+            @if (GuestPlayers.Count > 0)
+            {
+                <MudSelect T="int" Label="Guest Players" MultiSelection="true"
+                           @bind-SelectedValues="GuestPlayerIds"
+                           MultiSelectionTextFunc="@(ids => $"{ids.Count()} guest(s) added")"
+                           Class="mb-3">
+                    @foreach (var player in GuestPlayers)
+                    {
+                        <MudSelectItem T="int" Value="player.Id">
+                            @(player.ShirtNumber is not null ? $"#{player.ShirtNumber} " : "")@player.DisplayName
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+            }
             <MudTextField @bind-Value="Notes" Label="Notes" Lines="3" Class="mb-3" />
         </MudForm>
     </DialogContent>
