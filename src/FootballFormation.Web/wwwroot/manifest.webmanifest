@@ -1,7 +1,7 @@
 {
-  "name": "Football Formation Planner",
-  "short_name": "Formation",
-  "description": "Plan football formations, manage your squad, and track match results.",
+  "name": "GJS Meiden",
+  "short_name": "GJS Meiden",
+  "description": "Opstellingen, selectie en uitslagen van de GJS meiden.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -22,7 +22,7 @@
       "purpose": "any"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "icons/icon-512-maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
