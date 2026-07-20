@@ -360,13 +360,30 @@ html, body {
     margin-right: 0 !important;
 }
 
-@media (max-width: 700px) {
-    /* Shirt number already leads the name row on mobile; the # column is noise there */
+/* Shirt number sits in its own # column on wide screens */
+.shirt-inline {
+    display: none;
+}
+
+/* 599.98px is where MudBlazor stacks a table into per-row cards (its xs breakpoint),
+   so these rules and that layout switch together. */
+@media (max-width: 599.98px) {
+    /* A whole card row just for the number is wasteful: drop the # cell and print
+       the number next to the name instead. */
     .players-table th:first-child,
     .players-table td[data-label="#"] {
         display: none !important;
     }
 
+    .shirt-inline {
+        display: inline;
+        margin-right: 6px;
+        font-weight: 700;
+        color: #fbbf24;
+    }
+}
+
+@media (max-width: 700px) {
     /* Logged-in admin name costs room the nav needs on a phone */
     .admin-name {
         display: none !important;
