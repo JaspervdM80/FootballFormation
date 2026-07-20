@@ -72,13 +72,18 @@ public static class PlayingTimeReport
 
         var totalMinutes = periodsPlaying * game.PeriodDurationMinutes;
 
+        // Against playable minutes, not GameDurationMinutes: with odd durations the
+        // integer period split drops a minute (45 in halves → 2×22), and playing every
+        // period should still read 100%.
+        var playableMinutes = orderedPeriods.Count * game.PeriodDurationMinutes;
+
         return new PlayingTimeRow
         {
             Player = player,
             PeriodDetails = details,
             TotalMinutes = totalMinutes,
-            Percentage = game.GameDurationMinutes > 0
-                ? Math.Round((double)totalMinutes / game.GameDurationMinutes * 100, 0)
+            Percentage = playableMinutes > 0
+                ? Math.Round((double)totalMinutes / playableMinutes * 100, 0)
                 : 0
         };
     }

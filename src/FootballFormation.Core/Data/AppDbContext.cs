@@ -1,6 +1,7 @@
 using FootballFormation.Core.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace FootballFormation.Core.Data;
 
@@ -38,30 +39,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             entity.HasKey(g => g.Id);
             entity.Property(g => g.Opponent).IsRequired().HasMaxLength(100);
-            entity.Property(g => g.UnavailablePlayerIds)
-                .HasConversion(
-                    v => string.Join(',', v),
-                    v => v.Length == 0
-                        ? new List<int>()
-                        : v.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                            .Select(s => int.Parse(s))
-                            .ToList(),
-                    new ValueComparer<List<int>>(
-                        (a, b) => a != null && b != null && a.SequenceEqual(b),
-                        c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-                        c => c.ToList()));
-            entity.Property(g => g.GuestPlayerIds)
-                .HasConversion(
-                    v => string.Join(',', v),
-                    v => v.Length == 0
-                        ? new List<int>()
-                        : v.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                            .Select(s => int.Parse(s))
-                            .ToList(),
-                    new ValueComparer<List<int>>(
-                        (a, b) => a != null && b != null && a.SequenceEqual(b),
-                        c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-                        c => c.ToList()));
+            UseCsvIntList(entity.Property(g => g.UnavailablePlayerIds));
+            UseCsvIntList(entity.Property(g => g.GuestPlayerIds));
             entity.HasMany(g => g.Periods)
                 .WithOne(p => p.Game)
                 .HasForeignKey(p => p.GameId)
@@ -108,4 +87,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasKey(m => m.Id);
         });
     }
+
+    /// <summary>Stores a List&lt;int&gt; as comma-separated text, with the comparer EF needs to detect changes.</summary>
+    private static void UseCsvIntList(PropertyBuilder<List<int>> property) =>
+        property.HasConversion(
+            v => string.Join(',', v),
+            v => v.Length == 0
+                ? new List<int>()
+                : v.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => int.Parse(s))
+                    .ToList(),
+            new ValueComparer<List<int>>(
+                (a, b) => a != null && b != null && a.SequenceEqual(b),
+                c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                c => c.ToList()));
 }

@@ -227,8 +227,20 @@ public partial class FormationBuilder
 
     // --- Playing time overview ---
 
-    private List<PlayingTimeRow> GetPlayingTimeData() =>
-        GameData is null ? [] : PlayingTimeReport.Build(GameData, RosterPlayers, PeriodLineups);
+    private List<PlayingTimeRow> GetPlayingTimeData()
+    {
+        if (GameData is null || AllPlayers is null) return [];
+
+        // Roster plus anyone already placed in a lineup (e.g. a guest removed from the
+        // game after being lined up), so the table always accounts for the whole pitch.
+        var linedUpIds = PeriodLineups.Values
+            .SelectMany(lineup => lineup)
+            .Select(p => p.PlayerId)
+            .ToHashSet();
+        var players = AllPlayers.Where(p => GameData.IsInRoster(p) || linedUpIds.Contains(p.Id));
+
+        return PlayingTimeReport.Build(GameData, players, PeriodLineups);
+    }
 
     private static string GetFitCssClass(PositionFit fit) => fit switch
     {
