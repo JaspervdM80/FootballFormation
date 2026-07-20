@@ -57,11 +57,16 @@ certificate are done (usually minutes after DNS propagates).
 
 ## Redeploying after changes
 
+Merging to `main` deploys automatically via GitHub Actions
+(`.github/workflows/fly-deploy.yml`, authenticated by the `FLY_API_TOKEN` repo secret —
+a scoped deploy token from `flyctl tokens create deploy --app gjs-meiden`).
+Manual deploys still work from the repo root:
+
 ```powershell
 fly deploy
 ```
 
-That's it — migrations run automatically on startup, same as locally.
+Either way, migrations run automatically on startup, same as locally.
 
 ## Useful commands
 
