@@ -56,7 +56,7 @@ Components/
 wwwroot/
   manifest.webmanifest    — PWA manifest (installable on iOS/Android via Add to Home Screen)
   service-worker.js       — Pass-through SW required for Android installability (no offline caching)
-  icons/                  — App icons 180 (apple-touch) / 192 / 512 (manifest + maskable)
+  icons/                  — GJS club logo as app icons: 180 (apple-touch) / 192 / 512 / 512-maskable
   js/pwa.js               — Service worker registration
   js/drag-drop-touch.js   — Touch → HTML5 drag event shim for the formation builder on phones
 ```
