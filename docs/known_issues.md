@@ -25,6 +25,18 @@ Avoid repeating these mistakes:
   shim in `wwwroot/js/drag-drop-touch.js`, plus `touch-action: none` on `[draggable="true"]`
   (in app.css) so the browser doesn't claim the gesture for scrolling.
 
+## Touch / PWA (continued)
+- **White page after switching apps**: a suspended PWA loses its SignalR circuit. Two
+  causes, both fixed: the page background came only from the MudBlazor theme (now also
+  set statically on `html, body` in app.css, plus `color-scheme: dark`), and Blazor's
+  stock reconnect overlay is light (now themed via `#components-reconnect-modal`, and
+  `js/pwa.js` reloads the page once reconnection fails or on return to a dead tab).
+
+## Localization
+- **Resource keys are English text, so watch for homographs**: "Home" was already the
+  venue label ("Thuis") when the nav needed a home link — the nav uses the key "Start"
+  instead. Resx names are also case-insensitive, so no "SUB"/"Sub" pairs.
+
 ## Formation/Pitch
 - **Duplicate enum positions**: Formations with 2 CDMs or 2 strikers need distinct enum values (LCDM/RCDM, LST/RST) — can't have duplicate values in an array.
 - **Pitch too large**: Use `max-height: 65vh` with `aspect-ratio: 3/4` and `max-width: calc(65vh * 3/4)`.

@@ -44,5 +44,36 @@
         },
         dismiss() { localStorage.setItem(DISMISSED_KEY, 'true'); }
     };
+
+    // Phones suspend a backgrounded PWA, which kills the SignalR circuit. Blazor then
+    // gives up and leaves a dead page behind, so reload as soon as that happens (and on
+    // return to the app) to land back on a live, correctly styled page.
+    const FAILED = ['components-reconnect-failed', 'components-reconnect-rejected'];
+    const modal = document.getElementById('components-reconnect-modal');
+    const RELOAD_STAMP_KEY = 'pwa-last-auto-reload';
+    const RELOAD_MIN_INTERVAL_MS = 10000;
+
+    function reloadIfDead() {
+        if (!modal || !FAILED.some(c => modal.classList.contains(c))) return;
+
+        // Guard against a reload loop when the page serves but the circuit never
+        // connects (blocked WebSocket, dead network): leave the overlay up instead.
+        const last = Number(sessionStorage.getItem(RELOAD_STAMP_KEY)) || 0;
+        if (Date.now() - last < RELOAD_MIN_INTERVAL_MS) return;
+
+        sessionStorage.setItem(RELOAD_STAMP_KEY, String(Date.now()));
+        window.location.reload();
+    }
+
+    if (modal) {
+        new MutationObserver(reloadIfDead).observe(modal, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') reloadIfDead();
+    });
 })();
 
