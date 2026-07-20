@@ -53,7 +53,7 @@ else
             <MudTd DataLabel="#">
                 <span style="font-weight: 700; color: var(--club-primary-bright);">@context.ShirtNumber</span>
             </MudTd>
-            <MudTd DataLabel="@L["Name"]">
+            <MudTd DataLabel="@L["Name"]" Class="cell-name">
                 @* One wrapper so the mobile card's flex row treats number + name as a
                    single item; otherwise space-between pushes them to opposite ends. *@
                 <span class="player-name-cell">
@@ -69,17 +69,18 @@ else
                     }
                 </span>
             </MudTd>
+            <MudTd DataLabel="@L["Preferred Position"]" Class="cell-pref">
+                <span class="badge-teal">@context.PreferredPosition.ToString()</span>
+            </MudTd>
             <AuthorizeView Context="authRow">
-                <MudTd DataLabel="@L["Preferred Position"]">
-                    <span class="badge-gold">@context.PreferredPosition.ToString()</span>
-                </MudTd>
-                <MudTd DataLabel="@L["Alternative Positions"]">
+
+                <MudTd DataLabel="@L["Alternative Positions"]" Class="cell-alt">
                     @foreach (var pos in context.AlternativePositions)
                     {
-                        <span class="badge-teal" style="margin-right: 4px;">@pos.ToString()</span>
+                        <span class="badge-gold" style="margin-right: 4px;">@pos.ToString()</span>
                     }
                 </MudTd>
-                <MudTd Class="cell-right">
+                <MudTd Class="cell-right cell-actions">
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
                                    Style="color: color-mix(in srgb, var(--ink) 40%, transparent);"
                                    OnClick="() => OpenEditDialog(context)" />

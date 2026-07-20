@@ -373,6 +373,40 @@ html, body {
 /* 599.98px is where MudBlazor stacks a table into per-row cards (its xs breakpoint),
    so these rules and that layout switch together. */
 @media (max-width: 599.98px) {
+    /* MudBlazor's stacked card prints the column label beside every cell, which on
+       this table is far more label than data. Lay each row out as a grid instead:
+       name + preferred position share the first line, alternatives get the second,
+       the row actions the third. The table parts have to stop being table boxes
+       for the row to become a grid container. */
+    .players-table .mud-table-root,
+    .players-table .mud-table-body {
+        display: block;
+        width: 100%;
+    }
+
+    .players-table .mud-table-body .mud-table-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        column-gap: 8px;
+        row-gap: 6px;
+        padding: 10px 14px;
+    }
+
+    .players-table .mud-table-body .mud-table-row:not(:last-child) {
+        border-bottom: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
+    }
+
+    .players-table .mud-table-body .mud-table-cell {
+        border: none !important;
+        padding: 0 !important;
+    }
+
+    /* Position and name read fine without their labels once they are in columns */
+    .players-table .mud-table-body .mud-table-cell::before {
+        display: none !important;
+    }
+
     /* A whole card row just for the number is wasteful: drop the # cell and print
        the number next to the name instead. */
     .players-table th:first-child,
@@ -385,6 +419,39 @@ html, body {
         margin-right: 6px;
         font-weight: 700;
         color: var(--club-primary-bright);
+    }
+
+    .players-table .cell-name {
+        min-width: 0;
+    }
+
+    /* Sized on the wrapper, not the cell: MudBlazor's dense-table rule for
+       .mud-table-cell outspecifies a plain .cell-name selector */
+    .players-table .cell-name .player-name-cell {
+        font-size: 1rem;
+    }
+
+    .players-table .cell-pref {
+        justify-content: flex-end;
+    }
+
+    /* Alternatives and the actions each take a full-width line of their own */
+    .players-table .cell-alt,
+    .players-table .cell-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    /* A player without alternatives should not get a blank line */
+    .players-table .cell-alt:not(:has(.badge-gold)) {
+        display: none;
+    }
+
+    /* The row's own gap does the spacing here */
+    .players-table .cell-alt .badge-gold {
+        margin-right: 0 !important;
     }
 }
 
