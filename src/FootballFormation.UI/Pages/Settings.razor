@@ -1,13 +1,13 @@
 @page "/settings"
 @attribute [Authorize]
 
-<PageTitle>Match Preferences</PageTitle>
+<PageTitle>@L["Match Preferences"]</PageTitle>
 
 <MudText Typo="Typo.h4" Style="color: white; font-weight: 700;" GutterBottom="true">
-    Match Preferences
+    @L["Match Preferences"]
 </MudText>
 <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.35);" Class="mb-6">
-    These defaults are applied when creating new games.
+    @L["These defaults are applied when creating new games."]
 </MudText>
 
 @if (_prefs is null)
@@ -17,20 +17,20 @@
 }
 
 <MudPaper Class="pa-6" MaxWidth="500px" Elevation="2" Style="border-radius: 16px;">
-    <div class="card-label">Defaults</div>
+    <div class="card-label">@L["Defaults"]</div>
     <MudForm @ref="_form">
         <MudNumericField T="int" @bind-Value="_prefs.GameDurationMinutes"
-                         Label="Game Duration (minutes)" Min="10" Max="120" Step="5"
+                         Label="@L["Game Duration (minutes)"]" Min="10" Max="120" Step="5"
                          Class="mb-4" />
 
         <MudSelect T="GameSplitType" @bind-Value="_prefs.DefaultSplitType"
-                   Label="Default Game Split" Class="mb-4">
-            <MudSelectItem Value="GameSplitType.Halves">Halves (2 periods)</MudSelectItem>
-            <MudSelectItem Value="GameSplitType.Quarters">Quarters (4 periods)</MudSelectItem>
+                   Label="@L["Default Game Split"]" Class="mb-4">
+            <MudSelectItem Value="GameSplitType.Halves">@L["Halves (2 periods)"]</MudSelectItem>
+            <MudSelectItem Value="GameSplitType.Quarters">@L["Quarters (4 periods)"]</MudSelectItem>
         </MudSelect>
 
         <MudSelect T="FormationType" @bind-Value="_prefs.DefaultFormation"
-                   Label="Default Formation" Class="mb-4">
+                   Label="@L["Default Formation"]" Class="mb-4">
             @foreach (var f in Enum.GetValues<FormationType>())
             {
                 <MudSelectItem Value="f">@f.DisplayName()</MudSelectItem>
@@ -38,37 +38,37 @@
         </MudSelect>
 
         <MudSelect T="DayOfWeek" @bind-Value="_prefs.MatchDay"
-                   Label="Match Day" Class="mb-4">
+                   Label="@L["Match Day"]" Class="mb-4">
             @foreach (var day in Enum.GetValues<DayOfWeek>())
             {
-                <MudSelectItem Value="day">@day</MudSelectItem>
+                <MudSelectItem Value="day">@System.Globalization.CultureInfo.CurrentUICulture.DateTimeFormat.GetDayName(day)</MudSelectItem>
             }
         </MudSelect>
 
         <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.35);" Class="mb-4">
-            Next calculated match date: <strong style="color: #fbbf24;">@_nextMatchDate?.ToString("dddd dd MMM yyyy")</strong>
+            @L["Next calculated match date:"] <strong style="color: #fbbf24;">@_nextMatchDate?.ToString("dddd dd MMM yyyy")</strong>
         </MudText>
     </MudForm>
 
     <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Save"
                OnClick="Save" FullWidth="true">
-        Save Preferences
+        @L["Save Preferences"]
     </MudButton>
 </MudPaper>
 
 <MudPaper Class="pa-6 mt-6" MaxWidth="500px" Elevation="2" Style="border-radius: 16px;">
-    <div class="card-label">Change Password</div>
+    <div class="card-label">@L["Change Password"]</div>
     <MudForm @ref="_passwordForm">
-        <MudTextField T="string" @bind-Value="_currentPassword" Label="Current Password"
+        <MudTextField T="string" @bind-Value="_currentPassword" Label="@L["Current Password"]"
                       InputType="InputType.Password" Required="true" Class="mb-4" />
-        <MudTextField T="string" @bind-Value="_newPassword" Label="New Password"
+        <MudTextField T="string" @bind-Value="_newPassword" Label="@L["New Password"]"
                       InputType="InputType.Password" Required="true" Class="mb-4" />
-        <MudTextField T="string" @bind-Value="_confirmPassword" Label="Confirm New Password"
+        <MudTextField T="string" @bind-Value="_confirmPassword" Label="@L["Confirm New Password"]"
                       InputType="InputType.Password" Required="true" Class="mb-4" />
     </MudForm>
 
     <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Lock"
                OnClick="ChangePassword" FullWidth="true">
-        Change Password
+        @L["Change Password"]
     </MudButton>
 </MudPaper>

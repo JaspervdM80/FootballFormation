@@ -1,6 +1,7 @@
 @page "/games/{GameId:int}/overview"
+@inject IStringLocalizer<Strings> L
 
-<PageTitle>Formation Overview</PageTitle>
+<PageTitle>@L["Formation Overview"]</PageTitle>
 
 @if (GameData is null)
 {
@@ -12,7 +13,7 @@
     <div class="overview-header">
         <div class="overview-header-left">
             <span class="overview-title">@(GameData.IsHomeGame ? "vs" : "@") @GameData.Opponent</span>
-            <span class="overview-date">@GameData.Date.ToString("dd MMM yyyy") · @(GameData.IsHomeGame ? "Home" : "Away")</span>
+            <span class="overview-date">@GameData.Date.ToString("dd MMM yyyy") · @(GameData.IsHomeGame ? L["Home"] : L["Away"])</span>
             <span class="overview-formation">@GameData.FormationType.DisplayName()</span>
         </div>
     </div>
@@ -26,12 +27,12 @@
             var subs = lineup.Where(p => p.IsSubstitute).ToList();
 
             <div class="overview-period-card">
-                <div class="period-label">@period.PeriodType.DisplayName()</div>
+                <div class="period-label">@L[period.PeriodType.DisplayName()]</div>
                 <PitchOverview Formation="formation" Positions="starters" HidePositionFit="IsAnonymous" />
                 @if (subs.Count > 0)
                 {
                     <div class="subs-row">
-                        <span class="subs-label">Subs:</span>
+                        <span class="subs-label">@L["Subs"]:</span>
                         @foreach (var sub in subs)
                         {
                             <span class="sub-badge">
@@ -39,7 +40,7 @@
                                 {
                                     <span class="sub-number">#@sub.Player.ShirtNumber</span>
                                 }
-                                @(sub.Player?.ShortName ?? $"Player {sub.PlayerId}")
+                                @(sub.Player?.ShortName ?? L["Player {0}", sub.PlayerId].Value)
                             </span>
                         }
                     </div>
@@ -47,7 +48,7 @@
                 else
                 {
                     <div class="subs-row">
-                        <span class="subs-label subs-none">No subs</span>
+                        <span class="subs-label subs-none">@L["No subs"]</span>
                     </div>
                 }
             </div>
@@ -61,20 +62,20 @@
             <MudButton Variant="Variant.Outlined" Size="Size.Small" Class="btn-ghost"
                        StartIcon="@Icons.Material.Filled.ArrowBack"
                        OnClick="NavigateToEditor">
-                Back to editor
+                @L["Back to editor"]
             </MudButton>
         </Authorized>
         <NotAuthorized>
             <MudButton Variant="Variant.Outlined" Size="Size.Small" Class="btn-ghost"
                        StartIcon="@Icons.Material.Filled.ArrowBack"
                        OnClick="NavigateToGames">
-                Back to games
+                @L["Back to games"]
             </MudButton>
         </NotAuthorized>
     </AuthorizeView>
     <MudButton Variant="Variant.Filled" Size="Size.Small" Class="btn-gold"
                StartIcon="@Icons.Material.Filled.CameraAlt"
                OnClick="CaptureScreenshot">
-        Save as image
+        @L["Save as image"]
     </MudButton>
 </div>

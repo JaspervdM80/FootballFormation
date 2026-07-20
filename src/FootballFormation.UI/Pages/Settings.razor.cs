@@ -3,6 +3,7 @@ using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.Extensions.Localization;
 using MudBlazor;
 
 namespace FootballFormation.UI.Pages;
@@ -12,6 +13,7 @@ public partial class Settings
     [Inject] private MatchPreferencesService PreferencesService { get; set; } = null!;
     [Inject] private AdminAuthService AuthService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
+    [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
     [CascadingParameter]
     private Task<AuthenticationState> AuthStateTask { get; set; } = null!;
@@ -39,7 +41,7 @@ public partial class Settings
         if (_prefs is null) return;
 
         var saveResult = await PreferencesService.SaveAsync(_prefs);
-        if (!Snackbar.Report(saveResult, "Preferences saved!")) return;
+        if (!Snackbar.Report(saveResult, L["Preferences saved!"])) return;
 
         await RefreshNextMatchDate();
     }
@@ -54,13 +56,13 @@ public partial class Settings
     {
         if (string.IsNullOrWhiteSpace(_currentPassword) || string.IsNullOrWhiteSpace(_newPassword))
         {
-            Snackbar.Add("Please fill in all password fields", Severity.Warning);
+            Snackbar.Add(L["Please fill in all password fields"], Severity.Warning);
             return;
         }
 
         if (_newPassword != _confirmPassword)
         {
-            Snackbar.Add("New passwords do not match", Severity.Error);
+            Snackbar.Add(L["New passwords do not match"], Severity.Error);
             return;
         }
 
@@ -71,19 +73,19 @@ public partial class Settings
         switch (result)
         {
             case AdminAuthService.PasswordChangeResult.Success:
-                Snackbar.Add("Password changed successfully!", Severity.Success);
+                Snackbar.Add(L["Password changed successfully!"], Severity.Success);
                 _currentPassword = "";
                 _newPassword = "";
                 _confirmPassword = "";
                 break;
             case AdminAuthService.PasswordChangeResult.InvalidCurrentPassword:
-                Snackbar.Add("Current password is incorrect", Severity.Error);
+                Snackbar.Add(L["Current password is incorrect"], Severity.Error);
                 break;
             case AdminAuthService.PasswordChangeResult.PasswordTooShort:
-                Snackbar.Add($"New password must be at least {AdminAuthService.MinPasswordLength} characters", Severity.Error);
+                Snackbar.Add(L["New password must be at least {0} characters", AdminAuthService.MinPasswordLength], Severity.Error);
                 break;
             case AdminAuthService.PasswordChangeResult.PasswordReused:
-                Snackbar.Add("New password must be different from the current one", Severity.Error);
+                Snackbar.Add(L["New password must be different from the current one"], Severity.Error);
                 break;
         }
     }

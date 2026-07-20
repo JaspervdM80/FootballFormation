@@ -1,24 +1,24 @@
 @page "/players"
 
-<PageTitle>Players</PageTitle>
+<PageTitle>@L["Players"]</PageTitle>
 
 <div class="d-flex align-center justify-space-between mb-6">
     <div>
-        <MudText Typo="Typo.h4" Style="color: white; font-weight: 700;">Squad</MudText>
+        <MudText Typo="Typo.h4" Style="color: white; font-weight: 700;">@L["Squad"]</MudText>
         <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.35);">
             @if (_players is not null)
             {
                 var squadCount = _players.Count(p => !p.IsGuest);
                 var guestCount = _players.Count - squadCount;
-                @($"{squadCount} player{(squadCount != 1 ? "s" : "")}")
-                @(guestCount > 0 ? $" · {guestCount} guest{(guestCount != 1 ? "s" : "")}" : "")
+                @(squadCount == 1 ? L["{0} player", squadCount] : L["{0} players", squadCount])
+                @(guestCount > 0 ? " · " + (guestCount == 1 ? L["{0} guest", guestCount] : L["{0} guests", guestCount]) : "")
             }
         </MudText>
     </div>
     <AuthorizeView>
         <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.PersonAdd"
                    OnClick="OpenAddDialog">
-            Add Player
+            @L["Add Player"]
         </MudButton>
     </AuthorizeView>
 </div>
@@ -32,7 +32,7 @@ else if (_players.Count == 0)
     <MudPaper Class="pa-6" Elevation="2" Style="border-radius: 16px; text-align: center;">
         <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Style="color: rgba(255,255,255,0.15);" />
         <MudText Typo="Typo.body1" Class="mt-3" Style="color: rgba(255,255,255,0.4);">
-            No players yet. Add your first player!
+            @L["No players yet. Add your first player!"]
         </MudText>
     </MudPaper>
 }
@@ -42,10 +42,10 @@ else
               Style="border-radius: 16px;">
         <HeaderContent>
             <MudTh><MudTableSortLabel SortBy="new Func<Player, object>(p => p.ShirtNumber ?? 999)">#</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<Player, object>(p => p.FirstName)">Name</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Player, object>(p => p.FirstName)">@L["Name"]</MudTableSortLabel></MudTh>
             <AuthorizeView Context="authHeader">
-                <MudTh>Preferred Position</MudTh>
-                <MudTh>Alternative Positions</MudTh>
+                <MudTh>@L["Preferred Position"]</MudTh>
+                <MudTh>@L["Alternative Positions"]</MudTh>
                 <MudTh></MudTh>
             </AuthorizeView>
         </HeaderContent>
@@ -53,18 +53,18 @@ else
             <MudTd DataLabel="#">
                 <span style="font-weight: 700; color: #fbbf24;">@context.ShirtNumber</span>
             </MudTd>
-            <MudTd DataLabel="Name">
+            <MudTd DataLabel="@L["Name"]">
                 <span style="font-weight: 600; color: white;">@context.DisplayName</span>
                 @if (context.IsGuest)
                 {
-                    <span class="badge-guest" style="margin-left: 6px;">GUEST</span>
+                    <span class="badge-guest" style="margin-left: 6px;">@L["GUEST"]</span>
                 }
             </MudTd>
             <AuthorizeView Context="authRow">
-                <MudTd DataLabel="Preferred">
+                <MudTd DataLabel="@L["Preferred Position"]">
                     <span class="badge-gold">@context.PreferredPosition.ToString()</span>
                 </MudTd>
-                <MudTd DataLabel="Alternatives">
+                <MudTd DataLabel="@L["Alternative Positions"]">
                     @foreach (var pos in context.AlternativePositions)
                     {
                         <span class="badge-teal" style="margin-right: 4px;">@pos.ToString()</span>

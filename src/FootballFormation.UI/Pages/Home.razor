@@ -1,4 +1,5 @@
 @page "/"
+@inject IStringLocalizer<Strings> L
 
 <PageTitle>Football Formation</PageTitle>
 
@@ -6,48 +7,48 @@
     Football Formation Planner
 </MudText>
 <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.35);" Class="mb-6">
-    Plan your team's formations, manage your squad, and organize game lineups.
+    @L["Plan your team's formations, manage your squad, and organize game lineups."]
 </MudText>
 
 <MudGrid Spacing="4">
     <MudItem xs="12" sm="6" md="4">
         <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">
-            <div class="card-label">Squad</div>
+            <div class="card-label">@L["Squad"]</div>
             <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Style="color: #fbbf24;" />
-            <MudText Typo="Typo.h6" Class="mt-3" Style="color: white;">Manage Players</MudText>
+            <MudText Typo="Typo.h6" Class="mt-3" Style="color: white;">@L["Manage Players"]</MudText>
             <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.4);" Class="mb-4">
-                Add players with their positions and shirt numbers.
+                @L["Add players with their positions and shirt numbers."]
             </MudText>
             <MudButton Variant="Variant.Filled" Class="btn-gold" Href="/players" FullWidth="true">
-                Go to Squad
+                @L["Go to Squad"]
             </MudButton>
         </MudPaper>
     </MudItem>
 
     <MudItem xs="12" sm="6" md="4">
         <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">
-            <div class="card-label">Matches</div>
+            <div class="card-label">@L["Matches"]</div>
             <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Size="Size.Large" Style="color: #fbbf24;" />
-            <MudText Typo="Typo.h6" Class="mt-3" Style="color: white;">Games & Formations</MudText>
+            <MudText Typo="Typo.h6" Class="mt-3" Style="color: white;">@L["Games & Formations"]</MudText>
             <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.4);" Class="mb-4">
-                Create games, build formations, and track results.
+                @L["Create games, build formations, and track results."]
             </MudText>
             <MudButton Variant="Variant.Filled" Class="btn-gold" Href="/games" FullWidth="true">
-                Go to Games
+                @L["Go to Games"]
             </MudButton>
         </MudPaper>
     </MudItem>
 
     <MudItem xs="12" sm="6" md="4">
         <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">
-            <div class="card-label">Settings</div>
+            <div class="card-label">@L["Settings"]</div>
             <MudIcon Icon="@Icons.Material.Filled.Settings" Size="Size.Large" Style="color: #fbbf24;" />
-            <MudText Typo="Typo.h6" Class="mt-3" Style="color: white;">Preferences</MudText>
+            <MudText Typo="Typo.h6" Class="mt-3" Style="color: white;">@L["Preferences"]</MudText>
             <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.4);" Class="mb-4">
-                Configure match duration, split type, and defaults.
+                @L["Configure match duration, split type, and defaults."]
             </MudText>
             <MudButton Variant="Variant.Filled" Class="btn-gold" Href="/settings" FullWidth="true">
-                Go to Settings
+                @L["Go to Settings"]
             </MudButton>
         </MudPaper>
     </MudItem>

@@ -1,31 +1,33 @@
+@inject IStringLocalizer<Strings> L
+
 <MudDialog>
     <DialogContent>
         <MudForm @ref="Form">
-            <MudTextField @bind-Value="FirstName" Label="First Name" Required="true"
-                          RequiredError="First name is required" Class="mb-3" />
-            <MudTextField @bind-Value="Surname" Label="Surname" Class="mb-3" />
-            <MudNumericField @bind-Value="ShirtNumber" Label="Shirt Number" Min="1" Max="99" Class="mb-3" />
-            <MudSelect T="PlayerPosition" @bind-Value="PreferredPosition" Label="Preferred Position" Class="mb-3">
+            <MudTextField @bind-Value="FirstName" Label="@L["First Name"]" Required="true"
+                          RequiredError="@L["First name is required"]" Class="mb-3" />
+            <MudTextField @bind-Value="Surname" Label="@L["Surname"]" Class="mb-3" />
+            <MudNumericField @bind-Value="ShirtNumber" Label="@L["Shirt Number"]" Min="1" Max="99" Class="mb-3" />
+            <MudSelect T="PlayerPosition" @bind-Value="PreferredPosition" Label="@L["Preferred Position"]" Class="mb-3">
                 @foreach (var pos in Enum.GetValues<PlayerPosition>())
                 {
                     <MudSelectItem Value="pos">@pos.ToString() - @pos.DisplayName()</MudSelectItem>
                 }
             </MudSelect>
-            <MudSelect T="PlayerPosition" Label="Alternative Positions" MultiSelection="true"
+            <MudSelect T="PlayerPosition" Label="@L["Alternative Positions"]" MultiSelection="true"
                        @bind-SelectedValues="AlternativePositions" Class="mb-3">
                 @foreach (var pos in Enum.GetValues<PlayerPosition>().Where(p => p != PreferredPosition))
                 {
                     <MudSelectItem Value="pos">@pos.ToString() - @pos.DisplayName()</MudSelectItem>
                 }
             </MudSelect>
-            <MudSwitch @bind-Value="IsGuest" Color="Color.Warning" Class="mb-1">Guest player</MudSwitch>
+            <MudSwitch @bind-Value="IsGuest" Color="Color.Warning" Class="mb-1">@L["Guest player"]</MudSwitch>
             <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.35);">
-                Guests are left out of every game unless you add them to it explicitly.
+                @L["Guests are left out of every game unless you add them to it explicitly."]
             </MudText>
         </MudForm>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">Save</MudButton>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>

@@ -1,9 +1,12 @@
+@inject IStringLocalizer<Strings> L
+
 <MudDialog>
     <DialogContent>
         <MudText>@ContentText</MudText>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color" Variant="Variant.Filled" OnClick="Submit">@ButtonText</MudButton>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        @* ButtonText is a resource key (e.g. "Delete") so callers stay culture-agnostic *@
+        <MudButton Color="Color" Variant="Variant.Filled" OnClick="Submit">@L[ButtonText]</MudButton>
     </DialogActions>
 </MudDialog>

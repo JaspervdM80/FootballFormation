@@ -1,21 +1,21 @@
 @page "/games"
 
-<PageTitle>Games</PageTitle>
+<PageTitle>@L["Games"]</PageTitle>
 
 <div class="d-flex align-center justify-space-between mb-6">
     <div>
-        <MudText Typo="Typo.h4" Style="color: white; font-weight: 700;">Games</MudText>
+        <MudText Typo="Typo.h4" Style="color: white; font-weight: 700;">@L["Games"]</MudText>
         <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.35);">
             @if (_games is not null)
             {
-                @($"{_games.Count} match{(_games.Count != 1 ? "es" : "")}")
+                @(_games.Count == 1 ? L["{0} match", _games.Count] : L["{0} matches", _games.Count])
             }
         </MudText>
     </div>
     <AuthorizeView>
         <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Add"
                    OnClick="OpenAddDialog">
-            New Game
+            @L["New Game"]
         </MudButton>
     </AuthorizeView>
 </div>
@@ -29,7 +29,7 @@ else if (_games.Count == 0)
     <MudPaper Class="pa-6" Elevation="2" Style="border-radius: 16px; text-align: center;">
         <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Size="Size.Large" Style="color: rgba(255,255,255,0.15);" />
         <MudText Typo="Typo.body1" Class="mt-3" Style="color: rgba(255,255,255,0.4);">
-            No games yet. Create your first game!
+            @L["No games yet. Create your first game!"]
         </MudText>
     </MudPaper>
 }
@@ -41,15 +41,15 @@ else
             <div class="game-row" @onclick="() => OpenGame(game)">
                 <span class="game-date">@game.Date.ToString("dd MMM")</span>
                 <span class="game-opponent">@(game.IsHomeGame ? "vs" : "@") @game.Opponent</span>
-                <span class="badge-venue">@(game.IsHomeGame ? "H" : "A")</span>
+                <span class="badge-venue">@(game.IsHomeGame ? L["H"] : L["A"])</span>
                 <span class="badge-gold">@game.FormationType.DisplayName()</span>
                 @if (game.UnavailablePlayerIds.Count > 0)
                 {
-                    <span class="badge-unavailable">@game.UnavailablePlayerIds.Count out</span>
+                    <span class="badge-unavailable">@L["{0} out", game.UnavailablePlayerIds.Count]</span>
                 }
                 @if (game.GuestPlayerIds.Count > 0)
                 {
-                    <span class="badge-guest">+@game.GuestPlayerIds.Count guest</span>
+                    <span class="badge-guest">@L["+{0} guest", game.GuestPlayerIds.Count]</span>
                 }
                 @if (game.ScoreHome.HasValue && game.ScoreAway.HasValue)
                 {
@@ -61,21 +61,21 @@ else
                 }
                 <div class="game-actions" @onclick:stopPropagation="true">
                     <AuthorizeView>
-                        <button class="action-btn" title="Formation" @onclick="() => OpenFormation(game.Id)">
+                        <button class="action-btn" title="@L["Formation"]" @onclick="() => OpenFormation(game.Id)">
                             <MudIcon Icon="@Icons.Material.Filled.ViewModule" Size="Size.Small" />
                         </button>
                     </AuthorizeView>
-                    <button class="action-btn" title="Overview" @onclick="() => OpenOverview(game.Id)">
+                    <button class="action-btn" title="@L["Overview"]" @onclick="() => OpenOverview(game.Id)">
                         <MudIcon Icon="@Icons.Material.Filled.Share" Size="Size.Small" />
                     </button>
-                    <button class="action-btn" title="Result" @onclick="() => OpenResult(game.Id)">
+                    <button class="action-btn" title="@L["Result"]" @onclick="() => OpenResult(game.Id)">
                         <MudIcon Icon="@Icons.Material.Filled.Scoreboard" Size="Size.Small" />
                     </button>
                     <AuthorizeView>
-                        <button class="action-btn" title="Edit" @onclick="() => OpenEditDialog(game)">
+                        <button class="action-btn" title="@L["Edit"]" @onclick="() => OpenEditDialog(game)">
                             <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
                         </button>
-                        <button class="action-btn action-delete" title="Delete" @onclick="() => DeleteGame(game)">
+                        <button class="action-btn action-delete" title="@L["Delete"]" @onclick="() => DeleteGame(game)">
                             <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
                         </button>
                     </AuthorizeView>

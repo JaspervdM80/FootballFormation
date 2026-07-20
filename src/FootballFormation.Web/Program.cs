@@ -6,6 +6,7 @@ using FootballFormation.Core.Services;
 using FootballFormation.Web.Components;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
@@ -41,6 +42,8 @@ try
         .AddInteractiveServerComponents();
 
     builder.Services.AddMudServices();
+
+    builder.Services.AddLocalization();
 
     // Keys on disk so antiforgery/auth cookies survive container restarts
     builder.Services.AddDataProtection()
@@ -112,6 +115,17 @@ try
         app.UseHsts();
     }
 
+    // Dutch by default; the language switcher sets the culture cookie. The
+    // Accept-Language provider is removed on purpose so the default is deterministic.
+    var localizationOptions = new RequestLocalizationOptions()
+        .SetDefaultCulture("nl")
+        .AddSupportedCultures("nl", "en")
+        .AddSupportedUICultures("nl", "en");
+    localizationOptions.RequestCultureProviders = localizationOptions.RequestCultureProviders
+        .Where(p => p is not AcceptLanguageHeaderRequestCultureProvider)
+        .ToList();
+    app.UseRequestLocalization(localizationOptions);
+
     app.UseResponseCompression();
     app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
     app.UseHttpsRedirection();
@@ -161,6 +175,21 @@ try
         await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return Results.Redirect("/");
     }).DisableAntiforgery();
+
+    // Language switcher target: persists the choice in the culture cookie, then
+    // reloads so the whole circuit restarts in the new culture.
+    app.MapGet("/culture/set", (string culture, string redirectUri, HttpContext context) =>
+    {
+        if (culture is "nl" or "en")
+        {
+            context.Response.Cookies.Append(
+                CookieRequestCultureProvider.DefaultCookieName,
+                CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture)),
+                new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1), IsEssential = true });
+        }
+
+        return Results.LocalRedirect($"~/{redirectUri.TrimStart('/')}");
+    });
 
     app.MapStaticAssets();
     app.MapRazorComponents<App>()
