@@ -4,8 +4,8 @@
 
 <div class="d-flex align-center justify-space-between mb-6">
     <div>
-        <MudText Typo="Typo.h4" Style="color: white; font-weight: 700;">@L["Squad"]</MudText>
-        <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.35);">
+        <MudText Typo="Typo.h4" Style="color: var(--ink); font-weight: 700;">@L["Squad"]</MudText>
+        <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 45%, transparent);">
             @if (_players is not null)
             {
                 var squadCount = _players.Count(p => !p.IsGuest);
@@ -30,8 +30,8 @@
 else if (_players.Count == 0)
 {
     <MudPaper Class="pa-6" Elevation="2" Style="border-radius: 16px; text-align: center;">
-        <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Style="color: rgba(255,255,255,0.15);" />
-        <MudText Typo="Typo.body1" Class="mt-3" Style="color: rgba(255,255,255,0.4);">
+        <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Style="color: color-mix(in srgb, var(--ink) 25%, transparent);" />
+        <MudText Typo="Typo.body1" Class="mt-3" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
             @L["No players yet. Add your first player!"]
         </MudText>
     </MudPaper>
@@ -51,7 +51,7 @@ else
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="#">
-                <span style="font-weight: 700; color: #fbbf24;">@context.ShirtNumber</span>
+                <span style="font-weight: 700; color: var(--club-primary-bright);">@context.ShirtNumber</span>
             </MudTd>
             <MudTd DataLabel="@L["Name"]">
                 @* One wrapper so the mobile card's flex row treats number + name as a
@@ -62,7 +62,7 @@ else
                     {
                         <span class="shirt-inline">#@context.ShirtNumber</span>
                     }
-                    <span style="font-weight: 600; color: white;">@context.DisplayName</span>
+                    <span style="font-weight: 600; color: var(--ink);">@context.DisplayName</span>
                     @if (context.IsGuest)
                     {
                         <span class="badge-guest" style="margin-left: 6px;">@L["GUEST"]</span>
@@ -73,7 +73,7 @@ else
                 <MudTd DataLabel="@L["Preferred Position"]">
                     <span class="badge-gold">@context.PreferredPosition.ToString()</span>
                 </MudTd>
-                <MudTd DataLabel="@L["Alternative Positions"]" Class="cell-right">
+                <MudTd DataLabel="@L["Alternative Positions"]">
                     @foreach (var pos in context.AlternativePositions)
                     {
                         <span class="badge-teal" style="margin-right: 4px;">@pos.ToString()</span>
@@ -81,10 +81,10 @@ else
                 </MudTd>
                 <MudTd Class="cell-right">
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
-                                   Style="color: rgba(255,255,255,0.3);"
+                                   Style="color: color-mix(in srgb, var(--ink) 40%, transparent);"
                                    OnClick="() => OpenEditDialog(context)" />
                     <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
-                                   Style="color: rgba(255,255,255,0.3);"
+                                   Style="color: color-mix(in srgb, var(--ink) 40%, transparent);"
                                    OnClick="() => DeletePlayer(context)" />
                 </MudTd>
             </AuthorizeView>

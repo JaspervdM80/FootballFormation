@@ -35,35 +35,32 @@ public partial class MainLayout : IDisposable
             forceLoad: true);
     }
 
+    // Club colors: keep in sync with wwwroot/theme.css (GJS Gorinchem, light) until
+    // the theme is driven by shared configuration. Text/line shades derive from the
+    // same ink color (#182b1f) as the CSS --ink token.
     private static readonly MudTheme Theme = new()
     {
         PaletteLight = new PaletteLight
         {
-            Primary = "#f59e0b",
-            Secondary = "#14b8a6",
-            AppbarBackground = "#1a1a2e"
-        },
-        PaletteDark = new PaletteDark
-        {
-            Primary = "#f59e0b",
-            PrimaryContrastText = "#0c0c14",
-            Secondary = "#14b8a6",
-            Tertiary = "#fbbf24",
-            AppbarBackground = "#13131f",
-            AppbarText = "rgba(255,255,255,0.85)",
-            Surface = "#141420",
-            Background = "#0c0c14",
-            DrawerBackground = "#13131f",
-            DrawerText = "rgba(255,255,255,0.7)",
-            TextPrimary = "rgba(255,255,255,0.87)",
-            TextSecondary = "rgba(255,255,255,0.5)",
-            ActionDefault = "rgba(255,255,255,0.5)",
-            ActionDisabled = "rgba(255,255,255,0.2)",
-            Divider = "rgba(255,255,255,0.06)",
-            TableHover = "rgba(255,255,255,0.03)",
-            TableStriped = "rgba(255,255,255,0.015)",
-            LinesDefault = "rgba(255,255,255,0.08)",
-            OverlayDark = "rgba(0,0,0,0.6)"
+            Primary = "#e11d24",
+            PrimaryContrastText = "#ffffff",
+            Secondary = "#0a8f3d",
+            Tertiary = "#c8151c",
+            AppbarBackground = "#ffffff",
+            AppbarText = "rgba(24,43,31,0.85)",
+            Surface = "#eef7f1",
+            Background = "#ffffff",
+            DrawerBackground = "#ffffff",
+            DrawerText = "rgba(24,43,31,0.8)",
+            TextPrimary = "rgba(24,43,31,0.92)",
+            TextSecondary = "rgba(24,43,31,0.6)",
+            ActionDefault = "rgba(24,43,31,0.55)",
+            ActionDisabled = "rgba(24,43,31,0.25)",
+            Divider = "rgba(24,43,31,0.1)",
+            TableHover = "rgba(24,43,31,0.04)",
+            TableStriped = "rgba(24,43,31,0.02)",
+            LinesDefault = "rgba(24,43,31,0.12)",
+            OverlayDark = "rgba(0,0,0,0.35)"
         },
         LayoutProperties = new LayoutProperties
         {

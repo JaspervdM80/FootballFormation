@@ -3,10 +3,10 @@
 
 <PageTitle>@L["Match Preferences"]</PageTitle>
 
-<MudText Typo="Typo.h4" Style="color: white; font-weight: 700;" GutterBottom="true">
+<MudText Typo="Typo.h4" Style="color: var(--ink); font-weight: 700;" GutterBottom="true">
     @L["Match Preferences"]
 </MudText>
-<MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.35);" Class="mb-6">
+<MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 45%, transparent);" Class="mb-6">
     @L["These defaults are applied when creating new games."]
 </MudText>
 
@@ -45,8 +45,8 @@
             }
         </MudSelect>
 
-        <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.35);" Class="mb-4">
-            @L["Next calculated match date:"] <strong style="color: #fbbf24;">@_nextMatchDate?.ToString("dddd dd MMM yyyy")</strong>
+        <MudText Typo="Typo.caption" Style="color: color-mix(in srgb, var(--ink) 45%, transparent);" Class="mb-4">
+            @L["Next calculated match date:"] <strong style="color: var(--club-primary-bright);">@_nextMatchDate?.ToString("dddd dd MMM yyyy")</strong>
         </MudText>
     </MudForm>
 

@@ -9,16 +9,16 @@
 <PageTitle>@L["Login"]</PageTitle>
 
 <div style="display: flex; justify-content: center; align-items: center; min-height: calc(100vh - 120px);">
-    <div style="width: 100%; max-width: 380px; background: #1e1e2f; border-radius: 16px; padding: 40px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+    <div style="width: 100%; max-width: 380px; background: var(--gradient-card); border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent); border-radius: 16px; padding: 40px; box-shadow: 0 8px 32px rgba(0,0,0,0.08);">
         <div style="text-align: center; margin-bottom: 32px;">
             <span style="font-size: 2rem;">&#9917;</span>
-            <h2 style="color: white; font-weight: 700; margin: 8px 0 4px;">@L["Admin Login"]</h2>
-            <p style="color: rgba(255,255,255,0.35); font-size: 0.875rem;">@L["Sign in to manage formations"]</p>
+            <h2 style="color: var(--ink); font-weight: 700; margin: 8px 0 4px;">@L["Admin Login"]</h2>
+            <p style="color: color-mix(in srgb, var(--ink) 50%, transparent); font-size: 0.875rem;">@L["Sign in to manage formations"]</p>
         </div>
 
         @if (_showError)
         {
-            <div style="background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 12px; margin-bottom: 20px; color: #fca5a5; font-size: 0.875rem; text-align: center;">
+            <div style="background: color-mix(in srgb, var(--color-danger) 12%, transparent); border: 1px solid color-mix(in srgb, var(--color-danger) 30%, transparent); border-radius: 8px; padding: 12px; margin-bottom: 20px; color: var(--color-danger-bright); font-size: 0.875rem; text-align: center;">
                 @L["Invalid username or password"]
             </div>
         }
@@ -27,25 +27,25 @@
             <input type="hidden" name="returnUrl" value="@_returnUrl" />
 
             <div style="margin-bottom: 16px;">
-                <label style="display: block; color: rgba(255,255,255,0.5); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">@L["Username"]</label>
+                <label style="display: block; color: color-mix(in srgb, var(--ink) 60%, transparent); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">@L["Username"]</label>
                 <input type="text" name="username" required autocomplete="username" autofocus
-                       style="width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; font-size: 0.95rem; outline: none; box-sizing: border-box;" />
+                       style="width: 100%; padding: 10px 14px; background: var(--surface-page); border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent); border-radius: 8px; color: var(--ink); font-size: 0.95rem; outline: none; box-sizing: border-box;" />
             </div>
 
             <div style="margin-bottom: 24px;">
-                <label style="display: block; color: rgba(255,255,255,0.5); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">@L["Password"]</label>
+                <label style="display: block; color: color-mix(in srgb, var(--ink) 60%, transparent); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">@L["Password"]</label>
                 <input type="password" name="password" required autocomplete="current-password"
-                       style="width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; font-size: 0.95rem; outline: none; box-sizing: border-box;" />
+                       style="width: 100%; padding: 10px 14px; background: var(--surface-page); border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent); border-radius: 8px; color: var(--ink); font-size: 0.95rem; outline: none; box-sizing: border-box;" />
             </div>
 
             <button type="submit"
-                    style="width: 100%; padding: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; border-radius: 8px; color: #1a1a2e; font-weight: 700; font-size: 0.95rem; cursor: pointer;">
+                    style="width: 100%; padding: 12px; background: var(--gradient-primary); border: none; border-radius: 8px; color: var(--club-on-primary); font-weight: 700; font-size: 0.95rem; cursor: pointer;">
                 @L["Sign In"]
             </button>
         </form>
 
         <div style="text-align: center; margin-top: 20px;">
-            <a href="/" style="color: rgba(255,255,255,0.3); font-size: 0.8rem; text-decoration: none;">@L["Continue as viewer"]</a>
+            <a href="/" style="color: color-mix(in srgb, var(--ink) 45%, transparent); font-size: 0.8rem; text-decoration: none;">@L["Continue as viewer"]</a>
         </div>
     </div>
 </div>

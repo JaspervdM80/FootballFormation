@@ -110,9 +110,11 @@
     border: 2px dashed rgba(255, 255, 255, 0.45);
 }
 
+/* White, not the club color: the highlight must stay visible on the green pitch
+   whatever the club palette is */
 .empty-circle.drop-ready {
-    border-color: #fbbf24;
-    background: rgba(251, 191, 36, 0.15);
+    border-color: #fff;
+    background: rgba(255, 255, 255, 0.25);
     animation: pulse 1s infinite;
 }
 

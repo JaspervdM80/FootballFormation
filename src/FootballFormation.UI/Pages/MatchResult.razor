@@ -10,12 +10,12 @@
 
 <div class="d-flex align-center gap-2 mb-2">
     <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="NavigateBack" Size="Size.Small"
-                   Style="color: rgba(255,255,255,0.3);" />
+                   Style="color: color-mix(in srgb, var(--ink) 40%, transparent);" />
     <div>
-        <MudText Typo="Typo.h5" Style="color: white; font-weight: 700;">
+        <MudText Typo="Typo.h5" Style="color: var(--ink); font-weight: 700;">
             @(GameData.IsHomeGame ? "vs" : "@") @GameData.Opponent
         </MudText>
-        <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.35);">
+        <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 45%, transparent);">
             @GameData.Date.ToString("dd MMMM yyyy") · @(GameData.IsHomeGame ? L["Home"] : L["Away"]) · @GameData.FormationType.DisplayName()
         </MudText>
     </div>
@@ -102,7 +102,7 @@
         }
         else
         {
-            <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.25);" Class="mb-3">
+            <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 35%, transparent);" Class="mb-3">
                 @L["No goals recorded yet"]
             </MudText>
         }

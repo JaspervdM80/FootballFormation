@@ -4,13 +4,13 @@
     gap: 6px;
     padding: 8px;
     margin-bottom: 8px;
-    border: 2px dashed rgba(251,191,36,0.3);
+    border: 2px dashed color-mix(in srgb, var(--club-primary-bright) 30%, transparent);
     border-radius: 10px;
-    color: rgba(251,191,36,0.6);
+    color: color-mix(in srgb, var(--club-primary-bright) 60%, transparent);
     transition: all 0.15s;
 }
 
 .sub-drop-zone:hover {
-    border-color: rgba(251,191,36,0.5);
-    background: rgba(251,191,36,0.04);
+    border-color: color-mix(in srgb, var(--club-primary-bright) 50%, transparent);
+    background: color-mix(in srgb, var(--club-primary-bright) 4%, transparent);
 }

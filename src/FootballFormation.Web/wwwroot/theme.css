@@ -1,0 +1,47 @@
+/* Club theme: GJS Gorinchem (light) — the single source of truth for club branding.
+   Colors are taken from the club crest (wwwroot/icons/icon-512.png): red shield,
+   green banner, on a white page with light-green sections. Re-theming for another
+   club should only require changing this file (plus the MudTheme palette in
+   MainLayout.razor.cs until that is driven by the same configuration).
+
+   Derived shades are made where they are used via
+   color-mix(in srgb, var(--token) N%, transparent) instead of separate
+   tokens per alpha level. Text derives from --ink the same way. */
+
+:root {
+    /* Brand */
+    --club-primary: #e11d24;        /* crest red */
+    --club-primary-bright: #c8151c; /* emphasis red for text on light surfaces */
+    --club-primary-deep: #a3141a;   /* darker gradient partner */
+    --club-on-primary: #ffffff;     /* text on primary-colored buttons */
+    --club-accent: #0a8f3d;         /* crest banner green */
+    --club-accent-bright: #0c7a37;  /* emphasis green for text on light surfaces */
+    --club-accent-deep: #076b2e;
+
+    /* Club identity */
+    --club-logo: url('icons/icon-192.png');
+    --club-logo-bg: #ffffff;        /* chip behind the crest in the appbar */
+
+    /* Surfaces: white page, light club-green sections */
+    --surface-page: #ffffff;
+    --surface-card: #eef7f1;
+    --surface-card-alt: #e0efe6;    /* deeper gradient partner for cards */
+    --surface-appbar: #ffffff;
+    --surface-appbar-alt: #e9f4ed;  /* greener gradient partner for the appbar */
+
+    /* Text: everything derives from ink via color-mix */
+    --ink: #182b1f;                 /* near-black with a green cast */
+
+    /* Semantic (club-independent, but centralized all the same) */
+    --color-guest: #a855f7;
+    --color-guest-bright: #7e22ce;
+    --color-danger: #ef4444;
+    --color-danger-bright: #dc2626;
+    --color-success-bright: #15803d;
+
+    /* Shared gradients */
+    --gradient-primary: linear-gradient(135deg, var(--club-primary), var(--club-primary-deep));
+    --gradient-accent: linear-gradient(135deg, var(--club-accent), var(--club-accent-deep));
+    --gradient-card: linear-gradient(135deg, var(--surface-card), var(--surface-card-alt));
+    --gradient-appbar: linear-gradient(to right, var(--surface-appbar), var(--surface-appbar-alt));
+}

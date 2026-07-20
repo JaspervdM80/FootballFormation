@@ -1,17 +1,17 @@
 @inherits LayoutComponentBase
 @inject IStringLocalizer<Strings> L
 
-<MudThemeProvider Theme="Theme" IsDarkMode="true" />
+<MudThemeProvider Theme="Theme" IsDarkMode="false" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="0" Fixed="true" Dense="true" Style="background: linear-gradient(to right, #13131f, #1a1a2e); border-bottom: 1px solid rgba(255,255,255,0.05); padding-top: env(safe-area-inset-top, 0px);">
+    <MudAppBar Elevation="0" Fixed="true" Dense="true" Style="background: var(--gradient-appbar); border-bottom: 1px solid color-mix(in srgb, var(--ink) 5%, transparent); padding-top: env(safe-area-inset-top, 0px);">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Class="nav-hamburger" Edge="Edge.Start"
-                       Style="color: rgba(255,255,255,0.7);" OnClick="ToggleDrawer" aria-label="Menu" />
+                       Style="color: color-mix(in srgb, var(--ink) 80%, transparent);" OnClick="ToggleDrawer" aria-label="Menu" />
         <a href="/" class="app-title-link ml-2 mr-8" aria-label="@L["Start"]">
-            <img src="icons/icon-192.png" alt="" class="app-title-logo" />
+            <span class="app-title-logo" aria-hidden="true"></span>
             <span class="app-title-text">GJS Meiden</span>
         </a>
         <div class="d-flex gap-1 topbar-nav">
@@ -28,18 +28,18 @@
         </div>
         <MudSpacer />
         <MudMenu Icon="@Icons.Material.Filled.Language" Size="Size.Small" Dense="true"
-                 AriaLabel="Language" Style="color: rgba(255,255,255,0.4);">
+                 AriaLabel="Language" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
             <MudMenuItem OnClick="@(() => SwitchCulture("nl"))">Nederlands</MudMenuItem>
             <MudMenuItem OnClick="@(() => SwitchCulture("en"))">English</MudMenuItem>
         </MudMenu>
         <AuthorizeView>
             <Authorized>
                 <div class="d-flex align-center gap-2">
-                    <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Size="Size.Small" Style="color: #fbbf24;" />
-                    <MudText Typo="Typo.body2" Class="admin-name" Style="color: rgba(255,255,255,0.5);">@context.User.Identity?.Name</MudText>
+                    <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Size="Size.Small" Style="color: var(--club-primary-bright);" />
+                    <MudText Typo="Typo.body2" Class="admin-name" Style="color: color-mix(in srgb, var(--ink) 60%, transparent);">@context.User.Identity?.Name</MudText>
                     <form method="post" action="/auth/logout" data-enhance="false" style="margin: 0;">
                         <button type="submit"
-                                style="background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; font-size: 0.875rem; padding: 4px 8px; text-transform: none;">
+                                style="background: none; border: none; color: color-mix(in srgb, var(--ink) 40%, transparent); cursor: pointer; font-size: 0.875rem; padding: 4px 8px; text-transform: none;">
                             @L["Logout"]
                         </button>
                     </form>
@@ -48,7 +48,7 @@
             <NotAuthorized>
                 <MudButton Href="/login" Target="_self" Variant="Variant.Text" Size="Size.Small"
                            StartIcon="@Icons.Material.Filled.Lock"
-                           Style="color: rgba(255,255,255,0.3); text-transform: none;">
+                           Style="color: color-mix(in srgb, var(--ink) 40%, transparent); text-transform: none;">
                     Admin
                 </MudButton>
             </NotAuthorized>
@@ -58,7 +58,7 @@
     <MudDrawer @bind-Open="_drawerOpen" Variant="@DrawerVariant.Temporary" Elevation="2"
                Style="padding-top: env(safe-area-inset-top, 0px);">
         <a href="/" class="app-title-link pa-4">
-            <img src="icons/icon-192.png" alt="" class="app-title-logo" />
+            <span class="app-title-logo" aria-hidden="true"></span>
             <span class="app-title-text">GJS Meiden</span>
         </a>
         <MudNavMenu>

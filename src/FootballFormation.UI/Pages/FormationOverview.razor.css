@@ -1,10 +1,10 @@
-/* Capture area — dark background for clean screenshots */
+/* Capture area — solid themed background for clean screenshots */
 .overview-capture {
-    background: linear-gradient(135deg, #0c0c14, #141420);
+    background: linear-gradient(135deg, var(--surface-page), var(--surface-card));
     border-radius: 16px;
     padding: 20px;
     max-width: 900px;
-    border: 1px solid rgba(255,255,255,0.05);
+    border: 1px solid color-mix(in srgb, var(--ink) 5%, transparent);
 }
 
 .overview-header {
@@ -13,7 +13,7 @@
     justify-content: space-between;
     margin-bottom: 16px;
     padding-bottom: 12px;
-    border-bottom: 1px solid rgba(251,191,36,0.1);
+    border-bottom: 1px solid color-mix(in srgb, var(--club-primary-bright) 10%, transparent);
 }
 
 .overview-header-left {
@@ -26,22 +26,22 @@
 .overview-title {
     font-size: 1.3rem;
     font-weight: 700;
-    color: white;
+    color: var(--ink);
 }
 
 .overview-date {
     font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.35);
+    color: color-mix(in srgb, var(--ink) 45%, transparent);
 }
 
 .overview-formation {
     font-size: 0.75rem;
     font-weight: 600;
-    color: #fbbf24;
-    background: rgba(245,158,11,0.12);
+    color: var(--club-primary-bright);
+    background: color-mix(in srgb, var(--club-primary) 12%, transparent);
     padding: 4px 12px;
     border-radius: 4px;
-    border: 1px solid rgba(245,158,11,0.2);
+    border: 1px solid color-mix(in srgb, var(--club-primary) 20%, transparent);
 }
 
 /* Period grid */
@@ -52,17 +52,17 @@
 }
 
 .overview-period-card {
-    background: rgba(255, 255, 255, 0.02);
+    background: color-mix(in srgb, var(--ink) 2%, transparent);
     border-radius: 12px;
     padding: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid color-mix(in srgb, var(--ink) 5%, transparent);
 }
 
 .period-label {
     text-align: center;
     font-size: 0.7rem;
     font-weight: 600;
-    color: rgba(251,191,36,0.6);
+    color: color-mix(in srgb, var(--club-primary-bright) 60%, transparent);
     margin-bottom: 8px;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -80,28 +80,28 @@
 .subs-label {
     font-size: 0.7rem;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.35);
+    color: color-mix(in srgb, var(--ink) 45%, transparent);
     text-transform: uppercase;
 }
 
 .subs-label.subs-none {
-    color: rgba(255, 255, 255, 0.15);
+    color: color-mix(in srgb, var(--ink) 25%, transparent);
     font-style: italic;
 }
 
 .sub-badge {
     font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.7);
-    background: rgba(255, 255, 255, 0.04);
+    color: color-mix(in srgb, var(--ink) 80%, transparent);
+    background: color-mix(in srgb, var(--ink) 4%, transparent);
     padding: 2px 8px;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
 }
 
 .sub-number {
     font-weight: 700;
     margin-right: 2px;
-    color: #fbbf24;
+    color: var(--club-primary-bright);
 }
 
 /* Action buttons below the capture area */

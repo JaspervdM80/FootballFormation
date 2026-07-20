@@ -9,21 +9,21 @@
     align-items: center;
     gap: 16px;
     padding: 14px 16px;
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.04);
+    background: color-mix(in srgb, var(--ink) 2%, transparent);
+    border: 1px solid color-mix(in srgb, var(--ink) 4%, transparent);
     border-radius: 12px;
     transition: all 0.15s;
     cursor: pointer;
 }
 
 .game-row:hover {
-    background: rgba(255,255,255,0.04);
-    border-color: rgba(255,255,255,0.08);
+    background: color-mix(in srgb, var(--ink) 4%, transparent);
+    border-color: color-mix(in srgb, var(--ink) 8%, transparent);
 }
 
 .game-date {
     font-size: 0.75rem;
-    color: rgba(255,255,255,0.35);
+    color: color-mix(in srgb, var(--ink) 45%, transparent);
     min-width: 56px;
     font-variant-numeric: tabular-nums;
 }
@@ -31,7 +31,7 @@
 .game-opponent {
     font-weight: 600;
     font-size: 0.9rem;
-    color: white;
+    color: var(--ink);
     flex: 1;
 }
 
@@ -42,18 +42,18 @@
     text-align: center;
 }
 
-.game-score.win { color: #4ade80; }
-.game-score.loss { color: #f87171; }
-.game-score.draw { color: rgba(255,255,255,0.4); }
+.game-score.win { color: var(--color-success-bright); }
+.game-score.loss { color: var(--color-danger-bright); }
+.game-score.draw { color: color-mix(in srgb, var(--ink) 50%, transparent); }
 
 .badge-unavailable {
     font-size: 0.65rem;
     font-weight: 600;
     padding: 3px 8px;
     border-radius: 4px;
-    background: rgba(239,68,68,0.1);
-    color: #f87171;
-    border: 1px solid rgba(239,68,68,0.15);
+    background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+    color: var(--color-danger-bright);
+    border: 1px solid color-mix(in srgb, var(--color-danger) 15%, transparent);
 }
 
 .game-actions {
@@ -67,7 +67,7 @@
     height: 32px;
     border: none;
     background: none;
-    color: rgba(255,255,255,0.4);
+    color: color-mix(in srgb, var(--ink) 50%, transparent);
     border-radius: 6px;
     cursor: pointer;
     display: flex;
@@ -78,11 +78,11 @@
 }
 
 .action-btn:hover {
-    color: #fbbf24;
-    background: rgba(251,191,36,0.1);
+    color: var(--club-primary-bright);
+    background: color-mix(in srgb, var(--club-primary-bright) 10%, transparent);
 }
 
 .action-btn.action-delete:hover {
-    color: #f87171;
-    background: rgba(239,68,68,0.1);
+    color: var(--color-danger-bright);
+    background: color-mix(in srgb, var(--color-danger) 10%, transparent);
 }

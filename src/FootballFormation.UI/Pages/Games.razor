@@ -4,8 +4,8 @@
 
 <div class="d-flex align-center justify-space-between mb-6">
     <div>
-        <MudText Typo="Typo.h4" Style="color: white; font-weight: 700;">@L["Games"]</MudText>
-        <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.35);">
+        <MudText Typo="Typo.h4" Style="color: var(--ink); font-weight: 700;">@L["Games"]</MudText>
+        <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 45%, transparent);">
             @if (_games is not null)
             {
                 @(_games.Count == 1 ? L["{0} match", _games.Count] : L["{0} matches", _games.Count])
@@ -27,8 +27,8 @@
 else if (_games.Count == 0)
 {
     <MudPaper Class="pa-6" Elevation="2" Style="border-radius: 16px; text-align: center;">
-        <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Size="Size.Large" Style="color: rgba(255,255,255,0.15);" />
-        <MudText Typo="Typo.body1" Class="mt-3" Style="color: rgba(255,255,255,0.4);">
+        <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Size="Size.Large" Style="color: color-mix(in srgb, var(--ink) 25%, transparent);" />
+        <MudText Typo="Typo.body1" Class="mt-3" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
             @L["No games yet. Create your first game!"]
         </MudText>
     </MudPaper>

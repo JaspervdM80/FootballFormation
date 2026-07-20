@@ -24,26 +24,26 @@ html, body {
     /* Painted statically rather than by the MudBlazor theme: when a phone suspends the
        PWA the circuit dies and the theme's injected styles can go with it, which used to
        flash the page white on resume. Also covers iOS overscroll beyond the safe area. */
-    background-color: #0c0c14;
-    color-scheme: dark;
+    background-color: var(--surface-page);
+    color-scheme: light;
 }
 
-/* === Premium Dark Theme Overrides === */
+/* === Club Theme Overrides === */
 
 /* MudBlazor AppBar customization */
 .mud-appbar {
-    background: linear-gradient(to right, #13131f, #1a1a2e) !important;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    background: var(--gradient-appbar) !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--ink) 5%, transparent);
 }
 
 /* MudBlazor Paper/Card styling */
 .mud-paper {
-    background: linear-gradient(135deg, #141420, #18182a) !important;
-    border: 1px solid rgba(255,255,255,0.05) !important;
+    background: var(--gradient-card) !important;
+    border: 1px solid color-mix(in srgb, var(--ink) 5%, transparent) !important;
     position: relative;
 }
 
-/* Gold top-line effect on elevated papers */
+/* Accent top-line effect on elevated papers */
 .mud-paper.mud-elevation-2::before,
 .mud-paper.mud-elevation-1::before {
     content: '';
@@ -52,51 +52,51 @@ html, body {
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(to right, transparent, rgba(251,191,36,0.2), transparent);
+    background: linear-gradient(to right, transparent, color-mix(in srgb, var(--club-accent) 30%, transparent), transparent);
     pointer-events: none;
     z-index: 1;
 }
 
 /* Table overrides */
 .mud-table .mud-table-head .mud-table-row .mud-table-cell {
-    color: rgba(251,191,36,0.6) !important;
+    color: color-mix(in srgb, var(--club-primary-bright) 60%, transparent) !important;
     font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
-    border-bottom-color: rgba(255,255,255,0.06) !important;
+    border-bottom-color: color-mix(in srgb, var(--ink) 6%, transparent) !important;
 }
 
 .mud-table .mud-table-body .mud-table-row .mud-table-cell {
-    border-bottom-color: rgba(255,255,255,0.04) !important;
+    border-bottom-color: color-mix(in srgb, var(--ink) 4%, transparent) !important;
 }
 
 .mud-table .mud-table-body .mud-table-row:hover {
-    background: rgba(255,255,255,0.03) !important;
+    background: color-mix(in srgb, var(--ink) 3%, transparent) !important;
 }
 
 .mud-table .mud-table-body .mud-table-row.mud-table-row-striped:nth-child(even) {
-    background: rgba(255,255,255,0.015) !important;
+    background: color-mix(in srgb, var(--ink) 2%, transparent) !important;
 }
 
 /* Tab overrides */
 .mud-tabs .mud-tab.mud-tab-active {
-    color: #fbbf24 !important;
+    color: var(--club-primary-bright) !important;
 }
 
 .mud-tabs .mud-tab-slider {
-    background: #fbbf24 !important;
+    background: var(--club-primary-bright) !important;
 }
 
 /* Dialog styling */
 .mud-dialog {
-    background: linear-gradient(135deg, #141420, #18182a) !important;
-    border: 1px solid rgba(255,255,255,0.08) !important;
+    background: var(--gradient-card) !important;
+    border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent) !important;
 }
 
 /* Input field focus */
 .mud-input.mud-input-underline::after {
-    border-bottom-color: #fbbf24 !important;
+    border-bottom-color: var(--club-primary-bright) !important;
 }
 
 /* Progress linear */
@@ -106,21 +106,23 @@ html, body {
 
 /* Chip overrides for formation badge */
 .mud-chip.mud-chip-color-secondary {
-    background: rgba(245,158,11,0.12) !important;
-    color: #fbbf24 !important;
-    border: 1px solid rgba(245,158,11,0.2) !important;
+    background: color-mix(in srgb, var(--club-primary) 12%, transparent) !important;
+    color: var(--club-primary-bright) !important;
+    border: 1px solid color-mix(in srgb, var(--club-primary) 20%, transparent) !important;
 }
 
 /* Snackbar */
+/* Success stays green regardless of club primary — a red club would otherwise
+   get error-looking success toasts */
 .mud-snackbar.mud-alert-filled-success {
-    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
-    color: #0c0c14 !important;
+    background: var(--gradient-accent) !important;
+    color: #fff !important;
 }
 
 /* Separator line */
 .gold-separator {
     height: 1px;
-    background: linear-gradient(to right, transparent, rgba(251,191,36,0.1), transparent);
+    background: linear-gradient(to right, transparent, color-mix(in srgb, var(--club-primary-bright) 10%, transparent), transparent);
     margin: 24px 0;
 }
 
@@ -130,7 +132,7 @@ html, body {
     border-radius: 6px !important;
     font-size: 0.8rem !important;
     font-weight: 500 !important;
-    color: rgba(255,255,255,0.45) !important;
+    color: color-mix(in srgb, var(--ink) 55%, transparent) !important;
     cursor: pointer;
     transition: all 0.15s;
     text-decoration: none !important;
@@ -138,14 +140,14 @@ html, body {
 }
 
 .topbar-nav-link:hover {
-    color: rgba(255,255,255,0.7) !important;
-    background: rgba(255,255,255,0.04) !important;
+    color: color-mix(in srgb, var(--ink) 80%, transparent) !important;
+    background: color-mix(in srgb, var(--ink) 4%, transparent) !important;
 }
 
 .topbar-nav-link.active,
 .topbar-nav-link[aria-current="page"] {
-    color: #fbbf24 !important;
-    background: rgba(245,158,11,0.1) !important;
+    color: var(--club-primary-bright) !important;
+    background: color-mix(in srgb, var(--club-primary) 10%, transparent) !important;
 }
 
 /* Hide MudNavLink default icon area in top bar */
@@ -155,8 +157,8 @@ html, body {
 
 /* Gold button style */
 .btn-gold {
-    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
-    color: #0c0c14 !important;
+    background: var(--gradient-primary) !important;
+    color: var(--club-on-primary) !important;
     font-weight: 600 !important;
     border: none !important;
 }
@@ -169,13 +171,13 @@ html, body {
 /* Ghost button */
 .btn-ghost {
     background: transparent !important;
-    border: 1px solid rgba(255,255,255,0.1) !important;
-    color: rgba(255,255,255,0.5) !important;
+    border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent) !important;
+    color: color-mix(in srgb, var(--ink) 60%, transparent) !important;
 }
 
 .btn-ghost:hover {
-    border-color: rgba(255,255,255,0.2) !important;
-    color: white !important;
+    border-color: color-mix(in srgb, var(--ink) 30%, transparent) !important;
+    color: color-mix(in srgb, var(--ink) 90%, transparent) !important;
 }
 
 /* Badge styles */
@@ -184,9 +186,9 @@ html, body {
     font-weight: 600;
     padding: 4px 10px;
     border-radius: 4px;
-    background: rgba(245,158,11,0.12);
-    color: #fbbf24;
-    border: 1px solid rgba(245,158,11,0.2);
+    background: color-mix(in srgb, var(--club-primary) 12%, transparent);
+    color: var(--club-primary-bright);
+    border: 1px solid color-mix(in srgb, var(--club-primary) 20%, transparent);
 }
 
 .badge-teal {
@@ -194,9 +196,9 @@ html, body {
     font-weight: 600;
     padding: 4px 10px;
     border-radius: 4px;
-    background: rgba(20,184,166,0.12);
-    color: #2dd4bf;
-    border: 1px solid rgba(20,184,166,0.2);
+    background: color-mix(in srgb, var(--club-accent) 12%, transparent);
+    color: var(--club-accent-bright);
+    border: 1px solid color-mix(in srgb, var(--club-accent) 20%, transparent);
 }
 
 .badge-guest {
@@ -205,9 +207,9 @@ html, body {
     letter-spacing: 0.5px;
     padding: 2px 6px;
     border-radius: 4px;
-    background: rgba(168,85,247,0.12);
-    color: #c084fc;
-    border: 1px solid rgba(168,85,247,0.2);
+    background: color-mix(in srgb, var(--color-guest) 12%, transparent);
+    color: var(--color-guest-bright);
+    border: 1px solid color-mix(in srgb, var(--color-guest) 20%, transparent);
 }
 
 .badge-venue {
@@ -215,14 +217,14 @@ html, body {
     font-weight: 600;
     padding: 3px 8px;
     border-radius: 4px;
-    background: rgba(255,255,255,0.06);
-    color: rgba(255,255,255,0.5);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: color-mix(in srgb, var(--ink) 6%, transparent);
+    color: color-mix(in srgb, var(--ink) 60%, transparent);
+    border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
 }
 
 /* Page header styling */
 .page-header-subtitle {
-    color: rgba(255,255,255,0.35);
+    color: color-mix(in srgb, var(--ink) 45%, transparent);
     font-size: 0.85rem;
 }
 
@@ -232,7 +234,7 @@ html, body {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: rgba(251,191,36,0.6);
+    color: color-mix(in srgb, var(--club-primary-bright) 60%, transparent);
     margin-bottom: 16px;
 }
 
@@ -242,16 +244,16 @@ html, body {
 }
 
 ::-webkit-scrollbar-track {
-    background: rgba(255,255,255,0.02);
+    background: color-mix(in srgb, var(--ink) 2%, transparent);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.1);
+    background: color-mix(in srgb, var(--ink) 10%, transparent);
     border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255,255,255,0.2);
+    background: color-mix(in srgb, var(--ink) 30%, transparent);
 }
 
 /* Fix: MudPopoverProvider sits before MudLayout in DOM — collapse it to zero height
@@ -335,15 +337,18 @@ html, body {
     width: 28px;
     height: 28px;
     border-radius: 6px;
-    background: #fff;
-    object-fit: contain;
+    background-color: var(--club-logo-bg);
+    background-image: var(--club-logo);
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
     flex: none;
 }
 
 .app-title-text {
     font-size: 1.15rem;
     font-weight: 700;
-    background: linear-gradient(135deg, #f59e0b, #d97706);
+    background: var(--gradient-primary);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -353,7 +358,7 @@ html, body {
 
 /* Alternative positions and the row actions hug the right edge of the table */
 .players-table .cell-right {
-    text-align: right;
+    justify-content: flex-end;
 }
 
 .players-table .cell-right .badge-teal:last-child {
@@ -379,7 +384,7 @@ html, body {
         display: inline;
         margin-right: 6px;
         font-weight: 700;
-        color: #fbbf24;
+        color: var(--club-primary-bright);
     }
 }
 
@@ -406,8 +411,8 @@ html, body {
     z-index: 2000;
     align-items: center;
     justify-content: center;
-    background: rgba(12, 12, 20, 0.92);
-    color: rgba(255, 255, 255, 0.75);
+    background: color-mix(in srgb, var(--surface-page) 92%, transparent);
+    color: color-mix(in srgb, var(--ink) 85%, transparent);
     font-size: 0.95rem;
     text-align: center;
     padding: 24px;

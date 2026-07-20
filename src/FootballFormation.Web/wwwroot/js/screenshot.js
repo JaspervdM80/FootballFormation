@@ -13,8 +13,12 @@ window.captureFormationOverview = async function (elementId) {
         });
     }
 
+    // Background comes from the club theme (theme.css) so exported images match the app
+    const themeBackground = getComputedStyle(document.documentElement)
+        .getPropertyValue('--surface-appbar-alt').trim() || '#1a1a2e';
+
     const canvas = await html2canvas(element, {
-        backgroundColor: '#1a1a2e',
+        backgroundColor: themeBackground,
         scale: 2, // High res for WhatsApp
         useCORS: true,
         logging: false
