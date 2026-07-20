@@ -15,10 +15,33 @@
                         Class="topbar-nav-link">Squad</MudNavLink>
             <MudNavLink Href="/games" Match="NavLinkMatch.Prefix"
                         Class="topbar-nav-link">Games</MudNavLink>
-            <MudNavLink Href="/settings" Match="NavLinkMatch.All"
-                        Class="topbar-nav-link">Preferences</MudNavLink>
+            <AuthorizeView>
+                <MudNavLink Href="/settings" Match="NavLinkMatch.All"
+                            Class="topbar-nav-link">Preferences</MudNavLink>
+            </AuthorizeView>
         </div>
         <MudSpacer />
+        <AuthorizeView>
+            <Authorized>
+                <div class="d-flex align-center gap-2">
+                    <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Size="Size.Small" Style="color: #fbbf24;" />
+                    <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.5);">@context.User.Identity?.Name</MudText>
+                    <form method="post" action="/auth/logout" data-enhance="false" style="margin: 0;">
+                        <button type="submit"
+                                style="background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; font-size: 0.875rem; padding: 4px 8px; text-transform: none;">
+                            Logout
+                        </button>
+                    </form>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                <MudButton Href="/login" Target="_self" Variant="Variant.Text" Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Lock"
+                           Style="color: rgba(255,255,255,0.3); text-transform: none;">
+                    Admin
+                </MudButton>
+            </NotAuthorized>
+        </AuthorizeView>
     </MudAppBar>
 
     <MudMainContent Style="padding: 76px 24px 40px; max-width: 1100px; margin: 0 auto;">

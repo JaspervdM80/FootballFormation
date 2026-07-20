@@ -10,7 +10,12 @@ namespace FootballFormation.UI.Helpers;
 public static class UiFeedback
 {
     /// <summary>Dialogs must not close on backdrop click — see docs/ui_components.md.</summary>
-    public static readonly DialogOptions LockedDialog = new() { BackdropClick = false };
+    public static readonly DialogOptions LockedDialog = new()
+    {
+        BackdropClick = false,
+        MaxWidth = MaxWidth.Small,
+        FullWidth = true
+    };
 
     /// <summary>
     /// Shows <paramref name="successMessage"/> when the call succeeded, the service error

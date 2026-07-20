@@ -155,6 +155,7 @@ public class GameService(AppDbContext db, ILogger<GameService> logger)
                     GamePeriodId = periodId,
                     PlayerId = pos.PlayerId,
                     Position = pos.Position,
+                    SlotIndex = pos.IsSubstitute ? null : pos.SlotIndex,
                     IsSubstitute = pos.IsSubstitute
                 });
             }

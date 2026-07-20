@@ -3,7 +3,10 @@
 ## Formation Builder (`/games/{id}/formation`)
 3-panel layout: Player List | Pitch | Substitutes
 - Tabs for each period (2 halves or 4 quarters)
-- Drag state lives in `LineupDragState` (`Drag.PlayerId` / `Drag.FromPosition`), cleared via `Drag.Clear()`
+- Drag state lives in `LineupDragState` (`Drag.PlayerId` / `Drag.FromSlotIndex` / `Drag.FromSub`), cleared via `Drag.Clear()`
+- Pitch slots are index-based: `GamePlayerPosition.SlotIndex` is the source of truth,
+  position matching is the fallback for legacy rows (see `BuildSlotAssignments`)
+- Page requires admin login (`[Authorize]`); anonymous visitors get the read-only overview
 - Actions: Save All, Copy to Next Period
 - Playing time table is built by `PlayingTimeReport.Build(...)`, not by the page; it renders
   whenever there are players (it does not wait for every period to be filled)
@@ -11,8 +14,9 @@
 ## Drag & Drop (HTML5 API)
 - **Player list → Pitch**: Assigns player to position slot
 - **Player list → Sub bench**: Adds as substitute
-- **Pitch → Pitch**: Swaps two players' positions (`Drag.FromPosition` is set ⇒ the drop is a swap)
-- **Pitch → Sub bench**: Moves player from pitch to bench
+- **Pitch → Pitch**: Swaps two players' slots (`Drag.FromSlotIndex` is set ⇒ the drop is a swap)
+- **Pitch → Sub bench**: Drop on empty bench area moves player to bench; drop **on a sub** swaps the two (`OnSwapFieldPlayerWithSub`)
+- **Sub bench → Pitch**: Sub takes the slot; the displaced starter goes to the bench
 - Click on assigned player = remove from position
 - `@ondragstart`/`@ondrop` sit on the **inner** circle (`.player-circle` / `.empty-circle`),
   not on the `.position-slot` wrapper — relevant when scripting or testing a drag

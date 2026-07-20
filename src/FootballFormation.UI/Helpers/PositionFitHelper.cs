@@ -16,7 +16,6 @@ public static class PositionFitHelper
     /// <summary>
     /// Maps each position to the specific slots it naturally covers.
     /// Broad positions (W, DEF, MID, ATT) expand to all their specific variants.
-    /// Specific positions map to their close variants (CB ↔ LCB/RCB, ST ↔ LST/RST, etc.).
     /// </summary>
     private static readonly Dictionary<PlayerPosition, PlayerPosition[]> NaturalPositions = new()
     {
@@ -24,50 +23,35 @@ public static class PositionFitHelper
         [PlayerPosition.GK] = [],
 
         // Defenders — broad
-        [PlayerPosition.DEF] = [PlayerPosition.LB, PlayerPosition.LCB, PlayerPosition.CB, PlayerPosition.RCB, PlayerPosition.RB, PlayerPosition.LWB, PlayerPosition.RWB],
+        [PlayerPosition.DEF] = [PlayerPosition.LB, PlayerPosition.CB, PlayerPosition.RB],
 
-        // Defenders — specific (close variants only)
-        [PlayerPosition.CB]  = [PlayerPosition.LCB, PlayerPosition.RCB],
-        [PlayerPosition.LCB] = [PlayerPosition.CB, PlayerPosition.RCB],
-        [PlayerPosition.RCB] = [PlayerPosition.CB, PlayerPosition.LCB],
-        [PlayerPosition.LB]  = [PlayerPosition.LWB],
-        [PlayerPosition.RB]  = [PlayerPosition.RWB],
-        [PlayerPosition.LWB] = [PlayerPosition.LB],
-        [PlayerPosition.RWB] = [PlayerPosition.RB],
+        // Defenders — specific
+        [PlayerPosition.CB] = [],
+        [PlayerPosition.LB] = [],
+        [PlayerPosition.RB] = [],
 
         // Midfielders — broad
-        [PlayerPosition.MID] = [PlayerPosition.LCDM, PlayerPosition.RCDM, PlayerPosition.CDM, PlayerPosition.LCM, PlayerPosition.CM, PlayerPosition.RCM, PlayerPosition.LM, PlayerPosition.RM, PlayerPosition.LCAM, PlayerPosition.RCAM, PlayerPosition.CAM],
+        [PlayerPosition.MID] = [PlayerPosition.CDM, PlayerPosition.CM, PlayerPosition.LM, PlayerPosition.RM, PlayerPosition.CAM],
 
         // Midfielders — specific
-        [PlayerPosition.CDM]  = [PlayerPosition.LCDM, PlayerPosition.RCDM],
-        [PlayerPosition.LCDM] = [PlayerPosition.CDM, PlayerPosition.RCDM],
-        [PlayerPosition.RCDM] = [PlayerPosition.CDM, PlayerPosition.LCDM],
-        [PlayerPosition.CM]   = [PlayerPosition.LCM, PlayerPosition.RCM],
-        [PlayerPosition.LCM]  = [PlayerPosition.CM, PlayerPosition.RCM],
-        [PlayerPosition.RCM]  = [PlayerPosition.CM, PlayerPosition.LCM],
-        [PlayerPosition.CAM]  = [PlayerPosition.LCAM, PlayerPosition.RCAM],
-        [PlayerPosition.LCAM] = [PlayerPosition.CAM, PlayerPosition.RCAM],
-        [PlayerPosition.RCAM] = [PlayerPosition.CAM, PlayerPosition.LCAM],
-        [PlayerPosition.LM]   = [PlayerPosition.LW],
-        [PlayerPosition.RM]   = [PlayerPosition.RW],
+        [PlayerPosition.CDM] = [PlayerPosition.CM],
+        [PlayerPosition.CM]  = [PlayerPosition.CDM, PlayerPosition.CAM],
+        [PlayerPosition.CAM] = [PlayerPosition.CM],
+        [PlayerPosition.LM]  = [PlayerPosition.LW],
+        [PlayerPosition.RM]  = [PlayerPosition.RW],
 
         // Wingers — broad
-        [PlayerPosition.W] = [PlayerPosition.LW, PlayerPosition.RW, PlayerPosition.LF, PlayerPosition.RF],
+        [PlayerPosition.W] = [PlayerPosition.LW, PlayerPosition.RW],
 
         // Wingers — specific
-        [PlayerPosition.LW] = [PlayerPosition.RW, PlayerPosition.LF],
-        [PlayerPosition.RW] = [PlayerPosition.LW, PlayerPosition.RF],
+        [PlayerPosition.LW] = [PlayerPosition.RW],
+        [PlayerPosition.RW] = [PlayerPosition.LW],
 
         // Forwards — broad
-        [PlayerPosition.ATT] = [PlayerPosition.ST, PlayerPosition.LST, PlayerPosition.RST, PlayerPosition.CF, PlayerPosition.LF, PlayerPosition.RF],
+        [PlayerPosition.ATT] = [PlayerPosition.ST],
 
         // Forwards — specific
-        [PlayerPosition.ST]  = [PlayerPosition.LST, PlayerPosition.RST, PlayerPosition.CF],
-        [PlayerPosition.LST] = [PlayerPosition.ST, PlayerPosition.RST, PlayerPosition.CF],
-        [PlayerPosition.RST] = [PlayerPosition.ST, PlayerPosition.LST, PlayerPosition.CF],
-        [PlayerPosition.CF]  = [PlayerPosition.ST, PlayerPosition.LST, PlayerPosition.RST],
-        [PlayerPosition.LF]  = [PlayerPosition.RF, PlayerPosition.LW],
-        [PlayerPosition.RF]  = [PlayerPosition.LF, PlayerPosition.RW],
+        [PlayerPosition.ST] = [],
     };
 
     public static PositionFit GetFit(Player player, PlayerPosition slotPosition)

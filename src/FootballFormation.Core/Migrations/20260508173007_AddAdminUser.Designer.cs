@@ -3,6 +3,7 @@ using System;
 using FootballFormation.Core.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FootballFormation.Core.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260508173007_AddAdminUser")]
+    partial class AddAdminUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.5");
@@ -50,13 +53,6 @@ namespace FootballFormation.Core.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("GameDurationMinutes")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("GuestPlayerIds")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsHomeGame")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Notes")
@@ -206,9 +202,6 @@ namespace FootballFormation.Core.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsGuest")
-                        .HasColumnType("INTEGER");
 
                     b.Property<int>("PreferredPosition")
                         .HasColumnType("INTEGER");

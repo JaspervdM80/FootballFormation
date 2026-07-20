@@ -27,7 +27,7 @@
 
             <div class="overview-period-card">
                 <div class="period-label">@period.PeriodType.DisplayName()</div>
-                <PitchOverview Formation="formation" Positions="starters" />
+                <PitchOverview Formation="formation" Positions="starters" HidePositionFit="IsAnonymous" />
                 @if (subs.Count > 0)
                 {
                     <div class="subs-row">
@@ -56,11 +56,22 @@
 </div>
 
 <div class="overview-actions">
-    <MudButton Variant="Variant.Outlined" Size="Size.Small" Class="btn-ghost"
-               StartIcon="@Icons.Material.Filled.ArrowBack"
-               OnClick="NavigateBack">
-        Back to editor
-    </MudButton>
+    <AuthorizeView>
+        <Authorized>
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" Class="btn-ghost"
+                       StartIcon="@Icons.Material.Filled.ArrowBack"
+                       OnClick="NavigateToEditor">
+                Back to editor
+            </MudButton>
+        </Authorized>
+        <NotAuthorized>
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" Class="btn-ghost"
+                       StartIcon="@Icons.Material.Filled.ArrowBack"
+                       OnClick="NavigateToGames">
+                Back to games
+            </MudButton>
+        </NotAuthorized>
+    </AuthorizeView>
     <MudButton Variant="Variant.Filled" Size="Size.Small" Class="btn-gold"
                StartIcon="@Icons.Material.Filled.CameraAlt"
                OnClick="CaptureScreenshot">

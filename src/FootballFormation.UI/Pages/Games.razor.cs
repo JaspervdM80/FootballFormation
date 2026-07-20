@@ -2,6 +2,7 @@ using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using MudBlazor;
 
 namespace FootballFormation.UI.Pages;
@@ -13,9 +14,19 @@ public partial class Games
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
 
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; } = null!;
+
+    private bool _isAdmin;
+
     private List<Game>? _games;
 
-    protected override async Task OnInitializedAsync() => await LoadGames();
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateTask;
+        _isAdmin = authState.User.Identity?.IsAuthenticated == true;
+        await LoadGames();
+    }
 
     private async Task LoadGames()
     {
@@ -41,6 +52,17 @@ public partial class Games
         var result = await GameService.UpdateAsync(updated);
         Snackbar.Report(result, $"Game vs {updated.Opponent} updated");
         await LoadGames();
+    }
+
+    /// <summary>Row click: finished games open the result; admins build formations; visitors get the overview.</summary>
+    private void OpenGame(Game game)
+    {
+        if (game.ScoreHome.HasValue && game.ScoreAway.HasValue)
+            OpenResult(game.Id);
+        else if (_isAdmin)
+            OpenFormation(game.Id);
+        else
+            OpenOverview(game.Id);
     }
 
     private async Task DeleteGame(Game game)

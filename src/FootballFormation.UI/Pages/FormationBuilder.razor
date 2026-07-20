@@ -1,4 +1,5 @@
 @page "/games/{GameId:int}/formation"
+@attribute [Authorize]
 
 <PageTitle>Formation Builder</PageTitle>
 
@@ -56,9 +57,9 @@
                     <PitchView Formation="periodFormation"
                                Positions="PeriodLineups[period.Id]"
                                DraggedPlayerId="Drag.PlayerId"
-                               OnPlayerDropped="(pos) => OnPlayerDropped(period.Id, pos)"
-                               OnPlayerRemoved="(pos) => OnPlayerRemoved(period.Id, pos)"
-                               OnPlayerDragStart="(pos) => OnPitchPlayerDragStart(period.Id, pos)" />
+                               OnPlayerDropped="(slot) => OnPlayerDropped(period.Id, slot)"
+                               OnPlayerRemoved="(slot) => OnPlayerRemoved(period.Id, slot)"
+                               OnPlayerDragStart="(slot) => OnPitchPlayerDragStart(period.Id, slot)" />
                     <div class="pitch-legend">
                         <span class="legend-item"><span class="legend-dot chip-preferred"></span> Exact</span>
                         <span class="legend-item"><span class="legend-dot chip-natural"></span> Natural fit</span>
@@ -71,7 +72,9 @@
                     <SubstituteBench Lineup="PeriodLineups[period.Id]"
                                      DraggedPlayerId="Drag.PlayerId"
                                      OnSubRemoved="(pp) => RemoveSub(period.Id, pp)"
-                                     OnPlayerDroppedToSub="() => OnPlayerDroppedToSub(period.Id)" />
+                                     OnPlayerDroppedToSub="() => OnPlayerDroppedToSub(period.Id)"
+                                     OnSubDragStart="(playerId) => OnSubDragStart(playerId)"
+                                     OnSwapWithSub="(subPlayerId) => OnSwapFieldPlayerWithSub(period.Id, subPlayerId)" />
                 </div>
             </div>
         </MudTabPanel>
