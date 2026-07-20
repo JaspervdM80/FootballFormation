@@ -1,0 +1,22 @@
+name: Deploy to Fly.io
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: fly-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Pinned to the 1.6 tag's commit so upstream changes can't run unreviewed with our token
+      - uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # 1.6
+      # --ha=false: single machine only — SQLite lives on one volume (see docs/deployment.md)
+      - run: flyctl deploy --remote-only --ha=false
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

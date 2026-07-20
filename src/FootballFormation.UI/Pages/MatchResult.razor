@@ -12,9 +12,11 @@
     <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="NavigateBack" Size="Size.Small"
                    Style="color: rgba(255,255,255,0.3);" />
     <div>
-        <MudText Typo="Typo.h5" Style="color: white; font-weight: 700;">vs @GameData.Opponent</MudText>
+        <MudText Typo="Typo.h5" Style="color: white; font-weight: 700;">
+            @(GameData.IsHomeGame ? "vs" : "@") @GameData.Opponent
+        </MudText>
         <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.35);">
-            @GameData.Date.ToString("dd MMMM yyyy") · @GameData.FormationType.DisplayName() · @GameData.SplitType
+            @GameData.Date.ToString("dd MMMM yyyy") · @(GameData.IsHomeGame ? "Home" : "Away") · @GameData.FormationType.DisplayName() · @GameData.SplitType
         </MudText>
     </div>
 </div>
@@ -22,34 +24,41 @@
 <div class="result-layout">
     <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">
         <div class="card-label">Final Score</div>
+        @{
+            // ScoreHome/ScoreAway always mean "us"/"them"; only the display order follows the venue.
+            RenderFragment ourSide =
+                @<div class="score-side">
+                    <span class="score-name">Us</span>
+                    <AuthorizeView Context="auth">
+                        <Authorized>
+                            <input type="number" class="score-big-input" min="0" max="99"
+                                   value="@ScoreHome"
+                                   @onchange="e => ScoreHome = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)" />
+                        </Authorized>
+                        <NotAuthorized>
+                            <span class="score-big-input" style="pointer-events: none;">@(ScoreHome?.ToString() ?? "–")</span>
+                        </NotAuthorized>
+                    </AuthorizeView>
+                </div>;
+            RenderFragment opponentSide =
+                @<div class="score-side">
+                    <span class="score-name">@GameData.Opponent</span>
+                    <AuthorizeView Context="auth">
+                        <Authorized>
+                            <input type="number" class="score-big-input score-away" min="0" max="99"
+                                   value="@ScoreAway"
+                                   @onchange="e => ScoreAway = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)" />
+                        </Authorized>
+                        <NotAuthorized>
+                            <span class="score-big-input score-away" style="pointer-events: none;">@(ScoreAway?.ToString() ?? "–")</span>
+                        </NotAuthorized>
+                    </AuthorizeView>
+                </div>;
+        }
         <div class="score-visual">
-            <div class="score-side">
-                <span class="score-name">Home</span>
-                <AuthorizeView>
-                    <Authorized>
-                        <input type="number" class="score-big-input" min="0" max="99"
-                               value="@ScoreHome"
-                               @onchange="e => ScoreHome = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)" />
-                    </Authorized>
-                    <NotAuthorized>
-                        <span class="score-big-input" style="pointer-events: none;">@(ScoreHome?.ToString() ?? "–")</span>
-                    </NotAuthorized>
-                </AuthorizeView>
-            </div>
+            @(GameData.IsHomeGame ? ourSide : opponentSide)
             <span class="score-vs">–</span>
-            <div class="score-side">
-                <span class="score-name">@GameData.Opponent</span>
-                <AuthorizeView>
-                    <Authorized>
-                        <input type="number" class="score-big-input score-away" min="0" max="99"
-                               value="@ScoreAway"
-                               @onchange="e => ScoreAway = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)" />
-                    </Authorized>
-                    <NotAuthorized>
-                        <span class="score-big-input score-away" style="pointer-events: none;">@(ScoreAway?.ToString() ?? "–")</span>
-                    </NotAuthorized>
-                </AuthorizeView>
-            </div>
+            @(GameData.IsHomeGame ? opponentSide : ourSide)
         </div>
         <AuthorizeView>
             <MudButton Variant="Variant.Filled" Class="btn-gold mt-4" FullWidth="true"

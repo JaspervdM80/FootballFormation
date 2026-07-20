@@ -3,6 +3,7 @@ using System;
 using FootballFormation.Core.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,32 +11,14 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FootballFormation.Core.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260719183432_AddGuestPlayersAndHomeAway")]
+    partial class AddGuestPlayersAndHomeAway
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.5");
-
-            modelBuilder.Entity("FootballFormation.Core.Models.AdminUser", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("AdminUsers");
-                });
 
             modelBuilder.Entity("FootballFormation.Core.Models.Game", b =>
                 {
@@ -155,9 +138,6 @@ namespace FootballFormation.Core.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("Position")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("SlotIndex")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");

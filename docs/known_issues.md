@@ -15,6 +15,16 @@ Avoid repeating these mistakes:
 - **Multi-select binding**: Use `IReadOnlyCollection<T>` not `IEnumerable<T>`.
 - **`RenderFragment` in code-behind**: Use `=> __builder =>` lambda pattern in `@code` block; can't use regular methods.
 
+## Touch / PWA
+- **Blazor silently drops drag events with null `dataTransfer`**: dispatching
+  `new DragEvent('dragstart', {bubbles: true})` reaches DOM listeners but never the Blazor
+  handler — its DragEventArgs serializer reads `dataTransfer.files/items/types` and gives up
+  on null. Always attach `new DataTransfer()` (or a stub with those fields). Plain `Event`
+  objects with a drag type name are ignored entirely. Cost hours; see `js/drag-drop-touch.js`.
+- **HTML5 drag events never fire from touch input**: iOS Safari and Android Chrome require the
+  shim in `wwwroot/js/drag-drop-touch.js`, plus `touch-action: none` on `[draggable="true"]`
+  (in app.css) so the browser doesn't claim the gesture for scrolling.
+
 ## Formation/Pitch
 - **Duplicate enum positions**: Formations with 2 CDMs or 2 strikers need distinct enum values (LCDM/RCDM, LST/RST) — can't have duplicate values in an array.
 - **Pitch too large**: Use `max-height: 65vh` with `aspect-ratio: 3/4` and `max-width: calc(65vh * 3/4)`.

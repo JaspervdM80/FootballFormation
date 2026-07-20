@@ -11,8 +11,8 @@
 <div class="overview-capture" id="formation-overview">
     <div class="overview-header">
         <div class="overview-header-left">
-            <span class="overview-title">vs @GameData.Opponent</span>
-            <span class="overview-date">@GameData.Date.ToString("dd MMM yyyy")</span>
+            <span class="overview-title">@(GameData.IsHomeGame ? "vs" : "@") @GameData.Opponent</span>
+            <span class="overview-date">@GameData.Date.ToString("dd MMM yyyy") · @(GameData.IsHomeGame ? "Home" : "Away")</span>
             <span class="overview-formation">@GameData.FormationType.DisplayName()</span>
         </div>
     </div>

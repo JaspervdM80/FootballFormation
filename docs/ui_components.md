@@ -3,16 +3,35 @@
 ## Formation Builder (`/games/{id}/formation`)
 3-panel layout: Player List | Pitch | Substitutes
 - Tabs for each period (2 halves or 4 quarters)
-- Drag state tracked via `DraggedPlayerId` and `DraggedFromPosition`
-- Actions: Save All, Copy to All Periods
-- Playing time overview table appears when all periods are fully filled
+- Drag state lives in `LineupDragState` (`Drag.PlayerId` / `Drag.FromSlotIndex` / `Drag.FromSub`), cleared via `Drag.Clear()`
+- Pitch slots are index-based: `GamePlayerPosition.SlotIndex` is the source of truth,
+  position matching is the fallback for legacy rows (see `BuildSlotAssignments`)
+- Page requires admin login (`[Authorize]`); anonymous visitors get the read-only overview
+- Actions: Save All, Copy to Next Period
+- Playing time table is built by `PlayingTimeReport.Build(...)`, not by the page; it renders
+  whenever there are players (it does not wait for every period to be filled)
 
 ## Drag & Drop (HTML5 API)
 - **Player list → Pitch**: Assigns player to position slot
 - **Player list → Sub bench**: Adds as substitute
-- **Pitch → Pitch**: Swaps two players' positions (uses `DraggedFromPosition`)
-- **Pitch → Sub bench**: Moves player from pitch to bench
+- **Pitch → Pitch**: Swaps two players' slots (`Drag.FromSlotIndex` is set ⇒ the drop is a swap)
+- **Pitch → Sub bench**: Drop on empty bench area moves player to bench; drop **on a sub** swaps the two (`OnSwapFieldPlayerWithSub`)
+- **Sub bench → Pitch**: Sub takes the slot; the displaced starter goes to the bench
 - Click on assigned player = remove from position
+- `@ondragstart`/`@ondrop` sit on the **inner** circle (`.player-circle` / `.empty-circle`),
+  not on the `.position-slot` wrapper — relevant when scripting or testing a drag
+- **Touch devices**: `wwwroot/js/drag-drop-touch.js` (Web project) converts touch gestures into
+  synthetic `DragEvent`s with a real `DataTransfer` — Blazor ignores drag events without one.
+  A floating ghost follows the finger; an 8px threshold separates taps from drags. Draggable
+  chips have `touch-action: none` (app.css), so a scroll gesture cannot start on a chip.
+
+## InstallBanner (PWA install prompt)
+- `Components/InstallBanner.razor(.cs)`, rendered once in `MainLayout`
+- Shows a fixed bottom banner on mobile browsers when the app is not installed
+  (standalone) and not previously dismissed (localStorage `pwa-install-dismissed`)
+- Android: button triggers the native install prompt via `window.pwaInstall` (js/pwa.js,
+  which captures `beforeinstallprompt`); falls back to ⋮-menu instructions if unavailable
+- iOS: no install API exists — shows "Tap Share, then Add to Home Screen" text instead
 
 ## Position Fit Colors (5 tiers)
 | Tier | CSS class | Color | Example |

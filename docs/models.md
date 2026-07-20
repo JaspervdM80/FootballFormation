@@ -9,6 +9,7 @@
 | ShirtNumber | int? | Optional |
 | PreferredPosition | PlayerPosition | Single preferred |
 | AlternativePositions | List\<PlayerPosition\> | Stored as comma-separated ints |
+| IsGuest | bool | Guest players are excluded from every game unless listed in `Game.GuestPlayerIds` |
 | DisplayName | string | Computed: "First Last" or "First" |
 | ShortName | string | Computed: "F. Last" or "First" |
 
@@ -22,8 +23,15 @@
 | FormationType | FormationType | |
 | SplitType | GameSplitType | Halves or Quarters |
 | GameDurationMinutes | int | Default 60 |
+| IsHomeGame | bool | Default true. Venue only — score fields are unaffected |
+| ScoreHome / ScoreAway | int? | **Our** score / **opponent** score, regardless of venue |
 | Periods | List\<GamePeriod\> | Auto-created on game creation |
-| UnavailablePlayerIds | List\<int\> | Stored as comma-separated values |
+| UnavailablePlayerIds | List\<int\> | Squad players opted **out**. Comma-separated |
+| GuestPlayerIds | List\<int\> | Guests opted **in**. Comma-separated |
+
+`Game.IsInRoster(player)` / `Game.SelectRoster(players)` centralize the rule: squad players
+are in unless marked unavailable, guests are out unless explicitly added. Use these rather
+than filtering on the id lists directly.
 
 ## GamePeriod
 | Property | Type | Notes |

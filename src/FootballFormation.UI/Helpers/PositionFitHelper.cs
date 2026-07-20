@@ -75,23 +75,6 @@ public static class PositionFitHelper
         return PositionFit.OutOfPosition;
     }
 
-    private static bool IsNaturalFit(PlayerPosition playerPos, PlayerPosition slotPos)
-    {
-        if (NaturalPositions.TryGetValue(playerPos, out var family))
-            return family.Contains(slotPos);
-
-        return false;
-    }
-
-    public static string GetFitMarker(Player player, PlayerPosition position)
-    {
-        return GetFit(player, position) switch
-        {
-            PositionFit.Preferred => "***",
-            PositionFit.NaturalFit => "**½",
-            PositionFit.Alternative => "**",
-            PositionFit.Compatible => "*",
-            _ => ""
-        };
-    }
+    private static bool IsNaturalFit(PlayerPosition playerPos, PlayerPosition slotPos) =>
+        NaturalPositions.TryGetValue(playerPos, out var family) && family.Contains(slotPos);
 }

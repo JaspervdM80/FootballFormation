@@ -20,8 +20,8 @@ src/
 UI is a separate RCL for future **MAUI Blazor Hybrid** reuse.
 
 ## Key Features
-- Player management (name, shirt number, preferred + alternative positions)
-- Game management (opponent, date, formation, split type, duration, unavailable players)
+- Player management (name, shirt number, preferred + alternative positions, guest flag)
+- Game management (opponent, date, home/away, formation, split type, duration, unavailable players, guest call-ups)
 - Formation builder with drag-and-drop onto visual pitch
 - Per-period lineups (halves or quarters)
 - Playing time overview (shows % of game time per player with position-fit colors)

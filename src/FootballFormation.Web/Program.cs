@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Threading.RateLimiting;
 using FootballFormation.Core.Data;
+using Microsoft.AspNetCore.DataProtection;
 using FootballFormation.Core.Services;
 using FootballFormation.Web.Components;
 using Microsoft.AspNetCore.Authentication;
@@ -11,8 +12,9 @@ using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using Serilog;
 
+// Honors APP_DATA_DIR — the persistent volume when hosted (e.g. /data on Fly.io)
 var dbPath = DatabasePathHelper.GetDatabasePath();
-var appDataFolder = Path.GetDirectoryName(dbPath);
+var appDataFolder = Path.GetDirectoryName(dbPath)!;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
@@ -39,6 +41,10 @@ try
         .AddInteractiveServerComponents();
 
     builder.Services.AddMudServices();
+
+    // Keys on disk so antiforgery/auth cookies survive container restarts
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(appDataFolder, "keys")));
 
     // Compress SignalR WebSocket traffic (render diffs, events)
     builder.Services.AddResponseCompression(opts =>
