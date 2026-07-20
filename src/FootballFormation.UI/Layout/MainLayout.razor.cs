@@ -1,9 +1,30 @@
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Routing;
 using MudBlazor;
 
 namespace FootballFormation.UI.Layout;
 
-public partial class MainLayout
+public partial class MainLayout : IDisposable
 {
+    [Inject] private NavigationManager Navigation { get; set; } = null!;
+
+    private bool _drawerOpen;
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
+    protected override void OnInitialized() => Navigation.LocationChanged += OnLocationChanged;
+
+    // The drawer's nav links are plain anchors; close the drawer when one navigates
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        if (!_drawerOpen) return;
+
+        _drawerOpen = false;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+
     private static readonly MudTheme Theme = new()
     {
         PaletteLight = new PaletteLight

@@ -6,11 +6,13 @@
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="0" Fixed="true" Dense="true" Style="background: linear-gradient(to right, #13131f, #1a1a2e); border-bottom: 1px solid rgba(255,255,255,0.05);">
+    <MudAppBar Elevation="0" Fixed="true" Dense="true" Style="background: linear-gradient(to right, #13131f, #1a1a2e); border-bottom: 1px solid rgba(255,255,255,0.05); padding-top: env(safe-area-inset-top, 0px);">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Class="nav-hamburger" Edge="Edge.Start"
+                       Style="color: rgba(255,255,255,0.7);" OnClick="ToggleDrawer" aria-label="Menu" />
         <MudText Typo="Typo.h6" Class="ml-2 mr-8" Style="font-weight: 700; white-space: nowrap;">
             ⚽ <span style="background: linear-gradient(135deg, #f59e0b, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Formation Planner</span>
         </MudText>
-        <div class="d-flex gap-1">
+        <div class="d-flex gap-1 topbar-nav">
             <MudNavLink Href="/players" Match="NavLinkMatch.Prefix"
                         Class="topbar-nav-link">Squad</MudNavLink>
             <MudNavLink Href="/games" Match="NavLinkMatch.Prefix"
@@ -44,7 +46,24 @@
         </AuthorizeView>
     </MudAppBar>
 
-    <MudMainContent Style="padding: 76px 24px 40px; max-width: 1100px; margin: 0 auto;">
+    <MudDrawer @bind-Open="_drawerOpen" Variant="@DrawerVariant.Temporary" Elevation="2"
+               Style="padding-top: env(safe-area-inset-top, 0px);">
+        <MudText Typo="Typo.h6" Class="pa-4" Style="font-weight: 700;">
+            ⚽ <span style="background: linear-gradient(135deg, #f59e0b, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Formation Planner</span>
+        </MudText>
+        <MudNavMenu>
+            <MudNavLink Href="/players" Match="NavLinkMatch.Prefix"
+                        Icon="@Icons.Material.Filled.Groups">Squad</MudNavLink>
+            <MudNavLink Href="/games" Match="NavLinkMatch.Prefix"
+                        Icon="@Icons.Material.Filled.SportsSoccer">Games</MudNavLink>
+            <AuthorizeView>
+                <MudNavLink Href="/settings" Match="NavLinkMatch.All"
+                            Icon="@Icons.Material.Filled.Settings">Preferences</MudNavLink>
+            </AuthorizeView>
+        </MudNavMenu>
+    </MudDrawer>
+
+    <MudMainContent Style="padding: calc(76px + env(safe-area-inset-top, 0px)) 24px calc(40px + env(safe-area-inset-bottom, 0px)); max-width: 1100px; margin: 0 auto;">
         @Body
     </MudMainContent>
 

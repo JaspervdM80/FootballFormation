@@ -294,3 +294,24 @@ html, body {
     -webkit-touch-callout: none;
     touch-action: none;
 }
+
+/* --- Mobile navigation & PWA safe areas --- */
+
+/* Hamburger only on small screens; inline nav links only on larger ones */
+.nav-hamburger {
+    display: none !important;
+}
+
+@media (max-width: 700px) {
+    .topbar-nav {
+        display: none !important;
+    }
+
+    .nav-hamburger {
+        display: inline-flex !important;
+    }
+
+    .mud-appbar .ml-2.mr-8 {
+        margin-right: 8px !important;
+    }
+}
