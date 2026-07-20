@@ -24,6 +24,9 @@
 
 <body>
     <Routes @rendermode="InteractiveServer" />
+    @* Blazor toggles the classes on this element; styled dark in app.css and
+       auto-reloaded by pwa.js so resuming a suspended phone app just works. *@
+    <div id="components-reconnect-modal">Verbinding herstellen…</div>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script src="js/screenshot.js"></script>
     <script src="js/drag-drop-touch.js"></script>

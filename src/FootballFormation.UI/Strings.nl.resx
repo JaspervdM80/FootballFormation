@@ -14,6 +14,8 @@
   </resheader>
 
   <!-- Navigation & layout -->
+  <!-- "Start" (not "Home") because the key "Home" already means the venue, see Game dialog -->
+  <data name="Start" xml:space="preserve"><value>Start</value></data>
   <data name="Squad" xml:space="preserve"><value>Selectie</value></data>
   <data name="Games" xml:space="preserve"><value>Wedstrijden</value></data>
   <data name="Preferences" xml:space="preserve"><value>Voorkeuren</value></data>

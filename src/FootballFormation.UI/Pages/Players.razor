@@ -39,14 +39,14 @@ else if (_players.Count == 0)
 else
 {
     <MudTable Items="_players" Hover="true" Dense="true" Elevation="2"
-              Style="border-radius: 16px;">
+              Class="players-table" Style="border-radius: 16px;">
         <HeaderContent>
             <MudTh><MudTableSortLabel SortBy="new Func<Player, object>(p => p.ShirtNumber ?? 999)">#</MudTableSortLabel></MudTh>
             <MudTh><MudTableSortLabel SortBy="new Func<Player, object>(p => p.FirstName)">@L["Name"]</MudTableSortLabel></MudTh>
             <AuthorizeView Context="authHeader">
                 <MudTh>@L["Preferred Position"]</MudTh>
-                <MudTh>@L["Alternative Positions"]</MudTh>
-                <MudTh></MudTh>
+                <MudTh Class="cell-right">@L["Alternative Positions"]</MudTh>
+                <MudTh Class="cell-right"></MudTh>
             </AuthorizeView>
         </HeaderContent>
         <RowTemplate>
@@ -64,13 +64,13 @@ else
                 <MudTd DataLabel="@L["Preferred Position"]">
                     <span class="badge-gold">@context.PreferredPosition.ToString()</span>
                 </MudTd>
-                <MudTd DataLabel="@L["Alternative Positions"]">
+                <MudTd DataLabel="@L["Alternative Positions"]" Class="cell-right">
                     @foreach (var pos in context.AlternativePositions)
                     {
                         <span class="badge-teal" style="margin-right: 4px;">@pos.ToString()</span>
                     }
                 </MudTd>
-                <MudTd>
+                <MudTd Class="cell-right">
                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
                                    Style="color: rgba(255,255,255,0.3);"
                                    OnClick="() => OpenEditDialog(context)" />

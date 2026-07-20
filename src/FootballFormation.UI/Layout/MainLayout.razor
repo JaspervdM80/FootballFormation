@@ -10,10 +10,13 @@
     <MudAppBar Elevation="0" Fixed="true" Dense="true" Style="background: linear-gradient(to right, #13131f, #1a1a2e); border-bottom: 1px solid rgba(255,255,255,0.05); padding-top: env(safe-area-inset-top, 0px);">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Class="nav-hamburger" Edge="Edge.Start"
                        Style="color: rgba(255,255,255,0.7);" OnClick="ToggleDrawer" aria-label="Menu" />
-        <MudText Typo="Typo.h6" Class="ml-2 mr-8" Style="font-weight: 700; white-space: nowrap;">
-            ⚽ <span style="background: linear-gradient(135deg, #f59e0b, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Formation Planner</span>
-        </MudText>
+        <a href="/" class="app-title-link ml-2 mr-8" aria-label="@L["Start"]">
+            <img src="icons/icon-192.png" alt="" class="app-title-logo" />
+            <span class="app-title-text">GJS Meiden</span>
+        </a>
         <div class="d-flex gap-1 topbar-nav">
+            <MudNavLink Href="/" Match="NavLinkMatch.All"
+                        Class="topbar-nav-link">@L["Start"]</MudNavLink>
             <MudNavLink Href="/players" Match="NavLinkMatch.Prefix"
                         Class="topbar-nav-link">@L["Squad"]</MudNavLink>
             <MudNavLink Href="/games" Match="NavLinkMatch.Prefix"
@@ -33,7 +36,7 @@
             <Authorized>
                 <div class="d-flex align-center gap-2">
                     <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Size="Size.Small" Style="color: #fbbf24;" />
-                    <MudText Typo="Typo.body2" Style="color: rgba(255,255,255,0.5);">@context.User.Identity?.Name</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-name" Style="color: rgba(255,255,255,0.5);">@context.User.Identity?.Name</MudText>
                     <form method="post" action="/auth/logout" data-enhance="false" style="margin: 0;">
                         <button type="submit"
                                 style="background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; font-size: 0.875rem; padding: 4px 8px; text-transform: none;">
@@ -54,10 +57,13 @@
 
     <MudDrawer @bind-Open="_drawerOpen" Variant="@DrawerVariant.Temporary" Elevation="2"
                Style="padding-top: env(safe-area-inset-top, 0px);">
-        <MudText Typo="Typo.h6" Class="pa-4" Style="font-weight: 700;">
-            ⚽ <span style="background: linear-gradient(135deg, #f59e0b, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Formation Planner</span>
-        </MudText>
+        <a href="/" class="app-title-link pa-4">
+            <img src="icons/icon-192.png" alt="" class="app-title-logo" />
+            <span class="app-title-text">GJS Meiden</span>
+        </a>
         <MudNavMenu>
+            <MudNavLink Href="/" Match="NavLinkMatch.All"
+                        Icon="@Icons.Material.Filled.Home">@L["Start"]</MudNavLink>
             <MudNavLink Href="/players" Match="NavLinkMatch.Prefix"
                         Icon="@Icons.Material.Filled.Groups">@L["Squad"]</MudNavLink>
             <MudNavLink Href="/games" Match="NavLinkMatch.Prefix"

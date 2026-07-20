@@ -21,6 +21,11 @@ html, body {
     font-family: 'DM Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     margin: 0;
     padding: 0;
+    /* Painted statically rather than by the MudBlazor theme: when a phone suspends the
+       PWA the circuit dies and the theme's injected styles can go with it, which used to
+       flash the page white on resume. Also covers iOS overscroll beyond the safe area. */
+    background-color: #0c0c14;
+    color-scheme: dark;
 }
 
 /* === Premium Dark Theme Overrides === */
@@ -314,4 +319,79 @@ html, body {
     .mud-appbar .ml-2.mr-8 {
         margin-right: 8px !important;
     }
+}
+
+/* --- App title / home link --- */
+
+.app-title-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.app-title-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: #fff;
+    object-fit: contain;
+    flex: none;
+}
+
+.app-title-text {
+    font-size: 1.15rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* --- Squad table --- */
+
+/* Alternative positions and the row actions hug the right edge of the table */
+.players-table .cell-right {
+    text-align: right;
+}
+
+.players-table .cell-right .badge-teal:last-child {
+    margin-right: 0 !important;
+}
+
+@media (max-width: 700px) {
+    /* Shirt number already leads the name row on mobile; the # column is noise there */
+    .players-table th:first-child,
+    .players-table td[data-label="#"] {
+        display: none !important;
+    }
+
+    /* Logged-in admin name costs room the nav needs on a phone */
+    .admin-name {
+        display: none !important;
+    }
+}
+
+/* --- Reconnect overlay ---
+   Blazor's stock overlay is light and reads as "the app went white" when a phone
+   suspends the tab. Keep it on-theme, and pwa.js reloads once reconnecting fails. */
+#components-reconnect-modal {
+    display: none;
+}
+
+#components-reconnect-modal.components-reconnect-show,
+#components-reconnect-modal.components-reconnect-failed,
+#components-reconnect-modal.components-reconnect-rejected {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    background: rgba(12, 12, 20, 0.92);
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.95rem;
+    text-align: center;
+    padding: 24px;
 }

@@ -44,5 +44,28 @@
         },
         dismiss() { localStorage.setItem(DISMISSED_KEY, 'true'); }
     };
+
+    // Phones suspend a backgrounded PWA, which kills the SignalR circuit. Blazor then
+    // gives up and leaves a dead page behind, so reload as soon as that happens (and on
+    // return to the app) to land back on a live, correctly styled page.
+    const FAILED = ['components-reconnect-failed', 'components-reconnect-rejected'];
+    const modal = document.getElementById('components-reconnect-modal');
+
+    function reloadIfDead() {
+        if (modal && FAILED.some(c => modal.classList.contains(c))) {
+            window.location.reload();
+        }
+    }
+
+    if (modal) {
+        new MutationObserver(reloadIfDead).observe(modal, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') reloadIfDead();
+    });
 })();
 
