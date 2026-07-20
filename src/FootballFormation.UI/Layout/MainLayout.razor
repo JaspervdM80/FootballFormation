@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+@inject IStringLocalizer<Strings> L
 
 <MudThemeProvider Theme="Theme" IsDarkMode="true" />
 <MudPopoverProvider />
@@ -14,15 +15,20 @@
         </MudText>
         <div class="d-flex gap-1 topbar-nav">
             <MudNavLink Href="/players" Match="NavLinkMatch.Prefix"
-                        Class="topbar-nav-link">Squad</MudNavLink>
+                        Class="topbar-nav-link">@L["Squad"]</MudNavLink>
             <MudNavLink Href="/games" Match="NavLinkMatch.Prefix"
-                        Class="topbar-nav-link">Games</MudNavLink>
+                        Class="topbar-nav-link">@L["Games"]</MudNavLink>
             <AuthorizeView>
                 <MudNavLink Href="/settings" Match="NavLinkMatch.All"
-                            Class="topbar-nav-link">Preferences</MudNavLink>
+                            Class="topbar-nav-link">@L["Preferences"]</MudNavLink>
             </AuthorizeView>
         </div>
         <MudSpacer />
+        <MudMenu Icon="@Icons.Material.Filled.Language" Size="Size.Small" Dense="true"
+                 AriaLabel="Language" Style="color: rgba(255,255,255,0.4);">
+            <MudMenuItem OnClick="@(() => SwitchCulture("nl"))">Nederlands</MudMenuItem>
+            <MudMenuItem OnClick="@(() => SwitchCulture("en"))">English</MudMenuItem>
+        </MudMenu>
         <AuthorizeView>
             <Authorized>
                 <div class="d-flex align-center gap-2">
@@ -31,7 +37,7 @@
                     <form method="post" action="/auth/logout" data-enhance="false" style="margin: 0;">
                         <button type="submit"
                                 style="background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; font-size: 0.875rem; padding: 4px 8px; text-transform: none;">
-                            Logout
+                            @L["Logout"]
                         </button>
                     </form>
                 </div>
@@ -53,12 +59,12 @@
         </MudText>
         <MudNavMenu>
             <MudNavLink Href="/players" Match="NavLinkMatch.Prefix"
-                        Icon="@Icons.Material.Filled.Groups">Squad</MudNavLink>
+                        Icon="@Icons.Material.Filled.Groups">@L["Squad"]</MudNavLink>
             <MudNavLink Href="/games" Match="NavLinkMatch.Prefix"
-                        Icon="@Icons.Material.Filled.SportsSoccer">Games</MudNavLink>
+                        Icon="@Icons.Material.Filled.SportsSoccer">@L["Games"]</MudNavLink>
             <AuthorizeView>
                 <MudNavLink Href="/settings" Match="NavLinkMatch.All"
-                            Icon="@Icons.Material.Filled.Settings">Preferences</MudNavLink>
+                            Icon="@Icons.Material.Filled.Settings">@L["Preferences"]</MudNavLink>
             </AuthorizeView>
         </MudNavMenu>
     </MudDrawer>

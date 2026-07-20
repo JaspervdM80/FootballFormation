@@ -3,6 +3,7 @@ using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.Extensions.Localization;
 using MudBlazor;
 
 namespace FootballFormation.UI.Pages;
@@ -13,6 +14,7 @@ public partial class Games
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
+    [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
     [CascadingParameter]
     private Task<AuthenticationState> AuthStateTask { get; set; } = null!;
@@ -36,21 +38,21 @@ public partial class Games
 
     private async Task OpenAddDialog()
     {
-        var game = await ShowGameDialogAsync("New Game");
+        var game = await ShowGameDialogAsync(L["New Game"]);
         if (game is null) return;
 
         var result = await GameService.CreateAsync(game);
-        Snackbar.Report(result, $"Game vs {game.Opponent} created");
+        Snackbar.Report(result, L["Game vs {0} created", game.Opponent]);
         await LoadGames();
     }
 
     private async Task OpenEditDialog(Game game)
     {
-        var updated = await ShowGameDialogAsync("Edit Game", game);
+        var updated = await ShowGameDialogAsync(L["Edit Game"], game);
         if (updated is null) return;
 
         var result = await GameService.UpdateAsync(updated);
-        Snackbar.Report(result, $"Game vs {updated.Opponent} updated");
+        Snackbar.Report(result, L["Game vs {0} updated", updated.Opponent]);
         await LoadGames();
     }
 
@@ -68,12 +70,12 @@ public partial class Games
     private async Task DeleteGame(Game game)
     {
         var confirmed = await DialogService.ConfirmDeleteAsync(
-            "Delete Game",
-            $"Are you sure you want to delete the game vs {game.Opponent}?");
+            L["Delete Game"],
+            L["Are you sure you want to delete the game vs {0}?", game.Opponent]);
         if (!confirmed) return;
 
         var result = await GameService.DeleteAsync(game.Id);
-        Snackbar.Report(result, $"Game vs {game.Opponent} deleted", Severity.Warning);
+        Snackbar.Report(result, L["Game vs {0} deleted", game.Opponent], Severity.Warning);
         await LoadGames();
     }
 

@@ -1,13 +1,15 @@
+@inject IStringLocalizer<Strings> L
+
 <MudPaper Class="pa-3" Elevation="2"
           @ondragover:preventDefault="true"
           @ondrop="() => OnPlayerDroppedToSub.InvokeAsync()">
-    <MudText Typo="Typo.subtitle2" GutterBottom="true">Substitutes</MudText>
+    <MudText Typo="Typo.subtitle2" GutterBottom="true">@L["Substitutes"]</MudText>
 
     @if (DraggedPlayerId is not null)
     {
         <div class="sub-drop-zone">
             <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Size="Size.Small" />
-            <MudText Typo="Typo.caption">Drop here to add as sub</MudText>
+            <MudText Typo="Typo.caption">@L["Drop here to add as sub"]</MudText>
         </div>
     }
 
@@ -44,6 +46,6 @@
     }
     else if (DraggedPlayerId is null)
     {
-        <MudText Typo="Typo.caption" Color="Color.Tertiary">Drag players here to add as subs</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Tertiary">@L["Drag players here to add as subs"]</MudText>
     }
 </MudPaper>

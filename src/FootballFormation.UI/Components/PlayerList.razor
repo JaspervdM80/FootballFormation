@@ -1,9 +1,11 @@
+@inject IStringLocalizer<Strings> L
+
 <MudPaper Class="pa-2" Elevation="2" Style="max-height: 70vh; overflow-y: auto;">
-    <MudText Typo="Typo.subtitle2" Class="mb-2">Available Players</MudText>
+    <MudText Typo="Typo.subtitle2" Class="mb-2">@L["Available Players"]</MudText>
 
     @if (Players.Count == 0)
     {
-        <MudText Typo="Typo.caption" Color="Color.Tertiary">All players assigned</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Tertiary">@L["All players assigned"]</MudText>
     }
 
     @foreach (var player in Players)

@@ -2,6 +2,7 @@ using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Localization;
 using MudBlazor;
 
 namespace FootballFormation.UI.Pages;
@@ -12,6 +13,7 @@ public partial class MatchResult
     [Inject] private PlayerService PlayerService { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
+    [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
     [Parameter]
     public int GameId { get; set; }
@@ -71,7 +73,7 @@ public partial class MatchResult
     private async Task SaveScore()
     {
         var result = await GameService.SaveScoreAsync(GameId, ScoreHome, ScoreAway);
-        Snackbar.Report(result, "Score saved!");
+        Snackbar.Report(result, L["Score saved!"]);
     }
 
     private async Task AddGoal()
@@ -88,7 +90,7 @@ public partial class MatchResult
         };
 
         var result = await GameService.AddGoalAsync(goal);
-        if (!Snackbar.Report(result, "Goal added!")) return;
+        if (!Snackbar.Report(result, L["Goal added!"])) return;
 
         await ReloadGame();
         ResetGoalForm();
@@ -97,7 +99,7 @@ public partial class MatchResult
     private async Task RemoveGoal(GameGoal goal)
     {
         var result = await GameService.RemoveGoalAsync(goal.Id);
-        if (!Snackbar.Report(result, "Goal removed", Severity.Warning)) return;
+        if (!Snackbar.Report(result, L["Goal removed"], Severity.Warning)) return;
 
         await ReloadGame();
     }

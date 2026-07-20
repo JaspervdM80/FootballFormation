@@ -25,6 +25,16 @@ public partial class MainLayout : IDisposable
 
     public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
 
+    // Full reload on purpose: the circuit's culture is fixed at startup, so the
+    // cookie set by /culture/set only takes effect on a fresh page load.
+    private void SwitchCulture(string culture)
+    {
+        var returnUrl = "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
+        Navigation.NavigateTo(
+            $"/culture/set?culture={culture}&redirectUri={Uri.EscapeDataString(returnUrl)}",
+            forceLoad: true);
+    }
+
     private static readonly MudTheme Theme = new()
     {
         PaletteLight = new PaletteLight

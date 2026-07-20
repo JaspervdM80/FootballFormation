@@ -1,5 +1,13 @@
 # UI Components & Interactions
 
+## Localization
+- Dutch is the default culture; English is the fallback (and the switcher's second option)
+- All user-facing strings go through `IStringLocalizer<Strings>` (`L`); **the English text
+  is the resource key**, so only `Strings.nl.resx` exists — missing keys render as English
+- Language switcher: globe menu in `MainLayout` → `/culture/set` endpoint → culture cookie
+  → full page reload (circuit culture is fixed at startup)
+- Known limitation: `Result.Error` messages from Core services are English
+
 ## Formation Builder (`/games/{id}/formation`)
 3-panel layout: Player List | Pitch | Substitutes
 - Tabs for each period (2 halves or 4 quarters)

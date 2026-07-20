@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Navigation & layout -->
+  <data name="Squad" xml:space="preserve"><value>Selectie</value></data>
+  <data name="Games" xml:space="preserve"><value>Wedstrijden</value></data>
+  <data name="Preferences" xml:space="preserve"><value>Voorkeuren</value></data>
+  <data name="Logout" xml:space="preserve"><value>Uitloggen</value></data>
+
+  <!-- Home -->
+  <data name="Plan your team's formations, manage your squad, and organize game lineups." xml:space="preserve"><value>Plan je opstellingen, beheer je selectie en organiseer de wedstrijden.</value></data>
+  <data name="Manage Players" xml:space="preserve"><value>Spelers beheren</value></data>
+  <data name="Add players with their positions and shirt numbers." xml:space="preserve"><value>Voeg spelers toe met hun posities en rugnummers.</value></data>
+  <data name="Go to Squad" xml:space="preserve"><value>Naar selectie</value></data>
+  <data name="Matches" xml:space="preserve"><value>Wedstrijden</value></data>
+  <data name="Games &amp; Formations" xml:space="preserve"><value>Wedstrijden &amp; opstellingen</value></data>
+  <data name="Create games, build formations, and track results." xml:space="preserve"><value>Maak wedstrijden aan, bouw opstellingen en houd uitslagen bij.</value></data>
+  <data name="Go to Games" xml:space="preserve"><value>Naar wedstrijden</value></data>
+  <data name="Settings" xml:space="preserve"><value>Instellingen</value></data>
+  <data name="Configure match duration, split type, and defaults." xml:space="preserve"><value>Stel wedstrijdduur, speelperiodes en standaardwaarden in.</value></data>
+  <data name="Go to Settings" xml:space="preserve"><value>Naar instellingen</value></data>
+
+  <!-- Players -->
+  <data name="Players" xml:space="preserve"><value>Spelers</value></data>
+  <data name="{0} player" xml:space="preserve"><value>{0} speler</value></data>
+  <data name="{0} players" xml:space="preserve"><value>{0} spelers</value></data>
+  <data name="{0} guest" xml:space="preserve"><value>{0} gast</value></data>
+  <data name="{0} guests" xml:space="preserve"><value>{0} gasten</value></data>
+  <data name="Add Player" xml:space="preserve"><value>Speler toevoegen</value></data>
+  <data name="Edit Player" xml:space="preserve"><value>Speler bewerken</value></data>
+  <data name="No players yet. Add your first player!" xml:space="preserve"><value>Nog geen spelers. Voeg je eerste speler toe!</value></data>
+  <data name="Name" xml:space="preserve"><value>Naam</value></data>
+  <data name="Preferred Position" xml:space="preserve"><value>Voorkeurspositie</value></data>
+  <data name="Alternative Positions" xml:space="preserve"><value>Alternatieve posities</value></data>
+  <data name="GUEST" xml:space="preserve"><value>GAST</value></data>
+  <data name="Player {0} added" xml:space="preserve"><value>Speler {0} toegevoegd</value></data>
+  <data name="Player {0} updated" xml:space="preserve"><value>Speler {0} bijgewerkt</value></data>
+  <data name="Player {0} deleted" xml:space="preserve"><value>Speler {0} verwijderd</value></data>
+  <data name="Delete Player" xml:space="preserve"><value>Speler verwijderen</value></data>
+  <data name="Are you sure you want to delete {0}?" xml:space="preserve"><value>Weet je zeker dat je {0} wilt verwijderen?</value></data>
+
+  <!-- Player dialog -->
+  <data name="First Name" xml:space="preserve"><value>Voornaam</value></data>
+  <data name="First name is required" xml:space="preserve"><value>Voornaam is verplicht</value></data>
+  <data name="Surname" xml:space="preserve"><value>Achternaam</value></data>
+  <data name="Shirt Number" xml:space="preserve"><value>Rugnummer</value></data>
+  <data name="Guest player" xml:space="preserve"><value>Gastspeler</value></data>
+  <data name="Guests are left out of every game unless you add them to it explicitly." xml:space="preserve"><value>Gasten doen alleen mee aan een wedstrijd als je ze er zelf aan toevoegt.</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Annuleren</value></data>
+  <data name="Save" xml:space="preserve"><value>Opslaan</value></data>
+  <data name="Delete" xml:space="preserve"><value>Verwijderen</value></data>
+
+  <!-- Games -->
+  <data name="{0} match" xml:space="preserve"><value>{0} wedstrijd</value></data>
+  <data name="{0} matches" xml:space="preserve"><value>{0} wedstrijden</value></data>
+  <data name="New Game" xml:space="preserve"><value>Nieuwe wedstrijd</value></data>
+  <data name="Edit Game" xml:space="preserve"><value>Wedstrijd bewerken</value></data>
+  <data name="No games yet. Create your first game!" xml:space="preserve"><value>Nog geen wedstrijden. Maak je eerste wedstrijd aan!</value></data>
+  <data name="H" xml:space="preserve"><value>T</value></data>
+  <data name="A" xml:space="preserve"><value>U</value></data>
+  <data name="{0} out" xml:space="preserve"><value>{0} afwezig</value></data>
+  <data name="+{0} guest" xml:space="preserve"><value>+{0} gast</value></data>
+  <data name="Formation" xml:space="preserve"><value>Opstelling</value></data>
+  <data name="Overview" xml:space="preserve"><value>Overzicht</value></data>
+  <data name="Result" xml:space="preserve"><value>Uitslag</value></data>
+  <data name="Edit" xml:space="preserve"><value>Bewerken</value></data>
+  <data name="Game vs {0} created" xml:space="preserve"><value>Wedstrijd tegen {0} aangemaakt</value></data>
+  <data name="Game vs {0} updated" xml:space="preserve"><value>Wedstrijd tegen {0} bijgewerkt</value></data>
+  <data name="Game vs {0} deleted" xml:space="preserve"><value>Wedstrijd tegen {0} verwijderd</value></data>
+  <data name="Delete Game" xml:space="preserve"><value>Wedstrijd verwijderen</value></data>
+  <data name="Are you sure you want to delete the game vs {0}?" xml:space="preserve"><value>Weet je zeker dat je de wedstrijd tegen {0} wilt verwijderen?</value></data>
+
+  <!-- Game dialog -->
+  <data name="Opponent" xml:space="preserve"><value>Tegenstander</value></data>
+  <data name="Opponent is required" xml:space="preserve"><value>Tegenstander is verplicht</value></data>
+  <data name="Date" xml:space="preserve"><value>Datum</value></data>
+  <data name="Venue" xml:space="preserve"><value>Locatie</value></data>
+  <data name="Home" xml:space="preserve"><value>Thuis</value></data>
+  <data name="Away" xml:space="preserve"><value>Uit</value></data>
+  <data name="Game Duration (minutes)" xml:space="preserve"><value>Wedstrijdduur (minuten)</value></data>
+  <data name="Game Split" xml:space="preserve"><value>Speelperiodes</value></data>
+  <data name="Halves (2 periods)" xml:space="preserve"><value>Helften (2 periodes)</value></data>
+  <data name="Quarters (4 periods)" xml:space="preserve"><value>Kwarten (4 periodes)</value></data>
+  <data name="per" xml:space="preserve"><value>per</value></data>
+  <data name="half" xml:space="preserve"><value>helft</value></data>
+  <data name="quarter" xml:space="preserve"><value>kwart</value></data>
+  <data name="Unavailable Players" xml:space="preserve"><value>Afwezige spelers</value></data>
+  <data name="{0} player(s) unavailable" xml:space="preserve"><value>{0} speler(s) afwezig</value></data>
+  <data name="Guest Players" xml:space="preserve"><value>Gastspelers</value></data>
+  <data name="{0} guest(s) added" xml:space="preserve"><value>{0} gast(en) toegevoegd</value></data>
+  <data name="Notes" xml:space="preserve"><value>Notities</value></data>
+
+  <!-- Formation builder -->
+  <data name="Formation Builder" xml:space="preserve"><value>Opstelling maken</value></data>
+  <data name="1st Half" xml:space="preserve"><value>1e helft</value></data>
+  <data name="2nd Half" xml:space="preserve"><value>2e helft</value></data>
+  <data name="Unavailable" xml:space="preserve"><value>Afwezig</value></data>
+  <data name="Exact" xml:space="preserve"><value>Exact</value></data>
+  <data name="Natural fit" xml:space="preserve"><value>Natuurlijke positie</value></data>
+  <data name="Alternative" xml:space="preserve"><value>Alternatief</value></data>
+  <data name="Compatible" xml:space="preserve"><value>Passend</value></data>
+  <data name="Out of position" xml:space="preserve"><value>Buiten positie</value></data>
+  <data name="Save All Lineups" xml:space="preserve"><value>Alle opstellingen opslaan</value></data>
+  <data name="Copy to next {0}" xml:space="preserve"><value>Kopieer naar volgende {0}</value></data>
+  <data name="Playing Time Overview" xml:space="preserve"><value>Speeltijdoverzicht</value></data>
+  <data name="Sort By" xml:space="preserve"><value>Sorteer op</value></data>
+  <data name="Player" xml:space="preserve"><value>Speler</value></data>
+  <data name="Total" xml:space="preserve"><value>Totaal</value></data>
+  <data name="Sub" xml:space="preserve"><value>Wissel</value></data>
+  <data name="Save failed: {0}" xml:space="preserve"><value>Opslaan mislukt: {0}</value></data>
+  <data name="All lineups saved!" xml:space="preserve"><value>Alle opstellingen opgeslagen!</value></data>
+  <data name="Lineup copied to {0}" xml:space="preserve"><value>Opstelling gekopieerd naar {0}</value></data>
+
+  <!-- Match result -->
+  <data name="Match Result" xml:space="preserve"><value>Uitslag</value></data>
+  <data name="Final Score" xml:space="preserve"><value>Eindstand</value></data>
+  <data name="Us" xml:space="preserve"><value>Wij</value></data>
+  <data name="Save Score" xml:space="preserve"><value>Uitslag opslaan</value></data>
+  <data name="Goals" xml:space="preserve"><value>Doelpunten</value></data>
+  <data name="OG" xml:space="preserve"><value>ED</value></data>
+  <data name="No goals recorded yet" xml:space="preserve"><value>Nog geen doelpunten ingevoerd</value></data>
+  <data name="Min" xml:space="preserve"><value>Min</value></data>
+  <data name="Scorer" xml:space="preserve"><value>Doelpuntenmaker</value></data>
+  <data name="Select player..." xml:space="preserve"><value>Kies speler...</value></data>
+  <data name="Assist" xml:space="preserve"><value>Assist</value></data>
+  <data name="Optional" xml:space="preserve"><value>Optioneel</value></data>
+  <data name="Add" xml:space="preserve"><value>Toevoegen</value></data>
+  <data name="Score saved!" xml:space="preserve"><value>Uitslag opgeslagen!</value></data>
+  <data name="Goal added!" xml:space="preserve"><value>Doelpunt toegevoegd!</value></data>
+  <data name="Goal removed" xml:space="preserve"><value>Doelpunt verwijderd</value></data>
+
+  <!-- Formation overview -->
+  <data name="Formation Overview" xml:space="preserve"><value>Opstellingsoverzicht</value></data>
+  <data name="Subs" xml:space="preserve"><value>Wissels</value></data>
+  <data name="Player {0}" xml:space="preserve"><value>Speler {0}</value></data>
+  <data name="No subs" xml:space="preserve"><value>Geen wissels</value></data>
+  <data name="Back to editor" xml:space="preserve"><value>Terug naar bewerken</value></data>
+  <data name="Back to games" xml:space="preserve"><value>Terug naar wedstrijden</value></data>
+  <data name="Save as image" xml:space="preserve"><value>Opslaan als afbeelding</value></data>
+
+  <!-- Settings -->
+  <data name="Match Preferences" xml:space="preserve"><value>Wedstrijdvoorkeuren</value></data>
+  <data name="These defaults are applied when creating new games." xml:space="preserve"><value>Deze standaardwaarden worden gebruikt bij het aanmaken van nieuwe wedstrijden.</value></data>
+  <data name="Defaults" xml:space="preserve"><value>Standaardwaarden</value></data>
+  <data name="Default Game Split" xml:space="preserve"><value>Standaard speelperiodes</value></data>
+  <data name="Default Formation" xml:space="preserve"><value>Standaard opstelling</value></data>
+  <data name="Match Day" xml:space="preserve"><value>Wedstrijddag</value></data>
+  <data name="Next calculated match date:" xml:space="preserve"><value>Volgende berekende wedstrijddatum:</value></data>
+  <data name="Save Preferences" xml:space="preserve"><value>Voorkeuren opslaan</value></data>
+  <data name="Change Password" xml:space="preserve"><value>Wachtwoord wijzigen</value></data>
+  <data name="Current Password" xml:space="preserve"><value>Huidig wachtwoord</value></data>
+  <data name="New Password" xml:space="preserve"><value>Nieuw wachtwoord</value></data>
+  <data name="Confirm New Password" xml:space="preserve"><value>Bevestig nieuw wachtwoord</value></data>
+  <data name="Preferences saved!" xml:space="preserve"><value>Voorkeuren opgeslagen!</value></data>
+  <data name="Please fill in all password fields" xml:space="preserve"><value>Vul alle wachtwoordvelden in</value></data>
+  <data name="New passwords do not match" xml:space="preserve"><value>De nieuwe wachtwoorden komen niet overeen</value></data>
+  <data name="Password changed successfully!" xml:space="preserve"><value>Wachtwoord gewijzigd!</value></data>
+  <data name="Current password is incorrect" xml:space="preserve"><value>Huidig wachtwoord is onjuist</value></data>
+  <data name="New password must be at least {0} characters" xml:space="preserve"><value>Nieuw wachtwoord moet minimaal {0} tekens lang zijn</value></data>
+  <data name="New password must be different from the current one" xml:space="preserve"><value>Nieuw wachtwoord moet verschillen van het huidige</value></data>
+
+  <!-- Login -->
+  <data name="Login" xml:space="preserve"><value>Inloggen</value></data>
+  <data name="Admin Login" xml:space="preserve"><value>Beheerder inloggen</value></data>
+  <data name="Sign in to manage formations" xml:space="preserve"><value>Log in om opstellingen te beheren</value></data>
+  <data name="Invalid username or password" xml:space="preserve"><value>Ongeldige gebruikersnaam of wachtwoord</value></data>
+  <data name="Username" xml:space="preserve"><value>Gebruikersnaam</value></data>
+  <data name="Password" xml:space="preserve"><value>Wachtwoord</value></data>
+  <data name="Sign In" xml:space="preserve"><value>Inloggen</value></data>
+  <data name="Continue as viewer" xml:space="preserve"><value>Verdergaan als bezoeker</value></data>
+
+  <!-- Builder components -->
+  <data name="Available Players" xml:space="preserve"><value>Beschikbare spelers</value></data>
+  <data name="All players assigned" xml:space="preserve"><value>Alle spelers ingedeeld</value></data>
+  <data name="Substitutes" xml:space="preserve"><value>Wisselspelers</value></data>
+  <data name="Drop here to add as sub" xml:space="preserve"><value>Sleep hierheen om als wissel toe te voegen</value></data>
+  <data name="Drag players here to add as subs" xml:space="preserve"><value>Sleep spelers hierheen om ze als wissel toe te voegen</value></data>
+
+  <!-- Install banner -->
+  <data name="Install Formation Planner" xml:space="preserve"><value>Installeer Formation Planner</value></data>
+  <data name="Install" xml:space="preserve"><value>Installeren</value></data>
+  <data name="Add the app to your home screen." xml:space="preserve"><value>Zet de app op je beginscherm.</value></data>
+  <data name="Tap Share, then &quot;Add to Home Screen&quot;." xml:space="preserve"><value>Tik op 'Deel' en dan op 'Zet op beginscherm'.</value></data>
+  <data name="In the browser menu (⋮), tap &quot;Add to Home screen&quot;." xml:space="preserve"><value>Tik in het browsermenu (⋮) op 'Toevoegen aan startscherm'.</value></data>
+</root>

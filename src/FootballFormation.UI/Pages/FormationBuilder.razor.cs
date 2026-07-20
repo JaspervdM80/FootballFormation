@@ -2,6 +2,7 @@ using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
 
@@ -14,6 +15,7 @@ public partial class FormationBuilder
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
     [Inject] private ILogger<FormationBuilder> Logger { get; set; } = null!;
+    [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
     [Parameter]
     public int GameId { get; set; }
@@ -281,7 +283,7 @@ public partial class FormationBuilder
 
         Logger.LogInformation("Copied lineup from {SourcePeriod} to {NextPeriod} for game {GameId}",
             sourcePeriod.PeriodType, nextPeriod.PeriodType, GameId);
-        Snackbar.Add($"Lineup copied to {nextPeriod.PeriodType.DisplayName()}", Severity.Info);
+        Snackbar.Add(L["Lineup copied to {0}", L[nextPeriod.PeriodType.DisplayName()].Value], Severity.Info);
     }
 
     // --- Persistence ---
@@ -298,11 +300,11 @@ public partial class FormationBuilder
 
         if (failures.Count > 0)
         {
-            Snackbar.Add($"Save failed: {string.Join("; ", failures)}", Severity.Error);
+            Snackbar.Add(L["Save failed: {0}", string.Join("; ", failures)], Severity.Error);
             return;
         }
 
-        Snackbar.Add("All lineups saved!", Severity.Success);
+        Snackbar.Add(L["All lineups saved!"], Severity.Success);
         Logger.LogInformation("Saved all lineups for game {GameId}", GameId);
 
         // Reload so the cached entries carry the DB-generated IDs

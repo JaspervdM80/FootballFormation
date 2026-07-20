@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Localization;
 using Microsoft.JSInterop;
 
 namespace FootballFormation.UI.Components;
@@ -14,6 +15,7 @@ public partial class InstallBanner
     private const string AndroidFallbackInstruction = "In the browser menu (⋮), tap \"Add to Home screen\".";
 
     [Inject] private IJSRuntime Js { get; set; } = null!;
+    [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
     private bool Visible { get; set; }
     private bool ShowInstallButton { get; set; }
