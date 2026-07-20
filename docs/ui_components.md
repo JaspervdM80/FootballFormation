@@ -16,6 +16,18 @@
 - Click on assigned player = remove from position
 - `@ondragstart`/`@ondrop` sit on the **inner** circle (`.player-circle` / `.empty-circle`),
   not on the `.position-slot` wrapper — relevant when scripting or testing a drag
+- **Touch devices**: `wwwroot/js/drag-drop-touch.js` (Web project) converts touch gestures into
+  synthetic `DragEvent`s with a real `DataTransfer` — Blazor ignores drag events without one.
+  A floating ghost follows the finger; an 8px threshold separates taps from drags. Draggable
+  chips have `touch-action: none` (app.css), so a scroll gesture cannot start on a chip.
+
+## InstallBanner (PWA install prompt)
+- `Components/InstallBanner.razor(.cs)`, rendered once in `MainLayout`
+- Shows a fixed bottom banner on mobile browsers when the app is not installed
+  (standalone) and not previously dismissed (localStorage `pwa-install-dismissed`)
+- Android: button triggers the native install prompt via `window.pwaInstall` (js/pwa.js,
+  which captures `beforeinstallprompt`); falls back to ⋮-menu instructions if unavailable
+- iOS: no install API exists — shows "Tap Share, then Add to Home Screen" text instead
 
 ## Position Fit Colors (5 tiers)
 | Tier | CSS class | Color | Example |

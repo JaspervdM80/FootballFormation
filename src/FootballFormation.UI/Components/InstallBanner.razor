@@ -1,0 +1,19 @@
+@namespace FootballFormation.UI.Components
+
+@if (Visible)
+{
+    <MudPaper Elevation="8" Class="pa-3 d-flex align-center gap-3"
+              Style="position: fixed; bottom: 12px; left: 12px; right: 12px; z-index: 1400; border-radius: 12px; max-width: 480px; margin: 0 auto;">
+        <MudIcon Icon="@Icons.Material.Filled.InstallMobile" Color="Color.Primary" />
+        <div style="flex: 1; min-width: 0;">
+            <MudText Typo="Typo.subtitle2">Install Formation Planner</MudText>
+            <MudText Typo="Typo.caption" Style="opacity: 0.8;">@Instruction</MudText>
+        </div>
+        @if (ShowInstallButton)
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                       OnClick="InstallAsync">Install</MudButton>
+        }
+        <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="DismissAsync" />
+    </MudPaper>
+}

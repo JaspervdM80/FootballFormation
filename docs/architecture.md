@@ -51,12 +51,25 @@ Layout/
 ```
 Program.cs                — Entry point: Serilog, EF Core, service registration, auto-migration
 Components/
-  App.razor               — Root component (InteractiveServer on Routes + HeadOutlet)
+  App.razor               — Root component (InteractiveServer on Routes + HeadOutlet), PWA meta tags
   Routes.razor             — Router discovering pages from both Web and UI assemblies
+wwwroot/
+  manifest.webmanifest    — PWA manifest (installable on iOS/Android via Add to Home Screen)
+  service-worker.js       — Pass-through SW required for Android installability (no offline caching)
+  icons/                  — App icons 180 (apple-touch) / 192 / 512 (manifest + maskable)
+  js/pwa.js               — Service worker registration
+  js/drag-drop-touch.js   — Touch → HTML5 drag event shim for the formation builder on phones
+```
+
+## Deployment (repo root)
+```
+Dockerfile     — Multi-stage image build; sets APP_DATA_DIR=/data, listens on 8080
+fly.toml       — Fly.io app "gjs-meiden" (ams), volume at /data, scale-to-zero
+docs/deployment.md — Full setup, DNS for gjs-meiden.nl, redeploy & backup commands
 ```
 
 ## Database
-- SQLite at `%LOCALAPPDATA%\FootballFormation\footballformation.db`
+- SQLite at `%LOCALAPPDATA%\FootballFormation\footballformation.db` (or `$APP_DATA_DIR` when set — `/data` volume on Fly.io)
 - Auto-migrates on startup
 - `List<PlayerPosition>` stored as comma-separated ints
 - `List<int>` (UnavailablePlayerIds) stored as comma-separated values

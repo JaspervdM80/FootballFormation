@@ -68,6 +68,28 @@ Logs are written to:
 %LOCALAPPDATA%\FootballFormation\logs\
 ```
 
+## Deployment
+
+The app deploys to Fly.io (Amsterdam) behind **https://gjs-meiden.nl** — a single
+container with a persistent volume for the SQLite database, scaled to zero when idle.
+See [docs/deployment.md](docs/deployment.md) for setup, DNS records, and the
+redeploy command (`fly deploy`).
+
+## Install on iPhone / Android (PWA)
+
+The app is an installable Progressive Web App. Open **https://gjs-meiden.nl** on the phone
+(HTTPS is required for installation and the service worker; only `localhost` is exempt), then:
+
+- **iPhone (Safari)**: Share → *Add to Home Screen*
+- **Android (Chrome)**: ⋮ menu → *Add to Home screen* (or the automatic install prompt)
+
+It launches full-screen with its own icon like a native app. Touch drag-and-drop on the
+formation builder is supported via a built-in shim (`js/drag-drop-touch.js`).
+
+> **Note**: this is a Blazor Server app — it needs a live connection to the server.
+> There is deliberately no offline mode; the service worker exists only to satisfy
+> installability requirements.
+
 ## Design
 
 Premium dark theme with gold/amber accent colors, top-bar navigation, and card-based layouts.

@@ -1,13 +1,16 @@
 using FootballFormation.Core.Data;
+using Microsoft.AspNetCore.DataProtection;
 using FootballFormation.Core.Services;
 using FootballFormation.Web.Components;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using Serilog;
 
-var appDataFolder = Path.Combine(
-    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-    "FootballFormation");
+// APP_DATA_DIR points at the persistent volume when hosted (e.g. /data on Fly.io)
+var appDataFolder = Environment.GetEnvironmentVariable("APP_DATA_DIR")
+    ?? Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "FootballFormation");
 Directory.CreateDirectory(appDataFolder);
 
 Log.Logger = new LoggerConfiguration()
@@ -35,6 +38,10 @@ try
         .AddInteractiveServerComponents();
 
     builder.Services.AddMudServices();
+
+    // Keys on disk so antiforgery/circuit tokens survive container restarts
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(appDataFolder, "keys")));
 
     var dbPath = Path.Combine(appDataFolder, "footballformation.db");
 
