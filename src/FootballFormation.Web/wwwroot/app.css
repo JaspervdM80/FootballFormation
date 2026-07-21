@@ -462,6 +462,12 @@ html, body {
     }
 }
 
+/* The desktop period tab strip is used purely as a selector — the lineup editor
+   is rendered once below it — so its (empty) panel body is collapsed away. */
+.builder-desktop-tabs .mud-tabs-panels {
+    display: none;
+}
+
 /* --- Playing time overview (formation builder) --- */
 
 /* Same 599.98px xs breakpoint MudBlazor stacks tables at. The default stack puts
