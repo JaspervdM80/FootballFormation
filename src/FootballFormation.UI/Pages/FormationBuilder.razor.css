@@ -1,3 +1,30 @@
+/* Page header: opponent + action on the first line, match meta on the second so
+   nothing gets crushed on a narrow screen. */
+.builder-header {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.builder-header-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.builder-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding-left: 40px;
+}
+
+.builder-date {
+    font-size: 0.8rem;
+    color: color-mix(in srgb, var(--ink) 45%, transparent);
+}
+
 .formation-layout {
     display: flex;
     gap: 12px;

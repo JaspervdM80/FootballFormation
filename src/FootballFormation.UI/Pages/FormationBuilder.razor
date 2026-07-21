@@ -9,16 +9,30 @@
     return;
 }
 
-<div class="d-flex align-center gap-2 mb-2">
-    <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="NavigateBack" Size="Size.Small"
-                   Style="color: color-mix(in srgb, var(--ink) 40%, transparent);" />
-    <MudText Typo="Typo.h6" Style="color: var(--ink); font-weight: 700;">
-        @(GameData.IsHomeGame ? "vs" : "@") @GameData.Opponent
-    </MudText>
-    <span class="badge-venue">@((GameData.IsHomeGame ? L["Home"] : L["Away"]).ToString().ToUpper())</span>
-    <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 45%, transparent);">@GameData.Date.ToString("dd MMM yyyy")</MudText>
-    <span class="badge-gold">@GameData.FormationType.DisplayName()</span>
-    <MudSpacer />
+<div class="builder-header mb-3">
+    <div class="builder-header-top">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="NavigateBack" Size="Size.Small"
+                       Style="color: color-mix(in srgb, var(--ink) 40%, transparent);" />
+        <MudText Typo="Typo.h6" Class="builder-opponent"
+                 Style="color: var(--ink); font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            @(GameData.IsHomeGame ? "vs" : "@") @GameData.Opponent
+        </MudText>
+    </div>
+    <div class="builder-meta">
+        <span class="badge-venue">@((GameData.IsHomeGame ? L["Home"] : L["Away"]).ToString().ToUpper())</span>
+        <span class="builder-date">@GameData.Date.ToString("dd MMM yyyy")</span>
+        <span class="badge-gold">@GameData.FormationType.DisplayName()</span>
+    </div>
+</div>
+
+@{
+    var orderedPeriods = GameData.Periods.OrderBy(p => p.PeriodType).ToList();
+    var activeIndex = Math.Clamp(ActivePeriodIndex, 0, orderedPeriods.Count - 1);
+    var activePeriod = orderedPeriods[activeIndex];
+    var periodFormation = activePeriod.FormationTypeOverride ?? GameData.FormationType;
+}
+
+<div class="d-flex justify-end mb-2">
     <MudButton Variant="Variant.Outlined" Size="Size.Small"
                StartIcon="@Icons.Material.Filled.Share" Class="btn-ghost"
                Href="@($"/games/{GameId}/overview")">
@@ -26,73 +40,76 @@
     </MudButton>
 </div>
 
-<MudTabs @bind-ActivePanelIndex="ActivePeriodIndex" Elevation="0" Rounded="true" ApplyEffectsToContainer="true"
-         Class="mb-2">
-    @foreach (var period in GameData.Periods.OrderBy(p => p.PeriodType))
+<MudSelect T="int" @bind-Value="ActivePeriodIndex" Dense="true" Variant="Variant.Outlined"
+           Label="@L[GameData.SplitType.PeriodLabel()]" Class="period-select mb-3">
+    @for (var i = 0; i < orderedPeriods.Count; i++)
     {
-        var periodFormation = period.FormationTypeOverride ?? GameData.FormationType;
-        <MudTabPanel Text="@L[period.PeriodType.DisplayName()]">
-            <div class="formation-layout mt-2">
-                <div class="player-list-panel">
-                    <PlayerList Players="GetAvailablePlayers(period.Id)"
-                                OnDragStart="OnPlayerDragStart" />
-                    @if (UnavailablePlayers.Count > 0)
-                    {
-                        <MudPaper Class="pa-2 mt-2" Elevation="1" Style="opacity: 0.6; border-radius: 10px;">
-                            <MudText Typo="Typo.subtitle2" Class="mb-1" Style="color: var(--color-danger-bright);">
-                                <MudIcon Icon="@Icons.Material.Filled.PersonOff" Size="Size.Small" Class="mr-1" />
-                                @L["Unavailable"] (@UnavailablePlayers.Count)
-                            </MudText>
-                            @foreach (var player in UnavailablePlayers)
-                            {
-                                <div class="unavailable-player">
-                                    <span class="player-shirt unavailable">@(player.ShirtNumber?.ToString() ?? "-")</span>
-                                    <span class="player-name-text">@player.DisplayName</span>
-                                </div>
-                            }
-                        </MudPaper>
-                    }
-                </div>
-                <div class="pitch-panel">
-                    <PitchView Formation="periodFormation"
-                               Positions="PeriodLineups[period.Id]"
-                               DraggedPlayerId="Drag.PlayerId"
-                               OnPlayerDropped="(slot) => OnPlayerDropped(period.Id, slot)"
-                               OnPlayerRemoved="(slot) => OnPlayerRemoved(period.Id, slot)"
-                               OnPlayerDragStart="(slot) => OnPitchPlayerDragStart(period.Id, slot)" />
-                    <div class="pitch-legend">
-                        <span class="legend-item"><span class="legend-dot chip-preferred"></span> @L["Exact"]</span>
-                        <span class="legend-item"><span class="legend-dot chip-natural"></span> @L["Natural fit"]</span>
-                        <span class="legend-item"><span class="legend-dot chip-alternative"></span> @L["Alternative"]</span>
-                        <span class="legend-item"><span class="legend-dot chip-compatible"></span> @L["Compatible"]</span>
-                        <span class="legend-item"><span class="legend-dot chip-out-of-position"></span> @L["Out of position"]</span>
-                    </div>
-                </div>
-                <div class="subs-panel">
-                    <SubstituteBench Lineup="PeriodLineups[period.Id]"
-                                     DraggedPlayerId="Drag.PlayerId"
-                                     OnSubRemoved="(pp) => RemoveSub(period.Id, pp)"
-                                     OnPlayerDroppedToSub="() => OnPlayerDroppedToSub(period.Id)"
-                                     OnSubDragStart="(playerId) => OnSubDragStart(playerId)"
-                                     OnSwapWithSub="(subPlayerId) => OnSwapFieldPlayerWithSub(period.Id, subPlayerId)" />
-                </div>
-            </div>
-        </MudTabPanel>
+        var index = i;
+        var period = orderedPeriods[i];
+        <MudSelectItem Value="@index">@L[period.PeriodType.DisplayName()]</MudSelectItem>
     }
-</MudTabs>
+</MudSelect>
+
+<div class="formation-layout mt-2">
+    <div class="player-list-panel">
+        <PlayerList Players="GetAvailablePlayers(activePeriod.Id)"
+                    OnDragStart="OnPlayerDragStart" />
+        @if (UnavailablePlayers.Count > 0)
+        {
+            <MudPaper Class="pa-2 mt-2" Elevation="1" Style="opacity: 0.6; border-radius: 10px;">
+                <MudText Typo="Typo.subtitle2" Class="mb-1" Style="color: var(--color-danger-bright);">
+                    <MudIcon Icon="@Icons.Material.Filled.PersonOff" Size="Size.Small" Class="mr-1" />
+                    @L["Unavailable"] (@UnavailablePlayers.Count)
+                </MudText>
+                @foreach (var player in UnavailablePlayers)
+                {
+                    <div class="unavailable-player">
+                        <span class="player-shirt unavailable">@(player.ShirtNumber?.ToString() ?? "-")</span>
+                        <span class="player-name-text">@player.DisplayName</span>
+                    </div>
+                }
+            </MudPaper>
+        }
+    </div>
+    <div class="pitch-panel">
+        <PitchView Formation="periodFormation"
+                   Positions="PeriodLineups[activePeriod.Id]"
+                   DraggedPlayerId="Drag.PlayerId"
+                   OnPlayerDropped="(slot) => OnPlayerDropped(activePeriod.Id, slot)"
+                   OnPlayerRemoved="(slot) => OnPlayerRemoved(activePeriod.Id, slot)"
+                   OnPlayerDragStart="(slot) => OnPitchPlayerDragStart(activePeriod.Id, slot)" />
+        <div class="pitch-legend">
+            <span class="legend-item"><span class="legend-dot chip-preferred"></span> @L["Exact"]</span>
+            <span class="legend-item"><span class="legend-dot chip-natural"></span> @L["Natural fit"]</span>
+            <span class="legend-item"><span class="legend-dot chip-alternative"></span> @L["Alternative"]</span>
+            <span class="legend-item"><span class="legend-dot chip-compatible"></span> @L["Compatible"]</span>
+            <span class="legend-item"><span class="legend-dot chip-out-of-position"></span> @L["Out of position"]</span>
+        </div>
+    </div>
+    <div class="subs-panel">
+        <SubstituteBench Lineup="PeriodLineups[activePeriod.Id]"
+                         DraggedPlayerId="Drag.PlayerId"
+                         OnSubRemoved="(pp) => RemoveSub(activePeriod.Id, pp)"
+                         OnPlayerDroppedToSub="() => OnPlayerDroppedToSub(activePeriod.Id)"
+                         OnSubDragStart="(playerId) => OnSubDragStart(playerId)"
+                         OnSwapWithSub="(subPlayerId) => OnSwapFieldPlayerWithSub(activePeriod.Id, subPlayerId)" />
+    </div>
+</div>
 
 <div class="d-flex gap-2 mt-2 mb-4">
     <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Save"
                OnClick="SaveAll" Size="Size.Small">
-        @L["Save All Lineups"]
+        @L["Save"]
     </MudButton>
+
+    <MudSpacer />
 
     @if (!IsLastPeriodSelected)
     {
         <MudButton Variant="Variant.Outlined" Class="btn-ghost"
                    StartIcon="@Icons.Material.Filled.ContentCopy"
                    OnClick="CopyToNextPeriod" Size="Size.Small">
-            @L["Copy to next {0}", L[GameData.SplitType.PeriodLabel()]]
+            @L["Copy"]
         </MudButton>
     }
 </div>
@@ -105,7 +122,7 @@
             @GameData.GameDurationMinutes min @L["Total"].ToString().ToLower() — @GameData.PeriodCount x @GameData.PeriodDurationMinutes min @L["per"] @L[GameData.SplitType.PeriodLabel()]
         </MudText>
         <MudTable Items="GetPlayingTimeData()" Dense="true" Hover="true"
-                  SortLabel="@L["Sort By"]" Elevation="0">
+                  SortLabel="@L["Sort By"]" Elevation="0" Class="playtime-table">
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<PlayingTimeRow, object>(r => r.ShirtNumber ?? 99)">
                     #</MudTableSortLabel></MudTh>
@@ -124,16 +141,16 @@
                         %</MudTableSortLabel></MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="#">
+                <MudTd DataLabel="#" Class="pt-num">
                     <span style="font-weight: 700; color: var(--club-primary-bright);">@(context.ShirtNumber?.ToString() ?? "-")</span>
                 </MudTd>
-                <MudTd DataLabel="@L["Player"]">
+                <MudTd DataLabel="@L["Player"]" Class="pt-name">
                     <span style="font-weight: 500; color: var(--ink);">@context.PlayerName</span>
                 </MudTd>
                 @foreach (var period in GameData.Periods.OrderBy(p => p.PeriodType))
                 {
                     var detail = context.PeriodDetails[period.Id];
-                    <MudTd Style="text-align:center">
+                    <MudTd Class="pt-period" Style="text-align:center">
                         @if (detail.Status == PeriodPlayStatus.Starting && detail.Fit.HasValue)
                         {
                             <span class="overview-dot @GetFitCssClass(detail.Fit.Value)"
@@ -153,10 +170,10 @@
                         }
                     </MudTd>
                 }
-                <MudTd DataLabel="@L["Total"]" Style="text-align:center">
+                <MudTd DataLabel="@L["Total"]" Class="pt-total" Style="text-align:center">
                     <strong style="color: var(--ink);">@context.TotalMinutes min</strong>
                 </MudTd>
-                <MudTd DataLabel="%" Style="text-align:center">
+                <MudTd DataLabel="%" Class="pt-percent" Style="text-align:center">
                     <MudProgressLinear Value="@context.Percentage" Color="@GetTimeColor(context.Percentage)"
                                        Size="Size.Medium" Rounded="true" Style="min-width:100px">
                         <MudText Typo="Typo.caption"><b>@context.Percentage.ToString("0")%</b></MudText>
