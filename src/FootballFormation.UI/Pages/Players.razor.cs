@@ -12,11 +12,18 @@ public partial class Players
     [Inject] private PlayerService PlayerService { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
+    [Inject] private NavigationManager Navigation { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
     private List<Player>? _players;
 
     protected override async Task OnInitializedAsync() => await LoadPlayers();
+
+    private void OnRowClicked(TableRowClickEventArgs<Player> args)
+    {
+        if (args.Item is not null)
+            Navigation.NavigateTo($"/players/{args.Item.Id}/stats");
+    }
 
     private async Task LoadPlayers()
     {

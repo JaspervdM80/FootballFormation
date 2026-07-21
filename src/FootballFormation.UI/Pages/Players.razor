@@ -38,7 +38,8 @@ else if (_players.Count == 0)
 }
 else
 {
-    <MudTable Items="_players" Hover="true" Dense="true" Elevation="2"
+    <MudTable Items="_players" Hover="true" Dense="true" Elevation="2" T="Player"
+              OnRowClick="OnRowClicked" RowStyle="cursor: pointer;"
               Class="players-table" Style="border-radius: 16px;">
         <HeaderContent>
             <MudTh><MudTableSortLabel SortBy="new Func<Player, object>(p => p.ShirtNumber ?? 999)">#</MudTableSortLabel></MudTh>
@@ -81,12 +82,15 @@ else
                     }
                 </MudTd>
                 <MudTd Class="cell-right cell-actions">
-                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
-                                   Style="color: color-mix(in srgb, var(--ink) 40%, transparent);"
-                                   OnClick="() => OpenEditDialog(context)" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
-                                   Style="color: color-mix(in srgb, var(--ink) 40%, transparent);"
-                                   OnClick="() => DeletePlayer(context)" />
+                    @* stopPropagation so the edit/delete buttons don't trigger the row's navigation *@
+                    <span @onclick:stopPropagation="true">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                       Style="color: color-mix(in srgb, var(--ink) 40%, transparent);"
+                                       OnClick="() => OpenEditDialog(context)" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                       Style="color: color-mix(in srgb, var(--ink) 40%, transparent);"
+                                       OnClick="() => DeletePlayer(context)" />
+                    </span>
                 </MudTd>
             </AuthorizeView>
         </RowTemplate>
