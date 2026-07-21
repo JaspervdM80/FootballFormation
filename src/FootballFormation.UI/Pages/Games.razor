@@ -40,10 +40,14 @@ else
         {
             <div class="game-row" @onclick="() => OpenGame(game)">
                 <div class="game-primary">
-                    <span class="game-date">@game.Date.ToString("dd MMM")</span>
-                    <span class="game-opponent">@(game.IsHomeGame ? "vs" : "@") @game.Opponent</span>
+                    <div class="game-meta">
+                        <span class="game-date">@game.Date.ToString("dd MMM")</span>
+                        @* Venue next to the date — shown on mobile only (desktop keeps the tag in the row) *@
+                        <span class="badge-venue venue-inline">@(game.IsHomeGame ? L["H"] : L["A"])</span>
+                    </div>
+                    <span class="game-opponent"><span class="opp-prefix">@(game.IsHomeGame ? "vs " : "@ ")</span>@game.Opponent</span>
                 </div>
-                <span class="badge-venue">@(game.IsHomeGame ? L["H"] : L["A"])</span>
+                <span class="badge-venue venue-standalone">@(game.IsHomeGame ? L["H"] : L["A"])</span>
                 <span class="badge-gold">@game.FormationType.DisplayName()</span>
                 @if (game.UnavailablePlayerIds.Count > 0)
                 {

@@ -20,6 +20,20 @@ public class GameService(AppDbContext db, ILogger<GameService> logger)
             return Result.Success(games);
         });
 
+    public Task<Result<List<Game>>> GetAllWithDetailsAsync() =>
+        ServiceOperation.RunAsync(logger, "load game details", async () =>
+        {
+            var games = await db.Games
+                .Include(g => g.Periods)
+                    .ThenInclude(p => p.PlayerPositions)
+                .Include(g => g.Goals)
+                .OrderByDescending(g => g.Date)
+                .ToListAsync();
+
+            logger.LogDebug("Retrieved {Count} games with details", games.Count);
+            return Result.Success(games);
+        });
+
     public Task<Result<Game>> GetByIdAsync(int id) =>
         ServiceOperation.RunAsync(logger, "load game", async () =>
         {

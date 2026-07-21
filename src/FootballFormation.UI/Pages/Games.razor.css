@@ -29,6 +29,18 @@
     min-width: 0;
 }
 
+.game-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* The venue tag sits next to the date on mobile only; on desktop the standalone
+   tag in the row is used instead. */
+.venue-inline {
+    display: none;
+}
+
 .game-date {
     font-size: 0.75rem;
     color: color-mix(in srgb, var(--ink) 45%, transparent);
@@ -112,6 +124,21 @@
     /* Formation and absentees are secondary detail — hide them on mobile */
     .badge-gold,
     .badge-unavailable {
+        display: none;
+    }
+
+    /* Venue tag moves next to the date; drop the standalone one and the guest tag */
+    .venue-standalone,
+    .badge-guest {
+        display: none;
+    }
+
+    .venue-inline {
+        display: inline-block;
+    }
+
+    /* Opponent shown without the "vs"/"@" prefix (venue is now a tag by the date) */
+    .opp-prefix {
         display: none;
     }
 }

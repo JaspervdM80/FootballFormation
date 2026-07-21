@@ -1,0 +1,165 @@
+/* Summary tiles */
+.stat-tiles {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.stat-tile {
+    background: var(--surface-card);
+    border: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
+    border-radius: 14px;
+    padding: 16px 12px;
+    text-align: center;
+    box-shadow: var(--mud-elevation-2, 0 2px 4px rgba(0, 0, 0, 0.06));
+}
+
+.stat-value {
+    font-size: 1.9rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--club-primary-bright);
+}
+
+.stat-unit {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-left: 1px;
+}
+
+.stat-label {
+    margin-top: 6px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: color-mix(in srgb, var(--ink) 62%, transparent);
+}
+
+.stat-sub {
+    margin-top: 3px;
+    font-size: 0.65rem;
+    color: color-mix(in srgb, var(--ink) 55%, transparent);
+}
+
+/* Two-column body */
+.stats-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+/* Position bars */
+.position-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.position-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 5px;
+}
+
+.position-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.position-meta {
+    font-size: 0.7rem;
+    color: color-mix(in srgb, var(--ink) 60%, transparent);
+}
+
+.position-track {
+    height: 8px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--ink) 6%, transparent);
+    overflow: hidden;
+}
+
+.position-fill {
+    height: 100%;
+    border-radius: 6px;
+    background: var(--gradient-primary);
+    min-width: 2px;
+}
+
+/* Per-game list */
+.game-list {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+}
+
+.game-row {
+    display: grid;
+    grid-template-columns: 1fr 48px 32px 32px;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 4px;
+    border-bottom: 1px solid color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+.game-row:last-child {
+    border-bottom: none;
+}
+
+.game-head {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: color-mix(in srgb, var(--ink) 55%, transparent);
+}
+
+.g-opp {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.g-opp-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.g-date {
+    font-size: 0.65rem;
+    color: color-mix(in srgb, var(--ink) 55%, transparent);
+}
+
+.game-head .g-opp {
+    flex-direction: row;
+}
+
+.g-num {
+    text-align: center;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: color-mix(in srgb, var(--ink) 72%, transparent);
+}
+
+.g-num.g-hit {
+    color: var(--club-primary-bright);
+    font-weight: 800;
+}
+
+@media (max-width: 760px) {
+    .stat-tiles {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stats-layout {
+        grid-template-columns: 1fr;
+    }
+}

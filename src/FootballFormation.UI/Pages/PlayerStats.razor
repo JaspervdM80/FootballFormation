@@ -1,0 +1,118 @@
+@page "/players/{PlayerId:int}/stats"
+
+<PageTitle>@(_stats is not null ? _stats.Player.DisplayName : L["Player Stats"])</PageTitle>
+
+@if (!_loaded)
+{
+    <MudProgressCircular Indeterminate="true" />
+    return;
+}
+
+@if (_stats is null)
+{
+    return;
+}
+
+<div class="d-flex align-center gap-2 mb-4">
+    <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="NavigateBack" Size="Size.Small"
+                   Style="color: color-mix(in srgb, var(--ink) 40%, transparent);" />
+    <div>
+        <MudText Typo="Typo.h5" Style="color: var(--ink); font-weight: 700;">
+            @if (_stats.Player.ShirtNumber is not null)
+            {
+                <span style="color: var(--club-primary-bright);">#@_stats.Player.ShirtNumber</span>
+            }
+            @_stats.Player.DisplayName
+        </MudText>
+        <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 62%, transparent);">
+            @L[_stats.Player.PreferredPosition.DisplayName()]
+        </MudText>
+    </div>
+</div>
+
+@if (_stats.GamesPlayed == 0 && _stats.Goals == 0 && _stats.Assists == 0)
+{
+    <MudPaper Class="pa-6" Elevation="2" Style="border-radius: 16px; text-align: center;">
+        <MudIcon Icon="@Icons.Material.Filled.QueryStats" Size="Size.Large"
+                 Style="color: color-mix(in srgb, var(--ink) 25%, transparent);" />
+        <MudText Typo="Typo.body1" Class="mt-3" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
+            @L["No games recorded yet for this player."]
+        </MudText>
+    </MudPaper>
+    return;
+}
+
+<div class="stat-tiles mb-4">
+    <div class="stat-tile">
+        <div class="stat-value">@_stats.GamesPlayed</div>
+        <div class="stat-label">@L["Games"]</div>
+    </div>
+    <div class="stat-tile">
+        <div class="stat-value">@_stats.TotalMinutes<span class="stat-unit">'</span></div>
+        <div class="stat-label">@L["Minutes"]</div>
+        <div class="stat-sub">@L["{0} / game", _stats.AverageMinutes.ToString("0")]</div>
+    </div>
+    <div class="stat-tile">
+        <div class="stat-value">@_stats.Goals</div>
+        <div class="stat-label">@L["Goals"]</div>
+        <div class="stat-sub">@L["{0} / game", _stats.GoalsPerGame.ToString("0.00")]</div>
+    </div>
+    <div class="stat-tile">
+        <div class="stat-value">@_stats.Assists</div>
+        <div class="stat-label">@L["Assists"]</div>
+        <div class="stat-sub">@L["{0} / game", _stats.AssistsPerGame.ToString("0.00")]</div>
+    </div>
+</div>
+
+<div class="stats-layout">
+    <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">
+        <div class="card-label">@L["Positions"]</div>
+        @if (_stats.Positions.Count > 0)
+        {
+            <div class="position-bars">
+                @foreach (var pos in _stats.Positions)
+                {
+                    <div class="position-row">
+                        <div class="position-head">
+                            <span class="position-name">@L[pos.Position.DisplayName()]</span>
+                            <span class="position-meta">@pos.Minutes' · @pos.Percentage.ToString("0")%</span>
+                        </div>
+                        <div class="position-track">
+                            <div class="position-fill" style="width: @(pos.Percentage.ToString(System.Globalization.CultureInfo.InvariantCulture))%;"></div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 35%, transparent);">
+                @L["No minutes on the pitch yet."]
+            </MudText>
+        }
+    </MudPaper>
+
+    <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">
+        <div class="card-label">@L["Per game"] (@_stats.Games.Count)</div>
+        <div class="game-list">
+            <div class="game-row game-head">
+                <span class="g-opp">@L["Opponent"]</span>
+                <span class="g-num">@L["Min"]</span>
+                <span class="g-num">@L["G"]</span>
+                <span class="g-num">@L["Ast"]</span>
+            </div>
+            @foreach (var g in _stats.Games)
+            {
+                <div class="game-row">
+                    <span class="g-opp">
+                        <span class="g-opp-name">@(g.Game.IsHomeGame ? "vs" : "@") @g.Game.Opponent</span>
+                        <span class="g-date">@g.Game.Date.ToString("dd MMM yyyy")</span>
+                    </span>
+                    <span class="g-num">@(g.Played ? $"{g.Minutes}'" : "—")</span>
+                    <span class="g-num @(g.Goals > 0 ? "g-hit" : "")">@g.Goals</span>
+                    <span class="g-num @(g.Assists > 0 ? "g-hit" : "")">@g.Assists</span>
+                </div>
+            }
+        </div>
+    </MudPaper>
+</div>

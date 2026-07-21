@@ -145,6 +145,36 @@
   <data name="Goal added!" xml:space="preserve"><value>Doelpunt toegevoegd!</value></data>
   <data name="Goal removed" xml:space="preserve"><value>Doelpunt verwijderd</value></data>
 
+  <!-- Player stats -->
+  <data name="Player Stats" xml:space="preserve"><value>Spelersstatistieken</value></data>
+  <data name="No games recorded yet for this player." xml:space="preserve"><value>Nog geen wedstrijden geregistreerd voor deze speler.</value></data>
+  <data name="Minutes" xml:space="preserve"><value>Minuten</value></data>
+  <data name="{0} / game" xml:space="preserve"><value>{0} / wedstrijd</value></data>
+  <data name="Assists" xml:space="preserve"><value>Assists</value></data>
+  <data name="Positions" xml:space="preserve"><value>Posities</value></data>
+  <data name="No minutes on the pitch yet." xml:space="preserve"><value>Nog geen speelminuten.</value></data>
+  <data name="Per game" xml:space="preserve"><value>Per wedstrijd</value></data>
+  <data name="G" xml:space="preserve"><value>D</value></data>
+  <data name="Ast" xml:space="preserve"><value>A</value></data>
+
+  <!-- Position names (keys are the English DisplayName) -->
+  <data name="Goalkeeper" xml:space="preserve"><value>Keeper</value></data>
+  <data name="Left Back" xml:space="preserve"><value>Linksback</value></data>
+  <data name="Center Back" xml:space="preserve"><value>Centrale verdediger</value></data>
+  <data name="Right Back" xml:space="preserve"><value>Rechtsback</value></data>
+  <data name="Defender" xml:space="preserve"><value>Verdediger</value></data>
+  <data name="Defensive Midfielder" xml:space="preserve"><value>Verdedigende middenvelder</value></data>
+  <data name="Center Midfielder" xml:space="preserve"><value>Centrale middenvelder</value></data>
+  <data name="Left Midfielder" xml:space="preserve"><value>Linkermiddenvelder</value></data>
+  <data name="Right Midfielder" xml:space="preserve"><value>Rechtermiddenvelder</value></data>
+  <data name="Attacking Midfielder" xml:space="preserve"><value>Aanvallende middenvelder</value></data>
+  <data name="Midfielder" xml:space="preserve"><value>Middenvelder</value></data>
+  <data name="Left Winger" xml:space="preserve"><value>Linksbuiten</value></data>
+  <data name="Right Winger" xml:space="preserve"><value>Rechtsbuiten</value></data>
+  <data name="Winger" xml:space="preserve"><value>Vleugelspeler</value></data>
+  <data name="Striker" xml:space="preserve"><value>Spits</value></data>
+  <data name="Attacker" xml:space="preserve"><value>Aanvaller</value></data>
+
   <!-- Formation overview -->
   <data name="Formation Overview" xml:space="preserve"><value>Opstellingsoverzicht</value></data>
   <data name="Subs" xml:space="preserve"><value>Wissels</value></data>
