@@ -15,7 +15,7 @@
     <AuthorizeView>
         <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Add"
                    OnClick="OpenAddDialog">
-            @L["New Game"]
+            @L["Add"]
         </MudButton>
     </AuthorizeView>
 </div>
@@ -39,8 +39,10 @@ else
         @foreach (var game in _games.OrderByDescending(g => g.Date))
         {
             <div class="game-row" @onclick="() => OpenGame(game)">
-                <span class="game-date">@game.Date.ToString("dd MMM")</span>
-                <span class="game-opponent">@(game.IsHomeGame ? "vs" : "@") @game.Opponent</span>
+                <div class="game-primary">
+                    <span class="game-date">@game.Date.ToString("dd MMM")</span>
+                    <span class="game-opponent">@(game.IsHomeGame ? "vs" : "@") @game.Opponent</span>
+                </div>
                 <span class="badge-venue">@(game.IsHomeGame ? L["H"] : L["A"])</span>
                 <span class="badge-gold">@game.FormationType.DisplayName()</span>
                 @if (game.UnavailablePlayerIds.Count > 0)

@@ -63,6 +63,7 @@
   <data name="Guests are left out of every game unless you add them to it explicitly." xml:space="preserve"><value>Gasten doen alleen mee aan een wedstrijd als je ze er zelf aan toevoegt.</value></data>
   <data name="Cancel" xml:space="preserve"><value>Annuleren</value></data>
   <data name="Save" xml:space="preserve"><value>Opslaan</value></data>
+  <data name="Copy" xml:space="preserve"><value>Kopieer</value></data>
   <data name="Delete" xml:space="preserve"><value>Verwijderen</value></data>
 
   <!-- Games -->

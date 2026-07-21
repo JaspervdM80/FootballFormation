@@ -462,6 +462,81 @@ html, body {
     }
 }
 
+/* The desktop period tab strip is used purely as a selector — the lineup editor
+   is rendered once below it — so its (empty) panel body is collapsed away. */
+.builder-desktop-tabs .mud-tabs-panels {
+    display: none;
+}
+
+/* --- Playing time overview (formation builder) --- */
+
+/* Same 599.98px xs breakpoint MudBlazor stacks tables at. The default stack puts
+   every cell on its own line, which turns a player's per-period positions into a
+   tall vertical strip. Lay each row out as a card instead: name on top, the period
+   positions in one horizontal band, and the percentage bar on its own line. */
+@media (max-width: 599.98px) {
+    .playtime-table .mud-table-root,
+    .playtime-table .mud-table-body {
+        display: block;
+        width: 100%;
+    }
+
+    .playtime-table .mud-table-body .mud-table-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        column-gap: 6px;
+        row-gap: 8px;
+        padding: 10px 14px;
+    }
+
+    .playtime-table .mud-table-body .mud-table-row:not(:last-child) {
+        border-bottom: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
+    }
+
+    .playtime-table .mud-table-body .mud-table-cell {
+        border: none !important;
+        padding: 0 !important;
+        display: flex;
+        align-items: center;
+        width: auto;
+        justify-content: flex-start;
+    }
+
+    /* MudBlazor's per-cell data labels add nothing once the row is a card */
+    .playtime-table .mud-table-body .mud-table-cell::before {
+        display: none !important;
+    }
+
+    /* The shirt-number column is noise on a phone */
+    .playtime-table .pt-num {
+        display: none !important;
+    }
+
+    /* Player name owns the first line */
+    .playtime-table .pt-name {
+        flex: 1 1 100%;
+        font-weight: 600;
+    }
+
+    /* Each part-of-game position sits beside the next rather than stacking */
+    .playtime-table .pt-period {
+        flex: 0 0 auto;
+        justify-content: center;
+    }
+
+    /* Total minutes trail the positions, pinned to the right of that line */
+    .playtime-table .pt-total {
+        flex: 0 0 auto;
+        margin-left: auto;
+    }
+
+    /* The percentage bar spans the full width on its own line */
+    .playtime-table .pt-percent {
+        flex: 1 1 100%;
+    }
+}
+
 /* --- Reconnect overlay ---
    Blazor's stock overlay is light and reads as "the app went white" when a phone
    suspends the tab. Keep it on-theme, and pwa.js reloads once reconnecting fails. */

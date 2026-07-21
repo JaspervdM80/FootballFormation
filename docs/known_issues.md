@@ -28,9 +28,10 @@ Avoid repeating these mistakes:
 ## Touch / PWA (continued)
 - **White page after switching apps**: a suspended PWA loses its SignalR circuit. Two
   causes, both fixed: the page background came only from the MudBlazor theme (now also
-  set statically on `html, body` in app.css, plus `color-scheme: dark`), and Blazor's
-  stock reconnect overlay is light (now themed via `#components-reconnect-modal`, and
-  `js/pwa.js` reloads the page once reconnection fails or on return to a dead tab).
+  set statically on `html, body` in app.css via `var(--surface-page)`, plus
+  `color-scheme: light`), and Blazor's stock reconnect overlay is light (now themed via
+  `#components-reconnect-modal`, and `js/pwa.js` reloads the page once reconnection fails
+  or on return to a dead tab).
 
 ## Localization
 - **Resource keys are English text, so watch for homographs**: "Home" was already the

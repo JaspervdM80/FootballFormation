@@ -1,3 +1,39 @@
+/* The builder keeps its original desktop layout (single-row header, tab strip,
+   full button labels) and switches to a compact phone layout only below the
+   MudBlazor xs breakpoint. */
+.builder-mobile {
+    display: none;
+}
+
+@media (max-width: 599.98px) {
+    .builder-desktop {
+        display: none;
+    }
+
+    .builder-mobile {
+        display: block;
+    }
+}
+
+/* Page header: opponent + action on the first line, match meta on the second so
+   nothing gets crushed on a narrow screen. */
+.builder-header {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.builder-header-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.builder-date {
+    font-size: 0.8rem;
+    color: color-mix(in srgb, var(--ink) 45%, transparent);
+}
+
 .formation-layout {
     display: flex;
     gap: 12px;
