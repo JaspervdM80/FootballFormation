@@ -1,0 +1,144 @@
+@page "/stats"
+
+<PageTitle>@L["Season statistics"]</PageTitle>
+
+@if (!_loaded)
+{
+    <MudProgressCircular Indeterminate="true" />
+    return;
+}
+
+@if (_stats is null)
+{
+    return;
+}
+
+<div class="mb-4">
+    <MudText Typo="Typo.h5" Style="color: var(--ink); font-weight: 700;">@L["Season statistics"]</MudText>
+    <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 62%, transparent);">
+        @L["Team and squad totals across all games"]
+    </MudText>
+</div>
+
+<div class="stat-tiles mb-4">
+    <div class="stat-tile">
+        <div class="stat-value">@_stats.Played</div>
+        <div class="stat-label">@L["Played"]</div>
+    </div>
+    <div class="stat-tile">
+        <div class="stat-value">@($"{_stats.Won}-{_stats.Drawn}-{_stats.Lost}")</div>
+        <div class="stat-label">@L["W-D-L"]</div>
+        <div class="stat-sub">@L["{0}% won", _stats.WinPercentage.ToString("0")]</div>
+    </div>
+    <div class="stat-tile">
+        <div class="stat-value">@_stats.GoalsFor</div>
+        <div class="stat-label">@L["Goals for"]</div>
+    </div>
+    <div class="stat-tile">
+        <div class="stat-value">@_stats.GoalsAgainst</div>
+        <div class="stat-label">@L["Goals against"]</div>
+        <div class="stat-sub">@(_stats.GoalDifference >= 0 ? "+" : "")@_stats.GoalDifference @L["diff"]</div>
+    </div>
+</div>
+
+@if (_stats.Form.Count > 0)
+{
+    <div class="form-row mb-4">
+        <span class="form-label">@L["Form"]</span>
+        @foreach (var r in _stats.Form)
+        {
+            <span class="form-pill @r.ToString().ToLowerInvariant()" title="@L[r.ToString()]">@ResultLetter(r)</span>
+        }
+    </div>
+}
+
+<div class="stats-layout">
+    <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">
+        <div class="card-label">@L["Top scorers"]</div>
+        @if (_scorers.Count > 0)
+        {
+            <div class="rank-list">
+                <div class="rank-row rank-head">
+                    <span class="r-name">@L["Player"]</span>
+                    <span class="g-num">@L["G"]</span>
+                    <span class="g-num">@L["Ast"]</span>
+                </div>
+                @foreach (var p in _scorers)
+                {
+                    <div class="rank-row" @onclick="() => OpenPlayer(p.Player.Id)">
+                        <span class="r-name">
+                            @if (p.Player.ShirtNumber is not null)
+                            {
+                                <span class="r-shirt">@p.Player.ShirtNumber</span>
+                            }
+                            @p.Player.DisplayName
+                        </span>
+                        <span class="g-num g-hit">@p.Goals</span>
+                        <span class="g-num @(p.Assists > 0 ? "g-hit" : "")">@p.Assists</span>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Class="mt-2 empty-note">@L["No goals recorded yet."]</MudText>
+        }
+    </MudPaper>
+
+    <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">
+        <div class="card-label">@L["Goalkeeper minutes"]</div>
+        @if (_keepers.Count > 0)
+        {
+            <div class="rank-list">
+                @foreach (var p in _keepers)
+                {
+                    <div class="rank-row rank-row-2col" @onclick="() => OpenPlayer(p.Player.Id)">
+                        <span class="r-name">
+                            @if (p.Player.ShirtNumber is not null)
+                            {
+                                <span class="r-shirt">@p.Player.ShirtNumber</span>
+                            }
+                            @p.Player.DisplayName
+                        </span>
+                        <span class="g-num g-hit">@p.GoalkeeperMinutes'</span>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Class="mt-2 empty-note">@L["No goalkeeper minutes yet."]</MudText>
+        }
+    </MudPaper>
+</div>
+
+<MudPaper Class="pa-5 mt-4" Elevation="2" Style="border-radius: 16px;">
+    <div class="card-label">@L["Playing time"]</div>
+    @if (_playingTime.Count > 0)
+    {
+        <div class="pt-list">
+            @foreach (var p in _playingTime)
+            {
+                <div class="pt-row" @onclick="() => OpenPlayer(p.Player.Id)">
+                    <div class="pt-head">
+                        <span class="pt-name">
+                            @if (p.Player.ShirtNumber is not null)
+                            {
+                                <span class="r-shirt">@p.Player.ShirtNumber</span>
+                            }
+                            @p.Player.DisplayName
+                        </span>
+                        <span class="pt-meta">@p.TotalMinutes' / @p.AvailableMinutes' · @(p.Utilization.ToString("0"))%</span>
+                    </div>
+                    <div class="position-track">
+                        <div class="position-fill" style="width: @(BarWidth(p.TotalMinutes).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <MudText Typo="Typo.body2" Class="mt-2 empty-note">@L["No players yet."]</MudText>
+    }
+</MudPaper>

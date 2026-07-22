@@ -32,6 +32,14 @@ public class PlayerStats
     public int GamesPlayed { get; init; }
     public int TotalMinutes { get; init; }
 
+    /// <summary>Minutes spent in goal (position GK).</summary>
+    public int GoalkeeperMinutes { get; init; }
+
+    /// <summary>Minutes the player was available to play — the full duration of every game
+    /// they were in the roster for (with a lineup). Games they were unavailable for don't
+    /// count, so this is a fair denominator: on-pitch minutes vs. bench/unavailable time.</summary>
+    public int AvailableMinutes { get; init; }
+
     public int Goals { get; init; }
     public int Assists { get; init; }
 
@@ -41,6 +49,9 @@ public class PlayerStats
     public required List<PlayerGameStat> Games { get; init; }
 
     public int GoalContributions => Goals + Assists;
+
+    /// <summary>Share of available minutes actually spent on the pitch, 0–100.</summary>
+    public double Utilization => AvailableMinutes > 0 ? Math.Round((double)TotalMinutes / AvailableMinutes * 100, 0) : 0;
 
     public double AverageMinutes => GamesPlayed > 0 ? (double)TotalMinutes / GamesPlayed : 0;
     public double GoalsPerGame => GamesPlayed > 0 ? (double)Goals / GamesPlayed : 0;
@@ -59,9 +70,15 @@ public static class PlayerStatsReport
     {
         var gameStats = new List<PlayerGameStat>();
         var positionMinutes = new Dictionary<PlayerPosition, int>();
+        var availableMinutes = 0;
 
         foreach (var game in games)
         {
+            // Available = the player was in the roster for a game that actually has a lineup,
+            // whether they started, subbed, or sat the bench. Unavailable games don't count.
+            if (game.HasLineup && game.IsInRoster(player))
+                availableMinutes += game.GameDurationMinutes;
+
             var playedPeriods = 0;
 
             foreach (var period in game.Periods)
@@ -113,6 +130,8 @@ public static class PlayerStatsReport
             Player = player,
             GamesPlayed = gameStats.Count(g => g.Played),
             TotalMinutes = totalMinutes,
+            GoalkeeperMinutes = positionMinutes.GetValueOrDefault(PlayerPosition.GK),
+            AvailableMinutes = availableMinutes,
             Goals = gameStats.Sum(g => g.Goals),
             Assists = gameStats.Sum(g => g.Assists),
             Positions = positions,

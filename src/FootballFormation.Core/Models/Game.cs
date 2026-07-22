@@ -35,6 +35,14 @@ public class Game
     public int PeriodDurationMinutes => PeriodCount == 0 ? 0 : GameDurationMinutes / PeriodCount;
 
     /// <summary>
+    /// True when at least one period has a player placed on the pitch. Only meaningful when
+    /// <see cref="Periods"/> are loaded with their <see cref="GamePeriod.PlayerPositions"/>
+    /// (e.g. via <c>GetAllWithDetailsAsync</c>). Playing time is derived from lineups, so a
+    /// game without one produces no minutes for anyone.
+    /// </summary>
+    public bool HasLineup => Periods.Any(p => p.PlayerPositions.Count > 0);
+
+    /// <summary>
     /// Squad players are in unless marked unavailable; guests are out unless explicitly added.
     /// </summary>
     public bool IsInRoster(Player player) => player.IsGuest

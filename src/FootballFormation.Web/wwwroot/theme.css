@@ -38,6 +38,9 @@
     --color-danger: #ef4444;
     --color-danger-bright: #dc2626;
     --color-success-bright: #15803d;
+    --color-warning: #f59e0b;
+    --color-warning-bright: #b45309;
+    --color-away: #2563eb;          /* away-game accent (home uses the club green) */
 
     /* Shared gradients */
     --gradient-primary: linear-gradient(135deg, var(--club-primary), var(--club-primary-deep));
