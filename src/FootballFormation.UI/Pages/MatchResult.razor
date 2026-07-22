@@ -8,14 +8,15 @@
     return;
 }
 
-<div class="d-flex align-center gap-2 mb-2">
+<div class="d-flex align-center gap-2 mb-2 result-header">
     <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="NavigateBack" Size="Size.Small"
                    Style="color: color-mix(in srgb, var(--ink) 40%, transparent);" />
     <div>
-        <MudText Typo="Typo.h5" Style="color: var(--ink); font-weight: 700;">
+        @* The opponent name repeats in the score card below; on mobile we hide this to save space. *@
+        <MudText Typo="Typo.h5" Class="result-opponent" Style="color: var(--ink); font-weight: 700;">
             @(GameData.IsHomeGame ? "vs" : "@") @GameData.Opponent
         </MudText>
-        <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 45%, transparent);">
+        <MudText Typo="Typo.body2" Class="result-subtitle">
             @GameData.Date.ToString("dd MMMM yyyy") · @(GameData.IsHomeGame ? L["Home"] : L["Away"]) · @GameData.FormationType.DisplayName()
         </MudText>
     </div>
@@ -108,6 +109,8 @@
         }
 
         <AuthorizeView>
+            @if (!AllScorersLogged)
+            {
             <div class="add-section">
                 <div class="add-row">
                     <div class="field" style="width: 60px;">
@@ -151,6 +154,7 @@
                     </button>
                 </div>
             </div>
+            }
         </AuthorizeView>
     </MudPaper>
 </div>

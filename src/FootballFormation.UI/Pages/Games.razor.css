@@ -35,10 +35,28 @@
     gap: 6px;
 }
 
-/* The venue tag sits next to the date on mobile only; on desktop the standalone
-   tag in the row is used instead. */
-.venue-inline {
-    display: none;
+/* Venue is shown as a coloured stripe down both edges of the card (replaces the T/U tag):
+   green for a home game, blue for away. */
+.game-row.home {
+    box-shadow: inset 4px 0 0 0 var(--club-accent-bright), inset -4px 0 0 0 var(--club-accent-bright);
+}
+
+.game-row.away {
+    box-shadow: inset 4px 0 0 0 var(--color-away), inset -4px 0 0 0 var(--color-away);
+}
+
+/* A played game with no lineup: tint the whole panel amber so it stands out at a glance. */
+.game-row.no-lineup {
+    background: color-mix(in srgb, var(--color-warning) 12%, var(--surface-card));
+}
+
+.game-row.no-lineup:hover {
+    background: color-mix(in srgb, var(--color-warning) 18%, var(--surface-card));
+}
+
+.nolineup-icon {
+    color: var(--color-warning-bright);
+    font-size: 1.05rem !important;
 }
 
 .game-date {
@@ -76,6 +94,11 @@
     border: 1px solid color-mix(in srgb, var(--color-danger) 15%, transparent);
 }
 
+.header-warning {
+    color: var(--color-warning-bright);
+    font-weight: 600;
+}
+
 .game-actions {
     display: flex;
     gap: 2px;
@@ -107,6 +130,18 @@
     background: color-mix(in srgb, var(--color-danger) 10%, transparent);
 }
 
+/* Formation action button on a card that has no lineup yet — tint it amber to match
+   the panel and nudge the admin toward filling it in. */
+.action-btn.action-needs-lineup {
+    color: var(--color-warning-bright);
+    background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+}
+
+.action-btn.action-needs-lineup:hover {
+    color: var(--color-warning-bright);
+    background: color-mix(in srgb, var(--color-warning) 22%, transparent);
+}
+
 @media (max-width: 599.98px) {
     /* A phone has no room for everything on one line: keep it compact so the
        action buttons stay inside the card instead of overflowing its edge. */
@@ -121,24 +156,22 @@
         gap: 2px;
     }
 
-    /* Formation and absentees are secondary detail — hide them on mobile */
+    /* Formation, absentees and guests are secondary detail — hide them on mobile */
     .badge-gold,
-    .badge-unavailable {
-        display: none;
-    }
-
-    /* Venue tag moves next to the date; drop the standalone one and the guest tag */
-    .venue-standalone,
+    .badge-unavailable,
     .badge-guest {
         display: none;
     }
 
-    .venue-inline {
-        display: inline-block;
+    /* Opponent shown without the "vs"/"@" prefix (venue is the left-edge stripe now) */
+    .opp-prefix {
+        display: none;
     }
 
-    /* Opponent shown without the "vs"/"@" prefix (venue is now a tag by the date) */
-    .opp-prefix {
+    /* Amber panel + amber formation button already flag a missing lineup; the icon
+       next to the date is redundant on a narrow card and just adds clutter. ::deep
+       is required because MudIcon renders the <svg> outside this component's scope. */
+    .game-meta ::deep .nolineup-icon {
         display: none;
     }
 }

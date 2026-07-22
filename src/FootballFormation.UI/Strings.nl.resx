@@ -157,6 +157,41 @@
   <data name="G" xml:space="preserve"><value>D</value></data>
   <data name="Ast" xml:space="preserve"><value>A</value></data>
 
+  <!-- Season stats -->
+  <data name="Season" xml:space="preserve"><value>Seizoen</value></data>
+  <data name="Season statistics" xml:space="preserve"><value>Seizoen statistieken</value></data>
+  <data name="Team and squad totals across all games" xml:space="preserve"><value>Team- en selectietotalen over alle wedstrijden</value></data>
+  <data name="Played" xml:space="preserve"><value>Gespeeld</value></data>
+  <data name="W-D-L" xml:space="preserve"><value>W-G-V</value></data>
+  <data name="{0}% won" xml:space="preserve"><value>{0}% winst</value></data>
+  <data name="Goals for" xml:space="preserve"><value>Voor</value></data>
+  <data name="Goals against" xml:space="preserve"><value>Tegen</value></data>
+  <data name="diff" xml:space="preserve"><value>saldo</value></data>
+  <data name="Form" xml:space="preserve"><value>Vorm</value></data>
+  <data name="Win" xml:space="preserve"><value>Winst</value></data>
+  <data name="Draw" xml:space="preserve"><value>Gelijkspel</value></data>
+  <data name="Loss" xml:space="preserve"><value>Verlies</value></data>
+  <data name="Top scorers" xml:space="preserve"><value>Topscorers</value></data>
+  <data name="Playing time" xml:space="preserve"><value>Speeltijd</value></data>
+  <data name="{0} games" xml:space="preserve"><value>{0} wed.</value></data>
+  <data name="Goalkeeper minutes" xml:space="preserve"><value>Keeperminuten</value></data>
+  <data name="No goalkeeper minutes yet." xml:space="preserve"><value>Nog geen keeperminuten.</value></data>
+  <data name="{0}% of {1}'" xml:space="preserve"><value>{0}% van {1}'</value></data>
+  <data name="No goals recorded yet." xml:space="preserve"><value>Nog geen doelpunten geregistreerd.</value></data>
+  <data name="No players yet." xml:space="preserve"><value>Nog geen speelsters.</value></data>
+
+  <!-- Games: incomplete-data flag -->
+  <data name="no lineup" xml:space="preserve"><value>geen opstelling</value></data>
+  <data name="Add lineup" xml:space="preserve"><value>Opstelling toevoegen</value></data>
+  <data name="{0} without lineup" xml:space="preserve"><value>{0} zonder opstelling</value></data>
+  <data name="This game has no lineup — playing time can't be recorded" xml:space="preserve"><value>Deze wedstrijd heeft geen opstelling — speeltijd kan niet worden geregistreerd</value></data>
+
+  <!-- Home: stats tile -->
+  <data name="Statistics" xml:space="preserve"><value>Statistieken</value></data>
+  <data name="Season stats" xml:space="preserve"><value>Seizoen statistieken</value></data>
+  <data name="See the team record, top scorers, and playing time." xml:space="preserve"><value>Bekijk de teambalans, topscorers en speeltijd.</value></data>
+  <data name="Go to Stats" xml:space="preserve"><value>Naar statistieken</value></data>
+
   <!-- Position names (keys are the English DisplayName) -->
   <data name="Goalkeeper" xml:space="preserve"><value>Keeper</value></data>
   <data name="Left Back" xml:space="preserve"><value>Linksback</value></data>

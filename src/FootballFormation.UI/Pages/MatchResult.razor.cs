@@ -31,6 +31,21 @@ public partial class MatchResult
     private bool NewGoalIsOwnGoal { get; set; }
 
     /// <summary>
+    /// True when both scores are set AND every goal our team scored has a named scorer.
+    /// Opponent's regular goals aren't tracked, so we only gate on our side. Used to hide
+    /// the "add scorer" form once there's nothing left to add.
+    /// </summary>
+    private bool AllScorersLogged
+    {
+        get
+        {
+            if (GameData is null || ScoreHome is null || ScoreAway is null) return false;
+            var ourGoalsLogged = GameData.Goals.Count(g => !g.IsOwnGoal);
+            return ourGoalsLogged >= ScoreHome.Value;
+        }
+    }
+
+    /// <summary>
     /// Players involved in this game (starters + subs across all periods).
     /// </summary>
     private List<Player> SquadPlayers

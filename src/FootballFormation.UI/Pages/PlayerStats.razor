@@ -51,6 +51,7 @@
         <div class="stat-value">@_stats.TotalMinutes<span class="stat-unit">'</span></div>
         <div class="stat-label">@L["Minutes"]</div>
         <div class="stat-sub">@L["{0} / game", _stats.AverageMinutes.ToString("0")]</div>
+        <div class="stat-sub">@L["{0}% of {1}'", _stats.Utilization.ToString("0"), _stats.AvailableMinutes]</div>
     </div>
     <div class="stat-tile">
         <div class="stat-value">@_stats.Goals</div>

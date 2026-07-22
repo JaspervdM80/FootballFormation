@@ -32,9 +32,15 @@ public partial class Games
 
     private async Task LoadGames()
     {
-        var result = await GameService.GetAllAsync();
+        // Details variant loads the period lineups so we can flag games missing one.
+        var result = await GameService.GetAllWithDetailsAsync();
         _games = Snackbar.ReportFailure(result) ? result.Value : [];
     }
+
+    /// <summary>A game that has already been played but has no lineup entered — its playing
+    /// time can't be computed, so the data is incomplete. Future games are legitimately empty.</summary>
+    private static bool IsIncomplete(Game game) =>
+        game.Date.Date < DateTime.Today && !game.HasLineup;
 
     private async Task OpenAddDialog()
     {

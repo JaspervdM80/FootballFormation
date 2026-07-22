@@ -9,6 +9,11 @@
             @if (_games is not null)
             {
                 @(_games.Count == 1 ? L["{0} match", _games.Count] : L["{0} matches", _games.Count])
+                var incomplete = _games.Count(IsIncomplete);
+                if (incomplete > 0)
+                {
+                    <span class="header-warning"> · @L["{0} without lineup", incomplete]</span>
+                }
             }
         </MudText>
     </div>
@@ -38,16 +43,21 @@ else
     <div class="game-cards">
         @foreach (var game in _games.OrderByDescending(g => g.Date))
         {
-            <div class="game-row" @onclick="() => OpenGame(game)">
+            @* Left-edge stripe marks the venue (home/away); an amber tint marks a played game with no lineup. *@
+            var rowClass = game.IsHomeGame ? "home" : "away";
+            if (IsIncomplete(game)) rowClass += " no-lineup";
+            <div class="game-row @rowClass" @onclick="() => OpenGame(game)">
                 <div class="game-primary">
                     <div class="game-meta">
                         <span class="game-date">@game.Date.ToString("dd MMM")</span>
-                        @* Venue next to the date — shown on mobile only (desktop keeps the tag in the row) *@
-                        <span class="badge-venue venue-inline">@(game.IsHomeGame ? L["H"] : L["A"])</span>
+                        @if (IsIncomplete(game))
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.WarningAmber" Size="Size.Small" Class="nolineup-icon"
+                                     Title="@L["This game has no lineup — playing time can't be recorded"]" />
+                        }
                     </div>
                     <span class="game-opponent"><span class="opp-prefix">@(game.IsHomeGame ? "vs " : "@ ")</span>@game.Opponent</span>
                 </div>
-                <span class="badge-venue venue-standalone">@(game.IsHomeGame ? L["H"] : L["A"])</span>
                 <span class="badge-gold">@game.FormationType.DisplayName()</span>
                 @if (game.UnavailablePlayerIds.Count > 0)
                 {
@@ -67,8 +77,12 @@ else
                 }
                 <div class="game-actions" @onclick:stopPropagation="true">
                     <AuthorizeView>
-                        <button class="action-btn" title="@L["Formation"]" @onclick="() => OpenFormation(game.Id)">
-                            <MudIcon Icon="@Icons.Material.Filled.ViewModule" Size="Size.Small" />
+                        @* Empty grid variant + amber tint when the lineup is missing, so a coach
+                           spots which cards need a lineup at a glance from the action row. *@
+                        <button class="action-btn @(IsIncomplete(game) ? "action-needs-lineup" : "")"
+                                title="@(IsIncomplete(game) ? L["Add lineup"] : L["Formation"])"
+                                @onclick="() => OpenFormation(game.Id)">
+                            <MudIcon Icon="@(IsIncomplete(game) ? Icons.Material.Outlined.GridView : Icons.Material.Filled.ViewModule)" Size="Size.Small" />
                         </button>
                     </AuthorizeView>
                     <button class="action-btn" title="@L["Overview"]" @onclick="() => OpenOverview(game.Id)">

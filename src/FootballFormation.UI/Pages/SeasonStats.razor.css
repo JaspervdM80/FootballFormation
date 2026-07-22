@@ -1,0 +1,217 @@
+/* Summary tiles — same look as the player-stats page */
+.stat-tiles {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.stat-tile {
+    background: var(--surface-card);
+    border: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
+    border-radius: 14px;
+    padding: 16px 12px;
+    text-align: center;
+    box-shadow: var(--mud-elevation-2, 0 2px 4px rgba(0, 0, 0, 0.06));
+}
+
+.stat-value {
+    font-size: 1.9rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--club-primary-bright);
+}
+
+.stat-label {
+    margin-top: 6px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: color-mix(in srgb, var(--ink) 62%, transparent);
+}
+
+.stat-sub {
+    margin-top: 3px;
+    font-size: 0.65rem;
+    color: color-mix(in srgb, var(--ink) 55%, transparent);
+}
+
+/* Form guide */
+.form-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: color-mix(in srgb, var(--club-primary-bright) 60%, transparent);
+}
+
+.form-pill {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #fff;
+}
+
+.form-pill.win { background: var(--color-success-bright); }
+.form-pill.draw { background: color-mix(in srgb, var(--ink) 38%, transparent); }
+.form-pill.loss { background: var(--color-danger-bright); }
+
+/* Two-column body */
+.stats-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+/* Ranked list (top scorers) */
+.rank-list {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+}
+
+.rank-row {
+    display: grid;
+    grid-template-columns: 1fr 32px 32px;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 4px;
+    border-bottom: 1px solid color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+.rank-row.rank-row-2col {
+    grid-template-columns: 1fr auto;
+}
+
+.rank-row:last-child { border-bottom: none; }
+
+.rank-row:not(.rank-head) { cursor: pointer; }
+
+.rank-row:not(.rank-head):hover { background: var(--surface-card-alt); }
+
+.rank-head {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: color-mix(in srgb, var(--ink) 55%, transparent);
+}
+
+.r-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.r-shirt {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 4px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--club-primary-bright) 12%, transparent);
+    color: var(--club-primary-bright);
+    font-size: 0.7rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.g-num {
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: color-mix(in srgb, var(--ink) 72%, transparent);
+}
+
+.g-num.g-hit {
+    color: var(--club-primary-bright);
+    font-weight: 800;
+}
+
+/* Playing-time fairness bars */
+.pt-list {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.pt-row { cursor: pointer; }
+
+.pt-row:hover .pt-name { color: var(--club-primary-bright); }
+
+.pt-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+
+.pt-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pt-meta {
+    font-size: 0.7rem;
+    color: color-mix(in srgb, var(--ink) 60%, transparent);
+    white-space: nowrap;
+}
+
+.position-track {
+    height: 8px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--ink) 6%, transparent);
+    overflow: hidden;
+}
+
+.position-fill {
+    height: 100%;
+    border-radius: 6px;
+    background: var(--gradient-primary);
+    min-width: 2px;
+}
+
+.empty-note {
+    color: color-mix(in srgb, var(--ink) 45%, transparent);
+}
+
+@media (max-width: 760px) {
+    .stat-tiles {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stats-layout {
+        grid-template-columns: 1fr;
+    }
+}
