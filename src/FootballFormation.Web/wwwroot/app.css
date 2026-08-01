@@ -438,6 +438,38 @@ html, body {
     .mud-appbar .ml-2.mr-8 {
         margin-right: 8px !important;
     }
+
+    /* The app bar is already crowded on a phone; the drawer copy of the picker is the
+       one that stays. Targets only the app-bar instance — the drawer one sits outside
+       .mud-appbar, in .drawer-season-picker. */
+    .mud-appbar .season-picker {
+        display: none !important;
+    }
+
+    /* Header actions on /games and /players: the icon carries the meaning on a phone,
+       and the labels ("Copy squad from 2024/25") are far too wide for the header row.
+       font-size:0 collapses the bare text node MudBlazor renders next to the icon —
+       the icon keeps its own font-size from .mud-icon-size-*, so it is unaffected. */
+    .btn-compact .mud-button-label {
+        font-size: 0;
+    }
+
+    .btn-compact .mud-button-icon-start {
+        margin-right: 0 !important;
+        margin-inline-end: 0 !important;
+    }
+
+    .btn-compact.mud-button-root,
+    .btn-compact .mud-button-root {
+        min-width: 0 !important;
+    }
+
+    /* Stack the squad header actions, Add on top. The markup order is Copy then Add so
+       that desktop reads left-to-right; column-reverse flips it without a second layout. */
+    .squad-actions {
+        flex-direction: column-reverse;
+        align-items: stretch !important;
+    }
 }
 
 /* --- App title / home link --- */
@@ -480,6 +512,21 @@ html, body {
 
 .players-table .cell-right .badge-teal:last-child {
     margin-right: 0 !important;
+}
+
+/* Row actions: MudMenu wraps its trigger in a plain div, whose inline-block baseline sits
+   lower than the inline-flex MudIconButtons beside it — the overflow ⋮ ended up a couple of
+   pixels below the other icons. Making the row and the wrapper flex takes baselines out of
+   the equation entirely. */
+.players-table .row-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.players-table .row-actions .mud-menu {
+    display: inline-flex;
+    align-items: center;
 }
 
 /* Shirt number sits in its own # column on wide screens */
