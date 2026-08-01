@@ -66,6 +66,26 @@ public class SeasonService(AppDbContext db, ILogger<SeasonService> logger)
             if (lookup.Value is not null) return Result.Success(lookup.Value);
 
             var season = Season.CreateFor(day);
+
+            // CreateFor always returns a full July–June window. If the date sits in a gap narrower
+            // than that, the window would overlap the seasons on either side, so clamp it to them:
+            // auto-creation can then only ever fill a hole, never straddle its neighbours.
+            var previous = await db.Seasons
+                .Where(s => s.EndDate < day)
+                .OrderByDescending(s => s.EndDate)
+                .FirstOrDefaultAsync();
+
+            if (previous is not null && previous.EndDate.Date >= season.StartDate.Date)
+                season.StartDate = previous.EndDate.Date.AddDays(1);
+
+            var following = await db.Seasons
+                .Where(s => s.StartDate > day)
+                .OrderBy(s => s.StartDate)
+                .FirstOrDefaultAsync();
+
+            if (following is not null && following.StartDate.Date <= season.EndDate.Date)
+                season.EndDate = following.StartDate.Date.AddDays(-1);
+
             db.Seasons.Add(season);
             await db.SaveChangesAsync();
 
@@ -156,6 +176,44 @@ public class SeasonService(AppDbContext db, ILogger<SeasonService> logger)
         });
 
     /// <summary>
+    /// Idempotent startup guard that pulls each season's start back to the day after the previous
+    /// one ends, closing any gap between them.
+    /// <para>
+    /// Gapless windows are an invariant the rest of the code relies on, but nothing enforced it
+    /// until <c>ValidateAsync</c> gained a gap check — so a database can already hold a hole that
+    /// strands every date inside it. This is a repair for those, not a rule: it only ever moves a
+    /// start date <em>earlier</em>, and never touches which season a game belongs to, since
+    /// <see cref="Game.SeasonId"/> is stored on the game itself.
+    /// </para>
+    /// </summary>
+    public Task<Result<int>> CloseSeasonGapsAsync() =>
+        ServiceOperation.RunAsync(logger, "close season gaps", async () =>
+        {
+            var seasons = await db.Seasons.OrderBy(s => s.StartDate).ToListAsync();
+            var closed = 0;
+
+            for (int i = 1; i < seasons.Count; i++)
+            {
+                var previous = seasons[i - 1];
+                var season = seasons[i];
+                var expectedStart = previous.EndDate.Date.AddDays(1);
+
+                // Only a genuine gap. An overlap is a different problem and is left well alone.
+                if (season.StartDate.Date <= expectedStart) continue;
+
+                logger.LogWarning(
+                    "Closing gap before season {SeasonName}: start moved from {Old} to {New}",
+                    season.Name, season.StartDate.ToString("yyyy-MM-dd"), expectedStart.ToString("yyyy-MM-dd"));
+
+                season.StartDate = expectedStart;
+                closed++;
+            }
+
+            if (closed > 0) await db.SaveChangesAsync();
+            return Result.Success(closed);
+        });
+
+    /// <summary>
     /// Idempotent startup guard. Runs on every boot so a fresh install — whose migration backfill
     /// found no games to derive seasons from — still has a current season to fall back on.
     /// </summary>
@@ -210,6 +268,38 @@ public class SeasonService(AppDbContext db, ILogger<SeasonService> logger)
             logger.LogWarning("Rejected season {SeasonName}: overlaps {OtherSeason}",
                 season.Name, overlapping.Name);
             return Result.Failure($"These dates overlap season {overlapping.Name}");
+        }
+
+        // Gaps are as damaging as overlaps and used to pass unchecked. Game.SeasonId is required
+        // and every date must map to exactly one season (see Season.StartMonth), so a hole strands
+        // every date inside it: the game dialog finds no season and offers an empty squad, which
+        // reads as "I cannot pick a date past the end of last season".
+        var previous = await db.Seasons
+            .Where(s => s.Id != season.Id && s.EndDate < season.StartDate)
+            .OrderByDescending(s => s.EndDate)
+            .FirstOrDefaultAsync();
+
+        if (previous is not null && previous.EndDate.Date.AddDays(1) != season.StartDate.Date)
+        {
+            var expected = previous.EndDate.Date.AddDays(1);
+            logger.LogWarning("Rejected season {SeasonName}: leaves a gap after {OtherSeason}",
+                season.Name, previous.Name);
+            return Result.Failure(
+                $"This leaves a gap after season {previous.Name} — it should start on {expected:dd-MM-yyyy}");
+        }
+
+        var following = await db.Seasons
+            .Where(s => s.Id != season.Id && s.StartDate > season.EndDate)
+            .OrderBy(s => s.StartDate)
+            .FirstOrDefaultAsync();
+
+        if (following is not null && following.StartDate.Date.AddDays(-1) != season.EndDate.Date)
+        {
+            var expected = following.StartDate.Date.AddDays(-1);
+            logger.LogWarning("Rejected season {SeasonName}: leaves a gap before {OtherSeason}",
+                season.Name, following.Name);
+            return Result.Failure(
+                $"This leaves a gap before season {following.Name} — it should end on {expected:dd-MM-yyyy}");
         }
 
         return Result.Success();
