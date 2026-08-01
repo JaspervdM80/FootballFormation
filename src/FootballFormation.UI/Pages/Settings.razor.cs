@@ -1,6 +1,7 @@
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
+using FootballFormation.UI.State;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Localization;
@@ -11,7 +12,10 @@ namespace FootballFormation.UI.Pages;
 public partial class Settings
 {
     [Inject] private MatchPreferencesService PreferencesService { get; set; } = null!;
+    [Inject] private SeasonService SeasonService { get; set; } = null!;
+    [Inject] private SeasonState SeasonState { get; set; } = null!;
     [Inject] private AdminAuthService AuthService { get; set; } = null!;
+    [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
@@ -22,6 +26,8 @@ public partial class Settings
     private MudForm _form = null!;
     private MudForm _passwordForm = null!;
     private DateTime? _nextMatchDate;
+
+    private List<Season>? _seasons;
 
     private string _currentPassword = "";
     private string _newPassword = "";
@@ -34,6 +40,72 @@ public partial class Settings
 
         _prefs = prefsResult.Value;
         await RefreshNextMatchDate();
+        await LoadSeasons();
+    }
+
+    private async Task LoadSeasons()
+    {
+        var result = await SeasonService.GetAllAsync();
+        _seasons = Snackbar.ReportFailure(result) ? result.Value : [];
+    }
+
+    /// <summary>Every season mutation refreshes the picker too, so the app bar and this list can't
+    /// disagree without a page reload.</summary>
+    private async Task ReloadSeasons()
+    {
+        await LoadSeasons();
+        await SeasonState.RefreshAsync();
+    }
+
+    private async Task OpenAddSeasonDialog()
+    {
+        var season = await ShowSeasonDialogAsync(L["New Season"]);
+        if (season is null) return;
+
+        var result = await SeasonService.CreateAsync(season);
+        Snackbar.Report(result, L["Season {0} created", season.Name]);
+        await ReloadSeasons();
+    }
+
+    private async Task OpenEditSeasonDialog(Season season)
+    {
+        var updated = await ShowSeasonDialogAsync(L["Edit Season"], season);
+        if (updated is null) return;
+
+        var result = await SeasonService.UpdateAsync(updated);
+        Snackbar.Report(result, L["Season {0} updated", updated.Name]);
+        await ReloadSeasons();
+    }
+
+    private async Task DeleteSeason(Season season)
+    {
+        var confirmed = await DialogService.ConfirmDeleteAsync(
+            L["Delete Season"],
+            L["Are you sure you want to delete the season {0}?", season.Name]);
+        if (!confirmed) return;
+
+        var result = await SeasonService.DeleteAsync(season.Id);
+        Snackbar.Report(result, L["Season {0} deleted", season.Name], Severity.Warning);
+        await ReloadSeasons();
+    }
+
+    private async Task SetCurrentSeason(Season season)
+    {
+        var result = await SeasonService.SetCurrentAsync(season.Id);
+        Snackbar.Report(result, L["Season {0} is now the current season", season.Name]);
+        await ReloadSeasons();
+    }
+
+    /// <summary>Returns the edited season, or null when the dialog was cancelled.</summary>
+    private async Task<Season?> ShowSeasonDialogAsync(string title, Season? season = null)
+    {
+        var parameters = new DialogParameters<SeasonDialog>();
+        if (season is not null) parameters.Add(x => x.Season, season);
+
+        var dialog = await DialogService.ShowAsync<SeasonDialog>(title, parameters, UiFeedback.LockedDialog);
+        var result = await dialog.Result;
+
+        return result is { Canceled: false, Data: Season edited } ? edited : null;
     }
 
     private async Task Save()

@@ -5,6 +5,12 @@ public class Game
     public int Id { get; set; }
     public required string Opponent { get; set; }
     public DateTime Date { get; set; }
+
+    /// <summary>The season this game counts towards. Derived from <see cref="Date"/> when the game
+    /// is created (see <c>SeasonService.GetOrCreateForDateAsync</c>) but reassignable afterwards.</summary>
+    public int SeasonId { get; set; }
+    public Season? Season { get; set; }
+
     public string? Notes { get; set; }
     public FormationType FormationType { get; set; }
     public GameSplitType SplitType { get; set; } = GameSplitType.Halves;

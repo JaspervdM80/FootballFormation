@@ -29,6 +29,7 @@
             </AuthorizeView>
         </div>
         <MudSpacer />
+        <SeasonPicker Compact="true" />
         <MudMenu Icon="@Icons.Material.Filled.Language" Size="Size.Small" Dense="true"
                  AriaLabel="Language" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
             <MudMenuItem OnClick="@(() => SwitchCulture("nl"))">Nederlands</MudMenuItem>
@@ -63,6 +64,9 @@
             <span class="app-title-logo" aria-hidden="true"></span>
             <span class="app-title-text">GJS Meiden</span>
         </a>
+        <div class="drawer-season-picker">
+            <SeasonPicker />
+        </div>
         <MudNavMenu>
             <MudNavLink Href="/" Match="NavLinkMatch.All"
                         Icon="@Icons.Material.Filled.Home">@L["Start"]</MudNavLink>

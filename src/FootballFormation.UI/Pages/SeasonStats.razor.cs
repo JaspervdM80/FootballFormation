@@ -1,15 +1,17 @@
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
+using FootballFormation.UI.State;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
 
 namespace FootballFormation.UI.Pages;
 
-public partial class SeasonStats
+public partial class SeasonStats : IDisposable
 {
     [Inject] private PlayerService PlayerService { get; set; } = null!;
     [Inject] private GameService GameService { get; set; } = null!;
+    [Inject] private SeasonState SeasonState { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
@@ -25,12 +27,34 @@ public partial class SeasonStats
 
     protected override async Task OnInitializedAsync()
     {
+        // Must come before any other service call — see SeasonState.EnsureLoadedAsync.
+        await SeasonState.EnsureLoadedAsync();
+        SeasonState.OnChanged += OnSeasonChanged;
+
+        await Load();
+    }
+
+    private void OnSeasonChanged() => _ = InvokeAsync(async () =>
+    {
+        await Load();
+        StateHasChanged();
+    });
+
+    public void Dispose() => SeasonState.OnChanged -= OnSeasonChanged;
+
+    private async Task Load()
+    {
+        // Back to the spinner while the newly selected season loads.
+        _loaded = false;
+
         var playersResult = await PlayerService.GetAllAsync();
         var players = Snackbar.ReportFailure(playersResult) ? playersResult.Value! : [];
 
-        var gamesResult = await GameService.GetAllWithDetailsAsync();
+        var gamesResult = await GameService.GetAllWithDetailsAsync(SeasonState.SelectedSeasonId);
         var games = Snackbar.ReportFailure(gamesResult) ? gamesResult.Value! : [];
 
+        // Build takes the game list as a parameter, so filtering at the call site is all a
+        // season-scoped report needs — the report builders stay pure.
         _stats = SeasonStatsReport.Build(players, games);
 
         _scorers = _stats.Players

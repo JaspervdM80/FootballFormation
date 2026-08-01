@@ -1,15 +1,17 @@
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
+using FootballFormation.UI.State;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
 
 namespace FootballFormation.UI.Pages;
 
-public partial class PlayerStats
+public partial class PlayerStats : IDisposable
 {
     [Inject] private PlayerService PlayerService { get; set; } = null!;
     [Inject] private GameService GameService { get; set; } = null!;
+    [Inject] private SeasonState SeasonState { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
@@ -21,6 +23,25 @@ public partial class PlayerStats
 
     protected override async Task OnInitializedAsync()
     {
+        // Must come before any other service call — see SeasonState.EnsureLoadedAsync.
+        await SeasonState.EnsureLoadedAsync();
+        SeasonState.OnChanged += OnSeasonChanged;
+
+        await Load();
+    }
+
+    private void OnSeasonChanged() => _ = InvokeAsync(async () =>
+    {
+        await Load();
+        StateHasChanged();
+    });
+
+    public void Dispose() => SeasonState.OnChanged -= OnSeasonChanged;
+
+    private async Task Load()
+    {
+        _loaded = false;
+
         var playerResult = await PlayerService.GetByIdAsync(PlayerId);
         if (!Snackbar.ReportFailure(playerResult))
         {
@@ -28,7 +49,7 @@ public partial class PlayerStats
             return;
         }
 
-        var gamesResult = await GameService.GetAllWithDetailsAsync();
+        var gamesResult = await GameService.GetAllWithDetailsAsync(SeasonState.SelectedSeasonId);
         var games = Snackbar.ReportFailure(gamesResult) ? gamesResult.Value! : [];
 
         _stats = PlayerStatsReport.Build(playerResult.Value!, games);

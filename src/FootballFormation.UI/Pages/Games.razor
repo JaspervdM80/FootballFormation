@@ -9,6 +9,10 @@
             @if (_games is not null)
             {
                 @(_games.Count == 1 ? L["{0} match", _games.Count] : L["{0} matches", _games.Count])
+                @if (SeasonState.SelectedSeason is { } season)
+                {
+                    <span> · @season.Name</span>
+                }
                 var incomplete = _games.Count(IsIncomplete);
                 if (incomplete > 0)
                 {
@@ -34,7 +38,9 @@ else if (_games.Count == 0)
     <MudPaper Class="pa-6" Elevation="2" Style="border-radius: 16px; text-align: center;">
         <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Size="Size.Large" Style="color: color-mix(in srgb, var(--ink) 25%, transparent);" />
         <MudText Typo="Typo.body1" Class="mt-3" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
-            @L["No games yet. Create your first game!"]
+            @(SeasonState.SelectedSeason is { } season
+                ? L["No games in {0} yet.", season.Name]
+                : L["No games yet. Create your first game!"])
         </MudText>
     </MudPaper>
 }

@@ -20,6 +20,7 @@ src/
 UI is a separate RCL for future **MAUI Blazor Hybrid** reuse.
 
 ## Key Features
+- Seasons (1 Jul – 30 Jun) grouping games, with an app-bar picker filtering the games list and all stats
 - Player management (name, shirt number, preferred + alternative positions, guest flag)
 - Game management (opponent, date, home/away, formation, split type, duration, unavailable players, guest call-ups)
 - Formation builder with drag-and-drop onto visual pitch

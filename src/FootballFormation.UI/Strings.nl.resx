@@ -160,7 +160,8 @@
   <!-- Season stats -->
   <data name="Season" xml:space="preserve"><value>Seizoen</value></data>
   <data name="Season statistics" xml:space="preserve"><value>Seizoen statistieken</value></data>
-  <data name="Team and squad totals across all games" xml:space="preserve"><value>Team- en selectietotalen over alle wedstrijden</value></data>
+  <data name="Team and squad totals for {0}" xml:space="preserve"><value>Team- en selectietotalen voor {0}</value></data>
+  <data name="Team and squad totals across all seasons" xml:space="preserve"><value>Team- en selectietotalen over alle seizoenen</value></data>
   <data name="Played" xml:space="preserve"><value>Gespeeld</value></data>
   <data name="W-D-L" xml:space="preserve"><value>W-G-V</value></data>
   <data name="{0}% won" xml:space="preserve"><value>{0}% winst</value></data>
@@ -179,6 +180,28 @@
   <data name="{0}% of {1}'" xml:space="preserve"><value>{0}% van {1}'</value></data>
   <data name="No goals recorded yet." xml:space="preserve"><value>Nog geen doelpunten geregistreerd.</value></data>
   <data name="No players yet." xml:space="preserve"><value>Nog geen speelsters.</value></data>
+
+  <!-- Seasons (picker, management, game assignment) -->
+  <data name="Seasons" xml:space="preserve"><value>Seizoenen</value></data>
+  <data name="All seasons" xml:space="preserve"><value>Alle seizoenen</value></data>
+  <data name="Current" xml:space="preserve"><value>Huidig</value></data>
+  <data name="Set as current" xml:space="preserve"><value>Als huidig instellen</value></data>
+  <data name="Select season" xml:space="preserve"><value>Seizoen kiezen</value></data>
+  <data name="Auto (by date)" xml:space="preserve"><value>Automatisch (op datum)</value></data>
+  <data name="Season name" xml:space="preserve"><value>Seizoensnaam</value></data>
+  <data name="Season name is required" xml:space="preserve"><value>Seizoensnaam is verplicht</value></data>
+  <data name="Start date" xml:space="preserve"><value>Startdatum</value></data>
+  <data name="End date" xml:space="preserve"><value>Einddatum</value></data>
+  <data name="New Season" xml:space="preserve"><value>Nieuw seizoen</value></data>
+  <data name="Edit Season" xml:space="preserve"><value>Seizoen bewerken</value></data>
+  <data name="Delete Season" xml:space="preserve"><value>Seizoen verwijderen</value></data>
+  <data name="Are you sure you want to delete the season {0}?" xml:space="preserve"><value>Weet je zeker dat je seizoen {0} wilt verwijderen?</value></data>
+  <data name="Season {0} created" xml:space="preserve"><value>Seizoen {0} aangemaakt</value></data>
+  <data name="Season {0} updated" xml:space="preserve"><value>Seizoen {0} bijgewerkt</value></data>
+  <data name="Season {0} deleted" xml:space="preserve"><value>Seizoen {0} verwijderd</value></data>
+  <data name="Season {0} is now the current season" xml:space="preserve"><value>Seizoen {0} is nu het huidige seizoen</value></data>
+  <data name="Seasons are used to group games and filter statistics." xml:space="preserve"><value>Seizoenen groeperen wedstrijden en filteren de statistieken.</value></data>
+  <data name="No games in {0} yet." xml:space="preserve"><value>Nog geen wedstrijden in {0}.</value></data>
 
   <!-- Games: incomplete-data flag -->
   <data name="no lineup" xml:space="preserve"><value>geen opstelling</value></data>

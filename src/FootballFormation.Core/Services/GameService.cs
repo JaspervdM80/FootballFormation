@@ -5,32 +5,37 @@ using Microsoft.Extensions.Logging;
 
 namespace FootballFormation.Core.Services;
 
-public class GameService(AppDbContext db, ILogger<GameService> logger)
+public class GameService(AppDbContext db, SeasonService seasons, ILogger<GameService> logger)
 {
-    public Task<Result<List<Game>>> GetAllAsync() =>
+    /// <param name="seasonId">Limits the result to one season. Null loads every season.</param>
+    public Task<Result<List<Game>>> GetAllAsync(int? seasonId = null) =>
         ServiceOperation.RunAsync(logger, "load games", async () =>
         {
             var games = await db.Games
+                .Where(g => seasonId == null || g.SeasonId == seasonId)
                 .Include(g => g.Periods)
                 .Include(g => g.Goals)
                 .OrderByDescending(g => g.Date)
                 .ToListAsync();
 
-            logger.LogDebug("Retrieved {Count} games", games.Count);
+            logger.LogDebug("Retrieved {Count} games for season {SeasonId}", games.Count, seasonId);
             return Result.Success(games);
         });
 
-    public Task<Result<List<Game>>> GetAllWithDetailsAsync() =>
+    /// <param name="seasonId">Limits the result to one season. Null loads every season.</param>
+    public Task<Result<List<Game>>> GetAllWithDetailsAsync(int? seasonId = null) =>
         ServiceOperation.RunAsync(logger, "load game details", async () =>
         {
             var games = await db.Games
+                .Where(g => seasonId == null || g.SeasonId == seasonId)
                 .Include(g => g.Periods)
                     .ThenInclude(p => p.PlayerPositions)
                 .Include(g => g.Goals)
                 .OrderByDescending(g => g.Date)
                 .ToListAsync();
 
-            logger.LogDebug("Retrieved {Count} games with details", games.Count);
+            logger.LogDebug("Retrieved {Count} games with details for season {SeasonId}",
+                games.Count, seasonId);
             return Result.Success(games);
         });
 
@@ -59,6 +64,17 @@ public class GameService(AppDbContext db, ILogger<GameService> logger)
     public Task<Result<Game>> CreateAsync(Game game) =>
         ServiceOperation.RunAsync(logger, "create game", async () =>
         {
+            // SeasonId 0 is the dialog's "auto by date" default; an explicit choice passes through.
+            // Resolving it here rather than at the call site keeps "every game has a season" an
+            // invariant no caller can bypass.
+            if (game.SeasonId == 0)
+            {
+                var seasonResult = await seasons.GetOrCreateForDateAsync(game.Date);
+                if (seasonResult.IsFailure) return Result.Failure<Game>(seasonResult.Error!);
+
+                game.SeasonId = seasonResult.Value!.Id;
+            }
+
             foreach (var periodType in PeriodTypeExtensions.ForSplitType(game.SplitType))
             {
                 game.Periods.Add(new GamePeriod { PeriodType = periodType });
@@ -67,8 +83,8 @@ public class GameService(AppDbContext db, ILogger<GameService> logger)
             db.Games.Add(game);
             await db.SaveChangesAsync();
 
-            logger.LogInformation("Created game vs {Opponent} on {Date} (ID: {GameId})",
-                game.Opponent, game.Date.ToString("yyyy-MM-dd"), game.Id);
+            logger.LogInformation("Created game vs {Opponent} on {Date} in season {SeasonId} (ID: {GameId})",
+                game.Opponent, game.Date.ToString("yyyy-MM-dd"), game.SeasonId, game.Id);
             return Result.Success(game);
         });
 
@@ -78,7 +94,8 @@ public class GameService(AppDbContext db, ILogger<GameService> logger)
             db.Games.Update(game);
             await db.SaveChangesAsync();
 
-            logger.LogInformation("Updated game vs {Opponent} (ID: {GameId})", game.Opponent, game.Id);
+            logger.LogInformation("Updated game vs {Opponent} in season {SeasonId} (ID: {GameId})",
+                game.Opponent, game.SeasonId, game.Id);
             return Result.Success();
         });
 

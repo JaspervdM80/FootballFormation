@@ -11,6 +11,7 @@ public partial class GameDialog
     private IMudDialogInstance MudDialog { get; set; } = null!;
 
     [Inject] private PlayerService PlayerService { get; set; } = null!;
+    [Inject] private SeasonService SeasonService { get; set; } = null!;
     [Inject] private MatchPreferencesService PreferencesService { get; set; } = null!;
 
     [Parameter]
@@ -28,6 +29,13 @@ public partial class GameDialog
     private IReadOnlyCollection<int> UnavailablePlayerIds { get; set; } = [];
     private IReadOnlyCollection<int> GuestPlayerIds { get; set; } = [];
 
+    private List<Season> Seasons { get; set; } = [];
+
+    /// <summary>0 = "auto by date", which <c>GameService.CreateAsync</c> resolves from
+    /// <see cref="Date"/>. Editing a game shows its real season, and changing the date never
+    /// silently moves it — reassigning is an explicit choice.</summary>
+    private int SelectedSeasonId { get; set; }
+
     private List<Player> SquadPlayers => AllPlayers.Where(p => !p.IsGuest).ToList();
     private List<Player> GuestPlayers => AllPlayers.Where(p => p.IsGuest).ToList();
 
@@ -37,6 +45,12 @@ public partial class GameDialog
         if (playersResult.IsSuccess)
         {
             AllPlayers = playersResult.Value!;
+        }
+
+        var seasonsResult = await SeasonService.GetAllAsync();
+        if (seasonsResult.IsSuccess)
+        {
+            Seasons = seasonsResult.Value!;
         }
 
         if (Game is null)
@@ -69,6 +83,7 @@ public partial class GameDialog
             Notes = Game.Notes;
             GameDurationMinutes = Game.GameDurationMinutes;
             IsHomeGame = Game.IsHomeGame;
+            SelectedSeasonId = Game.SeasonId;
             UnavailablePlayerIds = Game.UnavailablePlayerIds.ToList();
             GuestPlayerIds = Game.GuestPlayerIds.ToList();
         }
@@ -87,6 +102,7 @@ public partial class GameDialog
         game.Notes = Notes;
         game.GameDurationMinutes = GameDurationMinutes;
         game.IsHomeGame = IsHomeGame;
+        game.SeasonId = SelectedSeasonId;
         game.UnavailablePlayerIds = UnavailablePlayerIds.ToList();
         game.GuestPlayerIds = GuestPlayerIds.ToList();
 

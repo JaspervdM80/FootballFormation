@@ -7,18 +7,17 @@ fixes live in [known_issues.md](known_issues.md), not here.
 
 - **Season reporting** — data-completeness flags on the games list (past games missing a
   lineup are flagged), a season dashboard (`/stats`: record, goals for/against, form, top
-  scorers), and a playing-time fairness table across the squad.
+  scorers), and a playing-time fairness table across the squad. Games are now grouped into
+  `Season` records with a picker in the app bar filtering `/games`, `/stats` and player stats;
+  see [models.md](models.md) and the "UI state services" section of [patterns.md](patterns.md).
 
 ## Next
 
-- **Seasons / competitions** — group games into a season (and optionally a competition), and
-  filter the games list and all stats by the selected season. Right now every stat blends all
-  games together; as more years of data accumulate this will blur career vs. current-season
-  numbers. Likely needs: a `Season` entity (or a `SeasonId`/date-range on `Game`), a season
-  picker in the header, and a season filter threaded through `SeasonStatsReport` /
-  `PlayerStatsReport`.
-
 ## Later
+
+- **Competitions** — a competition/type per game (league, cup, friendly, tournament) so stats can
+  be split by competition as well as by season. Deliberately left out of the seasons work to keep
+  that change focused; it would be an enum on `Game` plus a second filter alongside the season one.
 
 - **Live match mode** — a phone-friendly sideline screen: running clock, quick "+ goal / +
   assist" buttons, and quick substitutions that write straight into the period lineup. This is

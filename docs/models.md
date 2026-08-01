@@ -13,12 +13,31 @@
 | DisplayName | string | Computed: "First Last" or "First" |
 | ShortName | string | Computed: "F. Last" or "First" |
 
+## Season
+| Property | Type | Notes |
+|---|---|---|
+| Id | int | PK |
+| Name | string | Required, max 20. e.g. "2025/26". Editable |
+| StartDate | DateTime | Unique index |
+| EndDate | DateTime | |
+| IsCurrent | bool | Exactly one row. `SeasonService.SetCurrentAsync` owns the invariant |
+| Games | List\<Game\> | |
+
+Seasons run **1 July – 30 June** (`Season.StartMonth = 7`), matching the KNVB amateur season.
+The windows are deliberately **gapless** — every date maps to exactly one season, which is what
+lets `Game.SeasonId` be required and `GetOrCreateForDateAsync` always resolve. An Aug–Jun window
+would orphan July fixtures and force an "unassigned" branch into every filter and list.
+
+Helpers on the model: `Contains(date)` (date-only), `ShortName` ("25/26", for the app bar),
+`StartYearFor(date)`, `NameForStartYear(year)`, and `CreateFor(date)` for a fresh unsaved season.
+
 ## Game
 | Property | Type | Notes |
 |---|---|---|
 | Id | int | PK |
 | Opponent | string | Required, max 100 |
 | Date | DateTime | |
+| SeasonId | int | FK → Season, **required**. Auto-derived from `Date` on creation, reassignable. Delete is **Restrict** |
 | Notes | string? | |
 | FormationType | FormationType | |
 | SplitType | GameSplitType | Halves or Quarters |
@@ -28,6 +47,11 @@
 | Periods | List\<GamePeriod\> | Auto-created on game creation |
 | UnavailablePlayerIds | List\<int\> | Squad players opted **out**. Comma-separated |
 | GuestPlayerIds | List\<int\> | Guests opted **in**. Comma-separated |
+
+A game's season is resolved in `GameService.CreateAsync`: `SeasonId == 0` means "auto by date"
+(the game dialog's default) and is looked up via `SeasonService.GetOrCreateForDateAsync`, creating
+the season if the date falls beyond those defined. An explicit id passes through untouched, and
+changing a game's date later never silently moves it between seasons.
 
 `Game.IsInRoster(player)` / `Game.SelectRoster(players)` centralize the rule: squad players
 are in unless marked unavailable, guests are out unless explicitly added. Use these rather
@@ -66,6 +90,11 @@ than filtering on the id lists directly.
 
 ## Relationships
 ```
-Game 1──* GamePeriod 1──* GamePlayerPosition *──1 Player
+Season 1──* Game 1──* GamePeriod 1──* GamePlayerPosition *──1 Player
 ```
-All cascading deletes. MatchPreferences is standalone (singleton row).
+Cascading deletes throughout, **except Season → Game, which is `Restrict`**: deleting a season must
+never take a year of games, lineups and goals with it. `SeasonService.DeleteAsync` refuses with a
+readable message when a season still has games, or when it is the current one, rather than letting
+the caller hit a raw `DbUpdateException`.
+
+MatchPreferences is standalone (singleton row).

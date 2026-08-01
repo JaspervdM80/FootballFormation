@@ -77,10 +77,36 @@ Logic in `PositionFitHelper.cs`. Broad positions (W, DEF, MID, ATT) naturally co
 - Sorting is unavailable on mobile — MudBlazor collapses the header to zero height in card
   mode. Pre-existing, not caused by the grid override.
 
+## Season picker (`Components/SeasonPicker.razor`)
+The global season filter, backed by the scoped `SeasonState` (see
+[patterns.md](patterns.md#ui-state-services)).
+
+- **Rendered twice from one component**: in the app bar right after `<MudSpacer />`, and inside the
+  mobile drawer above the nav menu. `.topbar-nav` is hidden below 700px while the drawer takes over,
+  so both placements are needed. The `Compact` parameter shortens the app-bar label to "25/26"
+  (`Season.ShortName`) while the drawer shows the full "2025/26".
+- Its CSS lives in `Web/wwwroot/app.css`, **not** scoped CSS, precisely because it renders from two
+  places — isolation would force a duplicate stylesheet, the problem `.stat-tiles` already has
+  between `SeasonStats.razor.css` and `PlayerStats.razor.css`.
+- **Route allowlist**: only shown where a season filter changes what is on screen — `/games`,
+  `/stats`, `/players/{id}/stats`. Hidden on `/`, `/players`, `/settings` and the single-game
+  routes, where it would be inert or (on `/settings`) misleading while the season list is edited.
+  The component subscribes to `NavigationManager.LocationChanged` so visibility follows navigation.
+- Selecting a season **never** writes `Season.IsCurrent` — the picker is reachable by anonymous
+  visitors, and `IsCurrent` is shared state owned by the admin on `/settings`.
+
 ## MudBlazor 9.x Notes
 - `ValidateAsync()` not `Validate()`
 - `IReadOnlyCollection<T>` for multi-select `@bind-SelectedValues`
 - `IMudDialogInstance` (cascading parameter in dialogs)
+- `MudIconButton` takes lowercase `title`, not `Title` (the MUD0002 analyzer flags it). The
+  `.action-btn` row buttons are plain `<button>` elements with `title` anyway.
+- **`MudMenu` + `ActivatorContent` does not wire itself up.** The custom activator receives a
+  `MenuContext` and *you* must call `context.ToggleAsync` — MudBlazor attaches no click handler to
+  the `.mud-menu-activator` wrapper, though it does give it `role="button"` and `tabindex="0"`,
+  leaving it focusable but inert. Prefer `Label` + `StartIcon`/`EndIcon` and style the generated
+  button (as `SeasonPicker` does via `.season-picker .mud-button-root`), which arrives
+  keyboard-accessible for free.
 - `MudDialogProvider`, `MudSnackbarProvider`, `MudPopoverProvider` all in MainLayout
 - Theme: **light mode**, club red/green from the crest. Colors are centralized as CSS
   variables — see [theming.md](theming.md). The MudBlazor palette (`MainLayout.razor.cs`)
