@@ -130,6 +130,30 @@
     background: color-mix(in srgb, var(--color-danger) 10%, transparent);
 }
 
+/* A match that is actually being played right now — green so it reads as "on air", and
+   it pulses so it is the first thing the eye lands on in the list. */
+.action-btn.action-live {
+    color: #fff;
+    background: var(--color-success-bright);
+    animation: action-live-pulse 2s ease-in-out infinite;
+}
+
+.action-btn.action-live:hover {
+    color: #fff;
+    background: var(--color-success-bright);
+}
+
+@keyframes action-live-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .action-btn.action-live {
+        animation: none;
+    }
+}
+
 /* Formation action button on a card that has no lineup yet — tint it amber to match
    the panel and nudge the admin toward filling it in. */
 .action-btn.action-needs-lineup {

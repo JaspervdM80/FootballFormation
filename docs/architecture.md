@@ -9,9 +9,11 @@ Models/
   Season.cs              — Season entity (1 Jul – 30 Jun windows), Contains/ShortName/CreateFor helpers
   SeasonSquadMember.cs   — Per-season squad membership, with the per-season IsGuest flag
   SeasonSquad.cs         — SeasonSquad + SeasonSquads value objects (immutable membership lookups)
-  Game.cs                — Game entity (incl. SeasonId), GameSplitType enum
+  Game.cs                — Game entity (incl. SeasonId + live match clock/state), GameSplitType and MatchState enums
   GamePeriod.cs          — GamePeriod entity, PeriodType enum, PeriodTypeExtensions
   GamePlayerPosition.cs  — Links player to position in a period (IsSubstitute flag)
+  GameGoal.cs            — A goal: scorer (null for the opponent), assister, minute, own/opponent flags
+  GameSubstitution.cs    — A timestamped change made during a live match
   MatchPreferences.cs    — Singleton preferences (duration, split, formation, match day)
 Data/
   AppDbContext.cs         — EF Core context, value converters for List<PlayerPosition> and List<int>
@@ -21,6 +23,8 @@ Services/
   SeasonService.cs        — CRUD + GetCurrent/SetCurrent/FindForDate/GetOrCreateForDate/EnsureCurrentSeason
   SeasonSquadService.cs   — Squad membership: get/add/remove/set-guest/copy-forward, with guards
   GameService.cs          — CRUD + SavePeriodLineupAsync, optional seasonId filter, returns Result<T>
+  LiveMatchService.cs     — Runs a match live: clock, period transitions, goals, substitutions
+  LiveMatchNotifier.cs    — Singleton: fans live match changes out to every open circuit
   MatchPreferencesService.cs — Get/Save prefs, GetNextMatchDateAsync
 Result.cs                — Result and Result<T> base types
 ```
@@ -37,11 +41,15 @@ Pages/
   SeasonStats.razor(.cs)(.css)— /stats — Season dashboard: record, goals, form, scorers, playing time
   PlayerStats.razor(.cs)(.css)— /players/{id}/stats — Per-player figures for the selected season
   MatchResult.razor(.cs)(.css)— /games/{id}/result — Score and goal entry
+  LiveMatch.razor(.cs)(.css)  — /games/{id}/live — Sideline screen: clock, subs, goals; admin drives, others watch
+  LiveGoalDialog.razor(.cs)   — Dialog: scorer, assister, own-goal toggle
+  LiveSubDialog.razor(.cs)(.css) — Dialog: pick the replacement for a player tapped on the pitch
   SeasonDialog.razor(.cs)     — Dialog: season name, start date, end date
   Settings.razor(.cs)         — /settings — Match preferences, password, season management
   Home.razor                  — / — Landing page
 Components/
   PitchView.razor(.cs)(.css)        — Visual pitch with position circles, drag-drop, fit colors
+  PitchOverview.razor(.cs)(.css)    — Read-only pitch (po- classes); optional OnPlayerClicked makes slots tappable
   PlayerList.razor(.cs)(.css)       — Draggable player cards (HTML5 drag API)
   SubstituteBench.razor(.cs)(.css)  — Substitute drop zone with remove buttons
   SeasonPicker.razor(.cs)           — Global season filter; rendered in both the app bar and the drawer
@@ -52,7 +60,7 @@ Helpers/
   PitchPositionHelper.cs      — Maps PlayerPosition → (left%, top%) coordinates
   PositionFitHelper.cs        — 5-tier position fit: Preferred, NaturalFit, Alternative, Compatible, OutOfPosition
   UiFeedback.cs               — Snackbar.Report()/ReportFailure() over Result, shared LockedDialog options
-  DialogPrompts.cs            — DialogService.ConfirmDeleteAsync() wrapper over ConfirmDialog
+  DialogPrompts.cs            — DialogService.ConfirmAsync()/ConfirmDeleteAsync() wrappers over ConfirmDialog
   PlayingTimeReport.cs        — Builds the playing-time table (PlayingTimeRow, PeriodDetail, PeriodPlayStatus)
   SeasonStatsReport.cs        — Team totals + form for /stats (SeasonStats, GameResult)
   PlayerStatsReport.cs        — Per-player aggregates (PlayerStats, PositionStat, PlayerGameStat)

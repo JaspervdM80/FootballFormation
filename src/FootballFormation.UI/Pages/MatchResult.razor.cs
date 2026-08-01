@@ -44,7 +44,7 @@ public partial class MatchResult
         get
         {
             if (GameData is null || ScoreHome is null || ScoreAway is null) return false;
-            var ourGoalsLogged = GameData.Goals.Count(g => !g.IsOwnGoal);
+            var ourGoalsLogged = Game.CountOurGoals(GameData.Goals);
             return ourGoalsLogged >= ScoreHome.Value;
         }
     }

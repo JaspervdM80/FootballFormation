@@ -15,6 +15,16 @@ public partial class PitchOverview
     [Parameter]
     public bool HidePositionFit { get; set; }
 
+    /// <summary>
+    /// Raised with the player id when an occupied slot is tapped. Left unset the pitch stays
+    /// inert, which is what the read-only overview wants; the live match screen uses it to open
+    /// the substitution sheet.
+    /// </summary>
+    [Parameter]
+    public EventCallback<int> OnPlayerClicked { get; set; }
+
+    private bool IsClickable => OnPlayerClicked.HasDelegate;
+
     private PlayerPosition[] AllSlots => [PlayerPosition.GK, .. Formation.DefaultPositions()];
 
     private GamePlayerPosition?[] BuildSlotAssignments()

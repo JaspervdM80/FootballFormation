@@ -11,7 +11,17 @@ fixes live in [known_issues.md](known_issues.md), not here.
   `Season` records with a picker in the app bar filtering `/games`, `/stats` and player stats;
   see [models.md](models.md) and the "UI state services" section of [patterns.md](patterns.md).
 
+- **Live match mode** — shipped: `/games/{id}/live` runs the clock, records substitutions as
+  timestamped events and logs goals/assists (ours and the opponent's) straight into the score.
+  Admin drives it, everyone else can watch the same URL read-only. See [models.md](models.md)
+  and the "Live match screen" section of [ui_components.md](ui_components.md).
+
 ## Next
+
+- **Exact minutes from substitution events** — `GameSubstitution` plus
+  `GamePeriod.StartedAtSeconds`/`EndedAtSeconds` now make real minutes computable, but
+  `PlayingTimeReport` and `PlayerStatsReport` still estimate them as
+  `periodsPlaying × PeriodDurationMinutes`. Rewriting those two reports is the follow-up.
 
 ## Later
 
@@ -19,10 +29,6 @@ fixes live in [known_issues.md](known_issues.md), not here.
   be split by competition as well as by season. Deliberately left out of the seasons work to keep
   that change focused; it would be an enum on `Game` plus a second filter alongside the season one.
 
-- **Live match mode** — a phone-friendly sideline screen: running clock, quick "+ goal / +
-  assist" buttons, and quick substitutions that write straight into the period lineup. This is
-  the root-cause fix for missing-lineup data (e.g. the ASWH game), since minutes and goals get
-  captured as they happen instead of reconstructed afterward.
 - **Share lineup as image** — export the formation/team sheet as a PNG for the WhatsApp group.
 - **Opponent head-to-head** — a small "vs this club" history (we already replay teams like
   Sliedrecht and Hardinxveld).

@@ -59,6 +59,40 @@ Logic in `PositionFitHelper.cs`. Broad positions (W, DEF, MID, ATT) naturally co
 - Assigned slots show colored circle with shirt number + short name
 - Circles are both draggable (for swap) and drop targets
 
+## PitchOverview
+The read-only twin of PitchView (`po-` prefixed classes, same slot algorithm), used by
+`/games/{id}/overview` and `/games/{id}/live`.
+
+- `HidePositionFit` flattens every chip to `po-preferred`; anonymous visitors get that.
+- `OnPlayerClicked` is **optional**. Unset, the pitch is inert — which is what the overview and
+  every spectator wants. Set, occupied slots gain `.po-clickable` (pointer cursor, press feedback)
+  and tapping one raises the player id. The live match screen wires it only when the viewer is an
+  admin *and* a period is actually being played.
+
+## Live match screen (`/games/{id}/live`)
+Phone-first single column (`max-width: 560px`), no `[Authorize]`: admin drives it, everyone else
+watches the same URL read-only. Every control sits in an `<AuthorizeView>`.
+
+- **The clock never round-trips.** A per-circuit 1-second `System.Timers.Timer` re-renders
+  `Game.ElapsedSecondsAt(DateTime.UtcNow)` from the anchor the server stored, and it repaints only
+  while the clock is running. See [models.md](models.md#game).
+- **Spectators are pushed to via the singleton `LiveMatchNotifier`.** `LiveMatchService` raises it
+  after every successful mutation; the page filters on its own `GameId`, reloads and
+  `InvokeAsync(StateHasChanged)`, and unsubscribes in `Dispose`. In-process only — fine for the
+  single Fly.io instance, but it needs a backplane if the app is ever scaled out.
+- **`GetLiveAsync` is `AsNoTrackingWithIdentityResolution`, and it has to be.** A spectator's
+  circuit keeps one scoped `AppDbContext` for its whole life, so a tracked `Game` keeps returning
+  the score, clock and state from its first load while newly inserted goals appear alongside them —
+  a live screen stuck at the old scoreline. Identity resolution keeps shared `Player` rows single.
+- Controls are context-sensitive: start → pause/resume + end {half|quarter} → start next → finish.
+  Wording comes from `SplitType.PeriodLabel()`.
+- The pitch shows the live period; at the break and after full time the last one played, and before
+  kick-off the first — so it is never blank when a lineup exists.
+- Finishing asks for confirmation via `DialogPrompts.ConfirmAsync` (not `ConfirmDeleteAsync`,
+  whose button says "Delete").
+- `/games` routes an `InProgress` game to `/live` for **everyone**, and shows a pulsing green
+  `.action-live` button on its card; for other games the Live action is admin-only.
+
 ## Squad table (`/players`) — responsive layout
 - One `MudTable` (`.players-table`) serves both breakpoints; **desktop is a normal table
   and must stay untouched** when changing mobile.
@@ -149,6 +183,14 @@ Season-scoped: it follows the season picker and shows that season's squad, not e
 - **`MudMenu.Class` styles the root wrapper, not the activator.** There is no `ActivatorClass`
   parameter, so a button style has to be pushed down a level — `.btn-gold.mud-menu .mud-button-root`
   in app.css does that for the squad page's "Add Player" menu.
+- **Scoped CSS does not reach a MudBlazor component's root element.** A `Class` you put on a
+  `MudPaper`/`MudButton` lands on markup the child component renders, which carries *its* scope
+  attribute (or none), never the page's — so the rule silently does nothing and you get MudBlazor's
+  default. Style plain elements in the scoped `.razor.css`; put anything targeting a MudBlazor
+  component in `app.css` (see the `.live-scoreboard` / `.live-action-btn` block there).
+- **A Razor comment inside a component's attribute list is parsed as an attribute name**, and
+  throws `does not have a property matching the name '@* … *@'` at render time — not at build time,
+  so it survives `dotnet build`. Put the comment on the line *above* the tag.
 - **Never set `position` in a global `.mud-paper` rule.** `MudPopover` is a `.mud-paper`, and
   overriding its `position: absolute` turns every dropdown into a full-width band. See
   [known_issues.md](known_issues.md).

@@ -65,8 +65,12 @@ try
     builder.Services.AddScoped<SeasonService>();
     builder.Services.AddScoped<SeasonSquadService>();
     builder.Services.AddScoped<GameService>();
+    builder.Services.AddScoped<LiveMatchService>();
     builder.Services.AddScoped<MatchPreferencesService>();
     builder.Services.AddScoped<AdminAuthService>();
+
+    // Singleton: the live match screen fans changes out to every open circuit — see LiveMatchNotifier
+    builder.Services.AddSingleton<LiveMatchNotifier>();
 
     // Scoped, so the selected season lives for the SignalR circuit — see SeasonState
     builder.Services.AddScoped<SeasonState>();

@@ -1,0 +1,228 @@
+@page "/games/{GameId:int}/live"
+
+<PageTitle>@L["Live Match"]</PageTitle>
+
+@if (GameData is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+    return;
+}
+
+<div class="d-flex align-center gap-2 mb-2">
+    <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="NavigateToGames" Size="Size.Small"
+                   Style="color: color-mix(in srgb, var(--ink) 40%, transparent);" />
+    <div>
+        <MudText Typo="Typo.h6" Style="color: var(--ink); font-weight: 700;">
+            @(GameData.IsHomeGame ? "vs" : "@") @GameData.Opponent
+        </MudText>
+        <MudText Typo="Typo.body2" Class="page-header-subtitle">
+            @GameData.Date.ToString("dd MMM yyyy") · @(GameData.IsHomeGame ? L["Home"] : L["Away"])
+        </MudText>
+    </div>
+</div>
+
+<div class="live-layout">
+    <MudPaper Class="pa-4 live-scoreboard" Elevation="2">
+        @{
+            // ScoreHome/ScoreAway always mean "us"/"them"; only the display order follows the venue.
+            RenderFragment ourSide =
+                @<div class="live-score-side">
+                    <span class="live-score-name">@L["Us"]</span>
+                    <span class="live-score-value">@(GameData.ScoreHome ?? 0)</span>
+                </div>;
+            RenderFragment theirSide =
+                @<div class="live-score-side">
+                    <span class="live-score-name">@GameData.Opponent</span>
+                    <span class="live-score-value live-score-away">@(GameData.ScoreAway ?? 0)</span>
+                </div>;
+        }
+        <div class="live-score-row">
+            @(GameData.IsHomeGame ? ourSide : theirSide)
+            <span class="live-score-dash">–</span>
+            @(GameData.IsHomeGame ? theirSide : ourSide)
+        </div>
+
+        <div class="live-clock">@ClockDisplay</div>
+        <div class="@StatusCssClass">@StatusLabel</div>
+    </MudPaper>
+
+    <AuthorizeView>
+        <MudPaper Class="pa-3 live-controls" Elevation="2">
+            @if (GameData.MatchState == MatchState.NotStarted)
+            {
+                <MudButton Variant="Variant.Filled" Class="btn-gold" FullWidth="true" Size="Size.Large"
+                           StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="StartMatch">
+                    @L["Start match"]
+                </MudButton>
+            }
+            else if (GameData.MatchState == MatchState.InProgress)
+            {
+                <div class="live-control-row">
+                    @if (IsLivePeriod)
+                    {
+                        @if (GameData.IsClockRunning)
+                        {
+                            <MudButton Variant="Variant.Outlined" Class="btn-ghost"
+                                       StartIcon="@Icons.Material.Filled.Pause" OnClick="PauseClock">
+                                @L["Pause"]
+                            </MudButton>
+                        }
+                        else
+                        {
+                            <MudButton Variant="Variant.Outlined" Class="btn-ghost"
+                                       StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="ResumeClock">
+                                @L["Resume"]
+                            </MudButton>
+                        }
+                        <MudButton Variant="Variant.Filled" Class="btn-gold"
+                                   StartIcon="@Icons.Material.Filled.SportsScore" OnClick="EndPeriod">
+                            @L["End {0}", L[PeriodNoun]]
+                        </MudButton>
+                    }
+                    else if (!AllPeriodsPlayed)
+                    {
+                        <MudButton Variant="Variant.Filled" Class="btn-gold"
+                                   StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="StartNextPeriod">
+                            @L["Start next {0}", L[PeriodNoun]]
+                        </MudButton>
+                    }
+
+                    <MudButton Variant="Variant.Outlined" Class="btn-ghost"
+                               StartIcon="@Icons.Material.Filled.Flag" OnClick="FinishMatch">
+                        @L["Finish match"]
+                    </MudButton>
+                </div>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Filled" Class="btn-gold" FullWidth="true"
+                           StartIcon="@Icons.Material.Filled.EditNote" OnClick="NavigateToResult">
+                    @L["Edit result"]
+                </MudButton>
+            }
+        </MudPaper>
+    </AuthorizeView>
+
+    <MudPaper Class="pa-4" Elevation="2" Style="border-radius: 16px;">
+        <div class="card-label">
+            @(DisplayPeriod is null ? L["Line-up"] : L[DisplayPeriod.PeriodType.DisplayName()])
+        </div>
+
+        @if (DisplayLineup.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 35%, transparent);">
+                @L["No line-up for this period yet — build one first."]
+            </MudText>
+        }
+        else
+        {
+            @if (CanSubstitute)
+            {
+                <MudText Typo="Typo.caption" Class="live-pitch-hint">
+                    @L["Tap a player to substitute them."]
+                </MudText>
+            }
+
+            @* OnPlayerClicked is left unset for spectators and between periods, which keeps the pitch inert. *@
+            <PitchOverview Formation="DisplayFormation" Positions="OnPitch"
+                           HidePositionFit="!_isAdmin"
+                           OnPlayerClicked="@(CanSubstitute ? EventCallback.Factory.Create<int>(this, OpenSubDialog) : default)" />
+
+            <div class="live-bench">
+                <span class="live-bench-label">@L["Subs"]:</span>
+                @if (OnBench.Count == 0)
+                {
+                    <span class="live-bench-empty">@L["No subs"]</span>
+                }
+                else
+                {
+                    @foreach (var sub in OnBench)
+                    {
+                        <span class="live-bench-chip">
+                            @if (sub.Player?.ShirtNumber is not null)
+                            {
+                                <span class="live-bench-number">#@sub.Player.ShirtNumber</span>
+                            }
+                            @PlayerLabel(sub.PlayerId)
+                        </span>
+                    }
+                }
+            </div>
+        }
+    </MudPaper>
+
+    <AuthorizeView>
+        <div class="live-actions">
+            <MudButton Variant="Variant.Filled" Class="btn-gold live-action-btn" Size="Size.Large"
+                       Disabled="@(GameData.MatchState == MatchState.NotStarted)"
+                       StartIcon="@Icons.Material.Filled.SportsSoccer" OnClick="AddGoal">
+                @L["We scored"]
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Class="btn-ghost live-action-btn" Size="Size.Large"
+                       Disabled="@(GameData.MatchState == MatchState.NotStarted)"
+                       OnClick="AddOpponentGoal">
+                @L["They scored"]
+            </MudButton>
+        </div>
+    </AuthorizeView>
+
+    <MudPaper Class="pa-4" Elevation="2" Style="border-radius: 16px;">
+        <div class="card-label">@L["Timeline"]</div>
+
+        @if (Timeline.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 35%, transparent);">
+                @L["Nothing has happened yet"]
+            </MudText>
+        }
+        else
+        {
+            <div class="live-timeline">
+                @foreach (var entry in Timeline)
+                {
+                    var against = entry.Goal is { } g && (g.IsOwnGoal || g.IsOpponentGoal);
+                    <div class="live-event @(against ? "live-event-against" : "")">
+                        <span class="live-event-min">@(entry.Minute)'</span>
+                        <MudIcon Size="Size.Small"
+                                 Icon="@(entry.IsGoal ? Icons.Material.Filled.SportsSoccer : Icons.Material.Filled.SwapHoriz)" />
+                        <div class="live-event-body">
+                            @if (entry.Goal is { } goal)
+                            {
+                                <div class="live-event-main">
+                                    @(goal.Scorer?.DisplayName ?? GameData.Opponent)
+                                    @if (goal.IsOwnGoal)
+                                    {
+                                        <span class="live-event-tag">(@L["OG"])</span>
+                                    }
+                                </div>
+                                @if (goal.Assister is not null)
+                                {
+                                    <div class="live-event-sub">↳ @goal.Assister.DisplayName</div>
+                                }
+                            }
+                            else if (entry.Substitution is { } sub)
+                            {
+                                <div class="live-event-main">@PlayerLabel(sub.PlayerOnId)</div>
+                                <div class="live-event-sub">↔ @PlayerLabel(sub.PlayerOffId)</div>
+                            }
+                        </div>
+                        <AuthorizeView Context="auth">
+                            @if (entry.Goal is { } goalToRemove)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small"
+                                               title="@L["Remove"]"
+                                               OnClick="() => RemoveGoal(goalToRemove)" />
+                            }
+                            else if (entry.Substitution is { } subToRemove)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Undo" Size="Size.Small"
+                                               title="@L["Undo"]"
+                                               OnClick="() => RemoveSubstitution(subToRemove)" />
+                            }
+                        </AuthorizeView>
+                    </div>
+                }
+            </div>
+        }
+    </MudPaper>
+</div>

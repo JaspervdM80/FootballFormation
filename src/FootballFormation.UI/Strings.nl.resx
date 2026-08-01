@@ -145,6 +145,50 @@
   <data name="Goal added!" xml:space="preserve"><value>Doelpunt toegevoegd!</value></data>
   <data name="Goal removed" xml:space="preserve"><value>Doelpunt verwijderd</value></data>
 
+  <!-- Live match -->
+  <data name="Live Match" xml:space="preserve"><value>Live wedstrijd</value></data>
+  <data name="Live" xml:space="preserve"><value>Live</value></data>
+  <data name="Not started" xml:space="preserve"><value>Nog niet begonnen</value></data>
+  <data name="In progress" xml:space="preserve"><value>Bezig</value></data>
+  <data name="Break" xml:space="preserve"><value>Rust</value></data>
+  <data name="Paused" xml:space="preserve"><value>Gepauzeerd</value></data>
+  <data name="Full time" xml:space="preserve"><value>Einde wedstrijd</value></data>
+  <data name="Start match" xml:space="preserve"><value>Wedstrijd starten</value></data>
+  <data name="Pause" xml:space="preserve"><value>Pauzeren</value></data>
+  <data name="Resume" xml:space="preserve"><value>Hervatten</value></data>
+  <data name="End {0}" xml:space="preserve"><value>Einde {0}</value></data>
+  <data name="Start next {0}" xml:space="preserve"><value>Volgende {0} starten</value></data>
+  <data name="Finish match" xml:space="preserve"><value>Wedstrijd afsluiten</value></data>
+  <data name="Edit result" xml:space="preserve"><value>Uitslag aanpassen</value></data>
+  <data name="Line-up" xml:space="preserve"><value>Opstelling</value></data>
+  <data name="No line-up for this period yet — build one first." xml:space="preserve"><value>Nog geen opstelling voor dit deel — maak er eerst een.</value></data>
+  <data name="Tap a player to substitute them." xml:space="preserve"><value>Tik op een speler om te wisselen.</value></data>
+  <data name="We scored" xml:space="preserve"><value>Wij scoorden</value></data>
+  <data name="They scored" xml:space="preserve"><value>Zij scoorden</value></data>
+  <data name="Timeline" xml:space="preserve"><value>Tijdlijn</value></data>
+  <data name="Nothing has happened yet" xml:space="preserve"><value>Er is nog niets gebeurd</value></data>
+  <data name="Remove" xml:space="preserve"><value>Verwijderen</value></data>
+  <data name="Undo" xml:space="preserve"><value>Ongedaan maken</value></data>
+  <data name="Match started" xml:space="preserve"><value>Wedstrijd gestart</value></data>
+  <data name="Clock paused" xml:space="preserve"><value>Klok gepauzeerd</value></data>
+  <data name="Clock running" xml:space="preserve"><value>Klok loopt</value></data>
+  <data name="Period ended" xml:space="preserve"><value>Speeldeel beëindigd</value></data>
+  <data name="Next period started" xml:space="preserve"><value>Volgend speeldeel gestart</value></data>
+  <data name="Match finished" xml:space="preserve"><value>Wedstrijd afgesloten</value></data>
+  <data name="End the match and save the final score? You can still edit the result afterwards." xml:space="preserve"><value>Wedstrijd afsluiten en de eindstand opslaan? Je kunt de uitslag daarna nog aanpassen.</value></data>
+  <data name="Goal" xml:space="preserve"><value>Doelpunt</value></data>
+  <data name="Add goal" xml:space="preserve"><value>Doelpunt toevoegen</value></data>
+  <data name="No assist" xml:space="preserve"><value>Geen assist</value></data>
+  <data name="Own goal" xml:space="preserve"><value>Eigen doelpunt</value></data>
+  <data name="An own goal counts for the opponent." xml:space="preserve"><value>Een eigen doelpunt telt voor de tegenstander.</value></data>
+  <data name="Opponent goal added" xml:space="preserve"><value>Tegendoelpunt toegevoegd</value></data>
+  <data name="Substitution" xml:space="preserve"><value>Wissel</value></data>
+  <data name="Substitution made" xml:space="preserve"><value>Wissel doorgevoerd</value></data>
+  <data name="Substitution undone" xml:space="preserve"><value>Wissel ongedaan gemaakt</value></data>
+  <data name="Make substitution" xml:space="preserve"><value>Wissel doorvoeren</value></data>
+  <data name="Comes on" xml:space="preserve"><value>Komt erin</value></data>
+  <data name="Nobody is on the bench for this period." xml:space="preserve"><value>Er zit niemand op de bank voor dit speeldeel.</value></data>
+
   <!-- Player stats -->
   <data name="Player Stats" xml:space="preserve"><value>Spelersstatistieken</value></data>
   <data name="No games recorded yet for this player." xml:space="preserve"><value>Nog geen wedstrijden geregistreerd voor deze speler.</value></data>

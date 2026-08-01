@@ -77,13 +77,14 @@
             <div class="goal-timeline">
                 @foreach (var goal in GameData.Goals.OrderBy(g => g.Minute))
                 {
-                    <div class="goal-entry @(goal.IsOwnGoal ? "own-goal" : "")">
+                    @* Own goals and opponent goals both count against us, so they share the styling. *@
+                    <div class="goal-entry @(goal.IsOwnGoal || goal.IsOpponentGoal ? "own-goal" : "")">
                         <span class="goal-time">
                             @(goal.Minute.HasValue ? $"{goal.Minute}'" : "—")
                         </span>
                         <div class="goal-info">
                             <div class="goal-player">
-                                @goal.Scorer.DisplayName
+                                @(goal.Scorer?.DisplayName ?? GameData.Opponent)
                                 @if (goal.IsOwnGoal)
                                 {
                                     <span class="own-goal-tag">(@L["OG"])</span>

@@ -85,6 +85,19 @@ always had, and keeps games referencing a since-departed player rendering sensib
 | Periods | List\<GamePeriod\> | Auto-created on game creation |
 | UnavailablePlayerIds | List\<int\> | Squad players opted **out**. Comma-separated |
 | GuestPlayerIds | List\<int\> | Guests **of this game's season**, opted in. Comma-separated |
+| MatchState | MatchState | NotStarted / InProgress / Finished. Driven by the live match screen |
+| ClockRunningSince | DateTime? | UTC anchor; null whenever the clock is stopped |
+| ClockAccumulatedSeconds | int | Seconds banked from earlier running stretches |
+| LivePeriodId | int? | The period on the pitch. Null before kick-off, at the break and after full time |
+| Substitutions | List\<GameSubstitution\> | Cascade delete |
+
+The match clock is stored as an **anchor plus a banked total**, never as a ticking value:
+`ElapsedSecondsAt(utcNow)` adds the time since `ClockRunningSince` to `ClockAccumulatedSeconds`.
+Every viewer therefore derives the same clock from one row without the server pushing each second,
+and a page refresh or a second device picks it up exactly where it is.
+
+`Game.CountOurGoals(goals)` / `Game.CountTheirGoals(goals)` are the one place the scoreline rule
+lives: an own goal counts for the opponent, so it is excluded from ours and included in theirs.
 
 A game's season is resolved in `GameService.CreateAsync`: `SeasonId == 0` means "auto by date"
 (the game dialog's default) and is looked up via `SeasonService.GetOrCreateForDateAsync`, creating
@@ -113,6 +126,8 @@ each. `PlayerStatsReport.Build` and `SeasonStatsReport.Build` both take `SeasonS
 | GameId | int | FK → Game (cascade delete) |
 | PeriodType | PeriodType | FirstHalf, SecondHalf, FirstQuarter..FourthQuarter |
 | FormationTypeOverride | FormationType? | Null = use game's formation |
+| StartedAtSeconds | int? | Match-clock second it kicked off. Null unless run live |
+| EndedAtSeconds | int? | Match-clock second it was whistled off |
 | PlayerPositions | List\<GamePlayerPosition\> | |
 
 ## GamePlayerPosition
@@ -123,6 +138,41 @@ each. `PlayerStatsReport.Build` and `SeasonStatsReport.Build` both take `SeasonS
 | PlayerId | int | FK → Player (cascade delete) |
 | Position | PlayerPosition | Slot on the pitch |
 | IsSubstitute | bool | True = bench player |
+
+## GameGoal
+| Property | Type | Notes |
+|---|---|---|
+| Id | int | PK |
+| GameId | int | FK → Game (cascade delete) |
+| ScorerId | int? | FK → Player, **SetNull**. Null for an opponent goal — we don't track their players |
+| AssisterId | int? | FK → Player, SetNull |
+| Minute | int? | Free-typed on `/result`; stamped from the clock on `/live` |
+| IsOwnGoal | bool | One of ours into our own net. Counts for the opponent |
+| IsOpponentGoal | bool | The opponent scored. Counts for them, and has no scorer |
+
+## GameSubstitution
+| Property | Type | Notes |
+|---|---|---|
+| Id | int | PK |
+| GameId | int | FK → Game (cascade delete) |
+| GamePeriodId | int | FK → GamePeriod (cascade delete) |
+| PlayerOffId / PlayerOnId | int | FK → Player, both **Restrict** |
+| AtSeconds | int | Match-clock second of the change |
+| SlotIndex | int? | The pitch slot that changed hands |
+| Position | PlayerPosition | The position that changed hands |
+| Minute | int | Computed: `AtSeconds / 60 + 1` — a timeline's first minute is 1', not 0' |
+
+The lineup stays the source of truth for *who stands where*; this records **when** the swap
+happened, which the period lineup alone cannot express. `LiveMatchService.SubstituteAsync` writes
+both in one `SaveChangesAsync`, so they cannot diverge — and it updates the lineup **in place**
+rather than going through `GameService.SavePeriodLineupAsync`, which is delete-and-reinsert.
+
+Both player legs are `Restrict`, not `Cascade`: two cascading paths from `Players` to the same row
+is the shape SQLite rejects, and neither leg is nullable, so deleting a player who was substituted
+fails loudly instead of silently rewriting match history.
+
+Only the **most recent** substitution of a period can be undone (`RemoveSubstitutionAsync`);
+reversing an older swap would fight every change made on that slot since.
 
 ## MatchPreferences (singleton)
 | Property | Type | Default |
@@ -141,6 +191,8 @@ each. `PlayerStatsReport.Build` and `SeasonStatsReport.Build` both take `SeasonS
 ```
 Season 1──* Game 1──* GamePeriod 1──* GamePlayerPosition *──1 Player
 Season 1──* SeasonSquadMember *──1 Player
+Game 1──* GameGoal *──1 Player (scorer, assister — both SetNull)
+Game 1──* GameSubstitution *──1 Player (off, on — both Restrict)
 ```
 Cascading deletes throughout, **except Season → Game, which is `Restrict`**: deleting a season must
 never take a year of games, lineups and goals with it. `SeasonService.DeleteAsync` refuses with a
