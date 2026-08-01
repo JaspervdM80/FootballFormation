@@ -14,6 +14,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<GamePeriod> GamePeriods => Set<GamePeriod>();
     public DbSet<GamePlayerPosition> GamePlayerPositions => Set<GamePlayerPosition>();
     public DbSet<GameGoal> GameGoals => Set<GameGoal>();
+    public DbSet<GameSubstitution> GameSubstitutions => Set<GameSubstitution>();
     public DbSet<MatchPreferences> MatchPreferences => Set<MatchPreferences>();
     public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
 
@@ -89,6 +90,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithOne(gl => gl.Game)
                 .HasForeignKey(gl => gl.GameId)
                 .OnDelete(DeleteBehavior.Cascade);
+            entity.HasMany(g => g.Substitutions)
+                .WithOne(s => s.Game)
+                .HasForeignKey(s => s.GameId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<GamePeriod>(entity =>
@@ -112,14 +117,40 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<GameGoal>(entity =>
         {
             entity.HasKey(g => g.Id);
+            // SetNull, not Cascade: ScorerId is nullable now that opponent goals are tracked, and a
+            // deleted player must not take the goal (and with it the scoreline) out of the record.
             entity.HasOne(g => g.Scorer)
                 .WithMany()
                 .HasForeignKey(g => g.ScorerId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.SetNull);
             entity.HasOne(g => g.Assister)
                 .WithMany()
                 .HasForeignKey(g => g.AssisterId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<GameSubstitution>(entity =>
+        {
+            entity.HasKey(s => s.Id);
+
+            entity.HasOne(s => s.GamePeriod)
+                .WithMany()
+                .HasForeignKey(s => s.GamePeriodId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Restrict on both player legs. They are not nullable — a substitution without either
+            // side is meaningless — and two cascading paths from Players to the same row is exactly
+            // the multiple-cascade-path shape SQLite rejects. Deleting a player who was substituted
+            // therefore fails loudly rather than silently rewriting match history.
+            entity.HasOne(s => s.PlayerOff)
+                .WithMany()
+                .HasForeignKey(s => s.PlayerOffId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(s => s.PlayerOn)
+                .WithMany()
+                .HasForeignKey(s => s.PlayerOnId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<MatchPreferences>(entity =>

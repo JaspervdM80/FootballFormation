@@ -1,0 +1,10 @@
+.sub-off-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sub-off-name {
+    font-weight: 700;
+    color: var(--ink);
+}

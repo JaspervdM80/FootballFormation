@@ -8,6 +8,15 @@ public class GamePeriod
     public PeriodType PeriodType { get; set; }
     public FormationType? FormationTypeOverride { get; set; }
 
+    /// <summary>
+    /// Match-clock second this period kicked off, set by the live match screen. Null for periods
+    /// that were never run live — the lineup builder does not need it.
+    /// </summary>
+    public int? StartedAtSeconds { get; set; }
+
+    /// <summary>Match-clock second this period was whistled off. Null while it is still running.</summary>
+    public int? EndedAtSeconds { get; set; }
+
     public List<GamePlayerPosition> PlayerPositions { get; set; } = [];
 }
 

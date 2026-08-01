@@ -142,7 +142,8 @@ public class GameService(AppDbContext db, SeasonService seasons, ILogger<GameSer
             await db.SaveChangesAsync();
 
             // Reload with navigation properties
-            await db.Entry(goal).Reference(g => g.Scorer).LoadAsync();
+            if (goal.ScorerId is not null)
+                await db.Entry(goal).Reference(g => g.Scorer).LoadAsync();
             if (goal.AssisterId is not null)
                 await db.Entry(goal).Reference(g => g.Assister).LoadAsync();
 

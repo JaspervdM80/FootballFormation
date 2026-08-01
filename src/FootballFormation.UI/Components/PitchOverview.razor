@@ -19,8 +19,10 @@
 
         if (assigned?.Player is not null)
         {
+            var playerId = assigned.Player.Id;
             <div class="po-slot" style="@style">
-                <div class="@GetChipCssClass(position, assigned.Player)">
+                <div class="@GetChipCssClass(position, assigned.Player) @(IsClickable ? "po-clickable" : "")"
+                     @onclick="() => OnPlayerClicked.InvokeAsync(playerId)">
                     <span class="po-number">@(assigned.Player.ShirtNumber?.ToString() ?? "")</span>
                     <span class="po-name">@assigned.Player.ShortName</span>
                 </div>

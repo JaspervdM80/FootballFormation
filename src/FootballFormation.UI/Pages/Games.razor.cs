@@ -77,10 +77,13 @@ public partial class Games : IDisposable
         await LoadGames();
     }
 
-    /// <summary>Row click: finished games open the result; admins build formations; visitors get the overview.</summary>
+    /// <summary>Row click: a match under way beats everything; then finished games open the
+    /// result; admins build formations; visitors get the overview.</summary>
     private void OpenGame(Game game)
     {
-        if (game.ScoreHome.HasValue && game.ScoreAway.HasValue)
+        if (game.MatchState == MatchState.InProgress)
+            OpenLive(game.Id);
+        else if (game.ScoreHome.HasValue && game.ScoreAway.HasValue)
             OpenResult(game.Id);
         else if (_isAdmin)
             OpenFormation(game.Id);
@@ -105,6 +108,8 @@ public partial class Games : IDisposable
     private void OpenOverview(int gameId) => Navigation.NavigateTo($"/games/{gameId}/overview");
 
     private void OpenResult(int gameId) => Navigation.NavigateTo($"/games/{gameId}/result");
+
+    private void OpenLive(int gameId) => Navigation.NavigateTo($"/games/{gameId}/live");
 
     /// <summary>Returns the edited game, or null when the dialog was cancelled.</summary>
     private async Task<Game?> ShowGameDialogAsync(string title, Game? game = null)

@@ -1,0 +1,37 @@
+@inject IStringLocalizer<Strings> L
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="Form">
+            <MudSelect T="int" @bind-Value="ScorerId" Label="@L["Scorer"]" Class="mb-3"
+                       Required="true" RequiredError="@L["Please select a player"]">
+                @foreach (var player in Candidates)
+                {
+                    <MudSelectItem T="int" Value="player.Id">
+                        @(player.ShirtNumber is not null ? $"#{player.ShirtNumber} " : "")@player.DisplayName
+                    </MudSelectItem>
+                }
+            </MudSelect>
+
+            @* 0 is "no assist" — the select needs a value for the placeholder row. *@
+            <MudSelect T="int" @bind-Value="AssisterId" Label="@L["Assist"]" Class="mb-3" Clearable="true">
+                <MudSelectItem T="int" Value="0">@L["No assist"]</MudSelectItem>
+                @foreach (var player in Candidates.Where(p => p.Id != ScorerId))
+                {
+                    <MudSelectItem T="int" Value="player.Id">
+                        @(player.ShirtNumber is not null ? $"#{player.ShirtNumber} " : "")@player.DisplayName
+                    </MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSwitch @bind-Value="IsOwnGoal" Color="Color.Error" Class="mb-1">@L["Own goal"]</MudSwitch>
+            <MudText Typo="Typo.caption" Style="color: color-mix(in srgb, var(--ink) 45%, transparent);">
+                @L["An own goal counts for the opponent."]
+            </MudText>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">@L["Add goal"]</MudButton>
+    </DialogActions>
+</MudDialog>

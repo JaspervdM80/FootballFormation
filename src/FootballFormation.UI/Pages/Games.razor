@@ -91,6 +91,21 @@ else
                             <MudIcon Icon="@(IsIncomplete(game) ? Icons.Material.Outlined.GridView : Icons.Material.Filled.ViewModule)" Size="Size.Small" />
                         </button>
                     </AuthorizeView>
+                    @* A match in progress is what everyone wants first, so it is not admin-gated. *@
+                    @if (game.MatchState == MatchState.InProgress)
+                    {
+                        <button class="action-btn action-live" title="@L["Live"]" @onclick="() => OpenLive(game.Id)">
+                            <MudIcon Icon="@Icons.Material.Filled.Sensors" Size="Size.Small" />
+                        </button>
+                    }
+                    else
+                    {
+                        <AuthorizeView>
+                            <button class="action-btn" title="@L["Live"]" @onclick="() => OpenLive(game.Id)">
+                                <MudIcon Icon="@Icons.Material.Filled.Sensors" Size="Size.Small" />
+                            </button>
+                        </AuthorizeView>
+                    }
                     <button class="action-btn" title="@L["Overview"]" @onclick="() => OpenOverview(game.Id)">
                         <MudIcon Icon="@Icons.Material.Filled.Share" Size="Size.Small" />
                     </button>

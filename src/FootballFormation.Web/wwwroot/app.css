@@ -324,6 +324,25 @@ html, body {
     border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
 }
 
+/* --- Live match ---
+   These three sit here rather than in LiveMatch.razor.css because they target MudBlazor
+   components (two MudPapers and a MudButton), and scoped CSS never reaches a child
+   component's root element. The rest of that page's styling is scoped as normal. */
+.live-scoreboard,
+.live-controls {
+    border-radius: 16px;
+}
+
+.live-scoreboard {
+    text-align: center;
+}
+
+.live-action-btn {
+    flex: 1;
+    /* Thumb-sized: pressed while watching the pitch, not the phone. */
+    min-height: 56px;
+}
+
 /* Page header styling */
 .page-header-subtitle {
     color: color-mix(in srgb, var(--ink) 45%, transparent);

@@ -27,6 +27,23 @@ public class Game
 
     public List<GamePeriod> Periods { get; set; } = [];
     public List<GameGoal> Goals { get; set; } = [];
+    public List<GameSubstitution> Substitutions { get; set; } = [];
+
+    /// <summary>How far the live match screen has got with this game.</summary>
+    public MatchState MatchState { get; set; } = MatchState.NotStarted;
+
+    /// <summary>
+    /// UTC instant the match clock was last started or resumed; null whenever the clock is not
+    /// running. The clock is stored as an anchor rather than a ticking value so every viewer
+    /// derives the same elapsed time without the server having to push each second.
+    /// </summary>
+    public DateTime? ClockRunningSince { get; set; }
+
+    /// <summary>Seconds banked from earlier running stretches, excluding the current one.</summary>
+    public int ClockAccumulatedSeconds { get; set; }
+
+    /// <summary>The period currently on the pitch. Null before kick-off, at the break, and after the final whistle.</summary>
+    public int? LivePeriodId { get; set; }
 
     /// <summary>Squad players opted out of this game.</summary>
     public List<int> UnavailablePlayerIds { get; set; } = [];
@@ -69,6 +86,33 @@ public class Game
     /// <summary>Everyone taking part in this game, from the full player pool.</summary>
     public List<Player> SelectRoster(IEnumerable<Player> allPlayers, SeasonSquad squad) =>
         [.. allPlayers.Where(p => IsInRoster(p, squad))];
+
+    public bool IsClockRunning => ClockRunningSince is not null;
+
+    /// <summary>
+    /// The match clock in seconds at <paramref name="utcNow"/>. Callers that only need a settled
+    /// value (a paused clock, a finished match) can pass any instant.
+    /// </summary>
+    public int ElapsedSecondsAt(DateTime utcNow) => ClockAccumulatedSeconds +
+        (ClockRunningSince is null ? 0 : Math.Max(0, (int)(utcNow - ClockRunningSince.Value).TotalSeconds));
+
+    /// <summary>
+    /// Our goals, counted from the logged goal rows. An own goal by one of ours counts for them,
+    /// so it is excluded here and included in <see cref="CountTheirGoals"/>.
+    /// </summary>
+    public static int CountOurGoals(IEnumerable<GameGoal> goals) =>
+        goals.Count(g => !g.IsOwnGoal && !g.IsOpponentGoal);
+
+    /// <summary>Their goals: everything the opponent scored, plus our own goals.</summary>
+    public static int CountTheirGoals(IEnumerable<GameGoal> goals) =>
+        goals.Count(g => g.IsOwnGoal || g.IsOpponentGoal);
+}
+
+public enum MatchState
+{
+    NotStarted,
+    InProgress,
+    Finished
 }
 
 public enum GameSplitType
