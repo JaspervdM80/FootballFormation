@@ -181,6 +181,31 @@
   <data name="No goals recorded yet." xml:space="preserve"><value>Nog geen doelpunten geregistreerd.</value></data>
   <data name="No players yet." xml:space="preserve"><value>Nog geen speelsters.</value></data>
 
+  <!-- Season squad (per-season membership and guest status) -->
+  <data name="New player" xml:space="preserve"><value>Nieuwe speler</value></data>
+  <data name="Existing player" xml:space="preserve"><value>Bestaande speler</value></data>
+  <data name="Add to squad" xml:space="preserve"><value>Aan selectie toevoegen</value></data>
+  <data name="{0} added to the squad" xml:space="preserve"><value>{0} is aan de selectie toegevoegd</value></data>
+  <data name="Remove from squad" xml:space="preserve"><value>Uit selectie verwijderen</value></data>
+  <data name="Remove {0} from the {1} squad? Their history stays intact." xml:space="preserve"><value>{0} uit de selectie van {1} verwijderen? De geschiedenis blijft bewaard.</value></data>
+  <data name="{0} removed from the squad" xml:space="preserve"><value>{0} is uit de selectie verwijderd</value></data>
+  <data name="Mark as guest" xml:space="preserve"><value>Als gast markeren</value></data>
+  <data name="Mark as squad player" xml:space="preserve"><value>Als selectiespeler markeren</value></data>
+  <data name="{0} is now a guest" xml:space="preserve"><value>{0} is nu een gast</value></data>
+  <data name="{0} is now a squad player" xml:space="preserve"><value>{0} is nu een selectiespeler</value></data>
+  <data name="Copy squad from {0}" xml:space="preserve"><value>Selectie kopiëren uit {0}</value></data>
+  <data name="{0} players copied from {1}" xml:space="preserve"><value>{0} spelers gekopieerd uit {1}</value></data>
+  <data name="No squad for {0} yet." xml:space="preserve"><value>Nog geen selectie voor {0}.</value></data>
+  <data name="Copy last season's squad, or add players one by one." xml:space="preserve"><value>Kopieer de selectie van vorig seizoen, of voeg spelers los toe.</value></data>
+  <data name="Select a season to manage its squad." xml:space="preserve"><value>Kies een seizoen om de selectie te beheren.</value></data>
+  <data name="Show {0}" xml:space="preserve"><value>Toon {0}</value></data>
+  <data name="Everyone on file is already in this squad." xml:space="preserve"><value>Iedereen staat al in deze selectie.</value></data>
+  <data name="Delete player permanently" xml:space="preserve"><value>Speler definitief verwijderen</value></data>
+  <data name="Please select a player" xml:space="preserve"><value>Kies een speler</value></data>
+  <data name="More" xml:space="preserve"><value>Meer</value></data>
+  <data name="This date starts a new season — its squad is empty until you fill it in on the squad page." xml:space="preserve"><value>Deze datum start een nieuw seizoen — de selectie is leeg tot je die op de selectiepagina invult.</value></data>
+  <data name="Are you sure you want to delete the season {0}, including its {1}-player squad?" xml:space="preserve"><value>Weet je zeker dat je het seizoen {0} en de bijbehorende selectie van {1} spelers wilt verwijderen?</value></data>
+
   <!-- Seasons (picker, management, game assignment) -->
   <data name="Seasons" xml:space="preserve"><value>Seizoenen</value></data>
   <data name="All seasons" xml:space="preserve"><value>Alle seizoenen</value></data>

@@ -31,7 +31,7 @@ public class Game
     /// <summary>Squad players opted out of this game.</summary>
     public List<int> UnavailablePlayerIds { get; set; } = [];
 
-    /// <summary>Guest players explicitly opted in to this game.</summary>
+    /// <summary>Guests of this game's season, explicitly opted in to this game.</summary>
     public List<int> GuestPlayerIds { get; set; } = [];
 
     /// <summary>How many periods this game is split into.</summary>
@@ -50,14 +50,25 @@ public class Game
 
     /// <summary>
     /// Squad players are in unless marked unavailable; guests are out unless explicitly added.
+    /// <para>
+    /// Guest status is per season, so the season's squad has to be passed in. Anyone outside the
+    /// squad is treated as a guest — three membership states collapse to the same two branches the
+    /// rule always had.
+    /// </para>
     /// </summary>
-    public bool IsInRoster(Player player) => player.IsGuest
-        ? GuestPlayerIds.Contains(player.Id)
-        : !UnavailablePlayerIds.Contains(player.Id);
+    public bool IsInRoster(Player player, SeasonSquad squad) => squad.IsFullMember(player.Id)
+        ? !UnavailablePlayerIds.Contains(player.Id)
+        : GuestPlayerIds.Contains(player.Id);
+
+    /// <summary>
+    /// Overload for reports that walk games across several seasons: the game picks its own season's
+    /// squad, so a player who was a guest one year and a regular the next is judged correctly in each.
+    /// </summary>
+    public bool IsInRoster(Player player, SeasonSquads squads) => IsInRoster(player, squads.For(SeasonId));
 
     /// <summary>Everyone taking part in this game, from the full player pool.</summary>
-    public List<Player> SelectRoster(IEnumerable<Player> allPlayers) =>
-        allPlayers.Where(IsInRoster).ToList();
+    public List<Player> SelectRoster(IEnumerable<Player> allPlayers, SeasonSquad squad) =>
+        [.. allPlayers.Where(p => IsInRoster(p, squad))];
 }
 
 public enum GameSplitType

@@ -89,11 +89,30 @@ The global season filter, backed by the scoped `SeasonState` (see
   places — isolation would force a duplicate stylesheet, the problem `.stat-tiles` already has
   between `SeasonStats.razor.css` and `PlayerStats.razor.css`.
 - **Route allowlist**: only shown where a season filter changes what is on screen — `/games`,
-  `/stats`, `/players/{id}/stats`. Hidden on `/`, `/players`, `/settings` and the single-game
-  routes, where it would be inert or (on `/settings`) misleading while the season list is edited.
-  The component subscribes to `NavigationManager.LocationChanged` so visibility follows navigation.
+  `/stats`, `/players` (the squad is per season) and `/players/{id}/stats`. Hidden on `/`,
+  `/settings` and the single-game routes, where it would be inert or (on `/settings`) misleading
+  while the season list is edited. The component subscribes to `NavigationManager.LocationChanged`
+  so visibility follows navigation.
 - Selecting a season **never** writes `Season.IsCurrent` — the picker is reachable by anonymous
   visitors, and `IsCurrent` is shared state owned by the admin on `/settings`.
+
+## Squad page (`/players`)
+Season-scoped: it follows the season picker and shows that season's squad, not everyone on file.
+
+- Row actions (admin only): **guest toggle** (star), **remove from squad** (person-remove), and an
+  overflow `MudMenu` holding "Edit player" and "Delete player permanently". Removing from a squad is
+  the everyday action; deleting a *person* cascades their lineup and goal rows in every season, so
+  it is demoted out of the icon row.
+- "Add Player" is a `MudMenu` with two items: **New player** (creates the person *and* adds them to
+  this squad in one action) and **Existing player** (`SquadMemberDialog`, picking from
+  `GetNonMembersAsync` — someone from an earlier season, or a guest being promoted).
+- **Copy squad from {previous season}** appears whenever a previous season exists, and is the
+  primary action in the empty state. It preserves guest flags and is idempotent.
+- Three edge states: "All seasons" selected (a card asking you to pick one — a squad belongs to
+  exactly one season); an empty squad with a previous season (copy-forward offer); an empty squad
+  with no previous season (plain "add your first player").
+- The `GUEST` badge is driven by the **member's** flag, so the existing `.badge-guest` CSS and its
+  mobile hide rule are untouched.
 
 ## MudBlazor 9.x Notes
 - `ValidateAsync()` not `Validate()`
@@ -107,6 +126,12 @@ The global season filter, backed by the scoped `SeasonState` (see
   leaving it focusable but inert. Prefer `Label` + `StartIcon`/`EndIcon` and style the generated
   button (as `SeasonPicker` does via `.season-picker .mud-button-root`), which arrives
   keyboard-accessible for free.
+- **`MudMenu.Class` styles the root wrapper, not the activator.** There is no `ActivatorClass`
+  parameter, so a button style has to be pushed down a level — `.btn-gold.mud-menu .mud-button-root`
+  in app.css does that for the squad page's "Add Player" menu.
+- **Never set `position` in a global `.mud-paper` rule.** `MudPopover` is a `.mud-paper`, and
+  overriding its `position: absolute` turns every dropdown into a full-width band. See
+  [known_issues.md](known_issues.md).
 - `MudDialogProvider`, `MudSnackbarProvider`, `MudPopoverProvider` all in MainLayout
 - Theme: **light mode**, club red/green from the crest. Colors are centralized as CSS
   variables — see [theming.md](theming.md). The MudBlazor palette (`MainLayout.razor.cs`)

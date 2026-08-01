@@ -245,6 +245,31 @@ html, body {
     transform: translateY(-1px);
 }
 
+/* MudMenu applies its Class to the root wrapper, not to the activator button, so
+   btn-gold on a MudMenu paints an invisible div and leaves the button in MudBlazor's
+   default filled colours. Push the style down one level instead. */
+.btn-gold.mud-menu {
+    background: none !important;
+    border: none !important;
+    display: inline-flex;
+}
+
+.btn-gold.mud-menu .mud-button-root {
+    background: var(--gradient-primary) !important;
+    color: var(--club-on-primary) !important;
+    font-weight: 600 !important;
+    border: none !important;
+}
+
+.btn-gold.mud-menu:hover {
+    transform: none;
+}
+
+.btn-gold.mud-menu .mud-button-root:hover {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+}
+
 /* Ghost button */
 .btn-ghost {
     background: transparent !important;
@@ -339,6 +364,21 @@ html, body {
 .mud-popover-provider {
     height: 0 !important;
     overflow: visible;
+}
+
+/* Fix: every dropdown rendered as a full-width band across the page. MudPopover carries
+   .mud-paper, and the card rule above gives it position:relative, which beats MudBlazor's
+   own .mud-popover{position:absolute} on source order. A relatively positioned block
+   stretches to the popover provider's full width and takes the placement JS's left/top as
+   an offset from its static spot at the top of the page — hence the band. Restore the
+   framework's positioning; popovers are elevation-8, so they never wanted the ::before
+   accent line that position:relative exists for. */
+.mud-popover.mud-paper {
+    position: absolute;
+}
+
+.mud-popover.mud-paper.mud-popover-fixed {
+    position: fixed;
 }
 
 /* Fix: MudSelect dropdown double scrollbar — MudBlazor v9 only sets overflow:hidden on

@@ -11,6 +11,7 @@ public partial class MatchResult
 {
     [Inject] private GameService GameService { get; set; } = null!;
     [Inject] private PlayerService PlayerService { get; set; } = null!;
+    [Inject] private SeasonSquadService SquadService { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
@@ -20,6 +21,9 @@ public partial class MatchResult
 
     private Game? GameData { get; set; }
     private List<Player>? AllPlayers { get; set; }
+
+    /// <summary>The squad of this game's season, for the no-lineup fallback below.</summary>
+    private SeasonSquad Squad { get; set; } = SeasonSquad.Empty;
 
     private int? ScoreHome { get; set; }
     private int? ScoreAway { get; set; }
@@ -62,7 +66,7 @@ public partial class MatchResult
 
             // If no lineup yet, fall back to everyone selected for this game
             if (involvedIds.Count == 0)
-                return GameData.SelectRoster(AllPlayers);
+                return GameData.SelectRoster(AllPlayers, Squad);
 
             return AllPlayers.Where(p => involvedIds.Contains(p.Id)).ToList();
         }
@@ -81,6 +85,11 @@ public partial class MatchResult
         ScoreHome = GameData.ScoreHome;
         ScoreAway = GameData.ScoreAway;
 
+        var squadResult = await SquadService.GetSquadAsync(GameData.SeasonId);
+        Squad = squadResult.IsSuccess ? squadResult.Value! : SeasonSquad.Empty;
+
+        // Anyone who actually appeared stays selectable as a scorer regardless of current
+        // membership, so the full pool is still loaded.
         var playersResult = await PlayerService.GetAllAsync();
         AllPlayers = playersResult.IsSuccess ? playersResult.Value! : [];
     }

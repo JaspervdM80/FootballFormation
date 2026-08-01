@@ -12,6 +12,7 @@ public partial class FormationBuilder
 {
     [Inject] private GameService GameService { get; set; } = null!;
     [Inject] private PlayerService PlayerService { get; set; } = null!;
+    [Inject] private SeasonSquadService SquadService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
     [Inject] private ILogger<FormationBuilder> Logger { get; set; } = null!;
@@ -22,6 +23,10 @@ public partial class FormationBuilder
 
     private Game? GameData { get; set; }
     private List<Player>? AllPlayers { get; set; }
+
+    /// <summary>The squad of this game's season. Taken from the game, not from the season picker —
+    /// the builder is scoped to one fixture and must not follow a global filter.</summary>
+    private SeasonSquad Squad { get; set; } = SeasonSquad.Empty;
     private Dictionary<int, List<GamePlayerPosition>> PeriodLineups { get; } = [];
     private int ActivePeriodIndex { get; set; }
     private LineupDragState Drag { get; } = new();
@@ -38,6 +43,11 @@ public partial class FormationBuilder
 
         GameData = gameResult.Value!;
 
+        var squadResult = await SquadService.GetSquadAsync(GameData.SeasonId);
+        Squad = Snackbar.ReportFailure(squadResult) ? squadResult.Value! : SeasonSquad.Empty;
+
+        // The full pool is still needed: a player who was lined up but has since left the squad
+        // must stay visible in the playing-time table (see GetPlayingTimeData).
         var playersResult = await PlayerService.GetAllAsync();
         AllPlayers = Snackbar.ReportFailure(playersResult) ? playersResult.Value! : [];
 
@@ -53,7 +63,7 @@ public partial class FormationBuilder
 
     /// <summary>Squad players who are available, plus guests explicitly added to this game.</summary>
     private List<Player> RosterPlayers =>
-        AllPlayers is null || GameData is null ? [] : GameData.SelectRoster(AllPlayers);
+        AllPlayers is null || GameData is null ? [] : GameData.SelectRoster(AllPlayers, Squad);
 
     /// <summary>Squad players who opted out of this game. Guests are simply not added, not unavailable.</summary>
     private List<Player> UnavailablePlayers
@@ -63,7 +73,7 @@ public partial class FormationBuilder
             if (AllPlayers is null || GameData is null) return [];
 
             var unavailable = GameData.UnavailablePlayerIds.ToHashSet();
-            return AllPlayers.Where(p => !p.IsGuest && unavailable.Contains(p.Id)).ToList();
+            return AllPlayers.Where(p => Squad.IsFullMember(p.Id) && unavailable.Contains(p.Id)).ToList();
         }
     }
 
@@ -338,7 +348,7 @@ public partial class FormationBuilder
             .SelectMany(lineup => lineup)
             .Select(p => p.PlayerId)
             .ToHashSet();
-        var players = AllPlayers.Where(p => GameData.IsInRoster(p) || linedUpIds.Contains(p.Id));
+        var players = AllPlayers.Where(p => GameData.IsInRoster(p, Squad) || linedUpIds.Contains(p.Id));
 
         return PlayingTimeReport.Build(GameData, players, PeriodLineups);
     }

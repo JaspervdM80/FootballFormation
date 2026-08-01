@@ -70,7 +70,11 @@ public class PlayerStats
 /// </summary>
 public static class PlayerStatsReport
 {
-    public static PlayerStats Build(Player player, IEnumerable<Game> games)
+    /// <param name="squads">The squads of every season <paramref name="games"/> covers. Plural
+    /// because guest status is per season and the caller may be showing "All seasons": each game
+    /// resolves its own season, so a player who was a guest one year and a regular the next is
+    /// judged correctly in each.</param>
+    public static PlayerStats Build(Player player, IEnumerable<Game> games, SeasonSquads squads)
     {
         var gameStats = new List<PlayerGameStat>();
         var positionMinutes = new Dictionary<PlayerPosition, int>();
@@ -80,7 +84,7 @@ public static class PlayerStatsReport
         {
             // Available = the player was in the roster for a game that actually has a lineup,
             // whether they started, subbed, or sat the bench. Unavailable games don't count.
-            if (game.HasLineup && game.IsInRoster(player))
+            if (game.HasLineup && game.IsInRoster(player, squads))
                 availableMinutes += game.GameDurationMinutes;
 
             var playedPeriods = 0;

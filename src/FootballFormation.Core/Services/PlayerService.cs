@@ -7,12 +7,14 @@ namespace FootballFormation.Core.Services;
 
 public class PlayerService(AppDbContext db, ILogger<PlayerService> logger)
 {
+    /// <summary>Everyone on file, in shirt order. Guest status is per season now, so the
+    /// guests-last ordering moved to <see cref="SeasonSquad"/>, which is the only thing that can
+    /// know it.</summary>
     public Task<Result<List<Player>>> GetAllAsync() =>
         ServiceOperation.RunAsync(logger, "load players", async () =>
         {
             var players = await db.Players
-                .OrderBy(p => p.IsGuest)
-                .ThenBy(p => p.ShirtNumber ?? int.MaxValue)
+                .OrderBy(p => p.ShirtNumber ?? int.MaxValue)
                 .ThenBy(p => p.FirstName)
                 .ThenBy(p => p.Surname)
                 .ToListAsync();

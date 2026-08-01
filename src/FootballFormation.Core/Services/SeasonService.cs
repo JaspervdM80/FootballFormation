@@ -37,6 +37,22 @@ public class SeasonService(AppDbContext db, ILogger<SeasonService> logger)
         });
 
     /// <summary>
+    /// The season covering <paramref name="date"/>, or null when none is defined yet. Read-only
+    /// sibling of <see cref="GetOrCreateForDateAsync"/>, for callers that must not create a season
+    /// as a side effect — e.g. the game dialog reacting to a date the user may still cancel.
+    /// </summary>
+    public Task<Result<Season?>> FindForDateAsync(DateTime date) =>
+        ServiceOperation.RunAsync(logger, "look up the season for that date", async () =>
+        {
+            var day = date.Date;
+
+            var season = await db.Seasons
+                .FirstOrDefaultAsync(s => s.StartDate <= day && s.EndDate >= day);
+
+            return Result.Success(season);
+        });
+
+    /// <summary>
     /// The season covering <paramref name="date"/>, created on the fly when a game is scheduled
     /// beyond the seasons defined so far. Season windows are gapless, so this always resolves.
     /// </summary>
@@ -45,9 +61,9 @@ public class SeasonService(AppDbContext db, ILogger<SeasonService> logger)
         {
             var day = date.Date;
 
-            var existing = await db.Seasons
-                .FirstOrDefaultAsync(s => s.StartDate <= day && s.EndDate >= day);
-            if (existing is not null) return Result.Success(existing);
+            var lookup = await FindForDateAsync(day);
+            if (lookup.IsFailure) return Result.Failure<Season>(lookup.Error!);
+            if (lookup.Value is not null) return Result.Success(lookup.Value);
 
             var season = Season.CreateFor(day);
             db.Seasons.Add(season);

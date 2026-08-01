@@ -28,7 +28,7 @@ public partial class SeasonPicker : IDisposable
     private bool Visible => IsSeasonAware(CurrentPath);
 
     private static bool IsSeasonAware(string path) =>
-        path is "games" or "stats"
+        path is "games" or "stats" or "players"
         || (path.StartsWith("players/") && path.EndsWith("/stats"));
 
     private string CurrentPath =>

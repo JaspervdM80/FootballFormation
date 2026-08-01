@@ -9,6 +9,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     public DbSet<Player> Players => Set<Player>();
     public DbSet<Season> Seasons => Set<Season>();
+    public DbSet<SeasonSquadMember> SeasonSquadMembers => Set<SeasonSquadMember>();
     public DbSet<Game> Games => Set<Game>();
     public DbSet<GamePeriod> GamePeriods => Set<GamePeriod>();
     public DbSet<GamePlayerPosition> GamePlayerPositions => Set<GamePlayerPosition>();
@@ -50,6 +51,28 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithOne(g => g.Season)
                 .HasForeignKey(g => g.SeasonId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<SeasonSquadMember>(entity =>
+        {
+            entity.HasKey(m => m.Id);
+
+            // Cascade on both sides, unlike Season -> Game. A membership row carries no history —
+            // it is purely "is this person in that squad" — so it must never block deleting the
+            // person or an (already game-free) season, and an orphan row would be meaningless.
+            entity.HasOne(m => m.Season)
+                .WithMany(s => s.SquadMembers)
+                .HasForeignKey(m => m.SeasonId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(m => m.Player)
+                .WithMany()
+                .HasForeignKey(m => m.PlayerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // One row per player per season. SeasonSquadService refuses duplicates with a readable
+            // message; this is the net underneath it.
+            entity.HasIndex(m => new { m.SeasonId, m.PlayerId }).IsUnique();
         });
 
         modelBuilder.Entity<Game>(entity =>

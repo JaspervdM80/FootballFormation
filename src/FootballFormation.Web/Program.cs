@@ -62,6 +62,7 @@ try
 
     builder.Services.AddScoped<PlayerService>();
     builder.Services.AddScoped<SeasonService>();
+    builder.Services.AddScoped<SeasonSquadService>();
     builder.Services.AddScoped<GameService>();
     builder.Services.AddScoped<MatchPreferencesService>();
     builder.Services.AddScoped<AdminAuthService>();

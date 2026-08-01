@@ -7,6 +7,8 @@ Models/
   Position.cs            — PlayerPosition enum (32 values), PositionCategory enum, extensions
   FormationType.cs       — FormationType enum (12 formations), DisplayName(), DefaultPositions()
   Season.cs              — Season entity (1 Jul – 30 Jun windows), Contains/ShortName/CreateFor helpers
+  SeasonSquadMember.cs   — Per-season squad membership, with the per-season IsGuest flag
+  SeasonSquad.cs         — SeasonSquad + SeasonSquads value objects (immutable membership lookups)
   Game.cs                — Game entity (incl. SeasonId), GameSplitType enum
   GamePeriod.cs          — GamePeriod entity, PeriodType enum, PeriodTypeExtensions
   GamePlayerPosition.cs  — Links player to position in a period (IsSubstitute flag)
@@ -16,7 +18,8 @@ Data/
 Services/
   ServiceOperation.cs     — Shared try/catch + error logging wrapper for all service methods
   PlayerService.cs        — CRUD, returns Result<T>
-  SeasonService.cs        — CRUD + GetCurrent/SetCurrent/GetOrCreateForDate/EnsureCurrentSeason
+  SeasonService.cs        — CRUD + GetCurrent/SetCurrent/FindForDate/GetOrCreateForDate/EnsureCurrentSeason
+  SeasonSquadService.cs   — Squad membership: get/add/remove/set-guest/copy-forward, with guards
   GameService.cs          — CRUD + SavePeriodLineupAsync, optional seasonId filter, returns Result<T>
   MatchPreferencesService.cs — Get/Save prefs, GetNextMatchDateAsync
 Result.cs                — Result and Result<T> base types
@@ -25,8 +28,9 @@ Result.cs                — Result and Result<T> base types
 ## UI (`src/FootballFormation.UI/`) — Razor Class Library
 ```
 Pages/
-  Players.razor(.cs)          — /players — Squad management with add/edit/delete dialogs
-  PlayerDialog.razor(.cs)     — Dialog: first name, surname, shirt #, positions
+  Players.razor(.cs)          — /players — Season-scoped squad management (add/remove, guest toggle, copy forward)
+  PlayerDialog.razor(.cs)     — Dialog: first name, surname, shirt #, positions (no guest switch — that's per season)
+  SquadMemberDialog.razor(.cs)— Dialog: add someone already on file to this season's squad
   Games.razor(.cs)            — /games — Game list with formation builder link
   GameDialog.razor(.cs)       — Dialog: opponent, date, season, formation, split, duration, unavailable players
   FormationBuilder.razor(.cs) — /games/{id}/formation — Pitch + player list + subs + playing time overview
@@ -59,8 +63,10 @@ Layout/
   NavMenu.razor               — Unused legacy; MainLayout inlines its own MudNavMenu
 ```
 
-Report builders in `Helpers/` are pure static functions taking the game list as a parameter, which
-is why season filtering happens at the call site and their signatures never changed.
+Report builders in `Helpers/` are pure static functions taking their scope as parameters — the game
+list, and (since per-season squads) a `SeasonSquads`. Season filtering therefore happens at the call
+site, and the builders never touch the database. The squads parameter is not optional: guest status
+is per season, and a report may walk games spanning several of them.
 
 ## Web (`src/FootballFormation.Web/`)
 ```
@@ -90,3 +96,6 @@ docs/deployment.md — Full setup, DNS for gjs-meiden.nl, redeploy & backup comm
 - `List<int>` (UnavailablePlayerIds) stored as comma-separated values
 - `Games.SeasonId` is a required FK with `ON DELETE RESTRICT`; the `AddSeasons` migration backfills
   existing rows (see the EF Core conventions in [patterns.md](patterns.md))
+- `SeasonSquadMembers` holds per-season squad membership, unique on `(SeasonId, PlayerId)`, cascading
+  from both parents. The `AddSeasonSquads` migration backfills it from the old `Players.IsGuest`
+  column and then drops that column — a parent-table rebuild, so verify with `PRAGMA foreign_key_check`

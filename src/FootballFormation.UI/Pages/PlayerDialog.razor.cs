@@ -18,7 +18,9 @@ public partial class PlayerDialog
     private int? ShirtNumber { get; set; }
     private PlayerPosition PreferredPosition { get; set; } = PlayerPosition.CM;
     private IReadOnlyCollection<PlayerPosition> AlternativePositions { get; set; } = Array.Empty<PlayerPosition>();
-    private bool IsGuest { get; set; }
+
+    // No guest switch here: guest status belongs to a season's squad, not to the person.
+    // It is toggled per member on the squad page.
 
     protected override void OnParametersSet()
     {
@@ -29,7 +31,6 @@ public partial class PlayerDialog
             ShirtNumber = Player.ShirtNumber;
             PreferredPosition = Player.PreferredPosition;
             AlternativePositions = Player.AlternativePositions;
-            IsGuest = Player.IsGuest;
         }
     }
 
@@ -44,7 +45,6 @@ public partial class PlayerDialog
         player.ShirtNumber = ShirtNumber;
         player.PreferredPosition = PreferredPosition;
         player.AlternativePositions = AlternativePositions.ToList();
-        player.IsGuest = IsGuest;
 
         MudDialog.Close(DialogResult.Ok(player));
     }

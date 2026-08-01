@@ -20,10 +20,6 @@
                     <MudSelectItem Value="pos">@pos.ToString() - @pos.DisplayName()</MudSelectItem>
                 }
             </MudSelect>
-            <MudSwitch @bind-Value="IsGuest" Color="Color.Warning" Class="mb-1">@L["Guest player"]</MudSwitch>
-            <MudText Typo="Typo.caption" Style="color: color-mix(in srgb, var(--ink) 45%, transparent);">
-                @L["Guests are left out of every game unless you add them to it explicitly."]
-            </MudText>
         </MudForm>
     </DialogContent>
     <DialogActions>

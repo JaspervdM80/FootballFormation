@@ -24,6 +24,9 @@ public class Season
 
     public List<Game> Games { get; set; } = [];
 
+    /// <summary>This season's squad — who can be picked, and who is only a guest.</summary>
+    public List<SeasonSquadMember> SquadMembers { get; set; } = [];
+
     /// <summary>Whether <paramref name="date"/> falls inside this season's window. Date-only,
     /// since game dates come from a date picker and carry a midnight time component.</summary>
     public bool Contains(DateTime date) => date.Date >= StartDate.Date && date.Date <= EndDate.Date;

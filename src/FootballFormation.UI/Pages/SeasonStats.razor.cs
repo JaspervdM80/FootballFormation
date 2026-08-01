@@ -1,3 +1,4 @@
+using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
 using FootballFormation.UI.State;
@@ -9,7 +10,7 @@ namespace FootballFormation.UI.Pages;
 
 public partial class SeasonStats : IDisposable
 {
-    [Inject] private PlayerService PlayerService { get; set; } = null!;
+    [Inject] private SeasonSquadService SquadService { get; set; } = null!;
     [Inject] private GameService GameService { get; set; } = null!;
     [Inject] private SeasonState SeasonState { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
@@ -47,15 +48,18 @@ public partial class SeasonStats : IDisposable
         // Back to the spinner while the newly selected season loads.
         _loaded = false;
 
-        var playersResult = await PlayerService.GetAllAsync();
-        var players = Snackbar.ReportFailure(playersResult) ? playersResult.Value! : [];
+        // The squad is the authoritative roster, so the player list comes from it rather than from
+        // every person on file. That is what stops a past season showing today's squad.
+        var squadsResult = await SquadService.GetSquadsAsync(SeasonState.SelectedSeasonId);
+        var squads = Snackbar.ReportFailure(squadsResult) ? squadsResult.Value! : SeasonSquads.Empty;
+        var players = squads.AllPlayers;
 
         var gamesResult = await GameService.GetAllWithDetailsAsync(SeasonState.SelectedSeasonId);
         var games = Snackbar.ReportFailure(gamesResult) ? gamesResult.Value! : [];
 
-        // Build takes the game list as a parameter, so filtering at the call site is all a
+        // Build takes the games and squads as parameters, so filtering at the call site is all a
         // season-scoped report needs — the report builders stay pure.
-        _stats = SeasonStatsReport.Build(players, games);
+        _stats = SeasonStatsReport.Build(players, games, squads);
 
         _scorers = _stats.Players
             .Where(p => p.Goals > 0 || p.Assists > 0)
@@ -70,9 +74,10 @@ public partial class SeasonStats : IDisposable
             .ThenBy(p => p.Player.ShirtNumber ?? int.MaxValue)
             .ToList();
 
-        // Fairness table is about squad rotation, so guests are left out.
+        // Fairness table is about squad rotation, so guests are left out — per season. On "All
+        // seasons" a player counts if they were a regular in at least one of the seasons shown.
         _playingTime = _stats.Players
-            .Where(p => !p.Player.IsGuest)
+            .Where(p => squads.IsFullMemberAnywhere(p.Player.Id))
             .OrderByDescending(p => p.TotalMinutes)
             .ThenBy(p => p.Player.ShirtNumber ?? int.MaxValue)
             .ToList();
