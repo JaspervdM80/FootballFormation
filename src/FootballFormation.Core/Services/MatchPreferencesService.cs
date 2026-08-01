@@ -44,8 +44,16 @@ public class MatchPreferencesService(AppDbContext db, ILogger<MatchPreferencesSe
                 .FirstOrDefaultAsync();
 
             var matchDay = prefsResult.Value!.MatchDay;
-            var referenceDate = latestGame?.Date ?? DateTime.Today;
-            var nextDate = CalculateNextMatchDay(referenceDate, matchDay, latestGame is not null);
+            var today = DateTime.Today;
+            var lastGame = latestGame?.Date.Date;
+
+            // Only step off the last game while it is still ahead of us — that is the case this
+            // was written for, a run of fixtures entered in advance. Once the last game is behind
+            // us, measuring from it proposes a date in the past (a season's final game would have
+            // the dialog opening months back), so today becomes the reference instead.
+            var lastGameIsUpcoming = lastGame is not null && lastGame >= today;
+            var referenceDate = lastGameIsUpcoming ? lastGame!.Value : today;
+            var nextDate = CalculateNextMatchDay(referenceDate, matchDay, lastGameIsUpcoming);
 
             logger.LogDebug("Next match date calculated: {NextDate} (match day: {MatchDay})",
                 nextDate.ToString("yyyy-MM-dd"), matchDay);
@@ -53,16 +61,17 @@ public class MatchPreferencesService(AppDbContext db, ILogger<MatchPreferencesSe
         });
 
     /// <summary>
-    /// The next occurrence of <paramref name="matchDay"/> after the last game. With no games
-    /// played yet, today counts as a valid match day; otherwise we always move forward.
+    /// The next occurrence of <paramref name="matchDay"/> on or after <paramref name="referenceDate"/>.
     /// </summary>
-    private static DateTime CalculateNextMatchDay(DateTime referenceDate, DayOfWeek matchDay, bool hasGames)
+    /// <param name="stepPastReference">
+    /// True when the reference is a match already scheduled, so the answer has to be a later date —
+    /// two games must not land on the same day. False when the reference is today, which is itself
+    /// a valid answer if today happens to be the match day.
+    /// </param>
+    private static DateTime CalculateNextMatchDay(DateTime referenceDate, DayOfWeek matchDay, bool stepPastReference)
     {
-        var startDate = hasGames ? referenceDate.AddDays(1) : referenceDate;
+        var startDate = stepPastReference ? referenceDate.AddDays(1) : referenceDate;
         var daysUntil = ((int)matchDay - (int)startDate.DayOfWeek + 7) % 7;
-
-        if (daysUntil == 0 && hasGames)
-            daysUntil = 7;
 
         return startDate.AddDays(daysUntil);
     }
