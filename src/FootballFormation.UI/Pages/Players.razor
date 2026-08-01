@@ -19,16 +19,20 @@
     <AuthorizeView>
         @if (_squad is not null)
         {
-            <div class="d-flex align-center gap-2">
-                @if (_previousSeason is not null)
+            @* column-reverse on mobile: the markup order puts Copy first so it reads left of
+               Add on desktop, but on a phone Add is the primary action and belongs on top. *@
+            <div class="d-flex align-center gap-2 squad-actions">
+                @* Copying forward only makes sense into an empty squad — once there are members
+                   it would silently merge two rosters. *@
+                @if (_previousSeason is not null && _squad.Members.Count == 0)
                 {
-                    <MudButton Variant="Variant.Text" Class="btn-ghost" StartIcon="@Icons.Material.Filled.ContentCopy"
+                    <MudButton Variant="Variant.Text" Class="btn-ghost btn-compact" StartIcon="@Icons.Material.Filled.ContentCopy"
                                OnClick="CopyPreviousSquad">
                         @L["Copy squad from {0}", _previousSeason.Name]
                     </MudButton>
                 }
                 @* MudMenu's built-in Label, not ActivatorContent — see docs/ui_components.md *@
-                <MudMenu Label="@L["Add Player"]" Variant="Variant.Filled" Class="btn-gold"
+                <MudMenu Label="@L["Add Player"]" Variant="Variant.Filled" Class="btn-gold btn-compact"
                          StartIcon="@Icons.Material.Filled.PersonAdd" Dense="true">
                     <MudMenuItem OnClick="AddNewPlayer">@L["New player"]</MudMenuItem>
                     <MudMenuItem OnClick="AddExistingPlayer">@L["Existing player"]</MudMenuItem>
@@ -73,15 +77,11 @@
         </MudText>
         @if (_previousSeason is not null)
         {
+            @* No copy button here: the header carries the only one, so an empty squad doesn't
+               show two identical actions. *@
             <MudText Typo="Typo.caption" Class="d-block mt-1" Style="color: color-mix(in srgb, var(--ink) 40%, transparent);">
                 @L["Copy last season's squad, or add players one by one."]
             </MudText>
-            <AuthorizeView>
-                <MudButton Variant="Variant.Filled" Class="btn-gold mt-4" StartIcon="@Icons.Material.Filled.ContentCopy"
-                           OnClick="CopyPreviousSquad">
-                    @L["Copy squad from {0}", _previousSeason.Name]
-                </MudButton>
-            </AuthorizeView>
         }
     </MudPaper>
     return;
@@ -132,9 +132,14 @@
             </MudTd>
             <MudTd Class="cell-right cell-actions">
                 @* stopPropagation so the action buttons don't trigger the row's navigation *@
-                <span @onclick:stopPropagation="true">
-                    <MudIconButton Icon="@(context.IsGuest ? Icons.Material.Filled.Star : Icons.Material.Filled.StarBorder)"
-                                   Size="Size.Small" Color="Color.Warning"
+                <span class="row-actions" @onclick:stopPropagation="true">
+                    @* A filled star reads as "favourite", which a guest is not. HowToReg (person
+                       with a tick) says "on the roster"; the plain outline says "not one of ours".
+                       The guest colour is the same purple as the GUEST badge, which is what carries
+                       the status on mobile where the badge itself is hidden. *@
+                    <MudIconButton Icon="@(context.IsGuest ? Icons.Material.Filled.PersonOutline : Icons.Material.Filled.HowToReg)"
+                                   Size="Size.Small"
+                                   Style="@(context.IsGuest ? "color: var(--color-guest-bright);" : "color: var(--club-primary-bright);")"
                                    aria-label="@(context.IsGuest ? L["Mark as squad player"] : L["Mark as guest"])"
                                    OnClick="() => ToggleGuest(context)" />
                     <MudIconButton Icon="@Icons.Material.Filled.PersonRemove" Size="Size.Small"

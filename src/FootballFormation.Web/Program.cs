@@ -1,3 +1,4 @@
+using System.Net;
 using System.Security.Claims;
 using System.Threading.RateLimiting;
 using FootballFormation.Core.Data;
@@ -185,6 +186,37 @@ try
         await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return Results.Redirect("/");
     }).DisableAntiforgery();
+
+    // Development only: signs in as admin without credentials, so the [Authorize] screens can be
+    // opened and inspected without anyone typing a password into the login form. It mints exactly
+    // the principal /auth/login does, so what you see is the real authorized UI.
+    //
+    // Two independent guards, either one sufficient: the endpoint is not mapped outside
+    // Development (the Fly.io container runs Production), and it refuses non-loopback callers.
+    // Do NOT relax either — this is an unauthenticated route to full admin rights.
+    if (app.Environment.IsDevelopment())
+    {
+        app.MapGet("/dev/login", async (HttpContext context) =>
+        {
+            var remote = context.Connection.RemoteIpAddress;
+            if (remote is null || !IPAddress.IsLoopback(remote))
+                return Results.NotFound();
+
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.Name, "admin"),
+                new(ClaimTypes.Role, "Admin")
+            };
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            await context.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(identity));
+
+            return Results.Redirect("/");
+        });
+
+        Log.Warning("Dev login endpoint mapped at /dev/login (Development + loopback only)");
+    }
 
     // Language switcher target: persists the choice in the culture cookie, then
     // reloads so the whole circuit restarts in the new culture.
