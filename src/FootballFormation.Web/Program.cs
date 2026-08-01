@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using FootballFormation.Core.Data;
 using Microsoft.AspNetCore.DataProtection;
 using FootballFormation.Core.Services;
+using FootballFormation.UI.State;
 using FootballFormation.Web.Components;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -60,9 +61,14 @@ try
             x => x.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
     builder.Services.AddScoped<PlayerService>();
+    builder.Services.AddScoped<SeasonService>();
+    builder.Services.AddScoped<SeasonSquadService>();
     builder.Services.AddScoped<GameService>();
     builder.Services.AddScoped<MatchPreferencesService>();
     builder.Services.AddScoped<AdminAuthService>();
+
+    // Scoped, so the selected season lives for the SignalR circuit — see SeasonState
+    builder.Services.AddScoped<SeasonState>();
 
     builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
         .AddCookie(options =>
@@ -98,7 +104,7 @@ try
 
     var app = builder.Build();
 
-    // Auto-migrate database and seed admin
+    // Auto-migrate database, seed admin, and make sure a current season exists
     using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -107,6 +113,10 @@ try
 
         var authService = scope.ServiceProvider.GetRequiredService<AdminAuthService>();
         await authService.EnsureAdminSeededAsync();
+
+        // A fresh install has no games for the migration's backfill to derive seasons from
+        var seasonService = scope.ServiceProvider.GetRequiredService<SeasonService>();
+        await seasonService.EnsureCurrentSeasonAsync();
     }
 
     if (!app.Environment.IsDevelopment())

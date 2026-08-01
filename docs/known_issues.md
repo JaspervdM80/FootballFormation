@@ -6,6 +6,10 @@ Avoid repeating these mistakes:
 - **UNIQUE constraint on save**: When re-saving `GamePlayerPosition` entities, always create NEW entities with `Id = 0`. Never re-add tracked entities with existing IDs — EF tries INSERT with the old PK.
 - **List value converters need ValueComparer**: Without it, EF won't detect changes to `List<PlayerPosition>` or `List<int>` properties.
 - **DB path must be absolute**: Use `%LOCALAPPDATA%\FootballFormation\` not relative paths (relative resolves to working directory, which changes).
+- **The scaffolder ordered a destructive migration wrongly**: `AddSeasonSquads` had to copy `Players.IsGuest` into a new table *and* drop the column; EF emitted the `DropColumn` first, which would have wiped the source before the backfill ran. Always read and reorder the generated `Up()`.
+
+## Data / domain
+- **Deleting a player is destructive across every season**: `PlayerService.DeleteAsync` cascades their `GamePlayerPosition` and `GameGoal` rows, so last season's top scorer disappears from last season's stats. Pre-existing, but more visible now that old seasons are browsable. Prefer **removing them from the current season's squad** on `/players` — that keeps all history. Soft-delete (`IsArchived`) would be the real fix if this ever bites.
 
 ## Blazor / MudBlazor 9.x
 - **Dialogs not showing**: `MudDialogProvider` must be inside an interactive render mode. Fixed by setting `@rendermode="InteractiveServer"` on both `<Routes>` and `<HeadOutlet>` in App.razor.
@@ -14,6 +18,8 @@ Avoid repeating these mistakes:
 - **`ShowMessageBox` removed**: Use custom `ConfirmDialog` component instead.
 - **Multi-select binding**: Use `IReadOnlyCollection<T>` not `IEnumerable<T>`.
 - **`RenderFragment` in code-behind**: Use `=> __builder =>` lambda pattern in `@code` block; can't use regular methods.
+- **Dropdowns rendered as a full-width band across the page**: `MudPopover` carries `.mud-paper`, and app.css's card rule set `position: relative` on it — same specificity as MudBlazor's `.mud-popover{position:absolute}` but later in source order, so it won. A relatively positioned block fills the popover provider's width and treats the placement JS's `left`/`top` as an offset from its static spot at the top of the page. Fixed with `.mud-popover.mud-paper{position:absolute}` (+ the `.mud-popover-fixed` variant). Watch for this whenever a global `.mud-*` rule touches layout.
+- **`MudMenu`'s `Class` lands on the root wrapper, not the activator button**: `Class="btn-gold"` painted an invisible `div` while the button kept MudBlazor's default filled colours. There is no `ActivatorClass` parameter in 9.7 — style `.<your-class>.mud-menu .mud-button-root` instead (see `.btn-gold.mud-menu` in app.css, and `SeasonPicker`'s `.season-picker .mud-button-root`).
 
 ## Touch / PWA
 - **Blazor silently drops drag events with null `dataTransfer`**: dispatching

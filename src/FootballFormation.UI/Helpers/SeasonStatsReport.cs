@@ -27,8 +27,8 @@ public class SeasonStats
     /// <summary>Most recent finished games first, capped for a form guide.</summary>
     public required List<GameResult> Form { get; init; }
 
-    /// <summary>Per-player season figures, one entry per player (guests included; the page
-    /// filters them out of the fairness table but keeps them in scorer lists).</summary>
+    /// <summary>Per-player figures, one entry per squad member of the seasons covered (guests
+    /// included; the page filters them out of the fairness table but keeps them in scorer lists).</summary>
     public required List<PlayerStats> Players { get; init; }
 
     public int GoalDifference => GoalsFor - GoalsAgainst;
@@ -44,7 +44,9 @@ public static class SeasonStatsReport
 {
     private const int FormLength = 5;
 
-    public static SeasonStats Build(IReadOnlyList<Player> players, IReadOnlyList<Game> games)
+    /// <param name="squads">The squads of every season <paramref name="games"/> covers — forwarded
+    /// to <see cref="PlayerStatsReport.Build"/>, which needs per-season guest status.</param>
+    public static SeasonStats Build(IReadOnlyList<Player> players, IReadOnlyList<Game> games, SeasonSquads squads)
     {
         var finished = games
             .Where(g => g.ScoreHome.HasValue && g.ScoreAway.HasValue)
@@ -57,7 +59,7 @@ public static class SeasonStatsReport
             .ToList();
 
         var playerStats = players
-            .Select(p => PlayerStatsReport.Build(p, games))
+            .Select(p => PlayerStatsReport.Build(p, games, squads))
             .ToList();
 
         return new SeasonStats

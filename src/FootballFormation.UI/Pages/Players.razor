@@ -6,93 +6,151 @@
     <div>
         <MudText Typo="Typo.h4" Style="color: var(--ink); font-weight: 700;">@L["Squad"]</MudText>
         <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 45%, transparent);">
-            @if (_players is not null)
+            @if (_squad is not null)
             {
-                var squadCount = _players.Count(p => !p.IsGuest);
-                var guestCount = _players.Count - squadCount;
+                var squadCount = _squad.FullMembers.Count;
+                var guestCount = _squad.Guests.Count;
                 @(squadCount == 1 ? L["{0} player", squadCount] : L["{0} players", squadCount])
                 @(guestCount > 0 ? " · " + (guestCount == 1 ? L["{0} guest", guestCount] : L["{0} guests", guestCount]) : "")
+                <span> · @SeasonName</span>
             }
         </MudText>
     </div>
     <AuthorizeView>
-        <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.PersonAdd"
-                   OnClick="OpenAddDialog">
-            @L["Add Player"]
-        </MudButton>
+        @if (_squad is not null)
+        {
+            <div class="d-flex align-center gap-2">
+                @if (_previousSeason is not null)
+                {
+                    <MudButton Variant="Variant.Text" Class="btn-ghost" StartIcon="@Icons.Material.Filled.ContentCopy"
+                               OnClick="CopyPreviousSquad">
+                        @L["Copy squad from {0}", _previousSeason.Name]
+                    </MudButton>
+                }
+                @* MudMenu's built-in Label, not ActivatorContent — see docs/ui_components.md *@
+                <MudMenu Label="@L["Add Player"]" Variant="Variant.Filled" Class="btn-gold"
+                         StartIcon="@Icons.Material.Filled.PersonAdd" Dense="true">
+                    <MudMenuItem OnClick="AddNewPlayer">@L["New player"]</MudMenuItem>
+                    <MudMenuItem OnClick="AddExistingPlayer">@L["Existing player"]</MudMenuItem>
+                </MudMenu>
+            </div>
+        }
     </AuthorizeView>
 </div>
 
-@if (_players is null)
+@if (!_loaded)
 {
     <MudProgressCircular Indeterminate="true" />
+    return;
 }
-else if (_players.Count == 0)
+
+@if (_squad is null)
+{
+    @* "All seasons" is selected: a squad belongs to exactly one season, so there is nothing to edit. *@
+    <MudPaper Class="pa-6" Elevation="2" Style="border-radius: 16px; text-align: center;">
+        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Size="Size.Large" Style="color: color-mix(in srgb, var(--ink) 25%, transparent);" />
+        <MudText Typo="Typo.body1" Class="mt-3" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
+            @L["Select a season to manage its squad."]
+        </MudText>
+        @if (SeasonState.Seasons.Count > 0)
+        {
+            <MudButton Variant="Variant.Filled" Class="btn-gold mt-4" OnClick="ShowCurrentSeason">
+                @L["Show {0}", (SeasonState.Seasons.FirstOrDefault(s => s.IsCurrent) ?? SeasonState.Seasons[0]).Name]
+            </MudButton>
+        }
+    </MudPaper>
+    return;
+}
+
+@if (_squad.Members.Count == 0)
 {
     <MudPaper Class="pa-6" Elevation="2" Style="border-radius: 16px; text-align: center;">
         <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Style="color: color-mix(in srgb, var(--ink) 25%, transparent);" />
         <MudText Typo="Typo.body1" Class="mt-3" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
-            @L["No players yet. Add your first player!"]
+            @(_previousSeason is not null
+                ? L["No squad for {0} yet.", SeasonName]
+                : L["No players yet. Add your first player!"])
         </MudText>
-    </MudPaper>
-}
-else
-{
-    <MudTable Items="_players" Hover="true" Dense="true" Elevation="2" T="Player"
-              OnRowClick="OnRowClicked" RowStyle="cursor: pointer;"
-              Class="players-table" Style="border-radius: 16px;">
-        <HeaderContent>
-            <MudTh><MudTableSortLabel SortBy="new Func<Player, object>(p => p.ShirtNumber ?? 999)">#</MudTableSortLabel></MudTh>
-            <MudTh><MudTableSortLabel SortBy="new Func<Player, object>(p => p.FirstName)">@L["Name"]</MudTableSortLabel></MudTh>
-            <AuthorizeView Context="authHeader">
-                <MudTh>@L["Preferred Position"]</MudTh>
-                <MudTh Class="cell-right">@L["Alternative Positions"]</MudTh>
-                <MudTh Class="cell-right"></MudTh>
+        @if (_previousSeason is not null)
+        {
+            <MudText Typo="Typo.caption" Class="d-block mt-1" Style="color: color-mix(in srgb, var(--ink) 40%, transparent);">
+                @L["Copy last season's squad, or add players one by one."]
+            </MudText>
+            <AuthorizeView>
+                <MudButton Variant="Variant.Filled" Class="btn-gold mt-4" StartIcon="@Icons.Material.Filled.ContentCopy"
+                           OnClick="CopyPreviousSquad">
+                    @L["Copy squad from {0}", _previousSeason.Name]
+                </MudButton>
             </AuthorizeView>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="#">
-                <span style="font-weight: 700; color: var(--club-primary-bright);">@context.ShirtNumber</span>
+        }
+    </MudPaper>
+    return;
+}
+
+<MudTable Items="_squad.Members" Hover="true" Dense="true" Elevation="2" T="SeasonSquadMember"
+          OnRowClick="OnRowClicked" RowStyle="cursor: pointer;"
+          Class="players-table" Style="border-radius: 16px;">
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortBy="new Func<SeasonSquadMember, object>(m => m.Player!.ShirtNumber ?? 999)">#</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<SeasonSquadMember, object>(m => m.Player!.FirstName)">@L["Name"]</MudTableSortLabel></MudTh>
+        <AuthorizeView Context="authHeader">
+            <MudTh>@L["Preferred Position"]</MudTh>
+            <MudTh Class="cell-right">@L["Alternative Positions"]</MudTh>
+            <MudTh Class="cell-right"></MudTh>
+        </AuthorizeView>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="#">
+            <span style="font-weight: 700; color: var(--club-primary-bright);">@context.Player!.ShirtNumber</span>
+        </MudTd>
+        <MudTd DataLabel="@L["Name"]" Class="cell-name">
+            @* One wrapper so the mobile card's flex row treats number + name as a
+               single item; otherwise space-between pushes them to opposite ends. *@
+            <span class="player-name-cell">
+                @* Mobile only: the # column is hidden there, so the number rides along here *@
+                @if (context.Player!.ShirtNumber is not null)
+                {
+                    <span class="shirt-inline">#@context.Player!.ShirtNumber</span>
+                }
+                <span style="font-weight: 600; color: var(--ink);">@context.Player!.DisplayName</span>
+                @if (context.IsGuest)
+                {
+                    <span class="badge-guest" style="margin-left: 6px;">@L["GUEST"]</span>
+                }
+            </span>
+        </MudTd>
+        <MudTd DataLabel="@L["Preferred Position"]" Class="cell-pref">
+            <span class="badge-teal">@context.Player!.PreferredPosition.ToString()</span>
+        </MudTd>
+        <AuthorizeView Context="authRow">
+
+            <MudTd DataLabel="@L["Alternative Positions"]" Class="cell-alt">
+                @foreach (var pos in context.Player!.AlternativePositions)
+                {
+                    <span class="badge-gold" style="margin-right: 4px;">@pos.ToString()</span>
+                }
             </MudTd>
-            <MudTd DataLabel="@L["Name"]" Class="cell-name">
-                @* One wrapper so the mobile card's flex row treats number + name as a
-                   single item; otherwise space-between pushes them to opposite ends. *@
-                <span class="player-name-cell">
-                    @* Mobile only: the # column is hidden there, so the number rides along here *@
-                    @if (context.ShirtNumber is not null)
-                    {
-                        <span class="shirt-inline">#@context.ShirtNumber</span>
-                    }
-                    <span style="font-weight: 600; color: var(--ink);">@context.DisplayName</span>
-                    @if (context.IsGuest)
-                    {
-                        <span class="badge-guest" style="margin-left: 6px;">@L["GUEST"]</span>
-                    }
+            <MudTd Class="cell-right cell-actions">
+                @* stopPropagation so the action buttons don't trigger the row's navigation *@
+                <span @onclick:stopPropagation="true">
+                    <MudIconButton Icon="@(context.IsGuest ? Icons.Material.Filled.Star : Icons.Material.Filled.StarBorder)"
+                                   Size="Size.Small" Color="Color.Warning"
+                                   aria-label="@(context.IsGuest ? L["Mark as squad player"] : L["Mark as guest"])"
+                                   OnClick="() => ToggleGuest(context)" />
+                    <MudIconButton Icon="@Icons.Material.Filled.PersonRemove" Size="Size.Small"
+                                   Style="color: color-mix(in srgb, var(--ink) 40%, transparent);"
+                                   aria-label="@L["Remove from squad"]"
+                                   OnClick="() => RemoveMember(context)" />
+                    @* Editing the person and deleting them outright are rarer than squad changes,
+                       so they sit behind an overflow menu. *@
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true"
+                             AriaLabel="@L["More"]"
+                             Style="color: color-mix(in srgb, var(--ink) 40%, transparent);">
+                        <MudMenuItem OnClick="() => OpenEditDialog(context.Player!)">@L["Edit Player"]</MudMenuItem>
+                        <MudMenuItem OnClick="() => DeletePlayer(context.Player!)">@L["Delete player permanently"]</MudMenuItem>
+                    </MudMenu>
                 </span>
             </MudTd>
-            <MudTd DataLabel="@L["Preferred Position"]" Class="cell-pref">
-                <span class="badge-teal">@context.PreferredPosition.ToString()</span>
-            </MudTd>
-            <AuthorizeView Context="authRow">
-
-                <MudTd DataLabel="@L["Alternative Positions"]" Class="cell-alt">
-                    @foreach (var pos in context.AlternativePositions)
-                    {
-                        <span class="badge-gold" style="margin-right: 4px;">@pos.ToString()</span>
-                    }
-                </MudTd>
-                <MudTd Class="cell-right cell-actions">
-                    @* stopPropagation so the edit/delete buttons don't trigger the row's navigation *@
-                    <span @onclick:stopPropagation="true">
-                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
-                                       Style="color: color-mix(in srgb, var(--ink) 40%, transparent);"
-                                       OnClick="() => OpenEditDialog(context)" />
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
-                                       Style="color: color-mix(in srgb, var(--ink) 40%, transparent);"
-                                       OnClick="() => DeletePlayer(context)" />
-                    </span>
-                </MudTd>
-            </AuthorizeView>
-        </RowTemplate>
-    </MudTable>
-}
+        </AuthorizeView>
+    </RowTemplate>
+</MudTable>

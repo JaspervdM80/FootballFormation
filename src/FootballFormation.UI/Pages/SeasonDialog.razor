@@ -1,0 +1,16 @@
+@inject IStringLocalizer<Strings> L
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="Form">
+            <MudTextField @bind-Value="Name" Label="@L["Season name"]" Required="true"
+                          RequiredError="@L["Season name is required"]" Class="mb-3" />
+            <MudDatePicker @bind-Date="StartDate" Label="@L["Start date"]" Class="mb-3" />
+            <MudDatePicker @bind-Date="EndDate" Label="@L["End date"]" Class="mb-3" />
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">@L["Save"]</MudButton>
+    </DialogActions>
+</MudDialog>

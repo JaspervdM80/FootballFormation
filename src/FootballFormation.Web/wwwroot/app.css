@@ -155,6 +155,83 @@ html, body {
     display: none;
 }
 
+/* --- Season picker ---
+   Not scoped CSS: the component renders from both the app bar and the mobile drawer, and
+   isolation would force a duplicate stylesheet for the second placement. */
+/* Tone MudMenu's activator button down to a quiet chip that suits the dense app bar */
+.season-picker .mud-button-root {
+    padding: 4px 10px !important;
+    min-width: 0 !important;
+    border-radius: 6px !important;
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    white-space: nowrap;
+    color: color-mix(in srgb, var(--ink) 55%, transparent) !important;
+}
+
+.season-picker .mud-button-root:hover {
+    color: color-mix(in srgb, var(--ink) 80%, transparent) !important;
+    background: color-mix(in srgb, var(--ink) 4%, transparent) !important;
+}
+
+/* Menu rows pair the season name with its "current" pill */
+.season-menu-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* In the drawer the picker is a block row under the title, not an app-bar chip */
+.drawer-season-picker {
+    padding: 0 8px 8px;
+}
+
+/* --- Season list (settings) --- */
+.season-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.season-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--ink) 3%, transparent);
+}
+
+.season-row-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.season-row-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--ink);
+}
+
+.season-row-dates {
+    font-size: 0.75rem;
+    color: color-mix(in srgb, var(--ink) 45%, transparent);
+}
+
+.season-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
 /* Gold button style */
 .btn-gold {
     background: var(--gradient-primary) !important;
@@ -164,6 +241,31 @@ html, body {
 }
 
 .btn-gold:hover {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+}
+
+/* MudMenu applies its Class to the root wrapper, not to the activator button, so
+   btn-gold on a MudMenu paints an invisible div and leaves the button in MudBlazor's
+   default filled colours. Push the style down one level instead. */
+.btn-gold.mud-menu {
+    background: none !important;
+    border: none !important;
+    display: inline-flex;
+}
+
+.btn-gold.mud-menu .mud-button-root {
+    background: var(--gradient-primary) !important;
+    color: var(--club-on-primary) !important;
+    font-weight: 600 !important;
+    border: none !important;
+}
+
+.btn-gold.mud-menu:hover {
+    transform: none;
+}
+
+.btn-gold.mud-menu .mud-button-root:hover {
     filter: brightness(1.15);
     transform: translateY(-1px);
 }
@@ -262,6 +364,21 @@ html, body {
 .mud-popover-provider {
     height: 0 !important;
     overflow: visible;
+}
+
+/* Fix: every dropdown rendered as a full-width band across the page. MudPopover carries
+   .mud-paper, and the card rule above gives it position:relative, which beats MudBlazor's
+   own .mud-popover{position:absolute} on source order. A relatively positioned block
+   stretches to the popover provider's full width and takes the placement JS's left/top as
+   an offset from its static spot at the top of the page — hence the band. Restore the
+   framework's positioning; popovers are elevation-8, so they never wanted the ::before
+   accent line that position:relative exists for. */
+.mud-popover.mud-paper {
+    position: absolute;
+}
+
+.mud-popover.mud-paper.mud-popover-fixed {
+    position: fixed;
 }
 
 /* Fix: MudSelect dropdown double scrollbar — MudBlazor v9 only sets overflow:hidden on

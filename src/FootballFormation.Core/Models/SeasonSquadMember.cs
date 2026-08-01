@@ -1,0 +1,24 @@
+namespace FootballFormation.Core.Models;
+
+/// <summary>
+/// A player's membership of one season's squad. The squad is authoritative: it decides who can be
+/// picked for that season's games and who appears in its stats.
+/// <para>
+/// <see cref="IsGuest"/> lives here rather than on <see cref="Player"/> on purpose — someone can be
+/// a guest in 2025/26 and a full squad player in 2026/27.
+/// </para>
+/// </summary>
+public class SeasonSquadMember
+{
+    public int Id { get; set; }
+
+    public int SeasonId { get; set; }
+    public Season? Season { get; set; }
+
+    public int PlayerId { get; set; }
+    public Player? Player { get; set; }
+
+    /// <summary>Guests are left out of every game in this season unless explicitly listed in
+    /// <see cref="Game.GuestPlayerIds"/>. Full members are in unless marked unavailable.</summary>
+    public bool IsGuest { get; set; }
+}

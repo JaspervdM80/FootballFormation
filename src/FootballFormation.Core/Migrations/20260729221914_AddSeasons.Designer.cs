@@ -3,6 +3,7 @@ using System;
 using FootballFormation.Core.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FootballFormation.Core.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260729221914_AddSeasons")]
+    partial class AddSeasons
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
@@ -212,6 +215,9 @@ namespace FootballFormation.Core.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsGuest")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("PreferredPosition")
                         .HasColumnType("INTEGER");
 
@@ -253,31 +259,6 @@ namespace FootballFormation.Core.Migrations
                         .IsUnique();
 
                     b.ToTable("Seasons");
-                });
-
-            modelBuilder.Entity("FootballFormation.Core.Models.SeasonSquadMember", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsGuest")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("PlayerId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("SeasonId")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PlayerId");
-
-                    b.HasIndex("SeasonId", "PlayerId")
-                        .IsUnique();
-
-                    b.ToTable("SeasonSquadMembers");
                 });
 
             modelBuilder.Entity("FootballFormation.Core.Models.Game", b =>
@@ -347,25 +328,6 @@ namespace FootballFormation.Core.Migrations
                     b.Navigation("Player");
                 });
 
-            modelBuilder.Entity("FootballFormation.Core.Models.SeasonSquadMember", b =>
-                {
-                    b.HasOne("FootballFormation.Core.Models.Player", "Player")
-                        .WithMany()
-                        .HasForeignKey("PlayerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("FootballFormation.Core.Models.Season", "Season")
-                        .WithMany("SquadMembers")
-                        .HasForeignKey("SeasonId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Player");
-
-                    b.Navigation("Season");
-                });
-
             modelBuilder.Entity("FootballFormation.Core.Models.Game", b =>
                 {
                     b.Navigation("Goals");
@@ -381,8 +343,6 @@ namespace FootballFormation.Core.Migrations
             modelBuilder.Entity("FootballFormation.Core.Models.Season", b =>
                 {
                     b.Navigation("Games");
-
-                    b.Navigation("SquadMembers");
                 });
 #pragma warning restore 612, 618
         }

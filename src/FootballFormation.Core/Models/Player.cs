@@ -9,11 +9,8 @@ public class Player
     public PlayerPosition PreferredPosition { get; set; }
     public List<PlayerPosition> AlternativePositions { get; set; } = [];
 
-    /// <summary>
-    /// Guest players are not part of the regular squad. They are excluded from a game
-    /// unless explicitly listed in <see cref="Game.GuestPlayerIds"/>.
-    /// </summary>
-    public bool IsGuest { get; set; }
+    // Guest status is deliberately NOT here: it belongs to a season's squad, not to the person.
+    // See SeasonSquadMember.IsGuest.
 
     public string DisplayName => Surname is not null ? $"{FirstName} {Surname}" : FirstName;
     public string ShortName => Surname is not null ? $"{FirstName[0]}. {Surname}" : FirstName;

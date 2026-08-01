@@ -8,6 +8,8 @@ namespace FootballFormation.Core.Data;
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
     public DbSet<Player> Players => Set<Player>();
+    public DbSet<Season> Seasons => Set<Season>();
+    public DbSet<SeasonSquadMember> SeasonSquadMembers => Set<SeasonSquadMember>();
     public DbSet<Game> Games => Set<Game>();
     public DbSet<GamePeriod> GamePeriods => Set<GamePeriod>();
     public DbSet<GamePlayerPosition> GamePlayerPositions => Set<GamePlayerPosition>();
@@ -34,6 +36,43 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                         (a, b) => a != null && b != null && a.SequenceEqual(b),
                         c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
                         c => c.ToList()));
+        });
+
+        modelBuilder.Entity<Season>(entity =>
+        {
+            entity.HasKey(s => s.Id);
+            entity.Property(s => s.Name).IsRequired().HasMaxLength(20);
+            // One season per start date — stops a double-create on /settings producing duplicates,
+            // and is the safety net if the season-derivation rule is ever changed.
+            entity.HasIndex(s => s.StartDate).IsUnique();
+            // Restrict, not Cascade: deleting a season must never take a year of games, lineups
+            // and goals with it. SeasonService.DeleteAsync refuses with a readable message instead.
+            entity.HasMany(s => s.Games)
+                .WithOne(g => g.Season)
+                .HasForeignKey(g => g.SeasonId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<SeasonSquadMember>(entity =>
+        {
+            entity.HasKey(m => m.Id);
+
+            // Cascade on both sides, unlike Season -> Game. A membership row carries no history —
+            // it is purely "is this person in that squad" — so it must never block deleting the
+            // person or an (already game-free) season, and an orphan row would be meaningless.
+            entity.HasOne(m => m.Season)
+                .WithMany(s => s.SquadMembers)
+                .HasForeignKey(m => m.SeasonId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(m => m.Player)
+                .WithMany()
+                .HasForeignKey(m => m.PlayerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // One row per player per season. SeasonSquadService refuses duplicates with a readable
+            // message; this is the net underneath it.
+            entity.HasIndex(m => new { m.SeasonId, m.PlayerId }).IsUnique();
         });
 
         modelBuilder.Entity<Game>(entity =>

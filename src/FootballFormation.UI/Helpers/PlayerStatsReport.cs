@@ -2,7 +2,7 @@ using FootballFormation.Core.Models;
 
 namespace FootballFormation.UI.Helpers;
 
-/// <summary>Minutes and share a player spent in one position, across their whole history.</summary>
+/// <summary>Minutes and share a player spent in one position, over the games passed in.</summary>
 public class PositionStat
 {
     public required PlayerPosition Position { get; init; }
@@ -23,7 +23,9 @@ public class PlayerGameStat
     public bool Played => Minutes > 0;
 }
 
-/// <summary>A player's aggregated career figures across every recorded game.</summary>
+/// <summary>A player's aggregated figures over the games passed to
+/// <see cref="PlayerStatsReport.Build"/> — one season's worth when the caller filtered by season,
+/// career totals when it did not.</summary>
 public class PlayerStats
 {
     public required Player Player { get; init; }
@@ -60,13 +62,19 @@ public class PlayerStats
 }
 
 /// <summary>
-/// Turns a player's game history into career stats. Pure computation — no state, no
-/// service calls. Minute logic mirrors <see cref="PlayingTimeReport"/>: a player earns a
-/// period's minutes only when fielded (not a substitute) in that period.
+/// Turns a player's game history into aggregate stats. Pure computation — no state, no
+/// service calls, and no opinion about scope: the caller decides which games to pass in, which
+/// is how the same builder serves both season and career figures. Minute logic mirrors
+/// <see cref="PlayingTimeReport"/>: a player earns a period's minutes only when fielded (not a
+/// substitute) in that period.
 /// </summary>
 public static class PlayerStatsReport
 {
-    public static PlayerStats Build(Player player, IEnumerable<Game> games)
+    /// <param name="squads">The squads of every season <paramref name="games"/> covers. Plural
+    /// because guest status is per season and the caller may be showing "All seasons": each game
+    /// resolves its own season, so a player who was a guest one year and a regular the next is
+    /// judged correctly in each.</param>
+    public static PlayerStats Build(Player player, IEnumerable<Game> games, SeasonSquads squads)
     {
         var gameStats = new List<PlayerGameStat>();
         var positionMinutes = new Dictionary<PlayerPosition, int>();
@@ -76,7 +84,7 @@ public static class PlayerStatsReport
         {
             // Available = the player was in the roster for a game that actually has a lineup,
             // whether they started, subbed, or sat the bench. Unavailable games don't count.
-            if (game.HasLineup && game.IsInRoster(player))
+            if (game.HasLineup && game.IsInRoster(player, squads))
                 availableMinutes += game.GameDurationMinutes;
 
             var playedPeriods = 0;

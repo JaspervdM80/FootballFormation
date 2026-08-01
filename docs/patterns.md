@@ -54,19 +54,77 @@ Anything computable without the database lives on the entity, not in a service o
 `GameSplitTypeExtensions.PeriodCount()/PeriodLabel()`. `PeriodCount` derives from
 `PeriodTypeExtensions.ForSplitType`, so the count can never drift from the periods actually created.
 
+### Pass a value object, don't eager-load a navigation
+When a model rule needs data the entity doesn't own, hand it in as a parameter rather than relying
+on a navigation property being loaded. `Game.IsInRoster(player, squad)` takes a `SeasonSquad`
+(`Models/SeasonSquad.cs`) instead of reading `Game.Season.SquadMembers`, because `Game.Season` is
+nullable: a query that forgot the `.Include` would silently answer "everyone is a guest" and empty
+the roster, with no compile-time signal, on any of `GameService`'s four read paths. A parameter
+makes the dependency visible, gives the pure report helpers a scope they can be handed, and lets
+`SeasonSquad.Empty` be an honest degraded value instead of a null nav.
+
+The plural `SeasonSquads` exists for the same reason one level up: reports walk games across
+seasons, so each game resolves *its own* season's squad.
+
 ## EF Core Conventions
 - **DbContext**: `AppDbContext` with primary constructor
 - **Value converters**: `List<PlayerPosition>` → comma-separated ints; `List<int>` → comma-separated values. Both need `ValueComparer` for change tracking.
 - **SavePeriodLineupAsync**: Deletes all existing positions, then inserts fresh entities with `Id = 0` to avoid UNIQUE constraint errors (never reuse tracked entity IDs).
 - **Auto-migration**: `db.Database.MigrateAsync()` in Program.cs startup
+- **Data backfills** belong in the migration's `Up()` via `migrationBuilder.Sql(...)`, not in
+  startup code: `__EFMigrationsHistory` runs them exactly once, and it is the only place you can
+  populate a new required FK column *before* the constraint is added. Order the operations
+  `AddColumn` (with `defaultValue`) → backfill SQL → `CreateIndex`/`AddForeignKey`. See
+  `AddSeasons` and `ConsolidatePlayerPositions`.
+  **Do not assume atomicity:** when EF rebuilds a SQLite table it emits `PRAGMA foreign_keys = 0`,
+  which cannot run inside a transaction, so the migration is *not* all-or-nothing — and EF never
+  re-runs `foreign_key_check`, so a partial backfill boots silently clean. Verify with
+  `SELECT COUNT(*) FROM <table> WHERE <fk> = 0` and `PRAGMA foreign_key_check` after applying.
+- **Check the scaffolder's ordering before trusting it.** `AddSeasonSquads` needed `Players.IsGuest`
+  dropped *and* its values copied into a new table; EF emitted the `DropColumn` **first**, which
+  would have destroyed the source data before the backfill could read it. Always read the generated
+  `Up()` and reorder so reads happen before drops.
+- **`DropColumn` rebuilds the whole table.** When that table is a *parent* (other tables hold FKs
+  into it — `Players` has three), verify afterwards that its row count is unchanged and that no
+  `ef_temp_*` table survived: `SELECT name FROM sqlite_master WHERE name LIKE 'ef_temp%'`.
+- **Rehearse destructive migrations on a copy.** Copy the DB to a scratch folder, point
+  `APP_DATA_DIR` at it, run `dotnet ef database update`, and check the data before touching the
+  real file. Fly.io auto-migrates on boot, so production gets no second chance.
+
+## UI state services
+`SeasonState` (`UI/State/SeasonState.cs`) is the only cross-page state in the app: the selected
+season, shared by `MainLayout`'s picker and the season-aware pages. The pattern, if a second one
+is ever needed:
+
+- Registered `Scoped`, so on Blazor Server it lives for the SignalR circuit — the choice survives
+  navigation within a tab but resets on a browser refresh.
+- Loading is a **memoized task** (`EnsureLoadedAsync() => _loading ??= LoadAsync()`). A scoped
+  service can't load in its constructor, and the layout and the page both need the data during
+  their own `OnInitializedAsync`; they interleave at the first `await` and share one scoped
+  `AppDbContext`, where a second concurrent query throws *"A second operation was started on this
+  context."* Every consumer awaits it as the **first statement** of `OnInitializedAsync`, before
+  any other service call.
+- Change notification is `event Action? OnChanged`; consumers subscribe in `OnInitializedAsync`,
+  re-load inside `InvokeAsync`, and unsubscribe via `IDisposable`.
+- The state holds a **view** choice and never writes shared data. The picker is reachable by
+  anonymous visitors, so it must not touch `Season.IsCurrent`, which is admin-owned on `/settings`.
 
 ## Service Registration
 All services registered as `Scoped` in Program.cs:
 ```csharp
 builder.Services.AddScoped<PlayerService>();
+builder.Services.AddScoped<SeasonService>();
+builder.Services.AddScoped<SeasonSquadService>();
 builder.Services.AddScoped<GameService>();
 builder.Services.AddScoped<MatchPreferencesService>();
+builder.Services.AddScoped<SeasonState>();   // UI state, see "UI state services"
 ```
+
+`GameService` injects `SeasonService` so that "every game has a season" is an invariant no caller
+can bypass — the only service-to-service dependency in the app. `SeasonSquadService` deliberately
+takes none: it queries `db.Seasons` directly, keeping that edge unique. It is separate from
+`SeasonService` because the two own different things — the season lifecycle and its `IsCurrent`
+invariant, versus squad membership.
 
 ## Blazor Rendering
 - Entire app is Interactive Server (set on `<Routes>` and `<HeadOutlet>` in App.razor)

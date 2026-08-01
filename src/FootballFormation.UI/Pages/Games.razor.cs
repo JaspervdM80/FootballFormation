@@ -1,6 +1,7 @@
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
+using FootballFormation.UI.State;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Localization;
@@ -8,9 +9,10 @@ using MudBlazor;
 
 namespace FootballFormation.UI.Pages;
 
-public partial class Games
+public partial class Games : IDisposable
 {
     [Inject] private GameService GameService { get; set; } = null!;
+    [Inject] private SeasonState SeasonState { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
@@ -25,6 +27,11 @@ public partial class Games
 
     protected override async Task OnInitializedAsync()
     {
+        // Must come before any other service call: MainLayout's picker and this page share one
+        // scoped AppDbContext, and two concurrent queries on it throw.
+        await SeasonState.EnsureLoadedAsync();
+        SeasonState.OnChanged += OnSeasonChanged;
+
         var authState = await AuthStateTask;
         _isAdmin = authState.User.Identity?.IsAuthenticated == true;
         await LoadGames();
@@ -33,9 +40,17 @@ public partial class Games
     private async Task LoadGames()
     {
         // Details variant loads the period lineups so we can flag games missing one.
-        var result = await GameService.GetAllWithDetailsAsync();
+        var result = await GameService.GetAllWithDetailsAsync(SeasonState.SelectedSeasonId);
         _games = Snackbar.ReportFailure(result) ? result.Value : [];
     }
+
+    private void OnSeasonChanged() => _ = InvokeAsync(async () =>
+    {
+        await LoadGames();
+        StateHasChanged();
+    });
+
+    public void Dispose() => SeasonState.OnChanged -= OnSeasonChanged;
 
     /// <summary>A game that has already been played but has no lineup entered — its playing
     /// time can't be computed, so the data is incomplete. Future games are legitimately empty.</summary>

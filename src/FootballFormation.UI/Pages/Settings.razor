@@ -72,3 +72,59 @@
         @L["Change Password"]
     </MudButton>
 </MudPaper>
+
+<MudPaper Class="pa-6 mt-6" MaxWidth="500px" Elevation="2" Style="border-radius: 16px;">
+    <div class="card-label">@L["Seasons"]</div>
+    <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 45%, transparent);" Class="mb-4">
+        @L["Seasons are used to group games and filter statistics."]
+    </MudText>
+
+    @if (_seasons is null)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else
+    {
+        <div class="season-rows mb-4">
+            @foreach (var season in _seasons)
+            {
+                <div class="season-row">
+                    <div class="season-row-info">
+                        <span class="season-row-name">
+                            @season.Name
+                            @if (season.IsCurrent)
+                            {
+                                <span class="badge-teal">@L["Current"]</span>
+                            }
+                        </span>
+                        <span class="season-row-dates">
+                            @season.StartDate.ToString("MMM yyyy") – @season.EndDate.ToString("MMM yyyy")
+                        </span>
+                    </div>
+                    <div class="season-row-actions">
+                        @if (!season.IsCurrent)
+                        {
+                            <button class="action-btn" title="@L["Set as current"]"
+                                    @onclick="() => SetCurrentSeason(season)">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" />
+                            </button>
+                        }
+                        <button class="action-btn" title="@L["Edit Season"]"
+                                @onclick="() => OpenEditSeasonDialog(season)">
+                            <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                        </button>
+                        <button class="action-btn action-delete" title="@L["Delete Season"]"
+                                @onclick="() => DeleteSeason(season)">
+                            <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Add"
+               OnClick="OpenAddSeasonDialog" FullWidth="true">
+        @L["New Season"]
+    </MudButton>
+</MudPaper>

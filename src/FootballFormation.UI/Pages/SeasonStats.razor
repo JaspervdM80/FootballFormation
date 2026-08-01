@@ -16,7 +16,9 @@
 <div class="mb-4">
     <MudText Typo="Typo.h5" Style="color: var(--ink); font-weight: 700;">@L["Season statistics"]</MudText>
     <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 62%, transparent);">
-        @L["Team and squad totals across all games"]
+        @(SeasonState.SelectedSeason is { } season
+            ? L["Team and squad totals for {0}", season.Name]
+            : L["Team and squad totals across all seasons"])
     </MudText>
 </div>
 
