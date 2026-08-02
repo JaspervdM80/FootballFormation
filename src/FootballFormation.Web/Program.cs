@@ -122,6 +122,10 @@ try
         // A fresh install has no games for the migration's backfill to derive seasons from
         var seasonService = scope.ServiceProvider.GetRequiredService<SeasonService>();
         await seasonService.EnsureCurrentSeasonAsync();
+
+        // Repairs databases written before gaps were rejected — a hole between two seasons leaves
+        // every date inside it belonging to no season at all
+        await seasonService.CloseSeasonGapsAsync();
     }
 
     if (!app.Environment.IsDevelopment())

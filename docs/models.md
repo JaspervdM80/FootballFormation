@@ -32,6 +32,18 @@ The windows are deliberately **gapless** — every date maps to exactly one seas
 lets `Game.SeasonId` be required and `GetOrCreateForDateAsync` always resolve. An Aug–Jun window
 would orphan July fixtures and force an "unassigned" branch into every filter and list.
 
+That was documented but unenforced, and it bit: a hand-entered 2026/27 starting 1 August left all
+of July 2026 belonging to no season, so the game dialog answered every July date with "this date
+starts a new season" and an empty squad. Three things now hold the invariant up:
+
+- `ValidateAsync` rejects a **gap** as well as an overlap, naming the date the season should
+  start or end on.
+- `GetOrCreateForDateAsync` **clamps** an auto-created season to its neighbours, so filling a
+  gap narrower than a full season cannot produce an overlapping window.
+- `CloseSeasonGapsAsync` is an idempotent startup repair for databases written before the check
+  existed. It only ever moves a start date *earlier*, and never moves a game between seasons —
+  `Game.SeasonId` is stored on the game itself.
+
 Helpers on the model: `Contains(date)` (date-only), `ShortName` ("25/26", for the app bar),
 `StartYearFor(date)`, `NameForStartYear(year)`, and `CreateFor(date)` for a fresh unsaved season.
 
