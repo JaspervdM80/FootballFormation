@@ -16,6 +16,26 @@
     filter: brightness(1.06);
 }
 
+.home-live-banner:focus-visible {
+    outline: 2px solid var(--club-primary-bright);
+    outline-offset: 2px;
+}
+
+/* Before kick-off and after the final whistle the fixture still deserves the top of the page,
+   but not the live gradient — those keep the club colour as an outline instead. */
+.home-banner-upcoming,
+.home-banner-done {
+    color: var(--ink);
+    background: var(--gradient-card);
+    border: 1px solid color-mix(in srgb, var(--club-primary) 30%, transparent);
+    box-shadow: none;
+}
+
+.home-live-icon {
+    flex: none;
+    color: var(--club-primary-bright);
+}
+
 .home-live-dot {
     flex: none;
     width: 10px;
