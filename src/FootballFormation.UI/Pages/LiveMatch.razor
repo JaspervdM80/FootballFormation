@@ -74,16 +74,27 @@
                                 @L["Resume"]
                             </MudButton>
                         }
-                        <MudButton Variant="Variant.Filled" Class="btn-gold"
-                                   StartIcon="@Icons.Material.Filled.SportsScore" OnClick="EndPeriod">
-                            @L["End {0}", L[PeriodNoun]]
-                        </MudButton>
+                        @* Quarters roll on without a whistle; only half time actually stops play. *@
+                        @if (BreakFollowsCurrentPeriod)
+                        {
+                            <MudButton Variant="Variant.Filled" Class="btn-gold"
+                                       StartIcon="@Icons.Material.Filled.SportsScore" OnClick="EndPeriod">
+                                @L["Half time"]
+                            </MudButton>
+                        }
+                        else if (NextPeriodLabel is { } rollingInto)
+                        {
+                            <MudButton Variant="Variant.Filled" Class="btn-gold"
+                                       StartIcon="@Icons.Material.Filled.FastForward" OnClick="AdvancePeriod">
+                                @L["Start {0}", L[rollingInto]]
+                            </MudButton>
+                        }
                     }
-                    else if (!AllPeriodsPlayed)
+                    else if (NextPeriodLabel is { } startingNext)
                     {
                         <MudButton Variant="Variant.Filled" Class="btn-gold"
                                    StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="StartNextPeriod">
-                            @L["Start next {0}", L[PeriodNoun]]
+                            @L["Start {0}", L[startingNext]]
                         </MudButton>
                     }
 
@@ -103,7 +114,8 @@
         </MudPaper>
     </AuthorizeView>
 
-    <MudPaper Class="pa-4" Elevation="2" Style="border-radius: 16px;">
+    @* .live-lineup drops this card below the timeline on a phone — see app.css. *@
+    <MudPaper Class="pa-4 live-lineup" Elevation="2" Style="border-radius: 16px;">
         <div class="card-label">
             @(DisplayPeriod is null ? L["Line-up"] : L[DisplayPeriod.PeriodType.DisplayName()])
         </div>
@@ -225,4 +237,37 @@
             </div>
         }
     </MudPaper>
+
+    <AuthorizeView>
+        <MudPaper Class="pa-4 live-minutes-card" Elevation="2" Style="border-radius: 16px;">
+            <div class="card-label">@L["Minutes played"]</div>
+
+            @if (MinutesPlayed.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 35%, transparent);">
+                    @L["No line-up for this period yet — build one first."]
+                </MudText>
+            }
+            else
+            {
+                <div class="live-minutes">
+                    @foreach (var row in MinutesPlayed)
+                    {
+                        <div class="live-minutes-row @(row.IsOnPitch ? "live-minutes-on" : "")">
+                            @if (row.Player.ShirtNumber is not null)
+                            {
+                                <span class="live-minutes-number">#@row.Player.ShirtNumber</span>
+                            }
+                            <span class="live-minutes-name">@row.Player.DisplayName</span>
+                            @if (row.IsOnPitch)
+                            {
+                                <span class="live-minutes-dot" title="@L["On the pitch"]"></span>
+                            }
+                            <span class="live-minutes-value">@row.Minutes'</span>
+                        </div>
+                    }
+                </div>
+            }
+        </MudPaper>
+    </AuthorizeView>
 </div>

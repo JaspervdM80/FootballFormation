@@ -51,6 +51,23 @@ public class LiveMatchService(
             return Result.Success(game);
         });
 
+    /// <summary>
+    /// The match being played right now, or null when there is none. Nothing stops two games being
+    /// in progress at once, so the most recent by date wins — that is the one someone standing at a
+    /// pitch is watching.
+    /// </summary>
+    public Task<Result<Game?>> GetInProgressAsync() =>
+        ServiceOperation.RunAsync(logger, "find the match in progress", async () =>
+        {
+            var game = await db.Games
+                .AsNoTracking()
+                .Where(g => g.MatchState == MatchState.InProgress)
+                .OrderByDescending(g => g.Date)
+                .FirstOrDefaultAsync();
+
+            return Result.Success(game);
+        });
+
     public Task<Result<Game>> StartMatchAsync(int gameId) =>
         ServiceOperation.RunAsync(logger, "start match", async () =>
         {
@@ -155,6 +172,38 @@ public class LiveMatchService(
             await db.SaveChangesAsync();
             logger.LogInformation("Started period {PeriodId} of game {GameId} at {Seconds}s",
                 next.Id, gameId, next.StartedAtSeconds);
+            return Notified(game);
+        });
+
+    /// <summary>
+    /// Rolls straight from the current period into the next one without stopping the clock, for the
+    /// quarter boundaries that are not a real break (see <see cref="PeriodTypeExtensions.IsFollowedByBreak"/>).
+    /// The lineup changes over, the running time does not.
+    /// </summary>
+    public Task<Result<Game>> AdvancePeriodAsync(int gameId) =>
+        ServiceOperation.RunAsync(logger, "start the next period", async () =>
+        {
+            var game = await LoadWithPeriodsAsync(gameId);
+            if (game is null) return NotFound(gameId);
+
+            var current = CurrentPeriod(game);
+            if (current is null) return Result.Failure<Game>("No period is currently being played");
+
+            var next = NextPeriod(game);
+            if (next is null)
+                return Result.Failure<Game>("Every period has been played — finish the match instead");
+
+            // Both ends read the same instant, so no seconds fall between the two periods. The
+            // clock anchor is deliberately left alone: it must keep running through the change.
+            var elapsed = game.ElapsedSecondsAt(DateTime.UtcNow);
+            current.EndedAtSeconds = elapsed;
+            next.StartedAtSeconds = elapsed;
+            next.EndedAtSeconds = null;
+            game.LivePeriodId = next.Id;
+
+            await db.SaveChangesAsync();
+            logger.LogInformation("Game {GameId} rolled from period {From} into {To} at {Seconds}s",
+                gameId, current.Id, next.Id, elapsed);
             return Notified(game);
         });
 

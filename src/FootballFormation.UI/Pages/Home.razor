@@ -1,7 +1,23 @@
 @page "/"
-@inject IStringLocalizer<Strings> L
 
 <PageTitle>GJS Meiden</PageTitle>
+
+@if (LiveGame is not null)
+{
+    <div class="home-live-banner" role="button" tabindex="0"
+         @onclick="OpenLiveMatch" @onkeydown="OpenLiveMatchOnKey">
+        <span class="home-live-dot"></span>
+        <div class="home-live-body">
+            <div class="home-live-label">@L["Live now"]</div>
+            <div class="home-live-match">
+                @(LiveGame.IsHomeGame ? "vs" : "@") @LiveGame.Opponent
+            </div>
+        </div>
+        @* Score reads in venue order, matching the live screen. *@
+        <div class="home-live-score">@LiveScore</div>
+        <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+    </div>
+}
 
 <MudText Typo="Typo.h4" Style="color: var(--ink); font-weight: 700;" GutterBottom="true">
     GJS Meiden

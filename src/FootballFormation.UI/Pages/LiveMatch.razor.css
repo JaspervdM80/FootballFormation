@@ -209,3 +209,59 @@
 .live-event-against .live-event-main {
     color: var(--color-away);
 }
+
+/* Minutes played (admin only) */
+.live-minutes {
+    display: flex;
+    flex-direction: column;
+}
+
+.live-minutes-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    font-size: 0.85rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.live-minutes-row:last-child {
+    border-bottom: none;
+}
+
+.live-minutes-number {
+    min-width: 30px;
+    font-weight: 800;
+    color: color-mix(in srgb, var(--ink) 40%, transparent);
+}
+
+.live-minutes-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: color-mix(in srgb, var(--ink) 65%, transparent);
+}
+
+/* Whoever is on the pitch right now is what the coach is scanning for. */
+.live-minutes-on .live-minutes-name {
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.live-minutes-dot {
+    flex: none;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-success-bright);
+}
+
+.live-minutes-value {
+    min-width: 40px;
+    text-align: right;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+}

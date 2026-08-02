@@ -23,7 +23,8 @@ Services/
   SeasonService.cs        — CRUD + GetCurrent/SetCurrent/FindForDate/GetOrCreateForDate/EnsureCurrentSeason
   SeasonSquadService.cs   — Squad membership: get/add/remove/set-guest/copy-forward, with guards
   GameService.cs          — CRUD + SavePeriodLineupAsync, optional seasonId filter, returns Result<T>
-  LiveMatchService.cs     — Runs a match live: clock, period transitions, goals, substitutions
+  LiveMatchService.cs     — Runs a match live: clock, period transitions, goals, substitutions,
+                            GetInProgressAsync for the home-page banner
   LiveMatchNotifier.cs    — Singleton: fans live match changes out to every open circuit
   MatchPreferencesService.cs — Get/Save prefs, GetNextMatchDateAsync
 Result.cs                — Result and Result<T> base types
@@ -46,7 +47,7 @@ Pages/
   LiveSubDialog.razor(.cs)(.css) — Dialog: pick the replacement for a player tapped on the pitch
   SeasonDialog.razor(.cs)     — Dialog: season name, start date, end date
   Settings.razor(.cs)         — /settings — Match preferences, password, season management
-  Home.razor                  — / — Landing page
+  Home.razor(.cs)(.css)       — / — Landing page, plus the live-match banner when one is in progress
 Components/
   PitchView.razor(.cs)(.css)        — Visual pitch with position circles, drag-drop, fit colors
   PitchOverview.razor(.cs)(.css)    — Read-only pitch (po- classes); optional OnPlayerClicked makes slots tappable
@@ -62,6 +63,7 @@ Helpers/
   UiFeedback.cs               — Snackbar.Report()/ReportFailure() over Result, shared LockedDialog options
   DialogPrompts.cs            — DialogService.ConfirmAsync()/ConfirmDeleteAsync() wrappers over ConfirmDialog
   PlayingTimeReport.cs        — Builds the playing-time table (PlayingTimeRow, PeriodDetail, PeriodPlayStatus)
+  LiveMinutesReport.cs        — Exact minutes on the pitch during a live match, from clock anchors + subs
   SeasonStatsReport.cs        — Team totals + form for /stats (SeasonStats, GameResult)
   PlayerStatsReport.cs        — Per-player aggregates (PlayerStats, PositionStat, PlayerGameStat)
   LineupDragState.cs          — In-flight drag on the formation builder

@@ -18,10 +18,12 @@ fixes live in [known_issues.md](known_issues.md), not here.
 
 ## Next
 
-- **Exact minutes from substitution events** — `GameSubstitution` plus
-  `GamePeriod.StartedAtSeconds`/`EndedAtSeconds` now make real minutes computable, but
-  `PlayingTimeReport` and `PlayerStatsReport` still estimate them as
-  `periodsPlaying × PeriodDurationMinutes`. Rewriting those two reports is the follow-up.
+- **Exact minutes in the season reports** — `LiveMinutesReport` now computes real minutes from
+  `GameSubstitution` plus `GamePeriod.StartedAtSeconds`/`EndedAtSeconds`, but only for the live
+  screen. `PlayingTimeReport` and `PlayerStatsReport` still estimate
+  `periodsPlaying × PeriodDurationMinutes`. Folding the exact figure in is the follow-up, and it
+  has to stay a *fallback*: a game that was never run live has no clock anchors to read, so the
+  estimate remains the only answer for historic fixtures.
 
 ## Later
 

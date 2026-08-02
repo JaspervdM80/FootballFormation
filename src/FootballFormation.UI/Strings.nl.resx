@@ -156,8 +156,8 @@
   <data name="Start match" xml:space="preserve"><value>Wedstrijd starten</value></data>
   <data name="Pause" xml:space="preserve"><value>Pauzeren</value></data>
   <data name="Resume" xml:space="preserve"><value>Hervatten</value></data>
-  <data name="End {0}" xml:space="preserve"><value>Einde {0}</value></data>
-  <data name="Start next {0}" xml:space="preserve"><value>Volgende {0} starten</value></data>
+  <data name="Half time" xml:space="preserve"><value>Rust</value></data>
+  <data name="Start {0}" xml:space="preserve"><value>{0} starten</value></data>
   <data name="Finish match" xml:space="preserve"><value>Wedstrijd afsluiten</value></data>
   <data name="Edit result" xml:space="preserve"><value>Uitslag aanpassen</value></data>
   <data name="Line-up" xml:space="preserve"><value>Opstelling</value></data>
@@ -167,6 +167,9 @@
   <data name="They scored" xml:space="preserve"><value>Zij scoorden</value></data>
   <data name="Timeline" xml:space="preserve"><value>Tijdlijn</value></data>
   <data name="Nothing has happened yet" xml:space="preserve"><value>Er is nog niets gebeurd</value></data>
+  <data name="Minutes played" xml:space="preserve"><value>Gespeelde minuten</value></data>
+  <data name="On the pitch" xml:space="preserve"><value>In het veld</value></data>
+  <data name="Live now" xml:space="preserve"><value>Nu live</value></data>
   <data name="Remove" xml:space="preserve"><value>Verwijderen</value></data>
   <data name="Undo" xml:space="preserve"><value>Ongedaan maken</value></data>
   <data name="Match started" xml:space="preserve"><value>Wedstrijd gestart</value></data>
@@ -179,6 +182,7 @@
   <data name="Goal" xml:space="preserve"><value>Doelpunt</value></data>
   <data name="Add goal" xml:space="preserve"><value>Doelpunt toevoegen</value></data>
   <data name="No assist" xml:space="preserve"><value>Geen assist</value></data>
+  <data name="Who scored?" xml:space="preserve"><value>Wie scoorde?</value></data>
   <data name="Own goal" xml:space="preserve"><value>Eigen doelpunt</value></data>
   <data name="An own goal counts for the opponent." xml:space="preserve"><value>Een eigen doelpunt telt voor de tegenstander.</value></data>
   <data name="Opponent goal added" xml:space="preserve"><value>Tegendoelpunt toegevoegd</value></data>

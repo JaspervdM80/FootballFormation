@@ -3,22 +3,23 @@
 <MudDialog>
     <DialogContent>
         <MudForm @ref="Form">
-            <MudSelect T="int" @bind-Value="ScorerId" Label="@L["Scorer"]" Class="mb-3"
+            @* Both selects bind int? so they start empty rather than showing a phantom 0. *@
+            <MudSelect T="int?" @bind-Value="ScorerId" Label="@L["Scorer"]" Class="mb-3"
+                       Placeholder="@L["Who scored?"]"
                        Required="true" RequiredError="@L["Please select a player"]">
                 @foreach (var player in Candidates)
                 {
-                    <MudSelectItem T="int" Value="player.Id">
+                    <MudSelectItem T="int?" Value="player.Id">
                         @(player.ShirtNumber is not null ? $"#{player.ShirtNumber} " : "")@player.DisplayName
                     </MudSelectItem>
                 }
             </MudSelect>
 
-            @* 0 is "no assist" — the select needs a value for the placeholder row. *@
-            <MudSelect T="int" @bind-Value="AssisterId" Label="@L["Assist"]" Class="mb-3" Clearable="true">
-                <MudSelectItem T="int" Value="0">@L["No assist"]</MudSelectItem>
+            <MudSelect T="int?" @bind-Value="AssisterId" Label="@L["Assist"]" Class="mb-3"
+                       Placeholder="@L["No assist"]" Clearable="true">
                 @foreach (var player in Candidates.Where(p => p.Id != ScorerId))
                 {
-                    <MudSelectItem T="int" Value="player.Id">
+                    <MudSelectItem T="int?" Value="player.Id">
                         @(player.ShirtNumber is not null ? $"#{player.ShirtNumber} " : "")@player.DisplayName
                     </MudSelectItem>
                 }
