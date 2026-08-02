@@ -53,7 +53,7 @@
                 @foreach (var player in SquadPlayers)
                 {
                     <MudSelectItem T="int" Value="player.Id">
-                        @(player.ShirtNumber is not null ? $"#{player.ShirtNumber} " : "")@player.DisplayName
+                        <PlayerLabel Player="player" />
                     </MudSelectItem>
                 }
             </MudSelect>
@@ -66,7 +66,7 @@
                     @foreach (var player in GuestPlayers)
                     {
                         <MudSelectItem T="int" Value="player.Id">
-                            @(player.ShirtNumber is not null ? $"#{player.ShirtNumber} " : "")@player.DisplayName
+                            <PlayerLabel Player="player" />
                         </MudSelectItem>
                     }
                 </MudSelect>

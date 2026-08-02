@@ -50,24 +50,29 @@
 | Compatible | chip-compatible | Orange (#e65100) | Alt is CM, placed in LCM |
 | OutOfPosition | chip-out-of-position | Red (#b71c1c) | ST in CB |
 
-Logic in `PositionFitHelper.cs`. Broad positions (W, DEF, MID, ATT) naturally cover all their specific variants.
+Logic in `Core/Reporting/PositionFitHelper.cs`. Broad positions (W, DEF, MID, ATT) naturally cover all their specific variants.
 
-## PitchView
-- Pitch is `aspect-ratio: 3/4`, `max-height: 65vh`
-- Position coordinates from `PitchPositionHelper.cs` (left%, top%)
-- Empty slots show position label, pulsing green border when drag active
-- Assigned slots show colored circle with shirt number + short name
-- Circles are both draggable (for swap) and drop targets
+## Pitch
+One component for all three pitches — the drag-drop builder, the shareable overview and the live
+screen. It used to be two near-identical components plus a third copy of the slot logic inside
+`FormationBuilder`; the assignment rule now lives in `Core/Models/FormationSlots.cs` and is tested
+there, so a lineup can never be laid out one way on one screen and another way on the next.
 
-## PitchOverview
-The read-only twin of PitchView (`po-` prefixed classes, same slot algorithm), used by
-`/games/{id}/overview` and `/games/{id}/live`.
-
-- `HidePositionFit` flattens every chip to `po-preferred`; anonymous visitors get that.
-- `OnPlayerClicked` is **optional**. Unset, the pitch is inert — which is what the overview and
-  every spectator wants. Set, occupied slots gain `.po-clickable` (pointer cursor, press feedback)
-  and tapping one raises the player id. The live match screen wires it only when the viewer is an
-  admin *and* a period is actually being played.
+- `aspect-ratio: 3/4`; position coordinates from `PitchPositionHelper.cs` (left%, top%).
+- `Size` picks the chip scale: `Regular` (52px, the overview and live screens) or `Compact` (44px,
+  the builder, where the pitch shares the screen with the bench). Everything that differs between
+  the two — chip size, fonts, line alphas — is a CSS custom property set by the size class, so the
+  variants cannot drift apart again.
+- `ConstrainHeight` caps the pitch at 65vh; the builder uses it.
+- `HidePositionFit` flattens every chip to `fit-preferred`; anonymous visitors get that.
+- `Draggable` turns on the builder behaviour: chips are draggable, empty slots are drop targets
+  with the pulsing white `drop-ready` highlight, and tapping a chip removes the player.
+- `OnPlayerClicked` is **optional**. Unset (and not draggable), the pitch is inert — which is what
+  the overview and every spectator wants. Set, occupied slots gain `.pitch-clickable` (pointer
+  cursor, press feedback) and tapping one raises the player id. The live match screen wires it only
+  when the viewer is an admin *and* a period is actually being played.
+- The five fit colors are tokens in `theme.css` (`--fit-*`), shared with the builder's legend and
+  its playing-time dots — one definition, three consumers.
 
 ## Live match screen (`/games/{id}/live`)
 Phone-first single column (`max-width: 560px`), no `[Authorize]`: admin drives it, everyone else
@@ -223,5 +228,5 @@ Season-scoped: it follows the season picker and shows that season's squad, not e
   [known_issues.md](known_issues.md).
 - `MudDialogProvider`, `MudSnackbarProvider`, `MudPopoverProvider` all in MainLayout
 - Theme: **light mode**, club red/green from the crest. Colors are centralized as CSS
-  variables — see [theming.md](theming.md). The MudBlazor palette (`MainLayout.razor.cs`)
+  variables — see [theming.md](theming.md). The MudBlazor palette (built by `ClubTheme`)
   is a separate C# copy that must be kept in sync with `theme.css`.

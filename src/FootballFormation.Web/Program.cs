@@ -57,9 +57,17 @@ try
         opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(["application/octet-stream"]);
     });
 
-    builder.Services.AddDbContext<AppDbContext>(options =>
+    // A factory, not a scoped context. A Blazor Server circuit lives for as long as the tab is
+    // open, so a scoped DbContext would be shared by every component on the page — and two of them
+    // querying at once (the layout's season picker and the page itself) throws. Each service
+    // operation now opens and disposes its own short-lived context instead.
+    builder.Services.AddDbContextFactory<AppDbContext>(options =>
         options.UseSqlite($"Data Source={dbPath}",
             x => x.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
+
+    // The match clock. Injected rather than read from DateTime.UtcNow so the live-match timing
+    // logic is deterministic under test — see LiveMatchService.
+    builder.Services.AddSingleton(TimeProvider.System);
 
     builder.Services.AddScoped<PlayerService>();
     builder.Services.AddScoped<SeasonService>();
@@ -112,7 +120,8 @@ try
     // Auto-migrate database, seed admin, and make sure a current season exists
     using (var scope = app.Services.CreateScope())
     {
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>();
+        await using var db = await dbFactory.CreateDbContextAsync();
         await db.Database.MigrateAsync();
         Log.Information("Database migrated successfully at {DbPath}", dbPath);
 

@@ -99,18 +99,21 @@
         }
     </div>
     <div class="pitch-panel">
-        <PitchView Formation="periodFormation"
-                   Positions="PeriodLineups[activePeriod.Id]"
-                   DraggedPlayerId="Drag.PlayerId"
-                   OnPlayerDropped="(slot) => OnPlayerDropped(activePeriod.Id, slot)"
-                   OnPlayerRemoved="(slot) => OnPlayerRemoved(activePeriod.Id, slot)"
-                   OnPlayerDragStart="(slot) => OnPitchPlayerDragStart(activePeriod.Id, slot)" />
+        <Pitch Formation="periodFormation"
+               Positions="PeriodLineups[activePeriod.Id]"
+               Size="PitchSize.Compact"
+               ConstrainHeight="true"
+               Draggable="true"
+               DraggedPlayerId="Drag.PlayerId"
+               OnPlayerDropped="(slot) => OnPlayerDropped(activePeriod.Id, slot)"
+               OnPlayerRemoved="(slot) => OnPlayerRemoved(activePeriod.Id, slot)"
+               OnPlayerDragStart="(slot) => OnPitchPlayerDragStart(activePeriod.Id, slot)" />
         <div class="pitch-legend">
-            <span class="legend-item"><span class="legend-dot chip-preferred"></span> @L["Exact"]</span>
-            <span class="legend-item"><span class="legend-dot chip-natural"></span> @L["Natural fit"]</span>
-            <span class="legend-item"><span class="legend-dot chip-alternative"></span> @L["Alternative"]</span>
-            <span class="legend-item"><span class="legend-dot chip-compatible"></span> @L["Compatible"]</span>
-            <span class="legend-item"><span class="legend-dot chip-out-of-position"></span> @L["Out of position"]</span>
+            <span class="legend-item"><span class="legend-dot fit-preferred"></span> @L["Exact"]</span>
+            <span class="legend-item"><span class="legend-dot fit-natural"></span> @L["Natural fit"]</span>
+            <span class="legend-item"><span class="legend-dot fit-alternative"></span> @L["Alternative"]</span>
+            <span class="legend-item"><span class="legend-dot fit-compatible"></span> @L["Compatible"]</span>
+            <span class="legend-item"><span class="legend-dot fit-out-of-position"></span> @L["Out of position"]</span>
         </div>
     </div>
     <div class="subs-panel">

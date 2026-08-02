@@ -6,11 +6,21 @@
     <File Path="docs/models.md" />
     <File Path="docs/patterns.md" />
     <File Path="docs/project_overview.md" />
+    <File Path="docs/testing.md" />
+    <File Path="docs/theming.md" />
     <File Path="docs/ui_components.md" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/FootballFormation.Core/FootballFormation.Core.csproj" />
     <Project Path="src/FootballFormation.UI/FootballFormation.UI.csproj" />
     <Project Path="src/FootballFormation.Web/FootballFormation.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FootballFormation.Core.Tests/FootballFormation.Core.Tests.csproj" />
   </Folder>
 </Solution>

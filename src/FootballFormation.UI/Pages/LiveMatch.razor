@@ -136,9 +136,9 @@
             }
 
             @* OnPlayerClicked is left unset for spectators and between periods, which keeps the pitch inert. *@
-            <PitchOverview Formation="DisplayFormation" Positions="OnPitch"
-                           HidePositionFit="!_isAdmin"
-                           OnPlayerClicked="@(CanSubstitute ? EventCallback.Factory.Create<int>(this, OpenSubDialog) : default)" />
+            <Pitch Formation="DisplayFormation" Positions="OnPitch"
+                   HidePositionFit="!_isAdmin"
+                   OnPlayerClicked="@(CanSubstitute ? EventCallback.Factory.Create<int>(this, OpenSubDialog) : default)" />
 
             <div class="live-bench">
                 <span class="live-bench-label">@L["Subs"]:</span>

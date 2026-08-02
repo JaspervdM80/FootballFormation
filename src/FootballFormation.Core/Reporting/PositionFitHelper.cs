@@ -1,6 +1,6 @@
 using FootballFormation.Core.Models;
 
-namespace FootballFormation.UI.Helpers;
+namespace FootballFormation.Core.Reporting;
 
 public enum PositionFit
 {

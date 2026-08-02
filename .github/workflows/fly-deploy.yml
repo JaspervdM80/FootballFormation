@@ -10,7 +10,21 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Gate: nothing reaches the Fly volume that doesn't compile and pass its tests. The app
+  # auto-migrates on startup, so a broken build is a broken production database.
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore
+      - run: dotnet build --no-restore --configuration Release
+      - run: dotnet test --no-build --configuration Release --verbosity normal
+
   deploy:
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

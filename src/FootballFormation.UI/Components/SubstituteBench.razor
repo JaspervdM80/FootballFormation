@@ -32,7 +32,7 @@
                      style="cursor: grab; padding: 4px 8px;">
                     <div>
                         <MudText Typo="Typo.body2">
-                            @(sub.Player?.ShirtNumber.HasValue == true ? $"#{sub.Player.ShirtNumber} " : "")@sub.Player?.DisplayName
+                            <PlayerLabel Player="sub.Player" />
                         </MudText>
                         <MudText Typo="Typo.caption" Color="Color.Secondary">
                             @sub.Position.ToString()

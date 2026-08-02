@@ -1,7 +1,7 @@
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
-using FootballFormation.UI.State;
+using FootballFormation.UI.Components;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Localization;
@@ -9,10 +9,9 @@ using MudBlazor;
 
 namespace FootballFormation.UI.Pages;
 
-public partial class Games : IDisposable
+public partial class Games
 {
     [Inject] private GameService GameService { get; set; } = null!;
-    [Inject] private SeasonState SeasonState { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
@@ -25,32 +24,18 @@ public partial class Games : IDisposable
 
     private List<Game>? _games;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnInitializedCoreAsync()
     {
-        // Must come before any other service call: MainLayout's picker and this page share one
-        // scoped AppDbContext, and two concurrent queries on it throw.
-        await SeasonState.EnsureLoadedAsync();
-        SeasonState.OnChanged += OnSeasonChanged;
-
         var authState = await AuthStateTask;
         _isAdmin = authState.User.Identity?.IsAuthenticated == true;
-        await LoadGames();
     }
 
-    private async Task LoadGames()
+    protected override async Task LoadAsync()
     {
         // Details variant loads the period lineups so we can flag games missing one.
-        var result = await GameService.GetAllWithDetailsAsync(SeasonState.SelectedSeasonId);
-        _games = Snackbar.ReportFailure(result) ? result.Value : [];
+        var result = await GameService.GetAllWithDetailsAsync(SeasonId);
+        _games = Snackbar.ReportFailure(L, result) ? result.Value : [];
     }
-
-    private void OnSeasonChanged() => _ = InvokeAsync(async () =>
-    {
-        await LoadGames();
-        StateHasChanged();
-    });
-
-    public void Dispose() => SeasonState.OnChanged -= OnSeasonChanged;
 
     /// <summary>A game that has already been played but has no lineup entered — its playing
     /// time can't be computed, so the data is incomplete. Future games are legitimately empty.</summary>
@@ -74,8 +59,8 @@ public partial class Games : IDisposable
         if (game is null) return;
 
         var result = await GameService.CreateAsync(game);
-        Snackbar.Report(result, L["Game vs {0} created", game.Opponent]);
-        await LoadGames();
+        Snackbar.Report(L, result, L["Game vs {0} created", game.Opponent]);
+        await LoadAsync();
     }
 
     private async Task OpenEditDialog(Game game)
@@ -84,8 +69,8 @@ public partial class Games : IDisposable
         if (updated is null) return;
 
         var result = await GameService.UpdateAsync(updated);
-        Snackbar.Report(result, L["Game vs {0} updated", updated.Opponent]);
-        await LoadGames();
+        Snackbar.Report(L, result, L["Game vs {0} updated", updated.Opponent]);
+        await LoadAsync();
     }
 
     /// <summary>Row click: a match under way beats everything; then finished games open the
@@ -110,8 +95,8 @@ public partial class Games : IDisposable
         if (!confirmed) return;
 
         var result = await GameService.DeleteAsync(game.Id);
-        Snackbar.Report(result, L["Game vs {0} deleted", game.Opponent], Severity.Warning);
-        await LoadGames();
+        Snackbar.Report(L, result, L["Game vs {0} deleted", game.Opponent], Severity.Warning);
+        await LoadAsync();
     }
 
     private void OpenFormation(int gameId) => Navigation.NavigateTo($"/games/{gameId}/formation");
@@ -125,12 +110,9 @@ public partial class Games : IDisposable
     /// <summary>Returns the edited game, or null when the dialog was cancelled.</summary>
     private async Task<Game?> ShowGameDialogAsync(string title, Game? game = null)
     {
-        var parameters = new DialogParameters<GameDialog>();
-        if (game is not null) parameters.Add(x => x.Game, game);
-
-        var dialog = await DialogService.ShowAsync<GameDialog>(title, parameters, UiFeedback.LockedDialog);
-        var result = await dialog.Result;
-
-        return result is { Canceled: false, Data: Game edited } ? edited : null;
+        return await DialogService.PromptAsync<GameDialog, Game>(title, p =>
+        {
+            if (game is not null) p.Add(x => x.Game, game);
+        });
     }
 }

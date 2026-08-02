@@ -63,7 +63,7 @@ public partial class Settings
         }
 
         var prefsResult = await PreferencesService.GetAsync(_prefsSeasonId);
-        if (!Snackbar.ReportFailure(prefsResult)) return;
+        if (!Snackbar.ReportFailure(L, prefsResult)) return;
 
         _prefs = prefsResult.Value;
         await RefreshNextMatchDate();
@@ -78,7 +78,7 @@ public partial class Settings
     private async Task LoadSeasons()
     {
         var result = await SeasonService.GetAllAsync();
-        _seasons = Snackbar.ReportFailure(result) ? result.Value : [];
+        _seasons = Snackbar.ReportFailure(L, result) ? result.Value : [];
     }
 
     /// <summary>Every season mutation refreshes the picker too, so the app bar and this list can't
@@ -104,7 +104,7 @@ public partial class Settings
         if (season is null) return;
 
         var result = await SeasonService.CreateAsync(season);
-        Snackbar.Report(result, L["Season {0} created", season.Name]);
+        Snackbar.Report(L, result, L["Season {0} created", season.Name]);
         await ReloadSeasons();
     }
 
@@ -114,7 +114,7 @@ public partial class Settings
         if (updated is null) return;
 
         var result = await SeasonService.UpdateAsync(updated);
-        Snackbar.Report(result, L["Season {0} updated", updated.Name]);
+        Snackbar.Report(L, result, L["Season {0} updated", updated.Name]);
         await ReloadSeasons();
     }
 
@@ -126,14 +126,14 @@ public partial class Settings
         if (!confirmed) return;
 
         var result = await SeasonService.DeleteAsync(season.Id);
-        Snackbar.Report(result, L["Season {0} deleted", season.Name], Severity.Warning);
+        Snackbar.Report(L, result, L["Season {0} deleted", season.Name], Severity.Warning);
         await ReloadSeasons();
     }
 
     private async Task SetCurrentSeason(Season season)
     {
         var result = await SeasonService.SetCurrentAsync(season.Id);
-        Snackbar.Report(result, L["Season {0} is now the current season", season.Name]);
+        Snackbar.Report(L, result, L["Season {0} is now the current season", season.Name]);
         await ReloadSeasons();
     }
 
@@ -141,12 +141,10 @@ public partial class Settings
     private async Task<Season?> ShowSeasonDialogAsync(string title, Season? season = null)
     {
         var parameters = new DialogParameters<SeasonDialog>();
-        if (season is not null) parameters.Add(x => x.Season, season);
-
-        var dialog = await DialogService.ShowAsync<SeasonDialog>(title, parameters, UiFeedback.LockedDialog);
-        var result = await dialog.Result;
-
-        return result is { Canceled: false, Data: Season edited } ? edited : null;
+        return await DialogService.PromptAsync<SeasonDialog, Season>(title, p =>
+        {
+            if (season is not null) p.Add(x => x.Season, season);
+        });
     }
 
     private async Task Save()
@@ -154,7 +152,7 @@ public partial class Settings
         if (_prefs is null) return;
 
         var saveResult = await PreferencesService.SaveAsync(_prefs);
-        if (!Snackbar.Report(saveResult, L["Preferences for {0} saved!", PrefsSeason?.Name ?? ""])) return;
+        if (!Snackbar.Report(L, saveResult, L["Preferences for {0} saved!", PrefsSeason?.Name ?? ""])) return;
 
         await RefreshNextMatchDate();
     }

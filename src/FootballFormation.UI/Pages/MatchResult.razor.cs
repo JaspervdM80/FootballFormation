@@ -75,7 +75,7 @@ public partial class MatchResult
     protected override async Task OnInitializedAsync()
     {
         var gameResult = await GameService.GetByIdAsync(GameId);
-        if (!Snackbar.ReportFailure(gameResult))
+        if (!Snackbar.ReportFailure(L, gameResult))
         {
             Navigation.NavigateTo("/games");
             return;
@@ -97,7 +97,7 @@ public partial class MatchResult
     private async Task SaveScore()
     {
         var result = await GameService.SaveScoreAsync(GameId, ScoreHome, ScoreAway);
-        Snackbar.Report(result, L["Score saved!"]);
+        Snackbar.Report(L, result, L["Score saved!"]);
     }
 
     private async Task AddGoal()
@@ -114,7 +114,7 @@ public partial class MatchResult
         };
 
         var result = await GameService.AddGoalAsync(goal);
-        if (!Snackbar.Report(result, L["Goal added!"])) return;
+        if (!Snackbar.Report(L, result, L["Goal added!"])) return;
 
         await ReloadGame();
         ResetGoalForm();
@@ -123,7 +123,7 @@ public partial class MatchResult
     private async Task RemoveGoal(GameGoal goal)
     {
         var result = await GameService.RemoveGoalAsync(goal.Id);
-        if (!Snackbar.Report(result, L["Goal removed"], Severity.Warning)) return;
+        if (!Snackbar.Report(L, result, L["Goal removed"], Severity.Warning)) return;
 
         await ReloadGame();
     }

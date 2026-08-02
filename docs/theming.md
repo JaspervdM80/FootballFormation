@@ -39,26 +39,29 @@ red primary, crest banner green accent. Colors were sampled from the club crest
   5-tier position-fit colors stay fixed whatever the club palette is. The drop-ready
   highlight is white so it survives any palette.
 
-## MudBlazor is a second source — keep it in sync
+## One source, two styling systems
 
-MudBlazor's palette lives in C#, not CSS, so it can't read `theme.css`. The palette in
-`MainLayout.razor.cs` (`PaletteLight`, with `IsDarkMode="false"` in `MainLayout.razor`)
-duplicates the same red/green/ink values and **must be updated alongside `theme.css`**.
-Its text/line shades are the `#182b1f` ink at various alphas.
+MudBlazor's palette lives in C#, not CSS, so it cannot read a stylesheet — the app used to
+carry the same red/green/ink values twice and ask whoever edited one to remember the other.
+
+Both now come from **`ClubTheme`** (`src/FootballFormation.UI/Theming/ClubTheme.cs`):
+
+- `ToCssVariables()` emits the `--club-*`, `--surface-*` and `--ink` tokens into a `<style>`
+  block in `App.razor`, before every stylesheet that reads them.
+- `ToMudTheme()` builds the `PaletteLight` (used with `IsDarkMode="false"` in `MainLayout`).
+  Its text/line shades are the ink color at various alphas, mixed in `InkAt`.
+
+`theme.css` keeps only what is *not* club branding — the semantic status colors, the five
+position-fit tiers, and the gradients composed from the club tokens via `var()`.
 
 ## Re-theming for another club
 
-1. Edit the tokens in `theme.css`.
-2. Mirror primary/accent/surfaces/ink into the `MainLayout.razor.cs` palette.
-3. Replace `wwwroot/icons/icon-*.png` (or point `--club-logo` elsewhere) and set
-   `--club-logo-bg`.
-4. Update the white PWA chrome if the page color changes: `theme-color` meta in
+1. Edit `ClubTheme.Gjs` — colors, logo, corner radius. That is the whole palette, both systems.
+2. Replace `wwwroot/icons/icon-*.png` (or point `LogoUrl` elsewhere) and set `LogoBackground`.
+3. Update the white PWA chrome if the page color changes: `theme-color` meta in
    `App.razor` and `theme_color`/`background_color` in `manifest.webmanifest`.
-5. `screenshot.js` reads `--surface-appbar-alt` for the export background — no change
+4. `screenshot.js` reads `--surface-appbar-alt` for the export background — no change
    needed, it follows the theme.
-
-The eventual step-2 refactor is a `ClubTheme` config record (colors + logo + name) that
-feeds both `theme.css` and the MudTheme from one source; not built yet.
 
 ## Naming debt
 

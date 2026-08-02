@@ -8,9 +8,16 @@ namespace FootballFormation.Core.Services;
 /// instead of a raw exception. Expected failures (not found, validation) are returned
 /// by the operation itself as a <see cref="Result"/> and pass through untouched.
 /// </summary>
-internal static class ServiceOperation
+public static class ServiceOperation
 {
-    public static async Task<Result> RunAsync(ILogger logger, string action, Func<Task<Result>> operation)
+    /// <summary>
+    /// The message every unexpected failure carries. Public because the UI has to recognise it:
+    /// its one argument is an English action phrase that needs translating too, unlike the data
+    /// every other message interpolates (see <c>UiFeedback.Translate</c>).
+    /// </summary>
+    public const string UnexpectedFailureKey = "Failed to {0}";
+
+    internal static async Task<Result> RunAsync(ILogger logger, string action, Func<Task<Result>> operation)
     {
         try
         {
@@ -19,11 +26,11 @@ internal static class ServiceOperation
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to {Action}", action);
-            return Result.Failure($"Failed to {action}");
+            return Result.Failure(UnexpectedFailureKey, action);
         }
     }
 
-    public static async Task<Result<T>> RunAsync<T>(ILogger logger, string action, Func<Task<Result<T>>> operation)
+    internal static async Task<Result<T>> RunAsync<T>(ILogger logger, string action, Func<Task<Result<T>>> operation)
     {
         try
         {
@@ -32,7 +39,7 @@ internal static class ServiceOperation
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to {Action}", action);
-            return Result.Failure<T>($"Failed to {action}");
+            return Result.Failure<T>(UnexpectedFailureKey, action);
         }
     }
 }

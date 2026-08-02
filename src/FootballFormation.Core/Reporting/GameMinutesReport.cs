@@ -1,6 +1,6 @@
 using FootballFormation.Core.Models;
 
-namespace FootballFormation.UI.Helpers;
+namespace FootballFormation.Core.Reporting;
 
 /// <summary>Who was on the pitch, for how long, and in which position, over one game.</summary>
 public class GameMinutes

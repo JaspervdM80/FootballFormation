@@ -1,0 +1,44 @@
+<div class="pitch @SizeClass @(ConstrainHeight ? "pitch-constrained" : "")">
+    <div class="pitch-center-line"></div>
+    <div class="pitch-center-circle"></div>
+    <div class="pitch-penalty-top"></div>
+    <div class="pitch-penalty-bottom"></div>
+    <div class="pitch-goal-top"></div>
+    <div class="pitch-goal-bottom"></div>
+
+    @{
+        var slots = Slots;
+        var assignments = FormationSlots.Assign(slots, Positions);
+    }
+    @for (var i = 0; i < slots.Length; i++)
+    {
+        var slotIndex = i;
+        var position = slots[slotIndex];
+        var assigned = assignments[slotIndex];
+
+        <div class="pitch-slot" style="@SlotStyle(slotIndex)">
+            @if (assigned?.Player is not null)
+            {
+                var player = assigned.Player;
+
+                <div class="@ChipCssClass(position, player)"
+                     draggable="@Draggable.ToString().ToLowerInvariant()"
+                     @ondragstart="() => OnPlayerDragStart.InvokeAsync(slotIndex)"
+                     @ondragover:preventDefault="true"
+                     @ondrop="() => OnPlayerDropped.InvokeAsync(slotIndex)"
+                     @onclick="() => OnChipClicked(slotIndex, player.Id)">
+                    <span class="pitch-number">@(player.ShirtNumber?.ToString() ?? "")</span>
+                    <span class="pitch-name">@player.ShortName</span>
+                </div>
+            }
+            else
+            {
+                <div class="pitch-empty @(IsDropTarget ? "drop-ready" : "")"
+                     @ondragover:preventDefault="true"
+                     @ondrop="() => OnPlayerDropped.InvokeAsync(slotIndex)">
+                    <span class="pitch-label">@position.ToString()</span>
+                </div>
+            }
+        </div>
+    }
+</div>

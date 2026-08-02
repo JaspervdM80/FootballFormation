@@ -1,6 +1,6 @@
 using FootballFormation.Core.Models;
 
-namespace FootballFormation.UI.Helpers;
+namespace FootballFormation.Core.Reporting;
 
 /// <summary>Minutes and share a player spent in one position, over the games passed in.</summary>
 public class PositionStat

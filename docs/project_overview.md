@@ -1,10 +1,10 @@
 # Football Formation Planner
 
-Youth football team formation planner. Single user, no auth. Manages players, games, formations with drag-and-drop, and substitution planning across halves or quarters.
+Youth football team formation planner. Cookie-based admin auth with anonymous read-only access. Manages players, games, formations with drag-and-drop, and substitution planning across halves or quarters.
 
 ## Tech Stack
 - **.NET 10**, Blazor Web App (Interactive Server rendering)
-- **MudBlazor 9.2.0** — dark theme, green primary (#66BB6A)
+- **MudBlazor 9.7.0** — light club theme, driven by `ClubTheme` (see theming.md)
 - **EF Core + SQLite** — DB at `%LOCALAPPDATA%\FootballFormation\footballformation.db`
 - **Serilog** — console + rolling file logs at `%LOCALAPPDATA%\FootballFormation\logs\`
 - **.slnx** solution format
@@ -12,12 +12,15 @@ Youth football team formation planner. Single user, no auth. Manages players, ga
 ## Solution Structure (`FootballFormation.slnx`)
 ```
 src/
-├── FootballFormation.Core   — Models, Data (DbContext), Services, Result type
-├── FootballFormation.UI     — Razor Class Library: pages, components, helpers, layout
+├── FootballFormation.Core   — Models, Data (DbContext), Reporting, Services, Result type
+├── FootballFormation.UI     — Razor Class Library: pages, components, theming, layout
 └── FootballFormation.Web    — Blazor host: Program.cs, App.razor, Routes.razor
+tests/
+└── FootballFormation.Core.Tests — xUnit; runs as a CI gate before deploy (see testing.md)
 ```
 
-UI is a separate RCL for future **MAUI Blazor Hybrid** reuse.
+UI is a separate RCL for future **MAUI Blazor Hybrid** reuse. Statistics and playing-time
+calculation live in Core, not the UI, so they are testable and would come along by design.
 
 ## Key Features
 - Seasons (1 Jul – 30 Jun) grouping games, with an app-bar picker filtering the games list and all stats

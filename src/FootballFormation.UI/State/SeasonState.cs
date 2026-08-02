@@ -27,13 +27,14 @@ public class SeasonState(SeasonService seasons)
     public event Action? OnChanged;
 
     /// <summary>
-    /// Loads the season list once per circuit. Memoized because MainLayout and the page both need
-    /// the data during their own <c>OnInitializedAsync</c>, they interleave at the first await, and
-    /// they share one scoped <c>AppDbContext</c> — a second concurrent query on it throws. The
-    /// first caller runs the query and everyone else awaits that same task.
+    /// Loads the season list once per circuit. MainLayout and the page both need it during their
+    /// own <c>OnInitializedAsync</c> and interleave at the first await, so the first caller runs
+    /// the query and everyone else awaits that same task.
     /// <para>
-    /// Every season-aware page must await this as the first statement of its
-    /// <c>OnInitializedAsync</c>, before any other service call.
+    /// This was once load-bearing: the services shared one scoped <c>AppDbContext</c>, and a second
+    /// concurrent query on it threw. They take a short-lived context per operation now (see
+    /// <c>AddDbContextFactory</c> in Program.cs), so concurrent callers are safe and this is purely
+    /// an optimisation — a page that forgets it costs a duplicate query, not a crash.
     /// </para>
     /// </summary>
     public Task EnsureLoadedAsync() => _loading ??= LoadAsync();

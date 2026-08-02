@@ -43,6 +43,28 @@ Avoid repeating these mistakes:
 - **Resource keys are English text, so watch for homographs**: "Home" was already the
   venue label ("Thuis") when the nav needed a home link — the nav uses the key "Start"
   instead. Resx names are also case-insensitive, so no "SUB"/"Sub" pairs.
+- **Case-insensitivity bites the service action phrases**: `ServiceOperation`'s actions are
+  lowercase verb phrases ("delete game"), and several collided with existing capitalized button
+  labels ("Delete Game"). MSBuild warns `MSB3568: Duplicate resource name ... ignored` and the
+  first entry silently wins. Reuse the existing key rather than adding a lowercase twin.
+
+## Blazor components
+- **A base class for a page goes in the `.razor`, not the code-behind**: putting
+  `: SeasonAwarePage` on the `public partial class` gives *CS0263: Partial declarations must not
+  specify different base classes*, because the generated Razor partial already declares
+  `: ComponentBase`. Use `@inherits SeasonAwarePage` in the markup file.
+- **A generic dialog result can't tell `default` from "cancelled"**: `PromptAsync<TDialog, TResult>`
+  is constrained to `class` for that reason; a dialog returning a value type uses
+  `PromptValueAsync`, which hands back `TValue?`. A dialog closing with `0` is otherwise
+  indistinguishable from the user pressing Cancel.
+
+## Result
+- **Reading `Result<T>.Value` on a failure throws**: it used to return `default`, so a caller that
+  skipped the success check got a null three frames away instead of an error where the mistake was.
+  Check `IsSuccess` (or let `Snackbar.ReportFailure` do it — it returns a bool for exactly this).
+- **Failure messages are templates, not interpolated strings**: `Result.Failure("Season {0} still
+  has {1} games", name, count)`, never `$"..."`. The template is the resource key, so an
+  interpolated message can't be translated.
 
 ## Formation/Pitch
 - **Duplicate enum positions**: Formations with 2 CDMs or 2 strikers need distinct enum values (LCDM/RCDM, LST/RST) — can't have duplicate values in an array.

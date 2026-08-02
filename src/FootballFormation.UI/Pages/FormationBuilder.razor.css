@@ -80,29 +80,30 @@
     border-radius: 50%;
 }
 
-.legend-dot.chip-preferred {
-    background: #1b5e20;
-    border: 2px solid #4caf50;
+/* Same five tiers as the pitch chips and the playing-time dots, from the tokens in theme.css. */
+.legend-dot.fit-preferred {
+    background: var(--fit-preferred);
+    border: 2px solid var(--fit-preferred-edge);
 }
 
-.legend-dot.chip-natural {
-    background: #388e3c;
-    border: 2px solid #81c784;
+.legend-dot.fit-natural {
+    background: var(--fit-natural);
+    border: 2px solid var(--fit-natural-edge);
 }
 
-.legend-dot.chip-alternative {
-    background: #1565c0;
-    border: 2px solid #42a5f5;
+.legend-dot.fit-alternative {
+    background: var(--fit-alternative);
+    border: 2px solid var(--fit-alternative-edge);
 }
 
-.legend-dot.chip-compatible {
-    background: #e65100;
-    border: 2px solid #ff9800;
+.legend-dot.fit-compatible {
+    background: var(--fit-compatible);
+    border: 2px solid var(--fit-compatible-edge);
 }
 
-.legend-dot.chip-out-of-position {
-    background: #b71c1c;
-    border: 2px solid #ef5350;
+.legend-dot.fit-out-of-position {
+    background: var(--fit-out-of-position);
+    border: 2px solid var(--fit-out-of-position-edge);
 }
 
 .unavailable-player {
@@ -141,28 +142,28 @@
 }
 
 .overview-dot.fit-preferred {
-    background: #1b5e20;
-    border: 1px solid #4caf50;
+    background: var(--fit-preferred);
+    border: 1px solid var(--fit-preferred-edge);
 }
 
 .overview-dot.fit-natural {
-    background: #388e3c;
-    border: 1px solid #81c784;
+    background: var(--fit-natural);
+    border: 1px solid var(--fit-natural-edge);
 }
 
 .overview-dot.fit-alternative {
-    background: #1565c0;
-    border: 1px solid #42a5f5;
+    background: var(--fit-alternative);
+    border: 1px solid var(--fit-alternative-edge);
 }
 
 .overview-dot.fit-compatible {
-    background: #e65100;
-    border: 1px solid #ff9800;
+    background: var(--fit-compatible);
+    border: 1px solid var(--fit-compatible-edge);
 }
 
 .overview-dot.fit-out-of-position {
-    background: #b71c1c;
-    border: 1px solid #ef5350;
+    background: var(--fit-out-of-position);
+    border: 1px solid var(--fit-out-of-position-edge);
 }
 
 .overview-dot.overview-sub {
