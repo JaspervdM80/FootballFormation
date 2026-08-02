@@ -1,0 +1,65 @@
+/* The live banner. Loud on purpose — it only appears while a match is actually being played. */
+.home-live-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    border-radius: 16px;
+    cursor: pointer;
+    color: #fff;
+    background: linear-gradient(135deg, var(--club-primary), var(--club-primary-bright));
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--club-primary) 35%, transparent);
+}
+
+.home-live-banner:hover {
+    filter: brightness(1.06);
+}
+
+.home-live-dot {
+    flex: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--color-success-bright);
+    animation: home-live-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes home-live-pulse {
+    50% {
+        opacity: 0.25;
+    }
+}
+
+/* Respect a reduced-motion preference — the banner still reads without the pulse. */
+@media (prefers-reduced-motion: reduce) {
+    .home-live-dot {
+        animation: none;
+    }
+}
+
+.home-live-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.home-live-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.8;
+}
+
+.home-live-match {
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.home-live-score {
+    font-size: 1.5rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}

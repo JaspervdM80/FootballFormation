@@ -31,6 +31,12 @@ public class GameSubstitution
     public PlayerPosition Position { get; set; }
 
     /// <summary>
+    /// When the change was entered. <see cref="AtSeconds"/> says where on the match clock it sits;
+    /// this breaks ties against goals in the same minute. See <see cref="GameGoal.RecordedAt"/>.
+    /// </summary>
+    public DateTime RecordedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
     /// The minute as a football timeline writes it: the first minute of play is 1', not 0'. Goals
     /// are stamped the same way in <c>LiveMatchService.LogGoalAsync</c>, so the two line up.
     /// </summary>

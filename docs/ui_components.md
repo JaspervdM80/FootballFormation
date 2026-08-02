@@ -84,14 +84,41 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView>`.
   circuit keeps one scoped `AppDbContext` for its whole life, so a tracked `Game` keeps returning
   the score, clock and state from its first load while newly inserted goals appear alongside them —
   a live screen stuck at the old scoreline. Identity resolution keeps shared `Player` rows single.
-- Controls are context-sensitive: start → pause/resume + end {half|quarter} → start next → finish.
-  Wording comes from `SplitType.PeriodLabel()`.
+- Controls are context-sensitive, and **only half time is a break**. A quarters game is still two
+  halves: Q1→Q2 and Q3→Q4 offer "Start Q2"/"Start Q4", which call `AdvancePeriodAsync` and roll
+  the lineup over *without stopping the clock*. Only after the first half or Q2 does the screen
+  offer "Half time" (`EndPeriodAsync`, which does stop it) followed by "Start Q3". The rule lives
+  in `PeriodTypeExtensions.IsFollowedByBreak`, not in the page.
 - The pitch shows the live period; at the break and after full time the last one played, and before
   kick-off the first — so it is never blank when a lineup exists.
 - Finishing asks for confirmation via `DialogPrompts.ConfirmAsync` (not `ConfirmDeleteAsync`,
   whose button says "Delete").
+- **Minutes played is admin-only** (`LiveMinutesReport`), and shows exact time on the pitch rather
+  than the `periodsPlaying × periodDuration` estimate the planning screens use. It is a computed
+  property, so the running player's total climbs with the clock tick.
+- **Mobile reorders the column with flex `order`**: what just happened matters more at a touchline
+  than where everyone stands, so the line-up card (`.live-lineup`, `order: 1`) and the minutes
+  table (`.live-minutes-card`, `order: 2`) drop below the timeline under 600px. Both rules live in
+  `app.css` — the classes sit on `MudPaper` roots, which scoped CSS cannot reach.
+- Goal and assist selects bind `int?`, not `int`: an `int` binds to 0, which is nobody's id but
+  still renders as a chosen value, so the scorer field looked pre-filled.
 - `/games` routes an `InProgress` game to `/live` for **everyone**, and shows a pulsing green
-  `.action-live` button on its card; for other games the Live action is admin-only.
+  `.action-live` button on its card. For other games the Live action is admin-only, and it
+  disappears entirely once `Games.HasFinalScore(game)` — a settled game has nothing left to run,
+  so the Result button beside it is the way in and a row click opens `/result`.
+- `HasFinalScore` checks `MatchState` **as well as** the score fields, and must: `LiveMatchService`
+  writes `ScoreHome`/`ScoreAway` on every goal, so a score alone only means the game has started.
+  Testing the score by itself would hide the Live button on the very match being played.
+
+## Live banner on the home page
+`Home.razor` shows `.home-live-banner` whenever `LiveMatchService.GetInProgressAsync` finds a match
+being played — opponent, live score, and a tap through to `/games/{id}/live`. It is visible to
+everyone, since the people most likely to land on the home page mid-match are spectators.
+
+It subscribes to **every** `LiveMatchNotifier.Changed` event rather than filtering by game id, the
+way the live screen does: the banner has no game of its own until it loads one, so a match being
+started is exactly the event it must not miss. That is what makes it appear on an already-open home
+page without a refresh.
 
 ## Squad table (`/players`) — responsive layout
 - One `MudTable` (`.players-table`) serves both breakpoints; **desktop is a normal table

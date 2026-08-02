@@ -20,4 +20,12 @@ public class GameGoal
 
     /// <summary>The opponent scored. Counts for the opponent, and has no scorer.</summary>
     public bool IsOpponentGoal { get; set; }
+
+    /// <summary>
+    /// When this was entered, as opposed to the match minute it belongs to. Several things can
+    /// share a minute — a goal and the substitution that followed it — and the minute alone cannot
+    /// put them in the order they happened. Goals typed in afterwards on the result page get the
+    /// moment they were typed, which is the best available answer and never reorders a live match.
+    /// </summary>
+    public DateTime RecordedAt { get; set; } = DateTime.UtcNow;
 }

@@ -161,6 +161,7 @@ each. `PlayerStatsReport.Build` and `SeasonStatsReport.Build` both take `SeasonS
 | Minute | int? | Free-typed on `/result`; stamped from the clock on `/live` |
 | IsOwnGoal | bool | One of ours into our own net. Counts for the opponent |
 | IsOpponentGoal | bool | The opponent scored. Counts for them, and has no scorer |
+| RecordedAt | DateTime | UTC entry time — orders events that share a minute |
 
 ## GameSubstitution
 | Property | Type | Notes |
@@ -173,6 +174,13 @@ each. `PlayerStatsReport.Build` and `SeasonStatsReport.Build` both take `SeasonS
 | SlotIndex | int? | The pitch slot that changed hands |
 | Position | PlayerPosition | The position that changed hands |
 | Minute | int | Computed: `AtSeconds / 60 + 1` — a timeline's first minute is 1', not 0' |
+| RecordedAt | DateTime | UTC entry time — orders events that share a minute |
+
+`RecordedAt` exists on both `GameGoal` and `GameSubstitution` because the minute alone cannot order
+a timeline: a goal and the substitution that followed it routinely share one, and several events in
+the opening minute is the normal case, not the edge case. The live timeline sorts by minute then by
+`RecordedAt`, both descending. Rows written before the column existed default to `0001-01-01`, so
+historic events in the same minute keep an arbitrary (but stable) order.
 
 The lineup stays the source of truth for *who stands where*; this records **when** the swap
 happened, which the period lineup alone cannot express. `LiveMatchService.SubstituteAsync` writes

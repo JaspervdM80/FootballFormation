@@ -9,8 +9,11 @@ using MudBlazor;
 
 namespace FootballFormation.UI.Pages;
 
-/// <summary>One entry on the match timeline — a goal or a substitution — so both can be listed together.</summary>
-public record MatchEvent(int Minute, bool IsGoal, GameGoal? Goal, GameSubstitution? Substitution);
+/// <summary>
+/// One entry on the match timeline — a goal or a substitution — so both can be listed together.
+/// <paramref name="RecordedAt"/> orders events that share a minute, which the minute alone cannot.
+/// </summary>
+public record MatchEvent(int Minute, DateTime RecordedAt, bool IsGoal, GameGoal? Goal, GameSubstitution? Substitution);
 
 /// <summary>
 /// The sideline screen. An admin runs the clock and records what happens; everyone else sees the
@@ -83,12 +86,20 @@ public partial class LiveMatch : IDisposable
     /// <summary>Whether the sub controls can do anything — needs an admin and a period in play.</summary>
     private bool CanSubstitute => _isAdmin && IsLivePeriod;
 
-    /// <summary>True once every period has been kicked off, so "next period" has nowhere to go.</summary>
-    private bool AllPeriodsPlayed =>
-        GameData is not null && GameData.Periods.All(p => p.StartedAtSeconds is not null);
+    /// <summary>The first period not yet kicked off — where the clock goes next, if anywhere.</summary>
+    private GamePeriod? NextPeriod => GameData?.Periods
+        .OrderBy(p => p.PeriodType)
+        .FirstOrDefault(p => p.StartedAtSeconds is null);
 
-    /// <summary>Singular noun for this game's periods — "half" or "quarter".</summary>
-    private string PeriodNoun => GameData?.SplitType.PeriodLabel() ?? "half";
+    /// <summary>Name of the period the buttons would move to, or null once they all have been played.</summary>
+    private string? NextPeriodLabel => NextPeriod?.PeriodType.DisplayName();
+
+    /// <summary>
+    /// Whether the period being played ends in a real stoppage. Only half time does; a quarter
+    /// boundary rolls straight on, so the screen offers "start Q2" rather than a whistle.
+    /// </summary>
+    private bool BreakFollowsCurrentPeriod =>
+        DisplayPeriod is { } period && IsLivePeriod && period.PeriodType.IsFollowedByBreak();
 
     /// <summary>What the match is doing right now, in one phrase under the clock.</summary>
     private string StatusLabel => GameData?.MatchState switch
@@ -147,6 +158,13 @@ public partial class LiveMatch : IDisposable
         }
     }
 
+    /// <summary>
+    /// Exact minutes on the pitch so far, for the admin deciding who to bring on next. Recomputed
+    /// on every render, which is what keeps the running player's total climbing with the clock.
+    /// </summary>
+    private List<LiveMinutesRow> MinutesPlayed =>
+        GameData is null ? [] : LiveMinutesReport.Build(GameData, ElapsedSeconds, FindPlayer);
+
     /// <summary>Goals and substitutions on one timeline, most recent first.</summary>
     private List<MatchEvent> Timeline
     {
@@ -154,10 +172,14 @@ public partial class LiveMatch : IDisposable
         {
             if (GameData is null) return [];
 
-            var goals = GameData.Goals.Select(g => new MatchEvent(g.Minute ?? 0, true, g, null));
-            var subs = GameData.Substitutions.Select(s => new MatchEvent(s.Minute, false, null, s));
+            var goals = GameData.Goals.Select(g => new MatchEvent(g.Minute ?? 0, g.RecordedAt, true, g, null));
+            var subs = GameData.Substitutions.Select(s => new MatchEvent(s.Minute, s.RecordedAt, false, null, s));
 
-            return [.. goals.Concat(subs).OrderByDescending(e => e.Minute)];
+            // A goal and the sub that followed it commonly share a minute; the entry time keeps
+            // them in the order they actually happened rather than the order they were queried.
+            return [.. goals.Concat(subs)
+                .OrderByDescending(e => e.Minute)
+                .ThenByDescending(e => e.RecordedAt)];
         }
     }
 
@@ -233,6 +255,9 @@ public partial class LiveMatch : IDisposable
 
     private async Task StartNextPeriod() =>
         Snackbar.Report(await Live.StartNextPeriodAsync(GameId), L["Next period started"]);
+
+    private async Task AdvancePeriod() =>
+        Snackbar.Report(await Live.AdvancePeriodAsync(GameId), L["Next period started"]);
 
     private async Task FinishMatch()
     {

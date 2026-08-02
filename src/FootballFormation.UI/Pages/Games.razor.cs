@@ -57,6 +57,17 @@ public partial class Games : IDisposable
     private static bool IsIncomplete(Game game) =>
         game.Date.Date < DateTime.Today && !game.HasLineup;
 
+    /// <summary>
+    /// Whether the scoreline is settled. A live match writes `ScoreHome`/`ScoreAway` as the goals
+    /// go in, so a score on its own only means the game has *started* — the state has to be
+    /// checked too. Once it is settled there is nothing left to run live, and the result page is
+    /// where the game's information lives.
+    /// </summary>
+    private static bool HasFinalScore(Game game) =>
+        game.MatchState != MatchState.InProgress
+        && game.ScoreHome.HasValue
+        && game.ScoreAway.HasValue;
+
     private async Task OpenAddDialog()
     {
         var game = await ShowGameDialogAsync(L["New Game"]);
@@ -83,7 +94,7 @@ public partial class Games : IDisposable
     {
         if (game.MatchState == MatchState.InProgress)
             OpenLive(game.Id);
-        else if (game.ScoreHome.HasValue && game.ScoreAway.HasValue)
+        else if (HasFinalScore(game))
             OpenResult(game.Id);
         else if (_isAdmin)
             OpenFormation(game.Id);

@@ -21,17 +21,23 @@ public partial class LiveGoalDialog
     public List<Player> Candidates { get; set; } = [];
 
     private MudForm Form { get; set; } = null!;
-    private int ScorerId { get; set; }
-    private int AssisterId { get; set; }
+
+    /// <summary>
+    /// Nullable so the select opens genuinely empty. An int would bind to 0, which is nobody's id
+    /// but still renders as a chosen value and reads like the field is already filled in.
+    /// </summary>
+    private int? ScorerId { get; set; }
+
+    private int? AssisterId { get; set; }
     private bool IsOwnGoal { get; set; }
 
     private async Task Submit()
     {
         await Form.ValidateAsync();
-        if (!Form.IsValid || ScorerId == 0) return;
+        if (!Form.IsValid || ScorerId is not { } scorerId) return;
 
-        var assister = AssisterId == 0 || AssisterId == ScorerId ? (int?)null : AssisterId;
-        MudDialog.Close(DialogResult.Ok(new LiveGoalChoice(ScorerId, assister, IsOwnGoal)));
+        var assister = AssisterId == scorerId ? null : AssisterId;
+        MudDialog.Close(DialogResult.Ok(new LiveGoalChoice(scorerId, assister, IsOwnGoal)));
     }
 
     private void Cancel() => MudDialog.Cancel();

@@ -343,6 +343,19 @@ html, body {
     min-height: 56px;
 }
 
+/* On a phone what just happened matters more than where everyone stands, so the line-up card
+   drops below the timeline, taking the minutes table with it. Every other child of .live-layout
+   keeps the default order of 0 and so stays in source order above them. */
+@media (max-width: 599px) {
+    .live-lineup {
+        order: 1;
+    }
+
+    .live-minutes-card {
+        order: 2;
+    }
+}
+
 /* Page header styling */
 .page-header-subtitle {
     color: color-mix(in srgb, var(--ink) 45%, transparent);

@@ -91,14 +91,16 @@ else
                             <MudIcon Icon="@(IsIncomplete(game) ? Icons.Material.Outlined.GridView : Icons.Material.Filled.ViewModule)" Size="Size.Small" />
                         </button>
                     </AuthorizeView>
-                    @* A match in progress is what everyone wants first, so it is not admin-gated. *@
+                    @* A match in progress is what everyone wants first, so it is not admin-gated.
+                       Once the score is final there is nothing left to run, so the icon goes and
+                       the Result button beside it is the way in. *@
                     @if (game.MatchState == MatchState.InProgress)
                     {
                         <button class="action-btn action-live" title="@L["Live"]" @onclick="() => OpenLive(game.Id)">
                             <MudIcon Icon="@Icons.Material.Filled.Sensors" Size="Size.Small" />
                         </button>
                     }
-                    else
+                    else if (!HasFinalScore(game))
                     {
                         <AuthorizeView>
                             <button class="action-btn" title="@L["Live"]" @onclick="() => OpenLive(game.Id)">
