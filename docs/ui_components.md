@@ -103,7 +103,12 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView>`.
 - Goal and assist selects bind `int?`, not `int`: an `int` binds to 0, which is nobody's id but
   still renders as a chosen value, so the scorer field looked pre-filled.
 - `/games` routes an `InProgress` game to `/live` for **everyone**, and shows a pulsing green
-  `.action-live` button on its card; for other games the Live action is admin-only.
+  `.action-live` button on its card. For other games the Live action is admin-only, and it
+  disappears entirely once `Games.HasFinalScore(game)` — a settled game has nothing left to run,
+  so the Result button beside it is the way in and a row click opens `/result`.
+- `HasFinalScore` checks `MatchState` **as well as** the score fields, and must: `LiveMatchService`
+  writes `ScoreHome`/`ScoreAway` on every goal, so a score alone only means the game has started.
+  Testing the score by itself would hide the Live button on the very match being played.
 
 ## Live banner on the home page
 `Home.razor` shows `.home-live-banner` whenever `LiveMatchService.GetInProgressAsync` finds a match
