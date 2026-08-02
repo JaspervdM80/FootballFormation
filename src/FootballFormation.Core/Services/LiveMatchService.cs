@@ -52,17 +52,35 @@ public class LiveMatchService(
         });
 
     /// <summary>
-    /// The match being played right now, or null when there is none. Nothing stops two games being
-    /// in progress at once, so the most recent by date wins — that is the one someone standing at a
-    /// pitch is watching.
+    /// The match the home page should point at, or null on an ordinary day. That is whatever is
+    /// being played right now, and otherwise today's fixture — from the moment the day starts,
+    /// through the match, until the final score is in — so match day is signposted all day rather
+    /// than only between kick-off and the last whistle.
     /// </summary>
-    public Task<Result<Game?>> GetInProgressAsync() =>
-        ServiceOperation.RunAsync(logger, "find the match in progress", async () =>
+    public Task<Result<Game?>> GetTodaysMatchAsync() =>
+        ServiceOperation.RunAsync(logger, "find today's match", async () =>
         {
+            // A match in progress wins whatever the calendar says: it can have been kicked off
+            // before midnight, and it is the one someone standing at a pitch is watching. Nothing
+            // stops two being in progress at once, so the most recent by date wins.
             var game = await db.Games
                 .AsNoTracking()
                 .Where(g => g.MatchState == MatchState.InProgress)
                 .OrderByDescending(g => g.Date)
+                .FirstOrDefaultAsync();
+
+            if (game is not null) return Result.Success<Game?>(game);
+
+            // Games carry a date but no kick-off time, so "today" is the whole calendar day.
+            // A double-header shows the one still to be played before the one already done.
+            var today = DateTime.Today;
+            var tomorrow = today.AddDays(1);
+
+            game = await db.Games
+                .AsNoTracking()
+                .Where(g => g.Date >= today && g.Date < tomorrow)
+                .OrderBy(g => g.MatchState == MatchState.Finished)
+                .ThenBy(g => g.Date)
                 .FirstOrDefaultAsync();
 
             return Result.Success(game);

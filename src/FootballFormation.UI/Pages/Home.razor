@@ -2,19 +2,31 @@
 
 <PageTitle>GJS Meiden</PageTitle>
 
-@if (LiveGame is not null)
+@* One banner for the whole of match day: waiting for kick-off, being played, and done. *@
+@if (TodaysGame is not null)
 {
-    <div class="home-live-banner" role="button" tabindex="0"
-         @onclick="OpenLiveMatch" @onkeydown="OpenLiveMatchOnKey">
-        <span class="home-live-dot"></span>
+    <div class="home-live-banner @BannerCssClass" role="button" tabindex="0"
+         @onclick="OpenTodaysMatch" @onkeydown="OpenTodaysMatchOnKey">
+        @if (IsLive)
+        {
+            <span class="home-live-dot"></span>
+        }
+        else
+        {
+            <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Class="home-live-icon" />
+        }
         <div class="home-live-body">
-            <div class="home-live-label">@L["Live now"]</div>
+            <div class="home-live-label">@BannerLabel</div>
             <div class="home-live-match">
-                @(LiveGame.IsHomeGame ? "vs" : "@") @LiveGame.Opponent
+                @(TodaysGame.IsHomeGame ? "vs" : "@") @TodaysGame.Opponent
             </div>
         </div>
-        @* Score reads in venue order, matching the live screen. *@
-        <div class="home-live-score">@LiveScore</div>
+        @* Score reads in venue order, matching the live screen. Before kick-off there is no
+           scoreline to report, so the chevron carries the row on its own. *@
+        @if (TodaysGame.MatchState != MatchState.NotStarted)
+        {
+            <div class="home-live-score">@LiveScore</div>
+        }
         <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
     </div>
 }
@@ -26,60 +38,62 @@
     @L["Plan your team's formations, manage your squad, and organize game lineups."]
 </MudText>
 
+@* Whole tiles are the target — a card with a single destination does not need a button
+   repeating it, and the larger hit area is what a thumb wants on a phone. *@
 <MudGrid Spacing="4">
     <MudItem xs="12" sm="6" md="4">
-        <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px; height: 100%; display: flex; flex-direction: column;">
+        <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;" role="button" tabindex="0"
+                  @onclick="@(() => Open("/players"))" @onkeydown="@(e => OpenOnKey(e, "/players"))">
             <div class="card-label">@L["Squad"]</div>
             <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Style="color: var(--club-primary-bright);" />
-            <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Manage Players"]</MudText>
-            <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);" Class="mb-4">
-                @L["Add players with their positions and shirt numbers."]
-            </MudText>
-            <MudButton Variant="Variant.Filled" Class="btn-gold mt-auto" Href="/players" FullWidth="true">
-                @L["Go to Squad"]
-            </MudButton>
+            <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Selection"]</MudText>
+            <AuthorizeView>
+                <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
+                    @L["Add players with their positions and shirt numbers."]
+                </MudText>
+            </AuthorizeView>
         </MudPaper>
     </MudItem>
 
     <MudItem xs="12" sm="6" md="4">
-        <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px; height: 100%; display: flex; flex-direction: column;">
+        <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;" role="button" tabindex="0"
+                  @onclick="@(() => Open("/games"))" @onkeydown="@(e => OpenOnKey(e, "/games"))">
             <div class="card-label">@L["Matches"]</div>
             <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Size="Size.Large" Style="color: var(--club-primary-bright);" />
             <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Games & Formations"]</MudText>
-            <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);" Class="mb-4">
-                @L["Create games, build formations, and track results."]
-            </MudText>
-            <MudButton Variant="Variant.Filled" Class="btn-gold mt-auto" Href="/games" FullWidth="true">
-                @L["Go to Games"]
-            </MudButton>
+            <AuthorizeView>
+                <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
+                    @L["Create games, build formations, and track results."]
+                </MudText>
+            </AuthorizeView>
         </MudPaper>
     </MudItem>
 
     <MudItem xs="12" sm="6" md="4">
-        <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px; height: 100%; display: flex; flex-direction: column;">
+        <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;" role="button" tabindex="0"
+                  @onclick="@(() => Open("/stats"))" @onkeydown="@(e => OpenOnKey(e, "/stats"))">
             <div class="card-label">@L["Statistics"]</div>
             <MudIcon Icon="@Icons.Material.Filled.BarChart" Size="Size.Large" Style="color: var(--club-primary-bright);" />
             <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Season stats"]</MudText>
-            <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);" Class="mb-4">
-                @L["See the team record, top scorers, and playing time."]
-            </MudText>
-            <MudButton Variant="Variant.Filled" Class="btn-gold mt-auto" Href="/stats" FullWidth="true">
-                @L["Go to Stats"]
-            </MudButton>
+            <AuthorizeView>
+                <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
+                    @L["See the team record, top scorers, and playing time."]
+                </MudText>
+            </AuthorizeView>
         </MudPaper>
     </MudItem>
 
     <MudItem xs="12" sm="6" md="4">
-        <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px; height: 100%; display: flex; flex-direction: column;">
+        <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;" role="button" tabindex="0"
+                  @onclick="@(() => Open("/settings"))" @onkeydown="@(e => OpenOnKey(e, "/settings"))">
             <div class="card-label">@L["Settings"]</div>
             <MudIcon Icon="@Icons.Material.Filled.Settings" Size="Size.Large" Style="color: var(--club-primary-bright);" />
             <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Preferences"]</MudText>
-            <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);" Class="mb-4">
-                @L["Configure match duration, split type, and defaults."]
-            </MudText>
-            <MudButton Variant="Variant.Filled" Class="btn-gold mt-auto" Href="/settings" FullWidth="true">
-                @L["Go to Settings"]
-            </MudButton>
+            <AuthorizeView>
+                <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
+                    @L["Configure match duration, split type, and defaults."]
+                </MudText>
+            </AuthorizeView>
         </MudPaper>
     </MudItem>
 </MudGrid>

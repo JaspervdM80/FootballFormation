@@ -163,20 +163,23 @@
         }
     </MudPaper>
 
-    <AuthorizeView>
-        <div class="live-actions">
-            <MudButton Variant="Variant.Filled" Class="btn-gold live-action-btn" Size="Size.Large"
-                       Disabled="@(GameData.MatchState == MatchState.NotStarted)"
-                       StartIcon="@Icons.Material.Filled.SportsSoccer" OnClick="AddGoal">
-                @L["We scored"]
-            </MudButton>
-            <MudButton Variant="Variant.Outlined" Class="btn-ghost live-action-btn" Size="Size.Large"
-                       Disabled="@(GameData.MatchState == MatchState.NotStarted)"
-                       OnClick="AddOpponentGoal">
-                @L["They scored"]
-            </MudButton>
-        </div>
-    </AuthorizeView>
+    @* Nothing can be scored before kick-off, so the buttons stay out of the way entirely
+       rather than sitting there greyed out above the start button. *@
+    @if (GameData.MatchState != MatchState.NotStarted)
+    {
+        <AuthorizeView>
+            <div class="live-actions">
+                <MudButton Variant="Variant.Filled" Class="btn-gold live-action-btn" Size="Size.Large"
+                           StartIcon="@Icons.Material.Filled.SportsSoccer" OnClick="AddGoal">
+                    @L["Goal"]
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Class="btn-ghost live-action-btn" Size="Size.Large"
+                           OnClick="AddOpponentGoal">
+                    @L["Goal against"]
+                </MudButton>
+            </div>
+        </AuthorizeView>
+    }
 
     <MudPaper Class="pa-4" Elevation="2" Style="border-radius: 16px;">
         <div class="card-label">@L["Timeline"]</div>

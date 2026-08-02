@@ -356,6 +356,40 @@ html, body {
     }
 }
 
+/* Home tiles. The whole card is the link, so it needs the affordances a button had:
+   a pointer, a lift on hover and a visible focus ring for keyboard users. */
+.home-tile {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.home-tile:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--club-primary) 22%, transparent);
+}
+
+.home-tile:active {
+    transform: translateY(0);
+}
+
+.home-tile:focus-visible {
+    outline: 2px solid var(--club-primary-bright);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .home-tile {
+        transition: none;
+    }
+
+    .home-tile:hover {
+        transform: none;
+    }
+}
+
 /* Page header styling */
 .page-header-subtitle {
     color: color-mix(in srgb, var(--ink) 45%, transparent);

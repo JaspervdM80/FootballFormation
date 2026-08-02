@@ -78,7 +78,16 @@ public partial class LiveMatch : IDisposable
 
     private List<GamePlayerPosition> OnPitch => [.. DisplayLineup.Where(p => !p.IsSubstitute)];
 
-    private List<GamePlayerPosition> OnBench => [.. DisplayLineup.Where(p => p.IsSubstitute)];
+    /// <summary>
+    /// The bench for this period. A lineup can outlive the roster it was built from — someone
+    /// marked unavailable, or dropped from the squad, keeps their saved substitute row — and
+    /// listing them as a sub would offer a player who is not at the match.
+    /// </summary>
+    private List<GamePlayerPosition> OnBench =>
+        [.. DisplayLineup.Where(p => p.IsSubstitute && IsInRoster(p.PlayerId))];
+
+    private bool IsInRoster(int playerId) =>
+        GameData is not null && FindPlayer(playerId) is { } player && GameData.IsInRoster(player, Squad);
 
     private FormationType DisplayFormation =>
         DisplayPeriod?.FormationTypeOverride ?? GameData?.FormationType ?? FormationType.F442;

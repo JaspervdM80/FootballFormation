@@ -24,16 +24,13 @@
 
   <!-- Home -->
   <data name="Plan your team's formations, manage your squad, and organize game lineups." xml:space="preserve"><value>Plan je opstellingen, beheer je selectie en organiseer de wedstrijden.</value></data>
-  <data name="Manage Players" xml:space="preserve"><value>Spelers beheren</value></data>
+  <data name="Selection" xml:space="preserve"><value>Selectie</value></data>
   <data name="Add players with their positions and shirt numbers." xml:space="preserve"><value>Voeg spelers toe met hun posities en rugnummers.</value></data>
-  <data name="Go to Squad" xml:space="preserve"><value>Naar selectie</value></data>
   <data name="Matches" xml:space="preserve"><value>Wedstrijden</value></data>
   <data name="Games &amp; Formations" xml:space="preserve"><value>Wedstrijden &amp; opstellingen</value></data>
   <data name="Create games, build formations, and track results." xml:space="preserve"><value>Maak wedstrijden aan, bouw opstellingen en houd uitslagen bij.</value></data>
-  <data name="Go to Games" xml:space="preserve"><value>Naar wedstrijden</value></data>
   <data name="Settings" xml:space="preserve"><value>Instellingen</value></data>
   <data name="Configure match duration, split type, and defaults." xml:space="preserve"><value>Stel wedstrijdduur, speelperiodes en standaardwaarden in.</value></data>
-  <data name="Go to Settings" xml:space="preserve"><value>Naar instellingen</value></data>
 
   <!-- Players -->
   <data name="Players" xml:space="preserve"><value>Spelers</value></data>
@@ -163,13 +160,14 @@
   <data name="Line-up" xml:space="preserve"><value>Opstelling</value></data>
   <data name="No line-up for this period yet — build one first." xml:space="preserve"><value>Nog geen opstelling voor dit deel — maak er eerst een.</value></data>
   <data name="Tap a player to substitute them." xml:space="preserve"><value>Tik op een speler om te wisselen.</value></data>
-  <data name="We scored" xml:space="preserve"><value>Wij scoorden</value></data>
-  <data name="They scored" xml:space="preserve"><value>Zij scoorden</value></data>
+  <data name="Goal against" xml:space="preserve"><value>Tegen doelpunt</value></data>
   <data name="Timeline" xml:space="preserve"><value>Tijdlijn</value></data>
   <data name="Nothing has happened yet" xml:space="preserve"><value>Er is nog niets gebeurd</value></data>
   <data name="Minutes played" xml:space="preserve"><value>Gespeelde minuten</value></data>
   <data name="On the pitch" xml:space="preserve"><value>In het veld</value></data>
   <data name="Live now" xml:space="preserve"><value>Nu live</value></data>
+  <!-- Home banner: the same fixture before kick-off -->
+  <data name="Today" xml:space="preserve"><value>Vandaag</value></data>
   <data name="Remove" xml:space="preserve"><value>Verwijderen</value></data>
   <data name="Undo" xml:space="preserve"><value>Ongedaan maken</value></data>
   <data name="Match started" xml:space="preserve"><value>Wedstrijd gestart</value></data>
@@ -286,7 +284,6 @@
   <data name="Statistics" xml:space="preserve"><value>Statistieken</value></data>
   <data name="Season stats" xml:space="preserve"><value>Seizoen statistieken</value></data>
   <data name="See the team record, top scorers, and playing time." xml:space="preserve"><value>Bekijk de teambalans, topscorers en speeltijd.</value></data>
-  <data name="Go to Stats" xml:space="preserve"><value>Naar statistieken</value></data>
 
   <!-- Position names (keys are the English DisplayName) -->
   <data name="Goalkeeper" xml:space="preserve"><value>Keeper</value></data>

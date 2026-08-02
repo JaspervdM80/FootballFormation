@@ -17,50 +17,82 @@ public partial class Home : IDisposable
     [Inject] private NavigationManager Navigation { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
-    private Game? LiveGame { get; set; }
+    private Game? TodaysGame { get; set; }
+
+    private bool IsLive => TodaysGame?.MatchState == MatchState.InProgress;
+
+    /// <summary>Only a match actually being played gets the loud treatment.</summary>
+    private string BannerCssClass => TodaysGame?.MatchState switch
+    {
+        MatchState.InProgress => "",
+        MatchState.Finished => "home-banner-done",
+        _ => "home-banner-upcoming"
+    };
+
+    private string BannerLabel => TodaysGame?.MatchState switch
+    {
+        MatchState.InProgress => L["Live now"],
+        MatchState.Finished => L["Full time"],
+        _ => L["Today"]
+    };
 
     /// <summary>The score in venue order — ours first at home, the opponent's first away.</summary>
     private string LiveScore
     {
         get
         {
-            if (LiveGame is null) return "";
-            var ours = LiveGame.ScoreHome ?? 0;
-            var theirs = LiveGame.ScoreAway ?? 0;
-            return LiveGame.IsHomeGame ? $"{ours} – {theirs}" : $"{theirs} – {ours}";
+            if (TodaysGame is null) return "";
+            var ours = TodaysGame.ScoreHome ?? 0;
+            var theirs = TodaysGame.ScoreAway ?? 0;
+            return TodaysGame.IsHomeGame ? $"{ours} – {theirs}" : $"{theirs} – {ours}";
         }
     }
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadLiveGameAsync();
+        await LoadTodaysGameAsync();
 
         // Any live-match change at all, not just this game's: the banner has no game of its own
         // until it loads one, and a match starting is exactly the event it must not miss.
         Notifier.Changed += OnLiveChanged;
     }
 
-    private async Task LoadLiveGameAsync()
+    private async Task LoadTodaysGameAsync()
     {
-        var result = await Live.GetInProgressAsync();
-        LiveGame = result.IsSuccess ? result.Value : null;
+        var result = await Live.GetTodaysMatchAsync();
+        TodaysGame = result.IsSuccess ? result.Value : null;
     }
 
     private void OnLiveChanged(int gameId) => _ = InvokeAsync(async () =>
     {
-        await LoadLiveGameAsync();
+        await LoadTodaysGameAsync();
         StateHasChanged();
     });
 
-    private void OpenLiveMatch()
+    /// <summary>
+    /// Where the banner goes: the live screen while there is still a match to follow — before
+    /// kick-off too, and for spectators as much as the coach — and the result once it is over.
+    /// </summary>
+    private void OpenTodaysMatch()
     {
-        if (LiveGame is not null) Navigation.NavigateTo($"/games/{LiveGame.Id}/live");
+        if (TodaysGame is null) return;
+
+        var page = TodaysGame.MatchState == MatchState.Finished ? "result" : "live";
+        Navigation.NavigateTo($"/games/{TodaysGame.Id}/{page}");
     }
 
     /// <summary>The banner is a div, so it needs the keyboard activation a button would give it.</summary>
-    private void OpenLiveMatchOnKey(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    private void OpenTodaysMatchOnKey(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
     {
-        if (e.Key is "Enter" or " ") OpenLiveMatch();
+        if (e.Key is "Enter" or " ") OpenTodaysMatch();
+    }
+
+    private void Open(string url) => Navigation.NavigateTo(url);
+
+    /// <summary>Same reason as the banner: the tiles are divs standing in for links.</summary>
+    private void OpenOnKey(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e, string url)
+    {
+        if (e.Key is "Enter" or " ") Open(url);
     }
 
     public void Dispose() => Notifier.Changed -= OnLiveChanged;
