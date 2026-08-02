@@ -29,18 +29,50 @@ public partial class Settings
 
     private List<Season>? _seasons;
 
+    /// <summary>The season the defaults card is editing. Starts on whatever the app bar picker is
+    /// showing, but it is its own choice: an admin sets next season's game length while still
+    /// looking at this season's games.</summary>
+    private int _prefsSeasonId;
+
+    private Season? PrefsSeason => _seasons?.FirstOrDefault(s => s.Id == _prefsSeasonId);
+
     private string _currentPassword = "";
     private string _newPassword = "";
     private string _confirmPassword = "";
 
     protected override async Task OnInitializedAsync()
     {
-        var prefsResult = await PreferencesService.GetAsync();
+        await SeasonState.EnsureLoadedAsync();
+        await LoadSeasons();
+
+        _prefsSeasonId = SeasonState.SelectedSeasonId
+            ?? _seasons?.FirstOrDefault(s => s.IsCurrent)?.Id
+            ?? _seasons?.FirstOrDefault()?.Id
+            ?? 0;
+
+        await LoadPreferences();
+    }
+
+    private async Task LoadPreferences()
+    {
+        if (_prefsSeasonId == 0)
+        {
+            _prefs = null;
+            _nextMatchDate = null;
+            return;
+        }
+
+        var prefsResult = await PreferencesService.GetAsync(_prefsSeasonId);
         if (!Snackbar.ReportFailure(prefsResult)) return;
 
         _prefs = prefsResult.Value;
         await RefreshNextMatchDate();
-        await LoadSeasons();
+    }
+
+    private async Task OnPrefsSeasonChanged(int seasonId)
+    {
+        _prefsSeasonId = seasonId;
+        await LoadPreferences();
     }
 
     private async Task LoadSeasons()
@@ -55,6 +87,15 @@ public partial class Settings
     {
         await LoadSeasons();
         await SeasonState.RefreshAsync();
+
+        // The defaults card may have been editing the season that just went away.
+        if (_seasons?.Any(s => s.Id == _prefsSeasonId) != true)
+        {
+            _prefsSeasonId = _seasons?.FirstOrDefault(s => s.IsCurrent)?.Id
+                ?? _seasons?.FirstOrDefault()?.Id
+                ?? 0;
+            await LoadPreferences();
+        }
     }
 
     private async Task OpenAddSeasonDialog()
@@ -113,14 +154,14 @@ public partial class Settings
         if (_prefs is null) return;
 
         var saveResult = await PreferencesService.SaveAsync(_prefs);
-        if (!Snackbar.Report(saveResult, L["Preferences saved!"])) return;
+        if (!Snackbar.Report(saveResult, L["Preferences for {0} saved!", PrefsSeason?.Name ?? ""])) return;
 
         await RefreshNextMatchDate();
     }
 
     private async Task RefreshNextMatchDate()
     {
-        var dateResult = await PreferencesService.GetNextMatchDateAsync();
+        var dateResult = await PreferencesService.GetNextMatchDateAsync(_prefsSeasonId);
         if (dateResult.IsSuccess) _nextMatchDate = dateResult.Value;
     }
 

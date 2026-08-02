@@ -1,5 +1,6 @@
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
+using FootballFormation.UI.State;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -13,6 +14,7 @@ public partial class GameDialog
     [Inject] private SeasonSquadService SquadService { get; set; } = null!;
     [Inject] private SeasonService SeasonService { get; set; } = null!;
     [Inject] private MatchPreferencesService PreferencesService { get; set; } = null!;
+    [Inject] private SeasonState SeasonState { get; set; } = null!;
 
     [Parameter]
     public Game? Game { get; set; }
@@ -42,11 +44,17 @@ public partial class GameDialog
     /// <summary>True once a date resolves to no season at all — a fixture opening a new season.</summary>
     private bool SeasonNotCreatedYet { get; set; }
 
+    /// <summary>The season whose defaults are currently in the form, so they are re-applied only
+    /// when the game actually moves to a different season.</summary>
+    private int _defaultsFromSeasonId;
+
     private List<Player> SquadPlayers => Squad.FullMembers;
     private List<Player> GuestPlayers => Squad.Guests;
 
     protected override async Task OnInitializedAsync()
     {
+        await SeasonState.EnsureLoadedAsync();
+
         var seasonsResult = await SeasonService.GetAllAsync();
         if (seasonsResult.IsSuccess)
         {
@@ -55,16 +63,18 @@ public partial class GameDialog
 
         if (Game is null)
         {
-            var prefsResult = await PreferencesService.GetAsync();
-            if (prefsResult.IsSuccess)
-            {
-                var prefs = prefsResult.Value!;
-                SelectedFormationType = prefs.DefaultFormation;
-                SplitType = prefs.DefaultSplitType;
-                GameDurationMinutes = prefs.GameDurationMinutes;
-            }
+            // Preferences are per season, and the date comes out of them (the match day), so the
+            // season has to be picked before the date exists: the one the viewer is filtering by.
+            // The date that follows lands inside that season, so "Auto (by date)" still resolves
+            // to it and ReloadSquadAsync leaves the defaults alone.
+            var seasonId = SeasonState.SelectedSeasonId
+                ?? Seasons.FirstOrDefault(s => s.IsCurrent)?.Id
+                ?? Seasons.FirstOrDefault()?.Id
+                ?? 0;
 
-            var dateResult = await PreferencesService.GetNextMatchDateAsync();
+            await ApplySeasonDefaultsAsync(seasonId);
+
+            var dateResult = await PreferencesService.GetNextMatchDateAsync(seasonId);
             if (dateResult.IsSuccess)
             {
                 Date = dateResult.Value;
@@ -117,12 +127,33 @@ public partial class GameDialog
             Squad = squadResult.IsSuccess ? squadResult.Value! : SeasonSquad.Empty;
         }
 
+        // Formation, split and duration are season defaults too, so moving a *new* game to another
+        // season re-applies them. Only for a new game: an existing game's own settings are history
+        // and must never be rewritten by a season change.
+        if (Game is null && seasonId != 0 && seasonId != _defaultsFromSeasonId)
+            await ApplySeasonDefaultsAsync(seasonId);
+
         // Drop selections that aren't valid for this season, so switching can't smuggle a stale id
         // through to Submit. (Post-backfill nobody is outside a squad, but a later removal could.)
         UnavailablePlayerIds = [.. UnavailablePlayerIds.Where(Squad.IsFullMember)];
         GuestPlayerIds = [.. GuestPlayerIds.Where(id => Squad.Contains(id) && Squad.IsGuest(id))];
 
         StateHasChanged();
+    }
+
+    /// <summary>Fills formation, split and duration from a season's preferences.</summary>
+    private async Task ApplySeasonDefaultsAsync(int seasonId)
+    {
+        if (seasonId <= 0) return;
+
+        var prefsResult = await PreferencesService.GetAsync(seasonId);
+        if (prefsResult.IsFailure) return;
+
+        var prefs = prefsResult.Value!;
+        SelectedFormationType = prefs.DefaultFormation;
+        SplitType = prefs.DefaultSplitType;
+        GameDurationMinutes = prefs.GameDurationMinutes;
+        _defaultsFromSeasonId = seasonId;
     }
 
     protected override void OnParametersSet()

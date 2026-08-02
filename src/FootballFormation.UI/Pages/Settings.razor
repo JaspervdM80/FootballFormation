@@ -7,17 +7,26 @@
     @L["Match Preferences"]
 </MudText>
 <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 45%, transparent);" Class="mb-6">
-    @L["These defaults are applied when creating new games."]
+    @L["These defaults are applied when creating new games, and are kept per season."]
 </MudText>
-
-@if (_prefs is null)
-{
-    <MudProgressCircular Indeterminate="true" />
-    return;
-}
 
 <MudPaper Class="pa-6" MaxWidth="500px" Elevation="2" Style="border-radius: 16px;">
     <div class="card-label">@L["Defaults"]</div>
+
+    <MudSelect T="int" Value="_prefsSeasonId" ValueChanged="OnPrefsSeasonChanged"
+               Label="@L["Season"]" Class="mb-4">
+        @foreach (var season in _seasons ?? [])
+        {
+            <MudSelectItem Value="season.Id">@season.Name</MudSelectItem>
+        }
+    </MudSelect>
+
+    @if (_prefs is null)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else
+    {
     <MudForm @ref="_form">
         <MudNumericField T="int" @bind-Value="_prefs.GameDurationMinutes"
                          Label="@L["Game Duration (minutes)"]" Min="10" Max="120" Step="5"
@@ -54,6 +63,7 @@
                OnClick="Save" FullWidth="true">
         @L["Save Preferences"]
     </MudButton>
+    }
 </MudPaper>
 
 <MudPaper Class="pa-6 mt-6" MaxWidth="500px" Elevation="2" Style="border-radius: 16px;">
