@@ -66,6 +66,32 @@ public class Game
     public bool HasLineup => Periods.Any(p => p.PlayerPositions.Count > 0);
 
     /// <summary>
+    /// True once the game's data is settled enough to count towards statistics: the final whistle
+    /// was blown on the live screen, or the game was never run live but has a final score on file.
+    /// A match in progress never counts, however many goals are already logged — otherwise the
+    /// season table and scorer lists would shift while the game is still being played.
+    /// </summary>
+    public bool IsComplete => MatchState == MatchState.Finished
+        || (MatchState == MatchState.NotStarted && ScoreHome.HasValue && ScoreAway.HasValue);
+
+    /// <summary>
+    /// True when at least one period was actually kicked off, i.e. the game has real timings and
+    /// the planned lineup is no longer the best source for who played how long.
+    /// </summary>
+    public bool HasActualTimings => Periods.Any(p => p.StartedAtSeconds is not null);
+
+    /// <summary>
+    /// How long the match really lasted, summed over the periods that were played out. Falls back
+    /// to the scheduled duration when the game was never run live. This is the denominator for a
+    /// player's available minutes, so utilisation cannot exceed 100% on a match that over-ran.
+    /// </summary>
+    public int PlayedDurationMinutes => HasActualTimings
+        ? Periods
+            .Where(p => p.StartedAtSeconds is not null && p.EndedAtSeconds is not null)
+            .Sum(p => p.EndedAtSeconds!.Value - p.StartedAtSeconds!.Value) / 60
+        : GameDurationMinutes;
+
+    /// <summary>
     /// Squad players are in unless marked unavailable; guests are out unless explicitly added.
     /// <para>
     /// Guest status is per season, so the season's squad has to be passed in. Anyone outside the

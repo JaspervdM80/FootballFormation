@@ -48,8 +48,10 @@ public static class SeasonStatsReport
     /// to <see cref="PlayerStatsReport.Build"/>, which needs per-season guest status.</param>
     public static SeasonStats Build(IReadOnlyList<Player> players, IReadOnlyList<Game> games, SeasonSquads squads)
     {
+        // IsComplete, not just "has a score": a match in progress has a running scoreline from its
+        // first goal, and must not move the table, the form guide or the record until full time.
         var finished = games
-            .Where(g => g.ScoreHome.HasValue && g.ScoreAway.HasValue)
+            .Where(g => g.IsComplete && g.ScoreHome.HasValue && g.ScoreAway.HasValue)
             .ToList();
 
         var form = finished

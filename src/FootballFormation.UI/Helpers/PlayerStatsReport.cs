@@ -20,6 +20,10 @@ public class PlayerGameStat
     public int Goals { get; init; }
     public int Assists { get; init; }
 
+    /// <summary>False when the minutes are the planned estimate because the game was never run
+    /// live. See <see cref="GameMinutesReport"/>.</summary>
+    public bool IsActual { get; init; }
+
     public bool Played => Minutes > 0;
 }
 
@@ -37,7 +41,7 @@ public class PlayerStats
     /// <summary>Minutes spent in goal (position GK).</summary>
     public int GoalkeeperMinutes { get; init; }
 
-    /// <summary>Minutes the player was available to play — the full duration of every game
+    /// <summary>Minutes the player was available to play — the played duration of every game
     /// they were in the roster for (with a lineup). Games they were unavailable for don't
     /// count, so this is a fair denominator: on-pitch minutes vs. bench/unavailable time.</summary>
     public int AvailableMinutes { get; init; }
@@ -64,9 +68,17 @@ public class PlayerStats
 /// <summary>
 /// Turns a player's game history into aggregate stats. Pure computation — no state, no
 /// service calls, and no opinion about scope: the caller decides which games to pass in, which
-/// is how the same builder serves both season and career figures. Minute logic mirrors
-/// <see cref="PlayingTimeReport"/>: a player earns a period's minutes only when fielded (not a
-/// substitute) in that period.
+/// is how the same builder serves both season and career figures.
+/// <para>
+/// Only games that are <see cref="Game.IsComplete"/> contribute anything — minutes, positions,
+/// goals, assists or available minutes. A match still being played leaves every figure untouched
+/// until the final whistle.
+/// </para>
+/// <para>
+/// Minutes and positions come from <see cref="GameMinutesReport"/>, which reads the real timings
+/// and substitutions of a game that was run live and only falls back to the planned lineup for
+/// one that was not.
+/// </para>
 /// </summary>
 public static class PlayerStatsReport
 {
@@ -77,30 +89,32 @@ public static class PlayerStatsReport
     public static PlayerStats Build(Player player, IEnumerable<Game> games, SeasonSquads squads)
     {
         var gameStats = new List<PlayerGameStat>();
-        var positionMinutes = new Dictionary<PlayerPosition, int>();
+
+        // Seconds, not minutes: real timings rarely land on a whole minute, and rounding each game
+        // separately would drift. The conversion happens once, at the end.
+        var positionSeconds = new Dictionary<PlayerPosition, int>();
         var availableMinutes = 0;
 
         foreach (var game in games)
         {
+            // A game in progress contributes nothing at all until it has been played out.
+            if (!game.IsComplete) continue;
+
             // Available = the player was in the roster for a game that actually has a lineup,
             // whether they started, subbed, or sat the bench. Unavailable games don't count.
             if (game.HasLineup && game.IsInRoster(player, squads))
-                availableMinutes += game.GameDurationMinutes;
+                availableMinutes += game.PlayedDurationMinutes;
 
-            var playedPeriods = 0;
+            var gameMinutes = GameMinutesReport.Build(game);
+            var seconds = 0;
 
-            foreach (var period in game.Periods)
+            foreach (var (position, span) in gameMinutes.PositionsFor(player.Id))
             {
-                var entry = period.PlayerPositions
-                    .FirstOrDefault(pp => pp.PlayerId == player.Id && !pp.IsSubstitute);
-                if (entry is null) continue;
-
-                playedPeriods++;
-                positionMinutes[entry.Position] =
-                    positionMinutes.GetValueOrDefault(entry.Position) + game.PeriodDurationMinutes;
+                positionSeconds[position] = positionSeconds.GetValueOrDefault(position) + span;
+                seconds += span;
             }
 
-            var minutes = playedPeriods * game.PeriodDurationMinutes;
+            var minutes = ToMinutes(seconds);
 
             // Own goals don't count towards the scorer's tally.
             var goals = game.Goals.Count(g => g.ScorerId == player.Id && !g.IsOwnGoal);
@@ -114,19 +128,22 @@ public static class PlayerStatsReport
                 Game = game,
                 Minutes = minutes,
                 Goals = goals,
-                Assists = assists
+                Assists = assists,
+                IsActual = gameMinutes.IsActual
             });
         }
 
-        var totalMinutes = positionMinutes.Values.Sum();
+        var totalSeconds = positionSeconds.Values.Sum();
+        var totalMinutes = ToMinutes(totalSeconds);
 
-        var positions = positionMinutes
+        var positions = positionSeconds
             .Select(kv => new PositionStat
             {
                 Position = kv.Key,
-                Minutes = kv.Value,
-                Percentage = totalMinutes > 0
-                    ? Math.Round((double)kv.Value / totalMinutes * 100, 0)
+                Minutes = ToMinutes(kv.Value),
+                // From seconds, so the share is exact even where the rounded minutes are not.
+                Percentage = totalSeconds > 0
+                    ? Math.Round((double)kv.Value / totalSeconds * 100, 0)
                     : 0
             })
             .OrderByDescending(p => p.Minutes)
@@ -138,7 +155,7 @@ public static class PlayerStatsReport
             Player = player,
             GamesPlayed = gameStats.Count(g => g.Played),
             TotalMinutes = totalMinutes,
-            GoalkeeperMinutes = positionMinutes.GetValueOrDefault(PlayerPosition.GK),
+            GoalkeeperMinutes = ToMinutes(positionSeconds.GetValueOrDefault(PlayerPosition.GK)),
             AvailableMinutes = availableMinutes,
             Goals = gameStats.Sum(g => g.Goals),
             Assists = gameStats.Sum(g => g.Assists),
@@ -146,4 +163,8 @@ public static class PlayerStatsReport
             Games = gameStats
         };
     }
+
+    /// <summary>Rounds to the nearest minute rather than truncating: a half whistled at 29:50 is
+    /// 30 minutes played, not 29.</summary>
+    private static int ToMinutes(int seconds) => (int)Math.Round(seconds / 60.0);
 }
