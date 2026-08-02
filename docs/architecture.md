@@ -14,7 +14,7 @@ Models/
   GamePlayerPosition.cs  — Links player to position in a period (IsSubstitute flag)
   GameGoal.cs            — A goal: scorer (null for the opponent), assister, minute, own/opponent flags
   GameSubstitution.cs    — A timestamped change made during a live match
-  MatchPreferences.cs    — Singleton preferences (duration, split, formation, match day)
+  MatchPreferences.cs    — Per-season game defaults (duration, split, formation, match day)
 Data/
   AppDbContext.cs         — EF Core context, value converters for List<PlayerPosition> and List<int>
 Services/
@@ -26,7 +26,8 @@ Services/
   LiveMatchService.cs     — Runs a match live: clock, period transitions, goals, substitutions,
                             GetInProgressAsync for the home-page banner
   LiveMatchNotifier.cs    — Singleton: fans live match changes out to every open circuit
-  MatchPreferencesService.cs — Get/Save prefs, GetNextMatchDateAsync
+  MatchPreferencesService.cs — Per-season prefs: GetAsync(seasonId)/GetCurrentAsync/Save,
+                            GetNextMatchDateAsync(seasonId)
 Result.cs                — Result and Result<T> base types
 ```
 

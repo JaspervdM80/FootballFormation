@@ -194,13 +194,30 @@ fails loudly instead of silently rewriting match history.
 Only the **most recent** substitution of a period can be undone (`RemoveSubstitutionAsync`);
 reversing an older swap would fight every change made on that slot since.
 
-## MatchPreferences (singleton)
+## MatchPreferences (one row per season)
 | Property | Type | Default |
 |---|---|---|
+| Id | int | PK |
+| SeasonId | int | FK -> Season, **Cascade** delete. Unique index |
 | GameDurationMinutes | int | 60 |
 | DefaultSplitType | GameSplitType | Halves |
 | DefaultFormation | FormationType | F442 |
 | MatchDay | DayOfWeek | Saturday |
+
+The defaults a new game starts from are **per season**, not per app: a team moving up an age group
+plays longer games and often a different shape, and the fixture day can move too. Keeping one row
+per season means setting this year's values never rewrites the ones last year's games were created
+under.
+
+The row is created on first read by `MatchPreferencesService.GetAsync(seasonId)`, seeded via
+`MatchPreferences.CopyFor` from the newest season **before** it that has one — so a new season
+inherits last year's settings rather than the hardcoded 4-4-2 / 60 minutes, and per-season storage
+costs the user no extra work. `GetCurrentAsync()` is the no-season-in-hand shortcut.
+
+`GetNextMatchDateAsync(seasonId)` uses that season's `MatchDay`, counts only that season's games,
+and keeps its answer inside the season window: it measures from the opening day for a season not
+started yet, and falls back to the last match day of the window for one already over. Without that
+clamp, adding the first fixture of next season proposed a date in the season we are living in.
 
 ## Key Enums
 - **PlayerPosition** (32 values): GK, LB, LCB, CB, RCB, RB, LWB, RWB, DEF, LCDM, RCDM, CDM, LCM, CM, RCM, LM, RM, LCAM, RCAM, CAM, MID, LW, RW, W, LF, RF, CF, LST, RST, ST, ATT
@@ -224,4 +241,5 @@ so it must not make a person or a game-free season undeletable. Deleting a seaso
 its squad rows with it; deleting a **person** removes them from every season's squad and cascades
 their lineup and goal rows (see [known_issues.md](known_issues.md)).
 
-MatchPreferences is standalone (singleton row).
+`Season 1--1 MatchPreferences` — cascade, like `SeasonSquadMember`: a preferences row is pure
+configuration with no history, so it must never make an otherwise game-free season undeletable.

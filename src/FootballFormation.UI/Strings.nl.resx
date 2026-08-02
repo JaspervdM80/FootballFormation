@@ -317,7 +317,7 @@
 
   <!-- Settings -->
   <data name="Match Preferences" xml:space="preserve"><value>Wedstrijdvoorkeuren</value></data>
-  <data name="These defaults are applied when creating new games." xml:space="preserve"><value>Deze standaardwaarden worden gebruikt bij het aanmaken van nieuwe wedstrijden.</value></data>
+  <data name="These defaults are applied when creating new games, and are kept per season." xml:space="preserve"><value>Deze standaardwaarden worden gebruikt bij het aanmaken van nieuwe wedstrijden en gelden per seizoen.</value></data>
   <data name="Defaults" xml:space="preserve"><value>Standaardwaarden</value></data>
   <data name="Default Game Split" xml:space="preserve"><value>Standaard speelperiodes</value></data>
   <data name="Default Formation" xml:space="preserve"><value>Standaard opstelling</value></data>
@@ -328,7 +328,7 @@
   <data name="Current Password" xml:space="preserve"><value>Huidig wachtwoord</value></data>
   <data name="New Password" xml:space="preserve"><value>Nieuw wachtwoord</value></data>
   <data name="Confirm New Password" xml:space="preserve"><value>Bevestig nieuw wachtwoord</value></data>
-  <data name="Preferences saved!" xml:space="preserve"><value>Voorkeuren opgeslagen!</value></data>
+  <data name="Preferences for {0} saved!" xml:space="preserve"><value>Voorkeuren voor {0} opgeslagen!</value></data>
   <data name="Please fill in all password fields" xml:space="preserve"><value>Vul alle wachtwoordvelden in</value></data>
   <data name="New passwords do not match" xml:space="preserve"><value>De nieuwe wachtwoorden komen niet overeen</value></data>
   <data name="Password changed successfully!" xml:space="preserve"><value>Wachtwoord gewijzigd!</value></data>
