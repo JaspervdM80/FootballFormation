@@ -100,12 +100,17 @@ is ever needed:
   navigation within a tab but resets on a browser refresh.
 - Loading is a **memoized task** (`EnsureLoadedAsync() => _loading ??= LoadAsync()`). A scoped
   service can't load in its constructor, and the layout and the page both need the data during
-  their own `OnInitializedAsync`; they interleave at the first `await` and share one scoped
-  `AppDbContext`, where a second concurrent query throws *"A second operation was started on this
-  context."* Every consumer awaits it as the **first statement** of `OnInitializedAsync`, before
-  any other service call.
-- Change notification is `event Action? OnChanged`; consumers subscribe in `OnInitializedAsync`,
-  re-load inside `InvokeAsync`, and unsubscribe via `IDisposable`.
+  their own `OnInitializedAsync`, where they interleave at the first `await`. This was once
+  load-bearing — the services shared one scoped `AppDbContext` and a second concurrent query threw
+  *"A second operation was started on this context."* They take a short-lived context per operation
+  now (`AddDbContextFactory`), so it is purely an optimisation: forgetting it costs a duplicate
+  query, not a crash.
+- Change notification is `event Action? OnChanged`. Season-aware **pages don't wire this up
+  themselves** — they inherit `SeasonAwarePage` (`UI/Components/SeasonAwarePage.cs`), which awaits
+  the load, subscribes, re-runs `LoadAsync()` inside `InvokeAsync` on change, and unsubscribes on
+  dispose. Override `LoadAsync()`; use `OnInitializedCoreAsync()` for one-time setup such as
+  reading the auth state. Declare the base with `@inherits SeasonAwarePage` in the `.razor` —
+  Razor owns the base class, so putting it on the code-behind is a CS0263 error.
 - The state holds a **view** choice and never writes shared data. The picker is reachable by
   anonymous visitors, so it must not touch `Season.IsCurrent`, which is admin-owned on `/settings`.
 

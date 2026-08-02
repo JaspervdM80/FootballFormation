@@ -1,0 +1,220 @@
+/* The one pitch. Everything that used to differ between the builder's pitch and the overview's
+   is a custom property set by the size variant below — so the two can no longer drift apart. */
+
+.pitch {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    /* Physical, not themed: a pitch is green whatever the club palette is (see docs/theming.md) */
+    background: linear-gradient(
+        to bottom,
+        #2d5a1e 0%, #3a7a28 8%,
+        #2d5a1e 16%, #3a7a28 24%,
+        #2d5a1e 32%, #3a7a28 40%,
+        #2d5a1e 48%, #3a7a28 56%,
+        #2d5a1e 64%, #3a7a28 72%,
+        #2d5a1e 80%, #3a7a28 88%,
+        #2d5a1e 100%
+    );
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 6px;
+}
+
+.pitch-regular {
+    --chip-size: 52px;
+    --chip-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+    --number-size: 0.85rem;
+    --name-size: 0.55rem;
+    --name-weight: 600;
+    --name-color: rgba(255, 255, 255, 0.9);
+    --name-gap: 2px;
+    --label-color: rgba(255, 255, 255, 0.6);
+    --line-color: rgba(255, 255, 255, 0.35);
+    --goal-color: rgba(255, 255, 255, 0.25);
+    --empty-border: rgba(255, 255, 255, 0.35);
+}
+
+.pitch-compact {
+    --chip-size: 44px;
+    --chip-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    --number-size: 0.75rem;
+    --name-size: 0.45rem;
+    --name-weight: 500;
+    --name-color: rgba(255, 255, 255, 0.85);
+    --name-gap: 1px;
+    --label-color: rgba(255, 255, 255, 0.7);
+    --line-color: rgba(255, 255, 255, 0.4);
+    --goal-color: rgba(255, 255, 255, 0.3);
+    --empty-border: rgba(255, 255, 255, 0.45);
+}
+
+/* Keeps the builder's pitch beside its bench without the page scrolling */
+.pitch-constrained {
+    max-height: 65vh;
+    max-width: calc(65vh * 3 / 4);
+}
+
+/* Markings */
+.pitch-center-line {
+    position: absolute;
+    top: 50%;
+    left: 5%;
+    right: 5%;
+    height: 2px;
+    background: var(--line-color);
+}
+
+.pitch-center-circle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20%;
+    aspect-ratio: 1;
+    border: 2px solid var(--line-color);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.pitch-penalty-top,
+.pitch-penalty-bottom {
+    position: absolute;
+    left: 22%;
+    width: 56%;
+    height: 14%;
+    border: 2px solid var(--line-color);
+}
+
+.pitch-penalty-top {
+    top: 0;
+    border-top: none;
+}
+
+.pitch-penalty-bottom {
+    bottom: 0;
+    border-bottom: none;
+}
+
+.pitch-goal-top,
+.pitch-goal-bottom {
+    position: absolute;
+    left: 38%;
+    width: 24%;
+    height: 4%;
+    border: 2px solid var(--goal-color);
+}
+
+.pitch-goal-top {
+    top: 0;
+    border-top: none;
+}
+
+.pitch-goal-bottom {
+    bottom: 0;
+    border-bottom: none;
+}
+
+/* Slots */
+.pitch-slot {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+}
+
+.pitch-player,
+.pitch-empty {
+    width: var(--chip-size);
+    height: var(--chip-size);
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--chip-shadow);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pitch-empty {
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px dashed var(--empty-border);
+}
+
+/* Only when the host wired up a click or a drag — the plain overview stays inert. */
+.pitch-clickable {
+    cursor: pointer;
+}
+
+.pitch-clickable:hover {
+    transform: scale(1.15);
+}
+
+.pitch-clickable:active {
+    transform: scale(0.92);
+}
+
+/* White, not the club color: the highlight must stay visible on the green pitch
+   whatever the club palette is */
+.pitch-empty.drop-ready {
+    border-color: #fff;
+    background: rgba(255, 255, 255, 0.25);
+    cursor: pointer;
+    animation: pitch-pulse 1s infinite;
+}
+
+@keyframes pitch-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+}
+
+.pitch-number {
+    color: #fff;
+    font-size: var(--number-size);
+    font-weight: 700;
+    line-height: 1;
+}
+
+.pitch-name {
+    color: var(--name-color);
+    font-size: var(--name-size);
+    font-weight: var(--name-weight);
+    line-height: 1;
+    margin-top: var(--name-gap);
+    max-width: calc(var(--chip-size) - 4px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.pitch-label {
+    color: var(--label-color);
+    font-size: 0.55rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+/* Position fit. The colours themselves are tokens in theme.css, shared with the builder's
+   legend and playing-time dots, so the five tiers can only ever be defined once. */
+.fit-preferred {
+    background: var(--fit-preferred);
+    border: 2px solid var(--fit-preferred-edge);
+}
+
+.fit-natural {
+    background: var(--fit-natural);
+    border: 2px solid var(--fit-natural-edge);
+}
+
+.fit-alternative {
+    background: var(--fit-alternative);
+    border: 2px solid var(--fit-alternative-edge);
+}
+
+.fit-compatible {
+    background: var(--fit-compatible);
+    border: 2px solid var(--fit-compatible-edge);
+}
+
+.fit-out-of-position {
+    background: var(--fit-out-of-position);
+    border: 2px solid var(--fit-out-of-position-edge);
+}

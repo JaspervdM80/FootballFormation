@@ -5,12 +5,14 @@ using Microsoft.Extensions.Logging;
 
 namespace FootballFormation.Core.Services;
 
-public class GameService(AppDbContext db, SeasonService seasons, ILogger<GameService> logger)
+public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonService seasons, ILogger<GameService> logger)
 {
     /// <param name="seasonId">Limits the result to one season. Null loads every season.</param>
     public Task<Result<List<Game>>> GetAllAsync(int? seasonId = null) =>
         ServiceOperation.RunAsync(logger, "load games", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var games = await db.Games
                 .Where(g => seasonId == null || g.SeasonId == seasonId)
                 .Include(g => g.Periods)
@@ -26,6 +28,8 @@ public class GameService(AppDbContext db, SeasonService seasons, ILogger<GameSer
     public Task<Result<List<Game>>> GetAllWithDetailsAsync(int? seasonId = null) =>
         ServiceOperation.RunAsync(logger, "load game details", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var games = await db.Games
                 .Where(g => seasonId == null || g.SeasonId == seasonId)
                 .Include(g => g.Periods)
@@ -46,6 +50,8 @@ public class GameService(AppDbContext db, SeasonService seasons, ILogger<GameSer
     public Task<Result<Game>> GetByIdAsync(int id) =>
         ServiceOperation.RunAsync(logger, "load game", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var game = await db.Games
                 .Include(g => g.Periods.OrderBy(p => p.PeriodType))
                     .ThenInclude(p => p.PlayerPositions)
@@ -59,7 +65,7 @@ public class GameService(AppDbContext db, SeasonService seasons, ILogger<GameSer
             if (game is null)
             {
                 logger.LogWarning("Game {GameId} not found", id);
-                return Result.Failure<Game>($"Game with ID {id} not found");
+                return Result.Failure<Game>("Game with ID {0} not found", id);
             }
 
             return Result.Success(game);
@@ -68,13 +74,15 @@ public class GameService(AppDbContext db, SeasonService seasons, ILogger<GameSer
     public Task<Result<Game>> CreateAsync(Game game) =>
         ServiceOperation.RunAsync(logger, "create game", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             // SeasonId 0 is the dialog's "auto by date" default; an explicit choice passes through.
             // Resolving it here rather than at the call site keeps "every game has a season" an
             // invariant no caller can bypass.
             if (game.SeasonId == 0)
             {
                 var seasonResult = await seasons.GetOrCreateForDateAsync(game.Date);
-                if (seasonResult.IsFailure) return Result.Failure<Game>(seasonResult.Error!);
+                if (seasonResult.IsFailure) return seasonResult.To<Game>();
 
                 game.SeasonId = seasonResult.Value!.Id;
             }
@@ -95,6 +103,8 @@ public class GameService(AppDbContext db, SeasonService seasons, ILogger<GameSer
     public Task<Result> UpdateAsync(Game game) =>
         ServiceOperation.RunAsync(logger, "update game", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             db.Games.Update(game);
             await db.SaveChangesAsync();
 
@@ -106,6 +116,8 @@ public class GameService(AppDbContext db, SeasonService seasons, ILogger<GameSer
     public Task<Result> DeleteAsync(int id) =>
         ServiceOperation.RunAsync(logger, "delete game", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var game = await db.Games.FindAsync(id);
             if (game is null)
             {
@@ -123,6 +135,8 @@ public class GameService(AppDbContext db, SeasonService seasons, ILogger<GameSer
     public Task<Result> SaveScoreAsync(int gameId, int? scoreHome, int? scoreAway) =>
         ServiceOperation.RunAsync(logger, "save score", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var game = await db.Games.FindAsync(gameId);
             if (game is null)
             {
@@ -142,6 +156,8 @@ public class GameService(AppDbContext db, SeasonService seasons, ILogger<GameSer
     public Task<Result<GameGoal>> AddGoalAsync(GameGoal goal) =>
         ServiceOperation.RunAsync(logger, "add goal", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             db.GameGoals.Add(goal);
             await db.SaveChangesAsync();
 
@@ -159,6 +175,8 @@ public class GameService(AppDbContext db, SeasonService seasons, ILogger<GameSer
     public Task<Result> RemoveGoalAsync(int goalId) =>
         ServiceOperation.RunAsync(logger, "remove goal", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var goal = await db.GameGoals.FindAsync(goalId);
             if (goal is null)
             {
@@ -176,6 +194,8 @@ public class GameService(AppDbContext db, SeasonService seasons, ILogger<GameSer
     public Task<Result> SavePeriodLineupAsync(int periodId, List<GamePlayerPosition> positions) =>
         ServiceOperation.RunAsync(logger, "save lineup", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var existing = await db.GamePlayerPositions
                 .Where(pp => pp.GamePeriodId == periodId)
                 .ToListAsync();

@@ -1,7 +1,7 @@
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
-using FootballFormation.UI.State;
+using FootballFormation.UI.Components;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
@@ -12,11 +12,10 @@ namespace FootballFormation.UI.Pages;
 /// Season-scoped squad management. The squad is authoritative — it decides who can be picked for
 /// this season's games — so the page follows the season picker rather than listing everyone on file.
 /// </summary>
-public partial class Players : IDisposable
+public partial class Players
 {
     [Inject] private PlayerService PlayerService { get; set; } = null!;
     [Inject] private SeasonSquadService SquadService { get; set; } = null!;
-    [Inject] private SeasonState SeasonState { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
@@ -26,27 +25,9 @@ public partial class Players : IDisposable
     private Season? _previousSeason;
     private bool _loaded;
 
-    private int? SeasonId => SeasonState.SelectedSeasonId;
     private string SeasonName => SeasonState.SelectedSeason?.Name ?? "";
 
-    protected override async Task OnInitializedAsync()
-    {
-        // Must come before any other service call — see SeasonState.EnsureLoadedAsync.
-        await SeasonState.EnsureLoadedAsync();
-        SeasonState.OnChanged += OnSeasonChanged;
-
-        await Load();
-    }
-
-    private void OnSeasonChanged() => _ = InvokeAsync(async () =>
-    {
-        await Load();
-        StateHasChanged();
-    });
-
-    public void Dispose() => SeasonState.OnChanged -= OnSeasonChanged;
-
-    private async Task Load()
+    protected override async Task LoadAsync()
     {
         _loaded = false;
         _squad = null;
@@ -60,7 +41,7 @@ public partial class Players : IDisposable
         }
 
         var squadResult = await SquadService.GetSquadAsync(seasonId);
-        _squad = Snackbar.ReportFailure(squadResult) ? squadResult.Value! : SeasonSquad.Empty;
+        _squad = Snackbar.ReportFailure(L, squadResult) ? squadResult.Value! : SeasonSquad.Empty;
 
         var previousResult = await SquadService.FindPreviousSeasonAsync(seasonId);
         if (previousResult.IsSuccess) _previousSeason = previousResult.Value;
@@ -85,8 +66,8 @@ public partial class Players : IDisposable
         if (SeasonId is not { } seasonId || _previousSeason is null) return;
 
         var result = await SquadService.CopyFromAsync(_previousSeason.Id, seasonId);
-        Snackbar.Report(result, L["{0} players copied from {1}", result.Value, _previousSeason.Name]);
-        await Load();
+        Snackbar.Report(L, result, L["{0} players copied from {1}", result.Value, _previousSeason.Name]);
+        await LoadAsync();
     }
 
     /// <summary>Creates a new person and puts them in this season's squad in one action — creating
@@ -99,11 +80,11 @@ public partial class Players : IDisposable
         if (player is null) return;
 
         var created = await PlayerService.CreateAsync(player);
-        if (!Snackbar.ReportFailure(created)) return;
+        if (!Snackbar.ReportFailure(L, created)) return;
 
         var added = await SquadService.AddMemberAsync(seasonId, created.Value!.Id);
-        Snackbar.Report(added, L["{0} added to the squad", player.DisplayName]);
-        await Load();
+        Snackbar.Report(L, added, L["{0} added to the squad", player.DisplayName]);
+        await LoadAsync();
     }
 
     /// <summary>Adds someone already on file — a player from an earlier season, or a guest being
@@ -113,7 +94,7 @@ public partial class Players : IDisposable
         if (SeasonId is not { } seasonId) return;
 
         var candidatesResult = await SquadService.GetNonMembersAsync(seasonId);
-        if (!Snackbar.ReportFailure(candidatesResult)) return;
+        if (!Snackbar.ReportFailure(L, candidatesResult)) return;
 
         var candidates = candidatesResult.Value!;
         if (candidates.Count == 0)
@@ -126,9 +107,9 @@ public partial class Players : IDisposable
         if (picked is not { } choice) return;
 
         var result = await SquadService.AddMemberAsync(seasonId, choice.PlayerId, choice.IsGuest);
-        Snackbar.Report(result, L["{0} added to the squad",
+        Snackbar.Report(L, result, L["{0} added to the squad",
             candidates.First(p => p.Id == choice.PlayerId).DisplayName]);
-        await Load();
+        await LoadAsync();
     }
 
     private async Task ToggleGuest(SeasonSquadMember member)
@@ -137,10 +118,10 @@ public partial class Players : IDisposable
 
         var name = member.Player!.DisplayName;
         var result = await SquadService.SetGuestAsync(seasonId, member.PlayerId, !member.IsGuest);
-        Snackbar.Report(result, member.IsGuest
+        Snackbar.Report(L, result, member.IsGuest
             ? L["{0} is now a squad player", name]
             : L["{0} is now a guest", name]);
-        await Load();
+        await LoadAsync();
     }
 
     /// <summary>Removing from a squad is the everyday action; the service refuses once the player
@@ -156,8 +137,8 @@ public partial class Players : IDisposable
         if (!confirmed) return;
 
         var result = await SquadService.RemoveMemberAsync(seasonId, member.PlayerId);
-        Snackbar.Report(result, L["{0} removed from the squad", name], Severity.Warning);
-        await Load();
+        Snackbar.Report(L, result, L["{0} removed from the squad", name], Severity.Warning);
+        await LoadAsync();
     }
 
     private async Task OpenEditDialog(Player player)
@@ -166,8 +147,8 @@ public partial class Players : IDisposable
         if (updated is null) return;
 
         var result = await PlayerService.UpdateAsync(updated);
-        Snackbar.Report(result, L["Player {0} updated", updated.DisplayName]);
-        await Load();
+        Snackbar.Report(L, result, L["Player {0} updated", updated.DisplayName]);
+        await LoadAsync();
     }
 
     /// <summary>Deletes the person everywhere, cascading their lineup and goal rows in every
@@ -180,31 +161,24 @@ public partial class Players : IDisposable
         if (!confirmed) return;
 
         var result = await PlayerService.DeleteAsync(player.Id);
-        Snackbar.Report(result, L["Player {0} deleted", player.DisplayName], Severity.Warning);
-        await Load();
+        Snackbar.Report(L, result, L["Player {0} deleted", player.DisplayName], Severity.Warning);
+        await LoadAsync();
     }
 
     /// <summary>Returns the edited player, or null when the dialog was cancelled.</summary>
     private async Task<Player?> ShowPlayerDialogAsync(string title, Player? player = null)
     {
         var parameters = new DialogParameters<PlayerDialog>();
-        if (player is not null) parameters.Add(x => x.Player, player);
-
-        var dialog = await DialogService.ShowAsync<PlayerDialog>(title, parameters, UiFeedback.LockedDialog);
-        var result = await dialog.Result;
-
-        return result is { Canceled: false, Data: Player edited } ? edited : null;
+        return await DialogService.PromptAsync<PlayerDialog, Player>(title, p =>
+        {
+            if (player is not null) p.Add(x => x.Player, player);
+        });
     }
 
     /// <summary>Returns the picked player and guest status, or null when cancelled.</summary>
     private async Task<SquadMemberChoice?> ShowSquadMemberDialogAsync(List<Player> candidates)
     {
-        var parameters = new DialogParameters<SquadMemberDialog> { { x => x.Candidates, candidates } };
-
-        var dialog = await DialogService.ShowAsync<SquadMemberDialog>(
-            L["Add to squad"], parameters, UiFeedback.LockedDialog);
-        var result = await dialog.Result;
-
-        return result is { Canceled: false, Data: SquadMemberChoice choice } ? choice : null;
+        return await DialogService.PromptAsync<SquadMemberDialog, SquadMemberChoice>(
+            L["Add to squad"], p => p.Add(x => x.Candidates, candidates));
     }
 }

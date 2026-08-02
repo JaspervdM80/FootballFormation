@@ -16,6 +16,10 @@
     <link rel="apple-touch-icon" href="icons/icon-180.png" />
     <ResourcePreloader />
     <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    @* The club's colors, from the same ClubTheme record that builds MudBlazor's palette. Inline
+       and first, so every stylesheet below can read the tokens. The values are compile-time
+       constants in that record — nothing user-supplied reaches this markup. *@
+    <style>@(new MarkupString(FootballFormation.UI.Theming.ClubTheme.Current.ToCssVariables()))</style>
     <link rel="stylesheet" href="@Assets["theme.css"]" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["FootballFormation.Web.styles.css"]" />

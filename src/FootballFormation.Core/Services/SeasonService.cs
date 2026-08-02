@@ -5,12 +5,17 @@ using Microsoft.Extensions.Logging;
 
 namespace FootballFormation.Core.Services;
 
-public class SeasonService(AppDbContext db, ILogger<SeasonService> logger)
+public class SeasonService(
+    IDbContextFactory<AppDbContext> dbFactory,
+    TimeProvider time,
+    ILogger<SeasonService> logger)
 {
     /// <summary>Newest first — the season picker and the current-season fallbacks rely on it.</summary>
     public Task<Result<List<Season>>> GetAllAsync() =>
         ServiceOperation.RunAsync(logger, "load seasons", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var seasons = await db.Seasons
                 .OrderByDescending(s => s.StartDate)
                 .ToListAsync();
@@ -24,6 +29,8 @@ public class SeasonService(AppDbContext db, ILogger<SeasonService> logger)
     public Task<Result<Season>> GetCurrentAsync() =>
         ServiceOperation.RunAsync(logger, "load current season", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var season = await db.Seasons.FirstOrDefaultAsync(s => s.IsCurrent)
                 ?? await db.Seasons.OrderByDescending(s => s.StartDate).FirstOrDefaultAsync();
 
@@ -44,6 +51,8 @@ public class SeasonService(AppDbContext db, ILogger<SeasonService> logger)
     public Task<Result<Season?>> FindForDateAsync(DateTime date) =>
         ServiceOperation.RunAsync(logger, "look up the season for that date", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var day = date.Date;
 
             var season = await db.Seasons
@@ -59,10 +68,12 @@ public class SeasonService(AppDbContext db, ILogger<SeasonService> logger)
     public Task<Result<Season>> GetOrCreateForDateAsync(DateTime date) =>
         ServiceOperation.RunAsync(logger, "find the season for that date", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var day = date.Date;
 
             var lookup = await FindForDateAsync(day);
-            if (lookup.IsFailure) return Result.Failure<Season>(lookup.Error!);
+            if (lookup.IsFailure) return lookup.To<Season>();
             if (lookup.Value is not null) return Result.Success(lookup.Value);
 
             var season = Season.CreateFor(day);
@@ -97,8 +108,10 @@ public class SeasonService(AppDbContext db, ILogger<SeasonService> logger)
     public Task<Result<Season>> CreateAsync(Season season) =>
         ServiceOperation.RunAsync(logger, "create season", async () =>
         {
-            var validation = await ValidateAsync(season);
-            if (validation.IsFailure) return Result.Failure<Season>(validation.Error!);
+            await using var db = await dbFactory.CreateDbContextAsync();
+
+            var validation = await ValidateAsync(db, season);
+            if (validation.IsFailure) return validation.To<Season>();
 
             db.Seasons.Add(season);
             await db.SaveChangesAsync();
@@ -112,7 +125,9 @@ public class SeasonService(AppDbContext db, ILogger<SeasonService> logger)
     public Task<Result> UpdateAsync(Season season) =>
         ServiceOperation.RunAsync(logger, "update season", async () =>
         {
-            var validation = await ValidateAsync(season);
+            await using var db = await dbFactory.CreateDbContextAsync();
+
+            var validation = await ValidateAsync(db, season);
             if (validation.IsFailure) return validation;
 
             db.Seasons.Update(season);
@@ -125,6 +140,8 @@ public class SeasonService(AppDbContext db, ILogger<SeasonService> logger)
     public Task<Result> DeleteAsync(int id) =>
         ServiceOperation.RunAsync(logger, "delete season", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var season = await db.Seasons.FindAsync(id);
             if (season is null)
             {
@@ -139,13 +156,13 @@ public class SeasonService(AppDbContext db, ILogger<SeasonService> logger)
             {
                 logger.LogWarning("Cannot delete season {SeasonName}: {Count} games still assigned",
                     season.Name, gameCount);
-                return Result.Failure($"Season {season.Name} still has {gameCount} games");
+                return Result.Failure("Season {0} still has {1} games", season.Name, gameCount);
             }
 
             if (season.IsCurrent)
             {
                 logger.LogWarning("Cannot delete season {SeasonName}: it is the current season", season.Name);
-                return Result.Failure($"Season {season.Name} is the current season");
+                return Result.Failure("Season {0} is the current season", season.Name);
             }
 
             db.Seasons.Remove(season);
@@ -158,6 +175,8 @@ public class SeasonService(AppDbContext db, ILogger<SeasonService> logger)
     public Task<Result> SetCurrentAsync(int id) =>
         ServiceOperation.RunAsync(logger, "switch season", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var seasons = await db.Seasons.ToListAsync();
             var target = seasons.FirstOrDefault(s => s.Id == id);
 
@@ -189,6 +208,8 @@ public class SeasonService(AppDbContext db, ILogger<SeasonService> logger)
     public Task<Result<int>> CloseSeasonGapsAsync() =>
         ServiceOperation.RunAsync(logger, "close season gaps", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var seasons = await db.Seasons.OrderBy(s => s.StartDate).ToListAsync();
             var closed = 0;
 
@@ -220,6 +241,8 @@ public class SeasonService(AppDbContext db, ILogger<SeasonService> logger)
     public Task<Result<Season>> EnsureCurrentSeasonAsync() =>
         ServiceOperation.RunAsync(logger, "prepare seasons", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var current = await db.Seasons.FirstOrDefaultAsync(s => s.IsCurrent);
             if (current is not null) return Result.Success(current);
 
@@ -234,7 +257,7 @@ public class SeasonService(AppDbContext db, ILogger<SeasonService> logger)
                 return Result.Success(newest);
             }
 
-            var season = Season.CreateFor(DateTime.Today);
+            var season = Season.CreateFor(time.GetLocalNow().Date);
             season.IsCurrent = true;
             db.Seasons.Add(season);
             await db.SaveChangesAsync();
@@ -244,7 +267,7 @@ public class SeasonService(AppDbContext db, ILogger<SeasonService> logger)
         });
 
     /// <summary>Rules the dialog deliberately does not enforce, so any caller gets them.</summary>
-    private async Task<Result> ValidateAsync(Season season)
+    private async Task<Result> ValidateAsync(AppDbContext db, Season season)
     {
         if (string.IsNullOrWhiteSpace(season.Name))
         {
@@ -267,7 +290,7 @@ public class SeasonService(AppDbContext db, ILogger<SeasonService> logger)
         {
             logger.LogWarning("Rejected season {SeasonName}: overlaps {OtherSeason}",
                 season.Name, overlapping.Name);
-            return Result.Failure($"These dates overlap season {overlapping.Name}");
+            return Result.Failure("These dates overlap season {0}", overlapping.Name);
         }
 
         // Gaps are as damaging as overlaps and used to pass unchecked. Game.SeasonId is required
@@ -285,7 +308,8 @@ public class SeasonService(AppDbContext db, ILogger<SeasonService> logger)
             logger.LogWarning("Rejected season {SeasonName}: leaves a gap after {OtherSeason}",
                 season.Name, previous.Name);
             return Result.Failure(
-                $"This leaves a gap after season {previous.Name} — it should start on {expected:dd-MM-yyyy}");
+                "This leaves a gap after season {0} — it should start on {1}",
+                previous.Name, expected.ToString("dd-MM-yyyy"));
         }
 
         var following = await db.Seasons
@@ -299,7 +323,8 @@ public class SeasonService(AppDbContext db, ILogger<SeasonService> logger)
             logger.LogWarning("Rejected season {SeasonName}: leaves a gap before {OtherSeason}",
                 season.Name, following.Name);
             return Result.Failure(
-                $"This leaves a gap before season {following.Name} — it should end on {expected:dd-MM-yyyy}");
+                "This leaves a gap before season {0} — it should end on {1}",
+                following.Name, expected.ToString("dd-MM-yyyy"));
         }
 
         return Result.Success();

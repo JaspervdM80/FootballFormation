@@ -11,11 +11,20 @@ namespace FootballFormation.Core.Services;
 /// added here is stamping the live minute and keeping the scoreline in step with the logged goals.
 /// </summary>
 public class LiveMatchService(
-    AppDbContext db,
+    IDbContextFactory<AppDbContext> dbFactory,
     GameService games,
     LiveMatchNotifier notifier,
+    TimeProvider time,
     ILogger<LiveMatchService> logger)
 {
+    /// <summary>
+    /// The clock every match-time decision reads. Injected rather than taken straight from
+    /// <see cref="DateTime.UtcNow"/> so the period and substitution arithmetic can be driven to an
+    /// exact instant under test — it is the part of this service most likely to be silently wrong,
+    /// and a season's statistics depend on it.
+    /// </summary>
+    private DateTime UtcNow => time.GetUtcNow().UtcDateTime;
+
     /// <summary>
     /// Everything the live screen renders, in one round trip: the periods with their lineups and
     /// players, the goals, and the substitutions with both players named.
@@ -23,6 +32,8 @@ public class LiveMatchService(
     public Task<Result<Game>> GetLiveAsync(int gameId) =>
         ServiceOperation.RunAsync(logger, "load live match", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             // No tracking, and it matters: a spectator's circuit keeps one scoped DbContext for
             // its whole life, so a tracked Game would keep returning the score, clock and state
             // from its first load while newly inserted goals appeared alongside them. Identity
@@ -45,7 +56,7 @@ public class LiveMatchService(
             if (game is null)
             {
                 logger.LogWarning("Live match {GameId} not found", gameId);
-                return Result.Failure<Game>($"Game with ID {gameId} not found");
+                return Result.Failure<Game>("Game with ID {0} not found", gameId);
             }
 
             return Result.Success(game);
@@ -60,6 +71,8 @@ public class LiveMatchService(
     public Task<Result<Game?>> GetTodaysMatchAsync() =>
         ServiceOperation.RunAsync(logger, "find today's match", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             // A match in progress wins whatever the calendar says: it can have been kicked off
             // before midnight, and it is the one someone standing at a pitch is watching. Nothing
             // stops two being in progress at once, so the most recent by date wins.
@@ -73,7 +86,7 @@ public class LiveMatchService(
 
             // Games carry a date but no kick-off time, so "today" is the whole calendar day.
             // A double-header shows the one still to be played before the one already done.
-            var today = DateTime.Today;
+            var today = time.GetLocalNow().Date;
             var tomorrow = today.AddDays(1);
 
             game = await db.Games
@@ -89,7 +102,9 @@ public class LiveMatchService(
     public Task<Result<Game>> StartMatchAsync(int gameId) =>
         ServiceOperation.RunAsync(logger, "start match", async () =>
         {
-            var game = await LoadWithPeriodsAsync(gameId);
+            await using var db = await dbFactory.CreateDbContextAsync();
+
+            var game = await LoadWithPeriodsAsync(db, gameId);
             if (game is null) return NotFound(gameId);
 
             if (game.MatchState != MatchState.NotStarted)
@@ -100,7 +115,7 @@ public class LiveMatchService(
 
             game.MatchState = MatchState.InProgress;
             game.ClockAccumulatedSeconds = 0;
-            game.ClockRunningSince = DateTime.UtcNow;
+            game.ClockRunningSince = UtcNow;
             game.LivePeriodId = first.Id;
             first.StartedAtSeconds = 0;
             first.EndedAtSeconds = null;
@@ -113,7 +128,9 @@ public class LiveMatchService(
     public Task<Result<Game>> PauseClockAsync(int gameId) =>
         ServiceOperation.RunAsync(logger, "pause the clock", async () =>
         {
-            var game = await LoadWithPeriodsAsync(gameId);
+            await using var db = await dbFactory.CreateDbContextAsync();
+
+            var game = await LoadWithPeriodsAsync(db, gameId);
             if (game is null) return NotFound(gameId);
 
             if (!game.IsClockRunning) return Result.Failure<Game>("The clock is not running");
@@ -129,7 +146,9 @@ public class LiveMatchService(
     public Task<Result<Game>> ResumeClockAsync(int gameId) =>
         ServiceOperation.RunAsync(logger, "resume the clock", async () =>
         {
-            var game = await LoadWithPeriodsAsync(gameId);
+            await using var db = await dbFactory.CreateDbContextAsync();
+
+            var game = await LoadWithPeriodsAsync(db, gameId);
             if (game is null) return NotFound(gameId);
 
             if (game.MatchState != MatchState.InProgress)
@@ -138,7 +157,7 @@ public class LiveMatchService(
             if (game.LivePeriodId is null)
                 return Result.Failure<Game>("Start the next period before resuming the clock");
 
-            game.ClockRunningSince = DateTime.UtcNow;
+            game.ClockRunningSince = UtcNow;
             await db.SaveChangesAsync();
 
             logger.LogInformation("Resumed clock for game {GameId} at {Seconds}s",
@@ -150,7 +169,9 @@ public class LiveMatchService(
     public Task<Result<Game>> EndPeriodAsync(int gameId) =>
         ServiceOperation.RunAsync(logger, "end the period", async () =>
         {
-            var game = await LoadWithPeriodsAsync(gameId);
+            await using var db = await dbFactory.CreateDbContextAsync();
+
+            var game = await LoadWithPeriodsAsync(db, gameId);
             if (game is null) return NotFound(gameId);
 
             var current = CurrentPeriod(game);
@@ -169,7 +190,9 @@ public class LiveMatchService(
     public Task<Result<Game>> StartNextPeriodAsync(int gameId) =>
         ServiceOperation.RunAsync(logger, "start the next period", async () =>
         {
-            var game = await LoadWithPeriodsAsync(gameId);
+            await using var db = await dbFactory.CreateDbContextAsync();
+
+            var game = await LoadWithPeriodsAsync(db, gameId);
             if (game is null) return NotFound(gameId);
 
             if (game.MatchState != MatchState.InProgress)
@@ -185,7 +208,7 @@ public class LiveMatchService(
             next.StartedAtSeconds = game.ClockAccumulatedSeconds;
             next.EndedAtSeconds = null;
             game.LivePeriodId = next.Id;
-            game.ClockRunningSince = DateTime.UtcNow;
+            game.ClockRunningSince = UtcNow;
 
             await db.SaveChangesAsync();
             logger.LogInformation("Started period {PeriodId} of game {GameId} at {Seconds}s",
@@ -201,7 +224,9 @@ public class LiveMatchService(
     public Task<Result<Game>> AdvancePeriodAsync(int gameId) =>
         ServiceOperation.RunAsync(logger, "start the next period", async () =>
         {
-            var game = await LoadWithPeriodsAsync(gameId);
+            await using var db = await dbFactory.CreateDbContextAsync();
+
+            var game = await LoadWithPeriodsAsync(db, gameId);
             if (game is null) return NotFound(gameId);
 
             var current = CurrentPeriod(game);
@@ -213,7 +238,7 @@ public class LiveMatchService(
 
             // Both ends read the same instant, so no seconds fall between the two periods. The
             // clock anchor is deliberately left alone: it must keep running through the change.
-            var elapsed = game.ElapsedSecondsAt(DateTime.UtcNow);
+            var elapsed = game.ElapsedSecondsAt(UtcNow);
             current.EndedAtSeconds = elapsed;
             next.StartedAtSeconds = elapsed;
             next.EndedAtSeconds = null;
@@ -228,7 +253,9 @@ public class LiveMatchService(
     public Task<Result<Game>> FinishMatchAsync(int gameId) =>
         ServiceOperation.RunAsync(logger, "finish the match", async () =>
         {
-            var game = await LoadWithPeriodsAsync(gameId);
+            await using var db = await dbFactory.CreateDbContextAsync();
+
+            var game = await LoadWithPeriodsAsync(db, gameId);
             if (game is null) return NotFound(gameId);
 
             if (game.MatchState == MatchState.NotStarted)
@@ -257,8 +284,10 @@ public class LiveMatchService(
         int gameId, int? scorerId, int? assisterId, bool isOwnGoal, bool isOpponentGoal) =>
         ServiceOperation.RunAsync(logger, "log the goal", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var game = await db.Games.FindAsync(gameId);
-            if (game is null) return Result.Failure<GameGoal>($"Game with ID {gameId} not found");
+            if (game is null) return Result.Failure<GameGoal>("Game with ID {0} not found", gameId);
 
             if (scorerId is null && !isOpponentGoal)
                 return Result.Failure<GameGoal>("A goal for us needs a scorer");
@@ -270,7 +299,7 @@ public class LiveMatchService(
                 AssisterId = assisterId,
                 // The minute the clock showed. Minute 0 reads oddly on a timeline, so the first
                 // minute of play is 1' — matching how football scorelines are written.
-                Minute = (game.ElapsedSecondsAt(DateTime.UtcNow) / 60) + 1,
+                Minute = (game.ElapsedSecondsAt(UtcNow) / 60) + 1,
                 IsOwnGoal = isOwnGoal,
                 IsOpponentGoal = isOpponentGoal
             };
@@ -278,7 +307,7 @@ public class LiveMatchService(
             var added = await games.AddGoalAsync(goal);
             if (added.IsFailure) return added;
 
-            await SyncScoreAsync(gameId);
+            await SyncScoreAsync(db, gameId);
             notifier.Notify(gameId);
             return added;
         });
@@ -287,10 +316,12 @@ public class LiveMatchService(
     public Task<Result> RemoveGoalAsync(int gameId, int goalId) =>
         ServiceOperation.RunAsync(logger, "remove the goal", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var removed = await games.RemoveGoalAsync(goalId);
             if (removed.IsFailure) return removed;
 
-            await SyncScoreAsync(gameId);
+            await SyncScoreAsync(db, gameId);
             notifier.Notify(gameId);
             return Result.Success();
         });
@@ -303,11 +334,13 @@ public class LiveMatchService(
     public Task<Result<GameSubstitution>> SubstituteAsync(int gameId, int playerOffId, int playerOnId) =>
         ServiceOperation.RunAsync(logger, "make the substitution", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             if (playerOffId == playerOnId)
                 return Result.Failure<GameSubstitution>("A player cannot be substituted for themselves");
 
-            var game = await LoadWithPeriodsAsync(gameId);
-            if (game is null) return Result.Failure<GameSubstitution>($"Game with ID {gameId} not found");
+            var game = await LoadWithPeriodsAsync(db, gameId);
+            if (game is null) return Result.Failure<GameSubstitution>("Game with ID {0} not found", gameId);
 
             var period = CurrentPeriod(game);
             if (period is null)
@@ -348,7 +381,7 @@ public class LiveMatchService(
                 GamePeriodId = period.Id,
                 PlayerOffId = playerOffId,
                 PlayerOnId = playerOnId,
-                AtSeconds = game.ElapsedSecondsAt(DateTime.UtcNow),
+                AtSeconds = game.ElapsedSecondsAt(UtcNow),
                 SlotIndex = slot,
                 Position = position
             };
@@ -374,6 +407,8 @@ public class LiveMatchService(
     public Task<Result> RemoveSubstitutionAsync(int subId) =>
         ServiceOperation.RunAsync(logger, "undo the substitution", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var sub = await db.GameSubstitutions.FindAsync(subId);
             if (sub is null) return Result.Failure("Substitution not found");
 
@@ -414,9 +449,9 @@ public class LiveMatchService(
     /// Moves the time run so far out of the anchor and into the banked total, leaving the clock
     /// stopped. Every state change calls this first so no seconds are lost or double-counted.
     /// </summary>
-    private static void BankClock(Game game)
+    private void BankClock(Game game)
     {
-        game.ClockAccumulatedSeconds = game.ElapsedSecondsAt(DateTime.UtcNow);
+        game.ClockAccumulatedSeconds = game.ElapsedSecondsAt(UtcNow);
         game.ClockRunningSince = null;
     }
 
@@ -427,11 +462,11 @@ public class LiveMatchService(
     private static GamePeriod? NextPeriod(Game game) =>
         game.Periods.OrderBy(p => p.PeriodType).FirstOrDefault(p => p.StartedAtSeconds is null);
 
-    private Task<Game?> LoadWithPeriodsAsync(int gameId) =>
+    private static Task<Game?> LoadWithPeriodsAsync(AppDbContext db, int gameId) =>
         db.Games.Include(g => g.Periods).FirstOrDefaultAsync(g => g.Id == gameId);
 
     /// <summary>Rewrites the scoreline from the logged goals, so the live score is never guessed at.</summary>
-    private async Task SyncScoreAsync(int gameId)
+    private static async Task SyncScoreAsync(AppDbContext db, int gameId)
     {
         var game = await db.Games.FindAsync(gameId);
         if (game is null) return;
@@ -451,6 +486,6 @@ public class LiveMatchService(
     private Result<Game> NotFound(int gameId)
     {
         logger.LogWarning("Live match {GameId} not found", gameId);
-        return Result.Failure<Game>($"Game with ID {gameId} not found");
+        return Result.Failure<Game>("Game with ID {0} not found", gameId);
     }
 }

@@ -1,3 +1,4 @@
+using FootballFormation.UI.Theming;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using MudBlazor;
@@ -35,36 +36,7 @@ public partial class MainLayout : IDisposable
             forceLoad: true);
     }
 
-    // Club colors: keep in sync with wwwroot/theme.css (GJS Gorinchem, light) until
-    // the theme is driven by shared configuration. Text/line shades derive from the
-    // same ink color (#182b1f) as the CSS --ink token.
-    private static readonly MudTheme Theme = new()
-    {
-        PaletteLight = new PaletteLight
-        {
-            Primary = "#e11d24",
-            PrimaryContrastText = "#ffffff",
-            Secondary = "#0a8f3d",
-            Tertiary = "#c8151c",
-            AppbarBackground = "#ffffff",
-            AppbarText = "rgba(24,43,31,0.85)",
-            Surface = "#eef7f1",
-            Background = "#ffffff",
-            DrawerBackground = "#ffffff",
-            DrawerText = "rgba(24,43,31,0.8)",
-            TextPrimary = "rgba(24,43,31,0.92)",
-            TextSecondary = "rgba(24,43,31,0.6)",
-            ActionDefault = "rgba(24,43,31,0.55)",
-            ActionDisabled = "rgba(24,43,31,0.25)",
-            Divider = "rgba(24,43,31,0.1)",
-            TableHover = "rgba(24,43,31,0.04)",
-            TableStriped = "rgba(24,43,31,0.02)",
-            LinesDefault = "rgba(24,43,31,0.12)",
-            OverlayDark = "rgba(0,0,0,0.35)"
-        },
-        LayoutProperties = new LayoutProperties
-        {
-            DefaultBorderRadius = "12px"
-        }
-    };
+    // Built from the same ClubTheme record that emits the CSS custom properties, so MudBlazor's
+    // components and the hand-written styles can no longer drift apart.
+    private static readonly MudTheme Theme = ClubTheme.Current.ToMudTheme();
 }

@@ -15,8 +15,18 @@ Models/
   GameGoal.cs            — A goal: scorer (null for the opponent), assister, minute, own/opponent flags
   GameSubstitution.cs    — A timestamped change made during a live match
   MatchPreferences.cs    — Per-season game defaults (duration, split, formation, match day)
+  FormationSlots.cs      — Formation slots and lineup→slot assignment, shared by every pitch
 Data/
-  AppDbContext.cs         — EF Core context, value converters for List<PlayerPosition> and List<int>
+  AppDbContext.cs         — EF Core context; DbSets only, mapping lives in Configurations/
+  Configurations/         — One IEntityTypeConfiguration per entity, applied by assembly scan
+    CsvListConverters.cs  — List<int>/List<TEnum> ↔ comma-separated text, with the ValueComparer
+Reporting/
+  GameMinutesReport.cs    — Playing time for one game: real timings when run live, plan otherwise
+  PlayingTimeReport.cs    — The playing-time table (PlayingTimeRow, PeriodDetail, PeriodPlayStatus)
+  LiveMinutesReport.cs    — Exact minutes on the pitch during a live match
+  SeasonStatsReport.cs    — Team totals + form for /stats (SeasonStats, GameResult)
+  PlayerStatsReport.cs    — Per-player aggregates (PlayerStats, PositionStat, PlayerGameStat)
+  PositionFitHelper.cs    — 5-tier position fit: Preferred, NaturalFit, Alternative, Compatible, OutOfPosition
 Services/
   ServiceOperation.cs     — Shared try/catch + error logging wrapper for all service methods
   PlayerService.cs        — CRUD, returns Result<T>
@@ -28,7 +38,7 @@ Services/
   LiveMatchNotifier.cs    — Singleton: fans live match changes out to every open circuit
   MatchPreferencesService.cs — Per-season prefs: GetAsync(seasonId)/GetCurrentAsync/Save,
                             GetNextMatchDateAsync(seasonId)
-Result.cs                — Result and Result<T> base types
+Result.cs                — Result and Result<T>: success/failure with a translatable error key
 ```
 
 ## UI (`src/FootballFormation.UI/`) — Razor Class Library
@@ -50,8 +60,10 @@ Pages/
   Settings.razor(.cs)         — /settings — Match preferences, password, season management
   Home.razor(.cs)(.css)       — / — Landing page, plus the live-match banner when one is in progress
 Components/
-  PitchView.razor(.cs)(.css)        — Visual pitch with position circles, drag-drop, fit colors
-  PitchOverview.razor(.cs)(.css)    — Read-only pitch (po- classes); optional OnPlayerClicked makes slots tappable
+  Pitch.razor(.cs)(.css)            — The pitch. Read-only by default; Draggable for the builder,
+                                      OnPlayerClicked for the live screen, Size for chip scale
+  PlayerLabel.razor                 — A player as one line of text: "#7 Jasper"
+  SeasonAwarePage.cs                — Base for pages that follow the season picker
   PlayerList.razor(.cs)(.css)       — Draggable player cards (HTML5 drag API)
   SubstituteBench.razor(.cs)(.css)  — Substitute drop zone with remove buttons
   SeasonPicker.razor(.cs)           — Global season filter; rendered in both the app bar and the drawer
@@ -60,24 +72,24 @@ State/
   SeasonState.cs              — Scoped: the selected season, shared by the layout and the pages
 Helpers/
   PitchPositionHelper.cs      — Maps PlayerPosition → (left%, top%) coordinates
-  PositionFitHelper.cs        — 5-tier position fit: Preferred, NaturalFit, Alternative, Compatible, OutOfPosition
-  UiFeedback.cs               — Snackbar.Report()/ReportFailure() over Result, shared LockedDialog options
-  DialogPrompts.cs            — DialogService.ConfirmAsync()/ConfirmDeleteAsync() wrappers over ConfirmDialog
-  PlayingTimeReport.cs        — Builds the playing-time table (PlayingTimeRow, PeriodDetail, PeriodPlayStatus)
-  LiveMinutesReport.cs        — Exact minutes on the pitch during a live match, from clock anchors + subs
-  SeasonStatsReport.cs        — Team totals + form for /stats (SeasonStats, GameResult)
-  PlayerStatsReport.cs        — Per-player aggregates (PlayerStats, PositionStat, PlayerGameStat)
+  UiFeedback.cs               — Snackbar.Report()/ReportFailure() over Result (translates the error),
+                                shared LockedDialog options
+  DialogPrompts.cs            — ConfirmAsync()/ConfirmDeleteAsync(), and PromptAsync()/PromptValueAsync()
+                                for an editing dialog that returns a value
   LineupDragState.cs          — In-flight drag on the formation builder
+Theming/
+  ClubTheme.cs                — The club palette: emits the CSS custom properties AND the MudTheme
 Layout/
   MainLayout.razor(.cs)       — MudBlazor layout, club light theme, app-bar nav + drawer, providers.
                                 Nav entries and the season picker must be edited in BOTH places.
-  NavMenu.razor               — Unused legacy; MainLayout inlines its own MudNavMenu
 ```
 
-Report builders in `Helpers/` are pure static functions taking their scope as parameters — the game
-list, and (since per-season squads) a `SeasonSquads`. Season filtering therefore happens at the call
-site, and the builders never touch the database. The squads parameter is not optional: guest status
-is per season, and a report may walk games spanning several of them.
+Report builders live in **Core** (`Core/Reporting/`), not the UI: minutes played, utilisation and
+position share are domain answers, and keeping them out of the Razor project is what makes them
+testable. They are pure static functions taking their scope as parameters — the game list, and
+(since per-season squads) a `SeasonSquads`. Season filtering therefore happens at the call site, and
+the builders never touch the database. The squads parameter is not optional: guest status is per
+season, and a report may walk games spanning several of them.
 
 ## Web (`src/FootballFormation.Web/`)
 ```

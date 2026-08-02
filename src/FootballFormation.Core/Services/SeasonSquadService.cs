@@ -11,13 +11,15 @@ namespace FootballFormation.Core.Services;
 /// "exactly one current season" invariant, this owns membership. It takes no service dependency,
 /// so <c>GameService -&gt; SeasonService</c> stays the only service-to-service edge.
 /// </summary>
-public class SeasonSquadService(AppDbContext db, ILogger<SeasonSquadService> logger)
+public class SeasonSquadService(IDbContextFactory<AppDbContext> dbFactory, ILogger<SeasonSquadService> logger)
 {
     /// <summary>One season's squad, players loaded. An empty squad is a valid answer — a new
     /// season has none until it is copied forward or filled in.</summary>
     public Task<Result<SeasonSquad>> GetSquadAsync(int seasonId) =>
         ServiceOperation.RunAsync(logger, "load the squad", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var members = await db.SeasonSquadMembers
                 .Where(m => m.SeasonId == seasonId)
                 .Include(m => m.Player)
@@ -32,6 +34,8 @@ public class SeasonSquadService(AppDbContext db, ILogger<SeasonSquadService> log
     public Task<Result<SeasonSquads>> GetSquadsAsync(int? seasonId = null) =>
         ServiceOperation.RunAsync(logger, "load the squads", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var members = await db.SeasonSquadMembers
                 .Where(m => seasonId == null || m.SeasonId == seasonId)
                 .Include(m => m.Player)
@@ -45,6 +49,8 @@ public class SeasonSquadService(AppDbContext db, ILogger<SeasonSquadService> log
     public Task<Result<List<Player>>> GetNonMembersAsync(int seasonId) =>
         ServiceOperation.RunAsync(logger, "load players outside the squad", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var players = await db.Players
                 .Where(p => !db.SeasonSquadMembers.Any(m => m.SeasonId == seasonId && m.PlayerId == p.Id))
                 .OrderBy(p => p.ShirtNumber ?? int.MaxValue)
@@ -60,6 +66,8 @@ public class SeasonSquadService(AppDbContext db, ILogger<SeasonSquadService> log
     public Task<Result<Dictionary<int, int>>> GetCountsAsync() =>
         ServiceOperation.RunAsync(logger, "count the squads", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var counts = await db.SeasonSquadMembers
                 .GroupBy(m => m.SeasonId)
                 .Select(g => new { SeasonId = g.Key, Count = g.Count() })
@@ -71,6 +79,8 @@ public class SeasonSquadService(AppDbContext db, ILogger<SeasonSquadService> log
     public Task<Result<SeasonSquadMember>> AddMemberAsync(int seasonId, int playerId, bool isGuest = false) =>
         ServiceOperation.RunAsync(logger, "add the player to the squad", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var season = await db.Seasons.FindAsync(seasonId);
             if (season is null)
             {
@@ -94,7 +104,7 @@ public class SeasonSquadService(AppDbContext db, ILogger<SeasonSquadService> log
             {
                 logger.LogWarning("Player {PlayerName} is already in the {SeasonName} squad",
                     player.DisplayName, season.Name);
-                return Result.Failure<SeasonSquadMember>($"{player.DisplayName} is already in the {season.Name} squad");
+                return Result.Failure<SeasonSquadMember>("{0} is already in the {1} squad", player.DisplayName, season.Name);
             }
 
             var member = new SeasonSquadMember { SeasonId = seasonId, PlayerId = playerId, IsGuest = isGuest };
@@ -111,6 +121,8 @@ public class SeasonSquadService(AppDbContext db, ILogger<SeasonSquadService> log
     public Task<Result> RemoveMemberAsync(int seasonId, int playerId) =>
         ServiceOperation.RunAsync(logger, "remove the player from the squad", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var member = await db.SeasonSquadMembers
                 .Include(m => m.Player)
                 .FirstOrDefaultAsync(m => m.SeasonId == seasonId && m.PlayerId == playerId);
@@ -130,7 +142,7 @@ public class SeasonSquadService(AppDbContext db, ILogger<SeasonSquadService> log
             {
                 logger.LogWarning("Cannot remove {PlayerName} from season {SeasonId}: {Count} lineup entries",
                     name, seasonId, appearances);
-                return Result.Failure($"{name} has already played this season");
+                return Result.Failure("{0} has already played this season", name);
             }
 
             var contributions = await db.GameGoals
@@ -140,7 +152,7 @@ public class SeasonSquadService(AppDbContext db, ILogger<SeasonSquadService> log
             {
                 logger.LogWarning("Cannot remove {PlayerName} from season {SeasonId}: {Count} goal entries",
                     name, seasonId, contributions);
-                return Result.Failure($"{name} has goals or assists this season");
+                return Result.Failure("{0} has goals or assists this season", name);
             }
 
             db.SeasonSquadMembers.Remove(member);
@@ -153,6 +165,8 @@ public class SeasonSquadService(AppDbContext db, ILogger<SeasonSquadService> log
     public Task<Result> SetGuestAsync(int seasonId, int playerId, bool isGuest) =>
         ServiceOperation.RunAsync(logger, "change the squad status", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var member = await db.SeasonSquadMembers
                 .Include(m => m.Player)
                 .FirstOrDefaultAsync(m => m.SeasonId == seasonId && m.PlayerId == playerId);
@@ -180,6 +194,8 @@ public class SeasonSquadService(AppDbContext db, ILogger<SeasonSquadService> log
     public Task<Result<int>> CopyFromAsync(int fromSeasonId, int toSeasonId) =>
         ServiceOperation.RunAsync(logger, "copy the squad", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             if (fromSeasonId == toSeasonId)
             {
                 logger.LogWarning("Cannot copy squad {SeasonId} onto itself", fromSeasonId);
@@ -201,7 +217,7 @@ public class SeasonSquadService(AppDbContext db, ILogger<SeasonSquadService> log
             if (sourceMembers.Count == 0)
             {
                 logger.LogWarning("Cannot copy squad from {SeasonName}: it has no members", source.Name);
-                return Result.Failure<int>($"Season {source.Name} has no squad to copy");
+                return Result.Failure<int>("Season {0} has no squad to copy", source.Name);
             }
 
             var already = await db.SeasonSquadMembers
@@ -233,6 +249,8 @@ public class SeasonSquadService(AppDbContext db, ILogger<SeasonSquadService> log
     public Task<Result<Season?>> FindPreviousSeasonAsync(int seasonId) =>
         ServiceOperation.RunAsync(logger, "find the previous season", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var season = await db.Seasons.FindAsync(seasonId);
             if (season is null)
             {

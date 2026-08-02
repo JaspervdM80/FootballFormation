@@ -1,4 +1,6 @@
 using FootballFormation.Core.Models;
+using FootballFormation.Core.Reporting;
+using FootballFormation.UI.Components;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
 using Microsoft.AspNetCore.Components;
@@ -34,7 +36,7 @@ public partial class FormationBuilder
     protected override async Task OnInitializedAsync()
     {
         var gameResult = await GameService.GetByIdAsync(GameId);
-        if (!Snackbar.ReportFailure(gameResult))
+        if (!Snackbar.ReportFailure(L, gameResult))
         {
             Logger.LogWarning("Game {GameId} not found, redirecting to games list", GameId);
             Navigation.NavigateTo("/games");
@@ -44,12 +46,12 @@ public partial class FormationBuilder
         GameData = gameResult.Value!;
 
         var squadResult = await SquadService.GetSquadAsync(GameData.SeasonId);
-        Squad = Snackbar.ReportFailure(squadResult) ? squadResult.Value! : SeasonSquad.Empty;
+        Squad = Snackbar.ReportFailure(L, squadResult) ? squadResult.Value! : SeasonSquad.Empty;
 
         // The full pool is still needed: a player who was lined up but has since left the squad
         // must stay visible in the playing-time table (see GetPlayingTimeData).
         var playersResult = await PlayerService.GetAllAsync();
-        AllPlayers = Snackbar.ReportFailure(playersResult) ? playersResult.Value! : [];
+        AllPlayers = Snackbar.ReportFailure(L, playersResult) ? playersResult.Value! : [];
 
         CacheLineups();
 
@@ -91,45 +93,12 @@ public partial class FormationBuilder
     private PlayerPosition[] GetAllSlots(int periodId)
     {
         var period = GameData!.Periods.First(p => p.Id == periodId);
-        var formation = period.FormationTypeOverride ?? GameData.FormationType;
-        return [PlayerPosition.GK, .. formation.DefaultPositions()];
+        return FormationSlots.For(period.FormationTypeOverride ?? GameData.FormationType);
     }
 
-    /// <summary>
-    /// Matches lineup entries to formation slots.
-    /// Uses SlotIndex as the source of truth; falls back to position matching for legacy data.
-    /// </summary>
-    private GamePlayerPosition?[] BuildSlotAssignments(int periodId)
-    {
-        var slots = GetAllSlots(periodId);
-        var lineup = PeriodLineups.GetValueOrDefault(periodId, []);
-        var assignments = new GamePlayerPosition?[slots.Length];
-        var starters = lineup.Where(p => !p.IsSubstitute).ToList();
-
-        // Pass 1: direct slot index assignment
-        foreach (var entry in starters.Where(p => p.SlotIndex is not null).ToList())
-        {
-            var idx = entry.SlotIndex!.Value;
-            if (idx >= 0 && idx < slots.Length && assignments[idx] is null)
-            {
-                assignments[idx] = entry;
-                starters.Remove(entry);
-            }
-        }
-
-        // Pass 2: position-based fallback for legacy data without SlotIndex
-        for (int i = 0; i < slots.Length; i++)
-        {
-            if (assignments[i] is not null) continue;
-            var match = starters.FirstOrDefault(p => p.Position == slots[i]);
-            if (match is not null)
-            {
-                assignments[i] = match;
-                starters.Remove(match);
-            }
-        }
-        return assignments;
-    }
+    /// <summary>Who is standing where in this period, using the same rule the pitch draws with.</summary>
+    private GamePlayerPosition?[] BuildSlotAssignments(int periodId) =>
+        FormationSlots.Assign(GetAllSlots(periodId), PeriodLineups.GetValueOrDefault(periodId, []));
 
     // --- Drag & drop ---
 
@@ -353,14 +322,8 @@ public partial class FormationBuilder
         return PlayingTimeReport.Build(GameData, players, PeriodLineups);
     }
 
-    private static string GetFitCssClass(PositionFit fit) => fit switch
-    {
-        PositionFit.Preferred => "fit-preferred",
-        PositionFit.NaturalFit => "fit-natural",
-        PositionFit.Alternative => "fit-alternative",
-        PositionFit.Compatible => "fit-compatible",
-        _ => "fit-out-of-position"
-    };
+    /// <summary>The playing-time table colours its cells with the same five tiers as the pitch.</summary>
+    private static string GetFitCssClass(PositionFit fit) => Pitch.FitCssClass(fit);
 
     private static Color GetTimeColor(double percentage) => percentage switch
     {

@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace FootballFormation.Core.Services;
 
-public class PlayerService(AppDbContext db, ILogger<PlayerService> logger)
+public class PlayerService(IDbContextFactory<AppDbContext> dbFactory, ILogger<PlayerService> logger)
 {
     /// <summary>Everyone on file, in shirt order. Guest status is per season now, so the
     /// guests-last ordering moved to <see cref="SeasonSquad"/>, which is the only thing that can
@@ -13,6 +13,8 @@ public class PlayerService(AppDbContext db, ILogger<PlayerService> logger)
     public Task<Result<List<Player>>> GetAllAsync() =>
         ServiceOperation.RunAsync(logger, "load players", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var players = await db.Players
                 .OrderBy(p => p.ShirtNumber ?? int.MaxValue)
                 .ThenBy(p => p.FirstName)
@@ -26,11 +28,13 @@ public class PlayerService(AppDbContext db, ILogger<PlayerService> logger)
     public Task<Result<Player>> GetByIdAsync(int id) =>
         ServiceOperation.RunAsync(logger, "load player", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var player = await db.Players.FindAsync(id);
             if (player is null)
             {
                 logger.LogWarning("Player {PlayerId} not found", id);
-                return Result.Failure<Player>($"Player with ID {id} not found");
+                return Result.Failure<Player>("Player with ID {0} not found", id);
             }
 
             return Result.Success(player);
@@ -39,6 +43,8 @@ public class PlayerService(AppDbContext db, ILogger<PlayerService> logger)
     public Task<Result<Player>> CreateAsync(Player player) =>
         ServiceOperation.RunAsync(logger, "create player", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             db.Players.Add(player);
             await db.SaveChangesAsync();
 
@@ -49,6 +55,8 @@ public class PlayerService(AppDbContext db, ILogger<PlayerService> logger)
     public Task<Result> UpdateAsync(Player player) =>
         ServiceOperation.RunAsync(logger, "update player", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             db.Players.Update(player);
             await db.SaveChangesAsync();
 
@@ -59,6 +67,8 @@ public class PlayerService(AppDbContext db, ILogger<PlayerService> logger)
     public Task<Result> DeleteAsync(int id) =>
         ServiceOperation.RunAsync(logger, "delete player", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var player = await db.Players.FindAsync(id);
             if (player is null)
             {

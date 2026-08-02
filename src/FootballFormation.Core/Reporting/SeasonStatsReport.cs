@@ -1,6 +1,6 @@
 using FootballFormation.Core.Models;
 
-namespace FootballFormation.UI.Helpers;
+namespace FootballFormation.Core.Reporting;
 
 /// <summary>Outcome of one finished game, from our perspective.</summary>
 public enum GameResult

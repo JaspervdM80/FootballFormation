@@ -44,7 +44,6 @@
     <MudItem xs="12" sm="6" md="4">
         <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;" role="button" tabindex="0"
                   @onclick="@(() => Open("/players"))" @onkeydown="@(e => OpenOnKey(e, "/players"))">
-            <div class="card-label">@L["Squad"]</div>
             <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Style="color: var(--club-primary-bright);" />
             <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Selection"]</MudText>
             <AuthorizeView>
@@ -58,7 +57,6 @@
     <MudItem xs="12" sm="6" md="4">
         <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;" role="button" tabindex="0"
                   @onclick="@(() => Open("/games"))" @onkeydown="@(e => OpenOnKey(e, "/games"))">
-            <div class="card-label">@L["Matches"]</div>
             <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Size="Size.Large" Style="color: var(--club-primary-bright);" />
             <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Games & Formations"]</MudText>
             <AuthorizeView>
@@ -72,7 +70,6 @@
     <MudItem xs="12" sm="6" md="4">
         <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;" role="button" tabindex="0"
                   @onclick="@(() => Open("/stats"))" @onkeydown="@(e => OpenOnKey(e, "/stats"))">
-            <div class="card-label">@L["Statistics"]</div>
             <MudIcon Icon="@Icons.Material.Filled.BarChart" Size="Size.Large" Style="color: var(--club-primary-bright);" />
             <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Season stats"]</MudText>
             <AuthorizeView>
@@ -83,17 +80,18 @@
         </MudPaper>
     </MudItem>
 
-    <MudItem xs="12" sm="6" md="4">
-        <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;" role="button" tabindex="0"
-                  @onclick="@(() => Open("/settings"))" @onkeydown="@(e => OpenOnKey(e, "/settings"))">
-            <div class="card-label">@L["Settings"]</div>
-            <MudIcon Icon="@Icons.Material.Filled.Settings" Size="Size.Large" Style="color: var(--club-primary-bright);" />
-            <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Preferences"]</MudText>
-            <AuthorizeView>
+    @* /settings is [Authorize], so a visitor tapping this tile only ever reached the login
+       screen. Hide the whole tile rather than offer a door that is locked. *@
+    <AuthorizeView>
+        <MudItem xs="12" sm="6" md="4">
+            <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;" role="button" tabindex="0"
+                      @onclick="@(() => Open("/settings"))" @onkeydown="@(e => OpenOnKey(e, "/settings"))">
+                <MudIcon Icon="@Icons.Material.Filled.Settings" Size="Size.Large" Style="color: var(--club-primary-bright);" />
+                <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Preferences"]</MudText>
                 <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
                     @L["Configure match duration, split type, and defaults."]
                 </MudText>
-            </AuthorizeView>
-        </MudPaper>
-    </MudItem>
+            </MudPaper>
+        </MudItem>
+    </AuthorizeView>
 </MudGrid>

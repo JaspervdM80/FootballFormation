@@ -1,5 +1,6 @@
 using System.Timers;
 using FootballFormation.Core.Models;
+using FootballFormation.Core.Reporting;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
 using Microsoft.AspNetCore.Components;
@@ -239,7 +240,7 @@ public partial class LiveMatch : IDisposable
     private async Task<bool> ReloadAsync()
     {
         var result = await Live.GetLiveAsync(GameId);
-        if (!Snackbar.ReportFailure(result))
+        if (!Snackbar.ReportFailure(L, result))
         {
             Navigation.NavigateTo("/games");
             return false;
@@ -251,22 +252,22 @@ public partial class LiveMatch : IDisposable
 
     // Clock controls. Each service call notifies every viewer, which is what reloads this page too.
     private async Task StartMatch() =>
-        Snackbar.Report(await Live.StartMatchAsync(GameId), L["Match started"]);
+        Snackbar.Report(L, await Live.StartMatchAsync(GameId), L["Match started"]);
 
     private async Task PauseClock() =>
-        Snackbar.Report(await Live.PauseClockAsync(GameId), L["Clock paused"], Severity.Info);
+        Snackbar.Report(L, await Live.PauseClockAsync(GameId), L["Clock paused"], Severity.Info);
 
     private async Task ResumeClock() =>
-        Snackbar.Report(await Live.ResumeClockAsync(GameId), L["Clock running"], Severity.Info);
+        Snackbar.Report(L, await Live.ResumeClockAsync(GameId), L["Clock running"], Severity.Info);
 
     private async Task EndPeriod() =>
-        Snackbar.Report(await Live.EndPeriodAsync(GameId), L["Period ended"], Severity.Info);
+        Snackbar.Report(L, await Live.EndPeriodAsync(GameId), L["Period ended"], Severity.Info);
 
     private async Task StartNextPeriod() =>
-        Snackbar.Report(await Live.StartNextPeriodAsync(GameId), L["Next period started"]);
+        Snackbar.Report(L, await Live.StartNextPeriodAsync(GameId), L["Next period started"]);
 
     private async Task AdvancePeriod() =>
-        Snackbar.Report(await Live.AdvancePeriodAsync(GameId), L["Next period started"]);
+        Snackbar.Report(L, await Live.AdvancePeriodAsync(GameId), L["Next period started"]);
 
     private async Task FinishMatch()
     {
@@ -276,39 +277,32 @@ public partial class LiveMatch : IDisposable
             "Finish match");
         if (!confirmed) return;
 
-        Snackbar.Report(await Live.FinishMatchAsync(GameId), L["Match finished"]);
+        Snackbar.Report(L, await Live.FinishMatchAsync(GameId), L["Match finished"]);
     }
 
     private async Task AddGoal()
     {
-        var parameters = new DialogParameters<LiveGoalDialog>
-        {
-            { x => x.Candidates, GoalCandidates }
-        };
-
-        var dialog = await DialogService.ShowAsync<LiveGoalDialog>(
-            L["Goal"], parameters, UiFeedback.LockedDialog);
-        var result = await dialog.Result;
-
-        if (result is not { Canceled: false, Data: LiveGoalChoice choice }) return;
+        var choice = await DialogService.PromptAsync<LiveGoalDialog, LiveGoalChoice>(
+            L["Goal"], p => p.Add(x => x.Candidates, GoalCandidates));
+        if (choice is null) return;
 
         var logged = await Live.LogGoalAsync(
             GameId, choice.ScorerId, choice.AssisterId, choice.IsOwnGoal, isOpponentGoal: false);
-        Snackbar.Report(logged, L["Goal added!"]);
+        Snackbar.Report(L, logged, L["Goal added!"]);
     }
 
     private async Task AddOpponentGoal()
     {
         var logged = await Live.LogGoalAsync(
             GameId, scorerId: null, assisterId: null, isOwnGoal: false, isOpponentGoal: true);
-        Snackbar.Report(logged, L["Opponent goal added"], Severity.Info);
+        Snackbar.Report(L, logged, L["Opponent goal added"], Severity.Info);
     }
 
     private async Task RemoveGoal(GameGoal goal) =>
-        Snackbar.Report(await Live.RemoveGoalAsync(GameId, goal.Id), L["Goal removed"], Severity.Warning);
+        Snackbar.Report(L, await Live.RemoveGoalAsync(GameId, goal.Id), L["Goal removed"], Severity.Warning);
 
     private async Task RemoveSubstitution(GameSubstitution sub) =>
-        Snackbar.Report(await Live.RemoveSubstitutionAsync(sub.Id),
+        Snackbar.Report(L, await Live.RemoveSubstitutionAsync(sub.Id),
             L["Substitution undone"], Severity.Warning);
 
     /// <summary>Tapping a player on the pitch asks who replaces them.</summary>
@@ -319,20 +313,17 @@ public partial class LiveMatch : IDisposable
         var playerOff = FindPlayer(playerOffId);
         if (playerOff is null) return;
 
-        var parameters = new DialogParameters<LiveSubDialog>
-        {
-            { x => x.PlayerOff, playerOff },
-            { x => x.Bench, SubCandidates }
-        };
+        var playerOnId = await DialogService.PromptValueAsync<LiveSubDialog, int>(
+            L["Substitution"],
+            p =>
+            {
+                p.Add(x => x.PlayerOff, playerOff);
+                p.Add(x => x.Bench, SubCandidates);
+            });
+        if (playerOnId is null) return;
 
-        var dialog = await DialogService.ShowAsync<LiveSubDialog>(
-            L["Substitution"], parameters, UiFeedback.LockedDialog);
-        var result = await dialog.Result;
-
-        if (result is not { Canceled: false, Data: int playerOnId }) return;
-
-        var sub = await Live.SubstituteAsync(GameId, playerOffId, playerOnId);
-        Snackbar.Report(sub, L["Substitution made"]);
+        var sub = await Live.SubstituteAsync(GameId, playerOffId, playerOnId.Value);
+        Snackbar.Report(L, sub, L["Substitution made"]);
     }
 
     private Player? FindPlayer(int playerId) => AllPlayers.FirstOrDefault(p => p.Id == playerId);

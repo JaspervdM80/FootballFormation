@@ -128,7 +128,7 @@
                             @foreach (var player in SquadPlayers)
                             {
                                 <option value="@player.Id">
-                                    @(player.ShirtNumber.HasValue ? $"#{player.ShirtNumber} " : "")@player.DisplayName
+                                    <PlayerLabel Player="player" />
                                 </option>
                             }
                         </select>
@@ -141,7 +141,7 @@
                             @foreach (var player in SquadPlayers.Where(p => p.Id != NewGoalScorerId))
                             {
                                 <option value="@player.Id">
-                                    @(player.ShirtNumber.HasValue ? $"#{player.ShirtNumber} " : "")@player.DisplayName
+                                    <PlayerLabel Player="player" />
                                 </option>
                             }
                         </select>

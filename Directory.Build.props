@@ -1,0 +1,14 @@
+<Project>
+
+  <!-- Settings every project shares, so three csproj files cannot drift apart. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- A warning that reaches main is a warning nobody will ever read. CI builds Release, so
+         this is what actually stops one landing; local Debug builds stay quick to iterate on. -->
+    <TreatWarningsAsErrors Condition="'$(Configuration)' == 'Release'">true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+</Project>

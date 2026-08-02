@@ -5,7 +5,10 @@ using Microsoft.Extensions.Logging;
 
 namespace FootballFormation.Core.Services;
 
-public class MatchPreferencesService(AppDbContext db, ILogger<MatchPreferencesService> logger)
+public class MatchPreferencesService(
+    IDbContextFactory<AppDbContext> dbFactory,
+    TimeProvider time,
+    ILogger<MatchPreferencesService> logger)
 {
     /// <summary>
     /// The defaults for one season, created on first read. A brand-new season inherits the most
@@ -15,13 +18,15 @@ public class MatchPreferencesService(AppDbContext db, ILogger<MatchPreferencesSe
     public Task<Result<MatchPreferences>> GetAsync(int seasonId) =>
         ServiceOperation.RunAsync(logger, "load preferences", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             if (seasonId <= 0)
                 return Result.Failure<MatchPreferences>("No season selected");
 
             var prefs = await db.MatchPreferences.FirstOrDefaultAsync(p => p.SeasonId == seasonId);
             if (prefs is not null) return Result.Success(prefs);
 
-            prefs = await SeedForAsync(seasonId);
+            prefs = await SeedForAsync(db, seasonId);
             db.MatchPreferences.Add(prefs);
             await db.SaveChangesAsync();
 
@@ -33,6 +38,8 @@ public class MatchPreferencesService(AppDbContext db, ILogger<MatchPreferencesSe
     public Task<Result<MatchPreferences>> GetCurrentAsync() =>
         ServiceOperation.RunAsync(logger, "load preferences", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var season = await db.Seasons.FirstOrDefaultAsync(s => s.IsCurrent)
                 ?? await db.Seasons.OrderByDescending(s => s.StartDate).FirstOrDefaultAsync();
 
@@ -45,6 +52,8 @@ public class MatchPreferencesService(AppDbContext db, ILogger<MatchPreferencesSe
     public Task<Result> SaveAsync(MatchPreferences prefs) =>
         ServiceOperation.RunAsync(logger, "save preferences", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             db.MatchPreferences.Update(prefs);
             await db.SaveChangesAsync();
 
@@ -61,9 +70,11 @@ public class MatchPreferencesService(AppDbContext db, ILogger<MatchPreferencesSe
     public Task<Result<DateTime>> GetNextMatchDateAsync(int seasonId) =>
         ServiceOperation.RunAsync(logger, "calculate next match date", async () =>
         {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
             var prefsResult = await GetAsync(seasonId);
             if (prefsResult.IsFailure)
-                return Result.Failure<DateTime>(prefsResult.Error!);
+                return prefsResult.To<DateTime>();
 
             var season = await db.Seasons.FirstOrDefaultAsync(s => s.Id == seasonId);
             if (season is null)
@@ -75,7 +86,7 @@ public class MatchPreferencesService(AppDbContext db, ILogger<MatchPreferencesSe
                 .FirstOrDefaultAsync();
 
             var matchDay = prefsResult.Value!.MatchDay;
-            var today = DateTime.Today;
+            var today = time.GetLocalNow().Date;
             var lastGame = latestGame?.Date.Date;
 
             // Only step off the last game while it is still ahead of us — that is the case this
@@ -110,7 +121,7 @@ public class MatchPreferencesService(AppDbContext db, ILogger<MatchPreferencesSe
     /// A fresh row for a season, copied from the newest season <em>before</em> it that has one.
     /// Falls back to the newest row of any season, then to the model's own defaults.
     /// </summary>
-    private async Task<MatchPreferences> SeedForAsync(int seasonId)
+    private static async Task<MatchPreferences> SeedForAsync(AppDbContext db, int seasonId)
     {
         var startDate = await db.Seasons
             .Where(s => s.Id == seasonId)

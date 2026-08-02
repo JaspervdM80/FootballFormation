@@ -1,37 +1,18 @@
-/* Club theme: GJS Gorinchem (light) — the single source of truth for club branding.
-   Colors are taken from the club crest (wwwroot/icons/icon-512.png): red shield,
-   green banner, on a white page with light-green sections. Re-theming for another
-   club should only require changing this file (plus the MudTheme palette in
-   MainLayout.razor.cs until that is driven by the same configuration).
+/* Tokens that are NOT club branding, plus the gradients composed from the ones that are.
+
+   The club's own colors — brand, surfaces, ink, logo — no longer live here. They come from
+   ClubTheme (src/FootballFormation.UI/Theming/ClubTheme.cs), which emits them as CSS custom
+   properties into the document head AND builds MudBlazor's palette, so the two can no longer
+   disagree. Re-theming for another club means editing that record and nothing else.
+
+   Everything below is either club-independent (semantic status colors, position fit) or purely
+   derived from a club token via var(), so it stays in CSS where it is read.
 
    Derived shades are made where they are used via
    color-mix(in srgb, var(--token) N%, transparent) instead of separate
    tokens per alpha level. Text derives from --ink the same way. */
 
 :root {
-    /* Brand */
-    --club-primary: #e11d24;        /* crest red */
-    --club-primary-bright: #c8151c; /* emphasis red for text on light surfaces */
-    --club-primary-deep: #a3141a;   /* darker gradient partner */
-    --club-on-primary: #ffffff;     /* text on primary-colored buttons */
-    --club-accent: #0a8f3d;         /* crest banner green */
-    --club-accent-bright: #0c7a37;  /* emphasis green for text on light surfaces */
-    --club-accent-deep: #076b2e;
-
-    /* Club identity */
-    --club-logo: url('icons/icon-192.png');
-    --club-logo-bg: #ffffff;        /* chip behind the crest in the appbar */
-
-    /* Surfaces: white page, light club-green sections */
-    --surface-page: #ffffff;
-    --surface-card: #eef7f1;
-    --surface-card-alt: #e0efe6;    /* deeper gradient partner for cards */
-    --surface-appbar: #ffffff;
-    --surface-appbar-alt: #e9f4ed;  /* greener gradient partner for the appbar */
-
-    /* Text: everything derives from ink via color-mix */
-    --ink: #182b1f;                 /* near-black with a green cast */
-
     /* Semantic (club-independent, but centralized all the same) */
     --color-guest: #a855f7;
     --color-guest-bright: #7e22ce;
@@ -42,7 +23,21 @@
     --color-warning-bright: #b45309;
     --color-away: #2563eb;          /* away-game accent (home uses the club green) */
 
-    /* Shared gradients */
+    /* Position fit — the five tiers, used by the pitch chips, the builder's legend and the
+       playing-time dots. Deliberately not club colors: green-to-red reads as good-to-bad
+       everywhere, and the chips sit on a green pitch that no palette changes. */
+    --fit-preferred: #1b5e20;
+    --fit-preferred-edge: #4caf50;
+    --fit-natural: #388e3c;
+    --fit-natural-edge: #81c784;
+    --fit-alternative: #1565c0;
+    --fit-alternative-edge: #42a5f5;
+    --fit-compatible: #e65100;
+    --fit-compatible-edge: #ff9800;
+    --fit-out-of-position: #b71c1c;
+    --fit-out-of-position-edge: #ef5350;
+
+    /* Shared gradients, composed from the club tokens above */
     --gradient-primary: linear-gradient(135deg, var(--club-primary), var(--club-primary-deep));
     --gradient-accent: linear-gradient(135deg, var(--club-accent), var(--club-accent-deep));
     --gradient-card: linear-gradient(135deg, var(--surface-card), var(--surface-card-alt));

@@ -1,4 +1,5 @@
 using FootballFormation.UI.Components;
+using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
 namespace FootballFormation.UI.Helpers;
@@ -36,5 +37,54 @@ public static class DialogPrompts
         var result = await dialog.Result;
 
         return result is { Canceled: false };
+    }
+
+    /// <summary>
+    /// Opens an editing dialog and returns what it produced, or <c>null</c> when the user
+    /// cancelled. Dialogs in this app never persist anything themselves — they hand a value back
+    /// and the page saves it (see SquadMemberDialog) — so unwrapping the result is the same six
+    /// lines everywhere, and this is them.
+    /// </summary>
+    /// <param name="configure">Sets the dialog's parameters. Omit for a dialog that takes none.</param>
+    public static async Task<TResult?> PromptAsync<TDialog, TResult>(
+        this IDialogService dialogService,
+        string title,
+        Action<DialogParameters<TDialog>>? configure = null)
+        where TDialog : ComponentBase
+        where TResult : class
+    {
+        var result = await ShowAsync(dialogService, title, configure);
+
+        return result is { Canceled: false, Data: TResult value } ? value : null;
+    }
+
+    /// <summary>
+    /// <see cref="PromptAsync{TDialog, TResult}"/> for a dialog that returns a value type. Separate
+    /// because <c>default(int)</c> is a perfectly good answer, so "cancelled" has to be a null
+    /// <see cref="Nullable{T}"/> rather than a default value nobody can tell apart from a real one.
+    /// </summary>
+    public static async Task<TValue?> PromptValueAsync<TDialog, TValue>(
+        this IDialogService dialogService,
+        string title,
+        Action<DialogParameters<TDialog>>? configure = null)
+        where TDialog : ComponentBase
+        where TValue : struct
+    {
+        var result = await ShowAsync(dialogService, title, configure);
+
+        return result is { Canceled: false, Data: TValue value } ? value : null;
+    }
+
+    private static async Task<DialogResult?> ShowAsync<TDialog>(
+        IDialogService dialogService,
+        string title,
+        Action<DialogParameters<TDialog>>? configure)
+        where TDialog : ComponentBase
+    {
+        var parameters = new DialogParameters<TDialog>();
+        configure?.Invoke(parameters);
+
+        var dialog = await dialogService.ShowAsync<TDialog>(title, parameters, UiFeedback.LockedDialog);
+        return await dialog.Result;
     }
 }
