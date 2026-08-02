@@ -202,6 +202,8 @@
   <data name="Per game" xml:space="preserve"><value>Per wedstrijd</value></data>
   <data name="G" xml:space="preserve"><value>D</value></data>
   <data name="Ast" xml:space="preserve"><value>A</value></data>
+  <data name="Estimated from the planned line-up — this match was not tracked live." xml:space="preserve"><value>Geschat op basis van de opstelling — deze wedstrijd is niet live bijgehouden.</value></data>
+  <data name="~ estimated from the planned line-up; matches tracked live use the real clock and substitutions." xml:space="preserve"><value>~ geschat op basis van de opstelling; live bijgehouden wedstrijden gebruiken de echte klok en wissels.</value></data>
 
   <!-- Season stats -->
   <data name="Season" xml:space="preserve"><value>Seizoen</value></data>

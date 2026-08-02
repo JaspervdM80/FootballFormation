@@ -31,6 +31,10 @@ public class GameService(AppDbContext db, SeasonService seasons, ILogger<GameSer
                 .Include(g => g.Periods)
                     .ThenInclude(p => p.PlayerPositions)
                 .Include(g => g.Goals)
+                // Statistics reconstruct playing time from the substitutions (see
+                // GameMinutesReport); without them a live-tracked game reads as if the final
+                // lineup had been on the pitch from kick-off.
+                .Include(g => g.Substitutions)
                 .OrderByDescending(g => g.Date)
                 .ToListAsync();
 

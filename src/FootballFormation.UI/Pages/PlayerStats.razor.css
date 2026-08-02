@@ -154,6 +154,19 @@
     font-weight: 800;
 }
 
+/* Minutes that are a line-up estimate rather than a real clock reading. */
+.g-num.g-est {
+    color: color-mix(in srgb, var(--ink) 45%, transparent);
+    font-weight: 500;
+}
+
+.game-note {
+    margin-top: 10px;
+    font-size: 0.65rem;
+    line-height: 1.4;
+    color: color-mix(in srgb, var(--ink) 48%, transparent);
+}
+
 @media (max-width: 760px) {
     .stat-tiles {
         grid-template-columns: repeat(2, 1fr);
