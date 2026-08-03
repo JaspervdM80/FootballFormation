@@ -116,6 +116,24 @@ public class Game
     public bool IsClockRunning => ClockRunningSince is not null;
 
     /// <summary>
+    /// The period the match is currently about: the one being played; at a break and after the
+    /// final whistle the last one that was; and before kick-off the first one. Shared by the live
+    /// screen and the goal log so the minute written down is the one that was on screen.
+    /// </summary>
+    public GamePeriod? CurrentOrLastPeriod()
+    {
+        if (LivePeriodId is { } liveId
+            && Periods.FirstOrDefault(p => p.Id == liveId) is { } live) return live;
+
+        var lastPlayed = Periods
+            .Where(p => p.StartedAtSeconds is not null)
+            .OrderByDescending(p => p.StartedAtSeconds)
+            .FirstOrDefault();
+
+        return lastPlayed ?? Periods.OrderBy(p => p.PeriodType).FirstOrDefault();
+    }
+
+    /// <summary>
     /// The match clock in seconds at <paramref name="utcNow"/>. Callers that only need a settled
     /// value (a paused clock, a finished match) can pass any instant.
     /// </summary>

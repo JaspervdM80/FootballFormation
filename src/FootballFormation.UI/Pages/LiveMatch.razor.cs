@@ -48,30 +48,28 @@ public partial class LiveMatch : IDisposable
     /// </summary>
     private System.Timers.Timer? _tick;
 
+    /// <summary>The real time the match has been running. What gets stored and counted.</summary>
     private int ElapsedSeconds => GameData?.ElapsedSecondsAt(DateTime.UtcNow) ?? 0;
 
-    private string ClockDisplay => $"{ElapsedSeconds / 60:D2}:{ElapsedSeconds % 60:D2}";
+    /// <summary>
+    /// The same instant as a scoreboard shows it: capped at the end of the half, with the overrun
+    /// reported as additional time, and the second half starting at half the match duration.
+    /// </summary>
+    private MatchClock Clock => GameData is null
+        ? MatchClock.BeforeKickOff
+        : MatchClockReport.Build(GameData, DisplayPeriod, ElapsedSeconds);
+
+    private static string Mmss(int seconds) => $"{seconds / 60:D2}:{seconds % 60:D2}";
+
+    private string ClockDisplay => Mmss(Clock.Seconds);
+
+    private string AdditionalDisplay => Mmss(Clock.AdditionalSeconds);
 
     /// <summary>
     /// The period on screen: the one being played; at the break and after the whistle the last one
     /// that was; and before kick-off the first one, so the pitch is never blank when a line-up exists.
     /// </summary>
-    private GamePeriod? DisplayPeriod
-    {
-        get
-        {
-            if (GameData is null) return null;
-            if (GameData.LivePeriodId is { } liveId)
-                return GameData.Periods.FirstOrDefault(p => p.Id == liveId);
-
-            var lastPlayed = GameData.Periods
-                .Where(p => p.StartedAtSeconds is not null)
-                .OrderByDescending(p => p.StartedAtSeconds)
-                .FirstOrDefault();
-
-            return lastPlayed ?? GameData.Periods.OrderBy(p => p.PeriodType).FirstOrDefault();
-        }
-    }
+    private GamePeriod? DisplayPeriod => GameData?.CurrentOrLastPeriod();
 
     private bool IsLivePeriod => GameData?.LivePeriodId is not null;
 
@@ -101,15 +99,51 @@ public partial class LiveMatch : IDisposable
         .OrderBy(p => p.PeriodType)
         .FirstOrDefault(p => p.StartedAtSeconds is null);
 
-    /// <summary>Name of the period the buttons would move to, or null once they all have been played.</summary>
-    private string? NextPeriodLabel => NextPeriod?.PeriodType.DisplayName();
+    /// <summary>
+    /// The half on the clock, which is the only division this screen names. Quarters exist to
+    /// plan two line-ups per half; nobody standing at the pitch thinks in them, so Q1 and Q2 both
+    /// read as the first half here and the line-up change between them is announced on its own.
+    /// </summary>
+    private string? DisplayHalfLabel => DisplayPeriod?.PeriodType.HalfDisplayName();
+
+    /// <summary>Half the buttons would kick off, or null once every period has been played.</summary>
+    private string? NextHalfLabel => NextPeriod?.PeriodType.HalfDisplayName();
 
     /// <summary>
     /// Whether the period being played ends in a real stoppage. Only half time does; a quarter
-    /// boundary rolls straight on, so the screen offers "start Q2" rather than a whistle.
+    /// boundary rolls straight on, so the screen offers the line-up change rather than a whistle.
     /// </summary>
     private bool BreakFollowsCurrentPeriod =>
         DisplayPeriod is { } period && IsLivePeriod && period.PeriodType.IsFollowedByBreak();
+
+    /// <summary>
+    /// The period whose line-up takes over partway through the half on screen, if there is one.
+    /// Read from the period order rather than the clock, so the changes due can be looked up
+    /// before kick-off as well as during play. Null once the match is over.
+    /// </summary>
+    private GamePeriod? MidHalfSuccessor
+    {
+        get
+        {
+            if (GameData is null || GameData.MatchState == MatchState.Finished) return null;
+            if (DisplayPeriod is not { } current) return null;
+
+            var next = GameData.Periods
+                .OrderBy(p => p.PeriodType)
+                .FirstOrDefault(p => p.PeriodType > current.PeriodType);
+
+            return next?.PeriodType.Half() == current.PeriodType.Half() ? next : null;
+        }
+    }
+
+    /// <summary>
+    /// The swaps the planned line-ups imply for the middle of this half, measured against who is
+    /// on the pitch right now — so a live substitution already made drops out of the list.
+    /// </summary>
+    private PlannedChanges PlannedChanges =>
+        DisplayPeriod is { } current && MidHalfSuccessor is { } next
+            ? PlannedChangesReport.Build(current, next, FindPlayer)
+            : PlannedChanges.None;
 
     /// <summary>What the match is doing right now, in one phrase under the clock.</summary>
     private string StatusLabel => GameData?.MatchState switch
@@ -118,12 +152,16 @@ public partial class LiveMatch : IDisposable
         MatchState.Finished => L["Full time"],
         _ when !IsLivePeriod => L["Break"],
         _ when !GameData.IsClockRunning => L["Paused"],
-        _ => L[DisplayPeriod?.PeriodType.DisplayName() ?? "In progress"]
+        // The half is played out and play has not stopped — the thing to say is how much longer.
+        _ when Clock.IsInAdditionalTime => L["Additional time"],
+        _ => L[DisplayHalfLabel ?? "In progress"]
     };
 
     /// <summary>Drives the colour of the status chip: only a running clock counts as live.</summary>
     private string StatusCssClass => GameData?.MatchState switch
     {
+        MatchState.InProgress when GameData.IsClockRunning && Clock.IsInAdditionalTime =>
+            "live-status live-status-extra",
         MatchState.InProgress when GameData.IsClockRunning => "live-status live-status-running",
         MatchState.InProgress => "live-status live-status-paused",
         MatchState.Finished => "live-status live-status-done",

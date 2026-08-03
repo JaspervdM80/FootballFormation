@@ -314,6 +314,30 @@ public class LiveMatchServiceTests : ServiceTestBase
         Assert.Equal(26, later.Value!.Minute);
     }
 
+    /// <summary>
+    /// The second half's clock starts at half the match however long the first half really took,
+    /// and the goal minute follows the clock — otherwise every second-half goal is pushed out by
+    /// the first half's overrun.
+    /// </summary>
+    [Fact]
+    public async Task A_second_half_goal_is_stamped_off_the_scoreboard_clock_not_the_elapsed_time()
+    {
+        var game = await SeedGameAsync();
+        await Live.StartMatchAsync(game.Id);
+        var players = await Db.Players.OrderBy(p => p.Id).ToListAsync();
+
+        Time.Advance(TimeSpan.FromMinutes(33));      // a first half that ran three minutes long
+        await Live.EndPeriodAsync(game.Id);
+        await Live.StartNextPeriodAsync(game.Id);
+
+        Time.Advance(TimeSpan.FromMinutes(5));       // five minutes into the second half
+
+        var goal = await Live.LogGoalAsync(game.Id, players[1].Id, null, false, false);
+
+        // 35:xx on the clock, so the 36th minute — not the 39th the raw elapsed time would give.
+        Assert.Equal(36, goal.Value!.Minute);
+    }
+
     [Fact]
     public async Task A_goal_for_us_needs_a_scorer()
     {
