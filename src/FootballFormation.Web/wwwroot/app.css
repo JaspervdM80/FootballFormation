@@ -595,6 +595,29 @@ html, body {
     align-items: center;
 }
 
+/* Rows navigate to the player's stats. The chevron sits right after the name rather than at
+   the far edge of the row: on a phone the row is a two-column grid, and a right-aligned
+   chevron would land between the name and the position badge instead of at the end. */
+.player-name-chevron {
+    margin-left: 6px;
+    font-weight: 700;
+    line-height: 1;
+    color: color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
+.players-table .mud-table-row:hover .player-name-chevron {
+    color: var(--club-primary-bright);
+}
+
+/* Spells out what the chevron hints at, once, above the table */
+.squad-hint {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 2px;
+    color: color-mix(in srgb, var(--ink) 40%, transparent);
+}
+
 /* Shirt number sits in its own # column on wide screens */
 .shirt-inline {
     display: none;

@@ -16,6 +16,13 @@
                 <span> · @SeasonName</span>
             }
         </MudText>
+        @if (_squad is not null && _squad.Members.Count > 0)
+        {
+            <MudText Typo="Typo.caption" Class="squad-hint">
+                <MudIcon Icon="@Icons.Material.Filled.TouchApp" Size="Size.Small" />
+                @L["Tap a player to see their statistics."]
+            </MudText>
+        }
     </div>
     <AuthorizeView>
         @if (_squad is not null)
@@ -118,6 +125,10 @@
                 {
                     <span class="badge-guest" style="margin-left: 6px;">@L["GUEST"]</span>
                 }
+                @* The whole row navigates to the player's stats, which nothing on it said out
+                   loud. The chevron rides with the name so it works in both the desktop table
+                   and the stacked mobile card, where the row is a two-column grid. *@
+                <span class="player-name-chevron" aria-hidden="true">›</span>
             </span>
         </MudTd>
         <MudTd DataLabel="@L["Preferred Position"]" Class="cell-pref">

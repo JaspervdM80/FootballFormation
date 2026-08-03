@@ -52,6 +52,20 @@ public static class PeriodTypeExtensions
     public static bool IsFollowedByBreak(this PeriodType period) =>
         period is PeriodType.FirstHalf or PeriodType.SecondQuarter;
 
+    /// <summary>
+    /// The half this period is played in. Quarters are a planning device — a way to write two
+    /// line-ups per half — but a match is only ever two halves, so anything shown to someone
+    /// watching goes through here rather than naming the quarter.
+    /// </summary>
+    public static PeriodType Half(this PeriodType period) => period switch
+    {
+        PeriodType.FirstHalf or PeriodType.FirstQuarter or PeriodType.SecondQuarter => PeriodType.FirstHalf,
+        _ => PeriodType.SecondHalf
+    };
+
+    /// <summary>"1st Half" / "2nd Half", whichever period this actually is.</summary>
+    public static string HalfDisplayName(this PeriodType period) => period.Half().DisplayName();
+
     public static PeriodType[] ForSplitType(GameSplitType splitType) => splitType switch
     {
         GameSplitType.Halves => [PeriodType.FirstHalf, PeriodType.SecondHalf],

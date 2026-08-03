@@ -75,6 +75,7 @@
   <data name="+{0} guest" xml:space="preserve"><value>+{0} gast</value></data>
   <data name="Formation" xml:space="preserve"><value>Opstelling</value></data>
   <data name="Overview" xml:space="preserve"><value>Overzicht</value></data>
+  <data name="Tap a player to see their statistics." xml:space="preserve"><value>Tik op een speler voor haar statistieken.</value></data>
   <data name="Result" xml:space="preserve"><value>Uitslag</value></data>
   <data name="Edit" xml:space="preserve"><value>Bewerken</value></data>
   <data name="Game vs {0} created" xml:space="preserve"><value>Wedstrijd tegen {0} aangemaakt</value></data>
@@ -149,12 +150,16 @@
   <data name="In progress" xml:space="preserve"><value>Bezig</value></data>
   <data name="Break" xml:space="preserve"><value>Rust</value></data>
   <data name="Paused" xml:space="preserve"><value>Gepauzeerd</value></data>
+  <data name="Additional time" xml:space="preserve"><value>Extra tijd</value></data>
   <data name="Full time" xml:space="preserve"><value>Einde wedstrijd</value></data>
   <data name="Start match" xml:space="preserve"><value>Wedstrijd starten</value></data>
   <data name="Pause" xml:space="preserve"><value>Pauzeren</value></data>
   <data name="Resume" xml:space="preserve"><value>Hervatten</value></data>
   <data name="Half time" xml:space="preserve"><value>Rust</value></data>
   <data name="Start {0}" xml:space="preserve"><value>{0} starten</value></data>
+  <data name="Change line-up" xml:space="preserve"><value>Opstelling wisselen</value></data>
+  <data name="Changes at half-way" xml:space="preserve"><value>Wissels halverwege</value></data>
+  <data name="Position changes" xml:space="preserve"><value>Positiewissels</value></data>
   <data name="Finish match" xml:space="preserve"><value>Wedstrijd afsluiten</value></data>
   <data name="Edit result" xml:space="preserve"><value>Uitslag aanpassen</value></data>
   <data name="Line-up" xml:space="preserve"><value>Opstelling</value></data>

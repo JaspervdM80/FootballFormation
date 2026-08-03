@@ -42,7 +42,15 @@
             @(GameData.IsHomeGame ? theirSide : ourSide)
         </div>
 
-        <div class="live-clock">@ClockDisplay</div>
+        @* The clock stops at the end of the half; anything past it is counted alongside rather
+           than rolled into the reading, the way a scoreboard shows 30:00 +2:15. *@
+        <div class="live-clock">
+            @ClockDisplay
+            @if (Clock.IsInAdditionalTime)
+            {
+                <span class="live-clock-extra">+@AdditionalDisplay</span>
+            }
+        </div>
         <div class="@StatusCssClass">@StatusLabel</div>
     </MudPaper>
 
@@ -74,7 +82,8 @@
                                 @L["Resume"]
                             </MudButton>
                         }
-                        @* Quarters roll on without a whistle; only half time actually stops play. *@
+                        @* A quarter boundary is not a stoppage, it is the planned line-up change
+                           partway through the half — so it is named after what it does. *@
                         @if (BreakFollowsCurrentPeriod)
                         {
                             <MudButton Variant="Variant.Filled" Class="btn-gold"
@@ -82,15 +91,15 @@
                                 @L["Half time"]
                             </MudButton>
                         }
-                        else if (NextPeriodLabel is { } rollingInto)
+                        else if (MidHalfSuccessor is not null)
                         {
                             <MudButton Variant="Variant.Filled" Class="btn-gold"
-                                       StartIcon="@Icons.Material.Filled.FastForward" OnClick="AdvancePeriod">
-                                @L["Start {0}", L[rollingInto]]
+                                       StartIcon="@Icons.Material.Filled.SwapHoriz" OnClick="AdvancePeriod">
+                                @L["Change line-up"]
                             </MudButton>
                         }
                     }
-                    else if (NextPeriodLabel is { } startingNext)
+                    else if (NextHalfLabel is { } startingNext)
                     {
                         <MudButton Variant="Variant.Filled" Class="btn-gold"
                                    StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="StartNextPeriod">
@@ -117,7 +126,7 @@
     @* .live-lineup drops this card below the timeline on a phone — see app.css. *@
     <MudPaper Class="pa-4 live-lineup" Elevation="2" Style="border-radius: 16px;">
         <div class="card-label">
-            @(DisplayPeriod is null ? L["Line-up"] : L[DisplayPeriod.PeriodType.DisplayName()])
+            @(DisplayHalfLabel is { } half ? L[half] : L["Line-up"])
         </div>
 
         @if (DisplayLineup.Count == 0)
@@ -162,6 +171,49 @@
             </div>
         }
     </MudPaper>
+
+    @* The quarters the line-up was planned in are never named on this screen, but the difference
+       between them is exactly the set of changes due halfway through the half — which is the part
+       worth knowing at the touchline. Measured against the pitch as it stands, so a swap already
+       made live disappears from the list.
+       Admin only, like the minutes table: this is what the coach is about to do, not what has
+       happened, and a plan on a shared screen invites being asked about before it is carried out. *@
+    <AuthorizeView>
+        @{ var planned = PlannedChanges; }
+        @if (!planned.IsEmpty)
+        {
+            <MudPaper Class="pa-4" Elevation="2" Style="border-radius: 16px;">
+                <div class="card-label">@L["Changes at half-way"]</div>
+                <div class="live-planned">
+                    @foreach (var change in planned.Substitutions)
+                    {
+                        <div class="live-planned-row">
+                            <span class="live-planned-pos">@change.Position.ToString()</span>
+                            <span class="live-planned-off">@(change.PlayerOff?.ShortName ?? "—")</span>
+                            @* Plain text, not a MudIcon: scoped CSS never reaches a child component's root element. *@
+                            <span class="live-planned-arrow">→</span>
+                            <span class="live-planned-on">@(change.PlayerOn?.ShortName ?? "—")</span>
+                        </div>
+                    }
+                </div>
+
+                @* Secondary: nobody leaves the pitch, so this never competes with the swaps above. *@
+                @if (planned.Moves.Count > 0)
+                {
+                    <div class="live-planned-moves">
+                        <span class="live-planned-moves-label">@L["Position changes"]</span>
+                        @foreach (var move in planned.Moves)
+                        {
+                            <span class="live-planned-move">
+                                @move.Player.ShortName
+                                <span class="live-planned-move-pos">@move.From.ToString() → @move.To.ToString()</span>
+                            </span>
+                        }
+                    </div>
+                }
+            </MudPaper>
+        }
+    </AuthorizeView>
 
     @* Nothing can be scored before kick-off, so the buttons stay out of the way entirely
        rather than sitting there greyed out above the start button. *@

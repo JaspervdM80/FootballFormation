@@ -1,5 +1,6 @@
 using FootballFormation.Core.Data;
 using FootballFormation.Core.Models;
+using FootballFormation.Core.Reporting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -286,20 +287,26 @@ public class LiveMatchService(
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
-            var game = await db.Games.FindAsync(gameId);
+            // Periods included: the minute follows the scoreboard clock, which is measured from
+            // the half being played rather than from kick-off.
+            var game = await LoadWithPeriodsAsync(db, gameId);
             if (game is null) return Result.Failure<GameGoal>("Game with ID {0} not found", gameId);
 
             if (scorerId is null && !isOpponentGoal)
                 return Result.Failure<GameGoal>("A goal for us needs a scorer");
+
+            var clock = MatchClockReport.Build(
+                game, game.CurrentOrLastPeriod(), game.ElapsedSecondsAt(UtcNow));
 
             var goal = new GameGoal
             {
                 GameId = gameId,
                 ScorerId = scorerId,
                 AssisterId = assisterId,
-                // The minute the clock showed. Minute 0 reads oddly on a timeline, so the first
-                // minute of play is 1' — matching how football scorelines are written.
-                Minute = (game.ElapsedSecondsAt(UtcNow) / 60) + 1,
+                // The minute the clock showed, so an over-running first half does not push every
+                // second-half goal out by the overrun. Stoppage time counts on past the cap rather
+                // than pinning several goals to the same minute.
+                Minute = clock.Minute,
                 IsOwnGoal = isOwnGoal,
                 IsOpponentGoal = isOpponentGoal
             };
