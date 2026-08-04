@@ -3,6 +3,7 @@ using FootballFormation.Core.Reporting;
 using FootballFormation.UI.Components;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
+using FootballFormation.UI.Navigation;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
@@ -16,7 +17,7 @@ public partial class FormationBuilder
     [Inject] private PlayerService PlayerService { get; set; } = null!;
     [Inject] private SeasonSquadService SquadService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
-    [Inject] private NavigationManager Navigation { get; set; } = null!;
+    [Inject] private NavigationTrail Trail { get; set; } = null!;
     [Inject] private ILogger<FormationBuilder> Logger { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
@@ -39,7 +40,7 @@ public partial class FormationBuilder
         if (!Snackbar.ReportFailure(L, gameResult))
         {
             Logger.LogWarning("Game {GameId} not found, redirecting to games list", GameId);
-            Navigation.NavigateTo("/games");
+            Trail.Redirect(AppRoutes.Games);
             return;
         }
 
@@ -58,8 +59,6 @@ public partial class FormationBuilder
         Logger.LogDebug("Loaded formation builder for game {GameId} vs {Opponent}",
             GameId, GameData.Opponent);
     }
-
-    private void NavigateBack() => Navigation.NavigateTo("/games");
 
     // --- Roster ---
 

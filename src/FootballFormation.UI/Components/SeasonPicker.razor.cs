@@ -1,3 +1,4 @@
+using FootballFormation.UI.Navigation;
 using FootballFormation.UI.State;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
@@ -26,16 +27,9 @@ public partial class SeasonPicker : IDisposable
         await SeasonState.EnsureLoadedAsync();
     }
 
-    /// <summary>Only shown where a season filter actually changes what is on screen: the games
-    /// list, the squad and the two stats pages. Hidden on the single-game routes, and on
-    /// /settings it would be actively confusing while the admin edits the season list itself.
-    /// The start page is the exception — nothing there is filtered, but it is where a visit
-    /// begins, so the season can be set before navigating anywhere.</summary>
-    private bool Visible => IsSeasonAware(CurrentPath);
-
-    private static bool IsSeasonAware(string path) =>
-        path is "" or "games" or "stats" or "players"
-        || (path.StartsWith("players/") && path.EndsWith("/stats"));
+    /// <summary>Which routes those are is AppNav's to know — the same list decides what the back
+    /// button calls each page, and it only stays right while there is one copy of it.</summary>
+    private bool Visible => AppNav.IsSeasonAware(CurrentPath);
 
     private string CurrentPath =>
         Navigation.ToBaseRelativePath(Navigation.Uri).Split('?')[0].Trim('/');

@@ -3,10 +3,9 @@
 
 <PageTitle>@L["Players"]</PageTitle>
 
-<div class="d-flex align-center justify-space-between mb-6">
-    <div>
-        <MudText Typo="Typo.h4" Style="color: var(--ink); font-weight: 700;">@L["Squad"]</MudText>
-        <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 45%, transparent);">
+<PageHeader Class="mb-6" Title="@L["Squad"]">
+    <SubtitleContent>
+        <MudText Typo="Typo.body2" Class="page-header-subtitle">
             @if (_squad is not null)
             {
                 var squadCount = _squad.FullMembers.Count;
@@ -23,32 +22,34 @@
                 @L["Tap a player to see their statistics."]
             </MudText>
         }
-    </div>
-    <AuthorizeView>
-        @if (_squad is not null)
-        {
-            @* column-reverse on mobile: the markup order puts Copy first so it reads left of
-               Add on desktop, but on a phone Add is the primary action and belongs on top. *@
-            <div class="d-flex align-center gap-2 squad-actions">
-                @* Copying forward only makes sense into an empty squad — once there are members
-                   it would silently merge two rosters. *@
-                @if (_previousSeason is not null && _squad.Members.Count == 0)
-                {
-                    <MudButton Variant="Variant.Text" Class="btn-ghost btn-compact" StartIcon="@Icons.Material.Filled.ContentCopy"
-                               OnClick="CopyPreviousSquad">
-                        @L["Copy squad from {0}", _previousSeason.Name]
-                    </MudButton>
-                }
-                @* MudMenu's built-in Label, not ActivatorContent — see docs/ui_components.md *@
-                <MudMenu Label="@L["Add Player"]" Variant="Variant.Filled" Class="btn-gold btn-compact"
-                         StartIcon="@Icons.Material.Filled.PersonAdd" Dense="true">
-                    <MudMenuItem OnClick="AddNewPlayer">@L["New player"]</MudMenuItem>
-                    <MudMenuItem OnClick="AddExistingPlayer">@L["Existing player"]</MudMenuItem>
-                </MudMenu>
-            </div>
-        }
-    </AuthorizeView>
-</div>
+    </SubtitleContent>
+    <Actions>
+        <AuthorizeView>
+            @if (_squad is not null)
+            {
+                @* column-reverse on mobile: the markup order puts Copy first so it reads left of
+                   Add on desktop, but on a phone Add is the primary action and belongs on top. *@
+                <div class="d-flex align-center gap-2 squad-actions">
+                    @* Copying forward only makes sense into an empty squad — once there are members
+                       it would silently merge two rosters. *@
+                    @if (_previousSeason is not null && _squad.Members.Count == 0)
+                    {
+                        <MudButton Variant="Variant.Text" Class="btn-ghost btn-compact" StartIcon="@Icons.Material.Filled.ContentCopy"
+                                   OnClick="CopyPreviousSquad">
+                            @L["Copy squad from {0}", _previousSeason.Name]
+                        </MudButton>
+                    }
+                    @* MudMenu's built-in Label, not ActivatorContent — see docs/ui_components.md *@
+                    <MudMenu Label="@L["Add Player"]" Variant="Variant.Filled" Class="btn-gold btn-compact"
+                             StartIcon="@Icons.Material.Filled.PersonAdd" Dense="true">
+                        <MudMenuItem OnClick="AddNewPlayer">@L["New player"]</MudMenuItem>
+                        <MudMenuItem OnClick="AddExistingPlayer">@L["Existing player"]</MudMenuItem>
+                    </MudMenu>
+                </div>
+            }
+        </AuthorizeView>
+    </Actions>
+</PageHeader>
 
 @if (!_loaded)
 {

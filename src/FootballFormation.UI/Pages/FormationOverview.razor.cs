@@ -1,5 +1,6 @@
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
+using FootballFormation.UI.Navigation;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Logging;
@@ -11,7 +12,7 @@ namespace FootballFormation.UI.Pages;
 public partial class FormationOverview
 {
     [Inject] private GameService GameService { get; set; } = null!;
-    [Inject] private NavigationManager Navigation { get; set; } = null!;
+    [Inject] private NavigationTrail Trail { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IJSRuntime JS { get; set; } = null!;
     [Inject] private ILogger<FormationOverview> Logger { get; set; } = null!;
@@ -36,7 +37,7 @@ public partial class FormationOverview
         {
             Logger.LogWarning("Game {GameId} not found for overview", GameId);
             Snackbar.Add("Game not found", Severity.Error);
-            Navigation.NavigateTo("/games");
+            Trail.Redirect(AppRoutes.Games);
             return;
         }
 
@@ -48,8 +49,9 @@ public partial class FormationOverview
         }
     }
 
-    private void NavigateToEditor() => Navigation.NavigateTo($"/games/{GameId}/formation");
-    private void NavigateToGames() => Navigation.NavigateTo("/games");
+    /// <summary>Only reached on a deep link — a shared overview usually is one. An admin who lands
+    /// here cold is most likely on their way to edit it; a visitor has no editor to go to.</summary>
+    private string BackFallback => IsAnonymous ? AppRoutes.Games : AppRoutes.Formation(GameId);
 
     private async Task CaptureScreenshot()
     {

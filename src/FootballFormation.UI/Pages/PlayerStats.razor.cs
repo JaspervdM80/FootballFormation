@@ -3,6 +3,7 @@ using FootballFormation.Core.Reporting;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
 using FootballFormation.UI.Components;
+using FootballFormation.UI.Navigation;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
@@ -14,7 +15,7 @@ public partial class PlayerStats
     [Inject] private PlayerService PlayerService { get; set; } = null!;
     [Inject] private SeasonSquadService SquadService { get; set; } = null!;
     [Inject] private GameService GameService { get; set; } = null!;
-    [Inject] private NavigationManager Navigation { get; set; } = null!;
+    [Inject] private NavigationTrail Trail { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
@@ -30,7 +31,7 @@ public partial class PlayerStats
         var playerResult = await PlayerService.GetByIdAsync(PlayerId);
         if (!Snackbar.ReportFailure(L, playerResult))
         {
-            Navigation.NavigateTo("/players");
+            Trail.Redirect(AppRoutes.Players);
             return;
         }
 
@@ -46,6 +47,4 @@ public partial class PlayerStats
         _stats = PlayerStatsReport.Build(playerResult.Value!, games, squads);
         _loaded = true;
     }
-
-    private void NavigateBack() => Navigation.NavigateTo("/players");
 }

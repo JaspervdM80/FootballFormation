@@ -18,22 +18,21 @@
 
 @* --- Desktop: original single-row header + tab strip --- *@
 <div class="builder-desktop">
-    <div class="d-flex align-center gap-2 mb-2">
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="NavigateBack" Size="Size.Small"
-                       Style="color: color-mix(in srgb, var(--ink) 40%, transparent);" />
-        <MudText Typo="Typo.h6" Style="color: var(--ink); font-weight: 700;">
-            @(GameData.IsHomeGame ? "vs" : "@") @GameData.Opponent
-        </MudText>
-        <span class="badge-venue">@((GameData.IsHomeGame ? L["Home"] : L["Away"]).ToString().ToUpper())</span>
-        <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 45%, transparent);">@GameData.Date.ToString("dd MMM yyyy")</MudText>
-        <span class="badge-gold">@GameData.FormationType.DisplayName()</span>
-        <MudSpacer />
-        <MudButton Variant="Variant.Outlined" Size="Size.Small"
-                   StartIcon="@Icons.Material.Filled.Share" Class="btn-ghost"
-                   Href="@($"/games/{GameId}/overview")">
-            @L["Overview"]
-        </MudButton>
-    </div>
+    <PageHeader BackFallback="@AppRoutes.Games" TitleTypo="Typo.h6" Class="mb-2"
+                Title="@($"{(GameData.IsHomeGame ? "vs" : "@")} {GameData.Opponent}")">
+        <Meta>
+            <span class="badge-venue">@((GameData.IsHomeGame ? L["Home"] : L["Away"]).ToString().ToUpper())</span>
+            <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 45%, transparent);">@GameData.Date.ToString("dd MMM yyyy")</MudText>
+            <span class="badge-gold">@GameData.FormationType.DisplayName()</span>
+        </Meta>
+        <Actions>
+            <MudButton Variant="Variant.Outlined" Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Share" Class="btn-ghost"
+                       Href="@AppRoutes.Overview(GameId)">
+                @L["Overview"]
+            </MudButton>
+        </Actions>
+    </PageHeader>
     <MudTabs @bind-ActivePanelIndex="ActivePeriodIndex" Elevation="0" Rounded="true"
              ApplyEffectsToContainer="true" Class="mb-2 builder-desktop-tabs">
         @foreach (var period in orderedPeriods)
@@ -45,24 +44,19 @@
 
 @* --- Mobile: compact header, formation + overview row, and a period dropdown --- *@
 <div class="builder-mobile">
-    <div class="builder-header mb-3">
-        <div class="builder-header-top">
-            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="NavigateBack" Size="Size.Small"
-                           Style="color: color-mix(in srgb, var(--ink) 40%, transparent);" />
-            <MudText Typo="Typo.h6" Class="builder-opponent"
-                     Style="color: var(--ink); font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                @GameData.Opponent
-            </MudText>
+    <PageHeader BackFallback="@AppRoutes.Games" TitleTypo="Typo.h6" Class="mb-3"
+                TitleClass="builder-opponent" Title="@GameData.Opponent">
+        <Meta>
             <span class="builder-date">@GameData.Date.ToString("dd MMM yyyy")</span>
             <span class="badge-venue">@((GameData.IsHomeGame ? L["Home"] : L["Away"]).ToString().ToUpper())</span>
-        </div>
-    </div>
+        </Meta>
+    </PageHeader>
     <div class="d-flex align-center gap-2 mb-2">
         <span class="badge-gold">@GameData.FormationType.DisplayName()</span>
         <MudSpacer />
         <MudButton Variant="Variant.Outlined" Size="Size.Small"
                    StartIcon="@Icons.Material.Filled.Share" Class="btn-ghost"
-                   Href="@($"/games/{GameId}/overview")">
+                   Href="@AppRoutes.Overview(GameId)">
             @L["Overview"]
         </MudButton>
     </div>

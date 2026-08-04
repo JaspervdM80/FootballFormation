@@ -1,6 +1,7 @@
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
+using FootballFormation.UI.Navigation;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
@@ -12,7 +13,7 @@ public partial class MatchResult
     [Inject] private GameService GameService { get; set; } = null!;
     [Inject] private PlayerService PlayerService { get; set; } = null!;
     [Inject] private SeasonSquadService SquadService { get; set; } = null!;
-    [Inject] private NavigationManager Navigation { get; set; } = null!;
+    [Inject] private NavigationTrail Trail { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
@@ -77,7 +78,7 @@ public partial class MatchResult
         var gameResult = await GameService.GetByIdAsync(GameId);
         if (!Snackbar.ReportFailure(L, gameResult))
         {
-            Navigation.NavigateTo("/games");
+            Trail.Redirect(AppRoutes.Games);
             return;
         }
 
@@ -141,6 +142,4 @@ public partial class MatchResult
         NewGoalAssisterId = null;
         NewGoalIsOwnGoal = false;
     }
-
-    private void NavigateBack() => Navigation.NavigateTo("/games");
 }

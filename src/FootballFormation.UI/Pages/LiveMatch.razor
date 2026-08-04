@@ -8,18 +8,10 @@
     return;
 }
 
-<div class="d-flex align-center gap-2 mb-2">
-    <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="NavigateToGames" Size="Size.Small"
-                   Style="color: color-mix(in srgb, var(--ink) 40%, transparent);" />
-    <div>
-        <MudText Typo="Typo.h6" Style="color: var(--ink); font-weight: 700;">
-            @(GameData.IsHomeGame ? "vs" : "@") @GameData.Opponent
-        </MudText>
-        <MudText Typo="Typo.body2" Class="page-header-subtitle">
-            @GameData.Date.ToString("dd MMM yyyy") · @(GameData.IsHomeGame ? L["Home"] : L["Away"])
-        </MudText>
-    </div>
-</div>
+@* mb-2, not the usual mb-4: on a sideline phone every pixel above the scoreboard counts. *@
+<PageHeader BackFallback="@AppRoutes.Games" TitleTypo="Typo.h6" Class="mb-2"
+            Title="@($"{(GameData.IsHomeGame ? "vs" : "@")} {GameData.Opponent}")"
+            Subtitle="@($"{GameData.Date:dd MMM yyyy} · {(GameData.IsHomeGame ? L["Home"] : L["Away"])}")" />
 
 <div class="live-layout">
     <MudPaper Class="pa-4 live-scoreboard" Elevation="2">

@@ -3,6 +3,7 @@ using FootballFormation.Core.Reporting;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
 using FootballFormation.UI.Components;
+using FootballFormation.UI.Navigation;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
@@ -72,7 +73,7 @@ public partial class SeasonStats
 
     private double BarWidth(int minutes) => _maxMinutes > 0 ? (double)minutes / _maxMinutes * 100 : 0;
 
-    private void OpenPlayer(int playerId) => Navigation.NavigateTo($"/players/{playerId}/stats");
+    private void OpenPlayer(int playerId) => Navigation.NavigateTo(AppRoutes.PlayerStats(playerId));
 
     /// <summary>Single-letter form pill, localized (W/D/L in English, W/G/V in Dutch).</summary>
     private string ResultLetter(GameResult r) => L[r.ToString()].ToString()[..1];
