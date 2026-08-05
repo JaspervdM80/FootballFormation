@@ -2,6 +2,7 @@ using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
 using FootballFormation.UI.Components;
+using FootballFormation.UI.Navigation;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
@@ -52,7 +53,7 @@ public partial class Players
     private void OnRowClicked(TableRowClickEventArgs<SeasonSquadMember> args)
     {
         if (args.Item is not null)
-            Navigation.NavigateTo($"/players/{args.Item.PlayerId}/stats");
+            Navigation.NavigateTo(AppRoutes.PlayerStats(args.Item.PlayerId));
     }
 
     private void ShowCurrentSeason()

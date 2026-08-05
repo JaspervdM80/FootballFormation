@@ -67,7 +67,14 @@ Components/
   PlayerList.razor(.cs)(.css)       — Draggable player cards (HTML5 drag API)
   SubstituteBench.razor(.cs)(.css)  — Substitute drop zone with remove buttons
   SeasonPicker.razor(.cs)           — Global season filter; rendered in both the app bar and the drawer
+  NavItems.razor(.cs)               — The main menu, from AppNav.Menu; rendered in both, ShowIcons for the drawer
+  PageHeader.razor(.cs)             — Every page's title block: heading, subtitle, back arrow, actions
+  BackButton.razor(.cs)             — The back arrow; follows the trail, names its destination
   ConfirmDialog.razor(.cs)          — Reusable yes/no confirmation dialog
+Navigation/
+  AppRoutes.cs                — Every route: constants and builders. Never interpolate a URL at a call site
+  AppNav.cs                   — What each route is called, the menu, and which routes the season filters
+  NavigationTrail.cs          — Scoped: where the visitor has been, so back returns there
 State/
   SeasonState.cs              — Scoped: the selected season, shared by the layout and the pages
 Helpers/
@@ -81,7 +88,8 @@ Theming/
   ClubTheme.cs                — The club palette: emits the CSS custom properties AND the MudTheme
 Layout/
   MainLayout.razor(.cs)       — MudBlazor layout, club light theme, app-bar nav + drawer, providers.
-                                Nav entries and the season picker must be edited in BOTH places.
+                                Both nav renderings are <NavItems />, so a menu change is one edit
+                                in AppNav.Menu. Also starts the NavigationTrail for the circuit.
 ```
 
 Report builders live in **Core** (`Core/Reporting/`), not the UI: minutes played, utilisation and

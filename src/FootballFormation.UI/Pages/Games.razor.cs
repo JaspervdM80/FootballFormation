@@ -2,6 +2,7 @@ using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
 using FootballFormation.UI.Components;
+using FootballFormation.UI.Navigation;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Localization;
@@ -99,13 +100,13 @@ public partial class Games
         await LoadAsync();
     }
 
-    private void OpenFormation(int gameId) => Navigation.NavigateTo($"/games/{gameId}/formation");
+    private void OpenFormation(int gameId) => Navigation.NavigateTo(AppRoutes.Formation(gameId));
 
-    private void OpenOverview(int gameId) => Navigation.NavigateTo($"/games/{gameId}/overview");
+    private void OpenOverview(int gameId) => Navigation.NavigateTo(AppRoutes.Overview(gameId));
 
-    private void OpenResult(int gameId) => Navigation.NavigateTo($"/games/{gameId}/result");
+    private void OpenResult(int gameId) => Navigation.NavigateTo(AppRoutes.Result(gameId));
 
-    private void OpenLive(int gameId) => Navigation.NavigateTo($"/games/{gameId}/live");
+    private void OpenLive(int gameId) => Navigation.NavigateTo(AppRoutes.Live(gameId));
 
     /// <summary>Returns the edited game, or null when the dialog was cancelled.</summary>
     private async Task<Game?> ShowGameDialogAsync(string title, Game? game = null)

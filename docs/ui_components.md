@@ -159,13 +159,56 @@ The global season filter, backed by the scoped `SeasonState` (see
 - Its CSS lives in `Web/wwwroot/app.css`, **not** scoped CSS, precisely because it renders from two
   places — isolation would force a duplicate stylesheet, the problem `.stat-tiles` already has
   between `SeasonStats.razor.css` and `PlayerStats.razor.css`.
-- **Route allowlist**: `/games`, `/stats`, `/players` (the squad is per season),
-  `/players/{id}/stats`, and `/` — the start page filters nothing, but it is where a visit begins,
-  so the season can be set before navigating. Hidden on `/settings`, where it would be misleading
-  while the season list itself is edited, and on the single-game routes, where it is inert. The
-  component subscribes to `NavigationManager.LocationChanged` so visibility follows navigation.
+- **Route allowlist**, now `AppNav.IsSeasonAware` rather than a copy of the route list living here:
+  `/games`, `/stats`, `/players` (the squad is per season), `/players/{id}/stats`, and `/` — the
+  start page filters nothing, but it is where a visit begins, so the season can be set before
+  navigating. Hidden on `/settings`, where it would be misleading while the season list itself is
+  edited, and on the single-game routes, where it is inert. The component subscribes to
+  `NavigationManager.LocationChanged` so visibility follows navigation.
 - Selecting a season **never** writes `Season.IsCurrent` — the picker is reachable by anonymous
   visitors, and `IsCurrent` is shared state owned by the admin on `/settings`.
+
+## Navigation: routes, menu, page headers
+Everything that knows a URL lives in `UI/Navigation/`. Three rules, and the whole thing holds:
+
+1. **Build URLs from `AppRoutes`** — `AppRoutes.Games`, `AppRoutes.PlayerStats(id)` — in pages,
+   in `Href` attributes, everywhere. Not an interpolated literal. The `@page` directives are the
+   one exception: Razor needs a compile-time constant, so `AppRoutes` mirrors them by hand.
+2. **A page's name lives once**, in `AppNav.PageNameKey` — a localization key, matched by pattern
+   on the path segments. It names the menu entries *and* fills in "Back to {0}", so a page is
+   called the same thing wherever it is referred to. It returns `null` for anything outside the
+   app's routes (`/login`, `/not-found`), which is how the back arrow knows not to offer it.
+3. **The menu is `AppNav.Menu`**, rendered by `<NavItems />` in both the app bar and the drawer
+   (`ShowIcons="true"` there). Adding an item is one line. There is deliberately **no Start item**:
+   the "GJS Meiden" title is already a home link in both places.
+
+### PageHeader (`Components/PageHeader.razor`)
+Every page opens with one — heading, optional subtitle, optional back arrow, optional actions.
+Do not hand-roll a header row.
+
+- `Title` / `TitleContent` and `Subtitle` / `SubtitleContent`: string for plain text, fragment when
+  the page needs its own markup. **A fragment is compiled into the calling page**, so that page's
+  scoped CSS reaches inside it. Anything on an element *PageHeader* renders — the wrapper, the
+  heading — needs a rule in `app.css`; that is what `Class` and `TitleClass` are for, and why
+  `.result-header`, `.result-opponent`, `.result-subtitle` and `.builder-opponent` moved there.
+- `Meta` sits beside the heading (the formation builder's venue/date/formation badges); `Actions`
+  is pushed right by a `MudSpacer` (the Add button on `/games`, the squad actions on `/players`).
+- `TitleTypo` is `h4` on top-level pages, `h5`/`h6` on detail pages. `Class` carries the page's
+  bottom margin — the existing `mb-2`/`mb-3`/`mb-4`/`mb-6` were kept as they were, so unifying
+  the vertical rhythm is still an open, separate job.
+- `<PageTitle>` stays on the page. Several deliberately differ from the heading (`/players` is
+  titled "Players" but headed "Squad"), and on the detail pages it sits above the loading guard so
+  the browser tab is right before the data arrives.
+
+### Back arrow (`Components/BackButton.razor`)
+Rendered by `PageHeader` when you pass `BackFallback`. It returns to the page the visitor **came
+from** — `NavigationTrail`, see [patterns.md](patterns.md#ui-state-services) — and names that
+destination in `aria-label` + `title` ("Terug naar Seizoen"). Icon-only by design; the tooltip is
+the whole affordance, which is why the label and the destination are resolved from one expression.
+
+`BackFallback` is only used when there is nothing behind: a shared link, a bookmark, a refresh.
+Pick the page someone landing cold most likely wants — `/players` for player stats, `/games` for
+the game screens, and for `/games/{id}/overview` the editor for an admin, `/games` for a visitor.
 
 ## Squad page (`/players`)
 Season-scoped: it follows the season picker and shows that season's squad, not everyone on file.

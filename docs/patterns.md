@@ -92,9 +92,9 @@ seasons, so each game resolves *its own* season's squad.
   real file. Fly.io auto-migrates on boot, so production gets no second chance.
 
 ## UI state services
-`SeasonState` (`UI/State/SeasonState.cs`) is the only cross-page state in the app: the selected
-season, shared by `MainLayout`'s picker and the season-aware pages. The pattern, if a second one
-is ever needed:
+Two of these: `SeasonState` (`UI/State/SeasonState.cs`) holds the selected season, shared by
+`MainLayout`'s picker and the season-aware pages; `NavigationTrail` (`UI/Navigation/`) holds where
+the visitor has been. The pattern, taking `SeasonState` as the worked example:
 
 - Registered `Scoped`, so on Blazor Server it lives for the SignalR circuit — the choice survives
   navigation within a tab but resets on a browser refresh.
@@ -113,6 +113,21 @@ is ever needed:
   Razor owns the base class, so putting it on the code-behind is a CS0263 error.
 - The state holds a **view** choice and never writes shared data. The picker is reachable by
   anonymous visitors, so it must not touch `Season.IsCurrent`, which is admin-owned on `/settings`.
+
+`NavigationTrail` follows the same shape with one twist worth knowing. It records the circuit's
+navigations by subscribing to `NavigationManager.LocationChanged` — but a scoped service is not
+constructed until something injects it, and if the first injector were a detail page's back button
+the navigation that led there would already have been missed. So subscribing lives in `Start()`,
+which **`MainLayout.OnInitialized` calls**, before any page renders. `Previous` also records the
+current URL before answering: the `Router` subscribed to `LocationChanged` first and re-renders the
+page inside its own handler, so a component can read the trail before our handler has run.
+
+Two related rules for anything that navigates:
+
+- Build URLs from `AppRoutes` (`AppRoutes.PlayerStats(id)`), never an interpolated literal.
+- Redirect away from a page that failed to load with `Trail.Redirect(...)`, not `NavigateTo`. It
+  replaces the failed page in both the trail and browser history, so neither back button walks
+  straight back into it.
 
 ## Service Registration
 All services registered as `Scoped` in Program.cs:

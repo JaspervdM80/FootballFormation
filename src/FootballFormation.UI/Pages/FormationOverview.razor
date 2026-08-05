@@ -10,26 +10,11 @@
 }
 
 @* Outside .overview-capture on purpose — the capture area is what gets screenshotted, and a
-   back button has no business in the shared image. *@
-<div class="d-flex align-center gap-2 mb-3">
-    <AuthorizeView>
-        <Authorized>
-            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="NavigateToEditor" Size="Size.Small"
-                           aria-label="@L["Back to editor"]"
-                           Style="color: color-mix(in srgb, var(--ink) 40%, transparent);" />
-        </Authorized>
-        <NotAuthorized>
-            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="NavigateToGames" Size="Size.Small"
-                           aria-label="@L["Back to games"]"
-                           Style="color: color-mix(in srgb, var(--ink) 40%, transparent);" />
-        </NotAuthorized>
-    </AuthorizeView>
-    @* No subtitle: the capture block immediately below already names the fixture and the date,
-       and repeating them here reads as the page saying the same thing twice. *@
-    <MudText Typo="Typo.h6" Style="color: var(--ink); font-weight: 700;">
-        @L["Formation Overview"]
-    </MudText>
-</div>
+   back button has no business in the shared image.
+   No subtitle: the capture block immediately below already names the fixture and the date, and
+   repeating them here reads as the page saying the same thing twice. *@
+<PageHeader Title="@L["Formation Overview"]" TitleTypo="Typo.h6" Class="mb-3"
+            BackFallback="@BackFallback" />
 
 <div class="overview-capture" id="formation-overview">
     <div class="overview-header">

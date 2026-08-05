@@ -396,6 +396,38 @@ html, body {
     font-size: 0.85rem;
 }
 
+/* PageHeader renders the heading and the wrapper, so anything targeting them belongs here rather
+   than in a page's scoped stylesheet — the scope attribute would be PageHeader's, not the page's. */
+
+/* Match result: the date · venue · formation line is kept a touch darker than a normal body2
+   so it reads at a glance. */
+.result-header .result-subtitle {
+    color: color-mix(in srgb, var(--ink) 68%, transparent);
+    font-weight: 500;
+}
+
+/* Formation builder: the opponent has to give way to the badges beside it on a narrow screen. */
+.builder-opponent {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 599.98px) {
+    /* The opponent name repeats in the score card below, so drop the heading on a phone and give
+       the subtitle that prominence instead. */
+    .result-header .result-opponent {
+        display: none;
+    }
+
+    .result-header .result-subtitle {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: color-mix(in srgb, var(--ink) 82%, transparent);
+    }
+}
+
 /* Card label */
 .card-label {
     font-size: 0.7rem;

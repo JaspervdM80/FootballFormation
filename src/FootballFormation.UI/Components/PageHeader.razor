@@ -1,0 +1,34 @@
+<div class="d-flex align-center gap-2 @Class">
+    @if (BackFallback is not null)
+    {
+        <BackButton Fallback="@BackFallback" />
+    }
+    <div class="d-flex align-center gap-2">
+        <div>
+            <MudText Typo="@TitleTypo" Class="@TitleClass" Style="color: var(--ink); font-weight: 700;">
+                @if (TitleContent is not null)
+                {
+                    @TitleContent
+                }
+                else
+                {
+                    @Title
+                }
+            </MudText>
+            @if (SubtitleContent is not null)
+            {
+                @SubtitleContent
+            }
+            else if (Subtitle is not null)
+            {
+                <MudText Typo="Typo.body2" Class="page-header-subtitle">@Subtitle</MudText>
+            }
+        </div>
+        @Meta
+    </div>
+    @if (Actions is not null)
+    {
+        <MudSpacer />
+        @Actions
+    }
+</div>

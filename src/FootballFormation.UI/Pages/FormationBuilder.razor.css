@@ -15,20 +15,8 @@
     }
 }
 
-/* Page header: opponent + action on the first line, match meta on the second so
-   nothing gets crushed on a narrow screen. */
-.builder-header {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.builder-header-top {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
+/* The header row itself is PageHeader's now; .builder-opponent moved to app.css with it, since
+   MudText renders that element. This span is written here, so it keeps this file's scope. */
 .builder-date {
     font-size: 0.8rem;
     color: color-mix(in srgb, var(--ink) 45%, transparent);

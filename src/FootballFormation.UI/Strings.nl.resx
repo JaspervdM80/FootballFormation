@@ -21,6 +21,8 @@
   <data name="Games" xml:space="preserve"><value>Wedstrijden</value></data>
   <data name="Preferences" xml:space="preserve"><value>Voorkeuren</value></data>
   <data name="Logout" xml:space="preserve"><value>Uitloggen</value></data>
+  <!-- {0} is the name of the page the back arrow returns to — see AppNav.PageNameKey -->
+  <data name="Back to {0}" xml:space="preserve"><value>Terug naar {0}</value></data>
 
   <!-- Home -->
   <data name="Plan your team's formations, manage your squad, and organize game lineups." xml:space="preserve"><value>Plan je opstellingen, beheer je selectie en organiseer de wedstrijden.</value></data>
@@ -315,8 +317,6 @@
   <data name="Subs" xml:space="preserve"><value>Wissels</value></data>
   <data name="Player {0}" xml:space="preserve"><value>Speler {0}</value></data>
   <data name="No subs" xml:space="preserve"><value>Geen wissels</value></data>
-  <data name="Back to editor" xml:space="preserve"><value>Terug naar bewerken</value></data>
-  <data name="Back to games" xml:space="preserve"><value>Terug naar wedstrijden</value></data>
   <data name="Save as image" xml:space="preserve"><value>Opslaan als afbeelding</value></data>
 
   <!-- Settings -->

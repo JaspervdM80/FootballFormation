@@ -1,5 +1,6 @@
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
+using FootballFormation.UI.Navigation;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 
@@ -77,8 +78,9 @@ public partial class Home : IDisposable
     {
         if (TodaysGame is null) return;
 
-        var page = TodaysGame.MatchState == MatchState.Finished ? "result" : "live";
-        Navigation.NavigateTo($"/games/{TodaysGame.Id}/{page}");
+        Navigation.NavigateTo(TodaysGame.MatchState == MatchState.Finished
+            ? AppRoutes.Result(TodaysGame.Id)
+            : AppRoutes.Live(TodaysGame.Id));
     }
 
     /// <summary>The banner is a div, so it needs the keyboard activation a button would give it.</summary>

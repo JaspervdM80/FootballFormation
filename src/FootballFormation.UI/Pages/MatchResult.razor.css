@@ -33,14 +33,8 @@
     white-space: nowrap;
 }
 
-/* Header subtitle (date · venue · formation) — kept a touch darker than a normal
-   body2 so it reads at a glance on the match-result page. ::deep is required because
-   MudText renders the <p>/<h5> element itself and Blazor scoped CSS only attaches
-   the scope attribute to elements written directly in the razor. */
-.result-header ::deep .result-subtitle {
-    color: color-mix(in srgb, var(--ink) 68%, transparent);
-    font-weight: 500;
-}
+/* .result-header, .result-opponent and .result-subtitle now live in app.css: PageHeader renders
+   those three elements, so they carry its scope attribute rather than this file's. */
 
 .score-big-input {
     width: 64px;
@@ -270,20 +264,7 @@
     }
 }
 
-/* Mobile: the opponent name repeats in the score card below, so drop the h5 header
-   and give the date · venue · formation subtitle the prominence instead. ::deep needed
-   because MudText renders the <h5>/<p> outside of this component's scope attribute. */
 @media (max-width: 599.98px) {
-    .result-header ::deep .result-opponent {
-        display: none;
-    }
-
-    .result-header ::deep .result-subtitle {
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: color-mix(in srgb, var(--ink) 82%, transparent);
-    }
-
     .score-name {
         font-size: 1rem;
         letter-spacing: 0.6px;

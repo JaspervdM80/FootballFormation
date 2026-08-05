@@ -1,0 +1,20 @@
+@inject IStringLocalizer<Strings> L
+
+@foreach (var item in AppNav.Menu)
+{
+    @* A RenderFragment local so the MudNavLink is written once and the AuthorizeView only wraps
+       the entries that need it — the codebase's one sanctioned use of markup in @code. *@
+    RenderFragment link =
+        @<MudNavLink Href="@item.Path" Match="@item.Match"
+                     Class="@(ShowIcons ? null : "topbar-nav-link")"
+                     Icon="@(ShowIcons ? item.Icon : null)">@L[item.LabelKey]</MudNavLink>;
+
+    if (item.AdminOnly)
+    {
+        <AuthorizeView>@link</AuthorizeView>
+    }
+    else
+    {
+        @link
+    }
+}

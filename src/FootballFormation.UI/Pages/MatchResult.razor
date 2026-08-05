@@ -8,19 +8,17 @@
     return;
 }
 
-<div class="d-flex align-center gap-2 mb-2 result-header">
-    <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="NavigateBack" Size="Size.Small"
-                   Style="color: color-mix(in srgb, var(--ink) 40%, transparent);" />
-    <div>
-        @* The opponent name repeats in the score card below; on mobile we hide this to save space. *@
-        <MudText Typo="Typo.h5" Class="result-opponent" Style="color: var(--ink); font-weight: 700;">
-            @(GameData.IsHomeGame ? "vs" : "@") @GameData.Opponent
-        </MudText>
+@* The opponent name repeats in the score card below; on mobile it is hidden to save space —
+   .result-opponent and .result-subtitle live in app.css, since PageHeader renders those elements. *@
+<PageHeader BackFallback="@AppRoutes.Games" TitleTypo="Typo.h5"
+            Class="mb-2 result-header" TitleClass="result-opponent"
+            Title="@($"{(GameData.IsHomeGame ? "vs" : "@")} {GameData.Opponent}")">
+    <SubtitleContent>
         <MudText Typo="Typo.body2" Class="result-subtitle">
             @GameData.Date.ToString("dd MMMM yyyy") · @(GameData.IsHomeGame ? L["Home"] : L["Away"]) · @GameData.FormationType.DisplayName()
         </MudText>
-    </div>
-</div>
+    </SubtitleContent>
+</PageHeader>
 
 <div class="result-layout">
     <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">

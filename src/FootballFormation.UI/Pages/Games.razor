@@ -3,10 +3,9 @@
 
 <PageTitle>@L["Games"]</PageTitle>
 
-<div class="d-flex align-center justify-space-between mb-6">
-    <div>
-        <MudText Typo="Typo.h4" Style="color: var(--ink); font-weight: 700;">@L["Games"]</MudText>
-        <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 45%, transparent);">
+<PageHeader Class="mb-6" Title="@L["Games"]">
+    <SubtitleContent>
+        <MudText Typo="Typo.body2" Class="page-header-subtitle">
             @if (_games is not null)
             {
                 @(_games.Count == 1 ? L["{0} match", _games.Count] : L["{0} matches", _games.Count])
@@ -21,14 +20,16 @@
                 }
             }
         </MudText>
-    </div>
-    <AuthorizeView>
-        <MudButton Variant="Variant.Filled" Class="btn-gold btn-compact" StartIcon="@Icons.Material.Filled.Add"
-                   OnClick="OpenAddDialog">
-            @L["Add"]
-        </MudButton>
-    </AuthorizeView>
-</div>
+    </SubtitleContent>
+    <Actions>
+        <AuthorizeView>
+            <MudButton Variant="Variant.Filled" Class="btn-gold btn-compact" StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="OpenAddDialog">
+                @L["Add"]
+            </MudButton>
+        </AuthorizeView>
+    </Actions>
+</PageHeader>
 
 @if (_games is null)
 {

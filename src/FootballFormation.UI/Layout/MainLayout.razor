@@ -10,23 +10,13 @@
     <MudAppBar Elevation="0" Fixed="true" Dense="true" Style="background: var(--gradient-appbar); border-bottom: 1px solid color-mix(in srgb, var(--ink) 5%, transparent); padding-top: env(safe-area-inset-top, 0px);">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Class="nav-hamburger" Edge="Edge.Start"
                        Style="color: color-mix(in srgb, var(--ink) 80%, transparent);" OnClick="ToggleDrawer" aria-label="Menu" />
-        <a href="/" class="app-title-link ml-2 mr-8" aria-label="@L["Start"]">
+        @* The title is the home link — which is why the menu has no Start item, in either rendering *@
+        <a href="@AppRoutes.Home" class="app-title-link ml-2 mr-8" aria-label="@L["Start"]">
             <span class="app-title-logo" aria-hidden="true"></span>
             <span class="app-title-text">GJS Meiden</span>
         </a>
         <div class="d-flex gap-1 topbar-nav">
-            <MudNavLink Href="/" Match="NavLinkMatch.All"
-                        Class="topbar-nav-link">@L["Start"]</MudNavLink>
-            <MudNavLink Href="/players" Match="NavLinkMatch.Prefix"
-                        Class="topbar-nav-link">@L["Squad"]</MudNavLink>
-            <MudNavLink Href="/games" Match="NavLinkMatch.Prefix"
-                        Class="topbar-nav-link">@L["Games"]</MudNavLink>
-            <MudNavLink Href="/stats" Match="NavLinkMatch.Prefix"
-                        Class="topbar-nav-link">@L["Season"]</MudNavLink>
-            <AuthorizeView>
-                <MudNavLink Href="/settings" Match="NavLinkMatch.All"
-                            Class="topbar-nav-link">@L["Preferences"]</MudNavLink>
-            </AuthorizeView>
+            <NavItems />
         </div>
         <MudSpacer />
         <SeasonPicker Compact="true" />
@@ -49,7 +39,7 @@
                 </div>
             </Authorized>
             <NotAuthorized>
-                <MudButton Href="/login" Target="_self" Variant="Variant.Text" Size="Size.Small"
+                <MudButton Href="@AppRoutes.Login" Target="_self" Variant="Variant.Text" Size="Size.Small"
                            StartIcon="@Icons.Material.Filled.Lock"
                            Style="color: color-mix(in srgb, var(--ink) 40%, transparent); text-transform: none;">
                     Admin
@@ -60,7 +50,7 @@
 
     <MudDrawer @bind-Open="_drawerOpen" Variant="@DrawerVariant.Temporary" Elevation="2"
                Style="padding-top: env(safe-area-inset-top, 0px);">
-        <a href="/" class="app-title-link pa-4">
+        <a href="@AppRoutes.Home" class="app-title-link pa-4" aria-label="@L["Start"]">
             <span class="app-title-logo" aria-hidden="true"></span>
             <span class="app-title-text">GJS Meiden</span>
         </a>
@@ -68,18 +58,7 @@
             <SeasonPicker />
         </div>
         <MudNavMenu>
-            <MudNavLink Href="/" Match="NavLinkMatch.All"
-                        Icon="@Icons.Material.Filled.Home">@L["Start"]</MudNavLink>
-            <MudNavLink Href="/players" Match="NavLinkMatch.Prefix"
-                        Icon="@Icons.Material.Filled.Groups">@L["Squad"]</MudNavLink>
-            <MudNavLink Href="/games" Match="NavLinkMatch.Prefix"
-                        Icon="@Icons.Material.Filled.SportsSoccer">@L["Games"]</MudNavLink>
-            <MudNavLink Href="/stats" Match="NavLinkMatch.Prefix"
-                        Icon="@Icons.Material.Filled.BarChart">@L["Season"]</MudNavLink>
-            <AuthorizeView>
-                <MudNavLink Href="/settings" Match="NavLinkMatch.All"
-                            Icon="@Icons.Material.Filled.Settings">@L["Preferences"]</MudNavLink>
-            </AuthorizeView>
+            <NavItems ShowIcons="true" />
         </MudNavMenu>
     </MudDrawer>
 

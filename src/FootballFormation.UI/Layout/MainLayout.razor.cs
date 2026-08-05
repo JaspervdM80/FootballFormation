@@ -1,3 +1,4 @@
+using FootballFormation.UI.Navigation;
 using FootballFormation.UI.Theming;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
@@ -8,12 +9,19 @@ namespace FootballFormation.UI.Layout;
 public partial class MainLayout : IDisposable
 {
     [Inject] private NavigationManager Navigation { get; set; } = null!;
+    [Inject] private NavigationTrail Trail { get; set; } = null!;
 
     private bool _drawerOpen;
 
     private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
 
-    protected override void OnInitialized() => Navigation.LocationChanged += OnLocationChanged;
+    protected override void OnInitialized()
+    {
+        // The layout is on screen before any page, which is the only moment early enough to catch
+        // every navigation in the circuit — see NavigationTrail.Start.
+        Trail.Start();
+        Navigation.LocationChanged += OnLocationChanged;
+    }
 
     // The drawer's nav links are plain anchors; close the drawer when one navigates
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)

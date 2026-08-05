@@ -4,6 +4,7 @@ using System.Threading.RateLimiting;
 using FootballFormation.Core.Data;
 using Microsoft.AspNetCore.DataProtection;
 using FootballFormation.Core.Services;
+using FootballFormation.UI.Navigation;
 using FootballFormation.UI.State;
 using FootballFormation.Web.Components;
 using Microsoft.AspNetCore.Authentication;
@@ -82,6 +83,9 @@ try
 
     // Scoped, so the selected season lives for the SignalR circuit — see SeasonState
     builder.Services.AddScoped<SeasonState>();
+
+    // Scoped for the same reason: the back button follows the trail of this tab — see NavigationTrail
+    builder.Services.AddScoped<NavigationTrail>();
 
     builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
         .AddCookie(options =>

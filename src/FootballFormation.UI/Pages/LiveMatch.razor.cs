@@ -3,6 +3,7 @@ using FootballFormation.Core.Models;
 using FootballFormation.Core.Reporting;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
+using FootballFormation.UI.Navigation;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Localization;
@@ -27,6 +28,7 @@ public partial class LiveMatch : IDisposable
     [Inject] private SeasonSquadService SquadService { get; set; } = null!;
     [Inject] private LiveMatchNotifier Notifier { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
+    [Inject] private NavigationTrail Trail { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
@@ -280,7 +282,7 @@ public partial class LiveMatch : IDisposable
         var result = await Live.GetLiveAsync(GameId);
         if (!Snackbar.ReportFailure(L, result))
         {
-            Navigation.NavigateTo("/games");
+            Trail.Redirect(AppRoutes.Games);
             return false;
         }
 
@@ -369,9 +371,7 @@ public partial class LiveMatch : IDisposable
     private string PlayerLabel(int playerId) =>
         FindPlayer(playerId)?.ShortName ?? L["Player {0}", playerId].Value;
 
-    private void NavigateToGames() => Navigation.NavigateTo("/games");
-
-    private void NavigateToResult() => Navigation.NavigateTo($"/games/{GameId}/result");
+    private void NavigateToResult() => Navigation.NavigateTo(AppRoutes.Result(GameId));
 
     public void Dispose()
     {

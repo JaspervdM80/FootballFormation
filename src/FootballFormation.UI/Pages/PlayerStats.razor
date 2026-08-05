@@ -14,22 +14,18 @@
     return;
 }
 
-<div class="d-flex align-center gap-2 mb-4">
-    <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="NavigateBack" Size="Size.Small"
-                   Style="color: color-mix(in srgb, var(--ink) 40%, transparent);" />
-    <div>
-        <MudText Typo="Typo.h5" Style="color: var(--ink); font-weight: 700;">
-            @if (_stats.Player.ShirtNumber is not null)
-            {
-                <span style="color: var(--club-primary-bright);">#@_stats.Player.ShirtNumber</span>
-            }
-            @_stats.Player.DisplayName
-        </MudText>
-        <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 62%, transparent);">
-            @L[_stats.Player.PreferredPosition.DisplayName()]
-        </MudText>
-    </div>
-</div>
+@* The squad is only the fallback: this page is reached from the season statistics just as often,
+   and the back arrow follows whichever way the visitor actually came. *@
+<PageHeader BackFallback="@AppRoutes.Players" TitleTypo="Typo.h5"
+            Subtitle="@L[_stats.Player.PreferredPosition.DisplayName()]">
+    <TitleContent>
+        @if (_stats.Player.ShirtNumber is not null)
+        {
+            <span style="color: var(--club-primary-bright);">#@_stats.Player.ShirtNumber</span>
+        }
+        @_stats.Player.DisplayName
+    </TitleContent>
+</PageHeader>
 
 @if (_stats.GamesPlayed == 0 && _stats.Goals == 0 && _stats.Assists == 0)
 {

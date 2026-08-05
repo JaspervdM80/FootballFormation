@@ -31,19 +31,15 @@
     </div>
 }
 
-<MudText Typo="Typo.h4" Style="color: var(--ink); font-weight: 700;" GutterBottom="true">
-    GJS Meiden
-</MudText>
-<MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 45%, transparent);" Class="mb-6">
-    @L["Plan your team's formations, manage your squad, and organize game lineups."]
-</MudText>
+<PageHeader Class="mb-6" Title="GJS Meiden"
+            Subtitle="@L["Plan your team's formations, manage your squad, and organize game lineups."]" />
 
 @* Whole tiles are the target — a card with a single destination does not need a button
    repeating it, and the larger hit area is what a thumb wants on a phone. *@
 <MudGrid Spacing="4">
     <MudItem xs="12" sm="6" md="4">
         <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;" role="button" tabindex="0"
-                  @onclick="@(() => Open("/players"))" @onkeydown="@(e => OpenOnKey(e, "/players"))">
+                  @onclick="@(() => Open(AppRoutes.Players))" @onkeydown="@(e => OpenOnKey(e, AppRoutes.Players))">
             <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Style="color: var(--club-primary-bright);" />
             <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Selection"]</MudText>
             <AuthorizeView>
@@ -56,7 +52,7 @@
 
     <MudItem xs="12" sm="6" md="4">
         <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;" role="button" tabindex="0"
-                  @onclick="@(() => Open("/games"))" @onkeydown="@(e => OpenOnKey(e, "/games"))">
+                  @onclick="@(() => Open(AppRoutes.Games))" @onkeydown="@(e => OpenOnKey(e, AppRoutes.Games))">
             <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Size="Size.Large" Style="color: var(--club-primary-bright);" />
             <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Games & Formations"]</MudText>
             <AuthorizeView>
@@ -69,7 +65,7 @@
 
     <MudItem xs="12" sm="6" md="4">
         <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;" role="button" tabindex="0"
-                  @onclick="@(() => Open("/stats"))" @onkeydown="@(e => OpenOnKey(e, "/stats"))">
+                  @onclick="@(() => Open(AppRoutes.SeasonStats))" @onkeydown="@(e => OpenOnKey(e, AppRoutes.SeasonStats))">
             <MudIcon Icon="@Icons.Material.Filled.BarChart" Size="Size.Large" Style="color: var(--club-primary-bright);" />
             <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Season stats"]</MudText>
             <AuthorizeView>
@@ -85,7 +81,7 @@
     <AuthorizeView>
         <MudItem xs="12" sm="6" md="4">
             <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;" role="button" tabindex="0"
-                      @onclick="@(() => Open("/settings"))" @onkeydown="@(e => OpenOnKey(e, "/settings"))">
+                      @onclick="@(() => Open(AppRoutes.Settings))" @onkeydown="@(e => OpenOnKey(e, AppRoutes.Settings))">
                 <MudIcon Icon="@Icons.Material.Filled.Settings" Size="Size.Large" Style="color: var(--club-primary-bright);" />
                 <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Preferences"]</MudText>
                 <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
