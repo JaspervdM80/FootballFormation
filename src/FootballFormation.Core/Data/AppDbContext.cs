@@ -14,7 +14,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<GameGoal> GameGoals => Set<GameGoal>();
     public DbSet<GameSubstitution> GameSubstitutions => Set<GameSubstitution>();
     public DbSet<MatchPreferences> MatchPreferences => Set<MatchPreferences>();
-    public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
+    public DbSet<AppUser> Users => Set<AppUser>();
 
     /// <summary>
     /// Each entity's mapping lives beside it in <c>Data/Configurations</c>. The delete behaviours

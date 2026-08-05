@@ -28,7 +28,7 @@ public partial class Games
     protected override async Task OnInitializedCoreAsync()
     {
         var authState = await AuthStateTask;
-        _isAdmin = authState.User.Identity?.IsAuthenticated == true;
+        _isAdmin = authState.User.IsAdmin();
     }
 
     protected override async Task LoadAsync()

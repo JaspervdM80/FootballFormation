@@ -14,7 +14,7 @@ public partial class Settings
     [Inject] private MatchPreferencesService PreferencesService { get; set; } = null!;
     [Inject] private SeasonService SeasonService { get; set; } = null!;
     [Inject] private SeasonState SeasonState { get; set; } = null!;
-    [Inject] private AdminAuthService AuthService { get; set; } = null!;
+    [Inject] private UserService UserService { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
@@ -180,22 +180,22 @@ public partial class Settings
         var authState = await AuthStateTask;
         var username = authState.User.Identity?.Name ?? "admin";
 
-        var result = await AuthService.ChangePasswordAsync(username, _currentPassword, _newPassword);
+        var result = await UserService.ChangePasswordAsync(username, _currentPassword, _newPassword);
         switch (result)
         {
-            case AdminAuthService.PasswordChangeResult.Success:
+            case UserService.PasswordChangeResult.Success:
                 Snackbar.Add(L["Password changed successfully!"], Severity.Success);
                 _currentPassword = "";
                 _newPassword = "";
                 _confirmPassword = "";
                 break;
-            case AdminAuthService.PasswordChangeResult.InvalidCurrentPassword:
+            case UserService.PasswordChangeResult.InvalidCurrentPassword:
                 Snackbar.Add(L["Current password is incorrect"], Severity.Error);
                 break;
-            case AdminAuthService.PasswordChangeResult.PasswordTooShort:
-                Snackbar.Add(L["New password must be at least {0} characters", AdminAuthService.MinPasswordLength], Severity.Error);
+            case UserService.PasswordChangeResult.PasswordTooShort:
+                Snackbar.Add(L["New password must be at least {0} characters", UserService.MinPasswordLength], Severity.Error);
                 break;
-            case AdminAuthService.PasswordChangeResult.PasswordReused:
+            case UserService.PasswordChangeResult.PasswordReused:
                 Snackbar.Add(L["New password must be different from the current one"], Severity.Error);
                 break;
         }

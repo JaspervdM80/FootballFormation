@@ -46,7 +46,7 @@
         <div class="@StatusCssClass">@StatusLabel</div>
     </MudPaper>
 
-    <AuthorizeView>
+    <AuthorizeView Roles="@AppRoles.Admin">
         <MudPaper Class="pa-3 live-controls" Elevation="2">
             @if (GameData.MatchState == MatchState.NotStarted)
             {
@@ -170,7 +170,7 @@
        made live disappears from the list.
        Admin only, like the minutes table: this is what the coach is about to do, not what has
        happened, and a plan on a shared screen invites being asked about before it is carried out. *@
-    <AuthorizeView>
+    <AuthorizeView Roles="@AppRoles.Admin">
         @{ var planned = PlannedChanges; }
         @if (!planned.IsEmpty)
         {
@@ -211,7 +211,7 @@
        rather than sitting there greyed out above the start button. *@
     @if (GameData.MatchState != MatchState.NotStarted)
     {
-        <AuthorizeView>
+        <AuthorizeView Roles="@AppRoles.Admin">
             <div class="live-actions">
                 <MudButton Variant="Variant.Filled" Class="btn-gold live-action-btn" Size="Size.Large"
                            StartIcon="@Icons.Material.Filled.SportsSoccer" OnClick="AddGoal">
@@ -265,7 +265,7 @@
                                 <div class="live-event-sub">↔ @PlayerLabel(sub.PlayerOffId)</div>
                             }
                         </div>
-                        <AuthorizeView Context="auth">
+                        <AuthorizeView Roles="@AppRoles.Admin" Context="auth">
                             @if (entry.Goal is { } goalToRemove)
                             {
                                 <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small"
@@ -285,7 +285,7 @@
         }
     </MudPaper>
 
-    <AuthorizeView>
+    <AuthorizeView Roles="@AppRoles.Admin">
         <MudPaper Class="pa-4 live-minutes-card" Elevation="2" Style="border-radius: 16px;">
             <div class="card-label">@L["Minutes played"]</div>
 

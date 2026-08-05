@@ -15,7 +15,12 @@ Models/
   GameGoal.cs            — A goal: scorer (null for the opponent), assister, minute, own/opponent flags
   GameSubstitution.cs    — A timestamped change made during a live match
   MatchPreferences.cs    — Per-season game defaults (duration, split, formation, match day)
+  AppUser.cs             — An account that can sign in: name, login, hash, role, security stamp
+  UserRole.cs            — UserRole enum (Admin only today); the member name is the role claim value
   FormationSlots.cs      — Formation slots and lineup→slot assignment, shared by every pitch
+Security/
+  AppRoles.cs            — AppRoles.Admin (role claim constant) and AppClaims (uid, display_name,
+                           security_stamp) — the claim names Program.cs mints and the UI reads
 Data/
   AppDbContext.cs         — EF Core context; DbSets only, mapping lives in Configurations/
   Configurations/         — One IEntityTypeConfiguration per entity, applied by assembly scan
@@ -38,6 +43,10 @@ Services/
   LiveMatchNotifier.cs    — Singleton: fans live match changes out to every open circuit
   MatchPreferencesService.cs — Per-season prefs: GetAsync(seasonId)/GetCurrentAsync/Save,
                             GetNextMatchDateAsync(seasonId)
+  UserService.cs          — Accounts + credentials: CRUD returning Result<T>, plus
+                            ValidateCredentialsAsync/FindForSessionAsync/ChangePasswordAsync, which
+                            return raw values rather than Result so a failed login says nothing
+                            about why. Refuses to remove or demote the last admin.
 Result.cs                — Result and Result<T>: success/failure with a translatable error key
 ```
 
@@ -57,7 +66,10 @@ Pages/
   LiveGoalDialog.razor(.cs)   — Dialog: scorer, assister, own-goal toggle
   LiveSubDialog.razor(.cs)(.css) — Dialog: pick the replacement for a player tapped on the pitch
   SeasonDialog.razor(.cs)     — Dialog: season name, start date, end date
-  Settings.razor(.cs)         — /settings — Match preferences, password, season management
+  Settings.razor(.cs)         — /settings — Match preferences, own password, season management
+  Users.razor(.cs)            — /users — Accounts: add, edit, reset password, delete (Admin only)
+  UserDialog.razor(.cs)       — Dialog: name, login, role, password — also the reset-password form
+                                (PasswordOnly), since the fields are the same
   Home.razor(.cs)(.css)       — / — Landing page, plus the live-match banner when one is in progress
 Components/
   Pitch.razor(.cs)(.css)            — The pitch. Read-only by default; Draggable for the builder,
@@ -84,6 +96,8 @@ Helpers/
   DialogPrompts.cs            — ConfirmAsync()/ConfirmDeleteAsync(), and PromptAsync()/PromptValueAsync()
                                 for an editing dialog that returns a value
   LineupDragState.cs          — In-flight drag on the formation builder
+  PrincipalExtensions.cs      — ClaimsPrincipal.IsAdmin()/DisplayName()/UserId(). Use IsAdmin(), never
+                                Identity.IsAuthenticated — the two only agree while Admin is the one role
 Theming/
   ClubTheme.cs                — The club palette: emits the CSS custom properties AND the MudTheme
 Layout/

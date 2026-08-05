@@ -236,7 +236,7 @@ public partial class LiveMatch : IDisposable
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateTask;
-        _isAdmin = authState.User.Identity?.IsAuthenticated == true;
+        _isAdmin = authState.User.IsAdmin();
 
         if (!await ReloadAsync()) return;
 

@@ -24,12 +24,21 @@ internal sealed class MatchPreferencesConfiguration : IEntityTypeConfiguration<M
     }
 }
 
-internal sealed class AdminUserConfiguration : IEntityTypeConfiguration<AdminUser>
+internal sealed class AppUserConfiguration : IEntityTypeConfiguration<AppUser>
 {
-    public void Configure(EntityTypeBuilder<AdminUser> entity)
+    public void Configure(EntityTypeBuilder<AppUser> entity)
     {
-        entity.HasKey(a => a.Id);
-        entity.Property(a => a.Username).IsRequired().HasMaxLength(50);
-        entity.Property(a => a.PasswordHash).IsRequired();
+        entity.ToTable("Users");
+
+        entity.HasKey(u => u.Id);
+        entity.Property(u => u.DisplayName).IsRequired().HasMaxLength(100);
+        entity.Property(u => u.Username).IsRequired().HasMaxLength(50);
+        entity.Property(u => u.PasswordHash).IsRequired();
+        entity.Property(u => u.Role).IsRequired();
+        entity.Property(u => u.SecurityStamp).IsRequired().HasMaxLength(64);
+
+        // Two accounts sharing a login would make the credential check ambiguous — it takes the
+        // first match. UserService checks for a duplicate before writing; this is the net under it.
+        entity.HasIndex(u => u.Username).IsUnique();
     }
 }

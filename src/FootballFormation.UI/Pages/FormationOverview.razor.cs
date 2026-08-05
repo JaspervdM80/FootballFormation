@@ -1,5 +1,6 @@
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
+using FootballFormation.UI.Helpers;
 using FootballFormation.UI.Navigation;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -30,7 +31,7 @@ public partial class FormationOverview
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateTask;
-        IsAnonymous = authState.User.Identity?.IsAuthenticated != true;
+        IsAnonymous = !authState.User.IsAdmin();
 
         var result = await GameService.GetByIdAsync(GameId);
         if (result.IsFailure || result.Value is null)

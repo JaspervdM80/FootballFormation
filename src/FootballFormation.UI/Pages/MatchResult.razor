@@ -28,7 +28,7 @@
             RenderFragment ourSide =
                 @<div class="score-side">
                     <span class="score-name">@L["Us"]</span>
-                    <AuthorizeView Context="auth">
+                    <AuthorizeView Roles="@AppRoles.Admin" Context="auth">
                         <Authorized>
                             <input type="number" class="score-big-input" min="0" max="99"
                                    value="@ScoreHome"
@@ -42,7 +42,7 @@
             RenderFragment opponentSide =
                 @<div class="score-side">
                     <span class="score-name">@GameData.Opponent</span>
-                    <AuthorizeView Context="auth">
+                    <AuthorizeView Roles="@AppRoles.Admin" Context="auth">
                         <Authorized>
                             <input type="number" class="score-big-input score-away" min="0" max="99"
                                    value="@ScoreAway"
@@ -59,7 +59,7 @@
             <span class="score-vs">–</span>
             @(GameData.IsHomeGame ? opponentSide : ourSide)
         </div>
-        <AuthorizeView>
+        <AuthorizeView Roles="@AppRoles.Admin">
             <MudButton Variant="Variant.Filled" Class="btn-gold mt-4" FullWidth="true"
                        OnClick="SaveScore">
                 @L["Save Score"]
@@ -93,7 +93,7 @@
                                 <div class="goal-assist">↳ @goal.Assister.DisplayName</div>
                             }
                         </div>
-                        <AuthorizeView>
+                        <AuthorizeView Roles="@AppRoles.Admin">
                             <button class="goal-remove" @onclick="() => RemoveGoal(goal)">×</button>
                         </AuthorizeView>
                     </div>
@@ -107,7 +107,7 @@
             </MudText>
         }
 
-        <AuthorizeView>
+        <AuthorizeView Roles="@AppRoles.Admin">
             @if (!AllScorersLogged)
             {
             <div class="add-section">

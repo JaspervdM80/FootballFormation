@@ -219,7 +219,39 @@ and keeps its answer inside the season window: it measures from the opening day 
 started yet, and falls back to the last match day of the window for one already over. Without that
 clamp, adding the first fixture of next season proposed a date in the season we are living in.
 
+## AppUser (table `Users`)
+| Property | Type | Notes |
+|---|---|---|
+| Id | int | PK |
+| DisplayName | string(100) | The person, shown in the app bar and the user list |
+| Username | string(50) | The login. **Unique index** |
+| PasswordHash | string | PBKDF2, via `PasswordHasher<AppUser>` — never a plaintext column |
+| Role | UserRole | Stored as int. Written into the auth cookie as `Role.ToString()` |
+| SecurityStamp | string(64) | Guid "N". Changes whenever the account's authority does |
+
+Standalone: no foreign keys either way, so deleting a user takes nothing with it and no other
+entity can make one undeletable.
+
+**The role is the grant.** `[Authorize(Roles = AppRoles.Admin)]` and
+`<AuthorizeView Roles="@AppRoles.Admin">` match `Role.ToString()`, which `AppRoles` ties back to the
+enum member name — so renaming a `UserRole` member breaks the build rather than quietly
+unauthorizing everyone. Anonymous (not signed in) is not a role and needs no member.
+
+**SecurityStamp is what makes a change take effect now.** The cookie lasts eight hours and is
+sliding, so without it, deleting an account or changing its role would leave the old session working
+until it lapsed. The stamp is copied into the cookie at sign-in and re-checked on every authenticated
+request by `OnValidatePrincipal` (Program.cs) via `UserService.FindForSessionAsync`; a mismatch
+rejects the principal and signs the browser out. `UserService` regenerates it on password change and
+role change — but deliberately **not** on a rename, which changes nothing about what the account may
+do. Note that a live Blazor circuit is not re-validated per SignalR message: revocation lands on the
+next HTTP request.
+
+`UserService.DeleteAsync` and `UpdateAsync` both refuse to remove or demote the **last** Admin —
+the one operation with no way back short of editing the database by hand. `EnsureAdminSeededAsync`
+runs on every startup and does nothing once any account exists, so a changed password survives.
+
 ## Key Enums
+- **UserRole** (1): Admin. See AppUser above — the member name *is* the claim value
 - **PlayerPosition** (32 values): GK, LB, LCB, CB, RCB, RB, LWB, RWB, DEF, LCDM, RCDM, CDM, LCM, CM, RCM, LM, RM, LCAM, RCAM, CAM, MID, LW, RW, W, LF, RF, CF, LST, RST, ST, ATT
 - **FormationType** (12): F442, F433, F4231, F352, F343, F4141, F4411, F532, F541, F4321, F3421, F3511
 - Dual-slot variants: LCDM/RCDM for 4-2-3-1, LST/RST for 4-4-2, LCAM/RCAM for dual-CAM formations

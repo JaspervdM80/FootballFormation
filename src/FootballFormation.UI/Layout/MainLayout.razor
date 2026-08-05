@@ -25,11 +25,11 @@
             <MudMenuItem OnClick="@(() => SwitchCulture("nl"))">Nederlands</MudMenuItem>
             <MudMenuItem OnClick="@(() => SwitchCulture("en"))">English</MudMenuItem>
         </MudMenu>
-        <AuthorizeView>
+        <AuthorizeView Roles="@AppRoles.Admin">
             <Authorized>
                 <div class="d-flex align-center gap-2">
                     <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Size="Size.Small" Style="color: var(--club-primary-bright);" />
-                    <MudText Typo="Typo.body2" Class="admin-name" Style="color: color-mix(in srgb, var(--ink) 60%, transparent);">@context.User.Identity?.Name</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-name" Style="color: color-mix(in srgb, var(--ink) 60%, transparent);">@context.User.DisplayName()</MudText>
                     <form method="post" action="/auth/logout" data-enhance="false" style="margin: 0;">
                         <button type="submit"
                                 style="background: none; border: none; color: color-mix(in srgb, var(--ink) 40%, transparent); cursor: pointer; font-size: 0.875rem; padding: 4px 8px; text-transform: none;">

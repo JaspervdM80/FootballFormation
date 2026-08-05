@@ -14,7 +14,8 @@
 - Drag state lives in `LineupDragState` (`Drag.PlayerId` / `Drag.FromSlotIndex` / `Drag.FromSub`), cleared via `Drag.Clear()`
 - Pitch slots are index-based: `GamePlayerPosition.SlotIndex` is the source of truth,
   position matching is the fallback for legacy rows (see `BuildSlotAssignments`)
-- Page requires admin login (`[Authorize]`); anonymous visitors get the read-only overview
+- Page requires the Admin role (`[Authorize(Roles = AppRoles.Admin)]`); anonymous visitors get the
+  read-only overview
 - Actions: Save All, Copy to Next Period
 - Playing time table is built by `PlayingTimeReport.Build(...)`, not by the page; it renders
   whenever there are players (it does not wait for every period to be filled)
@@ -76,7 +77,7 @@ there, so a lineup can never be laid out one way on one screen and another way o
 
 ## Live match screen (`/games/{id}/live`)
 Phone-first single column (`max-width: 560px`), no `[Authorize]`: admin drives it, everyone else
-watches the same URL read-only. Every control sits in an `<AuthorizeView>`.
+watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="@AppRoles.Admin">`.
 
 - **The clock never round-trips.** A per-circuit 1-second `System.Timers.Timer` re-renders
   `Game.ElapsedSecondsAt(DateTime.UtcNow)` from the anchor the server stored, and it repaints only

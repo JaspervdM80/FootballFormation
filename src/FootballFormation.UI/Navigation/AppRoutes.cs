@@ -16,6 +16,7 @@ public static class AppRoutes
     public const string Games = "/games";
     public const string SeasonStats = "/stats";
     public const string Settings = "/settings";
+    public const string Users = "/users";
     public const string Login = "/login";
 
     public static string PlayerStats(int playerId) => $"/players/{playerId}/stats";

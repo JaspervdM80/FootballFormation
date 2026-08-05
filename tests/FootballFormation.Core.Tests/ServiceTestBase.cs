@@ -43,6 +43,7 @@ public abstract class ServiceTestBase : IDisposable
         Preferences = new MatchPreferencesService(DbFactory, Time, NullLogger<MatchPreferencesService>.Instance);
         Live = new LiveMatchService(DbFactory, Games, new LiveMatchNotifier(), Time,
             NullLogger<LiveMatchService>.Instance);
+        Users = new UserService(DbFactory, NullLogger<UserService>.Instance);
     }
 
     /// <summary>A context for arranging and asserting. The services use their own, as in production.</summary>
@@ -57,6 +58,7 @@ public abstract class ServiceTestBase : IDisposable
     protected GameService Games { get; }
     protected MatchPreferencesService Preferences { get; }
     protected LiveMatchService Live { get; }
+    protected UserService Users { get; }
 
     /// <summary>A fresh context, for reading back what a service wrote without tracking interference.</summary>
     protected AppDbContext Read() => DbFactory.CreateDbContext();
