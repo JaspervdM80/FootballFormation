@@ -8,7 +8,7 @@ namespace FootballFormation.UI.Navigation;
 /// <param name="LabelKey">Localization key; the English text is the key, see Strings.nl.resx.</param>
 /// <param name="Icon">Shown in the drawer only; the app bar hides it via .topbar-nav-link.</param>
 /// <param name="Match">How the active-page highlight matches the current URL.</param>
-/// <param name="AdminOnly">Wrapped in an AuthorizeView when true.</param>
+/// <param name="AdminOnly">Wrapped in an AuthorizeView restricted to the Admin role when true.</param>
 public sealed record NavItem(
     string Path,
     string LabelKey,
@@ -32,6 +32,7 @@ public static class AppNav
         new(AppRoutes.Games, PageNameKey(AppRoutes.Games)!, Icons.Material.Filled.SportsSoccer, NavLinkMatch.Prefix),
         new(AppRoutes.SeasonStats, PageNameKey(AppRoutes.SeasonStats)!, Icons.Material.Filled.BarChart, NavLinkMatch.Prefix),
         new(AppRoutes.Settings, PageNameKey(AppRoutes.Settings)!, Icons.Material.Filled.Settings, NavLinkMatch.All, AdminOnly: true),
+        new(AppRoutes.Users, PageNameKey(AppRoutes.Users)!, Icons.Material.Filled.ManageAccounts, NavLinkMatch.All, AdminOnly: true),
     ];
 
     /// <summary>
@@ -55,6 +56,7 @@ public static class AppNav
         ["games", _, "result"] => "Match Result",
         ["stats"] => "Season",
         ["settings"] => "Preferences",
+        ["users"] => "Users",
         _ => null,
     };
 

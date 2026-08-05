@@ -1,0 +1,64 @@
+@page "/users"
+@attribute [Authorize(Roles = AppRoles.Admin)]
+
+<PageTitle>@L["Users"]</PageTitle>
+
+<PageHeader Class="mb-6" Title="@L["Users"]"
+            Subtitle="@L["Accounts that can sign in, and what each one is allowed to do."]">
+    <Actions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd"
+                   OnClick="OpenAddDialog">
+            @L["Add User"]
+        </MudButton>
+    </Actions>
+</PageHeader>
+
+@if (_users is null)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+    return;
+}
+
+<MudTable Items="_users" Hover="true" Dense="true" Elevation="2" T="AppUser"
+          Class="users-table" Style="border-radius: 16px;">
+    <HeaderContent>
+        <MudTh>@L["Name"]</MudTh>
+        <MudTh>@L["Username"]</MudTh>
+        <MudTh>@L["Role"]</MudTh>
+        <MudTh Class="cell-right"></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="@L["Name"]" Class="cell-name">
+            <span style="font-weight: 600; color: var(--ink);">@context.DisplayName</span>
+            @if (context.Id == _currentUserId)
+            {
+                <span class="badge-teal" style="margin-left: 6px;">@L["You"]</span>
+            }
+        </MudTd>
+        <MudTd DataLabel="@L["Username"]" Class="cell-user">
+            <span style="color: color-mix(in srgb, var(--ink) 60%, transparent);">@context.Username</span>
+        </MudTd>
+        <MudTd DataLabel="@L["Role"]" Class="cell-role">
+            <span class="badge-gold">@L[context.Role.ToString()]</span>
+        </MudTd>
+        <MudTd Class="cell-right cell-actions">
+            <span class="row-actions">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                               Style="color: var(--club-primary-bright);"
+                               aria-label="@L["Edit User"]"
+                               OnClick="() => OpenEditDialog(context)" />
+                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true"
+                         AriaLabel="@L["More"]"
+                         Style="color: color-mix(in srgb, var(--ink) 40%, transparent);">
+                    <MudMenuItem OnClick="() => ResetPassword(context)">@L["Reset Password"]</MudMenuItem>
+                    @* Deleting yourself is not offered. The service refuses to remove the last
+                       admin either way, but signing yourself out should not be one misclick. *@
+                    @if (context.Id != _currentUserId)
+                    {
+                        <MudMenuItem OnClick="() => DeleteUser(context)">@L["Delete User"]</MudMenuItem>
+                    }
+                </MudMenu>
+            </span>
+        </MudTd>
+    </RowTemplate>
+</MudTable>

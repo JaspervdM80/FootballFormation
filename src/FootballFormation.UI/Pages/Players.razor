@@ -24,7 +24,7 @@
         }
     </SubtitleContent>
     <Actions>
-        <AuthorizeView>
+        <AuthorizeView Roles="@AppRoles.Admin">
             @if (_squad is not null)
             {
                 @* column-reverse on mobile: the markup order puts Copy first so it reads left of
@@ -102,7 +102,7 @@
     <HeaderContent>
         <MudTh><MudTableSortLabel SortBy="new Func<SeasonSquadMember, object>(m => m.Player!.ShirtNumber ?? 999)">#</MudTableSortLabel></MudTh>
         <MudTh><MudTableSortLabel SortBy="new Func<SeasonSquadMember, object>(m => m.Player!.FirstName)">@L["Name"]</MudTableSortLabel></MudTh>
-        <AuthorizeView Context="authHeader">
+        <AuthorizeView Roles="@AppRoles.Admin" Context="authHeader">
             <MudTh>@L["Preferred Position"]</MudTh>
             <MudTh Class="cell-right">@L["Alternative Positions"]</MudTh>
             <MudTh Class="cell-right"></MudTh>
@@ -135,7 +135,7 @@
         <MudTd DataLabel="@L["Preferred Position"]" Class="cell-pref">
             <span class="badge-teal">@context.Player!.PreferredPosition.ToString()</span>
         </MudTd>
-        <AuthorizeView Context="authRow">
+        <AuthorizeView Roles="@AppRoles.Admin" Context="authRow">
 
             <MudTd DataLabel="@L["Alternative Positions"]" Class="cell-alt">
                 @foreach (var pos in context.Player!.AlternativePositions)

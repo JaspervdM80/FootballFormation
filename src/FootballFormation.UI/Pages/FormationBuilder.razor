@@ -1,5 +1,5 @@
 @page "/games/{GameId:int}/formation"
-@attribute [Authorize]
+@attribute [Authorize(Roles = AppRoles.Admin)]
 
 <PageTitle>@L["Formation Builder"]</PageTitle>
 

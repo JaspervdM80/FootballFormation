@@ -11,7 +11,7 @@
 
     if (item.AdminOnly)
     {
-        <AuthorizeView>@link</AuthorizeView>
+        <AuthorizeView Roles="@AppRoles.Admin">@link</AuthorizeView>
     }
     else
     {

@@ -1,6 +1,7 @@
 # Football Formation Planner
 
-Youth football team formation planner. Cookie-based admin auth with anonymous read-only access. Manages players, games, formations with drag-and-drop, and substitution planning across halves or quarters.
+Youth football team formation planner. Cookie-based auth with role claims (`UserRole`, currently
+Admin only) and anonymous read-only access; accounts are managed on `/users`. Manages players, games, formations with drag-and-drop, and substitution planning across halves or quarters.
 
 ## Tech Stack
 - **.NET 10**, Blazor Web App (Interactive Server rendering)

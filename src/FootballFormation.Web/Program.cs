@@ -3,6 +3,8 @@ using System.Security.Claims;
 using System.Threading.RateLimiting;
 using FootballFormation.Core.Data;
 using Microsoft.AspNetCore.DataProtection;
+using FootballFormation.Core.Models;
+using FootballFormation.Core.Security;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Navigation;
 using FootballFormation.UI.State;
@@ -76,7 +78,7 @@ try
     builder.Services.AddScoped<GameService>();
     builder.Services.AddScoped<LiveMatchService>();
     builder.Services.AddScoped<MatchPreferencesService>();
-    builder.Services.AddScoped<AdminAuthService>();
+    builder.Services.AddScoped<UserService>();
 
     // Singleton: the live match screen fans changes out to every open circuit — see LiveMatchNotifier
     builder.Services.AddSingleton<LiveMatchNotifier>();
@@ -100,6 +102,28 @@ try
             options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
                 ? CookieSecurePolicy.SameAsRequest
                 : CookieSecurePolicy.Always;
+
+            // A cookie is good for eight hours, but the authority it carries is not: deleting an
+            // account or changing its role has to take effect now, not whenever the cookie lapses.
+            // Every account carries a security stamp that changes when its authority does; the
+            // cookie carries the stamp as it was at sign-in, and this compares the two.
+            options.Events.OnValidatePrincipal = async context =>
+            {
+                var principal = context.Principal;
+                var stamp = principal?.FindFirst(AppClaims.SecurityStamp)?.Value;
+                var userId = principal?.FindFirst(AppClaims.UserId)?.Value;
+
+                // Cookies issued before this feature shipped carry neither claim. Reject them
+                // rather than trusting them — the only cost is one extra sign-in.
+                if (stamp is not null && int.TryParse(userId, out var id))
+                {
+                    var users = context.HttpContext.RequestServices.GetRequiredService<UserService>();
+                    if (await users.FindForSessionAsync(id, stamp) is not null) return;
+                }
+
+                context.RejectPrincipal();
+                await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            };
         });
     builder.Services.AddAuthorization();
     builder.Services.AddCascadingAuthenticationState();
@@ -129,8 +153,8 @@ try
         await db.Database.MigrateAsync();
         Log.Information("Database migrated successfully at {DbPath}", dbPath);
 
-        var authService = scope.ServiceProvider.GetRequiredService<AdminAuthService>();
-        await authService.EnsureAdminSeededAsync();
+        var userService = scope.ServiceProvider.GetRequiredService<UserService>();
+        await userService.EnsureAdminSeededAsync();
 
         // A fresh install has no games for the migration's backfill to derive seasons from
         var seasonService = scope.ServiceProvider.GetRequiredService<SeasonService>();
@@ -168,7 +192,7 @@ try
 
     app.MapPost("/auth/login", async (
         HttpContext context,
-        AdminAuthService authService,
+        UserService userService,
         ILoggerFactory loggerFactory) =>
     {
         var logger = loggerFactory.CreateLogger("Auth");
@@ -178,24 +202,18 @@ try
         var returnUrl = form["returnUrl"].ToString();
         var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
-        var user = await authService.ValidateCredentialsAsync(username, password);
+        var user = await userService.ValidateCredentialsAsync(username, password);
         if (user is null)
         {
             logger.LogWarning("Failed login attempt for user '{Username}' from {Ip}", username, ip);
             return Results.Redirect("/login?error=true");
         }
 
-        logger.LogInformation("Successful login for user '{Username}' from {Ip}", username, ip);
+        logger.LogInformation("Successful login for user '{Username}' ({Role}) from {Ip}", username, user.Role, ip);
 
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.Name, user.Username),
-            new(ClaimTypes.Role, "Admin")
-        };
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         await context.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
-            new ClaimsPrincipal(identity));
+            PrincipalFor(user));
 
         return Results.Redirect(IsLocalUrl(returnUrl) ? returnUrl : "/");
     })
@@ -208,30 +226,37 @@ try
         return Results.Redirect("/");
     }).DisableAntiforgery();
 
-    // Development only: signs in as admin without credentials, so the [Authorize] screens can be
-    // opened and inspected without anyone typing a password into the login form. It mints exactly
-    // the principal /auth/login does, so what you see is the real authorized UI.
+    // Development only: signs in as an existing admin without credentials, so the [Authorize]
+    // screens can be opened and inspected without anyone typing a password into the login form. It
+    // mints exactly the principal /auth/login does — same claims, same real database row — so what
+    // you see is the real authorized UI, and the security-stamp check accepts the cookie.
     //
     // Two independent guards, either one sufficient: the endpoint is not mapped outside
     // Development (the Fly.io container runs Production), and it refuses non-loopback callers.
     // Do NOT relax either — this is an unauthenticated route to full admin rights.
     if (app.Environment.IsDevelopment())
     {
-        app.MapGet("/dev/login", async (HttpContext context) =>
+        app.MapGet("/dev/login", async (HttpContext context, UserService userService) =>
         {
             var remote = context.Connection.RemoteIpAddress;
             if (remote is null || !IPAddress.IsLoopback(remote))
                 return Results.NotFound();
 
-            var claims = new List<Claim>
-            {
-                new(ClaimTypes.Name, "admin"),
-                new(ClaimTypes.Role, "Admin")
-            };
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var usersResult = await userService.GetAllAsync();
+            if (usersResult.IsFailure) return Results.NotFound();
+
+            // The seeded account by preference, otherwise the oldest admin. Deterministic on
+            // purpose: GetAllAsync orders by display name, so "first admin" would otherwise mean
+            // "whoever happens to sort first", and adding a user could silently change who the
+            // dev route signs you in as.
+            var admins = usersResult.Value!.Where(u => u.Role == UserRole.Admin).ToList();
+            var admin = admins.FirstOrDefault(u => u.Username == "admin")
+                ?? admins.OrderBy(u => u.Id).FirstOrDefault();
+            if (admin is null) return Results.NotFound();
+
             await context.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(identity));
+                PrincipalFor(admin));
 
             return Results.Redirect("/");
         });
@@ -268,6 +293,29 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
+}
+
+/// <summary>
+/// The signed-in identity for an account. The one place claims are built, so /auth/login and
+/// /dev/login cannot drift — a claim missing from the dev principal would mean the dev route
+/// exercises a different authorization path than the real one.
+/// </summary>
+static ClaimsPrincipal PrincipalFor(AppUser user)
+{
+    var claims = new List<Claim>
+    {
+        new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+        new(ClaimTypes.Name, user.Username),
+        // ToString() rather than a literal: this is the string [Authorize(Roles = ...)] matches,
+        // and AppRoles ties those constants back to the same enum member names.
+        new(ClaimTypes.Role, user.Role.ToString()),
+        new(AppClaims.UserId, user.Id.ToString()),
+        new(AppClaims.DisplayName, user.DisplayName),
+        new(AppClaims.SecurityStamp, user.SecurityStamp)
+    };
+
+    return new ClaimsPrincipal(
+        new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
 }
 
 static bool IsLocalUrl(string? url)

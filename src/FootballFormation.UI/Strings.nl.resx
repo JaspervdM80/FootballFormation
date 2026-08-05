@@ -340,6 +340,37 @@
   <data name="New password must be at least {0} characters" xml:space="preserve"><value>Nieuw wachtwoord moet minimaal {0} tekens lang zijn</value></data>
   <data name="New password must be different from the current one" xml:space="preserve"><value>Nieuw wachtwoord moet verschillen van het huidige</value></data>
 
+  <!-- Users -->
+  <data name="Users" xml:space="preserve"><value>Gebruikers</value></data>
+  <data name="Accounts that can sign in, and what each one is allowed to do." xml:space="preserve"><value>Accounts die kunnen inloggen, en wat elk account mag doen.</value></data>
+  <data name="Add User" xml:space="preserve"><value>Gebruiker toevoegen</value></data>
+  <data name="Edit User" xml:space="preserve"><value>Gebruiker bewerken</value></data>
+  <data name="Delete User" xml:space="preserve"><value>Gebruiker verwijderen</value></data>
+  <data name="Reset Password" xml:space="preserve"><value>Wachtwoord opnieuw instellen</value></data>
+  <data name="Role" xml:space="preserve"><value>Rol</value></data>
+  <data name="You" xml:space="preserve"><value>JIJ</value></data>
+  <!-- Role names. The key is the UserRole member name, so a new role needs an entry here. -->
+  <data name="Admin" xml:space="preserve"><value>Beheerder</value></data>
+  <data name="Confirm password" xml:space="preserve"><value>Wachtwoord bevestigen</value></data>
+  <data name="At least {0} characters" xml:space="preserve"><value>Minimaal {0} tekens</value></data>
+  <data name="Use Reset Password to give this account a new password." xml:space="preserve"><value>Gebruik Wachtwoord opnieuw instellen om dit account een nieuw wachtwoord te geven.</value></data>
+  <data name="User {0} created" xml:space="preserve"><value>Gebruiker {0} aangemaakt</value></data>
+  <data name="User {0} updated" xml:space="preserve"><value>Gebruiker {0} bijgewerkt</value></data>
+  <data name="User {0} deleted" xml:space="preserve"><value>Gebruiker {0} verwijderd</value></data>
+  <data name="Password reset for {0}" xml:space="preserve"><value>Wachtwoord opnieuw ingesteld voor {0}</value></data>
+  <data name="Are you sure you want to delete the account for {0}?" xml:space="preserve"><value>Weet je zeker dat je het account van {0} wilt verwijderen?</value></data>
+  <!-- User validation, from UserService and UserDialog -->
+  <data name="Name is required" xml:space="preserve"><value>Naam is verplicht</value></data>
+  <data name="Username is required" xml:space="preserve"><value>Gebruikersnaam is verplicht</value></data>
+  <data name="Password is required" xml:space="preserve"><value>Wachtwoord is verplicht</value></data>
+  <data name="Passwords do not match" xml:space="preserve"><value>Wachtwoorden komen niet overeen</value></data>
+  <data name="Password must be at least {0} characters" xml:space="preserve"><value>Wachtwoord moet minimaal {0} tekens lang zijn</value></data>
+  <data name="Name must be at most {0} characters" xml:space="preserve"><value>Naam mag maximaal {0} tekens lang zijn</value></data>
+  <data name="Username must be at most {0} characters" xml:space="preserve"><value>Gebruikersnaam mag maximaal {0} tekens lang zijn</value></data>
+  <data name="A user with username {0} already exists" xml:space="preserve"><value>Er bestaat al een gebruiker met gebruikersnaam {0}</value></data>
+  <data name="The last administrator cannot be removed or demoted" xml:space="preserve"><value>De laatste beheerder kan niet worden verwijderd of gedegradeerd</value></data>
+  <data name="User with ID {0} not found" xml:space="preserve"><value>Gebruiker met ID {0} niet gevonden</value></data>
+
   <!-- Login -->
   <data name="Login" xml:space="preserve"><value>Inloggen</value></data>
   <data name="Admin Login" xml:space="preserve"><value>Beheerder inloggen</value></data>
@@ -413,6 +444,8 @@
   <data name="create game" xml:space="preserve"><value>wedstrijd aanmaken</value></data>
   <data name="create player" xml:space="preserve"><value>speler aanmaken</value></data>
   <data name="create season" xml:space="preserve"><value>seizoen aanmaken</value></data>
+  <data name="create the user" xml:space="preserve"><value>gebruiker aanmaken</value></data>
+  <data name="delete the user" xml:space="preserve"><value>gebruiker verwijderen</value></data>
   <data name="end the period" xml:space="preserve"><value>periode beëindigen</value></data>
   <data name="find the previous season" xml:space="preserve"><value>vorig seizoen zoeken</value></data>
   <data name="find the season for that date" xml:space="preserve"><value>seizoen bij die datum zoeken</value></data>
@@ -430,6 +463,7 @@
   <data name="load seasons" xml:space="preserve"><value>seizoenen laden</value></data>
   <data name="load the squad" xml:space="preserve"><value>selectie laden</value></data>
   <data name="load the squads" xml:space="preserve"><value>selecties laden</value></data>
+  <data name="load users" xml:space="preserve"><value>gebruikers laden</value></data>
   <data name="log the goal" xml:space="preserve"><value>doelpunt vastleggen</value></data>
   <data name="look up the season for that date" xml:space="preserve"><value>seizoen bij die datum opzoeken</value></data>
   <data name="make the substitution" xml:space="preserve"><value>wissel doorvoeren</value></data>
@@ -440,10 +474,12 @@
   <data name="remove the player from the squad" xml:space="preserve"><value>speler uit de selectie verwijderen</value></data>
   <data name="resume the clock" xml:space="preserve"><value>klok hervatten</value></data>
   <data name="save lineup" xml:space="preserve"><value>opstelling opslaan</value></data>
+  <data name="set the password" xml:space="preserve"><value>wachtwoord instellen</value></data>
   <data name="start the next period" xml:space="preserve"><value>volgende periode starten</value></data>
   <data name="switch season" xml:space="preserve"><value>van seizoen wisselen</value></data>
   <data name="undo the substitution" xml:space="preserve"><value>wissel ongedaan maken</value></data>
   <data name="update game" xml:space="preserve"><value>wedstrijd bijwerken</value></data>
   <data name="update player" xml:space="preserve"><value>speler bijwerken</value></data>
   <data name="update season" xml:space="preserve"><value>seizoen bijwerken</value></data>
+  <data name="update the user" xml:space="preserve"><value>gebruiker bijwerken</value></data>
 </root>

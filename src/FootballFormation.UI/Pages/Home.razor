@@ -42,7 +42,7 @@
                   @onclick="@(() => Open(AppRoutes.Players))" @onkeydown="@(e => OpenOnKey(e, AppRoutes.Players))">
             <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Style="color: var(--club-primary-bright);" />
             <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Selection"]</MudText>
-            <AuthorizeView>
+            <AuthorizeView Roles="@AppRoles.Admin">
                 <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
                     @L["Add players with their positions and shirt numbers."]
                 </MudText>
@@ -55,7 +55,7 @@
                   @onclick="@(() => Open(AppRoutes.Games))" @onkeydown="@(e => OpenOnKey(e, AppRoutes.Games))">
             <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Size="Size.Large" Style="color: var(--club-primary-bright);" />
             <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Games & Formations"]</MudText>
-            <AuthorizeView>
+            <AuthorizeView Roles="@AppRoles.Admin">
                 <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
                     @L["Create games, build formations, and track results."]
                 </MudText>
@@ -68,7 +68,7 @@
                   @onclick="@(() => Open(AppRoutes.SeasonStats))" @onkeydown="@(e => OpenOnKey(e, AppRoutes.SeasonStats))">
             <MudIcon Icon="@Icons.Material.Filled.BarChart" Size="Size.Large" Style="color: var(--club-primary-bright);" />
             <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Season stats"]</MudText>
-            <AuthorizeView>
+            <AuthorizeView Roles="@AppRoles.Admin">
                 <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
                     @L["See the team record, top scorers, and playing time."]
                 </MudText>
@@ -78,7 +78,7 @@
 
     @* /settings is [Authorize], so a visitor tapping this tile only ever reached the login
        screen. Hide the whole tile rather than offer a door that is locked. *@
-    <AuthorizeView>
+    <AuthorizeView Roles="@AppRoles.Admin">
         <MudItem xs="12" sm="6" md="4">
             <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;" role="button" tabindex="0"
                       @onclick="@(() => Open(AppRoutes.Settings))" @onkeydown="@(e => OpenOnKey(e, AppRoutes.Settings))">

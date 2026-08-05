@@ -1,0 +1,47 @@
+@inject IStringLocalizer<Strings> L
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="Form">
+            @if (!PasswordOnly)
+            {
+                <MudTextField @bind-Value="DisplayName" Label="@L["Name"]" Required="true"
+                              RequiredError="@L["Name is required"]" MaxLength="100" Class="mb-3" />
+                <MudTextField @bind-Value="Username" Label="@L["Username"]" Required="true"
+                              RequiredError="@L["Username is required"]" MaxLength="50" Class="mb-3" />
+                <MudSelect @bind-Value="Role" Label="@L["Role"]" Class="mb-3">
+                    @foreach (var role in Enum.GetValues<UserRole>())
+                    {
+                        <MudSelectItem Value="role">@L[role.ToString()]</MudSelectItem>
+                    }
+                </MudSelect>
+            }
+
+            @if (ShowPasswordFields)
+            {
+                @* Explicit Func: MudBlazor's Validation is typed object, so a bare method group
+                   binds as one rather than as a delegate and never runs. *@
+                <MudTextField @bind-Value="Password" Label="@L["Password"]"
+                              InputType="InputType.Password"
+                              Validation="@(new Func<string, string?>(ValidatePassword))"
+                              HelperText="@L["At least {0} characters", UserService.MinPasswordLength]"
+                              Class="mb-3" />
+                <MudTextField @bind-Value="ConfirmPassword" Label="@L["Confirm password"]"
+                              InputType="InputType.Password"
+                              Validation="@(new Func<string, string?>(ValidateConfirmation))" />
+            }
+            else
+            {
+                @* Editing an existing account. Changing the password from here would silently sign
+                   them out mid-session, so it is its own action on the row menu instead. *@
+                <MudText Typo="Typo.caption" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
+                    @L["Use Reset Password to give this account a new password."]
+                </MudText>
+            }
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">@L["Save"]</MudButton>
+    </DialogActions>
+</MudDialog>
