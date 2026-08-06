@@ -24,4 +24,11 @@ public static class AppClaims
 
     /// <summary><see cref="AppUser.SecurityStamp"/> as it was when the cookie was issued.</summary>
     public const string SecurityStamp = "security_stamp";
+
+    /// <summary>
+    /// Present and "true" while <see cref="AppUser.MustChangePassword"/> is set. Changing the
+    /// password rolls the security stamp, which invalidates the cookie carrying this claim, so it
+    /// cannot outlive the condition it describes.
+    /// </summary>
+    public const string MustChangePassword = "must_change_password";
 }

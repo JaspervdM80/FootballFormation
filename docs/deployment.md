@@ -68,6 +68,35 @@ fly deploy
 
 Either way, migrations run automatically on startup, same as locally.
 
+## The database is snapshotted before every migration
+
+Startup does three things in order, in `Program.cs` (see `Core/Data/DatabaseSafety.cs`):
+
+1. **If — and only if — migrations are pending**, copy the database to
+   `/data/backups/pre-migration-<utc timestamp>.db`, keeping the newest 5. The copy is taken with
+   SQLite's own backup API rather than a file copy, because with WAL journalling the `.db` file on
+   its own can be missing the most recent writes.
+2. Apply the migrations.
+3. `PRAGMA integrity_check` and `PRAGMA foreign_key_check`. Either failing throws, so a damaged
+   database stops the boot loudly instead of serving wrong answers.
+
+**A failed backup aborts the migration.** That is deliberate: several migrations are one-way in
+practice (`AddMatchTypeAndComments` drops a column, `AddMustChangePasswordAndLineupUniqueIndex`
+deletes rows), so once one has run without a snapshot there is no route back. A container that
+refuses to start is an afternoon's problem; a season of lineups quietly rewritten is permanent.
+If the app will not boot for this reason, the volume is full — that is the thing to fix.
+
+To recover from a bad migration: stop the machine, replace `/data/footballformation.db` with the
+newest `pre-migration-*.db`, and deploy the previous image.
+
+```powershell
+fly ssh console -C "ls -la /data/backups"                  # what snapshots exist
+fly ssh sftp get /data/backups/pre-migration-<stamp>.db    # pull one down
+```
+
+Snapshots are pre-migration only. They are not a substitute for a routine backup of a database
+that changes every match day — take one of those before anything risky.
+
 ## Useful commands
 
 ```powershell

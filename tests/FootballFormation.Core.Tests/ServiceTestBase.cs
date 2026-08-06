@@ -1,5 +1,6 @@
 using FootballFormation.Core.Data;
 using FootballFormation.Core.Models;
+using FootballFormation.Core.Security;
 using FootballFormation.Core.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -36,15 +37,22 @@ public abstract class ServiceTestBase : IDisposable
 
         Time = new FakeTimeProvider(Now);
 
-        Players = new PlayerService(DbFactory, NullLogger<PlayerService>.Instance);
-        Seasons = new SeasonService(DbFactory, Time, NullLogger<SeasonService>.Instance);
-        Squads = new SeasonSquadService(DbFactory, NullLogger<SeasonSquadService>.Instance);
-        Games = new GameService(DbFactory, Seasons, NullLogger<GameService>.Instance);
-        Preferences = new MatchPreferencesService(DbFactory, Time, NullLogger<MatchPreferencesService>.Instance);
-        Live = new LiveMatchService(DbFactory, Games, new LiveMatchNotifier(), Time,
+        Players = new PlayerService(DbFactory, CurrentUser, NullLogger<PlayerService>.Instance);
+        Seasons = new SeasonService(DbFactory, Time, CurrentUser, NullLogger<SeasonService>.Instance);
+        Squads = new SeasonSquadService(DbFactory, CurrentUser, NullLogger<SeasonSquadService>.Instance);
+        Games = new GameService(DbFactory, Seasons, CurrentUser, Time, NullLogger<GameService>.Instance);
+        Preferences = new MatchPreferencesService(DbFactory, Time, CurrentUser,
+            NullLogger<MatchPreferencesService>.Instance);
+        Live = new LiveMatchService(DbFactory, Games, new LiveMatchNotifier(), Time, CurrentUser,
             NullLogger<LiveMatchService>.Instance);
-        Users = new UserService(DbFactory, NullLogger<UserService>.Instance);
+        Users = new UserService(DbFactory, CurrentUser, NullLogger<UserService>.Instance);
     }
+
+    /// <summary>
+    /// An admin by default, so a test that is about something else does not have to say so. Set
+    /// <see cref="FakeCurrentUser.IsAdmin"/> to false to exercise the refusal path.
+    /// </summary>
+    protected FakeCurrentUser CurrentUser { get; } = new();
 
     /// <summary>A context for arranging and asserting. The services use their own, as in production.</summary>
     protected AppDbContext Db { get; }

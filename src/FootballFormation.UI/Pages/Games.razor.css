@@ -61,7 +61,7 @@
 
 .game-date {
     font-size: 0.75rem;
-    color: color-mix(in srgb, var(--ink) 45%, transparent);
+    color: var(--ink-muted);
     min-width: 56px;
     font-variant-numeric: tabular-nums;
 }
@@ -82,17 +82,7 @@
 
 .game-score.win { color: var(--color-success-bright); }
 .game-score.loss { color: var(--color-danger-bright); }
-.game-score.draw { color: color-mix(in srgb, var(--ink) 50%, transparent); }
-
-.badge-unavailable {
-    font-size: 0.65rem;
-    font-weight: 600;
-    padding: 3px 8px;
-    border-radius: 4px;
-    background: color-mix(in srgb, var(--color-danger) 10%, transparent);
-    color: var(--color-danger-bright);
-    border: 1px solid color-mix(in srgb, var(--color-danger) 15%, transparent);
-}
+.game-score.draw { color: var(--ink-muted); }
 
 .header-warning {
     color: var(--color-warning-bright);
@@ -104,67 +94,8 @@
     gap: 2px;
 }
 
-/* Action buttons — visible, clear icons */
-.action-btn {
-    width: 32px;
-    height: 32px;
-    border: none;
-    background: none;
-    color: color-mix(in srgb, var(--ink) 50%, transparent);
-    border-radius: 6px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s;
-    padding: 0;
-}
-
-.action-btn:hover {
-    color: var(--club-primary-bright);
-    background: color-mix(in srgb, var(--club-primary-bright) 10%, transparent);
-}
-
-.action-btn.action-delete:hover {
-    color: var(--color-danger-bright);
-    background: color-mix(in srgb, var(--color-danger) 10%, transparent);
-}
-
-/* A match that is actually being played right now — green so it reads as "on air", and
-   it pulses so it is the first thing the eye lands on in the list. */
-.action-btn.action-live {
-    color: #fff;
-    background: var(--color-success-bright);
-    animation: action-live-pulse 2s ease-in-out infinite;
-}
-
-.action-btn.action-live:hover {
-    color: #fff;
-    background: var(--color-success-bright);
-}
-
-@keyframes action-live-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .action-btn.action-live {
-        animation: none;
-    }
-}
-
-/* Formation action button on a card that has no lineup yet — tint it amber to match
-   the panel and nudge the admin toward filling it in. */
-.action-btn.action-needs-lineup {
-    color: var(--color-warning-bright);
-    background: color-mix(in srgb, var(--color-warning) 12%, transparent);
-}
-
-.action-btn.action-needs-lineup:hover {
-    color: var(--color-warning-bright);
-    background: color-mix(in srgb, var(--color-warning) 22%, transparent);
-}
+/* .badge-unavailable and the .action-btn family live in app.css — both are used by more than
+   this page, and a scoped rule reaches no other one. */
 
 @media (max-width: 599.98px) {
     /* A phone has no room for everything on one line: keep it compact so the

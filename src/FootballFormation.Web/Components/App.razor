@@ -34,6 +34,13 @@
     @* Blazor toggles the classes on this element; styled dark in app.css and
        auto-reloaded by pwa.js so resuming a suspended phone app just works. *@
     <div id="components-reconnect-modal">@L["Reconnecting..."]</div>
+    @* Blazor unhides this when a circuit hits an unhandled error. The element used to be missing
+       while app.css still styled it, so the app had no error UI at all — a broken page just went
+       quiet. Reloading is the only recovery, so the whole bar is the button. *@
+    <div id="blazor-error-ui">
+        <span>@L["Something went wrong. Reload the page to continue."]</span>
+        <a href="" class="reload">@L["Reload"]</a>
+    </div>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script src="js/screenshot.js"></script>
     <script src="js/drag-drop-touch.js"></script>

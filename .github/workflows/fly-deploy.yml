@@ -3,6 +3,11 @@ name: Deploy to Fly.io
 on:
   push:
     branches: [main]
+  # Also on PRs into main: the build job is the gate that keeps a broken migration off the Fly
+  # volume, and running it only after the merge means finding out on the way to production. The
+  # deploy job below is guarded by an `if` so a pull request builds and tests but never deploys.
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -25,6 +30,8 @@ jobs:
 
   deploy:
     needs: build
+    # Never from a pull request — a fork's PR must not be able to reach the deploy token.
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

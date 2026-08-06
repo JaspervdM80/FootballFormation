@@ -38,8 +38,8 @@
 else if (_games.Count == 0)
 {
     <MudPaper Class="pa-6" Elevation="2" Style="border-radius: 16px; text-align: center;">
-        <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Size="Size.Large" Style="color: color-mix(in srgb, var(--ink) 25%, transparent);" />
-        <MudText Typo="Typo.body1" Class="mt-3" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
+        <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Size="Size.Large" Style="color: var(--ink-faint);" />
+        <MudText Typo="Typo.body1" Class="mt-3" Style="color: var(--ink-muted);">
             @(SeasonState.SelectedSeason is { } season
                 ? L["No games in {0} yet.", season.Name]
                 : L["No games yet. Create your first game!"])

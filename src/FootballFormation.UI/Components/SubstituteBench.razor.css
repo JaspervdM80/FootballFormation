@@ -6,7 +6,7 @@
     margin-bottom: 8px;
     border: 2px dashed color-mix(in srgb, var(--club-primary-bright) 30%, transparent);
     border-radius: 10px;
-    color: color-mix(in srgb, var(--club-primary-bright) 60%, transparent);
+    color: var(--club-primary-bright);
     transition: all 0.15s;
 }
 

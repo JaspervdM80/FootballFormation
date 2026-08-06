@@ -55,5 +55,5 @@
 
 .player-pos-text {
     font-size: 0.6rem;
-    color: color-mix(in srgb, var(--ink) 45%, transparent);
+    color: var(--ink-muted);
 }

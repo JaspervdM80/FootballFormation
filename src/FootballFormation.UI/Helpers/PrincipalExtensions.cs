@@ -26,4 +26,11 @@ public static class PrincipalExtensions
     /// <summary>The signed-in account's id, or null when nobody is signed in.</summary>
     public static int? UserId(this ClaimsPrincipal? user) =>
         int.TryParse(user?.FindFirst(AppClaims.UserId)?.Value, out var id) ? id : null;
+
+    /// <summary>
+    /// True while this account is still on the password a fresh install seeded. MainLayout holds
+    /// such a session on /settings until it is changed — see <see cref="AppClaims.MustChangePassword"/>.
+    /// </summary>
+    public static bool MustChangePassword(this ClaimsPrincipal? user) =>
+        user?.FindFirst(AppClaims.MustChangePassword)?.Value == "true";
 }

@@ -37,7 +37,7 @@ public partial class FormationOverview
         if (result.IsFailure || result.Value is null)
         {
             Logger.LogWarning("Game {GameId} not found for overview", GameId);
-            Snackbar.Add("Game not found", Severity.Error);
+            Snackbar.Add(L["Game with ID {0} not found", GameId], Severity.Error);
             Trail.Redirect(AppRoutes.Games);
             return;
         }
@@ -63,7 +63,7 @@ public partial class FormationOverview
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to capture screenshot");
-            Snackbar.Add("Screenshot failed — try using your device's screenshot instead", Severity.Warning);
+            Snackbar.Add(L["Screenshot failed — try using your device's screenshot instead"], Severity.Warning);
         }
     }
 }

@@ -22,7 +22,7 @@
                 Title="@($"{(GameData.IsHomeGame ? "vs" : "@")} {GameData.Opponent}")">
         <Meta>
             <span class="badge-venue">@((GameData.IsHomeGame ? L["Home"] : L["Away"]).ToString().ToUpper())</span>
-            <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 45%, transparent);">@GameData.Date.ToString("dd MMM yyyy")</MudText>
+            <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">@GameData.Date.ToString("dd MMM yyyy")</MudText>
             <span class="badge-gold">@GameData.FormationType.DisplayName()</span>
         </Meta>
         <Actions>
@@ -164,11 +164,11 @@
 {
     <MudPaper Class="pa-5 mb-4" Elevation="2" Style="border-radius: 16px;">
         <div class="card-label">@L["Playing Time Overview"]</div>
-        <MudText Typo="Typo.caption" Style="color: color-mix(in srgb, var(--ink) 40%, transparent);" Class="mb-3">
+        <MudText Typo="Typo.caption" Style="color: var(--ink-subtle);" Class="mb-3">
             @GameData.GameDurationMinutes min @L["Total"].ToString().ToLower() — @GameData.PeriodCount x @GameData.PeriodDurationMinutes min @L["per"] @L[GameData.SplitType.PeriodLabel()]
         </MudText>
         <MudTable Items="GetPlayingTimeData()" Dense="true" Hover="true"
-                  SortLabel="@L["Sort By"]" Elevation="0" Class="playtime-table">
+                  SortLabel="@L["Sort By"]" Elevation="0" Class="playtime-table stacked-table">
             <HeaderContent>
                 <MudTh><MudTableSortLabel SortBy="new Func<PlayingTimeRow, object>(r => r.ShirtNumber ?? 99)">
                     #</MudTableSortLabel></MudTh>

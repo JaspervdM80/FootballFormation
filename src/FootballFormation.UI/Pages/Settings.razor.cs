@@ -1,6 +1,7 @@
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
+using FootballFormation.UI.Navigation;
 using FootballFormation.UI.State;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -18,12 +19,12 @@ public partial class Settings
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
+    [Inject] private NavigationManager Navigation { get; set; } = null!;
 
     [CascadingParameter]
     private Task<AuthenticationState> AuthStateTask { get; set; } = null!;
 
     private MatchPreferences? _prefs;
-    private MudForm _form = null!;
     private MudForm _passwordForm = null!;
     private DateTime? _nextMatchDate;
 
@@ -40,8 +41,14 @@ public partial class Settings
     private string _newPassword = "";
     private string _confirmPassword = "";
 
+    /// <summary>The signed-in account is still on the password a fresh install seeded. MainLayout
+    /// has pinned them to this page; the card explains why.</summary>
+    private bool _mustChangePassword;
+
     protected override async Task OnInitializedAsync()
     {
+        _mustChangePassword = (await AuthStateTask).User.MustChangePassword();
+
         await SeasonState.EnsureLoadedAsync();
         await LoadSeasons();
 
@@ -140,7 +147,6 @@ public partial class Settings
     /// <summary>Returns the edited season, or null when the dialog was cancelled.</summary>
     private async Task<Season?> ShowSeasonDialogAsync(string title, Season? season = null)
     {
-        var parameters = new DialogParameters<SeasonDialog>();
         return await DialogService.PromptAsync<SeasonDialog, Season>(title, p =>
         {
             if (season is not null) p.Add(x => x.Season, season);
@@ -165,6 +171,10 @@ public partial class Settings
 
     private async Task ChangePassword()
     {
+        // The three fields are Required="true", so let the form say so in place rather than
+        // leaving those attributes decorative — same as GameDialog and UserDialog do.
+        await _passwordForm.ValidateAsync();
+
         if (string.IsNullOrWhiteSpace(_currentPassword) || string.IsNullOrWhiteSpace(_newPassword))
         {
             Snackbar.Add(L["Please fill in all password fields"], Severity.Warning);
@@ -177,8 +187,16 @@ public partial class Settings
             return;
         }
 
+        // ClaimTypes.Name carries the login, which is what ChangePasswordAsync verifies against.
+        // No fallback: the page is [Authorize]d, so an absent name means something is wrong with
+        // the principal — and defaulting to "admin" would aim the change at the wrong account.
         var authState = await AuthStateTask;
-        var username = authState.User.Identity?.Name ?? "admin";
+        var username = authState.User.Identity?.Name;
+        if (string.IsNullOrEmpty(username))
+        {
+            Snackbar.Add(L["Current password is incorrect"], Severity.Error);
+            return;
+        }
 
         var result = await UserService.ChangePasswordAsync(username, _currentPassword, _newPassword);
         switch (result)
@@ -188,6 +206,12 @@ public partial class Settings
                 _currentPassword = "";
                 _newPassword = "";
                 _confirmPassword = "";
+
+                // The change rolled the security stamp, so this cookie is already dead — the next
+                // request would sign them out mid-navigation. Send them to the login form now, on
+                // a full reload, so it reads as "sign in again" rather than a session that broke.
+                if (_mustChangePassword)
+                    Navigation.NavigateTo(AppRoutes.Login, forceLoad: true);
                 break;
             case UserService.PasswordChangeResult.InvalidCurrentPassword:
                 Snackbar.Add(L["Current password is incorrect"], Severity.Error);

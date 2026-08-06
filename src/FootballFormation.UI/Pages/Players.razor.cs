@@ -1,7 +1,6 @@
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
-using FootballFormation.UI.Components;
 using FootballFormation.UI.Navigation;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
@@ -169,7 +168,6 @@ public partial class Players
     /// <summary>Returns the edited player, or null when the dialog was cancelled.</summary>
     private async Task<Player?> ShowPlayerDialogAsync(string title, Player? player = null)
     {
-        var parameters = new DialogParameters<PlayerDialog>();
         return await DialogService.PromptAsync<PlayerDialog, Player>(title, p =>
         {
             if (player is not null) p.Add(x => x.Player, player);

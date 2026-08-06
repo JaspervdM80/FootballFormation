@@ -1,12 +1,25 @@
 using FootballFormation.Core.Data;
 using FootballFormation.Core.Models;
+using FootballFormation.Core.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace FootballFormation.Core.Services;
 
-public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonService seasons, ILogger<GameService> logger)
+public class GameService(
+    IDbContextFactory<AppDbContext> dbFactory,
+    SeasonService seasons,
+    ICurrentUser currentUser,
+    TimeProvider time,
+    ILogger<GameService> logger)
 {
+    /// <summary>
+    /// The clock for anything this service stamps. Injected rather than read from
+    /// <see cref="DateTime.UtcNow"/> for the same reason <see cref="LiveMatchService"/> does it:
+    /// a timestamp a test cannot control is a timestamp a test cannot assert on.
+    /// </summary>
+    private DateTime UtcNow => time.GetUtcNow().UtcDateTime;
+
     /// <param name="seasonId">Limits the result to one season. Null loads every season.</param>
     public Task<Result<List<Game>>> GetAllAsync(int? seasonId = null) =>
         ServiceOperation.RunAsync(logger, "load games", async () =>
@@ -14,6 +27,7 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
             await using var db = await dbFactory.CreateDbContextAsync();
 
             var games = await db.Games
+                .AsNoTracking()
                 .Where(g => seasonId == null || g.SeasonId == seasonId)
                 .Include(g => g.Periods)
                 .Include(g => g.Goals)
@@ -31,6 +45,7 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
             await using var db = await dbFactory.CreateDbContextAsync();
 
             var games = await db.Games
+                .AsNoTracking()
                 .Where(g => seasonId == null || g.SeasonId == seasonId)
                 .Include(g => g.Periods)
                     .ThenInclude(p => p.PlayerPositions)
@@ -52,11 +67,16 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
+            // Goals are included twice because EF needs a fresh Include to hang a second
+            // ThenInclude off the same navigation. Both must be spelled identically — a filtered
+            // and an unfiltered include of one collection is ambiguous. Callers that care about
+            // order sort for themselves (MatchResult.razor).
             var game = await db.Games
+                .AsNoTracking()
                 .Include(g => g.Periods.OrderBy(p => p.PeriodType))
                     .ThenInclude(p => p.PlayerPositions)
                         .ThenInclude(pp => pp.Player)
-                .Include(g => g.Goals.OrderBy(gl => gl.Minute))
+                .Include(g => g.Goals)
                     .ThenInclude(gl => gl.Scorer)
                 .Include(g => g.Goals)
                     .ThenInclude(gl => gl.Assister)
@@ -72,7 +92,7 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
         });
 
     public Task<Result<Game>> CreateAsync(Game game) =>
-        ServiceOperation.RunAsync(logger, "create game", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "create game", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -101,11 +121,16 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
         });
 
     public Task<Result> UpdateAsync(Game game) =>
-        ServiceOperation.RunAsync(logger, "update game", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "update game", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
-            db.Games.Update(game);
+            // Scalars only. The game handed in came from GetAllWithDetailsAsync, so its Periods,
+            // PlayerPositions, Goals and Substitutions are all populated — and DbSet.Update walks
+            // that whole graph and marks every row Modified. Renaming an opponent would rewrite
+            // the entire lineup history of the match. Setting State on the entry attaches the
+            // root alone and leaves the navigations untouched.
+            db.Entry(game).State = EntityState.Modified;
             await db.SaveChangesAsync();
 
             logger.LogInformation("Updated game vs {Opponent} in season {SeasonId} (ID: {GameId})",
@@ -114,7 +139,7 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
         });
 
     public Task<Result> DeleteAsync(int id) =>
-        ServiceOperation.RunAsync(logger, "delete game", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "delete game", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -133,7 +158,7 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
         });
 
     public Task<Result> SaveScoreAsync(int gameId, int? scoreHome, int? scoreAway) =>
-        ServiceOperation.RunAsync(logger, "save score", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "save score", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -154,9 +179,16 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
         });
 
     public Task<Result<GameGoal>> AddGoalAsync(GameGoal goal) =>
-        ServiceOperation.RunAsync(logger, "add goal", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "add goal", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
+
+            // Stamped here rather than left to the property initializer on the entity. That
+            // initializer reads the wall clock at construction, which meant a live match driven by
+            // a fake clock still recorded real timestamps — the one thing TimeProvider exists to
+            // prevent. The initializer stays as a sensible default for a goal built outside a
+            // service; when a service saves one, the service's clock decides.
+            goal.RecordedAt = UtcNow;
 
             db.GameGoals.Add(goal);
             await db.SaveChangesAsync();
@@ -173,7 +205,7 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
         });
 
     public Task<Result> RemoveGoalAsync(int goalId) =>
-        ServiceOperation.RunAsync(logger, "remove goal", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "remove goal", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -195,11 +227,19 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
     /// True only for an admin. The filter lives in the query rather than in the page so a private
     /// body never reaches a visitor at all — the result page prerenders server-side, so markup that
     /// merely hides the row would still ship the text.
+    /// <para>
+    /// Asking is not the same as being allowed: the flag is confirmed against
+    /// <see cref="ICurrentUser"/> below, so a caller that passes true without being an admin gets
+    /// the public comments and nothing else. This is the one read with something to hide, and it
+    /// should not be the one place a boolean argument is taken on trust.
+    /// </para>
     /// </param>
     public Task<Result<List<GameComment>>> GetCommentsAsync(int gameId, bool includePrivate) =>
         ServiceOperation.RunAsync(logger, "load comments", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
+
+            includePrivate = includePrivate && await currentUser.IsAdminAsync();
 
             var comments = await db.GameComments
                 .Where(c => c.GameId == gameId && (includePrivate || c.IsPublic))
@@ -213,9 +253,12 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
         });
 
     public Task<Result<GameComment>> AddCommentAsync(GameComment comment) =>
-        ServiceOperation.RunAsync(logger, "add comment", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "add comment", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
+
+            // The service's clock, not the entity initializer's — see AddGoalAsync.
+            comment.CreatedAt = UtcNow;
 
             db.GameComments.Add(comment);
             await db.SaveChangesAsync();
@@ -230,7 +273,7 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
         });
 
     public Task<Result> UpdateCommentAsync(int commentId, string body, bool isPublic) =>
-        ServiceOperation.RunAsync(logger, "update comment", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "update comment", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -243,7 +286,7 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
 
             // Publishing on its own is not an edit — the text is unchanged, so the "edited" marker
             // would be a lie.
-            if (comment.Body != body) comment.EditedAt = DateTime.UtcNow;
+            if (comment.Body != body) comment.EditedAt = UtcNow;
 
             comment.Body = body;
             comment.IsPublic = isPublic;
@@ -255,7 +298,7 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
         });
 
     public Task<Result> RemoveCommentAsync(int commentId) =>
-        ServiceOperation.RunAsync(logger, "remove comment", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "remove comment", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -274,9 +317,13 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
         });
 
     public Task<Result> SavePeriodLineupAsync(int periodId, List<GamePlayerPosition> positions) =>
-        ServiceOperation.RunAsync(logger, "save lineup", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "save lineup", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
+
+            // Delete-then-insert needs both halves or neither: without the transaction, a failure
+            // on the insert leaves the period with no lineup at all rather than the one it had.
+            await using var tx = await db.Database.BeginTransactionAsync();
 
             var existing = await db.GamePlayerPositions
                 .Where(pp => pp.GamePeriodId == periodId)
@@ -299,6 +346,7 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
             }
 
             await db.SaveChangesAsync();
+            await tx.CommitAsync();
 
             logger.LogInformation("Saved lineup for period {PeriodId}: {Count} positions",
                 periodId, positions.Count);

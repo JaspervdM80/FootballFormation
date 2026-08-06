@@ -36,8 +36,23 @@ html, body {
     border-bottom: 1px solid color-mix(in srgb, var(--ink) 5%, transparent);
 }
 
-/* MudBlazor Paper/Card styling */
-.mud-paper {
+/* The page's own padding — see MainLayout. clamp() gives a 320px phone 12px gutters and a desktop
+   the full 24px, instead of a flat 24px that cost a small phone 15% of its width. The left/right
+   safe-area insets are added on top so landscape on a notched phone clears the notch. */
+.mud-main-content.app-main {
+    padding-top: calc(76px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+    padding-left: calc(clamp(12px, 4vw, 24px) + env(safe-area-inset-left, 0px));
+    padding-right: calc(clamp(12px, 4vw, 24px) + env(safe-area-inset-right, 0px));
+}
+
+/* MudBlazor Paper/Card styling.
+   Excluding popovers and dialogs is the point of the selector, not a detail. .mud-paper is on
+   every MudBlazor surface — cards, drawer, menus, dropdowns, dialogs — so styling it flat also
+   restyled things that are not cards, and position:relative in particular broke every dropdown
+   into a full-width band across the page. Three separate patch rules used to undo that. Dialogs
+   get the same look from .mud-dialog below, which they carry themselves. */
+.mud-paper:not(.mud-popover):not(.mud-dialog) {
     background: var(--gradient-card) !important;
     border: 1px solid color-mix(in srgb, var(--ink) 5%, transparent) !important;
     position: relative;
@@ -57,9 +72,41 @@ html, body {
     z-index: 1;
 }
 
+/* --- Stacked tables on a phone ---
+   MudBlazor stacks a table into per-row cards at its xs breakpoint and prints the column label
+   beside every cell, which on these three tables is far more label than data. Opting in with
+   .stacked-table stops the table parts being table boxes, so each row can become a grid or flex
+   container, and drops the generated labels.
+
+   Shared because all three tables — /players, /users and the builder's playing-time overview —
+   needed exactly these five rules and each carried its own copy. What legitimately differs is
+   only the row layout, which stays with each table below. */
+@media (max-width: 599.98px) {
+    .stacked-table .mud-table-root,
+    .stacked-table .mud-table-body {
+        display: block;
+        width: 100%;
+    }
+
+    .stacked-table .mud-table-body .mud-table-row:not(:last-child) {
+        border-bottom: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
+    }
+
+    .stacked-table .mud-table-body .mud-table-cell {
+        border: none !important;
+        padding: 0 !important;
+    }
+
+    .stacked-table .mud-table-body .mud-table-cell::before {
+        display: none !important;
+    }
+}
+
 /* Table overrides */
 .mud-table .mud-table-head .mud-table-row .mud-table-cell {
-    color: color-mix(in srgb, var(--club-primary-bright) 60%, transparent) !important;
+    /* Full strength, not a 60% mix: this is 0.7rem uppercase text, and the mix measured about
+       3.0:1 on white — under AA for a label people actually have to read. */
+    color: var(--club-primary-bright) !important;
     font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -119,11 +166,82 @@ html, body {
     color: #fff !important;
 }
 
-/* Separator line */
-.gold-separator {
-    height: 1px;
-    background: linear-gradient(to right, transparent, color-mix(in srgb, var(--club-primary-bright) 10%, transparent), transparent);
-    margin: 24px 0;
+/* --- Icon action buttons ---
+   Global, not scoped, because two pages use them: the game cards on /games and the season rows
+   on /settings. They lived in Games.razor.css and so compiled to .action-btn[b-<gamesHash>],
+   which meant the /settings buttons matched nothing and rendered as native browser chrome.
+   Scoped CSS fails silently like that, so anything more than one page uses belongs here. */
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: none;
+    color: var(--ink-muted);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    padding: 0;
+}
+
+/* Hover is a pointer idea; on a touch screen it sticks after the tap and reads as "selected". */
+@media (hover: hover) {
+    .action-btn:hover {
+        color: var(--club-primary-bright);
+        background: color-mix(in srgb, var(--club-primary-bright) 10%, transparent);
+    }
+
+    .action-btn.action-delete:hover {
+        color: var(--color-danger-bright);
+        background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+    }
+
+    .action-btn.action-live:hover {
+        color: #fff;
+        background: var(--color-success-bright);
+    }
+
+    .action-btn.action-needs-lineup:hover {
+        color: var(--color-warning-bright);
+        background: color-mix(in srgb, var(--color-warning) 22%, transparent);
+    }
+}
+
+/* A match that is actually being played right now — green so it reads as "on air", and
+   it pulses so it is the first thing the eye lands on in the list. */
+.action-btn.action-live {
+    color: #fff;
+    background: var(--color-success-bright);
+    animation: action-live-pulse 2s ease-in-out infinite;
+}
+
+@keyframes action-live-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .action-btn.action-live {
+        animation: none;
+    }
+}
+
+/* Formation action button on a card that has no lineup yet — tint it amber to match
+   the panel and nudge the admin toward filling it in. */
+.action-btn.action-needs-lineup {
+    color: var(--color-warning-bright);
+    background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+}
+
+/* A finger needs more than the 32px the pointer version uses, and up to five of these sit
+   side by side on a game card. */
+@media (pointer: coarse) {
+    .action-btn {
+        width: 40px;
+        height: 40px;
+    }
 }
 
 /* Navigation links in top bar */
@@ -132,7 +250,7 @@ html, body {
     border-radius: 6px !important;
     font-size: 0.8rem !important;
     font-weight: 500 !important;
-    color: color-mix(in srgb, var(--ink) 55%, transparent) !important;
+    color: var(--ink-muted) !important;
     cursor: pointer;
     transition: all 0.15s;
     text-decoration: none !important;
@@ -167,7 +285,7 @@ html, body {
     font-weight: 500 !important;
     text-transform: none !important;
     white-space: nowrap;
-    color: color-mix(in srgb, var(--ink) 55%, transparent) !important;
+    color: var(--ink-muted) !important;
 }
 
 .season-picker .mud-button-root:hover {
@@ -222,7 +340,7 @@ html, body {
 
 .season-row-dates {
     font-size: 0.75rem;
-    color: color-mix(in srgb, var(--ink) 45%, transparent);
+    color: var(--ink-muted);
 }
 
 .season-row-actions {
@@ -274,11 +392,11 @@ html, body {
 .btn-ghost {
     background: transparent !important;
     border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent) !important;
-    color: color-mix(in srgb, var(--ink) 60%, transparent) !important;
+    color: var(--ink-muted) !important;
 }
 
 .btn-ghost:hover {
-    border-color: color-mix(in srgb, var(--ink) 30%, transparent) !important;
+    border-color: var(--ink-faint) !important;
     color: color-mix(in srgb, var(--ink) 90%, transparent) !important;
 }
 
@@ -320,8 +438,18 @@ html, body {
     padding: 3px 8px;
     border-radius: 4px;
     background: color-mix(in srgb, var(--ink) 6%, transparent);
-    color: color-mix(in srgb, var(--ink) 60%, transparent);
+    color: var(--ink-muted);
     border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.badge-unavailable {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+    color: var(--color-danger-bright);
+    border: 1px solid color-mix(in srgb, var(--color-danger) 15%, transparent);
 }
 
 /* --- Live match ---
@@ -346,7 +474,7 @@ html, body {
 /* On a phone what just happened matters more than where everyone stands, so the line-up card
    drops below the timeline, taking the minutes table with it. Every other child of .live-layout
    keeps the default order of 0 and so stays in source order above them. */
-@media (max-width: 599px) {
+@media (max-width: 599.98px) {
     .live-lineup {
         order: 1;
     }
@@ -392,7 +520,7 @@ html, body {
 
 /* Page header styling */
 .page-header-subtitle {
-    color: color-mix(in srgb, var(--ink) 45%, transparent);
+    color: var(--ink-muted);
     font-size: 0.85rem;
 }
 
@@ -434,7 +562,7 @@ html, body {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: color-mix(in srgb, var(--club-primary-bright) 60%, transparent);
+    color: var(--club-primary-bright);
     margin-bottom: 16px;
 }
 
@@ -464,20 +592,11 @@ html, body {
     overflow: visible;
 }
 
-/* Fix: every dropdown rendered as a full-width band across the page. MudPopover carries
-   .mud-paper, and the card rule above gives it position:relative, which beats MudBlazor's
-   own .mud-popover{position:absolute} on source order. A relatively positioned block
-   stretches to the popover provider's full width and takes the placement JS's left/top as
-   an offset from its static spot at the top of the page — hence the band. Restore the
-   framework's positioning; popovers are elevation-8, so they never wanted the ::before
-   accent line that position:relative exists for. */
-.mud-popover.mud-paper {
-    position: absolute;
-}
-
-.mud-popover.mud-paper.mud-popover-fixed {
-    position: fixed;
-}
+/* The two rules that used to sit here restored .mud-popover{position:absolute} and
+   .mud-popover-fixed{position:fixed} after the card rule had overwritten them with
+   position:relative — which is what turned every dropdown into a full-width band across the
+   page. The card rule now excludes .mud-popover outright, so MudBlazor's own positioning is
+   never disturbed and there is nothing left to put back. */
 
 /* Fix: MudSelect dropdown double scrollbar — MudBlazor v9 only sets overflow:hidden on
    menu popovers (:has(>.mud-menu-list)) but not select popovers. The .mud-popover gets
@@ -487,34 +606,55 @@ html, body {
     overflow: hidden;
 }
 
-/* Blazor error UI */
+/* Unhandled circuit error. Blazor unhides this itself; the markup is in App.razor.
+   Themed rather than the template's lightyellow, and safe-area padded like every other
+   fixed element so it clears the home indicator on a phone. */
 #blazor-error-ui {
-    background: lightyellow;
-    bottom: 0;
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
     display: none;
-    left: 0;
-    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
     position: fixed;
+    left: 0;
+    bottom: 0;
     width: 100%;
     z-index: 1000;
+    padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px));
+    background: var(--color-danger-bright);
+    color: #fff;
+    font-size: 0.85rem;
+    text-align: center;
 }
 
-#blazor-error-ui .dismiss {
+/* Blazor reveals the bar by setting display:block inline, which would beat any flex layout
+   declared above — so the contents are laid out inline instead. */
+#blazor-error-ui .reload {
+    margin-left: 16px;
+}
+
+#blazor-error-ui .reload {
+    color: #fff;
+    font-weight: 600;
+    text-decoration: underline;
     cursor: pointer;
-    position: absolute;
-    right: 0.75rem;
-    top: 0.5rem;
 }
 
 /* Touch drag support (see js/drag-drop-touch.js): the browser must not claim
-   touches on draggable chips for scrolling, text selection, or the iOS callout,
-   or the synthetic drag never starts. Scrolling still works from anywhere else. */
+   touches on draggable elements for text selection or the iOS callout, or the
+   synthetic drag never starts. */
 [draggable="true"] {
     -webkit-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;
     touch-action: none;
+}
+
+/* …but touch-action: none also forbids scrolling, and the squad list on the formation builder
+   is a scrollable panel whose every row is draggable. A finger landing on a player could not
+   scroll it — only the few pixels of padding at the edges would. pan-y gives the browser back
+   the vertical gesture; the shim only starts a drag once the finger has moved 8px, and a drag
+   that begins as a vertical pan is the one case worth losing to keep the list usable.
+   The pitch chips keep touch-action: none — there, every direction is a drag. */
+.draggable-player,
+.sub-item {
+    touch-action: pan-y;
 }
 
 /* --- Mobile navigation & PWA safe areas --- */
@@ -524,6 +664,9 @@ html, body {
     display: none !important;
 }
 
+/* 700px is content-driven, not a layout tier: it is the width at which the five nav links, the
+   season picker and the admin block stop fitting on one bar. Deliberately not MudBlazor's md —
+   that would put a hamburger on every tablet with room to spare. See docs/theming.md. */
 @media (max-width: 700px) {
     .topbar-nav {
         display: none !important;
@@ -533,7 +676,10 @@ html, body {
         display: inline-flex !important;
     }
 
-    .mud-appbar .ml-2.mr-8 {
+    /* The title link. Was selected as .ml-2.mr-8 — by the MudBlazor spacing utilities it happens
+       to carry — so changing mr-8 to mr-6 in MainLayout would have silently switched this off.
+       .app-title-link is on the same element and means what it says. */
+    .mud-appbar .app-title-link {
         margin-right: 8px !important;
     }
 
@@ -567,6 +713,101 @@ html, body {
     .squad-actions {
         flex-direction: column-reverse;
         align-items: stretch !important;
+    }
+}
+
+/* --- Statistics: tiles, bars and figure columns ---
+   Shared by /stats and /players/{id}/stats. Both sheets carried their own byte-identical copy of
+   this block — about seventy duplicated lines, and SeasonStats.razor.css opened with the comment
+   "same look as the player-stats page", which is the sort of thing that stays true right up until
+   it doesn't. Every element here is a plain div the page owns, so scoping bought nothing. */
+
+.stat-tiles {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.stat-tile {
+    background: var(--surface-card);
+    border: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
+    border-radius: 14px;
+    padding: 16px 12px;
+    text-align: center;
+    box-shadow: 0 2px 4px color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.stat-value {
+    font-size: 1.9rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--club-primary-bright);
+}
+
+.stat-unit {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-left: 1px;
+}
+
+.stat-label {
+    margin-top: 6px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--ink-muted);
+}
+
+.stat-sub {
+    margin-top: 3px;
+    font-size: 0.65rem;
+    color: var(--ink-muted);
+}
+
+/* Two-column body */
+.stats-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+/* Proportion bars — minutes per position on one page, playing-time fairness on the other */
+.position-track {
+    height: 8px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--ink) 6%, transparent);
+    overflow: hidden;
+}
+
+.position-fill {
+    height: 100%;
+    border-radius: 6px;
+    background: var(--gradient-primary);
+    min-width: 2px;
+}
+
+/* Right-aligned figure columns in the per-game lists */
+.g-num {
+    text-align: center;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--ink-muted);
+}
+
+.g-num.g-hit {
+    color: var(--club-primary-bright);
+    font-weight: 800;
+}
+
+@media (max-width: 760px) {
+    .stat-tiles {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stats-layout {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -608,8 +849,19 @@ html, body {
     justify-content: flex-end;
 }
 
-.players-table .cell-right .badge-teal:last-child {
-    margin-right: 0 !important;
+/* Badge spacing comes from the container's gap, not a margin on each badge. It used to be an
+   inline style="margin-right: 4px" in Players.razor, which then needed !important rules in two
+   places to switch it off again on mobile — this app's CSS beating this app's own markup. A gap
+   has no trailing edge to undo. */
+.players-table .cell-alt,
+.players-table .cell-right {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.player-name-cell .badge-guest {
+    margin-left: 6px;
 }
 
 /* Row actions: MudMenu wraps its trigger in a plain div, whose inline-block baseline sits
@@ -634,7 +886,7 @@ html, body {
     margin-left: 6px;
     font-weight: 700;
     line-height: 1;
-    color: color-mix(in srgb, var(--ink) 30%, transparent);
+    color: var(--ink-faint);
 }
 
 .players-table .mud-table-row:hover .player-name-chevron {
@@ -647,7 +899,7 @@ html, body {
     align-items: center;
     gap: 4px;
     margin-top: 2px;
-    color: color-mix(in srgb, var(--ink) 40%, transparent);
+    color: var(--ink-subtle);
 }
 
 /* Shirt number sits in its own # column on wide screens */
@@ -663,12 +915,6 @@ html, body {
        name + preferred position share the first line, alternatives get the second,
        the row actions the third. The table parts have to stop being table boxes
        for the row to become a grid container. */
-    .players-table .mud-table-root,
-    .players-table .mud-table-body {
-        display: block;
-        width: 100%;
-    }
-
     .players-table .mud-table-body .mud-table-row {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
@@ -676,20 +922,6 @@ html, body {
         column-gap: 8px;
         row-gap: 6px;
         padding: 10px 14px;
-    }
-
-    .players-table .mud-table-body .mud-table-row:not(:last-child) {
-        border-bottom: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
-    }
-
-    .players-table .mud-table-body .mud-table-cell {
-        border: none !important;
-        padding: 0 !important;
-    }
-
-    /* Position and name read fine without their labels once they are in columns */
-    .players-table .mud-table-body .mud-table-cell::before {
-        display: none !important;
     }
 
     /* A whole card row just for the number is wasteful: drop the # cell and print
@@ -734,10 +966,6 @@ html, body {
         display: none;
     }
 
-    /* The row's own gap does the spacing here */
-    .players-table .cell-alt .badge-gold {
-        margin-right: 0 !important;
-    }
 }
 
 /* --- Users table --- */
@@ -765,12 +993,6 @@ html, body {
    Lay the row out as a grid instead: name + role on the first line, login on the second,
    the actions hugging the right edge. */
 @media (max-width: 599.98px) {
-    .users-table .mud-table-root,
-    .users-table .mud-table-body {
-        display: block;
-        width: 100%;
-    }
-
     .users-table .mud-table-body .mud-table-row {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto auto;
@@ -778,19 +1000,6 @@ html, body {
         column-gap: 8px;
         row-gap: 4px;
         padding: 10px 14px;
-    }
-
-    .users-table .mud-table-body .mud-table-row:not(:last-child) {
-        border-bottom: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
-    }
-
-    .users-table .mud-table-body .mud-table-cell {
-        border: none !important;
-        padding: 0 !important;
-    }
-
-    .users-table .mud-table-body .mud-table-cell::before {
-        display: none !important;
     }
 
     .users-table .cell-name {
@@ -838,12 +1047,6 @@ html, body {
    tall vertical strip. Lay each row out as a card instead: name on top, the period
    positions in one horizontal band, and the percentage bar on its own line. */
 @media (max-width: 599.98px) {
-    .playtime-table .mud-table-root,
-    .playtime-table .mud-table-body {
-        display: block;
-        width: 100%;
-    }
-
     .playtime-table .mud-table-body .mud-table-row {
         display: flex;
         flex-wrap: wrap;
@@ -853,10 +1056,6 @@ html, body {
         padding: 10px 14px;
     }
 
-    .playtime-table .mud-table-body .mud-table-row:not(:last-child) {
-        border-bottom: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
-    }
-
     .playtime-table .mud-table-body .mud-table-cell {
         border: none !important;
         padding: 0 !important;
@@ -864,11 +1063,6 @@ html, body {
         align-items: center;
         width: auto;
         justify-content: flex-start;
-    }
-
-    /* MudBlazor's per-cell data labels add nothing once the row is a card */
-    .playtime-table .mud-table-body .mud-table-cell::before {
-        display: none !important;
     }
 
     /* The shirt-number column is noise on a phone */

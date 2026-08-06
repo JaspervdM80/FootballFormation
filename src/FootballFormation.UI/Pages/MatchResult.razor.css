@@ -63,9 +63,16 @@
     background: linear-gradient(to bottom, color-mix(in srgb, var(--club-primary-bright) 5%, transparent), transparent);
 }
 
+/* The opponent's number, in the same away colour the live scoreboard uses
+   (.live-score-away). The markup has always carried this class; the rule was missing, so
+   both scorelines rendered in the club colour and the two screens disagreed. */
+.score-away {
+    color: var(--color-away);
+}
+
 .score-vs {
     font-size: 1rem;
-    color: color-mix(in srgb, var(--ink) 25%, transparent);
+    color: var(--ink-faint);
     font-weight: 300;
     padding-top: 24px;
 }
@@ -139,7 +146,7 @@
 
 .goal-assist {
     font-size: 0.7rem;
-    color: color-mix(in srgb, var(--ink) 40%, transparent);
+    color: var(--ink-subtle);
     margin-top: 2px;
 }
 
@@ -151,11 +158,11 @@
 }
 
 .goal-remove {
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     border: none;
     background: none;
-    color: color-mix(in srgb, var(--ink) 25%, transparent);
+    color: var(--ink-muted);
     cursor: pointer;
     border-radius: 4px;
     font-size: 16px;
@@ -163,9 +170,19 @@
     font-family: inherit;
 }
 
-.goal-remove:hover {
-    color: var(--color-danger);
-    background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+/* 24px was well under any thumb; a finger gets the full target. */
+@media (pointer: coarse) {
+    .goal-remove {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+@media (hover: hover) {
+    .goal-remove:hover {
+        color: var(--color-danger);
+        background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+    }
 }
 
 /* Add goal section */
@@ -193,7 +210,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: color-mix(in srgb, var(--ink) 35%, transparent);
+    color: var(--ink-subtle);
 }
 
 .field input,
@@ -203,7 +220,9 @@
     border-radius: 8px;
     color: var(--ink);
     padding: 8px 10px;
-    font-size: 0.8rem;
+    /* Not smaller: iOS Safari zooms the page when a focused input is under 16px, and it never
+       zooms back — the goal form would leave the page scrolled sideways after every entry. */
+    font-size: 1rem;
     outline: none;
     font-family: inherit;
     transition: border-color 0.15s;
@@ -303,7 +322,7 @@
     align-items: center;
     gap: 6px;
     font-size: 0.7rem;
-    color: color-mix(in srgb, var(--ink) 40%, transparent);
+    color: var(--ink-subtle);
 }
 
 .comment-visibility {
@@ -314,7 +333,7 @@
     padding: 2px 8px;
     border-radius: 4px;
     background: color-mix(in srgb, var(--ink) 8%, transparent);
-    color: color-mix(in srgb, var(--ink) 50%, transparent);
+    color: var(--ink-muted);
 }
 
 .comment-visibility.is-public {
@@ -331,23 +350,34 @@
 }
 
 .comment-btn {
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border: none;
     background: none;
-    color: color-mix(in srgb, var(--ink) 30%, transparent);
+    color: var(--ink-muted);
     cursor: pointer;
     border-radius: 4px;
     transition: all 0.15s;
     font-family: inherit;
 }
 
-.comment-btn:hover {
-    color: var(--club-primary-bright);
-    background: color-mix(in srgb, var(--club-primary) 10%, transparent);
+/* Same treatment as .goal-remove, which sits beside it in the row: a finger needs more than the
+   pointer size, and an unguarded :hover sticks after a tap and reads as "selected". */
+@media (pointer: coarse) {
+    .comment-btn {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+@media (hover: hover) {
+    .comment-btn:hover {
+        color: var(--club-primary-bright);
+        background: color-mix(in srgb, var(--club-primary) 10%, transparent);
+    }
 }
 
 .comment-add-row {

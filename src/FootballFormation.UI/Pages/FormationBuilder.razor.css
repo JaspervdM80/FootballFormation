@@ -19,7 +19,7 @@
    MudText renders that element. This span is written here, so it keeps this file's scope. */
 .builder-date {
     font-size: 0.8rem;
-    color: color-mix(in srgb, var(--ink) 45%, transparent);
+    color: var(--ink-muted);
 }
 
 .formation-layout {
@@ -58,7 +58,7 @@
     align-items: center;
     gap: 4px;
     font-size: 0.65rem;
-    color: color-mix(in srgb, var(--ink) 60%, transparent);
+    color: var(--ink-muted);
 }
 
 .legend-dot {
@@ -101,15 +101,27 @@
     padding: 2px 4px;
     font-size: 0.75rem;
     text-decoration: line-through;
-    color: color-mix(in srgb, var(--ink) 50%, transparent);
+    color: var(--ink-muted);
+}
+
+/* The name beside the shirt. PlayerList.razor.css has an identical rule, but that one is scoped
+   to PlayerList and never reaches this page — the class here was inert. */
+.unavailable-player .player-name-text {
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .player-shirt.unavailable {
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    background: rgba(239,68,68,0.15);
-    color: color-mix(in srgb, var(--ink) 50%, transparent);
+    /* Was a hardcoded rgba(239,68,68,…) — the same red as --color-danger, but invisible to a
+       re-theme. See docs/theming.md: only text on a coloured fill stays a literal. */
+    background: color-mix(in srgb, var(--color-danger) 15%, transparent);
+    color: var(--ink-muted);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -157,7 +169,7 @@
 .overview-dot.overview-sub {
     background: color-mix(in srgb, var(--ink) 6%, transparent);
     border: 1px dashed color-mix(in srgb, var(--ink) 35%, transparent);
-    color: color-mix(in srgb, var(--ink) 50%, transparent);
+    color: var(--ink-muted);
 }
 
 .overview-dot.overview-none {
@@ -166,7 +178,9 @@
     border: none;
 }
 
-@media (max-width: 900px) {
+/* MudBlazor's md boundary — the same one FormationOverview stacks its pitches at, so the two
+   formation screens reflow together rather than one pixel apart. See docs/theming.md. */
+@media (max-width: 959.98px) {
     .formation-layout {
         flex-direction: column;
         align-items: stretch;

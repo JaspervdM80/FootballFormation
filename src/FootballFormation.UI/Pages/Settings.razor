@@ -6,6 +6,13 @@
 <PageHeader Class="mb-6" Title="@L["Match Preferences"]"
             Subtitle="@L["These defaults are applied when creating new games, and are kept per season."]" />
 
+@if (_mustChangePassword)
+{
+    <MudAlert Severity="Severity.Warning" Class="mb-6" Style="max-width: 500px;">
+        @L["This account still uses the password it was created with. Choose your own below — until you do, the rest of the app stays locked."]
+    </MudAlert>
+}
+
 <MudPaper Class="pa-6" MaxWidth="500px" Elevation="2" Style="border-radius: 16px;">
     <div class="card-label">@L["Defaults"]</div>
 
@@ -23,7 +30,7 @@
     }
     else
     {
-    <MudForm @ref="_form">
+    <MudForm>
         <MudNumericField T="int" @bind-Value="_prefs.GameDurationMinutes"
                          Label="@L["Game Duration (minutes)"]" Min="10" Max="120" Step="5"
                          Class="mb-4" />
@@ -50,7 +57,7 @@
             }
         </MudSelect>
 
-        <MudText Typo="Typo.caption" Style="color: color-mix(in srgb, var(--ink) 45%, transparent);" Class="mb-4">
+        <MudText Typo="Typo.caption" Style="color: var(--ink-muted);" Class="mb-4">
             @L["Next calculated match date:"] <strong style="color: var(--club-primary-bright);">@_nextMatchDate?.ToString("dddd dd MMM yyyy")</strong>
         </MudText>
     </MudForm>
@@ -81,7 +88,7 @@
 
 <MudPaper Class="pa-6 mt-6" MaxWidth="500px" Elevation="2" Style="border-radius: 16px;">
     <div class="card-label">@L["Seasons"]</div>
-    <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 45%, transparent);" Class="mb-4">
+    <MudText Typo="Typo.body2" Style="color: var(--ink-muted);" Class="mb-4">
         @L["Seasons are used to group games and filter statistics."]
     </MudText>
 

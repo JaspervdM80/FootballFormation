@@ -31,7 +31,7 @@
 
 .overview-date {
     font-size: 0.9rem;
-    color: color-mix(in srgb, var(--ink) 45%, transparent);
+    color: var(--ink-muted);
 }
 
 .overview-formation {
@@ -62,7 +62,7 @@
     text-align: center;
     font-size: 0.7rem;
     font-weight: 600;
-    color: color-mix(in srgb, var(--club-primary-bright) 60%, transparent);
+    color: var(--club-primary-bright);
     margin-bottom: 8px;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -80,12 +80,12 @@
 .subs-label {
     font-size: 0.7rem;
     font-weight: 600;
-    color: color-mix(in srgb, var(--ink) 45%, transparent);
+    color: var(--ink-muted);
     text-transform: uppercase;
 }
 
 .subs-label.subs-none {
-    color: color-mix(in srgb, var(--ink) 25%, transparent);
+    color: var(--ink-faint);
     font-style: italic;
 }
 
@@ -112,8 +112,11 @@
     max-width: 900px;
 }
 
-/* Responsive */
-@media (max-width: 600px) {
+/* Responsive.
+   Collapsed at 959.98px rather than at phone width: two columns on a tablet gave each pitch only
+   about 225px, which is too narrow to read a lineup off even now that the chips scale with it.
+   Same breakpoint the formation builder uses to stack its panels. */
+@media (max-width: 959.98px) {
     .overview-periods {
         grid-template-columns: 1fr;
     }

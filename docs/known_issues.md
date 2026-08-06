@@ -67,8 +67,26 @@ Avoid repeating these mistakes:
   interpolated message can't be translated.
 
 ## Formation/Pitch
-- **Duplicate enum positions**: Formations with 2 CDMs or 2 strikers need distinct enum values (LCDM/RCDM, LST/RST) — can't have duplicate values in an array.
-- **Pitch too large**: Use `max-height: 65vh` with `aspect-ratio: 3/4` and `max-width: calc(65vh * 3/4)`.
+- **Duplicate enum positions are fine — do not "fix" them.** A formation with two CBs or two
+  strikers returns the same `PlayerPosition` twice from `DefaultPositions()`, and that is the
+  design: which slot a player occupies comes from `GamePlayerPosition.SlotIndex`, ordered by
+  `FormationSlots.OrdinalOf`. This entry used to say the opposite — that side-specific members
+  (LCDM/RCDM, LST/RST) were needed — and they were, until `ConsolidatePlayerPositions` and
+  `ConsolidatePositionsRound2` deleted them. Reintroducing them would undo those migrations.
+- **Pitch too large**: `max-height: 65dvh` with `aspect-ratio: 3/4` and
+  `max-width: calc(65dvh * 3/4)`. `dvh`, not `vh` — on iOS `vh` is the *large* viewport, so with
+  the URL bar showing a `vh`-sized pitch is taller than the visible area.
+- **Chips must scale with the pitch.** `.pitch` is `container-type: inline-size` and `--chip-size`
+  is a `clamp(..., cqw, ...)`. Fixed-pixel chips looked right on a full-width pitch and collided on
+  a narrow one — at ~225px wide, a 52px chip is a quarter of the pitch and the wide positions
+  (LM at `left: 8%`) hung off the grass, since `.pitch` has no `overflow: hidden`.
+
+## CSS scoping
+- **A class used on a page that doesn't own its `.razor.css` silently does nothing.** Scoped CSS
+  compiles to `.foo[b-<ownerHash>]`, so `.action-btn` defined in `Games.razor.css` never matched
+  the identical markup on `/settings` — those buttons rendered as native browser chrome for as
+  long as nobody looked. There is no warning. Anything more than one page uses goes in `app.css`;
+  `.action-btn`, `.badge-*`, `.stat-tile*` and `.stacked-table` are there for this reason.
 
 ## General
 - **Port already in use**: Kill orphaned process with `taskkill //PID <pid> //F`.

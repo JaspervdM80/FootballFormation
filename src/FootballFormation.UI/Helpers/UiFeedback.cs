@@ -62,11 +62,12 @@ public static class UiFeedback
     {
         if (result.ErrorKey is null) return string.Empty;
 
-        // Only the unexpected-failure wrapper takes a translatable argument: its placeholder is an
-        // English action phrase ("load games"), so it needs its own lookup or half the sentence
+        // Only the two ServiceOperation wrappers take a translatable argument: their placeholder is
+        // an English action phrase ("load games"), so it needs its own lookup or half the sentence
         // stays in English. Every other argument is data — a player name, a season, a count — and
         // must pass through untouched, or a player called "Start" would come out translated.
-        if (result.ErrorKey == ServiceOperation.UnexpectedFailureKey && result.ErrorArgs is [string action])
+        if (result.ErrorKey is ServiceOperation.UnexpectedFailureKey or ServiceOperation.NotAllowedKey
+            && result.ErrorArgs is [string action])
             return localizer[result.ErrorKey, localizer[action].Value];
 
         return localizer[result.ErrorKey, [.. result.ErrorArgs]];

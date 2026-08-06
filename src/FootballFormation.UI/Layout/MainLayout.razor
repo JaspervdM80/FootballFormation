@@ -21,7 +21,7 @@
         <MudSpacer />
         <SeasonPicker Compact="true" />
         <MudMenu Icon="@Icons.Material.Filled.Language" Size="Size.Small" Dense="true"
-                 AriaLabel="Language" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
+                 AriaLabel="Language" Style="color: var(--ink-muted);">
             <MudMenuItem OnClick="@(() => SwitchCulture("nl"))">Nederlands</MudMenuItem>
             <MudMenuItem OnClick="@(() => SwitchCulture("en"))">English</MudMenuItem>
         </MudMenu>
@@ -29,10 +29,10 @@
             <Authorized>
                 <div class="d-flex align-center gap-2">
                     <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Size="Size.Small" Style="color: var(--club-primary-bright);" />
-                    <MudText Typo="Typo.body2" Class="admin-name" Style="color: color-mix(in srgb, var(--ink) 60%, transparent);">@context.User.DisplayName()</MudText>
+                    <MudText Typo="Typo.body2" Class="admin-name" Style="color: var(--ink-muted);">@context.User.DisplayName()</MudText>
                     <form method="post" action="/auth/logout" data-enhance="false" style="margin: 0;">
                         <button type="submit"
-                                style="background: none; border: none; color: color-mix(in srgb, var(--ink) 40%, transparent); cursor: pointer; font-size: 0.875rem; padding: 4px 8px; text-transform: none;">
+                                style="background: none; border: none; color: var(--ink-subtle); cursor: pointer; font-size: 0.875rem; padding: 4px 8px; text-transform: none;">
                             @L["Logout"]
                         </button>
                     </form>
@@ -41,8 +41,8 @@
             <NotAuthorized>
                 <MudButton Href="@AppRoutes.Login" Target="_self" Variant="Variant.Text" Size="Size.Small"
                            StartIcon="@Icons.Material.Filled.Lock"
-                           Style="color: color-mix(in srgb, var(--ink) 40%, transparent); text-transform: none;">
-                    Admin
+                           Style="color: var(--ink-subtle); text-transform: none;">
+                    @L["Admin"]
                 </MudButton>
             </NotAuthorized>
         </AuthorizeView>
@@ -62,7 +62,10 @@
         </MudNavMenu>
     </MudDrawer>
 
-    <MudMainContent Style="padding: calc(76px + env(safe-area-inset-top, 0px)) 24px calc(40px + env(safe-area-inset-bottom, 0px)); max-width: 1100px; margin: 0 auto;">
+    @* Horizontal padding is a clamp rather than a flat 24px: a 320px phone kept only 272px of
+       content. The left/right safe-area insets matter too — viewport-fit=cover means landscape on
+       a notched phone would otherwise run content under the notch and the rounded corners. *@
+    <MudMainContent Class="app-main" Style="max-width: 1100px; margin: 0 auto;">
         @Body
     </MudMainContent>
 

@@ -4,41 +4,72 @@ A web app for planning football (soccer) formations, managing your youth team sq
 
 ## Features
 
+### Squad and games
+- **Seasons** — Everything is scoped to a season (1 Jul – 30 Jun). A picker in the app bar filters
+  the squad, the games and the statistics; season windows are gapless, so every date belongs to
+  exactly one
+- **Season squads** — Squad membership is per season, with a guest flag, and can be copied forward
+  from last season in one action
 - **Squad Management** — Add players with shirt numbers, preferred positions, and alternative positions
 - **Game Planning** — Create matches with opponent, date, formation type, and split type (halves/quarters)
+- **Unavailable Players** — Mark players as unavailable per game
+
+### Match day
 - **Formation Builder** — Drag-and-drop players onto a pitch with real-time position-fit feedback (5-tier color system)
 - **Substitute Bench** — Drag-and-drop substitutes per period
 - **Playing Time Overview** — See how many minutes each player is assigned across all periods
 - **Copy to Next Period** — Quickly duplicate a lineup to the next half/quarter
-- **Unavailable Players** — Mark players as unavailable per game
+- **Live match mode** — A sideline screen with a running clock, period transitions, timestamped
+  substitutions and goals as they happen. The admin drives it; everyone else watches the same
+  clock, derived from one stored anchor rather than pushed each second
 - **Match Results** — Record final scores, goal scorers, assists, and own goals
 - **Formation Overview** — Shareable screenshot of all periods (via html2canvas)
-- **Match Preferences** — Default game duration, split type, formation, and match day
+
+### Reporting and admin
+- **Season statistics** — Record, goals, form guide, top scorers, and a playing-time fairness view
+- **Player statistics** — Per-player minutes, utilisation, goals, assists and position share.
+  Minutes are reconstructed from the substitutions when a match was tracked live
+- **Match Preferences** — Default game duration, split type, formation and match day, **per season**
+  and inherited from the previous one
+- **Accounts and roles** — Cookie authentication with an `Admin` role. Reading is public; every
+  change requires signing in, enforced both in the UI and at the service boundary. Account
+  management lives on `/users`, self-service password change on `/settings`
+- **Dutch by default**, with English available from the language switcher. Every user-facing
+  string goes through `IStringLocalizer`; the English text is the resource key
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Framework | .NET 10, Blazor Server (Interactive) |
-| UI Library | MudBlazor 9.2.0 |
+| UI Library | MudBlazor 9.7.0 |
 | Database | SQLite via EF Core |
+| Auth | Cookie authentication, PBKDF2 via `PasswordHasher<T>`, security stamps |
+| Localization | `IStringLocalizer` — Dutch default, English fallback |
 | Logging | Serilog (file + console) |
-| Screenshots | html2canvas (CDN) |
+| Screenshots | html2canvas (bundled, not CDN) |
+| Tests | xUnit v3 against real SQLite |
 
 ## Solution Structure
 
 ```
 FootballFormation/
 ├── src/
-│   ├── FootballFormation.Core/    # Domain models, EF Core DbContext, services
+│   ├── FootballFormation.Core/    # Domain models, EF Core DbContext, services, reports
 │   ├── FootballFormation.UI/      # Blazor components, pages, helpers, layout
 │   └── FootballFormation.Web/     # Host project, Program.cs, wwwroot
+├── tests/
+│   └── FootballFormation.Core.Tests/   # Service and domain tests (gate the deploy)
 ├── docs/                          # Architecture & project documentation
 │   ├── project_overview.md
 │   ├── architecture.md
 │   ├── models.md
 │   ├── patterns.md
 │   ├── ui_components.md
+│   ├── theming.md
+│   ├── testing.md
+│   ├── deployment.md
+│   ├── roadmap.md
 │   └── known_issues.md
 └── FootballFormation.slnx
 ```
@@ -68,6 +99,27 @@ Logs are written to:
 %LOCALAPPDATA%\FootballFormation\logs\
 ```
 
+### First sign-in
+
+An install with no accounts seeds `admin` / `admin` and flags it: the account can sign in and
+nothing else until the password is changed. Every route redirects it to `/settings`, and the
+services treat it as unauthorized, so the default credentials are never a working admin login.
+Changing the password releases the gate and signs the session out, so you sign back in with the
+new one.
+
+In Development only, `GET /dev/login` signs in as admin without credentials — it is mapped only
+outside Production *and* only for loopback callers.
+
+### Tests and CI
+
+```bash
+dotnet test
+```
+
+`.github/workflows/fly-deploy.yml` runs `dotnet build -c Release` and `dotnet test` before every
+deploy, so both must pass. Note that `Directory.Build.props` sets `TreatWarningsAsErrors` in
+**Release only** — a warning that builds fine locally will fail CI. Build Release before pushing.
+
 ## Deployment
 
 The app deploys to Fly.io (Amsterdam) behind **https://gjs-meiden.nl** — a single
@@ -92,7 +144,10 @@ formation builder is supported via a built-in shim (`js/drag-drop-touch.js`).
 
 ## Design
 
-Premium dark theme with gold/amber accent colors, top-bar navigation, and card-based layouts.
+A light theme in the club's red and green, sampled from the GJS crest, with card-based layouts.
+Navigation is a top bar on desktop and a drawer below 700px. The whole palette comes from one
+record — `ClubTheme` — which emits the CSS custom properties *and* builds MudBlazor's palette, so
+re-skinning for another club is one file. See [docs/theming.md](docs/theming.md).
 
 ### Position Fit System
 
@@ -108,8 +163,13 @@ Players on the pitch are color-coded by how well they fit their assigned positio
 
 ## Architecture
 
-- **Result pattern** — Service methods return `Result` or `Result<T>` instead of throwing exceptions
+- **Result pattern** — Service methods return `Result` or `Result<T>` instead of throwing exceptions.
+  The English message is also the resource key, so failures are translatable
 - **Code-behind** — Razor pages use `.razor.cs` partial classes
+- **DbContext factory, not a scoped context** — a Blazor Server circuit outlives a request, so each
+  service operation opens and disposes its own short-lived context
+- **Authorization at the service boundary** — every write goes through `RunAdminAsync`, so hiding a
+  control in the UI is the first line of defence, not the only one
 - **Auto-migration** — EF Core migrations run on startup
 - **Split queries** — Configured globally to avoid N+1 issues with multiple includes
 

@@ -54,6 +54,14 @@ Desktop.ini
 appsettings.*.local.json
 secrets.json
 
+# Database files and their backups. This repository is public and the database holds the names
+# and shirt numbers of children — a copy pulled off the volume for a restore must never be one
+# `git add -A` away from being published. Keep them outside the repo, or here but ignored.
+backups/
+*.db
+*.db-shm
+*.db-wal
+
 # Publish output
 publish/
 out/

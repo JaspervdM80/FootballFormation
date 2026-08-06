@@ -123,7 +123,7 @@
 
         @if (DisplayLineup.Count == 0)
         {
-            <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 35%, transparent);">
+            <MudText Typo="Typo.body2" Style="color: var(--ink-subtle);">
                 @L["No line-up for this period yet — build one first."]
             </MudText>
         }
@@ -230,7 +230,7 @@
 
         @if (Timeline.Count == 0)
         {
-            <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 35%, transparent);">
+            <MudText Typo="Typo.body2" Style="color: var(--ink-subtle);">
                 @L["Nothing has happened yet"]
             </MudText>
         }
@@ -291,7 +291,7 @@
 
             @if (MinutesPlayed.Count == 0)
             {
-                <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 35%, transparent);">
+                <MudText Typo="Typo.body2" Style="color: var(--ink-subtle);">
                     @L["No line-up for this period yet — build one first."]
                 </MudText>
             }
