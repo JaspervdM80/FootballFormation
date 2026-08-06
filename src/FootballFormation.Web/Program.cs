@@ -155,8 +155,25 @@ try
     {
         var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>();
         await using var db = await dbFactory.CreateDbContextAsync();
+
+        // Snapshot first, and refuse to migrate if that fails. Migrations here are unattended and
+        // some are one-way — dropping a column, deleting rows — so the copy taken in the seconds
+        // before is the only route back from a bad one. A container that will not start is a bad
+        // afternoon; a season of lineups quietly rewritten with no snapshot is not recoverable at
+        // all, and that is the trade this makes.
+        var dbLogger = scope.ServiceProvider
+            .GetRequiredService<ILoggerFactory>()
+            .CreateLogger("DatabaseSafety");
+
+        var backupPath = await DatabaseSafety.BackupBeforeMigrationsAsync(db, dbPath, dbLogger);
+
         await db.Database.MigrateAsync();
         Log.Information("Database migrated successfully at {DbPath}", dbPath);
+
+        await DatabaseSafety.VerifyIntegrityAsync(db, dbLogger);
+
+        if (backupPath is not null)
+            Log.Information("Pre-migration backup retained at {BackupPath}", backupPath);
 
         var userService = scope.ServiceProvider.GetRequiredService<UserService>();
         await userService.EnsureAdminSeededAsync();
