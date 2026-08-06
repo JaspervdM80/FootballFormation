@@ -191,6 +191,88 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
             return Result.Success();
         });
 
+    /// <param name="includePrivate">
+    /// True only for an admin. The filter lives in the query rather than in the page so a private
+    /// body never reaches a visitor at all — the result page prerenders server-side, so markup that
+    /// merely hides the row would still ship the text.
+    /// </param>
+    public Task<Result<List<GameComment>>> GetCommentsAsync(int gameId, bool includePrivate) =>
+        ServiceOperation.RunAsync(logger, "load comments", async () =>
+        {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
+            var comments = await db.GameComments
+                .Where(c => c.GameId == gameId && (includePrivate || c.IsPublic))
+                .Include(c => c.Author)
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
+
+            logger.LogDebug("Retrieved {Count} comments for game {GameId} (private included: {IncludePrivate})",
+                comments.Count, gameId, includePrivate);
+            return Result.Success(comments);
+        });
+
+    public Task<Result<GameComment>> AddCommentAsync(GameComment comment) =>
+        ServiceOperation.RunAsync(logger, "add comment", async () =>
+        {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
+            db.GameComments.Add(comment);
+            await db.SaveChangesAsync();
+
+            // The list shows the author's name, and Add returns the row without it.
+            if (comment.AuthorId is not null)
+                await db.Entry(comment).Reference(c => c.Author).LoadAsync();
+
+            logger.LogInformation("Added {Visibility} comment to game {GameId} by user {AuthorId} (ID: {CommentId})",
+                comment.IsPublic ? "public" : "private", comment.GameId, comment.AuthorId, comment.Id);
+            return Result.Success(comment);
+        });
+
+    public Task<Result> UpdateCommentAsync(int commentId, string body, bool isPublic) =>
+        ServiceOperation.RunAsync(logger, "update comment", async () =>
+        {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
+            var comment = await db.GameComments.FindAsync(commentId);
+            if (comment is null)
+            {
+                logger.LogWarning("Cannot update comment {CommentId}: not found", commentId);
+                return Result.Failure("Comment not found");
+            }
+
+            // Publishing on its own is not an edit — the text is unchanged, so the "edited" marker
+            // would be a lie.
+            if (comment.Body != body) comment.EditedAt = DateTime.UtcNow;
+
+            comment.Body = body;
+            comment.IsPublic = isPublic;
+            await db.SaveChangesAsync();
+
+            logger.LogInformation("Updated comment {CommentId} on game {GameId} to {Visibility}",
+                commentId, comment.GameId, isPublic ? "public" : "private");
+            return Result.Success();
+        });
+
+    public Task<Result> RemoveCommentAsync(int commentId) =>
+        ServiceOperation.RunAsync(logger, "remove comment", async () =>
+        {
+            await using var db = await dbFactory.CreateDbContextAsync();
+
+            var comment = await db.GameComments.FindAsync(commentId);
+            if (comment is null)
+            {
+                logger.LogWarning("Cannot remove comment {CommentId}: not found", commentId);
+                return Result.Failure("Comment not found");
+            }
+
+            db.GameComments.Remove(comment);
+            await db.SaveChangesAsync();
+
+            logger.LogInformation("Removed comment {CommentId} from game {GameId}", commentId, comment.GameId);
+            return Result.Success();
+        });
+
     public Task<Result> SavePeriodLineupAsync(int periodId, List<GamePlayerPosition> positions) =>
         ServiceOperation.RunAsync(logger, "save lineup", async () =>
         {

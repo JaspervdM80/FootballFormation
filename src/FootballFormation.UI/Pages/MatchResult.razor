@@ -15,7 +15,7 @@
             Title="@($"{(GameData.IsHomeGame ? "vs" : "@")} {GameData.Opponent}")">
     <SubtitleContent>
         <MudText Typo="Typo.body2" Class="result-subtitle">
-            @GameData.Date.ToString("dd MMMM yyyy") · @(GameData.IsHomeGame ? L["Home"] : L["Away"]) · @GameData.FormationType.DisplayName()
+            @GameData.Date.ToString("dd MMMM yyyy") · @(GameData.IsHomeGame ? L["Home"] : L["Away"]) · @L[GameData.MatchType.DisplayName()] · @GameData.FormationType.DisplayName()
         </MudText>
     </SubtitleContent>
 </PageHeader>
@@ -156,4 +156,80 @@
             }
         </AuthorizeView>
     </MudPaper>
+
+    @* An empty comments card on the public site is just clutter, so a visitor with nothing to read
+       gets no card at all. Admins always get it — it is where comments are written.
+       IsAdmin comes from the same place the load does, so the controls on screen can never disagree
+       with what GetCommentsAsync was asked for. *@
+    @if (IsAdmin || Comments.Count > 0)
+    {
+        <MudPaper Class="pa-5 result-comments" Elevation="2" Style="border-radius: 16px;">
+            <div class="card-label">@L["Comments"] (@Comments.Count)</div>
+
+            @if (Comments.Count > 0)
+            {
+                <div class="comment-list">
+                    @foreach (var comment in Comments)
+                    {
+                        <div class="comment-entry @(comment.IsPublic ? "is-public" : "")">
+                            <div class="comment-body">@comment.Body</div>
+                            <div class="comment-meta">
+                                <span>@comment.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</span>
+                                @if (comment.EditedAt is not null)
+                                {
+                                    <span>· @L["edited"]</span>
+                                }
+                                @if (IsAdmin)
+                                {
+                                    @if (comment.Author is not null)
+                                    {
+                                        <span>· @comment.Author.DisplayName</span>
+                                    }
+                                    <span class="comment-visibility @(comment.IsPublic ? "is-public" : "")">
+                                        @(comment.IsPublic ? L["Public"] : L["Admin only"])
+                                    </span>
+                                }
+                            </div>
+                            @if (IsAdmin)
+                            {
+                                <div class="comment-actions">
+                                    <button class="comment-btn"
+                                            title="@(comment.IsPublic ? L["Make admin only"] : L["Publish"])"
+                                            @onclick="() => ToggleCommentVisibility(comment)">
+                                        <MudIcon Size="Size.Small"
+                                                 Icon="@(comment.IsPublic ? Icons.Material.Filled.Visibility : Icons.Material.Filled.VisibilityOff)" />
+                                    </button>
+                                    <button class="goal-remove" title="@L["Delete"]"
+                                            @onclick="() => RemoveComment(comment)">×</button>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 35%, transparent);" Class="mb-3">
+                    @L["No comments yet"]
+                </MudText>
+            }
+
+            @if (IsAdmin)
+            {
+                <div class="add-section">
+                    <MudTextField @bind-Value="NewCommentBody" Label="@L["Add comment"]" Lines="3"
+                                  Immediate="true" Class="mb-2" />
+                    @* Off by default: publishing is always a deliberate act. *@
+                    <div class="comment-add-row">
+                        <MudSwitch @bind-Value="NewCommentIsPublic" Color="Color.Primary" Class="ma-0"
+                                   Label="@L["Visible to everyone"]" />
+                        <button class="btn-add-goal" disabled="@string.IsNullOrWhiteSpace(NewCommentBody)"
+                                @onclick="AddComment">
+                            + @L["Add"]
+                        </button>
+                    </div>
+                </div>
+            }
+        </MudPaper>
+    }
 </div>

@@ -20,7 +20,14 @@
     <div class="overview-header">
         <div class="overview-header-left">
             <span class="overview-title">@(GameData.IsHomeGame ? "vs" : "@") @GameData.Opponent</span>
-            <span class="overview-date">@GameData.Date.ToString("dd MMM yyyy") · @(GameData.IsHomeGame ? L["Home"] : L["Away"])</span>
+            @* This image gets shared, so a cup tie or a practice game has to be legible in it.
+               A competition match is the norm and stays unlabelled. *@
+            <span class="overview-date">
+                @GameData.Date.ToString("dd MMM yyyy") · @(GameData.IsHomeGame ? L["Home"] : L["Away"])@if (GameData.MatchType != MatchType.Competition)
+                {
+                    <text> · </text>@L[GameData.MatchType.DisplayName()]
+                }
+            </span>
             <span class="overview-formation">@GameData.FormationType.DisplayName()</span>
         </div>
     </div>

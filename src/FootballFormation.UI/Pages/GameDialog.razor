@@ -26,6 +26,12 @@
                 <MudSelectItem Value="true">@L["Home"]</MudSelectItem>
                 <MudSelectItem Value="false">@L["Away"]</MudSelectItem>
             </MudSelect>
+            <MudSelect T="MatchType" @bind-Value="SelectedMatchType" Label="@L["Match Type"]" Class="mb-3">
+                @foreach (var type in Enum.GetValues<MatchType>())
+                {
+                    <MudSelectItem Value="type">@L[type.DisplayName()]</MudSelectItem>
+                }
+            </MudSelect>
             <MudSelect T="FormationType" @bind-Value="SelectedFormationType" Label="@L["Formation"]" Class="mb-3">
                 @foreach (var f in Enum.GetValues<FormationType>())
                 {
@@ -71,7 +77,6 @@
                     }
                 </MudSelect>
             }
-            <MudTextField @bind-Value="Notes" Label="@L["Notes"]" Lines="3" Class="mb-3" />
         </MudForm>
     </DialogContent>
     <DialogActions>
