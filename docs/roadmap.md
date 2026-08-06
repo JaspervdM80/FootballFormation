@@ -27,9 +27,11 @@ fixes live in [known_issues.md](known_issues.md), not here.
 
 ## Later
 
-- **Competitions** — a competition/type per game (league, cup, friendly, tournament) so stats can
-  be split by competition as well as by season. Deliberately left out of the seasons work to keep
-  that change focused; it would be an enum on `Game` plus a second filter alongside the season one.
+- **Filter stats by match type** — `Game.MatchType` (Competition / Cup / Practice) now exists and is
+  shown on the games list, the result page and the shareable overview, but it is purely descriptive:
+  every type still counts towards the season table and player minutes alike. Splitting the reports
+  by type — a second filter alongside the season one — is the follow-up. Worth deciding first
+  whether a practice game *should* count, since the answer changes every historic figure.
 
 - **Share lineup as image** — export the formation/team sheet as a PNG for the WhatsApp group.
 - **Opponent head-to-head** — a small "vs this club" history (we already replay teams like

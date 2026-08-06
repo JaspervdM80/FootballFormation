@@ -258,6 +258,106 @@
     filter: none;
 }
 
+/* Comments */
+
+/* Full width on its own row: comment bodies are prose, and 260px is a column for a scoreboard. */
+.result-comments {
+    grid-column: 1 / -1;
+}
+
+.comment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.comment-entry {
+    position: relative;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--ink) 2%, transparent);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px 12px;
+    align-items: start;
+}
+
+/* A published comment carries a left edge, so an admin can tell at a glance which of these the
+   outside world can read without having to check each chip. */
+.comment-entry.is-public {
+    border-left: 3px solid var(--club-primary-bright);
+}
+
+.comment-body {
+    font-size: 0.85rem;
+    color: var(--ink);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.comment-meta {
+    grid-column: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.7rem;
+    color: color-mix(in srgb, var(--ink) 40%, transparent);
+}
+
+.comment-visibility {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--ink) 8%, transparent);
+    color: color-mix(in srgb, var(--ink) 50%, transparent);
+}
+
+.comment-visibility.is-public {
+    background: color-mix(in srgb, var(--club-primary) 12%, transparent);
+    color: var(--club-primary-bright);
+}
+
+.comment-actions {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.comment-btn {
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    color: color-mix(in srgb, var(--ink) 30%, transparent);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.15s;
+    font-family: inherit;
+}
+
+.comment-btn:hover {
+    color: var(--club-primary-bright);
+    background: color-mix(in srgb, var(--club-primary) 10%, transparent);
+}
+
+.comment-add-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
 @media (max-width: 700px) {
     .result-layout {
         grid-template-columns: 1fr;
