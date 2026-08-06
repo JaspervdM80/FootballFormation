@@ -1,5 +1,6 @@
 using FootballFormation.Core.Data;
 using FootballFormation.Core.Models;
+using FootballFormation.Core.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -8,6 +9,7 @@ namespace FootballFormation.Core.Services;
 public class SeasonService(
     IDbContextFactory<AppDbContext> dbFactory,
     TimeProvider time,
+    ICurrentUser currentUser,
     ILogger<SeasonService> logger)
 {
     /// <summary>Newest first — the season picker and the current-season fallbacks rely on it.</summary>
@@ -17,30 +19,12 @@ public class SeasonService(
             await using var db = await dbFactory.CreateDbContextAsync();
 
             var seasons = await db.Seasons
+                .AsNoTracking()
                 .OrderByDescending(s => s.StartDate)
                 .ToListAsync();
 
             logger.LogDebug("Retrieved {Count} seasons", seasons.Count);
             return Result.Success(seasons);
-        });
-
-    /// <summary>Falls back to the newest season when no row is flagged, so a hand-edited or
-    /// half-migrated database still yields something usable.</summary>
-    public Task<Result<Season>> GetCurrentAsync() =>
-        ServiceOperation.RunAsync(logger, "load current season", async () =>
-        {
-            await using var db = await dbFactory.CreateDbContextAsync();
-
-            var season = await db.Seasons.FirstOrDefaultAsync(s => s.IsCurrent)
-                ?? await db.Seasons.OrderByDescending(s => s.StartDate).FirstOrDefaultAsync();
-
-            if (season is null)
-            {
-                logger.LogWarning("No seasons defined");
-                return Result.Failure<Season>("No seasons defined");
-            }
-
-            return Result.Success(season);
         });
 
     /// <summary>
@@ -56,6 +40,7 @@ public class SeasonService(
             var day = date.Date;
 
             var season = await db.Seasons
+                .AsNoTracking()
                 .FirstOrDefaultAsync(s => s.StartDate <= day && s.EndDate >= day);
 
             return Result.Success(season);
@@ -66,7 +51,7 @@ public class SeasonService(
     /// beyond the seasons defined so far. Season windows are gapless, so this always resolves.
     /// </summary>
     public Task<Result<Season>> GetOrCreateForDateAsync(DateTime date) =>
-        ServiceOperation.RunAsync(logger, "find the season for that date", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "find the season for that date", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -106,7 +91,7 @@ public class SeasonService(
         });
 
     public Task<Result<Season>> CreateAsync(Season season) =>
-        ServiceOperation.RunAsync(logger, "create season", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "create season", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -123,7 +108,7 @@ public class SeasonService(
         });
 
     public Task<Result> UpdateAsync(Season season) =>
-        ServiceOperation.RunAsync(logger, "update season", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "update season", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -138,7 +123,7 @@ public class SeasonService(
         });
 
     public Task<Result> DeleteAsync(int id) =>
-        ServiceOperation.RunAsync(logger, "delete season", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "delete season", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -173,7 +158,7 @@ public class SeasonService(
         });
 
     public Task<Result> SetCurrentAsync(int id) =>
-        ServiceOperation.RunAsync(logger, "switch season", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "switch season", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 

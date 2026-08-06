@@ -61,8 +61,8 @@
 {
     @* "All seasons" is selected: a squad belongs to exactly one season, so there is nothing to edit. *@
     <MudPaper Class="pa-6" Elevation="2" Style="border-radius: 16px; text-align: center;">
-        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Size="Size.Large" Style="color: color-mix(in srgb, var(--ink) 25%, transparent);" />
-        <MudText Typo="Typo.body1" Class="mt-3" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
+        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Size="Size.Large" Style="color: var(--ink-faint);" />
+        <MudText Typo="Typo.body1" Class="mt-3" Style="color: var(--ink-muted);">
             @L["Select a season to manage its squad."]
         </MudText>
         @if (SeasonState.Seasons.Count > 0)
@@ -78,8 +78,8 @@
 @if (_squad.Members.Count == 0)
 {
     <MudPaper Class="pa-6" Elevation="2" Style="border-radius: 16px; text-align: center;">
-        <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Style="color: color-mix(in srgb, var(--ink) 25%, transparent);" />
-        <MudText Typo="Typo.body1" Class="mt-3" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
+        <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Style="color: var(--ink-faint);" />
+        <MudText Typo="Typo.body1" Class="mt-3" Style="color: var(--ink-muted);">
             @(_previousSeason is not null
                 ? L["No squad for {0} yet.", SeasonName]
                 : L["No players yet. Add your first player!"])
@@ -88,7 +88,7 @@
         {
             @* No copy button here: the header carries the only one, so an empty squad doesn't
                show two identical actions. *@
-            <MudText Typo="Typo.caption" Class="d-block mt-1" Style="color: color-mix(in srgb, var(--ink) 40%, transparent);">
+            <MudText Typo="Typo.caption" Class="d-block mt-1" Style="color: var(--ink-subtle);">
                 @L["Copy last season's squad, or add players one by one."]
             </MudText>
         }
@@ -98,7 +98,7 @@
 
 <MudTable Items="_squad.Members" Hover="true" Dense="true" Elevation="2" T="SeasonSquadMember"
           OnRowClick="OnRowClicked" RowStyle="cursor: pointer;"
-          Class="players-table" Style="border-radius: 16px;">
+          Class="players-table stacked-table" Style="border-radius: 16px;">
     <HeaderContent>
         <MudTh><MudTableSortLabel SortBy="new Func<SeasonSquadMember, object>(m => m.Player!.ShirtNumber ?? 999)">#</MudTableSortLabel></MudTh>
         <MudTh><MudTableSortLabel SortBy="new Func<SeasonSquadMember, object>(m => m.Player!.FirstName)">@L["Name"]</MudTableSortLabel></MudTh>
@@ -124,7 +124,7 @@
                 <span style="font-weight: 600; color: var(--ink);">@context.Player!.DisplayName</span>
                 @if (context.IsGuest)
                 {
-                    <span class="badge-guest" style="margin-left: 6px;">@L["GUEST"]</span>
+                    <span class="badge-guest">@L["GUEST"]</span>
                 }
                 @* The whole row navigates to the player's stats, which nothing on it said out
                    loud. The chevron rides with the name so it works in both the desktop table
@@ -140,7 +140,7 @@
             <MudTd DataLabel="@L["Alternative Positions"]" Class="cell-alt">
                 @foreach (var pos in context.Player!.AlternativePositions)
                 {
-                    <span class="badge-gold" style="margin-right: 4px;">@pos.ToString()</span>
+                    <span class="badge-gold">@pos.ToString()</span>
                 }
             </MudTd>
             <MudTd Class="cell-right cell-actions">
@@ -156,14 +156,14 @@
                                    aria-label="@(context.IsGuest ? L["Mark as squad player"] : L["Mark as guest"])"
                                    OnClick="() => ToggleGuest(context)" />
                     <MudIconButton Icon="@Icons.Material.Filled.PersonRemove" Size="Size.Small"
-                                   Style="color: color-mix(in srgb, var(--ink) 40%, transparent);"
+                                   Style="color: var(--ink-subtle);"
                                    aria-label="@L["Remove from squad"]"
                                    OnClick="() => RemoveMember(context)" />
                     @* Editing the person and deleting them outright are rarer than squad changes,
                        so they sit behind an overflow menu. *@
                     <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true"
                              AriaLabel="@L["More"]"
-                             Style="color: color-mix(in srgb, var(--ink) 40%, transparent);">
+                             Style="color: var(--ink-subtle);">
                         <MudMenuItem OnClick="() => OpenEditDialog(context.Player!)">@L["Edit Player"]</MudMenuItem>
                         <MudMenuItem OnClick="() => DeletePlayer(context.Player!)">@L["Delete player permanently"]</MudMenuItem>
                     </MudMenu>

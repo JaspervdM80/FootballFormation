@@ -1,6 +1,7 @@
 using FootballFormation.Core.Data;
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Reporting;
+using FootballFormation.Core.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -16,6 +17,7 @@ public class LiveMatchService(
     GameService games,
     LiveMatchNotifier notifier,
     TimeProvider time,
+    ICurrentUser currentUser,
     ILogger<LiveMatchService> logger)
 {
     /// <summary>
@@ -101,7 +103,7 @@ public class LiveMatchService(
         });
 
     public Task<Result<Game>> StartMatchAsync(int gameId) =>
-        ServiceOperation.RunAsync(logger, "start match", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "start match", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -127,7 +129,7 @@ public class LiveMatchService(
         });
 
     public Task<Result<Game>> PauseClockAsync(int gameId) =>
-        ServiceOperation.RunAsync(logger, "pause the clock", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "pause the clock", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -145,7 +147,7 @@ public class LiveMatchService(
         });
 
     public Task<Result<Game>> ResumeClockAsync(int gameId) =>
-        ServiceOperation.RunAsync(logger, "resume the clock", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "resume the clock", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -168,7 +170,7 @@ public class LiveMatchService(
 
     /// <summary>Whistles the current period off. The clock stops and no period is live until the next one starts.</summary>
     public Task<Result<Game>> EndPeriodAsync(int gameId) =>
-        ServiceOperation.RunAsync(logger, "end the period", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "end the period", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -189,7 +191,7 @@ public class LiveMatchService(
         });
 
     public Task<Result<Game>> StartNextPeriodAsync(int gameId) =>
-        ServiceOperation.RunAsync(logger, "start the next period", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "start the next period", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -223,7 +225,7 @@ public class LiveMatchService(
     /// The lineup changes over, the running time does not.
     /// </summary>
     public Task<Result<Game>> AdvancePeriodAsync(int gameId) =>
-        ServiceOperation.RunAsync(logger, "start the next period", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "start the next period", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -252,7 +254,7 @@ public class LiveMatchService(
         });
 
     public Task<Result<Game>> FinishMatchAsync(int gameId) =>
-        ServiceOperation.RunAsync(logger, "finish the match", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "finish the match", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -283,7 +285,7 @@ public class LiveMatchService(
     /// <param name="scorerId">Null for an opponent goal — we do not track their players.</param>
     public Task<Result<GameGoal>> LogGoalAsync(
         int gameId, int? scorerId, int? assisterId, bool isOwnGoal, bool isOpponentGoal) =>
-        ServiceOperation.RunAsync(logger, "log the goal", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "log the goal", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -321,7 +323,7 @@ public class LiveMatchService(
 
     /// <summary>Removes a goal and pulls the scoreline back in step with what is left.</summary>
     public Task<Result> RemoveGoalAsync(int gameId, int goalId) =>
-        ServiceOperation.RunAsync(logger, "remove the goal", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "remove the goal", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -339,7 +341,7 @@ public class LiveMatchService(
     /// is recorded with the minute it happened.
     /// </summary>
     public Task<Result<GameSubstitution>> SubstituteAsync(int gameId, int playerOffId, int playerOnId) =>
-        ServiceOperation.RunAsync(logger, "make the substitution", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "make the substitution", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -412,7 +414,7 @@ public class LiveMatchService(
     /// older swap would fight every change made on that slot since.
     /// </summary>
     public Task<Result> RemoveSubstitutionAsync(int subId) =>
-        ServiceOperation.RunAsync(logger, "undo the substitution", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "undo the substitution", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 

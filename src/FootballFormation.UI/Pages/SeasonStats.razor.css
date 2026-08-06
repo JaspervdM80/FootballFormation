@@ -1,40 +1,5 @@
-/* Summary tiles — same look as the player-stats page */
-.stat-tiles {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-}
-
-.stat-tile {
-    background: var(--surface-card);
-    border: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
-    border-radius: 14px;
-    padding: 16px 12px;
-    text-align: center;
-    box-shadow: var(--mud-elevation-2, 0 2px 4px rgba(0, 0, 0, 0.06));
-}
-
-.stat-value {
-    font-size: 1.9rem;
-    font-weight: 800;
-    line-height: 1;
-    color: var(--club-primary-bright);
-}
-
-.stat-label {
-    margin-top: 6px;
-    font-size: 0.62rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: color-mix(in srgb, var(--ink) 62%, transparent);
-}
-
-.stat-sub {
-    margin-top: 3px;
-    font-size: 0.65rem;
-    color: color-mix(in srgb, var(--ink) 55%, transparent);
-}
+/* .stat-tiles, .stat-tile, .stat-value, .stat-label, .stat-sub, .stats-layout, .position-track,
+   .position-fill and .g-num live in app.css — shared with /players/{id}/stats. */
 
 /* Form guide */
 .form-row {
@@ -48,7 +13,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: color-mix(in srgb, var(--club-primary-bright) 60%, transparent);
+    color: var(--club-primary-bright);
 }
 
 .form-pill {
@@ -66,14 +31,6 @@
 .form-pill.win { background: var(--color-success-bright); }
 .form-pill.draw { background: color-mix(in srgb, var(--ink) 38%, transparent); }
 .form-pill.loss { background: var(--color-danger-bright); }
-
-/* Two-column body */
-.stats-layout {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    align-items: start;
-}
 
 /* Ranked list (top scorers) */
 .rank-list {
@@ -106,7 +63,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: color-mix(in srgb, var(--ink) 55%, transparent);
+    color: var(--ink-muted);
 }
 
 .r-name {
@@ -135,18 +92,6 @@
     font-size: 0.7rem;
     font-weight: 700;
     flex-shrink: 0;
-}
-
-.g-num {
-    text-align: center;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: color-mix(in srgb, var(--ink) 72%, transparent);
-}
-
-.g-num.g-hit {
-    color: var(--club-primary-bright);
-    font-weight: 800;
 }
 
 /* Playing-time fairness bars */
@@ -184,34 +129,11 @@
 
 .pt-meta {
     font-size: 0.7rem;
-    color: color-mix(in srgb, var(--ink) 60%, transparent);
+    color: var(--ink-muted);
     white-space: nowrap;
 }
 
-.position-track {
-    height: 8px;
-    border-radius: 6px;
-    background: color-mix(in srgb, var(--ink) 6%, transparent);
-    overflow: hidden;
-}
-
-.position-fill {
-    height: 100%;
-    border-radius: 6px;
-    background: var(--gradient-primary);
-    min-width: 2px;
-}
-
 .empty-note {
-    color: color-mix(in srgb, var(--ink) 45%, transparent);
+    color: var(--ink-muted);
 }
 
-@media (max-width: 760px) {
-    .stat-tiles {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .stats-layout {
-        grid-template-columns: 1fr;
-    }
-}

@@ -1,11 +1,15 @@
 using FootballFormation.Core.Data;
 using FootballFormation.Core.Models;
+using FootballFormation.Core.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace FootballFormation.Core.Services;
 
-public class PlayerService(IDbContextFactory<AppDbContext> dbFactory, ILogger<PlayerService> logger)
+public class PlayerService(
+    IDbContextFactory<AppDbContext> dbFactory,
+    ICurrentUser currentUser,
+    ILogger<PlayerService> logger)
 {
     /// <summary>Everyone on file, in shirt order. Guest status is per season now, so the
     /// guests-last ordering moved to <see cref="SeasonSquad"/>, which is the only thing that can
@@ -16,6 +20,7 @@ public class PlayerService(IDbContextFactory<AppDbContext> dbFactory, ILogger<Pl
             await using var db = await dbFactory.CreateDbContextAsync();
 
             var players = await db.Players
+                .AsNoTracking()
                 .OrderBy(p => p.ShirtNumber ?? int.MaxValue)
                 .ThenBy(p => p.FirstName)
                 .ThenBy(p => p.Surname)
@@ -41,7 +46,7 @@ public class PlayerService(IDbContextFactory<AppDbContext> dbFactory, ILogger<Pl
         });
 
     public Task<Result<Player>> CreateAsync(Player player) =>
-        ServiceOperation.RunAsync(logger, "create player", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "create player", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -53,7 +58,7 @@ public class PlayerService(IDbContextFactory<AppDbContext> dbFactory, ILogger<Pl
         });
 
     public Task<Result> UpdateAsync(Player player) =>
-        ServiceOperation.RunAsync(logger, "update player", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "update player", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -65,7 +70,7 @@ public class PlayerService(IDbContextFactory<AppDbContext> dbFactory, ILogger<Pl
         });
 
     public Task<Result> DeleteAsync(int id) =>
-        ServiceOperation.RunAsync(logger, "delete player", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "delete player", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 

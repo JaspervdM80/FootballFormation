@@ -8,10 +8,15 @@ owns the exception handling, the error log and the user-facing message, which is
 `"Failed to {action}"` built from the action phrase passed in:
 
 ```csharp
-// Service — expression-bodied, returns Task<...> directly (RunAsync awaits the lambda)
+// Service — expression-bodied, returns Task<...> directly (RunAsync awaits the lambda).
+// RunAdminAsync rather than RunAsync because this one writes: it refuses a non-admin caller
+// before the lambda runs. Reads use plain RunAsync and stay open to everyone.
 public Task<Result<Player>> CreateAsync(Player player) =>
-    ServiceOperation.RunAsync(logger, "create player", async () =>
+    ServiceOperation.RunAdminAsync(currentUser, logger, "create player", async () =>
     {
+        // Its own context, every time — the factory, never an injected AppDbContext. See below.
+        await using var db = await dbFactory.CreateDbContextAsync();
+
         db.Players.Add(player);
         await db.SaveChangesAsync();
 
@@ -24,13 +29,15 @@ Expected misses (not found) still return `Result.Failure(...)` explicitly from i
 after a `LogWarning`. Only unexpected exceptions fall through to the wrapper.
 
 ```csharp
-// UI consumer — via the UiFeedback extensions, never a hand-rolled if/else
+// UI consumer — via the UiFeedback extensions, never a hand-rolled if/else.
+// The localizer is the first argument: the service states its error in English, and that English
+// text is the resource key, so Report needs L to translate it.
 var result = await PlayerService.CreateAsync(player);
-Snackbar.Report(result, $"Player {player.DisplayName} added");
+Snackbar.Report(L, result, L["{0} added to the squad", player.DisplayName]);
 
 // Loads: report only failures
 var players = await PlayerService.GetAllAsync();
-_players = Snackbar.ReportFailure(players) ? players.Value : [];
+_players = Snackbar.ReportFailure(L, players) ? players.Value : [];
 ```
 
 **Trade-off:** the error log for an exception records the action phrase (`"Failed to {Action}"`)
@@ -130,21 +137,42 @@ Two related rules for anything that navigates:
   straight back into it.
 
 ## Service Registration
-All services registered as `Scoped` in Program.cs:
+Scoped, except the two that must outlive a circuit:
 ```csharp
+builder.Services.AddSingleton(TimeProvider.System);        // the clock, injected so tests can drive it
+builder.Services.AddSingleton<LiveMatchNotifier>();        // fans live changes to every open circuit
+
+builder.Services.AddScoped<ICurrentUser, CircuitCurrentUser>();  // who is asking; the write guard
 builder.Services.AddScoped<PlayerService>();
 builder.Services.AddScoped<SeasonService>();
 builder.Services.AddScoped<SeasonSquadService>();
 builder.Services.AddScoped<GameService>();
+builder.Services.AddScoped<LiveMatchService>();
 builder.Services.AddScoped<MatchPreferencesService>();
-builder.Services.AddScoped<SeasonState>();   // UI state, see "UI state services"
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<SeasonState>();       // UI state, see "UI state services"
+builder.Services.AddScoped<NavigationTrail>();   // where this tab has been, for the back arrow
 ```
 
-`GameService` injects `SeasonService` so that "every game has a season" is an invariant no caller
-can bypass — the only service-to-service dependency in the app. `SeasonSquadService` deliberately
-takes none: it queries `db.Seasons` directly, keeping that edge unique. It is separate from
-`SeasonService` because the two own different things — the season lifecycle and its `IsCurrent`
-invariant, versus squad membership.
+The two singletons are the deliberate exceptions. `LiveMatchNotifier` has to be shared across
+circuits or a substitution on the sideline would never reach the parents watching; `TimeProvider`
+is stateless.
+
+Service-to-service edges are kept few and named: `GameService` injects `SeasonService` so that
+"every game has a season" is an invariant no caller can bypass, and `LiveMatchService` injects
+`GameService` so goal storage has one implementation. `SeasonSquadService` deliberately takes
+none — it queries `db.Seasons` directly. It is separate from `SeasonService` because the two own
+different things: the season lifecycle and its `IsCurrent` invariant, versus squad membership.
+
+## Authorization is at the service boundary, not only in the markup
+Every mutating service method goes through `ServiceOperation.RunAdminAsync`, which asks
+`ICurrentUser` and refuses before running. The UI already hides those controls behind
+`<AuthorizeView Roles="@AppRoles.Admin">` and an unrendered handler has no id to dispatch to — but
+that is enforcement in the render tree only, and it stops holding the moment a service is reached
+some other way. Reads stay open: the squad, fixtures and statistics are public.
+
+`CircuitCurrentUser` answers false for an account still on its seeded password, so the first-login
+gate is a real restriction rather than a redirect that could be navigated around.
 
 ## Blazor Rendering
 - Entire app is Interactive Server (set on `<Routes>` and `<HeadOutlet>` in App.razor)

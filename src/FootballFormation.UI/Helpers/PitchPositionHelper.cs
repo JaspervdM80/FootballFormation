@@ -60,24 +60,4 @@ public static class PitchPositionHelper
         _ => one[0]
     };
 
-    /// <summary>
-    /// Computes coordinates for each slot in a formation, handling duplicate positions.
-    /// Returns an array parallel to the formation's DefaultPositions().
-    /// </summary>
-    public static (double Left, double Top)[] GetFormationCoordinates(PlayerPosition[] positions)
-    {
-        var result = new (double Left, double Top)[positions.Length];
-        for (int i = 0; i < positions.Length; i++)
-        {
-            var pos = positions[i];
-            var count = positions.Count(p => p == pos);
-            var index = 0;
-            for (int j = 0; j < i; j++)
-            {
-                if (positions[j] == pos) index++;
-            }
-            result[i] = GetCoordinates(pos, index, count);
-        }
-        return result;
-    }
 }

@@ -25,4 +25,12 @@ public class AppUser
     /// instead of staying valid for the rest of its eight hours.
     /// </summary>
     public string SecurityStamp { get; set; } = Guid.NewGuid().ToString("N");
+
+    /// <summary>
+    /// Set on the account a fresh install seeds, whose password is public knowledge. While it is
+    /// true the app lets the person sign in but nothing else — every route sends them to /settings
+    /// until they pick their own password. Cleared by
+    /// <see cref="Services.UserService.ChangePasswordAsync"/>.
+    /// </summary>
+    public bool MustChangePassword { get; set; }
 }

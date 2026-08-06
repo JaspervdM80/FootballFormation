@@ -7,6 +7,7 @@ using FootballFormation.Core.Models;
 using FootballFormation.Core.Security;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Navigation;
+using FootballFormation.UI.Security;
 using FootballFormation.UI.State;
 using FootballFormation.Web.Components;
 using Microsoft.AspNetCore.Authentication;
@@ -71,6 +72,10 @@ try
     // The match clock. Injected rather than read from DateTime.UtcNow so the live-match timing
     // logic is deterministic under test — see LiveMatchService.
     builder.Services.AddSingleton(TimeProvider.System);
+
+    // Who the services think is calling. Scoped, so it answers for the circuit that made the call.
+    // Registered before them because every write path depends on it — see ICurrentUser.
+    builder.Services.AddScoped<ICurrentUser, CircuitCurrentUser>();
 
     builder.Services.AddScoped<PlayerService>();
     builder.Services.AddScoped<SeasonService>();
@@ -313,6 +318,10 @@ static ClaimsPrincipal PrincipalFor(AppUser user)
         new(AppClaims.DisplayName, user.DisplayName),
         new(AppClaims.SecurityStamp, user.SecurityStamp)
     };
+
+    // Only when set, so the common case carries no extra claim at all.
+    if (user.MustChangePassword)
+        claims.Add(new Claim(AppClaims.MustChangePassword, "true"));
 
     return new ClaimsPrincipal(
         new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));

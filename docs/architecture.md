@@ -4,7 +4,7 @@
 ```
 Models/
   Player.cs              — Player entity (FirstName, Surname, ShirtNumber, PreferredPosition, AlternativePositions)
-  Position.cs            — PlayerPosition enum (32 values), PositionCategory enum, extensions
+  Position.cs            — PlayerPosition enum (16 values), PositionCategory enum, extensions
   FormationType.cs       — FormationType enum (12 formations), DisplayName(), DefaultPositions()
   Season.cs              — Season entity (1 Jul – 30 Jun windows), Contains/ShortName/CreateFor helpers
   SeasonSquadMember.cs   — Per-season squad membership, with the per-season IsGuest flag
@@ -20,11 +20,17 @@ Models/
   FormationSlots.cs      — Formation slots and lineup→slot assignment, shared by every pitch
 Security/
   AppRoles.cs            — AppRoles.Admin (role claim constant) and AppClaims (uid, display_name,
-                           security_stamp) — the claim names Program.cs mints and the UI reads
+                           security_stamp, must_change_password) — the claim names Program.cs mints
+                           and the UI reads
+  ICurrentUser.cs        — Who is asking, as far as a Core service is concerned. The seam that lets
+                           every write path refuse a non-admin (ServiceOperation.RunAdminAsync)
 Data/
   AppDbContext.cs         — EF Core context; DbSets only, mapping lives in Configurations/
   Configurations/         — One IEntityTypeConfiguration per entity, applied by assembly scan
     CsvListConverters.cs  — List<int>/List<TEnum> ↔ comma-separated text, with the ValueComparer
+  DatabasePathHelper.cs   — Resolves the SQLite path: APP_DATA_DIR, then WEBSITE_INSTANCE_ID, then LOCALAPPDATA
+  DesignTimeDbContextFactory.cs — Lets dotnet-ef build the context from Core alone, so migration
+                           commands need no --startup-project
 Reporting/
   GameMinutesReport.cs    — Playing time for one game: real timings when run live, plan otherwise
   PlayingTimeReport.cs    — The playing-time table (PlayingTimeRow, PeriodDetail, PeriodPlayStatus)
@@ -32,16 +38,19 @@ Reporting/
   SeasonStatsReport.cs    — Team totals + form for /stats (SeasonStats, GameResult)
   PlayerStatsReport.cs    — Per-player aggregates (PlayerStats, PositionStat, PlayerGameStat)
   PositionFitHelper.cs    — 5-tier position fit: Preferred, NaturalFit, Alternative, Compatible, OutOfPosition
+  MatchClockReport.cs     — Derives the live clock and period state from the stored anchor + banked total
+  PlannedChangesReport.cs — What the next period changes versus the one on the pitch
 Services/
   ServiceOperation.cs     — Shared try/catch + error logging wrapper for all service methods
   PlayerService.cs        — CRUD, returns Result<T>
-  SeasonService.cs        — CRUD + GetCurrent/SetCurrent/FindForDate/GetOrCreateForDate/EnsureCurrentSeason
+  SeasonService.cs        — CRUD + SetCurrent/FindForDate/GetOrCreateForDate/EnsureCurrentSeason/CloseSeasonGaps
   SeasonSquadService.cs   — Squad membership: get/add/remove/set-guest/copy-forward, with guards
   GameService.cs          — CRUD + SavePeriodLineupAsync, optional seasonId filter, returns Result<T>
   LiveMatchService.cs     — Runs a match live: clock, period transitions, goals, substitutions,
-                            GetInProgressAsync for the home-page banner
+                            GetTodaysMatchAsync for the home-page banner (in-progress first,
+                            else today's fixture, upcoming or finished)
   LiveMatchNotifier.cs    — Singleton: fans live match changes out to every open circuit
-  MatchPreferencesService.cs — Per-season prefs: GetAsync(seasonId)/GetCurrentAsync/Save,
+  MatchPreferencesService.cs — Per-season prefs: GetAsync(seasonId)/SaveAsync,
                             GetNextMatchDateAsync(seasonId)
   UserService.cs          — Accounts + credentials: CRUD returning Result<T>, plus
                             ValidateCredentialsAsync/FindForSessionAsync/ChangePasswordAsync, which
@@ -71,6 +80,8 @@ Pages/
   UserDialog.razor(.cs)       — Dialog: name, login, role, password — also the reset-password form
                                 (PasswordOnly), since the fields are the same
   Home.razor(.cs)(.css)       — / — Landing page, plus the live-match banner when one is in progress
+  FormationOverview.razor(.cs)(.css) — /games/{id}/overview — Read-only per-period pitches, shareable
+                                and screenshottable (html2canvas)
 Components/
   Pitch.razor(.cs)(.css)            — The pitch. Read-only by default; Draggable for the builder,
                                       OnPlayerClicked for the live screen, Size for chip scale
@@ -83,6 +94,8 @@ Components/
   PageHeader.razor(.cs)             — Every page's title block: heading, subtitle, back arrow, actions
   BackButton.razor(.cs)             — The back arrow; follows the trail, names its destination
   ConfirmDialog.razor(.cs)          — Reusable yes/no confirmation dialog
+  InstallBanner.razor(.cs)          — The "add to home screen" prompt, rendered by MainLayout
+  RedirectToLogin.razor             — Routes NotAuthorized to /login (see Routes.razor)
 Navigation/
   AppRoutes.cs                — Every route: constants and builders. Never interpolate a URL at a call site
   AppNav.cs                   — What each route is called, the menu, and which routes the season filters
@@ -118,8 +131,17 @@ season, and a report may walk games spanning several of them.
 Program.cs                — Entry point: Serilog, EF Core, service registration, auto-migration
 Components/
   App.razor               — Root component (InteractiveServer on Routes + HeadOutlet), PWA meta tags
-  Routes.razor             — Router discovering pages from both Web and UI assemblies
+  Routes.razor            — Router discovering pages from both Web and UI assemblies
+  Pages/Login.razor       — The sign-in form (posts to /auth/login)
+  Pages/Error.razor       — Unhandled-error page, localized
+  Pages/NotFound.razor    — /not-found, localized
 wwwroot/
+  theme.css               — Semantic tokens, the muted-ink ramp and the gradients (see docs/theming.md)
+  app.css                 — Global styles: MudBlazor overrides, badges, .action-btn, .stacked-table,
+                            the responsive table layouts and the nav breakpoints
+  fonts/                  — Self-hosted DM Sans (no render-blocking Google Fonts request)
+  js/screenshot.js        — Renders the overview to a PNG via the bundled html2canvas
+  js/vendor/html2canvas.min.js
   manifest.webmanifest    — PWA manifest (installable on iOS/Android via Add to Home Screen)
   service-worker.js       — Pass-through SW required for Android installability (no offline caching)
   icons/                  — GJS club logo as app icons: 180 (apple-touch) / 192 / 512 / 512-maskable

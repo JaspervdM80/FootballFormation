@@ -1,3 +1,4 @@
+using FootballFormation.Core.Security;
 using Microsoft.Extensions.Logging;
 
 namespace FootballFormation.Core.Services;
@@ -42,4 +43,56 @@ public static class ServiceOperation
             return Result.Failure<T>(UnexpectedFailureKey, action);
         }
     }
+
+    /// <summary>
+    /// The same wrapper for an operation that writes: refuses before running when the caller is
+    /// not an admin. Every mutating service method goes through this rather than
+    /// <see cref="RunAsync(ILogger, string, Func{Task{Result}})"/>, so the check is a property of
+    /// the shape instead of something each method has to remember.
+    /// </summary>
+    internal static async Task<Result> RunAdminAsync(
+        ICurrentUser currentUser, ILogger logger, string action, Func<Task<Result>> operation)
+    {
+        if (!await IsAllowedAsync(currentUser, logger, action))
+            return Result.Failure(NotAllowedKey, action);
+
+        return await RunAsync(logger, action, operation);
+    }
+
+    /// <inheritdoc cref="RunAdminAsync(ICurrentUser, ILogger, string, Func{Task{Result}})"/>
+    internal static async Task<Result<T>> RunAdminAsync<T>(
+        ICurrentUser currentUser, ILogger logger, string action, Func<Task<Result<T>>> operation)
+    {
+        if (!await IsAllowedAsync(currentUser, logger, action))
+            return Result.Failure<T>(NotAllowedKey, action);
+
+        return await RunAsync(logger, action, operation);
+    }
+
+    /// <summary>
+    /// A failed authorization check counts as a refusal, not an error: if the principal cannot be
+    /// resolved at all, the answer is still "no".
+    /// </summary>
+    private static async Task<bool> IsAllowedAsync(ICurrentUser currentUser, ILogger logger, string action)
+    {
+        bool allowed;
+        try
+        {
+            allowed = await currentUser.IsAdminAsync();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Could not determine whether the caller may {Action}", action);
+            return false;
+        }
+
+        if (!allowed) logger.LogWarning("Refused an unauthorized attempt to {Action}", action);
+        return allowed;
+    }
+
+    /// <summary>
+    /// Its argument is an English action phrase, so like <see cref="UnexpectedFailureKey"/> it
+    /// needs translating rather than passing through as data — see <c>UiFeedback.Translate</c>.
+    /// </summary>
+    public const string NotAllowedKey = "You are not signed in to {0}";
 }

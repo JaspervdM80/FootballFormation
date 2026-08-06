@@ -95,6 +95,7 @@ always had, and keeps games referencing a since-departed player rendering sensib
 | IsHomeGame | bool | Default true. Venue only — score fields are unaffected |
 | ScoreHome / ScoreAway | int? | **Our** score / **opponent** score, regardless of venue |
 | Periods | List\<GamePeriod\> | Auto-created on game creation |
+| Goals | List\<GameGoal\> | Cascade delete |
 | UnavailablePlayerIds | List\<int\> | Squad players opted **out**. Comma-separated |
 | GuestPlayerIds | List\<int\> | Guests **of this game's season**, opted in. Comma-separated |
 | MatchState | MatchState | NotStarted / InProgress / Finished. Driven by the live match screen |
@@ -148,8 +149,12 @@ each. `PlayerStatsReport.Build` and `SeasonStatsReport.Build` both take `SeasonS
 | Id | int | PK, auto-generated |
 | GamePeriodId | int | FK → GamePeriod (cascade delete) |
 | PlayerId | int | FK → Player (cascade delete) |
-| Position | PlayerPosition | Slot on the pitch |
+| Position | PlayerPosition | Which role — not which slot; see SlotIndex |
+| SlotIndex | int? | **The source of truth for pitch placement.** Which of the formation's slots this is, so two CBs stay distinguishable. Null for a substitute |
 | IsSubstitute | bool | True = bench player |
+
+`(GamePeriodId, PlayerId)` is unique: a player appears once per period, on the pitch or on the
+bench, never both and never twice.
 
 ## GameGoal
 | Property | Type | Notes |
@@ -228,6 +233,7 @@ clamp, adding the first fixture of next season proposed a date in the season we 
 | PasswordHash | string | PBKDF2, via `PasswordHasher<AppUser>` — never a plaintext column |
 | Role | UserRole | Stored as int. Written into the auth cookie as `Role.ToString()` |
 | SecurityStamp | string(64) | Guid "N". Changes whenever the account's authority does |
+| MustChangePassword | bool | Set on the account a fresh install seeds, whose password is public knowledge. While true the session can sign in and nothing else — every route sends it to `/settings`, and `ICurrentUser.IsAdminAsync()` answers false, so the services refuse it too. Cleared by `ChangePasswordAsync` |
 
 Standalone: no foreign keys either way, so deleting a user takes nothing with it and no other
 entity can make one undeletable.
@@ -252,9 +258,14 @@ runs on every startup and does nothing once any account exists, so a changed pas
 
 ## Key Enums
 - **UserRole** (1): Admin. See AppUser above — the member name *is* the claim value
-- **PlayerPosition** (32 values): GK, LB, LCB, CB, RCB, RB, LWB, RWB, DEF, LCDM, RCDM, CDM, LCM, CM, RCM, LM, RM, LCAM, RCAM, CAM, MID, LW, RW, W, LF, RF, CF, LST, RST, ST, ATT
+- **PlayerPosition** (16 values): GK, LB, CB, RB, DEF, CDM, CM, LM, RM, CAM, MID, LW, RW, W, ST, ATT
 - **FormationType** (12): F442, F433, F4231, F352, F343, F4141, F4411, F532, F541, F4321, F3421, F3511
-- Dual-slot variants: LCDM/RCDM for 4-2-3-1, LST/RST for 4-4-2, LCAM/RCAM for dual-CAM formations
+- **Duplicate positions in a formation are normal.** `F442.DefaultPositions()` returns two CBs and
+  two STs, and that is fine: which slot a player occupies comes from
+  `GamePlayerPosition.SlotIndex` (ordered by `FormationSlots.OrdinalOf`), not from the enum member.
+  The side-specific members that used to exist for this — LCB, RCB, LWB, RWB, LCDM, RCDM, LCM, RCM,
+  LCAM, RCAM, LF, RF, CF, LST, RST — were deleted by the `ConsolidatePlayerPositions` and
+  `ConsolidatePositionsRound2` migrations. Do not reintroduce them.
 
 ## Relationships
 ```

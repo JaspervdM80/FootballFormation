@@ -45,11 +45,14 @@
 ## Position Fit Colors (5 tiers)
 | Tier | CSS class | Color | Example |
 |---|---|---|---|
-| Preferred | chip-preferred | Dark green (#1b5e20) | CB in CB |
-| NaturalFit | chip-natural | Light green (#388e3c) | W in LW, DEF in CB |
-| Alternative | chip-alternative | Blue (#1565c0) | Listed CAM alt, placed in CAM |
-| Compatible | chip-compatible | Orange (#e65100) | Alt is CM, placed in LCM |
-| OutOfPosition | chip-out-of-position | Red (#b71c1c) | ST in CB |
+| Preferred | fit-preferred | Dark green (#1b5e20) | CB in CB |
+| NaturalFit | fit-natural | Light green (#388e3c) | W in LW, DEF in CB |
+| Alternative | fit-alternative | Blue (#1565c0) | Listed CAM alt, placed in CAM |
+| Compatible | fit-compatible | Orange (#e65100) | Alt is CM, placed in CM |
+| OutOfPosition | fit-out-of-position | Red (#b71c1c) | ST in CB |
+
+The classes are applied by `Pitch.razor.cs` and defined in `Pitch.razor.css`; the hex values come
+from the `--fit-*` tokens in `theme.css`.
 
 Logic in `Core/Reporting/PositionFitHelper.cs`. Broad positions (W, DEF, MID, ATT) naturally cover all their specific variants.
 
@@ -117,9 +120,11 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   Testing the score by itself would hide the Live button on the very match being played.
 
 ## Live banner on the home page
-`Home.razor` shows `.home-live-banner` whenever `LiveMatchService.GetInProgressAsync` finds a match
-being played — opponent, live score, and a tap through to `/games/{id}/live`. It is visible to
-everyone, since the people most likely to land on the home page mid-match are spectators.
+`Home.razor` calls `LiveMatchService.GetTodaysMatchAsync`, which returns a match in progress if
+there is one and otherwise today's fixture — so the banner has three forms: `.home-live-banner`
+for a match being played (opponent, live score, tap through to `/games/{id}/live`),
+`home-banner-upcoming` before kick-off and `home-banner-done` after full time. It is visible to
+everyone, since the people most likely to land on the home page on match day are spectators.
 
 It subscribes to **every** `LiveMatchNotifier.Changed` event rather than filtering by game id, the
 way the live screen does: the banner has no game of its own until it loads one, so a match being

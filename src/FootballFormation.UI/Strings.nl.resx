@@ -21,6 +21,16 @@
   <data name="Games" xml:space="preserve"><value>Wedstrijden</value></data>
   <data name="Preferences" xml:space="preserve"><value>Voorkeuren</value></data>
   <data name="Logout" xml:space="preserve"><value>Uitloggen</value></data>
+
+  <!-- Error and not-found pages -->
+  <data name="Page Not Found" xml:space="preserve"><value>Pagina niet gevonden</value></data>
+  <data name="Sorry, the content you are looking for does not exist." xml:space="preserve"><value>Sorry, deze pagina bestaat niet.</value></data>
+  <data name="Something went wrong" xml:space="preserve"><value>Er is iets misgegaan</value></data>
+  <data name="The page could not be loaded. Try again, and if it keeps happening let the administrator know." xml:space="preserve"><value>De pagina kon niet worden geladen. Probeer het opnieuw, en laat het de beheerder weten als het blijft gebeuren.</value></data>
+  <data name="Reference" xml:space="preserve"><value>Referentie</value></data>
+  <data name="Something went wrong. Reload the page to continue." xml:space="preserve"><value>Er is iets misgegaan. Herlaad de pagina om verder te gaan.</value></data>
+  <data name="Reload" xml:space="preserve"><value>Herladen</value></data>
+  <data name="Screenshot failed — try using your device's screenshot instead" xml:space="preserve"><value>Schermafbeelding mislukt — gebruik de schermafdruk van je toestel</value></data>
   <!-- {0} is the name of the page the back arrow returns to — see AppNav.PageNameKey -->
   <data name="Back to {0}" xml:space="preserve"><value>Terug naar {0}</value></data>
 
@@ -47,7 +57,6 @@
   <data name="Preferred Position" xml:space="preserve"><value>Voorkeurspositie</value></data>
   <data name="Alternative Positions" xml:space="preserve"><value>Alternatieve posities</value></data>
   <data name="GUEST" xml:space="preserve"><value>GAST</value></data>
-  <data name="Player {0} added" xml:space="preserve"><value>Speler {0} toegevoegd</value></data>
   <data name="Player {0} updated" xml:space="preserve"><value>Speler {0} bijgewerkt</value></data>
   <data name="Player {0} deleted" xml:space="preserve"><value>Speler {0} verwijderd</value></data>
   <data name="Delete Player" xml:space="preserve"><value>Speler verwijderen</value></data>
@@ -229,7 +238,6 @@
   <data name="Loss" xml:space="preserve"><value>Verlies</value></data>
   <data name="Top scorers" xml:space="preserve"><value>Topscorers</value></data>
   <data name="Playing time" xml:space="preserve"><value>Speeltijd</value></data>
-  <data name="{0} games" xml:space="preserve"><value>{0} wed.</value></data>
   <data name="Goalkeeper minutes" xml:space="preserve"><value>Keeperminuten</value></data>
   <data name="No goalkeeper minutes yet." xml:space="preserve"><value>Nog geen keeperminuten.</value></data>
   <data name="{0}% of {1}'" xml:space="preserve"><value>{0}% van {1}'</value></data>
@@ -259,7 +267,6 @@
   <data name="Please select a player" xml:space="preserve"><value>Kies een speler</value></data>
   <data name="More" xml:space="preserve"><value>Meer</value></data>
   <data name="This date starts a new season — its squad is empty until you fill it in on the squad page." xml:space="preserve"><value>Deze datum start een nieuw seizoen — de selectie is leeg tot je die op de selectiepagina invult.</value></data>
-  <data name="Are you sure you want to delete the season {0}, including its {1}-player squad?" xml:space="preserve"><value>Weet je zeker dat je het seizoen {0} en de bijbehorende selectie van {1} spelers wilt verwijderen?</value></data>
 
   <!-- Seasons (picker, management, game assignment) -->
   <data name="Seasons" xml:space="preserve"><value>Seizoenen</value></data>
@@ -336,6 +343,7 @@
   <data name="Please fill in all password fields" xml:space="preserve"><value>Vul alle wachtwoordvelden in</value></data>
   <data name="New passwords do not match" xml:space="preserve"><value>De nieuwe wachtwoorden komen niet overeen</value></data>
   <data name="Password changed successfully!" xml:space="preserve"><value>Wachtwoord gewijzigd!</value></data>
+  <data name="This account still uses the password it was created with. Choose your own below — until you do, the rest of the app stays locked." xml:space="preserve"><value>Dit account gebruikt nog het wachtwoord waarmee het is aangemaakt. Kies hieronder je eigen wachtwoord — tot die tijd blijft de rest van de app op slot.</value></data>
   <data name="Current password is incorrect" xml:space="preserve"><value>Huidig wachtwoord is onjuist</value></data>
   <data name="New password must be at least {0} characters" xml:space="preserve"><value>Nieuw wachtwoord moet minimaal {0} tekens lang zijn</value></data>
   <data name="New password must be different from the current one" xml:space="preserve"><value>Nieuw wachtwoord moet verschillen van het huidige</value></data>
@@ -397,6 +405,7 @@
 
   <!-- Service errors — the message templates Core returns in Result.Error -->
   <data name="Failed to {0}" xml:space="preserve"><value>Actie mislukt: {0}</value></data>
+  <data name="You are not signed in to {0}" xml:space="preserve"><value>Je bent niet aangemeld om te {0}</value></data>
   <data name="A goal for us needs a scorer" xml:space="preserve"><value>Een doelpunt voor ons heeft een maker nodig</value></data>
   <data name="A player cannot be substituted for themselves" xml:space="preserve"><value>Een speler kan niet voor zichzelf gewisseld worden</value></data>
   <data name="Cannot copy a squad onto itself" xml:space="preserve"><value>Een selectie kan niet naar zichzelf gekopieerd worden</value></data>

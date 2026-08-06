@@ -10,9 +10,26 @@
 
    Derived shades are made where they are used via
    color-mix(in srgb, var(--token) N%, transparent) instead of separate
-   tokens per alpha level. Text derives from --ink the same way. */
+   tokens per alpha level. Muted *text* is the exception — see the ink ramp below. */
 
 :root {
+    /* --- Muted text ---
+       Secondary text used to be written inline as color-mix(in srgb, var(--ink) 45%, transparent)
+       and friends, with the percentages inherited from the old dark theme. On the light theme
+       those mixes fail WCAG: against white, 45% ink measured about 2.8:1, 35% about 2.1:1 and 25%
+       about 1.6:1, where AA wants 4.5:1 for body text and 3:1 for large or secondary text.
+
+       Named tokens instead of repeated percentages, so the next adjustment is one edit rather than
+       a sweep of thirty rules. Ratios computed for #182b1f over #ffffff:
+         --ink-muted   4.8:1  clears AA for body text — dates, subtitles, captions, table headers
+         --ink-subtle  3.9:1  clears AA for large/secondary text — empty states, quieter labels
+         --ink-faint   3.3:1  clears AA for non-text contrast — icons, dividers, placeholder glyphs
+       Small text carrying meaning uses --ink-muted. Recompute these if --ink or --surface-page
+       changes for another club; the percentages are tuned to this pair, not universal. */
+    --ink-muted: color-mix(in srgb, var(--ink) 65%, transparent);
+    --ink-subtle: color-mix(in srgb, var(--ink) 58%, transparent);
+    --ink-faint: color-mix(in srgb, var(--ink) 52%, transparent);
+
     /* Semantic (club-independent, but centralized all the same) */
     --color-guest: #a855f7;
     --color-guest-bright: #7e22ce;

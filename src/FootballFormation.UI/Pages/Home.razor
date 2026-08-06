@@ -43,7 +43,7 @@
             <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Style="color: var(--club-primary-bright);" />
             <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Selection"]</MudText>
             <AuthorizeView Roles="@AppRoles.Admin">
-                <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
+                <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
                     @L["Add players with their positions and shirt numbers."]
                 </MudText>
             </AuthorizeView>
@@ -56,7 +56,7 @@
             <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Size="Size.Large" Style="color: var(--club-primary-bright);" />
             <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Games & Formations"]</MudText>
             <AuthorizeView Roles="@AppRoles.Admin">
-                <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
+                <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
                     @L["Create games, build formations, and track results."]
                 </MudText>
             </AuthorizeView>
@@ -69,7 +69,7 @@
             <MudIcon Icon="@Icons.Material.Filled.BarChart" Size="Size.Large" Style="color: var(--club-primary-bright);" />
             <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Season stats"]</MudText>
             <AuthorizeView Roles="@AppRoles.Admin">
-                <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
+                <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
                     @L["See the team record, top scorers, and playing time."]
                 </MudText>
             </AuthorizeView>
@@ -84,7 +84,7 @@
                       @onclick="@(() => Open(AppRoutes.Settings))" @onkeydown="@(e => OpenOnKey(e, AppRoutes.Settings))">
                 <MudIcon Icon="@Icons.Material.Filled.Settings" Size="Size.Large" Style="color: var(--club-primary-bright);" />
                 <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Preferences"]</MudText>
-                <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
+                <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
                     @L["Configure match duration, split type, and defaults."]
                 </MudText>
             </MudPaper>

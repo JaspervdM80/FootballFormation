@@ -27,5 +27,12 @@ internal sealed class GamePlayerPositionConfiguration : IEntityTypeConfiguration
             .WithMany()
             .HasForeignKey(pp => pp.PlayerId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // A player appears once per period — on the pitch or on the bench, never both, never twice.
+        // The code has assumed this all along (SavePeriodLineupAsync rebuilds the period from
+        // scratch, FormationBuilder swaps rather than duplicates), but nothing enforced it, so a
+        // lineup written by an older build could break it and PlannedChangesReport had to defend
+        // with TryAdd. The index makes the assumption real.
+        entity.HasIndex(pp => new { pp.GamePeriodId, pp.PlayerId }).IsUnique();
     }
 }

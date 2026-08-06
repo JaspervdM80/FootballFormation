@@ -1,5 +1,6 @@
 using FootballFormation.Core.Data;
 using FootballFormation.Core.Models;
+using FootballFormation.Core.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -15,7 +16,10 @@ namespace FootballFormation.Core.Services;
 /// <c>Result</c> carrying a message would give an attacker something to tell them apart with.
 /// </para>
 /// </summary>
-public class UserService(IDbContextFactory<AppDbContext> dbFactory, ILogger<UserService> logger)
+public class UserService(
+    IDbContextFactory<AppDbContext> dbFactory,
+    ICurrentUser currentUser,
+    ILogger<UserService> logger)
 {
     public const int MinPasswordLength = 8;
 
@@ -64,6 +68,12 @@ public class UserService(IDbContextFactory<AppDbContext> dbFactory, ILogger<User
 
         user.PasswordHash = Hasher.HashPassword(user, newPassword);
         user.SecurityStamp = NewStamp();
+
+        // The seeded account is only held back until its owner picks a password of their own —
+        // this is the moment that happens. The new stamp above signs the gated cookie out, so the
+        // next request re-reads the flag rather than trusting the claim minted at login.
+        user.MustChangePassword = false;
+
         await db.SaveChangesAsync();
 
         logger.LogInformation("Password changed for user {Username}", username);
@@ -88,7 +98,7 @@ public class UserService(IDbContextFactory<AppDbContext> dbFactory, ILogger<User
         });
 
     public Task<Result<AppUser>> CreateAsync(string displayName, string username, string password, UserRole role) =>
-        ServiceOperation.RunAsync(logger, "create the user", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "create the user", async () =>
         {
             var validation = ValidateFields(displayName, username);
             if (validation.IsFailure) return validation.To<AppUser>();
@@ -123,7 +133,7 @@ public class UserService(IDbContextFactory<AppDbContext> dbFactory, ILogger<User
     /// sessions, so it is its own action (<see cref="SetPasswordAsync"/>).
     /// </summary>
     public Task<Result> UpdateAsync(int id, string displayName, string username, UserRole role) =>
-        ServiceOperation.RunAsync(logger, "update the user", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "update the user", async () =>
         {
             var validation = ValidateFields(displayName, username);
             if (validation.IsFailure) return validation;
@@ -160,7 +170,7 @@ public class UserService(IDbContextFactory<AppDbContext> dbFactory, ILogger<User
 
     /// <summary>An admin resetting someone else's password, without knowing the old one.</summary>
     public Task<Result> SetPasswordAsync(int id, string newPassword) =>
-        ServiceOperation.RunAsync(logger, "set the password", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "set the password", async () =>
         {
             if (string.IsNullOrEmpty(newPassword) || newPassword.Length < MinPasswordLength)
                 return Result.Failure(PasswordTooShortKey, MinPasswordLength);
@@ -179,7 +189,7 @@ public class UserService(IDbContextFactory<AppDbContext> dbFactory, ILogger<User
         });
 
     public Task<Result> DeleteAsync(int id) =>
-        ServiceOperation.RunAsync(logger, "delete the user", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "delete the user", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -199,6 +209,12 @@ public class UserService(IDbContextFactory<AppDbContext> dbFactory, ILogger<User
     /// <summary>
     /// Gives a fresh install someone to sign in as. Runs on every startup and does nothing once any
     /// account exists, so a changed password is never overwritten.
+    /// <para>
+    /// The credentials are public knowledge, which on a reachable deployment is a handed-over key.
+    /// So the account is seeded with <see cref="AppUser.MustChangePassword"/> set: it can sign in,
+    /// and it can do nothing else until the password is replaced. That keeps a fresh clone usable
+    /// without leaving a working admin login on the internet.
+    /// </para>
     /// </summary>
     public async Task EnsureAdminSeededAsync()
     {
@@ -210,13 +226,15 @@ public class UserService(IDbContextFactory<AppDbContext> dbFactory, ILogger<User
             DisplayName = "Administrator",
             Username = "admin",
             Role = UserRole.Admin,
-            SecurityStamp = NewStamp()
+            SecurityStamp = NewStamp(),
+            MustChangePassword = true
         };
         admin.PasswordHash = Hasher.HashPassword(admin, "admin");
         db.Users.Add(admin);
         await db.SaveChangesAsync();
 
-        logger.LogWarning("Default admin account created (username: admin, password: admin). Change this immediately!");
+        logger.LogWarning("Default admin account created (username: admin, password: admin). " +
+                          "It cannot do anything until the password is changed on /settings.");
     }
 
     // ---------------------------------------------------------------- internals

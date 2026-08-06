@@ -5,6 +5,12 @@
     position: relative;
     width: 100%;
     aspect-ratio: 3 / 4;
+    /* Makes the pitch its own sizing context so the chips below can be measured in cqw — a
+       percentage of this element's width — rather than in fixed pixels. The pitch is fluid, the
+       chips were not, so on a narrow pitch (two overview columns on a tablet, ~225px each) a 52px
+       chip was a quarter of the width: they collided, and the wide positions like LM at left:8%
+       hung over the edge of the grass. */
+    container-type: inline-size;
     /* Physical, not themed: a pitch is green whatever the club palette is (see docs/theming.md) */
     background: linear-gradient(
         to bottom,
@@ -20,11 +26,13 @@
     border-radius: 6px;
 }
 
+/* The clamps keep the old pixel sizes on a full-width pitch and shrink proportionally below that,
+   with a floor at the smallest size a shirt number is still readable at. */
 .pitch-regular {
-    --chip-size: 52px;
+    --chip-size: clamp(34px, 13cqw, 52px);
     --chip-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
-    --number-size: 0.85rem;
-    --name-size: 0.55rem;
+    --number-size: clamp(0.6rem, 3.2cqw, 0.85rem);
+    --name-size: clamp(0.4rem, 2.1cqw, 0.55rem);
     --name-weight: 600;
     --name-color: rgba(255, 255, 255, 0.9);
     --name-gap: 2px;
@@ -35,10 +43,10 @@
 }
 
 .pitch-compact {
-    --chip-size: 44px;
+    --chip-size: clamp(28px, 15cqw, 44px);
     --chip-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-    --number-size: 0.75rem;
-    --name-size: 0.45rem;
+    --number-size: clamp(0.55rem, 3.6cqw, 0.75rem);
+    --name-size: clamp(0.35rem, 2.2cqw, 0.45rem);
     --name-weight: 500;
     --name-color: rgba(255, 255, 255, 0.85);
     --name-gap: 1px;
@@ -50,8 +58,8 @@
 
 /* Keeps the builder's pitch beside its bench without the page scrolling */
 .pitch-constrained {
-    max-height: 65vh;
-    max-width: calc(65vh * 3 / 4);
+    max-height: 65dvh;
+    max-width: calc(65dvh * 3 / 4);
 }
 
 /* Markings */

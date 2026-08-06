@@ -1,5 +1,6 @@
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Data;
+using FootballFormation.Core.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -8,6 +9,7 @@ namespace FootballFormation.Core.Services;
 public class MatchPreferencesService(
     IDbContextFactory<AppDbContext> dbFactory,
     TimeProvider time,
+    ICurrentUser currentUser,
     ILogger<MatchPreferencesService> logger)
 {
     /// <summary>
@@ -34,23 +36,8 @@ public class MatchPreferencesService(
             return Result.Success(prefs);
         });
 
-    /// <summary>The defaults of the current season, for callers with no season of their own.</summary>
-    public Task<Result<MatchPreferences>> GetCurrentAsync() =>
-        ServiceOperation.RunAsync(logger, "load preferences", async () =>
-        {
-            await using var db = await dbFactory.CreateDbContextAsync();
-
-            var season = await db.Seasons.FirstOrDefaultAsync(s => s.IsCurrent)
-                ?? await db.Seasons.OrderByDescending(s => s.StartDate).FirstOrDefaultAsync();
-
-            if (season is null)
-                return Result.Failure<MatchPreferences>("No seasons defined");
-
-            return await GetAsync(season.Id);
-        });
-
     public Task<Result> SaveAsync(MatchPreferences prefs) =>
-        ServiceOperation.RunAsync(logger, "save preferences", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "save preferences", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 

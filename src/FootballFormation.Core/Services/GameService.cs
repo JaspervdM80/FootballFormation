@@ -1,11 +1,16 @@
 using FootballFormation.Core.Data;
 using FootballFormation.Core.Models;
+using FootballFormation.Core.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace FootballFormation.Core.Services;
 
-public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonService seasons, ILogger<GameService> logger)
+public class GameService(
+    IDbContextFactory<AppDbContext> dbFactory,
+    SeasonService seasons,
+    ICurrentUser currentUser,
+    ILogger<GameService> logger)
 {
     /// <param name="seasonId">Limits the result to one season. Null loads every season.</param>
     public Task<Result<List<Game>>> GetAllAsync(int? seasonId = null) =>
@@ -14,6 +19,7 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
             await using var db = await dbFactory.CreateDbContextAsync();
 
             var games = await db.Games
+                .AsNoTracking()
                 .Where(g => seasonId == null || g.SeasonId == seasonId)
                 .Include(g => g.Periods)
                 .Include(g => g.Goals)
@@ -31,6 +37,7 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
             await using var db = await dbFactory.CreateDbContextAsync();
 
             var games = await db.Games
+                .AsNoTracking()
                 .Where(g => seasonId == null || g.SeasonId == seasonId)
                 .Include(g => g.Periods)
                     .ThenInclude(p => p.PlayerPositions)
@@ -52,11 +59,16 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
+            // Goals are included twice because EF needs a fresh Include to hang a second
+            // ThenInclude off the same navigation. Both must be spelled identically — a filtered
+            // and an unfiltered include of one collection is ambiguous. Callers that care about
+            // order sort for themselves (MatchResult.razor).
             var game = await db.Games
+                .AsNoTracking()
                 .Include(g => g.Periods.OrderBy(p => p.PeriodType))
                     .ThenInclude(p => p.PlayerPositions)
                         .ThenInclude(pp => pp.Player)
-                .Include(g => g.Goals.OrderBy(gl => gl.Minute))
+                .Include(g => g.Goals)
                     .ThenInclude(gl => gl.Scorer)
                 .Include(g => g.Goals)
                     .ThenInclude(gl => gl.Assister)
@@ -72,7 +84,7 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
         });
 
     public Task<Result<Game>> CreateAsync(Game game) =>
-        ServiceOperation.RunAsync(logger, "create game", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "create game", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -101,11 +113,16 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
         });
 
     public Task<Result> UpdateAsync(Game game) =>
-        ServiceOperation.RunAsync(logger, "update game", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "update game", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
-            db.Games.Update(game);
+            // Scalars only. The game handed in came from GetAllWithDetailsAsync, so its Periods,
+            // PlayerPositions, Goals and Substitutions are all populated — and DbSet.Update walks
+            // that whole graph and marks every row Modified. Renaming an opponent would rewrite
+            // the entire lineup history of the match. Setting State on the entry attaches the
+            // root alone and leaves the navigations untouched.
+            db.Entry(game).State = EntityState.Modified;
             await db.SaveChangesAsync();
 
             logger.LogInformation("Updated game vs {Opponent} in season {SeasonId} (ID: {GameId})",
@@ -114,7 +131,7 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
         });
 
     public Task<Result> DeleteAsync(int id) =>
-        ServiceOperation.RunAsync(logger, "delete game", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "delete game", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -133,7 +150,7 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
         });
 
     public Task<Result> SaveScoreAsync(int gameId, int? scoreHome, int? scoreAway) =>
-        ServiceOperation.RunAsync(logger, "save score", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "save score", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -154,7 +171,7 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
         });
 
     public Task<Result<GameGoal>> AddGoalAsync(GameGoal goal) =>
-        ServiceOperation.RunAsync(logger, "add goal", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "add goal", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -173,7 +190,7 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
         });
 
     public Task<Result> RemoveGoalAsync(int goalId) =>
-        ServiceOperation.RunAsync(logger, "remove goal", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "remove goal", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
@@ -192,9 +209,13 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
         });
 
     public Task<Result> SavePeriodLineupAsync(int periodId, List<GamePlayerPosition> positions) =>
-        ServiceOperation.RunAsync(logger, "save lineup", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "save lineup", async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync();
+
+            // Delete-then-insert needs both halves or neither: without the transaction, a failure
+            // on the insert leaves the period with no lineup at all rather than the one it had.
+            await using var tx = await db.Database.BeginTransactionAsync();
 
             var existing = await db.GamePlayerPositions
                 .Where(pp => pp.GamePeriodId == periodId)
@@ -217,6 +238,7 @@ public class GameService(IDbContextFactory<AppDbContext> dbFactory, SeasonServic
             }
 
             await db.SaveChangesAsync();
+            await tx.CommitAsync();
 
             logger.LogInformation("Saved lineup for period {PeriodId}: {Count} positions",
                 periodId, positions.Count);

@@ -31,8 +31,8 @@
 {
     <MudPaper Class="pa-6" Elevation="2" Style="border-radius: 16px; text-align: center;">
         <MudIcon Icon="@Icons.Material.Filled.QueryStats" Size="Size.Large"
-                 Style="color: color-mix(in srgb, var(--ink) 25%, transparent);" />
-        <MudText Typo="Typo.body1" Class="mt-3" Style="color: color-mix(in srgb, var(--ink) 50%, transparent);">
+                 Style="color: var(--ink-faint);" />
+        <MudText Typo="Typo.body1" Class="mt-3" Style="color: var(--ink-muted);">
             @L["No games recorded yet for this player."]
         </MudText>
     </MudPaper>
@@ -84,7 +84,7 @@
         }
         else
         {
-            <MudText Typo="Typo.body2" Style="color: color-mix(in srgb, var(--ink) 35%, transparent);">
+            <MudText Typo="Typo.body2" Style="color: var(--ink-subtle);">
                 @L["No minutes on the pitch yet."]
             </MudText>
         }
