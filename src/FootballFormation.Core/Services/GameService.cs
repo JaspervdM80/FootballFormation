@@ -10,8 +10,16 @@ public class GameService(
     IDbContextFactory<AppDbContext> dbFactory,
     SeasonService seasons,
     ICurrentUser currentUser,
+    TimeProvider time,
     ILogger<GameService> logger)
 {
+    /// <summary>
+    /// The clock for anything this service stamps. Injected rather than read from
+    /// <see cref="DateTime.UtcNow"/> for the same reason <see cref="LiveMatchService"/> does it:
+    /// a timestamp a test cannot control is a timestamp a test cannot assert on.
+    /// </summary>
+    private DateTime UtcNow => time.GetUtcNow().UtcDateTime;
+
     /// <param name="seasonId">Limits the result to one season. Null loads every season.</param>
     public Task<Result<List<Game>>> GetAllAsync(int? seasonId = null) =>
         ServiceOperation.RunAsync(logger, "load games", async () =>
@@ -175,6 +183,13 @@ public class GameService(
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
+            // Stamped here rather than left to the property initializer on the entity. That
+            // initializer reads the wall clock at construction, which meant a live match driven by
+            // a fake clock still recorded real timestamps — the one thing TimeProvider exists to
+            // prevent. The initializer stays as a sensible default for a goal built outside a
+            // service; when a service saves one, the service's clock decides.
+            goal.RecordedAt = UtcNow;
+
             db.GameGoals.Add(goal);
             await db.SaveChangesAsync();
 
@@ -242,6 +257,9 @@ public class GameService(
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
+            // The service's clock, not the entity initializer's — see AddGoalAsync.
+            comment.CreatedAt = UtcNow;
+
             db.GameComments.Add(comment);
             await db.SaveChangesAsync();
 
@@ -268,7 +286,7 @@ public class GameService(
 
             // Publishing on its own is not an edit — the text is unchanged, so the "edited" marker
             // would be a lie.
-            if (comment.Body != body) comment.EditedAt = DateTime.UtcNow;
+            if (comment.Body != body) comment.EditedAt = UtcNow;
 
             comment.Body = body;
             comment.IsPublic = isPublic;

@@ -40,7 +40,7 @@ public abstract class ServiceTestBase : IDisposable
         Players = new PlayerService(DbFactory, CurrentUser, NullLogger<PlayerService>.Instance);
         Seasons = new SeasonService(DbFactory, Time, CurrentUser, NullLogger<SeasonService>.Instance);
         Squads = new SeasonSquadService(DbFactory, CurrentUser, NullLogger<SeasonSquadService>.Instance);
-        Games = new GameService(DbFactory, Seasons, CurrentUser, NullLogger<GameService>.Instance);
+        Games = new GameService(DbFactory, Seasons, CurrentUser, Time, NullLogger<GameService>.Instance);
         Preferences = new MatchPreferencesService(DbFactory, Time, CurrentUser,
             NullLogger<MatchPreferencesService>.Instance);
         Live = new LiveMatchService(DbFactory, Games, new LiveMatchNotifier(), Time, CurrentUser,

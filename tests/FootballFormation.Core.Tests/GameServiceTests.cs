@@ -106,6 +106,55 @@ public class GameServiceTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task Recorded_timestamps_come_from_the_injected_clock()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(1);
+        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
+
+        // Far from the wall clock, so a stray DateTime.UtcNow cannot pass by coincidence.
+        var kickOff = new DateTime(2031, 5, 4, 10, 30, 0, DateTimeKind.Utc);
+        Time.SetUtcNow(kickOff);
+
+        await Games.AddGoalAsync(new GameGoal { GameId = game.Id, ScorerId = players[0].Id, Minute = 12 });
+        await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Well played" });
+
+        Assert.Equal(kickOff, Read().GameGoals.Single().RecordedAt);
+        Assert.Equal(kickOff, Read().GameComments.Single().CreatedAt);
+    }
+
+    [Fact]
+    public async Task Editing_a_comment_stamps_EditedAt_from_the_injected_clock()
+    {
+        var season = await SeedSeasonAsync();
+        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
+        var comment = (await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "First" })).Value!;
+
+        var editedAt = new DateTime(2031, 5, 4, 18, 0, 0, DateTimeKind.Utc);
+        Time.SetUtcNow(editedAt);
+
+        await Games.UpdateCommentAsync(comment.Id, "Second", isPublic: true);
+
+        Assert.Equal(editedAt, Read().GameComments.Single().EditedAt);
+    }
+
+    [Fact]
+    public async Task Publishing_a_comment_without_changing_it_is_not_an_edit()
+    {
+        var season = await SeedSeasonAsync();
+        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
+        var comment = (await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Same" })).Value!;
+
+        Time.SetUtcNow(Now.AddHours(3));
+        await Games.UpdateCommentAsync(comment.Id, "Same", isPublic: true);
+
+        // The text is unchanged, so an "edited" marker would be a lie.
+        var saved = Read().GameComments.Single();
+        Assert.Null(saved.EditedAt);
+        Assert.True(saved.IsPublic);
+    }
+
+    [Fact]
     public async Task Creating_a_game_without_a_season_resolves_one_from_its_date()
     {
         var season = await SeedSeasonAsync();

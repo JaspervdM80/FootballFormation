@@ -391,6 +391,10 @@ public class LiveMatchService(
                 PlayerOffId = playerOffId,
                 PlayerOnId = playerOnId,
                 AtSeconds = game.ElapsedSecondsAt(UtcNow),
+                // From this service's clock, not the entity initializer's wall-clock default —
+                // otherwise a match driven to an exact instant under test still records the real
+                // time here, and AtSeconds and RecordedAt describe different afternoons.
+                RecordedAt = UtcNow,
                 SlotIndex = slot,
                 Position = position
             };
