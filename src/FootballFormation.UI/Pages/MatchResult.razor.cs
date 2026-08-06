@@ -3,6 +3,7 @@ using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
 using FootballFormation.UI.Navigation;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
 
@@ -14,8 +15,12 @@ public partial class MatchResult
     [Inject] private PlayerService PlayerService { get; set; } = null!;
     [Inject] private SeasonSquadService SquadService { get; set; } = null!;
     [Inject] private NavigationTrail Trail { get; set; } = null!;
+    [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; } = null!;
 
     [Parameter]
     public int GameId { get; set; }
@@ -34,6 +39,22 @@ public partial class MatchResult
     private int? NewGoalScorerId { get; set; }
     private int? NewGoalAssisterId { get; set; }
     private bool NewGoalIsOwnGoal { get; set; }
+
+    /// <summary>
+    /// Decides both what the comments card offers and — via <c>GetCommentsAsync</c> — which comments
+    /// are fetched at all. Deliberately one flag for both: a visitor's page must never contain a
+    /// private body, and reading the two from separate sources is how they would drift apart.
+    /// </summary>
+    private bool IsAdmin { get; set; }
+
+    /// <summary>The id written onto comments this visitor creates. Null only if the claim is absent.</summary>
+    private int? CurrentUserId { get; set; }
+
+    private List<GameComment> Comments { get; set; } = [];
+
+    // New comment form
+    private string? NewCommentBody { get; set; }
+    private bool NewCommentIsPublic { get; set; }
 
     /// <summary>
     /// True when both scores are set AND every goal our team scored has a named scorer.
@@ -75,6 +96,10 @@ public partial class MatchResult
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthStateTask;
+        IsAdmin = authState.User.IsAdmin();
+        CurrentUserId = authState.User.UserId();
+
         var gameResult = await GameService.GetByIdAsync(GameId);
         if (!Snackbar.ReportFailure(L, gameResult))
         {
@@ -93,6 +118,8 @@ public partial class MatchResult
         // membership, so the full pool is still loaded.
         var playersResult = await PlayerService.GetAllAsync();
         AllPlayers = playersResult.IsSuccess ? playersResult.Value! : [];
+
+        await ReloadComments();
     }
 
     private async Task SaveScore()
@@ -127,6 +154,67 @@ public partial class MatchResult
         if (!Snackbar.Report(L, result, L["Goal removed"], Severity.Warning)) return;
 
         await ReloadGame();
+    }
+
+    private async Task AddComment()
+    {
+        if (string.IsNullOrWhiteSpace(NewCommentBody)) return;
+
+        var comment = new GameComment
+        {
+            GameId = GameId,
+            Body = NewCommentBody.Trim(),
+            IsPublic = NewCommentIsPublic,
+            AuthorId = CurrentUserId
+        };
+
+        var result = await GameService.AddCommentAsync(comment);
+        if (!Snackbar.Report(L, result, L["Comment added"])) return;
+
+        NewCommentBody = null;
+        NewCommentIsPublic = false;
+        await ReloadComments();
+    }
+
+    private async Task ToggleCommentVisibility(GameComment comment)
+    {
+        var makePublic = !comment.IsPublic;
+
+        // Publishing puts the text on the club site, so it is worth a confirmation. Unpublishing
+        // takes it back down and needs none.
+        if (makePublic && !await DialogService.ConfirmAsync(
+                L["Publish comment"],
+                L["This comment becomes visible to everyone who opens this match. Continue?"],
+                "Publish"))
+        {
+            return;
+        }
+
+        var result = await GameService.UpdateCommentAsync(comment.Id, comment.Body, makePublic);
+        if (!Snackbar.Report(L, result, makePublic ? L["Comment published"] : L["Comment is now admin only"])) return;
+
+        await ReloadComments();
+    }
+
+    private async Task RemoveComment(GameComment comment)
+    {
+        if (!await DialogService.ConfirmDeleteAsync(
+                L["Delete comment"],
+                L["Delete this comment? This cannot be undone."]))
+        {
+            return;
+        }
+
+        var result = await GameService.RemoveCommentAsync(comment.Id);
+        if (!Snackbar.Report(L, result, L["Comment removed"], Severity.Warning)) return;
+
+        await ReloadComments();
+    }
+
+    private async Task ReloadComments()
+    {
+        var result = await GameService.GetCommentsAsync(GameId, includePrivate: IsAdmin);
+        Comments = result.IsSuccess ? result.Value! : [];
     }
 
     private async Task ReloadGame()

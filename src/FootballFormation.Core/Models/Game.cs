@@ -11,7 +11,9 @@ public class Game
     public int SeasonId { get; set; }
     public Season? Season { get; set; }
 
-    public string? Notes { get; set; }
+    /// <summary>What kind of fixture this is. Descriptive — it does not affect statistics.</summary>
+    public MatchType MatchType { get; set; } = MatchType.Competition;
+
     public FormationType FormationType { get; set; }
     public GameSplitType SplitType { get; set; } = GameSplitType.Halves;
     public int GameDurationMinutes { get; set; } = 60;
@@ -28,6 +30,13 @@ public class Game
     public List<GamePeriod> Periods { get; set; } = [];
     public List<GameGoal> Goals { get; set; } = [];
     public List<GameSubstitution> Substitutions { get; set; } = [];
+
+    /// <summary>
+    /// Admin-written notes about this game, most of them private. Deliberately not eager-loaded
+    /// anywhere — every read goes through <c>GameService.GetCommentsAsync</c>, which is the one
+    /// place the public/private split is applied.
+    /// </summary>
+    public List<GameComment> Comments { get; set; } = [];
 
     /// <summary>How far the live match screen has got with this game.</summary>
     public MatchState MatchState { get; set; } = MatchState.NotStarted;

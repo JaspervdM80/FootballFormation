@@ -66,6 +66,12 @@ else
                     </div>
                     <span class="game-opponent"><span class="opp-prefix">@(game.IsHomeGame ? "vs " : "@ ")</span>@game.Opponent</span>
                 </div>
+                @* No badge for a competition match — that is the norm, and one on every card is
+                   noise. A cup tie or a practice game changes what the row means, so it says so. *@
+                @if (game.MatchType != MatchType.Competition)
+                {
+                    <span class="badge-teal">@L[game.MatchType.DisplayName()]</span>
+                }
                 <span class="badge-gold">@game.FormationType.DisplayName()</span>
                 @if (game.UnavailablePlayerIds.Count > 0)
                 {

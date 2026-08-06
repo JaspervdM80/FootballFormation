@@ -102,6 +102,53 @@ public class AuthorizationTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task An_anonymous_caller_cannot_write_a_comment()
+    {
+        var season = await SeedSeasonAsync();
+        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
+
+        CurrentUser.IsAdmin = false;
+
+        var result = await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Intruder" });
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ServiceOperation.NotAllowedKey, result.ErrorKey);
+        Assert.Empty(Read().GameComments);
+    }
+
+    [Fact]
+    public async Task An_anonymous_caller_asking_for_private_comments_gets_only_the_public_ones()
+    {
+        var season = await SeedSeasonAsync();
+        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
+        await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Public", IsPublic = true });
+        await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Private", IsPublic = false });
+
+        CurrentUser.IsAdmin = false;
+
+        // Passing includePrivate: true is not the same as being allowed to. The result page
+        // prerenders server-side, so a private body reaching the query at all would ship in the
+        // markup even if the page hid the row.
+        var comments = await Games.GetCommentsAsync(game.Id, includePrivate: true);
+
+        Assert.True(comments.IsSuccess);
+        Assert.Equal("Public", Assert.Single(comments.Value!).Body);
+    }
+
+    [Fact]
+    public async Task An_admin_sees_the_private_comments()
+    {
+        var season = await SeedSeasonAsync();
+        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
+        await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Public", IsPublic = true });
+        await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Private", IsPublic = false });
+
+        var comments = await Games.GetCommentsAsync(game.Id, includePrivate: true);
+
+        Assert.Equal(2, comments.Value!.Count);
+    }
+
+    [Fact]
     public async Task The_refusal_names_the_action_so_the_message_can_be_translated()
     {
         CurrentUser.IsAdmin = false;

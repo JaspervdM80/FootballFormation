@@ -93,8 +93,8 @@ namespace FootballFormation.Core.Migrations
                     b.Property<int>("MatchState")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Notes")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("MatchType")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Opponent")
                         .IsRequired()
@@ -122,6 +122,41 @@ namespace FootballFormation.Core.Migrations
                     b.HasIndex("SeasonId");
 
                     b.ToTable("Games");
+                });
+
+            modelBuilder.Entity("FootballFormation.Core.Models.GameComment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("AuthorId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("EditedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("GameId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsPublic")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorId");
+
+                    b.HasIndex("GameId", "CreatedAt");
+
+                    b.ToTable("GameComments");
                 });
 
             modelBuilder.Entity("FootballFormation.Core.Models.GameGoal", b =>
@@ -387,6 +422,24 @@ namespace FootballFormation.Core.Migrations
                     b.Navigation("Season");
                 });
 
+            modelBuilder.Entity("FootballFormation.Core.Models.GameComment", b =>
+                {
+                    b.HasOne("FootballFormation.Core.Models.AppUser", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("FootballFormation.Core.Models.Game", "Game")
+                        .WithMany("Comments")
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+
+                    b.Navigation("Game");
+                });
+
             modelBuilder.Entity("FootballFormation.Core.Models.GameGoal", b =>
                 {
                     b.HasOne("FootballFormation.Core.Models.Player", "Assister")
@@ -509,6 +562,8 @@ namespace FootballFormation.Core.Migrations
 
             modelBuilder.Entity("FootballFormation.Core.Models.Game", b =>
                 {
+                    b.Navigation("Comments");
+
                     b.Navigation("Goals");
 
                     b.Navigation("Periods");

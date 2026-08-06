@@ -88,7 +88,7 @@ always had, and keeps games referencing a since-departed player rendering sensib
 | Opponent | string | Required, max 100 |
 | Date | DateTime | |
 | SeasonId | int | FK → Season, **required**. Auto-derived from `Date` on creation, reassignable. Delete is **Restrict** |
-| Notes | string? | |
+| MatchType | MatchType | Competition / Cup / Practice. Descriptive only — every type counts towards statistics |
 | FormationType | FormationType | |
 | SplitType | GameSplitType | Halves or Quarters |
 | GameDurationMinutes | int | Default 60 |
@@ -103,6 +103,7 @@ always had, and keeps games referencing a since-departed player rendering sensib
 | ClockAccumulatedSeconds | int | Seconds banked from earlier running stretches |
 | LivePeriodId | int? | The period on the pitch. Null before kick-off, at the break and after full time |
 | Substitutions | List\<GameSubstitution\> | Cascade delete |
+| Comments | List\<GameComment\> | Cascade delete. Never eager-loaded — see GameComment |
 
 The match clock is stored as an **anchor plus a banked total**, never as a ticking value:
 `ElapsedSecondsAt(utcNow)` adds the time since `ClockRunningSince` to `ClockAccumulatedSeconds`.
@@ -199,6 +200,31 @@ fails loudly instead of silently rewriting match history.
 Only the **most recent** substitution of a period can be undone (`RemoveSubstitutionAsync`);
 reversing an older swap would fight every change made on that slot since.
 
+## GameComment
+| Property | Type | Notes |
+|---|---|---|
+| Id | int | PK |
+| GameId | int | FK → Game (cascade delete) |
+| Body | string(2000) | Required |
+| IsPublic | bool | **Default false** — admin-only until deliberately published |
+| AuthorId | int? | FK → AppUser, **SetNull**. Shown to admins only |
+| CreatedAt | DateTime | UTC |
+| EditedAt | DateTime? | Null until the body changes. Publishing alone is not an edit |
+
+Replaced the old `Game.Notes` string, which was written in the game dialog and displayed nowhere.
+The `AddMatchTypeAndComments` migration carries every non-empty `Notes` value over as one
+admin-only comment dated to the match.
+
+**Visibility is enforced in the query, not in the markup.** `GameService.GetCommentsAsync(gameId,
+includePrivate)` is the only read path, and it is deliberately *not* an `.Include` on
+`GetByIdAsync`: `/games/{id}/result` prerenders server-side, so a private body filtered out only in
+the razor would still ship in a visitor's HTML. The page passes `includePrivate: IsAdmin`, read from
+the same cascading auth state that decides what it renders.
+
+Indexed on `(GameId, CreatedAt)` — every read is "this game's comments, newest first". The author
+leg is `SetNull` like `GameGoal.Scorer`: a comment is part of the match record and outlives the
+account that wrote it.
+
 ## MatchPreferences (one row per season)
 | Property | Type | Default |
 |---|---|---|
@@ -235,8 +261,8 @@ clamp, adding the first fixture of next season proposed a date in the season we 
 | SecurityStamp | string(64) | Guid "N". Changes whenever the account's authority does |
 | MustChangePassword | bool | Set on the account a fresh install seeds, whose password is public knowledge. While true the session can sign in and nothing else — every route sends it to `/settings`, and `ICurrentUser.IsAdminAsync()` answers false, so the services refuse it too. Cleared by `ChangePasswordAsync` |
 
-Standalone: no foreign keys either way, so deleting a user takes nothing with it and no other
-entity can make one undeletable.
+Nothing an account owns can make it undeletable. The one reference to it — `GameComment.AuthorId` —
+is `SetNull`, so deleting a user leaves their comments in place, unattributed.
 
 **The role is the grant.** `[Authorize(Roles = AppRoles.Admin)]` and
 `<AuthorizeView Roles="@AppRoles.Admin">` match `Role.ToString()`, which `AppRoles` ties back to the
@@ -258,6 +284,8 @@ runs on every startup and does nothing once any account exists, so a changed pas
 
 ## Key Enums
 - **UserRole** (1): Admin. See AppUser above — the member name *is* the claim value
+- **MatchType** (3): Competition (0), Cup, Practice. Descriptive only — nothing in the reports
+  branches on it. `DisplayName()` returns the English name, which is also the resx key
 - **PlayerPosition** (16 values): GK, LB, CB, RB, DEF, CDM, CM, LM, RM, CAM, MID, LW, RW, W, ST, ATT
 - **FormationType** (12): F442, F433, F4231, F352, F343, F4141, F4411, F532, F541, F4321, F3421, F3511
 - **Duplicate positions in a formation are normal.** `F442.DefaultPositions()` returns two CBs and
@@ -273,6 +301,7 @@ Season 1──* Game 1──* GamePeriod 1──* GamePlayerPosition *──1 Pl
 Season 1──* SeasonSquadMember *──1 Player
 Game 1──* GameGoal *──1 Player (scorer, assister — both SetNull)
 Game 1──* GameSubstitution *──1 Player (off, on — both Restrict)
+Game 1──* GameComment *──1 AppUser (author — SetNull)
 ```
 Cascading deletes throughout, **except Season → Game, which is `Restrict`**: deleting a season must
 never take a year of games, lineups and goals with it. `SeasonService.DeleteAsync` refuses with a

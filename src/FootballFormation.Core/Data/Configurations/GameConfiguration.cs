@@ -28,5 +28,10 @@ internal sealed class GameConfiguration : IEntityTypeConfiguration<Game>
             .WithOne(s => s.Game)
             .HasForeignKey(s => s.GameId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        entity.HasMany(g => g.Comments)
+            .WithOne(c => c.Game)
+            .HasForeignKey(c => c.GameId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

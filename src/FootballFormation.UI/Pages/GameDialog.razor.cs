@@ -24,7 +24,7 @@ public partial class GameDialog
     private DateTime? Date { get; set; } = DateTime.Today;
     private FormationType SelectedFormationType { get; set; } = FormationType.F442;
     private GameSplitType SplitType { get; set; } = GameSplitType.Halves;
-    private string? Notes { get; set; }
+    private MatchType SelectedMatchType { get; set; } = MatchType.Competition;
     private int GameDurationMinutes { get; set; } = 60;
     private bool IsHomeGame { get; set; } = true;
     private IReadOnlyCollection<int> UnavailablePlayerIds { get; set; } = [];
@@ -164,7 +164,7 @@ public partial class GameDialog
             Date = Game.Date;
             SelectedFormationType = Game.FormationType;
             SplitType = Game.SplitType;
-            Notes = Game.Notes;
+            SelectedMatchType = Game.MatchType;
             GameDurationMinutes = Game.GameDurationMinutes;
             IsHomeGame = Game.IsHomeGame;
             SelectedSeasonId = Game.SeasonId;
@@ -183,7 +183,7 @@ public partial class GameDialog
         game.Date = Date ?? DateTime.Today;
         game.FormationType = SelectedFormationType;
         game.SplitType = SplitType;
-        game.Notes = Notes;
+        game.MatchType = SelectedMatchType;
         game.GameDurationMinutes = GameDurationMinutes;
         game.IsHomeGame = IsHomeGame;
         game.SeasonId = SelectedSeasonId;
