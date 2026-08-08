@@ -52,6 +52,22 @@ Avoid repeating these mistakes:
   viewport instead of anchoring it. Give the popover an **explicit** width, never just a
   `max-width`: `.mud-picker-calendar` is a wrapping flex row whose min-content width is one 40px
   day cell, so a shrink-to-fit popover collapses the month into a single column.
+- **Centring the calendar was only half of it — the day cells are 36px, and that is too small.**
+  Reported twice: after the popover was centred, picking a day on a phone still misfired. MudBlazor's
+  `.mud-day` is `width/height: 36px; margin: 0 2px`, i.e. a 36px circle on a 40px column pitch with
+  rows flush — under Apple's 44px *and* Android's 48dp in both axes, and the 4px gutters between
+  columns are **dead**: a tap landing there hits `.mud-picker-calendar` and does nothing at all.
+  Worse, the popover was still pinned to 310px on a sheet that is now the full width of the phone,
+  so 40px of screen sat unused either side of the calendar and left live form controls exposed
+  there — with the picker open, `elementFromPoint` 14px outside the calendar returned the season
+  `MudSelect` underneath. `--dp-day` in app.css spends that width instead (41.7px at 320 wide up to
+  52px, sized by height as well so landscape doesn't blow past the viewport) and drops the side
+  margins so the column pitch *is* the target. See [ui_components.md](ui_components.md).
+- **Sizing a MudBlazor calendar means sizing `.mud-picker-calendar-transition` too.**
+  `.mud-picker-slide-transition > *` is `position: absolute`, so the grid is out of flow and that
+  container's `min-height` (MudBlazor's 216px = six 36px rows) is the *only* thing reserving room
+  for it. Grow the day cells without growing it and the last weeks are drawn straight over whatever
+  follows. Always six rows — the calendar renders 42 cells whatever the month.
 - **Buttons need clear space above them, not just their own size.** The game dialog's action row
   sat 28px under the last field, and `MudSelect`'s hit box reaches ~10px past its own underline —
   leaving 18px of dead space between "Annuleren" and the unavailable-players dropdown. Mobile

@@ -289,8 +289,28 @@ height, because a 410px calendar genuinely does not fit a 390px-tall viewport.
 `MudDatePicker`'s popover is centred on the viewport instead of anchored to its input, and capped
 at `100dvh - 16px` with `overflow-y: auto` so landscape scrolls rather than clips. It applies to
 both dialogs that carry one — `GameDialog` and `SeasonDialog` on `/settings`. MudBlazor writes
-`left`/`top` inline from JS, so every positioning declaration needs `!important`. Day cells keep
-their 36px; that is already the smallest a finger reliably hits.
+`left`/`top` inline from JS, so every positioning declaration needs `!important`.
+
+The day cells are **resized**, not left at MudBlazor's 36px — that line used to say the 36px was
+"already the smallest a finger reliably hits" and it was wrong, which is why picking a day still
+misfired after the popover was centred. `--dp-day` on the popover sizes all seven columns from the
+viewport, bounded by what the height allows as well as the width, and every element that has to
+line up with a column reads it:
+
+| viewport | day cell | note |
+| --- | --- | --- |
+| 320x568 | 41.7px | the one phone that cannot reach 44px — seven of those need 308px and it has 308px |
+| 360x640 | 47.4px | |
+| 390x844 | 51.7px | |
+| 412x915 | 52px | the `clamp()` ceiling |
+| 844x390 | 36px | landscape is height-bound; the 100px banner halves to 56px so six rows still fit |
+
+The 2px side margins go with it, so the **column pitch is the target** — there are no dead gutters
+left to miss into, which the 40px pitch around a 36px cell used to have four of. Two knock-on rules
+are load-bearing: `.mud-picker-calendar-transition`'s `min-height` is the only thing reserving room
+for the grid (`.mud-picker-slide-transition` takes its children `position: absolute`), so it has to
+scale with the cell or taller rows draw over what follows; and the weekday letters carry the same
+width or the header stops lining up with the days.
 
 ## MudBlazor 9.x Notes
 - `ValidateAsync()` not `Validate()`
