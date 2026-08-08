@@ -115,6 +115,84 @@ public class DatabaseSafetyTests : IDisposable
     }
 
     [Fact]
+    public async Task Retrying_a_failed_migration_does_not_take_a_second_snapshot()
+    {
+        // A migration that fails partway leaves the rest pending, and Fly restarts the machine. The
+        // restart arrives here with the database in whatever state the failure left it — so a
+        // snapshot named for the moment would capture the damage, and there would be one per
+        // restart. Only the copy taken before the first attempt is worth keeping.
+        await using (var db = Open()) await db.Database.MigrateAsync();
+        await using (var db = Open())
+            await db.Database.ExecuteSqlRawAsync("DELETE FROM __EFMigrationsHistory");
+
+        await using var ctx = Open();
+        var first = await DatabaseSafety.BackupBeforeMigrationsAsync(ctx, _dbPath, NullLogger.Instance);
+
+        // Stand in for the damage a half-applied migration does, so a fresh snapshot would be
+        // visibly different from the one already on disk.
+        await ctx.Database.ExecuteSqlRawAsync("DELETE FROM Players");
+
+        for (var restart = 0; restart < DatabaseSafety.KeepBackups + 2; restart++)
+        {
+            var again = await DatabaseSafety.BackupBeforeMigrationsAsync(ctx, _dbPath, NullLogger.Instance);
+            Assert.Equal(first, again);
+        }
+
+        Assert.Single(Backups(BackupDir));
+    }
+
+    [Fact]
+    public async Task The_snapshot_a_crash_loop_keeps_is_the_one_from_before_the_failure()
+    {
+        await using (var db = Open())
+        {
+            await db.Database.MigrateAsync();
+            db.Players.Add(new Core.Models.Player { FirstName = "Survives", ShirtNumber = 9 });
+            await db.SaveChangesAsync();
+        }
+        await using (var db = Open())
+            await db.Database.ExecuteSqlRawAsync("DELETE FROM __EFMigrationsHistory");
+
+        await using var ctx = Open();
+        var path = await DatabaseSafety.BackupBeforeMigrationsAsync(ctx, _dbPath, NullLogger.Instance);
+
+        // The failure wipes the table; the restarts must not carry that into the backup folder.
+        await ctx.Database.ExecuteSqlRawAsync("DELETE FROM Players");
+        for (var restart = 0; restart < DatabaseSafety.KeepBackups + 2; restart++)
+            await DatabaseSafety.BackupBeforeMigrationsAsync(ctx, _dbPath, NullLogger.Instance);
+
+        await using var restored = new SqliteConnection($"Data Source={path};Mode=ReadOnly");
+        await restored.OpenAsync();
+        await using var cmd = restored.CreateCommand();
+        cmd.CommandText = "SELECT FirstName FROM Players";
+        Assert.Equal("Survives", (await cmd.ExecuteScalarAsync())?.ToString());
+    }
+
+    [Fact]
+    public async Task A_snapshot_left_half_written_is_not_mistaken_for_a_finished_one()
+    {
+        await using (var db = Open()) await db.Database.MigrateAsync();
+        await using (var db = Open())
+            await db.Database.ExecuteSqlRawAsync("DELETE FROM __EFMigrationsHistory");
+
+        // What a container killed midway through the copy leaves behind. It must not be picked up
+        // as the snapshot for this schema state — the whole guard rests on that file being complete.
+        Directory.CreateDirectory(BackupDir);
+        var torn = Path.Combine(BackupDir, "pre-migration-empty.db.tmp");
+        await File.WriteAllTextAsync(torn, "truncated");
+
+        await using var ctx = Open();
+        var path = await DatabaseSafety.BackupBeforeMigrationsAsync(ctx, _dbPath, NullLogger.Instance);
+
+        Assert.NotNull(path);
+        await using var restored = new SqliteConnection($"Data Source={path};Mode=ReadOnly");
+        await restored.OpenAsync();
+        await using var cmd = restored.CreateCommand();
+        cmd.CommandText = "SELECT COUNT(*) FROM Players";
+        Assert.Equal(0L, (long)(await cmd.ExecuteScalarAsync())!);
+    }
+
+    [Fact]
     public async Task A_healthy_database_passes_the_integrity_check()
     {
         await using var db = Open();

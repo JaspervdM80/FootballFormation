@@ -311,6 +311,13 @@ try
 catch (Exception ex)
 {
     Log.Fatal(ex, "Application terminated unexpectedly");
+
+    // Without this the process ends successfully, and a refused boot is invisible to everything
+    // outside the container: Fly sees a clean exit and the deploy that caused it reports success
+    // while the site is down. The guards above — a failed backup aborting the migration, a failed
+    // integrity check — are all written to stop the boot *loudly*, and this is the only part of
+    // that anyone outside the log can hear.
+    Environment.ExitCode = 1;
 }
 finally
 {

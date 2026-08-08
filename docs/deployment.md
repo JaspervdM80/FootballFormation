@@ -89,12 +89,27 @@ Either way, migrations run automatically on startup, same as locally.
 Startup does three things in order, in `Program.cs` (see `Core/Data/DatabaseSafety.cs`):
 
 1. **If — and only if — migrations are pending**, copy the database to
-   `/data/backups/pre-migration-<utc timestamp>.db`, keeping the newest 5. The copy is taken with
-   SQLite's own backup API rather than a file copy, because with WAL journalling the `.db` file on
-   its own can be missing the most recent writes.
+   `/data/backups/pre-migration-<last applied migration>.db`, keeping the newest 5. The copy is
+   taken with SQLite's own backup API rather than a file copy, because with WAL journalling the
+   `.db` file on its own can be missing the most recent writes. It is written under a `.tmp` name
+   and moved into place, so a container killed midway never leaves a truncated file under the name
+   that means "this state is safely backed up".
 2. Apply the migrations.
 3. `PRAGMA integrity_check` and `PRAGMA foreign_key_check`. Either failing throws, so a damaged
    database stops the boot loudly instead of serving wrong answers.
+
+**One snapshot per schema state, not per attempt.** The name is the migration the database is
+sitting on, so a state is backed up once however many times the app tries to migrate away from it.
+That is what makes a crash loop survivable: several migrations here run outside a transaction, so
+one that fails partway leaves the rest pending — and Fly restarts the machine. Named for the
+moment instead, every restart wrote a fresh snapshot of the *broken* database and pruned an older
+one, so five restarts destroyed the only good copy in about as many minutes.
+
+**A refused boot exits non-zero.** The startup `catch` logs `Fatal` and sets `Environment.ExitCode`
+(`Program.cs`). Without it the process ended successfully and the refusal never left the container:
+Fly saw a clean exit and the deploy that caused it reported success while the site was down. Every
+guard above is written to stop the boot loudly, and the exit code is the only part anyone outside
+the log can hear.
 
 **A failed backup aborts the migration.** That is deliberate: several migrations are one-way in
 practice (`AddMatchTypeAndComments` drops a column, `AddMustChangePasswordAndLineupUniqueIndex`
@@ -110,8 +125,27 @@ fly ssh console -C "ls -la /data/backups"                  # what snapshots exis
 fly ssh sftp get /data/backups/pre-migration-<stamp>.db    # pull one down
 ```
 
-Snapshots are pre-migration only. They are not a substitute for a routine backup of a database
-that changes every match day — take one of those before anything risky.
+Snapshots are pre-migration only, and they live on the volume they protect — they cover a bad
+migration, which is what they were built for, but not a lost or corrupted volume. They are not a
+substitute for a routine backup of a database that changes every match day; take one of those
+before anything risky, and see the gaps below.
+
+## Still open
+
+- **The backups share the volume with the database.** A volume-level failure takes both. Fly's own
+  volume snapshots (`fly volumes snapshots list`) are off-volume and cost nothing to enable; a copy
+  pulled off Fly entirely would also cover the account.
+- **Nothing verifies a deploy actually serves.** There is no health check in `fly.toml` and no
+  health endpoint, so Fly's only signal is that the machine started. A `/health` endpoint, a
+  `[[http_service.checks]]` block and a smoke request after `flyctl deploy` would close that —
+  though check first whether Fly's health checks count as traffic for `auto_stop_machines`, since
+  they could hold the machine awake and undo scale-to-zero.
+- **Rolling back is the image, not the database.** `fly releases` and `fly deploy --image` undo the
+  code cheaply and losslessly. Restoring the database stays manual and deliberate on purpose: live
+  match mode writes continuously on match day, so an automatic restore would silently discard the
+  substitutions and goals logged pitchside since the bad release booted — the same loss the
+  snapshots exist to prevent. The exception is a migration that failed before the app ever served,
+  which is exactly the case the per-schema-state snapshot preserves.
 
 ## Useful commands
 
