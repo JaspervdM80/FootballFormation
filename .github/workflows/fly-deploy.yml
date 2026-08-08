@@ -36,3 +36,31 @@ jobs:
       - run: flyctl deploy --remote-only --ha=false
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      # A green deploy only means the machine started. This is the step that says it *serves*:
+      # /health opens the database, so a boot that migrated badly, or refused to migrate at all,
+      # fails here instead of on the first parent to open the app on match day.
+      #
+      # Deliberately a one-shot request rather than a `[[http_service.checks]]` block in fly.toml:
+      # Fly's proxy checks count towards the concurrency its autostop decision reads, so a check
+      # every few seconds would hold the machine awake and undo scale-to-zero.
+      - name: Smoke check
+        run: |
+          for attempt in 1 2 3 4 5; do
+            # The public hostname, not gjs-meiden.fly.dev — this way DNS and the certificate are
+            # part of what gets checked, since they are what a visitor actually resolves.
+            # `|| code=000` so a connection failure is a failed attempt, not a dead step: curl
+            # exits non-zero there, and this script runs under `set -e`.
+            code=$(curl -sS -o /tmp/health -w '%{http_code}' --max-time 30 https://gjs-meiden.nl/health) || code=000
+            if [ "$code" = "200" ]; then
+              echo "Serving: $(cat /tmp/health)"
+              exit 0
+            fi
+            echo "Attempt $attempt: HTTP $code"
+            # The machine is usually cold-starting from zero, so back off rather than fail on the
+            # first miss — 5s, 10s, 15s, 20s. No pause after the last one; nothing follows it.
+            if [ "$attempt" -lt 5 ]; then sleep $((attempt * 5)); fi
+          done
+          echo "::error::/health never returned 200 — the release deployed but is not serving."
+          if [ -s /tmp/health ]; then cat /tmp/health; fi
+          exit 1

@@ -122,6 +122,11 @@ the checks in front of production are literally the ones a pull request ran, not
 drift. Note that `Directory.Build.props` sets `TreatWarningsAsErrors` in **Release only** — a
 warning that builds fine locally will fail CI. Build Release before pushing.
 
+A ruleset makes that check binding: `main` takes pull requests only, and the merge button stays
+disabled until `Build and test` is green. It lives in `.github/rulesets/main-build-and-test.json`
+and has to be imported into the repository's settings once — see
+[docs/deployment.md](docs/deployment.md#only-a-green-build-can-be-merged).
+
 ### Visual checks
 
 ```bash

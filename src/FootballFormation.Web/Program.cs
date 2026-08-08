@@ -212,6 +212,33 @@ try
     app.UseRateLimiter();
     app.UseAntiforgery();
 
+    // Proof that a deploy actually *serves*, not merely that the container started — which was
+    // Fly's only signal before this existed, and is the one thing a bad release reliably clears.
+    // It opens the database on purpose: this app migrates itself unattended on boot, so a process
+    // answering 200 while SQLite is unreachable is precisely the false green that would make a
+    // health check worse than none.
+    //
+    // Polled once, by the deploy workflow's smoke step. There is deliberately no
+    // `[[http_service.checks]]` block in fly.toml — Fly's proxy checks count towards the
+    // concurrency its autostop decision reads, so a check every few seconds holds the machine
+    // awake and quietly undoes scale-to-zero (see docs/deployment.md).
+    app.MapGet("/health", async (IDbContextFactory<AppDbContext> dbFactory, CancellationToken ct) =>
+    {
+        try
+        {
+            await using var db = await dbFactory.CreateDbContextAsync(ct);
+            // A real query, not CanConnectAsync: for SQLite that only opens the file, which
+            // succeeds against a database whose schema the migration left half-applied.
+            await db.Seasons.CountAsync(ct);
+            return Results.Text("healthy");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Health check failed");
+            return Results.Text("unhealthy", statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
+    }).AllowAnonymous();
+
     app.MapPost("/auth/login", async (
         HttpContext context,
         UserService userService,
