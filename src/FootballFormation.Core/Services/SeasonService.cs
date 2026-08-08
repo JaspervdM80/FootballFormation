@@ -18,10 +18,12 @@ public class SeasonService(
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
-            var seasons = await db.Seasons
+            // Ordered here rather than in the query: the database sorts the date's text, not the
+            // date. See SeasonOrdering.
+            var seasons = (await db.Seasons
                 .AsNoTracking()
-                .OrderByDescending(s => s.StartDate)
-                .ToListAsync();
+                .ToListAsync())
+                .NewestFirst();
 
             logger.LogDebug("Retrieved {Count} seasons", seasons.Count);
             return Result.Success(seasons);
@@ -39,9 +41,14 @@ public class SeasonService(
 
             var day = date.Date;
 
-            var season = await db.Seasons
-                .AsNoTracking()
-                .FirstOrDefaultAsync(s => s.StartDate <= day && s.EndDate >= day);
+            // Matched in memory: a window comparison in the query would compare the text the two
+            // dates were written as (see SeasonOrdering), and it could not call Season.Contains,
+            // which is where "this date is inside that window" is defined date-only — the season
+            // rows carry a midnight time component and the game dates handed in here do too.
+            // Windows are gapless and non-overlapping, so at most one matches; newest first only
+            // decides it deterministically if a database ever does hold two.
+            var seasons = await db.Seasons.AsNoTracking().ToListAsync();
+            var season = seasons.NewestFirst().FirstOrDefault(s => s.Contains(day));
 
             return Result.Success(season);
         });
@@ -66,18 +73,16 @@ public class SeasonService(
             // CreateFor always returns a full July–June window. If the date sits in a gap narrower
             // than that, the window would overlap the seasons on either side, so clamp it to them:
             // auto-creation can then only ever fill a hole, never straddle its neighbours.
-            var previous = await db.Seasons
-                .Where(s => s.EndDate < day)
-                .OrderByDescending(s => s.EndDate)
-                .FirstOrDefaultAsync();
+            // Both neighbours come from one materialised read, compared as dates rather than as
+            // the text they are stored in. See SeasonOrdering.
+            var existing = (await db.Seasons.AsNoTracking().ToListAsync()).OldestFirst();
+
+            var previous = existing.Where(s => s.EndDate.Date < day).MaxBy(s => s.EndDate.Date);
 
             if (previous is not null && previous.EndDate.Date >= season.StartDate.Date)
                 season.StartDate = previous.EndDate.Date.AddDays(1);
 
-            var following = await db.Seasons
-                .Where(s => s.StartDate > day)
-                .OrderBy(s => s.StartDate)
-                .FirstOrDefaultAsync();
+            var following = existing.Where(s => s.StartDate.Date > day).MinBy(s => s.StartDate.Date);
 
             if (following is not null && following.StartDate.Date <= season.EndDate.Date)
                 season.EndDate = following.StartDate.Date.AddDays(-1);
@@ -195,7 +200,8 @@ public class SeasonService(
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
-            var seasons = await db.Seasons.OrderBy(s => s.StartDate).ToListAsync();
+            // Ordered after loading, on the dates rather than on their text. See SeasonOrdering.
+            var seasons = (await db.Seasons.ToListAsync()).OldestFirst();
             var closed = 0;
 
             for (int i = 1; i < seasons.Count; i++)
@@ -231,7 +237,8 @@ public class SeasonService(
             var current = await db.Seasons.FirstOrDefaultAsync(s => s.IsCurrent);
             if (current is not null) return Result.Success(current);
 
-            var newest = await db.Seasons.OrderByDescending(s => s.StartDate).FirstOrDefaultAsync();
+            // Newest by start date, picked after loading. See SeasonOrdering.
+            var newest = (await db.Seasons.ToListAsync()).NewestFirst().FirstOrDefault();
             if (newest is not null)
             {
                 newest.IsCurrent = true;
@@ -266,10 +273,18 @@ public class SeasonService(
             return Result.Failure("The end date must be after the start date");
         }
 
-        var overlapping = await db.Seasons
+        // Every other window, read once and compared in memory: in the query these would be text
+        // comparisons (see SeasonOrdering) and could not be date-only, and the table holds one row
+        // a year. AsNoTracking so validating a season the caller is about to Update() cannot pull
+        // a second instance of the same row into the change tracker.
+        var others = (await db.Seasons
+            .AsNoTracking()
             .Where(s => s.Id != season.Id)
-            .Where(s => s.StartDate <= season.EndDate && s.EndDate >= season.StartDate)
-            .FirstOrDefaultAsync();
+            .ToListAsync())
+            .OldestFirst();
+
+        var overlapping = others.FirstOrDefault(s =>
+            s.StartDate.Date <= season.EndDate.Date && s.EndDate.Date >= season.StartDate.Date);
 
         if (overlapping is not null)
         {
@@ -282,10 +297,9 @@ public class SeasonService(
         // and every date must map to exactly one season (see Season.StartMonth), so a hole strands
         // every date inside it: the game dialog finds no season and offers an empty squad, which
         // reads as "I cannot pick a date past the end of last season".
-        var previous = await db.Seasons
-            .Where(s => s.Id != season.Id && s.EndDate < season.StartDate)
-            .OrderByDescending(s => s.EndDate)
-            .FirstOrDefaultAsync();
+        var previous = others
+            .Where(s => s.EndDate.Date < season.StartDate.Date)
+            .MaxBy(s => s.EndDate.Date);
 
         if (previous is not null && previous.EndDate.Date.AddDays(1) != season.StartDate.Date)
         {
@@ -297,10 +311,9 @@ public class SeasonService(
                 previous.Name, expected.ToString("dd-MM-yyyy"));
         }
 
-        var following = await db.Seasons
-            .Where(s => s.Id != season.Id && s.StartDate > season.EndDate)
-            .OrderBy(s => s.StartDate)
-            .FirstOrDefaultAsync();
+        var following = others
+            .Where(s => s.StartDate.Date > season.EndDate.Date)
+            .MinBy(s => s.StartDate.Date);
 
         if (following is not null && following.StartDate.Date.AddDays(-1) != season.EndDate.Date)
         {

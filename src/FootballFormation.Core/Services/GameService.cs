@@ -245,11 +245,17 @@ public class GameService(
 
             includePrivate = includePrivate && await currentUser.IsAdminAsync();
 
-            var comments = await db.GameComments
+            // Ordered here rather than in the query: CreatedAt is a TEXT column too, so the
+            // database would sort the timestamp's text (see GameOrdering). The tie-break runs the
+            // other way to a fixture list's — two comments written in the same instant are a feed,
+            // and the later one belongs on top.
+            var comments = (await db.GameComments
                 .Where(c => c.GameId == gameId && (includePrivate || c.IsPublic))
                 .Include(c => c.Author)
+                .ToListAsync())
                 .OrderByDescending(c => c.CreatedAt)
-                .ToListAsync();
+                .ThenByDescending(c => c.Id)
+                .ToList();
 
             logger.LogDebug("Retrieved {Count} comments for game {GameId} (private included: {IncludePrivate})",
                 comments.Count, gameId, includePrivate);

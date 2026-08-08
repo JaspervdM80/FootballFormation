@@ -78,6 +78,10 @@ seasons, so each game resolves *its own* season's squad.
 - **Value converters**: `List<PlayerPosition>` → comma-separated ints; `List<int>` → comma-separated values. Both need `ValueComparer` for change tracking.
 - **SavePeriodLineupAsync**: Deletes all existing positions, then inserts fresh entities with `Id = 0` to avoid UNIQUE constraint errors (never reuse tracked entity IDs).
 - **Auto-migration**: `db.Database.MigrateAsync()` in Program.cs startup
+- **Never order or compare a date in the query.** SQLite keeps every `DateTime` in a TEXT column,
+  so `ORDER BY Date` sorts the text a date was written as. Materialise first, then use
+  `GameOrdering` / `SeasonOrdering` (`Models/Game.cs`, `Models/Season.cs`). See
+  [known_issues.md](known_issues.md) for what goes wrong and the one deliberate exception.
 - **Data backfills** belong in the migration's `Up()` via `migrationBuilder.Sql(...)`, not in
   startup code: `__EFMigrationsHistory` runs them exactly once, and it is the only place you can
   populate a new required FK column *before* the constraint is added. Order the operations

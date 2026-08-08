@@ -117,15 +117,22 @@ public class MatchPreferencesService(
             .Select(s => (DateTime?)s.StartDate)
             .FirstOrDefaultAsync();
 
-        var source = await db.MatchPreferences
+        // Ordered and filtered in memory, on the season's start date rather than on the text
+        // SQLite keeps it in (see SeasonOrdering). One preferences row per season, so this is a
+        // handful of rows either way.
+        var byNewestSeason = (await db.MatchPreferences
             .Include(p => p.Season)
-            .Where(p => p.Season!.StartDate < startDate)
+            .ToListAsync())
+            .Where(p => p.Season is not null)
             .OrderByDescending(p => p.Season!.StartDate)
-            .FirstOrDefaultAsync()
-            ?? await db.MatchPreferences
-                .Include(p => p.Season)
-                .OrderByDescending(p => p.Season!.StartDate)
-                .FirstOrDefaultAsync();
+            .ThenBy(p => p.SeasonId)
+            .ToList();
+
+        // A season with no start date of its own (it does not exist yet) has nothing to be
+        // "before", so it falls straight through to the newest row of any season.
+        var source = byNewestSeason
+            .FirstOrDefault(p => startDate is not null && p.Season!.StartDate.Date < startDate.Value.Date)
+            ?? byNewestSeason.FirstOrDefault();
 
         return source?.CopyFor(seasonId) ?? new MatchPreferences { SeasonId = seasonId };
     }

@@ -87,6 +87,27 @@ public class GameOrderingTests : ServiceTestBase
             games.Select(g => g.Id).ToArray());
     }
 
+    /// <summary>
+    /// A game's comments are a feed, so their tie-break runs the other way to a fixture list's.
+    /// The clock does not move between two service calls here, which is exactly the case the
+    /// database's own row order used to decide.
+    /// </summary>
+    [Fact]
+    public async Task Comments_written_in_the_same_instant_put_the_later_one_on_top()
+    {
+        var season = await SeedSeasonAsync();
+        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
+
+        await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Written first" });
+        await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Written second" });
+
+        var comments = (await Games.GetCommentsAsync(game.Id, includePrivate: true)).Value!;
+
+        Assert.Equal(
+            new[] { "Written second", "Written first" },
+            comments.Select(c => c.Body).ToArray());
+    }
+
     /// <summary>Games written straight to the database — these tests are about read order, and
     /// <c>CreateAsync</c> would drag the whole period graph in for no gain.</summary>
     private async Task<Dictionary<string, int>> SeedGamesAsync(

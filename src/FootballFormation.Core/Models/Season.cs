@@ -55,3 +55,26 @@ public class Season
         };
     }
 }
+
+/// <summary>
+/// Putting seasons in date order — the same rule as <see cref="GameOrdering"/>, for the same
+/// reason: SQLite keeps <see cref="Season.StartDate"/> in a TEXT column, so an <c>ORDER BY</c> in
+/// a query compares the text a date was written as rather than the date. Sort the rows once they
+/// are materialised, where the parsed <see cref="DateTime"/> is what gets compared.
+/// <para>
+/// The season table holds one row a year, so <c>SeasonService</c> reads all of it and does its
+/// window arithmetic in memory rather than in SQL — the same reasoning, applied to the
+/// comparisons as well as to the ordering, and <see cref="Season.Contains"/> then gets to be the
+/// single definition of "this date is inside that window".
+/// </para>
+/// </summary>
+public static class SeasonOrdering
+{
+    /// <summary>Newest first — what the season picker and the current-season fallbacks want.</summary>
+    public static List<Season> NewestFirst(this IEnumerable<Season> seasons) =>
+        [.. seasons.OrderByDescending(s => s.StartDate).ThenBy(s => s.Id)];
+
+    /// <summary>Oldest first — the order the gap checks walk the windows in.</summary>
+    public static List<Season> OldestFirst(this IEnumerable<Season> seasons) =>
+        [.. seasons.OrderBy(s => s.StartDate).ThenBy(s => s.Id)];
+}
