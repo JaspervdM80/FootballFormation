@@ -1,6 +1,8 @@
 @inject IStringLocalizer<Strings> L
 
-<MudDialog>
+@* Class: below 600px `.dialog-sheet` turns this into a full-screen sheet — see app.css. This is the
+   app's longest form and it is filled in at a touchline, on a phone, in portrait. *@
+<MudDialog Class="dialog-sheet">
     <DialogContent>
         <MudForm @ref="Form">
             <MudTextField @bind-Value="Opponent" Label="@L["Opponent"]" Required="true"
