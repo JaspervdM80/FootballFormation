@@ -111,6 +111,14 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   `app.css` — the classes sit on `MudPaper` roots, which scoped CSS cannot reach.
 - Goal and assist selects bind `int?`, not `int`: an `int` binds to 0, which is nobody's id but
   still renders as a chosen value, so the scorer field looked pre-filled.
+- **`/games` is two lists, not one** (`Games.Sections()`): fixtures still to be played, soonest
+  first, then results in the order they were played — both ascending. A single list has to put one
+  of them at the wrong end, and newest-first put the *most distant* fixture at the top. The split
+  is on the date (`IsUpcoming`, `Date >= Today`), not on whether a score exists, so a past game
+  nobody entered a result for drops into the results list where its missing-lineup flag is visible
+  rather than sitting among the fixtures for ever. Today's game counts as upcoming all day, so a
+  match being played stays at the top instead of moving lists halfway through the afternoon.
+  Either block disappears when empty.
 - `/games` routes an `InProgress` game to `/live` for **everyone**, and shows a pulsing green
   `.action-live` button on its card — whatever the calendar says, since a match kicked off before
   midnight is still being played. For other games the Live action is admin-only **and match-day
