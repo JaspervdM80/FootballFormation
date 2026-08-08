@@ -21,9 +21,12 @@ Avoid repeating these mistakes:
   `SeasonOrderingTests` pin it. The one deliberate exception is `LiveMatchService`'s
   `Date >= today && Date < tomorrow`, a same-day range kept in SQL so the games table is not
   loaded whole on every home-page hit.
-- **A timestamp in a filename is a different case, and it is fine**: `DatabaseSafety` names backups
-  `pre-migration-yyyyMMdd-HHmmss.db` and prunes by `OrderByDescending(f => f.Name)`. That format is
-  fixed-width, so lexicographic *is* chronological — the sort is on text by design, not by accident.
+- **Sorting backup filenames as text is a different case, and it is fine**: `DatabaseSafety` names
+  backups `pre-migration-<last applied migration>.db` and prunes by `OrderByDescending(f => f.Name)`.
+  A migration id begins with the fixed-width timestamp it was scaffolded at, so lexicographic *is*
+  chronological — the sort is on text by design, not by accident. (The name used to be a timestamp
+  of the moment the copy was taken; it is the schema state now, so a crash loop cannot write five
+  snapshots of the broken database and prune the only good one. See [deployment.md](deployment.md).)
 - **The scaffolder ordered a destructive migration wrongly**: `AddSeasonSquads` had to copy `Players.IsGuest` into a new table *and* drop the column; EF emitted the `DropColumn` first, which would have wiped the source before the backfill ran. Always read and reorder the generated `Up()`.
 
 ## Data / domain

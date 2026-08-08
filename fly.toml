@@ -6,6 +6,12 @@ swap_size_mb = 512
 [[mounts]]
   source = "data"
   destination = "/data"
+  # Fly snapshots this volume daily and keeps them off-volume, which is the half of the backup
+  # story /data cannot tell: the pre-migration copies in /data/backups live on the disk they
+  # protect, so a lost volume takes the database and every snapshot of it together. Declared here
+  # rather than left to the 5-day default so the retention is in version control, and long enough
+  # that a season's data survives a problem nobody noticed over a school holiday. Max is 60.
+  snapshot_retention = 30
 
 [http_service]
   internal_port = 8080
