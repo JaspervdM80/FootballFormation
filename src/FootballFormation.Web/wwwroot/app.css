@@ -141,6 +141,114 @@ html, body {
     border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent) !important;
 }
 
+/* --- Long form dialogs on a phone (.dialog-sheet) ---
+   Opt in with `Class="dialog-sheet"` on the MudDialog — MudBlazor 9.7's DialogOptions has no
+   CssClass, but MudDialog's own Class lands straight on .mud-dialog, which is what these rules
+   need. GameDialog (the new/edit match form on /games) is the one user. Everything is inside the
+   media query on purpose: above 600px a .dialog-sheet is an ordinary centred MudBlazor dialog and
+   nothing below applies.
+
+   MudBlazor gives every dialog a 32px margin per side (.mud-dialog-width-full is
+   `calc(100% - 64px)`), which on a 360px phone leaves 296px of dialog. Two things break at that
+   width, and both were reported from a touchline:
+
+     1. The date picker's popover has `min-width: 310px` and is anchored to the input's left edge,
+        so it hung 9px off a 360px screen and 49px off a 320px one — the whole Saturday column was
+        unreachable. Widening the dialog is half the fix; the .mud-picker-popover block further
+        down is the other half.
+     2. The action buttons sat 28px below the last field, and MudSelect's hit box reaches ~10px
+        past its own underline — so only ~18px of dead space separated "Annuleren" from the
+        unavailable-players dropdown. Mobile browsers snap a tap that misses every target to the
+        nearest one by contact area, and the select is by far the bigger target, so a thumb aimed
+        at the button opened the dropdown instead. Capping the sheet at the viewport turns the
+        action row into a footer the flex layout pins to the bottom, and the rule, padding and
+        44px-tall buttons below are what actually separate it from the field above. */
+@media (max-width: 599.98px) {
+    .mud-dialog.dialog-sheet {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100dvh;
+        max-height: 100dvh;
+        margin: 0;
+        border: none !important;
+        border-radius: 0;
+        /* MudBlazor makes .mud-dialog itself scrollable as well as .mud-dialog-content. Two nested
+           scrollers means a flick can move either one, and a tap that lands during momentum
+           scrolling resolves against wherever the *other* one has since moved to. Hidden here
+           leaves .mud-dialog-content as the single scroller. */
+        overflow: hidden;
+    }
+
+    /* The sheet covers the app bar, so the title takes over its safe-area duty. */
+    .mud-dialog.dialog-sheet .mud-dialog-title {
+        padding-top: calc(16px + env(safe-area-inset-top, 0px));
+        border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+    }
+
+    .mud-dialog.dialog-sheet .mud-dialog-content {
+        overscroll-behavior: contain;
+        padding-bottom: 20px;
+    }
+
+    /* Opaque, not the gradient: content scrolls underneath it. */
+    .mud-dialog.dialog-sheet .mud-dialog-actions {
+        background: var(--surface-card);
+        border-top: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* 44px is the platform minimum touch target, and the width keeps the two buttons far enough
+       apart that a thumb cannot take Opslaan while aiming for Annuleren. */
+    .mud-dialog.dialog-sheet .mud-dialog-actions .mud-button-root {
+        min-height: 44px;
+        min-width: 112px;
+    }
+}
+
+/* --- Date pickers on a phone ---
+   Both dialogs that carry a MudDatePicker (new/edit match, and the season editor on /settings) are
+   smaller than the picker itself on a phone: the popover is 310x410 and anchored to the input's
+   left edge, which hung it 49px off a 320px-wide screen (the whole Saturday column was
+   untappable) and, in landscape, 20px below a 390px-tall one.
+
+   So the query is width **or** height — a landscape phone fails on height alone. Inside it the
+   calendar stops being anchored and is centred on the viewport, where it always fits. MudBlazor
+   writes `left`/`top` inline from JS, which is why every positioning line needs `!important`.
+
+   Only .mud-popover-open is pinned; a closed popover keeps MudBlazor's off-screen -9999px parking
+   spot rather than sitting invisible in the middle of the page. */
+@media (max-width: 599.98px), (max-height: 559.98px) {
+    .mud-popover.mud-picker-popover.mud-popover-open {
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        right: auto !important;
+        bottom: auto !important;
+        transform: translate(-50%, -50%);
+        /* An explicit width, not max-width. .mud-picker-calendar is a wrapping flex row, so its
+           min-content width is a single 40px day cell — let the popover shrink-to-fit and the
+           month collapses into one tall column. */
+        width: min(310px, calc(100vw - 16px)) !important;
+        max-width: none !important;
+        /* Landscape has no room for all 410px of it; scrolling beats clipping the last week. */
+        max-height: calc(100dvh - 16px);
+        overflow-y: auto;
+    }
+
+    /* MudBlazor hard-codes 310px in four places. Now that the popover carries the width, the
+       containers just fill it — the day cells keep their own 36px, which is already the smallest
+       a finger can reliably hit. */
+    .mud-picker-popover .mud-picker,
+    .mud-picker-popover .mud-picker-container,
+    .mud-picker-popover .mud-picker-content,
+    .mud-picker-popover .mud-picker-calendar-container,
+    .mud-picker-popover .mud-picker-month-container {
+        min-width: 0;
+        width: 100%;
+        max-width: 100%;
+    }
+}
+
 /* Input field focus */
 .mud-input.mud-input-underline::after {
     border-bottom-color: var(--club-primary-bright) !important;
