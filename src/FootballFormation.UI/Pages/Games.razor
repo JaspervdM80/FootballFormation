@@ -48,12 +48,12 @@ else if (_games.Count == 0)
 }
 else
 {
-    @foreach (var section in Sections())
+    @foreach (var gameList in Sections())
     {
         <div class="game-section">
-            <div class="card-label">@section.Title</div>
+            <div class="card-label">@gameList.Title</div>
             <div class="game-cards">
-                @foreach (var game in section.Games)
+                @foreach (var game in gameList.Games)
                 {
                     @* Left-edge stripe marks the venue (home/away); an amber tint marks a played game with no lineup. *@
                     var rowClass = game.IsHomeGame ? "home" : "away";

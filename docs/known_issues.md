@@ -67,6 +67,14 @@ Avoid repeating these mistakes:
   first entry silently wins. Reuse the existing key rather than adding a lowercase twin.
 
 ## Blazor components
+- **`section` is a reserved word in a `.razor` file.** `@foreach (var section in Sections())` then
+  `@section.Title` is parsed as the `@section` *directive*, not as a member access, and the build
+  fails with `RZ2005: The 'section' directive must appear at the start of the line`. Name the
+  variable anything else (`gameList` on `/games`), or parenthesise as `@(section.Title)`.
+  **This one is SDK-dependent, which is the real trap:** it fails on the 10.0.110 SDK from Ubuntu's
+  archive — the one `.claude/hooks/session-start.sh` installs — and compiled clean on the SDK
+  `actions/setup-dotnet` resolved for `10.0.x` in CI, so a green check is not proof it builds in a
+  web session. A `global.json` pinning one SDK would close that gap.
 - **A base class for a page goes in the `.razor`, not the code-behind**: putting
   `: SeasonAwarePage` on the `public partial class` gives *CS0263: Partial declarations must not
   specify different base classes*, because the generated Razor partial already declares
