@@ -3,16 +3,26 @@ name: Deploy to Fly.io
 on:
   push:
     branches: [main]
-  # Also on PRs into main: the build job is the gate that keeps a broken migration off the Fly
-  # volume, and running it only after the merge means finding out on the way to production. The
-  # deploy job below is guarded by an `if` so a pull request builds and tests but never deploys.
+  # Every pull request, whatever it targets — not just the ones into main. The build job is the
+  # gate that keeps a broken migration off the Fly volume, and running it only after the merge
+  # means finding out on the way to production. The deploy job below is guarded by an `if`, so a
+  # pull request builds and tests but never deploys.
   pull_request:
-    branches: [main]
   workflow_dispatch:
 
+# Keyed by ref, so a pull request's checks start immediately instead of queueing behind whatever
+# else the repository is doing. The old single `fly-deploy` group serialised every run in the
+# repository against every other, which meant a PR check could sit waiting on a production deploy
+# — the serialisation only ever needed to cover deploys, and now it does, on the job itself.
 concurrency:
-  group: fly-deploy
-  cancel-in-progress: false
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Superseding a pull request's run is free. Superseding a run on main is cancelling a deploy
+  # halfway through, so those are left to finish.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Nothing here writes to the repository; the deploy authenticates to Fly with its own token.
+permissions:
+  contents: read
 
 jobs:
   # Gate: nothing reaches the Fly volume that doesn't compile and pass its tests. The app
@@ -30,9 +40,17 @@ jobs:
 
   deploy:
     needs: build
-    # Never from a pull request — a fork's PR must not be able to reach the deploy token.
-    if: github.event_name != 'pull_request'
+    # Never from a pull request — a fork's PR must not be able to reach the deploy token. And only
+    # ever from main: `workflow_dispatch` can be run against any branch, which without the ref
+    # check would put that branch on the production volume.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    # One deploy at a time, whatever else the repository is running. SQLite lives on a single
+    # volume and the app migrates on boot, so two overlapping deploys race over one machine. This
+    # is what the workflow-level group used to give, kept where it is actually needed.
+    concurrency:
+      group: fly-deploy
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v7
       # Pinned to the 1.6 tag's commit so upstream changes can't run unreviewed with our token

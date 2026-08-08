@@ -60,6 +60,14 @@ certificate are done (usually minutes after DNS propagates).
 Merging to `main` deploys automatically via GitHub Actions
 (`.github/workflows/fly-deploy.yml`, authenticated by the `FLY_API_TOKEN` repo secret —
 a scoped deploy token from `flyctl tokens create deploy --app gjs-meiden`).
+
+The same workflow is the pull request gate: **every** pull request runs `build` — restore, a
+Release build (where warnings are errors) and the test suite — and the `deploy` job is skipped,
+so a PR can never reach the volume. Deploying needs both a non-PR event *and* `main`, which is
+what stops a `workflow_dispatch` run against a feature branch from putting that branch into
+production. Only the deploy job is serialised (`concurrency: fly-deploy`); PR checks are keyed by
+ref, so they start straight away and a new push cancels the run it supersedes.
+
 Manual deploys still work from the repo root:
 
 ```powershell
