@@ -435,6 +435,7 @@
   <data name="A goal for us needs a scorer" xml:space="preserve"><value>Een doelpunt voor ons heeft een maker nodig</value></data>
   <data name="A player cannot be substituted for themselves" xml:space="preserve"><value>Een speler kan niet voor zichzelf gewisseld worden</value></data>
   <data name="Cannot copy a squad onto itself" xml:space="preserve"><value>Een selectie kan niet naar zichzelf gekopieerd worden</value></data>
+  <data name="Comment not found" xml:space="preserve"><value>Opmerking niet gevonden</value></data>
   <data name="End the current period first" xml:space="preserve"><value>Beëindig eerst de huidige periode</value></data>
   <data name="Every period has been played — finish the match instead" xml:space="preserve"><value>Alle periodes zijn gespeeld — beëindig de wedstrijd</value></data>
   <data name="Game not found" xml:space="preserve"><value>Wedstrijd niet gevonden</value></data>
@@ -486,6 +487,7 @@
   <data name="find the season for that date" xml:space="preserve"><value>seizoen bij die datum zoeken</value></data>
   <data name="find today&#x27;s match" xml:space="preserve"><value>wedstrijd van vandaag zoeken</value></data>
   <data name="finish the match" xml:space="preserve"><value>wedstrijd afronden</value></data>
+  <data name="load comments" xml:space="preserve"><value>opmerkingen laden</value></data>
   <data name="load current season" xml:space="preserve"><value>huidig seizoen laden</value></data>
   <data name="load game" xml:space="preserve"><value>wedstrijd laden</value></data>
   <data name="load game details" xml:space="preserve"><value>wedstrijdgegevens laden</value></data>
@@ -504,6 +506,7 @@
   <data name="make the substitution" xml:space="preserve"><value>wissel doorvoeren</value></data>
   <data name="pause the clock" xml:space="preserve"><value>klok pauzeren</value></data>
   <data name="prepare seasons" xml:space="preserve"><value>seizoenen voorbereiden</value></data>
+  <data name="remove comment" xml:space="preserve"><value>opmerking verwijderen</value></data>
   <data name="remove goal" xml:space="preserve"><value>doelpunt verwijderen</value></data>
   <data name="remove the goal" xml:space="preserve"><value>doelpunt verwijderen</value></data>
   <data name="remove the player from the squad" xml:space="preserve"><value>speler uit de selectie verwijderen</value></data>
@@ -513,6 +516,7 @@
   <data name="start the next period" xml:space="preserve"><value>volgende periode starten</value></data>
   <data name="switch season" xml:space="preserve"><value>van seizoen wisselen</value></data>
   <data name="undo the substitution" xml:space="preserve"><value>wissel ongedaan maken</value></data>
+  <data name="update comment" xml:space="preserve"><value>opmerking bijwerken</value></data>
   <data name="update game" xml:space="preserve"><value>wedstrijd bijwerken</value></data>
   <data name="update player" xml:space="preserve"><value>speler bijwerken</value></data>
   <data name="update season" xml:space="preserve"><value>seizoen bijwerken</value></data>
