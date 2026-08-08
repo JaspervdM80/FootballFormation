@@ -263,6 +263,35 @@ Season-scoped: it follows the season picker and shows that season's squad, not e
   a plain `div`, and that wrapper's inline-block baseline put the ⋮ about 6px above the icon buttons
   beside it; flex removes baselines from the equation.
 
+## Dialogs on a phone (`.dialog-sheet`)
+Every dialog goes through `DialogPrompts` with `UiFeedback.LockedDialog` (no backdrop-click close).
+A **long form** additionally carries `Class="dialog-sheet"` on its `MudDialog` — currently only
+`GameDialog`, the new/edit match form, which is the app's longest and is filled in at a touchline
+on a phone in portrait.
+
+The class does nothing above 600px; the rules are in `app.css` behind a media query. Below it the
+dialog becomes a full-screen sheet:
+
+- **Full width.** MudBlazor's `calc(100% - 64px)` leaves a 360px phone 296px, which is narrower
+  than the 310px date picker. See [known_issues.md](known_issues.md).
+- **One scroll container.** `overflow: hidden` on the dialog leaves `.mud-dialog-content` as the
+  only scroller, so a tap during momentum scrolling can't resolve against a stale layout.
+- **A real footer.** The action row gets a top border, 12px padding plus the bottom safe-area
+  inset, and 44px-tall buttons. The point is the *gap*: the buttons need clear space above them,
+  or a thumb aimed at "Annuleren" gets snapped to the unavailable-players select instead.
+- The sheet covers the app bar, so `.mud-dialog-title` takes over the top safe-area inset.
+
+Deliberately width-only, so a **landscape** phone keeps an ordinary centred dialog — a full-screen
+sheet 844px wide is not an improvement. The date-picker rule below is the one that also keys off
+height, because a 410px calendar genuinely does not fit a 390px-tall viewport.
+
+### Date pickers below 600px (or 560px tall)
+`MudDatePicker`'s popover is centred on the viewport instead of anchored to its input, and capped
+at `100dvh - 16px` with `overflow-y: auto` so landscape scrolls rather than clips. It applies to
+both dialogs that carry one — `GameDialog` and `SeasonDialog` on `/settings`. MudBlazor writes
+`left`/`top` inline from JS, so every positioning declaration needs `!important`. Day cells keep
+their 36px; that is already the smallest a finger reliably hits.
+
 ## MudBlazor 9.x Notes
 - `ValidateAsync()` not `Validate()`
 - `IReadOnlyCollection<T>` for multi-select `@bind-SelectedValues`

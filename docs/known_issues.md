@@ -40,6 +40,29 @@ Avoid repeating these mistakes:
 - **`MudMenu`'s `Class` lands on the root wrapper, not the activator button**: `Class="btn-gold"` painted an invisible `div` while the button kept MudBlazor's default filled colours. There is no `ActivatorClass` parameter in 9.7 — style `.<your-class>.mud-menu .mud-button-root` instead (see `.btn-gold.mud-menu` in app.css, and `SeasonPicker`'s `.season-picker .mud-button-root`).
 
 ## Touch / PWA
+- **A MudBlazor dialog is 64px narrower than the phone, and that breaks the date picker.**
+  `.mud-dialog-width-full` is `calc(100% - 64px)`, so a 360px phone gets 296px of dialog and a
+  320px one gets 256px. `MudDatePicker`'s popover has `min-width: 310px` and is anchored to the
+  input's left edge, so it hung 9px off a 360px screen and **49px off a 320px one — the whole
+  Saturday column was untappable**. Two rules in app.css fix it: `.dialog-sheet` makes a long form
+  dialog full-screen below 600px, and the `.mud-picker-popover` block centres the calendar on the
+  viewport instead of anchoring it. Give the popover an **explicit** width, never just a
+  `max-width`: `.mud-picker-calendar` is a wrapping flex row whose min-content width is one 40px
+  day cell, so a shrink-to-fit popover collapses the month into a single column.
+- **Buttons need clear space above them, not just their own size.** The game dialog's action row
+  sat 28px under the last field, and `MudSelect`'s hit box reaches ~10px past its own underline —
+  leaving 18px of dead space between "Annuleren" and the unavailable-players dropdown. Mobile
+  browsers snap a tap that misses every target to the nearest one *by contact area*, and the
+  select is the far bigger target, so a thumb aimed at the button opened the dropdown instead.
+  This is invisible to `document.elementFromPoint`, which reports the button as reachable — the
+  measurement that finds it is the **gap** to the nearest interactive element above.
+- **Do not leave two nested scroll containers in a dialog.** MudBlazor makes both `.mud-dialog`
+  and `.mud-dialog-content` scrollable. A flick can move either one, and on iOS a tap landing
+  during momentum scrolling resolves against wherever the other has since moved to. `.dialog-sheet`
+  sets `overflow: hidden` on the dialog so the content is the only scroller.
+- **`DialogOptions` has no `CssClass` in MudBlazor 9.7** — but `MudDialog`'s own `Class` lands
+  straight on the `.mud-dialog` element, which is how `.dialog-sheet` gets there. No plumbing
+  through `DialogPrompts` is needed.
 - **Blazor silently drops drag events with null `dataTransfer`**: dispatching
   `new DragEvent('dragstart', {bubbles: true})` reaches DOM listeners but never the Blazor
   handler — its DragEventArgs serializer reads `dataTransfer.files/items/types` and gives up
