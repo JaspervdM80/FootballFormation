@@ -98,6 +98,32 @@ never reports leaves a PR pending forever rather than mergeable, so `ci.yml` del
 `paths:` filter — adding one later to "skip CI for docs" would silently wedge every docs-only PR.
 If the job is ever renamed, the ruleset's `context` must be renamed with it.
 
+**A restricted actions policy stops the check before it can report — and it looks like nothing ran.**
+Under *Settings → Actions → General → Actions permissions*, the owner-only option ("Allow
+JaspervdM80 actions and reusable workflows") blocks every third-party action. Both workflows here
+use them, so GitHub refuses each run about a second after creating it, with:
+
+> The actions `actions/checkout@v7` and `actions/setup-dotnet@v6` are not allowed in
+> `JaspervdM80/FootballFormation` because all actions must be from a repository owned by
+> `JaspervdM80`.
+
+That conclusion is `startup_failure`: **no job is created, so no check is created either**, and a
+pull request shows no checks at all rather than a red one. It reads like CI never triggered. It
+did — it was refused. The run is also not re-runnable (`This workflow run cannot be retried`), so
+recovering needs a fresh push, or closing and reopening the pull request.
+
+If the policy must stay restricted, the allow-list needs **both** of:
+
+| Entry | Covers |
+|-------|--------|
+| *Allow actions created by GitHub* (checkbox) | `actions/checkout`, `actions/setup-dotnet` — `ci.yml` |
+| `superfly/*` | `superfly/flyctl-actions/setup-flyctl` — `fly-deploy.yml` |
+
+**The second is the one that bites quietly.** `ci.yml` uses no third-party action, so ticking only
+the GitHub box turns every check green while `fly-deploy.yml` still fails at startup — and since
+merging is what deploys, the symptom is not a red build but a site that silently stops updating.
+Whenever this policy is touched, check the deploy workflow too, not just the pull request.
+
 **Deliberately not enabled: *require branches to be up to date*** (`strict_required_status_checks_policy`).
 It would force every PR to re-run against a moved `main` before landing, which for a single-maintainer
 repo is mostly friction. The case it protects against — a PR that passed against a stale `main` and
