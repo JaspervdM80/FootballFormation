@@ -70,11 +70,44 @@ literally what ran on the PR rather than a copy that can drift. Deploying additi
 `main`, which stops a `workflow_dispatch` run against a feature branch from putting that branch
 into production.
 
-**Blocking the merge** is a repository setting, not something either workflow can do. Under
-*Settings → Branches → Branch protection rules* for `main`, enable **Require status checks to pass
-before merging** and select **`Build and test`**. GitHub then blocks the merge button while that
-check is queued or running, and while it is failing. Add *Require branches to be up to date before
-merging* if a PR should also re-run against a moved `main` before it can land.
+## Only a green build can be merged
+
+A workflow can report a failure but it cannot refuse a merge — that is a repository setting, and
+until it is switched on a red PR merges as easily as a green one. `.github/rulesets/main-build-and-test.json`
+is that setting, written down: a GitHub **ruleset** covering the default branch which
+
+- requires a pull request, so nothing lands on `main` by direct push;
+- requires the **`Build and test`** check to pass, so the merge button stays disabled while it is
+  queued, running, or failing;
+- blocks deletion and force-pushes on `main`, since the deploy history is what a rollback reads;
+- grants **no bypass to anyone**, including the repo owner.
+
+**GitHub does not read this file from the repository.** Nothing in a repo can grant itself branch
+protection — that would rather defeat the point. The file is an importable export, and it has to be
+applied once by hand:
+
+> *Settings → Rules → Rulesets → New ruleset → **Import a ruleset*** → upload
+> `.github/rulesets/main-build-and-test.json` → **Create**.
+
+Check it took by opening any pull request: the merge button should be greyed with *Required
+statuses must pass before merging*. After that the file is the record of what is configured — change
+the rule here and re-import, so the setting is reviewable in a diff like everything else.
+
+**`Build and test` has to run on every pull request, or the guard inverts.** A required check that
+never reports leaves a PR pending forever rather than mergeable, so `ci.yml` deliberately carries no
+`paths:` filter — adding one later to "skip CI for docs" would silently wedge every docs-only PR.
+If the job is ever renamed, the ruleset's `context` must be renamed with it.
+
+**Deliberately not enabled: *require branches to be up to date*** (`strict_required_status_checks_policy`).
+It would force every PR to re-run against a moved `main` before landing, which for a single-maintainer
+repo is mostly friction. The case it protects against — a PR that passed against a stale `main` and
+breaks once merged — is already caught before it can reach production, because `fly-deploy.yml` runs
+the same CI workflow again on `main` and the deploy job depends on it. Turn it on if that changes.
+
+**The escape hatch is the ruleset, not a bypass.** With `bypass_actors` empty there is no way to
+merge past a red build quietly; an emergency means setting the ruleset to *Disabled*, which is a
+visible, logged act that shows up in the repo's rule insights. That is the intended trade — the
+guard is worth little if the person most likely to be in a hurry can step around it silently.
 
 Manual deploys still work from the repo root:
 
