@@ -10,8 +10,8 @@ custom domains at the lowest price point (~$3–5/month, less with scale-to-zero
 | File | Purpose |
 |------|---------|
 | `Dockerfile` | Multi-stage build (SDK → aspnet runtime), listens on 8080 |
-| `fly.toml` | App `gjs-meiden`, volume `data` mounted at `/data`, scale-to-zero enabled |
-| `Program.cs` | `APP_DATA_DIR` env var overrides the data folder (DB, logs, data-protection keys) |
+| `fly.toml` | App `gjs-meiden`, volume `data` mounted at `/data` with 30-day snapshot retention, scale-to-zero enabled |
+| `Program.cs` | `APP_DATA_DIR` env var overrides the data folder (DB, logs, data-protection keys); maps `/health` |
 
 On Fly, `APP_DATA_DIR=/data` points at a 1 GB persistent volume, so the SQLite DB,
 Serilog logs, and data-protection keys all survive deploys and restarts.
@@ -84,6 +84,32 @@ fly deploy
 
 Either way, migrations run automatically on startup, same as locally.
 
+## A deploy has to prove it serves
+
+`flyctl deploy` reporting success only means the machine started. After it, the workflow requests
+`https://gjs-meiden.nl/health` and fails the job unless it answers `200`. The public hostname is
+used on purpose, so DNS and the certificate are part of what gets checked rather than only the
+container.
+
+`/health` (mapped in `Program.cs`) opens the database and runs a real query rather than
+`CanConnectAsync`, which for SQLite only opens the file and so succeeds against a schema a
+migration left half-applied. A boot that migrated badly, or refused to migrate because the backup
+failed, therefore fails the deploy instead of waiting to be found by the first parent to open the
+app on match day. The request is retried five times with a growing pause (5 s, 10 s, 15 s, 20 s),
+because the machine is usually cold-starting from zero when it arrives.
+
+**Deliberately a one-shot request, not a `[[http_service.checks]]` block in `fly.toml`.** Fly's
+proxy health checks count towards the concurrency its autostop decision reads, so a check running
+every few seconds holds the machine awake and quietly undoes scale-to-zero — the thing that keeps
+this app at a few euros a month. A check that has to be paid for continuously to tell us something
+we only need to know at deploy time is the wrong trade here.
+
+Manual deploys skip the smoke step, so check it by hand after one:
+
+```powershell
+curl https://gjs-meiden.nl/health    # "healthy"
+```
+
 ## The database is snapshotted before every migration
 
 Startup does three things in order, in `Program.cs` (see `Core/Data/DatabaseSafety.cs`):
@@ -109,7 +135,8 @@ one, so five restarts destroyed the only good copy in about as many minutes.
 (`Program.cs`). Without it the process ended successfully and the refusal never left the container:
 Fly saw a clean exit and the deploy that caused it reported success while the site was down. Every
 guard above is written to stop the boot loudly, and the exit code is the only part anyone outside
-the log can hear.
+the log can hear — followed now by the smoke check above, which fails the deploy from the outside
+even in the case where the process somehow stays up without serving.
 
 **A failed backup aborts the migration.** That is deliberate: several migrations are one-way in
 practice (`AddMatchTypeAndComments` drops a column, `AddMustChangePasswordAndLineupUniqueIndex`
@@ -121,25 +148,52 @@ To recover from a bad migration: stop the machine, replace `/data/footballformat
 newest `pre-migration-*.db`, and deploy the previous image.
 
 ```powershell
-fly ssh console -C "ls -la /data/backups"                  # what snapshots exist
-fly ssh sftp get /data/backups/pre-migration-<stamp>.db    # pull one down
+fly ssh console -C "ls -la /data/backups"                      # what snapshots exist
+fly ssh sftp get /data/backups/pre-migration-<migration>.db    # pull one down
 ```
 
 Snapshots are pre-migration only, and they live on the volume they protect — they cover a bad
-migration, which is what they were built for, but not a lost or corrupted volume. They are not a
-substitute for a routine backup of a database that changes every match day; take one of those
-before anything risky, and see the gaps below.
+migration, which is what they were built for, but not a lost or corrupted volume. For that, and
+for the ordinary match-day damage no migration was involved in, there is a second layer.
+
+## Fly's volume snapshots cover what the pre-migration copies cannot
+
+`fly.toml` sets `snapshot_retention = 30` on the `data` mount. Fly snapshots the volume daily and
+keeps those copies **off** the volume, which is the half of the backup story `/data` cannot tell:
+the pre-migration copies sit on the disk they protect, so a lost volume takes the database and
+every snapshot of it in one go.
+
+Thirty days rather than Fly's five-day default, and rather than nothing at all in version control.
+The point is a season's data surviving a problem nobody noticed over a school holiday — a squad
+edited wrongly in October is not usually discovered the same week. Sixty is the maximum Fly allows.
+
+```powershell
+fly volumes list --app gjs-meiden                      # the volume id (vol_...)
+fly volumes snapshots list <volume-id>                 # what exists, and how old
+fly volumes snapshots create <volume-id>               # take one now, before anything risky
+
+# Restore: a NEW volume built from a snapshot. It must be named `data` — that is the
+# `source` fly.toml mounts at /data — and cannot be smaller than the snapshot it came from.
+fly volumes create data --snapshot-id <snapshot-id> --region ams --size 1 --app gjs-meiden
+```
+
+Restoring never overwrites: Fly builds a *new* volume from the snapshot, and the machine is then
+moved onto it. The damaged volume stays until it is destroyed, so it can still be read from — and
+because a single machine must attach exactly one volume named `data` (see the cost note at the
+bottom), the old one has to go before the app is scaled back up. That is deliberate friction, and
+it is why a restore is an act someone performs rather than something a deploy could do on its own.
+
+The two layers answer different questions and neither replaces the other: the pre-migration copy is
+the only thing precise enough to undo a schema change, and the Fly snapshot is the only thing that
+survives losing the volume.
 
 ## Still open
 
-- **The backups share the volume with the database.** A volume-level failure takes both. Fly's own
-  volume snapshots (`fly volumes snapshots list`) are off-volume and cost nothing to enable; a copy
-  pulled off Fly entirely would also cover the account.
-- **Nothing verifies a deploy actually serves.** There is no health check in `fly.toml` and no
-  health endpoint, so Fly's only signal is that the machine started. A `/health` endpoint, a
-  `[[http_service.checks]]` block and a smoke request after `flyctl deploy` would close that —
-  though check first whether Fly's health checks count as traffic for `auto_stop_machines`, since
-  they could hold the machine awake and undo scale-to-zero.
+- **Both backup layers live in the same Fly account.** The snapshots are off-volume, not off-Fly:
+  an account-level loss, or a `fly apps destroy` typed at the wrong app, still takes everything.
+  A copy pulled down periodically (`fly ssh sftp get /data/footballformation.db`) and kept
+  elsewhere is what would close that; the roadmap's in-app database export is the same gap seen
+  from the other side.
 - **Rolling back is the image, not the database.** `fly releases` and `fly deploy --image` undo the
   code cheaply and losslessly. Restoring the database stays manual and deliberate on purpose: live
   match mode writes continuously on match day, so an automatic restore would silently discard the
@@ -154,6 +208,7 @@ fly logs                 # live server logs (Serilog console output)
 fly status               # machine state (stopped = scaled to zero, normal)
 fly ssh console          # shell inside the container
 fly ssh sftp get /data/footballformation.db backup.db   # DB backup
+curl https://gjs-meiden.nl/health                       # does it serve? ("healthy")
 ```
 
 ## Cost control
