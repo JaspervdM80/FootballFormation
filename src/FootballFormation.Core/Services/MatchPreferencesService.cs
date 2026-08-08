@@ -67,14 +67,16 @@ public class MatchPreferencesService(
             if (season is null)
                 return Result.Failure<DateTime>("Season not found");
 
-            var latestGame = await db.Games
+            // The latest date is picked here rather than with an ORDER BY: the database compares
+            // the date's text, not the date. See GameOrdering. One season's dates is a short list.
+            var seasonDates = await db.Games
                 .Where(g => g.SeasonId == seasonId)
-                .OrderByDescending(g => g.Date)
-                .FirstOrDefaultAsync();
+                .Select(g => g.Date)
+                .ToListAsync();
 
             var matchDay = prefsResult.Value!.MatchDay;
             var today = time.GetLocalNow().Date;
-            var lastGame = latestGame?.Date.Date;
+            var lastGame = seasonDates.Count > 0 ? seasonDates.Max().Date : (DateTime?)null;
 
             // Only step off the last game while it is still ahead of us — that is the case this
             // was written for, a run of fixtures entered in advance. Once the last game is behind

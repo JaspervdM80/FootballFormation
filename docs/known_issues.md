@@ -6,6 +6,14 @@ Avoid repeating these mistakes:
 - **UNIQUE constraint on save**: When re-saving `GamePlayerPosition` entities, always create NEW entities with `Id = 0`. Never re-add tracked entities with existing IDs — EF tries INSERT with the old PK.
 - **List value converters need ValueComparer**: Without it, EF won't detect changes to `List<PlayerPosition>` or `List<int>` properties.
 - **DB path must be absolute**: Use `%LOCALAPPDATA%\FootballFormation\` not relative paths (relative resolves to working directory, which changes).
+- **`ORDER BY` on a date sorts its text, not the date**: SQLite has no date type, so every
+  `DateTime` (`Game.Date`, `Season.StartDate`, …) sits in a TEXT column and an `ORDER BY` in the
+  query compares the string the value was written as. That matches date order only while every row
+  carries byte-identical formatting — one row written with an ISO `T` separator instead of EF's
+  space (a restored backup, a value written by anything but this app) sorts as if `T` were part of
+  the time, because `'T'` > `' '`. Order games **after** materialising them, via
+  `GameOrdering.NewestFirst()`/`OldestFirst()` (`Models/Game.cs`), which compares the parsed
+  `DateTime` and spells the same-day tie-break out. `GameOrderingTests` pins it.
 - **The scaffolder ordered a destructive migration wrongly**: `AddSeasonSquads` had to copy `Players.IsGuest` into a new table *and* drop the column; EF emitted the `DropColumn` first, which would have wiped the source before the backfill ran. Always read and reorder the generated `Up()`.
 
 ## Data / domain

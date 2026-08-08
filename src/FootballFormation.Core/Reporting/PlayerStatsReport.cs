@@ -160,7 +160,10 @@ public static class PlayerStatsReport
             Goals = gameStats.Sum(g => g.Goals),
             Assists = gameStats.Sum(g => g.Assists),
             Positions = positions,
-            Games = gameStats
+            // Newest first is this list's contract, so it is sorted on the game's date here
+            // rather than left to the order the caller happened to hand the games over in
+            // (the same tie-break as GameOrdering: same-day fixtures in entry order).
+            Games = [.. gameStats.OrderByDescending(g => g.Game.Date).ThenBy(g => g.Game.Id)]
         };
     }
 

@@ -112,9 +112,15 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
 - Goal and assist selects bind `int?`, not `int`: an `int` binds to 0, which is nobody's id but
   still renders as a chosen value, so the scorer field looked pre-filled.
 - `/games` routes an `InProgress` game to `/live` for **everyone**, and shows a pulsing green
-  `.action-live` button on its card. For other games the Live action is admin-only, and it
-  disappears entirely once `Games.HasFinalScore(game)` — a settled game has nothing left to run,
-  so the Result button beside it is the way in and a row click opens `/result`.
+  `.action-live` button on its card — whatever the calendar says, since a match kicked off before
+  midnight is still being played. For other games the Live action is admin-only **and match-day
+  only** (`Games.IsMatchDay`, i.e. `game.Date.Date == Today`): the live screen runs a real clock
+  and writes real substitution timings, so opening it on a fixture weeks out would bank minutes
+  against a match nobody is playing. It disappears entirely once `Games.HasFinalScore(game)` — a
+  settled game has nothing left to run, so the Result button beside it is the way in and a row
+  click opens `/result`.
+- The page reads "today" from the injected `TimeProvider`, not `DateTime.Today`, the same way the
+  services do — that is also what `IsIncomplete` (the missing-lineup flag) compares against.
 - `HasFinalScore` checks `MatchState` **as well as** the score fields, and must: `LiveMatchService`
   writes `ScoreHome`/`ScoreAway` on every goal, so a score alone only means the game has started.
   Testing the score by itself would hide the Live button on the very match being played.

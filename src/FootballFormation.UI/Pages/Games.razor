@@ -49,7 +49,9 @@ else if (_games.Count == 0)
 else
 {
     <div class="game-cards">
-        @foreach (var game in _games.OrderByDescending(g => g.Date))
+        @* Newest first, on the game's date — see GameOrdering, which is also what the service
+           returns. Spelled out here so the page's order does not depend on a query's. *@
+        @foreach (var game in _games.NewestFirst())
         {
             @* Left-edge stripe marks the venue (home/away); an amber tint marks a played game with no lineup. *@
             var rowClass = game.IsHomeGame ? "home" : "away";
@@ -99,16 +101,19 @@ else
                             <MudIcon Icon="@(IsIncomplete(game) ? Icons.Material.Outlined.GridView : Icons.Material.Filled.ViewModule)" Size="Size.Small" />
                         </button>
                     </AuthorizeView>
-                    @* A match in progress is what everyone wants first, so it is not admin-gated.
-                       Once the score is final there is nothing left to run, so the icon goes and
-                       the Result button beside it is the way in. *@
+                    @* A match in progress is what everyone wants first, so it is not admin-gated,
+                       and it stays reachable whatever the calendar says — a game kicked off before
+                       midnight is still being played. Otherwise the live screen is a match-day
+                       tool: it belongs to today's fixture, not to one three weeks out. Once the
+                       score is final there is nothing left to run, so the icon goes and the Result
+                       button beside it is the way in. *@
                     @if (game.MatchState == MatchState.InProgress)
                     {
                         <button class="action-btn action-live" title="@L["Live"]" @onclick="() => OpenLive(game.Id)">
                             <MudIcon Icon="@Icons.Material.Filled.Sensors" Size="Size.Small" />
                         </button>
                     }
-                    else if (!HasFinalScore(game))
+                    else if (IsMatchDay(game) && !HasFinalScore(game))
                     {
                         <AuthorizeView Roles="@AppRoles.Admin">
                             <button class="action-btn" title="@L["Live"]" @onclick="() => OpenLive(game.Id)">

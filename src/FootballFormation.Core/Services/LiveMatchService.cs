@@ -79,11 +79,14 @@ public class LiveMatchService(
             // A match in progress wins whatever the calendar says: it can have been kicked off
             // before midnight, and it is the one someone standing at a pitch is watching. Nothing
             // stops two being in progress at once, so the most recent by date wins.
-            var game = await db.Games
+            // Ordered after loading, not in the query: the database sorts the date's text rather
+            // than the date. See GameOrdering.
+            var game = (await db.Games
                 .AsNoTracking()
                 .Where(g => g.MatchState == MatchState.InProgress)
-                .OrderByDescending(g => g.Date)
-                .FirstOrDefaultAsync();
+                .ToListAsync())
+                .NewestFirst()
+                .FirstOrDefault();
 
             if (game is not null) return Result.Success<Game?>(game);
 
@@ -92,12 +95,14 @@ public class LiveMatchService(
             var today = time.GetLocalNow().Date;
             var tomorrow = today.AddDays(1);
 
-            game = await db.Games
+            game = (await db.Games
                 .AsNoTracking()
                 .Where(g => g.Date >= today && g.Date < tomorrow)
+                .ToListAsync())
                 .OrderBy(g => g.MatchState == MatchState.Finished)
                 .ThenBy(g => g.Date)
-                .FirstOrDefaultAsync();
+                .ThenBy(g => g.Id)
+                .FirstOrDefault();
 
             return Result.Success(game);
         });

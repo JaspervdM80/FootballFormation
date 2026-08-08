@@ -15,6 +15,7 @@ public partial class Games
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
+    [Inject] private TimeProvider Time { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
     [CascadingParameter]
@@ -37,10 +38,22 @@ public partial class Games
         _games = Snackbar.ReportFailure(L, result) ? result.Value : [];
     }
 
+    /// <summary>Today, on the wall clock the fixtures were entered against. Read through
+    /// <see cref="TimeProvider"/> for the same reason the services do it — a date nobody can
+    /// control is a date nobody can test.</summary>
+    private DateTime Today => Time.GetLocalNow().Date;
+
     /// <summary>A game that has already been played but has no lineup entered — its playing
     /// time can't be computed, so the data is incomplete. Future games are legitimately empty.</summary>
-    private static bool IsIncomplete(Game game) =>
-        game.Date.Date < DateTime.Today && !game.HasLineup;
+    private bool IsIncomplete(Game game) =>
+        game.Date.Date < Today && !game.HasLineup;
+
+    /// <summary>
+    /// Whether this game is played today. The live screen runs a real match clock and writes real
+    /// substitution timings, so opening it on a fixture weeks out records minutes against a match
+    /// nobody is playing — the button that leads there only appears on the day itself.
+    /// </summary>
+    private bool IsMatchDay(Game game) => game.Date.Date == Today;
 
     /// <summary>
     /// Whether the scoreline is settled. A live match writes `ScoreHome`/`ScoreAway` as the goals

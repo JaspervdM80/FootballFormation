@@ -26,13 +26,15 @@ public class GameService(
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
-            var games = await db.Games
+            // Ordered here rather than in the query: the database sorts the date's text, not the
+            // date. See GameOrdering.
+            var games = (await db.Games
                 .AsNoTracking()
                 .Where(g => seasonId == null || g.SeasonId == seasonId)
                 .Include(g => g.Periods)
                 .Include(g => g.Goals)
-                .OrderByDescending(g => g.Date)
-                .ToListAsync();
+                .ToListAsync())
+                .NewestFirst();
 
             logger.LogDebug("Retrieved {Count} games for season {SeasonId}", games.Count, seasonId);
             return Result.Success(games);
@@ -44,7 +46,9 @@ public class GameService(
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
-            var games = await db.Games
+            // Ordered here rather than in the query: the database sorts the date's text, not the
+            // date. See GameOrdering.
+            var games = (await db.Games
                 .AsNoTracking()
                 .Where(g => seasonId == null || g.SeasonId == seasonId)
                 .Include(g => g.Periods)
@@ -54,8 +58,8 @@ public class GameService(
                 // GameMinutesReport); without them a live-tracked game reads as if the final
                 // lineup had been on the pitch from kick-off.
                 .Include(g => g.Substitutions)
-                .OrderByDescending(g => g.Date)
-                .ToListAsync();
+                .ToListAsync())
+                .NewestFirst();
 
             logger.LogDebug("Retrieved {Count} games with details for season {SeasonId}",
                 games.Count, seasonId);
