@@ -21,12 +21,15 @@ public static class DatabaseSafety
     public const int KeepBackups = 5;
 
     /// <summary>
-    /// Copies the database if — and only if — migrations are about to change it. A restart with
-    /// nothing pending is by far the common case (Fly wakes this app from zero), and writing a
-    /// snapshot each time would fill the volume with identical files and push the useful ones out
-    /// of the retention window.
+    /// Copies the database if — and only if — migrations are about to change it, and at most once
+    /// per schema state. A restart with nothing pending is by far the common case (Fly wakes this
+    /// app from zero), and writing a snapshot each time would fill the volume with identical files
+    /// and push the useful ones out of the retention window.
     /// </summary>
-    /// <returns>The snapshot's path, or null when there was nothing to migrate.</returns>
+    /// <returns>
+    /// The snapshot's path — freshly written, or the one already held for this schema state — or
+    /// null when there was nothing to migrate.
+    /// </returns>
     public static async Task<string?> BackupBeforeMigrationsAsync(
         AppDbContext db, string dbPath, ILogger logger)
     {
@@ -45,19 +48,47 @@ public static class DatabaseSafety
         var backupDir = Path.Combine(Path.GetDirectoryName(dbPath)!, "backups");
         Directory.CreateDirectory(backupDir);
 
-        var stamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss");
-        var backupPath = Path.Combine(backupDir, $"pre-migration-{stamp}.db");
+        // Named for the schema state being left behind, not for the moment the copy is taken, so a
+        // state gets exactly one snapshot however many times the app tries to migrate away from it.
+        //
+        // That is what makes a crash loop survivable. Several migrations here run outside a
+        // transaction, so one that fails partway leaves the rest pending — and Fly restarts the
+        // machine. With a per-attempt name, every restart wrote another snapshot of the *broken*
+        // database and pruned an older one, so five restarts destroyed the only good copy, in about
+        // as many minutes, precisely when it was the thing that mattered.
+        var applied = (await db.Database.GetAppliedMigrationsAsync()).ToList();
+        var schemaState = applied.Count > 0 ? applied[^1] : "empty";
+        var backupPath = Path.Combine(backupDir, $"pre-migration-{schemaState}.db");
+
+        if (File.Exists(backupPath))
+        {
+            logger.LogWarning("Reusing the snapshot already taken of this schema state: {BackupPath}", backupPath);
+            return backupPath;
+        }
+
+        // Written under a temporary name and moved into place, because the copy is not atomic: a
+        // container killed midway through one would otherwise leave a truncated file under the name
+        // that means "this state is safely backed up", and every later boot would trust it.
+        var pendingPath = backupPath + ".tmp";
+
+        // Whatever a previous attempt left here is garbage by definition, and SQLite will not write
+        // into it — it opens the destination as a database and refuses a file that is not one. Left
+        // in place that turns a single killed backup into a boot the app can never complete, since
+        // a failed backup deliberately aborts the migration.
+        File.Delete(pendingPath);
 
         // SQLite's own backup API, not File.Copy: with WAL journalling the .db file alone can be
         // missing everything still in the -wal, so a plain copy is a torn snapshot of exactly the
         // rows most recently written.
         await using (var source = new SqliteConnection($"Data Source={dbPath}"))
-        await using (var destination = new SqliteConnection($"Data Source={backupPath}"))
+        await using (var destination = new SqliteConnection($"Data Source={pendingPath}"))
         {
             await source.OpenAsync();
             await destination.OpenAsync();
             source.BackupDatabase(destination);
         }
+
+        File.Move(pendingPath, backupPath, overwrite: true);
 
         var size = new FileInfo(backupPath).Length;
         logger.LogWarning("Database backed up to {BackupPath} ({Size:N0} bytes) before applying {Count} migration(s)",
@@ -113,9 +144,10 @@ public static class DatabaseSafety
         logger.LogInformation("Database integrity verified");
     }
 
-    /// <summary>Keeps the newest <see cref="KeepBackups"/> snapshots. A pruning failure is logged
-    /// and swallowed — a full backup folder is a problem, but not one worth refusing to boot over,
-    /// unlike a missing backup.</summary>
+    /// <summary>Keeps the newest <see cref="KeepBackups"/> snapshots — newest by name, which is
+    /// newest by schema state, since a migration id begins with the timestamp it was scaffolded at.
+    /// A pruning failure is logged and swallowed — a full backup folder is a problem, but not one
+    /// worth refusing to boot over, unlike a missing backup.</summary>
     private static void Prune(string backupDir, ILogger logger)
     {
         try
