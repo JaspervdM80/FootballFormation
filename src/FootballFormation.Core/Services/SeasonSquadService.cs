@@ -251,8 +251,6 @@ public class SeasonSquadService(
                 return Result.Failure<Season?>("Season not found");
             }
 
-            // Picked after loading, so the comparison is on the dates and not on the text SQLite
-            // keeps them in. See SeasonOrdering.
             var previous = (await db.Seasons.AsNoTracking().ToListAsync())
                 .NewestFirst()
                 .FirstOrDefault(s => s.StartDate.Date < season.StartDate.Date);

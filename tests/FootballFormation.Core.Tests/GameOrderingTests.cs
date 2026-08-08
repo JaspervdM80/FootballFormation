@@ -4,15 +4,9 @@ using Microsoft.EntityFrameworkCore;
 namespace FootballFormation.Core.Tests;
 
 /// <summary>
-/// The order games are handed back in.
-/// <para>
-/// SQLite has no date type, so <see cref="Game.Date"/> lives in a TEXT column and an
-/// <c>ORDER BY</c> in the database compares the text a date was written as. That agrees with the
-/// date itself only while every row carries the identical format, and a row that doesn't looks
-/// perfectly normal on screen — it just sits in the wrong place. These tests pin the ordering to
-/// the date: a differently-written row still lands where its date says, and two fixtures on the
-/// same day never swap places between reads.
-/// </para>
+/// The order games are handed back in. SQLite has no date type, so <see cref="Game.Date"/> lives
+/// in a TEXT column and an <c>ORDER BY</c> in the database compares the text a date was written
+/// as — these pin the ordering to the date itself.
 /// </summary>
 public class GameOrderingTests : ServiceTestBase
 {
@@ -87,11 +81,8 @@ public class GameOrderingTests : ServiceTestBase
             games.Select(g => g.Id).ToArray());
     }
 
-    /// <summary>
-    /// A game's comments are a feed, so their tie-break runs the other way to a fixture list's.
-    /// The clock does not move between two service calls here, which is exactly the case the
-    /// database's own row order used to decide.
-    /// </summary>
+    /// <summary>The clock does not move between these two calls, so both rows carry the same
+    /// CreatedAt and the tie-break is the only thing deciding.</summary>
     [Fact]
     public async Task Comments_written_in_the_same_instant_put_the_later_one_on_top()
     {

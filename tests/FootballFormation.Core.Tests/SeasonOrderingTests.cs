@@ -5,14 +5,7 @@ namespace FootballFormation.Core.Tests;
 
 /// <summary>
 /// Seasons come back in date order, and the window arithmetic that used to run as SQL still holds
-/// now that it runs on the loaded rows.
-/// <para>
-/// Why it moved is pinned in <see cref="GameOrderingTests"/> — a <see cref="DateTime"/> lives in a
-/// TEXT column, so the database sorts and compares the text a date was written as. The season
-/// table holds one row a year, so <c>SeasonService</c> reads all of it and reasons in memory,
-/// which also lets <see cref="Season.Contains"/> be the one definition of a window. These tests
-/// are the behaviour riding on that.
-/// </para>
+/// now that it runs on the loaded rows. Why it moved is pinned in <see cref="GameOrderingTests"/>.
 /// </summary>
 public class SeasonOrderingTests : ServiceTestBase
 {

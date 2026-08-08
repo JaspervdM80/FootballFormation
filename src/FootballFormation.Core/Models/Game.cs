@@ -167,18 +167,18 @@ public class Game
 /// SQLite has no date type — <see cref="Game.Date"/> lives in a TEXT column — so an
 /// <c>ORDER BY</c> in the database compares the <em>text</em> a date was written as rather than
 /// the date itself. The two only agree while every row was written in exactly the same format;
-/// one row stored with a different separator or precision (a restored backup, a value written by
+/// one stored with a different separator or precision (a restored backup, a value written by
 /// anything but this app) lands in the wrong place and nothing on screen looks wrong. Sorting
 /// once the rows are materialised compares the parsed <see cref="DateTime"/>, which cannot drift.
 /// </para>
 /// <para>
-/// Both spell the tie-break out, so two fixtures on the same day always come back in the order
-/// they were entered instead of in whatever order the database happened to hand them over.
+/// Both spell the tie-break out, so two fixtures on the same day keep the order they were
+/// entered in rather than whatever order the database handed them over in.
 /// </para>
 /// </summary>
 public static class GameOrdering
 {
-    /// <summary>Newest first — the order the games list and the season reports read in.</summary>
+    /// <summary>Newest first — how the games list and the season reports read.</summary>
     public static List<Game> NewestFirst(this IEnumerable<Game> games) =>
         [.. games.OrderByDescending(g => g.Date).ThenBy(g => g.Id)];
 

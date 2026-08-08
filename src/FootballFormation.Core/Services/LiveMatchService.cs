@@ -79,8 +79,6 @@ public class LiveMatchService(
             // A match in progress wins whatever the calendar says: it can have been kicked off
             // before midnight, and it is the one someone standing at a pitch is watching. Nothing
             // stops two being in progress at once, so the most recent by date wins.
-            // Ordered after loading, not in the query: the database sorts the date's text rather
-            // than the date. See GameOrdering.
             var game = (await db.Games
                 .AsNoTracking()
                 .Where(g => g.MatchState == MatchState.InProgress)

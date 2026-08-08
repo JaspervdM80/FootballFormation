@@ -67,8 +67,7 @@ public class MatchPreferencesService(
             if (season is null)
                 return Result.Failure<DateTime>("Season not found");
 
-            // The latest date is picked here rather than with an ORDER BY: the database compares
-            // the date's text, not the date. See GameOrdering. One season's dates is a short list.
+            // The dates alone, and the latest picked from them: see GameOrdering.
             var seasonDates = await db.Games
                 .Where(g => g.SeasonId == seasonId)
                 .Select(g => g.Date)
@@ -117,9 +116,7 @@ public class MatchPreferencesService(
             .Select(s => (DateTime?)s.StartDate)
             .FirstOrDefaultAsync();
 
-        // Ordered and filtered in memory, on the season's start date rather than on the text
-        // SQLite keeps it in (see SeasonOrdering). One preferences row per season, so this is a
-        // handful of rows either way.
+        // One preferences row per season, so this is a handful of rows. See SeasonOrdering.
         var byNewestSeason = (await db.MatchPreferences
             .Include(p => p.Season)
             .ToListAsync())
@@ -128,8 +125,8 @@ public class MatchPreferencesService(
             .ThenBy(p => p.SeasonId)
             .ToList();
 
-        // A season with no start date of its own (it does not exist yet) has nothing to be
-        // "before", so it falls straight through to the newest row of any season.
+        // A season with no start date of its own has nothing to be "before", so it falls
+        // straight through to the newest row of any season.
         var source = byNewestSeason
             .FirstOrDefault(p => startDate is not null && p.Season!.StartDate.Date < startDate.Value.Date)
             ?? byNewestSeason.FirstOrDefault();

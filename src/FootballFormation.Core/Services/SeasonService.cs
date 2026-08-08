@@ -18,8 +18,6 @@ public class SeasonService(
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
-            // Ordered here rather than in the query: the database sorts the date's text, not the
-            // date. See SeasonOrdering.
             var seasons = (await db.Seasons
                 .AsNoTracking()
                 .ToListAsync())
@@ -41,12 +39,9 @@ public class SeasonService(
 
             var day = date.Date;
 
-            // Matched in memory: a window comparison in the query would compare the text the two
-            // dates were written as (see SeasonOrdering), and it could not call Season.Contains,
-            // which is where "this date is inside that window" is defined date-only — the season
-            // rows carry a midnight time component and the game dates handed in here do too.
-            // Windows are gapless and non-overlapping, so at most one matches; newest first only
-            // decides it deterministically if a database ever does hold two.
+            // Matched in memory so Season.Contains decides it — the one date-only definition of
+            // a window. Windows do not overlap, so newest-first only breaks a tie a healthy
+            // database never has. See SeasonOrdering.
             var seasons = await db.Seasons.AsNoTracking().ToListAsync();
             var season = seasons.NewestFirst().FirstOrDefault(s => s.Contains(day));
 
@@ -73,8 +68,6 @@ public class SeasonService(
             // CreateFor always returns a full July–June window. If the date sits in a gap narrower
             // than that, the window would overlap the seasons on either side, so clamp it to them:
             // auto-creation can then only ever fill a hole, never straddle its neighbours.
-            // Both neighbours come from one materialised read, compared as dates rather than as
-            // the text they are stored in. See SeasonOrdering.
             var existing = (await db.Seasons.AsNoTracking().ToListAsync()).OldestFirst();
 
             var previous = existing.Where(s => s.EndDate.Date < day).MaxBy(s => s.EndDate.Date);
@@ -200,7 +193,6 @@ public class SeasonService(
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
-            // Ordered after loading, on the dates rather than on their text. See SeasonOrdering.
             var seasons = (await db.Seasons.ToListAsync()).OldestFirst();
             var closed = 0;
 
@@ -237,7 +229,6 @@ public class SeasonService(
             var current = await db.Seasons.FirstOrDefaultAsync(s => s.IsCurrent);
             if (current is not null) return Result.Success(current);
 
-            // Newest by start date, picked after loading. See SeasonOrdering.
             var newest = (await db.Seasons.ToListAsync()).NewestFirst().FirstOrDefault();
             if (newest is not null)
             {
@@ -273,10 +264,9 @@ public class SeasonService(
             return Result.Failure("The end date must be after the start date");
         }
 
-        // Every other window, read once and compared in memory: in the query these would be text
-        // comparisons (see SeasonOrdering) and could not be date-only, and the table holds one row
-        // a year. AsNoTracking so validating a season the caller is about to Update() cannot pull
-        // a second instance of the same row into the change tracker.
+        // Every other window, read once and compared in memory (see SeasonOrdering). AsNoTracking
+        // so validating a season the caller is about to Update() cannot pull a second instance of
+        // the same row into the change tracker.
         var others = (await db.Seasons
             .AsNoTracking()
             .Where(s => s.Id != season.Id)
