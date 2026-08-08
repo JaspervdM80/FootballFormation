@@ -146,16 +146,38 @@ Either way, migrations run automatically on startup, same as locally.
 ## A deploy has to prove it serves
 
 `flyctl deploy` reporting success only means the machine started. After it, the workflow requests
-`https://gjs-meiden.nl/health` and fails the job unless it answers `200`. The public hostname is
-used on purpose, so DNS and the certificate are part of what gets checked rather than only the
-container.
+`https://gjs-meiden.nl/health` and fails the job unless it answers `200` **and reports the commit
+this run built**. The public hostname is used on purpose, so DNS and the certificate are part of
+what gets checked rather than only the container.
 
-`/health` (mapped in `Program.cs`) opens the database and runs a real query rather than
-`CanConnectAsync`, which for SQLite only opens the file and so succeeds against a schema a
-migration left half-applied. A boot that migrated badly, or refused to migrate because the backup
-failed, therefore fails the deploy instead of waiting to be found by the first parent to open the
-app on match day. The request is retried five times with a growing pause (5 s, 10 s, 15 s, 20 s),
-because the machine is usually cold-starting from zero when it arrives.
+```jsonc
+{
+  "status": "healthy",
+  "version": "d5ba72bb10ada2aa04ef454a7c4a15c5de691da3",  // the commit this image was built from
+  "appliedMigrations": 17,
+  "pendingMigrations": 0,
+  "detail": null                                           // why, when unhealthy
+}
+```
+
+**Why the commit is in there.** A 200 answers a weaker question than it appears to: it says *a*
+container is up, not that the one just built is the one answering. Fly can report a successful
+deploy while the previous machine carries on serving, and nothing about that looks wrong — the site
+is up, it is simply the old site, and the change you shipped is quietly missing. The commit comes
+from the `GIT_SHA` build arg (`Dockerfile` → `APP_GIT_SHA`), which `fly-deploy.yml` sets to
+`github.sha`; the smoke step compares the two and only passes when they match. Built outside CI it
+reads `unknown`.
+
+**Why the migration counts are in there.** The app migrates itself on boot, so anything still
+pending by the time it serves means the boot did not finish its job — and a half-applied schema is
+the worst kind of running: the pages that touch untouched tables work, and the rest fail strangely.
+`pendingMigrations > 0` is reported unhealthy for that reason (`HealthReport`, pinned by
+`HealthReportTests`). The check also runs a real query rather than `CanConnectAsync`, which for
+SQLite only opens the file and so succeeds against exactly the damaged schema worth catching.
+
+The request is retried five times with a growing pause (5 s, 10 s, 15 s, 20 s), because the machine
+is usually cold-starting from zero. A healthy response carrying the *previous* commit is treated as
+a retry rather than a failure — that is a deploy mid-swap, not a broken one.
 
 **Deliberately a one-shot request, not a `[[http_service.checks]]` block in `fly.toml`.** Fly's
 proxy health checks count towards the concurrency its autostop decision reads, so a check running
@@ -163,10 +185,19 @@ every few seconds holds the machine awake and quietly undoes scale-to-zero — t
 this app at a few euros a month. A check that has to be paid for continuously to tell us something
 we only need to know at deploy time is the wrong trade here.
 
+**Deliberately not wired to an automatic rollback.** Reverting the *image* on a failed smoke check
+looks like the obvious next step, and for code alone it would be — `fly deploy --image` is cheap and
+lossless. It is unsafe here because by the time the smoke check runs, the release has already
+migrated the database, and several migrations are one-way in practice (`AddMatchTypeAndComments`
+drops a column). Rolling the image back would leave the previous code running against the new
+schema, which is a second, worse failure on top of the first, and an unattended one. A failed smoke
+check is a loud red deploy that a person then decides about — see *Rolling back is the image, not
+the database* below.
+
 Manual deploys skip the smoke step, so check it by hand after one:
 
 ```powershell
-curl https://gjs-meiden.nl/health    # "healthy"
+curl https://gjs-meiden.nl/health
 ```
 
 ## The database is snapshotted before every migration
