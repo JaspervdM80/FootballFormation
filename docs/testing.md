@@ -9,14 +9,23 @@ migration reached a live database on startup.
 
 ## What is covered
 
+Every test class, so a gap here is visible rather than assumed:
+
 | Area | File | Why it matters |
 | --- | --- | --- |
 | `Game`, `Season`, `SeasonSquad` | `GameTests`, `SeasonTests`, `SeasonSquadTests` | The domain rules — season windows, the roster rule, the clock arithmetic |
+| Date ordering | `GameOrderingTests`, `SeasonOrderingTests` | Pins the rule that dates are sorted after materialising, never in SQL |
 | Formation slots | `FormationSlotsTests` | Every pitch draws from this; a bug lays lineups out wrong |
 | Formations | `FormationTypeTests` | Each shape must field exactly ten outfield players |
-| Report builders | `GameMinutesReportTests`, `PlayerStatsReportTests`, `SeasonStatsReportTests`, `PlayingTimeReportTests` | Minutes and statistics — wrong answers here are invisible until a season is over |
+| Report builders | `GameMinutesReportTests`, `PlayerStatsReportTests`, `SeasonStatsReportTests`, `PlayingTimeReportTests`, `PlannedChangesReportTests`, `MatchClockReportTests` | Minutes and statistics — wrong answers here are invisible until a season is over |
 | Position fit | `PositionFitHelperTests` | The five tiers that colour every chip |
 | Live match | `LiveMatchServiceTests` | Clock banking, period transitions, substitution undo |
+| Games and comments | `GameServiceTests`, `GameCommentTests` | Season derivation on create, scalar-only update, and the public/private split |
+| Seasons and squads | `SeasonServiceTests`, `SeasonSquadServiceTests` | Gapless windows, the single current season, copy-forward and the removal guards |
+| Match preferences | `MatchPreferencesServiceTests` | Per-season inheritance, and next-match dates staying inside the window |
+| **Authorization** | `AuthorizationTests` | That every write refuses a non-admin *at the service*, not only in the markup — the guard the whole write path rests on |
+| Accounts | `UserServiceTests`, `SeededAdminTests` | Credentials, security stamps, the last-admin guard, and the seeded account being no working login |
+| Boot safety | `DatabaseSafetyTests`, `HealthReportTests` | The pre-migration snapshot and what `/health` is allowed to call healthy |
 | Service lifetime | `ServiceLifetimeTests` | Concurrent reads, and detached entities round-tripping through update |
 | `Result` | `ResultTests` | Error keys, arguments, and the guard on reading a failed value |
 

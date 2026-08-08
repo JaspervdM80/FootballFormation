@@ -76,7 +76,7 @@ seasons, so each game resolves *its own* season's squad.
 ## EF Core Conventions
 - **DbContext**: `AppDbContext` with primary constructor
 - **Value converters**: `List<PlayerPosition>` → comma-separated ints; `List<int>` → comma-separated values. Both need `ValueComparer` for change tracking.
-- **SavePeriodLineupAsync**: Deletes all existing positions, then inserts fresh entities with `Id = 0` to avoid UNIQUE constraint errors (never reuse tracked entity IDs).
+- **SavePeriodLineupAsync**: Deletes all existing positions, then inserts fresh entities with `Id = 0` to avoid UNIQUE constraint errors (never reuse tracked entity IDs). Both halves run inside one `BeginTransactionAsync` — delete-then-insert needs all of it or none, or a failed insert leaves the period with no lineup at all rather than the one it had.
 - **Auto-migration**: `db.Database.MigrateAsync()` in Program.cs startup
 - **Never order or compare a date in the query.** SQLite keeps every `DateTime` in a TEXT column,
   so `ORDER BY Date` sorts the text a date was written as. Materialise first, then use
@@ -174,6 +174,15 @@ Every mutating service method goes through `ServiceOperation.RunAdminAsync`, whi
 `<AuthorizeView Roles="@AppRoles.Admin">` and an unrendered handler has no id to dispatch to — but
 that is enforcement in the render tree only, and it stops holding the moment a service is reached
 some other way. Reads stay open: the squad, fixtures and statistics are public.
+
+**One read is not open, and it is the exception worth knowing.**
+`GameService.GetCommentsAsync(gameId, includePrivate)` takes a flag saying whether to include
+admin-only comments — and then confirms it against `ICurrentUser` rather than believing it, so a
+caller passing `true` without the role gets the public ones. A read with something to hide should
+not be the one place a boolean argument is trusted. `AuthorizationTests` pins both halves —
+`An_anonymous_caller_asking_for_private_comments_gets_only_the_public_ones` alongside
+`Reads_stay_open_to_everyone`. Everything else public stays genuinely public; if a second such read
+appears, it belongs in this paragraph.
 
 `CircuitCurrentUser` answers false for an account still on its seeded password, so the first-login
 gate is a real restriction rather than a redirect that could be navigated around.

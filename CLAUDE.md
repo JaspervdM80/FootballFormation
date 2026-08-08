@@ -66,7 +66,6 @@ only routes to it. Before changing an area, read its doc:
 | Adding or changing tests | [docs/testing.md](docs/testing.md) |
 | Anything that ships or migrates | [docs/deployment.md](docs/deployment.md) |
 | **Before debugging anything that feels weird** | [docs/known_issues.md](docs/known_issues.md) |
-| Wondering whether something is planned | [docs/roadmap.md](docs/roadmap.md) |
 
 `docs/known_issues.md` is not a changelog — it is a list of traps that already cost someone hours
 (MudBlazor 9.x quirks, SQLite date sorting, touch drag-and-drop, CSS scoping). Check it before
@@ -83,7 +82,9 @@ throws by design.
 
 **Every write goes through `RunAdminAsync`.** Hiding a control behind `<AuthorizeView
 Roles="@AppRoles.Admin">` is the first line of defence, not the only one. Reads stay open — the
-squad, fixtures and statistics are public.
+squad, fixtures and statistics are public. The single exception is
+`GameService.GetCommentsAsync`, which re-confirms its `includePrivate` argument against
+`ICurrentUser` rather than trusting the caller.
 
 **Each service operation opens its own short-lived `AppDbContext`** from the injected
 `IDbContextFactory`. A Blazor Server circuit outlives a request, so a scoped context would be shared
@@ -91,8 +92,9 @@ by every component on the page and two concurrent queries throw.
 
 **Never order or compare a `DateTime` inside a query.** SQLite stores dates as TEXT, so `ORDER BY
 Date` sorts the string the value happened to be written as. Materialise first, then use
-`GameOrdering` / `SeasonOrdering`. `LiveMatchService`'s same-day range is the one deliberate
-exception, and it is commented as such.
+`GameOrdering` / `SeasonOrdering`. `LiveMatchService`'s same-day `Date >= today && Date < tomorrow`
+is the one comparison left in SQL, kept there so the home page does not load the games table whole;
+everything else compares dates in memory.
 
 **Take the clock from the injected `TimeProvider`**, never `DateTime.UtcNow` or `DateTime.Today` —
 in services and in pages alike. Tests drive `FakeTimeProvider`.

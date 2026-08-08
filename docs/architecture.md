@@ -15,6 +15,8 @@ Models/
   GameGoal.cs            — A goal: scorer (null for the opponent), assister, minute, own/opponent flags
   GameSubstitution.cs    — A timestamped change made during a live match
   MatchPreferences.cs    — Per-season game defaults (duration, split, formation, match day)
+  GameComment.cs         — An admin's note on a game: body, public/private, author, edited marker
+  MatchType.cs           — MatchType enum (Competition / Cup / Practice) + DisplayName()
   AppUser.cs             — An account that can sign in: name, login, hash, role, security stamp
   UserRole.cs            — UserRole enum (Admin only today); the member name is the role claim value
   FormationSlots.cs      — Formation slots and lineup→slot assignment, shared by every pitch
@@ -29,17 +31,25 @@ Data/
   Configurations/         — One IEntityTypeConfiguration per entity, applied by assembly scan
     CsvListConverters.cs  — List<int>/List<TEnum> ↔ comma-separated text, with the ValueComparer
   DatabasePathHelper.cs   — Resolves the SQLite path: APP_DATA_DIR, then WEBSITE_INSTANCE_ID, then LOCALAPPDATA
+  DatabaseSafety.cs       — What runs around MigrateAsync on boot: the pre-migration snapshot (one
+                           per schema state, newest 5 kept) and the post-migration integrity and
+                           foreign-key checks. See deployment.md
   DesignTimeDbContextFactory.cs — Lets dotnet-ef build the context from Core alone, so migration
                            commands need no --startup-project
 Reporting/
   GameMinutesReport.cs    — Playing time for one game: real timings when run live, plan otherwise
-  PlayingTimeReport.cs    — The playing-time table (PlayingTimeRow, PeriodDetail, PeriodPlayStatus)
+  PlayingTimeReport.cs    — The playing-time table (PlayingTimeRow, PeriodDetail, PeriodPlayStatus).
+                           Deliberately the planned periods × period length estimate: it serves the
+                           builder, where nothing has been played yet. PlayerStatsReport is the one
+                           that switched to real timings via GameMinutesReport
   LiveMinutesReport.cs    — Exact minutes on the pitch during a live match
   SeasonStatsReport.cs    — Team totals + form for /stats (SeasonStats, GameResult)
   PlayerStatsReport.cs    — Per-player aggregates (PlayerStats, PositionStat, PlayerGameStat)
   PositionFitHelper.cs    — 5-tier position fit: Preferred, NaturalFit, Alternative, Compatible, OutOfPosition
   MatchClockReport.cs     — Derives the live clock and period state from the stored anchor + banked total
   PlannedChangesReport.cs — What the next period changes versus the one on the pitch
+  HealthReport.cs         — Whether a booted container is actually serving: the /health payload and
+                           the rule that pending migrations mean unhealthy. Pure, so it is tested
 Services/
   ServiceOperation.cs     — Shared try/catch + error logging wrapper for all service methods
   PlayerService.cs        — CRUD, returns Result<T>
@@ -117,6 +127,14 @@ Layout/
   MainLayout.razor(.cs)       — MudBlazor layout, club light theme, app-bar nav + drawer, providers.
                                 Both nav renderings are <NavItems />, so a menu change is one edit
                                 in AppNav.Menu. Also starts the NavigationTrail for the circuit.
+Security/
+  CircuitCurrentUser.cs       — Core's ICurrentUser, answered from the circuit's auth state. The
+                                implementation every RunAdminAsync depends on; it answers false for
+                                an account still on its seeded password
+Strings.cs                    — Marker type for IStringLocalizer<Strings>. No English resx: the
+                                English text is the key
+Strings.nl.resx               — The Dutch translations, the app's default culture
+GlobalUsings.cs               — Aliases our MatchType over System.IO's, which implicit usings pull in
 ```
 
 Report builders live in **Core** (`Core/Reporting/`), not the UI: minutes played, utilisation and

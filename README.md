@@ -69,7 +69,6 @@ FootballFormation/
 │   ├── theming.md
 │   ├── testing.md
 │   ├── deployment.md
-│   ├── roadmap.md
 │   └── known_issues.md
 └── FootballFormation.slnx
 ```

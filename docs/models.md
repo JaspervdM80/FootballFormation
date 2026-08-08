@@ -113,6 +113,18 @@ and a page refresh or a second device picks it up exactly where it is.
 `Game.CountOurGoals(goals)` / `Game.CountTheirGoals(goals)` are the one place the scoreline rule
 lives: an own goal counts for the opponent, so it is excluded from ours and included in theirs.
 
+**`Game.IsComplete` decides whether a game counts towards statistics at all**: the final whistle
+went on the live screen, or the game was never run live and has a final score on file. A match in
+progress is never complete however many goals are logged, or the season table and the scorer lists
+would shift while it is still being played. Four more computed members support the reports:
+
+| Member | Answers |
+|---|---|
+| `HasLineup` | Does any period have someone on the pitch? Needs `PlayerPositions` loaded |
+| `HasActualTimings` | Was any period actually kicked off, i.e. are there real timings to prefer over the plan? |
+| `PlayedDurationMinutes` | How long the match really lasted, summed over the periods played out; falls back to `GameDurationMinutes`. The denominator for utilisation, so a match that over-ran cannot push anyone past 100% |
+| `CurrentOrLastPeriod()` | The period the match is *about*: the live one, else the last played, else the first — so the live screen is never blank |
+
 A game's season is resolved in `GameService.CreateAsync`: `SeasonId == 0` means "auto by date"
 (the game dialog's default) and is looked up via `SeasonService.GetOrCreateForDateAsync`, creating
 the season if the date falls beyond those defined. An explicit id passes through untouched, and
@@ -221,6 +233,11 @@ includePrivate)` is the only read path, and it is deliberately *not* an `.Includ
 the razor would still ship in a visitor's HTML. The page passes `includePrivate: IsAdmin`, read from
 the same cascading auth state that decides what it renders.
 
+**And the service does not take that flag on trust.** `GetCommentsAsync` re-confirms it against
+`ICurrentUser`, so a caller passing `true` without being an admin gets the public comments and
+nothing else. This is the one read in the app with something to hide, which makes it the wrong
+place for a boolean argument nobody checks — see [patterns.md](patterns.md#authorization-is-at-the-service-boundary-not-only-in-the-markup).
+
 Indexed on `(GameId, CreatedAt)` — every read is "this game's comments, newest first". The author
 leg is `SetNull` like `GameGoal.Scorer`: a comment is part of the match record and outlives the
 account that wrote it.
@@ -243,7 +260,8 @@ under.
 The row is created on first read by `MatchPreferencesService.GetAsync(seasonId)`, seeded via
 `MatchPreferences.CopyFor` from the newest season **before** it that has one — so a new season
 inherits last year's settings rather than the hardcoded 4-4-2 / 60 minutes, and per-season storage
-costs the user no extra work. `GetCurrentAsync()` is the no-season-in-hand shortcut.
+costs the user no extra work. There is no "current season" overload — every caller has a season in
+hand, from the picker or from the game being edited.
 
 `GetNextMatchDateAsync(seasonId)` uses that season's `MatchDay`, counts only that season's games,
 and keeps its answer inside the season window: it measures from the opening day for a season not
