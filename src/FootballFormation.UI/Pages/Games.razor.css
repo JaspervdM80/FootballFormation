@@ -1,3 +1,8 @@
+/* Fixtures and results are two lists on one page — the gap between them is what says so. */
+.game-section + .game-section {
+    margin-top: 28px;
+}
+
 .game-cards {
     display: flex;
     flex-direction: column;

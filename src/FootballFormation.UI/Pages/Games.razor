@@ -48,91 +48,97 @@ else if (_games.Count == 0)
 }
 else
 {
-    <div class="game-cards">
-        @foreach (var game in _games.NewestFirst())
-        {
-            @* Left-edge stripe marks the venue (home/away); an amber tint marks a played game with no lineup. *@
-            var rowClass = game.IsHomeGame ? "home" : "away";
-            if (IsIncomplete(game)) rowClass += " no-lineup";
-            <div class="game-row @rowClass" @onclick="() => OpenGame(game)">
-                <div class="game-primary">
-                    <div class="game-meta">
-                        <span class="game-date">@game.Date.ToString("dd MMM")</span>
-                        @if (IsIncomplete(game))
+    @foreach (var gameList in Sections())
+    {
+        <div class="game-section">
+            <div class="card-label">@gameList.Title</div>
+            <div class="game-cards">
+                @foreach (var game in gameList.Games)
+                {
+                    @* Left-edge stripe marks the venue (home/away); an amber tint marks a played game with no lineup. *@
+                    var rowClass = game.IsHomeGame ? "home" : "away";
+                    if (IsIncomplete(game)) rowClass += " no-lineup";
+                    <div class="game-row @rowClass" @onclick="() => OpenGame(game)">
+                        <div class="game-primary">
+                            <div class="game-meta">
+                                <span class="game-date">@game.Date.ToString("dd MMM")</span>
+                                @if (IsIncomplete(game))
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.WarningAmber" Size="Size.Small" Class="nolineup-icon"
+                                             Title="@L["This game has no lineup — playing time can't be recorded"]" />
+                                }
+                            </div>
+                            <span class="game-opponent"><span class="opp-prefix">@(game.IsHomeGame ? "vs " : "@ ")</span>@game.Opponent</span>
+                        </div>
+                        @* No badge for a competition match — that is the norm, and one on every card is
+                           noise. A cup tie or a practice game changes what the row means, so it says so. *@
+                        @if (game.MatchType != MatchType.Competition)
                         {
-                            <MudIcon Icon="@Icons.Material.Filled.WarningAmber" Size="Size.Small" Class="nolineup-icon"
-                                     Title="@L["This game has no lineup — playing time can't be recorded"]" />
+                            <span class="badge-teal">@L[game.MatchType.DisplayName()]</span>
                         }
-                    </div>
-                    <span class="game-opponent"><span class="opp-prefix">@(game.IsHomeGame ? "vs " : "@ ")</span>@game.Opponent</span>
-                </div>
-                @* No badge for a competition match — that is the norm, and one on every card is
-                   noise. A cup tie or a practice game changes what the row means, so it says so. *@
-                @if (game.MatchType != MatchType.Competition)
-                {
-                    <span class="badge-teal">@L[game.MatchType.DisplayName()]</span>
-                }
-                <span class="badge-gold">@game.FormationType.DisplayName()</span>
-                @if (game.UnavailablePlayerIds.Count > 0)
-                {
-                    <span class="badge-unavailable">@L["{0} out", game.UnavailablePlayerIds.Count]</span>
-                }
-                @if (game.GuestPlayerIds.Count > 0)
-                {
-                    <span class="badge-guest">@L["+{0} guest", game.GuestPlayerIds.Count]</span>
-                }
-                @if (game.ScoreHome.HasValue && game.ScoreAway.HasValue)
-                {
-                    var scoreClass = game.ScoreHome > game.ScoreAway ? "win" : game.ScoreHome < game.ScoreAway ? "loss" : "draw";
-                    @* Scoreboard reads in venue order: the home side is listed first. *@
-                    var left = game.IsHomeGame ? game.ScoreHome : game.ScoreAway;
-                    var right = game.IsHomeGame ? game.ScoreAway : game.ScoreHome;
-                    <span class="game-score @scoreClass">@left – @right</span>
-                }
-                <div class="game-actions" @onclick:stopPropagation="true">
-                    <AuthorizeView Roles="@AppRoles.Admin">
-                        @* Empty grid variant + amber tint when the lineup is missing, so a coach
-                           spots which cards need a lineup at a glance from the action row. *@
-                        <button class="action-btn @(IsIncomplete(game) ? "action-needs-lineup" : "")"
-                                title="@(IsIncomplete(game) ? L["Add lineup"] : L["Formation"])"
-                                @onclick="() => OpenFormation(game.Id)">
-                            <MudIcon Icon="@(IsIncomplete(game) ? Icons.Material.Outlined.GridView : Icons.Material.Filled.ViewModule)" Size="Size.Small" />
-                        </button>
-                    </AuthorizeView>
-                    @* A match in progress is what everyone wants first, so it is not admin-gated,
-                       and it stays reachable whatever the calendar says. Otherwise the live screen
-                       is a match-day tool. Once the score is final there is nothing left to run, so
-                       the icon goes and the Result button beside it is the way in. *@
-                    @if (game.MatchState == MatchState.InProgress)
-                    {
-                        <button class="action-btn action-live" title="@L["Live"]" @onclick="() => OpenLive(game.Id)">
-                            <MudIcon Icon="@Icons.Material.Filled.Sensors" Size="Size.Small" />
-                        </button>
-                    }
-                    else if (IsMatchDay(game) && !HasFinalScore(game))
-                    {
-                        <AuthorizeView Roles="@AppRoles.Admin">
-                            <button class="action-btn" title="@L["Live"]" @onclick="() => OpenLive(game.Id)">
-                                <MudIcon Icon="@Icons.Material.Filled.Sensors" Size="Size.Small" />
+                        <span class="badge-gold">@game.FormationType.DisplayName()</span>
+                        @if (game.UnavailablePlayerIds.Count > 0)
+                        {
+                            <span class="badge-unavailable">@L["{0} out", game.UnavailablePlayerIds.Count]</span>
+                        }
+                        @if (game.GuestPlayerIds.Count > 0)
+                        {
+                            <span class="badge-guest">@L["+{0} guest", game.GuestPlayerIds.Count]</span>
+                        }
+                        @if (game.ScoreHome.HasValue && game.ScoreAway.HasValue)
+                        {
+                            var scoreClass = game.ScoreHome > game.ScoreAway ? "win" : game.ScoreHome < game.ScoreAway ? "loss" : "draw";
+                            @* Scoreboard reads in venue order: the home side is listed first. *@
+                            var left = game.IsHomeGame ? game.ScoreHome : game.ScoreAway;
+                            var right = game.IsHomeGame ? game.ScoreAway : game.ScoreHome;
+                            <span class="game-score @scoreClass">@left – @right</span>
+                        }
+                        <div class="game-actions" @onclick:stopPropagation="true">
+                            <AuthorizeView Roles="@AppRoles.Admin">
+                                @* Empty grid variant + amber tint when the lineup is missing, so a coach
+                                   spots which cards need a lineup at a glance from the action row. *@
+                                <button class="action-btn @(IsIncomplete(game) ? "action-needs-lineup" : "")"
+                                        title="@(IsIncomplete(game) ? L["Add lineup"] : L["Formation"])"
+                                        @onclick="() => OpenFormation(game.Id)">
+                                    <MudIcon Icon="@(IsIncomplete(game) ? Icons.Material.Outlined.GridView : Icons.Material.Filled.ViewModule)" Size="Size.Small" />
+                                </button>
+                            </AuthorizeView>
+                            @* A match in progress is what everyone wants first, so it is not admin-gated,
+                               and it stays reachable whatever the calendar says. Otherwise the live screen
+                               is a match-day tool. Once the score is final there is nothing left to run, so
+                               the icon goes and the Result button beside it is the way in. *@
+                            @if (game.MatchState == MatchState.InProgress)
+                            {
+                                <button class="action-btn action-live" title="@L["Live"]" @onclick="() => OpenLive(game.Id)">
+                                    <MudIcon Icon="@Icons.Material.Filled.Sensors" Size="Size.Small" />
+                                </button>
+                            }
+                            else if (IsMatchDay(game) && !HasFinalScore(game))
+                            {
+                                <AuthorizeView Roles="@AppRoles.Admin">
+                                    <button class="action-btn" title="@L["Live"]" @onclick="() => OpenLive(game.Id)">
+                                        <MudIcon Icon="@Icons.Material.Filled.Sensors" Size="Size.Small" />
+                                    </button>
+                                </AuthorizeView>
+                            }
+                            <button class="action-btn" title="@L["Overview"]" @onclick="() => OpenOverview(game.Id)">
+                                <MudIcon Icon="@Icons.Material.Filled.Share" Size="Size.Small" />
                             </button>
-                        </AuthorizeView>
-                    }
-                    <button class="action-btn" title="@L["Overview"]" @onclick="() => OpenOverview(game.Id)">
-                        <MudIcon Icon="@Icons.Material.Filled.Share" Size="Size.Small" />
-                    </button>
-                    <button class="action-btn" title="@L["Result"]" @onclick="() => OpenResult(game.Id)">
-                        <MudIcon Icon="@Icons.Material.Filled.Scoreboard" Size="Size.Small" />
-                    </button>
-                    <AuthorizeView Roles="@AppRoles.Admin">
-                        <button class="action-btn" title="@L["Edit"]" @onclick="() => OpenEditDialog(game)">
-                            <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
-                        </button>
-                        <button class="action-btn action-delete" title="@L["Delete"]" @onclick="() => DeleteGame(game)">
-                            <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
-                        </button>
-                    </AuthorizeView>
-                </div>
+                            <button class="action-btn" title="@L["Result"]" @onclick="() => OpenResult(game.Id)">
+                                <MudIcon Icon="@Icons.Material.Filled.Scoreboard" Size="Size.Small" />
+                            </button>
+                            <AuthorizeView Roles="@AppRoles.Admin">
+                                <button class="action-btn" title="@L["Edit"]" @onclick="() => OpenEditDialog(game)">
+                                    <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                                </button>
+                                <button class="action-btn action-delete" title="@L["Delete"]" @onclick="() => DeleteGame(game)">
+                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                                </button>
+                            </AuthorizeView>
+                        </div>
+                    </div>
+                }
             </div>
-        }
-    </div>
+        </div>
+    }
 }

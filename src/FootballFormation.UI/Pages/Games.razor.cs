@@ -47,6 +47,35 @@ public partial class Games
     private bool IsIncomplete(Game game) =>
         game.Date.Date < Today && !game.HasLineup;
 
+    /// <summary>One headed block of the games list.</summary>
+    private sealed record GameSection(string Title, List<Game> Games);
+
+    /// <summary>
+    /// The page reads as two lists, because a fixture and a result are two different things to
+    /// look at: what is still to play, soonest first, and then what has been played, in the order
+    /// it was played. A single list has to put one of them at the wrong end.
+    /// <para>
+    /// The scoreline decides which, not the calendar: a game keeps its place in the fixture list
+    /// until a result is on file. So a match that was never played stays there after its date has
+    /// gone by — deliberately, since the only thing to do with one is delete it, and a stale row
+    /// in the fixture list is what prompts that. <see cref="HasFinalScore"/> tests the match state
+    /// as well, so a game being played now stays among the fixtures rather than moving across on
+    /// its first goal.
+    /// </para>
+    /// <para>Either block is dropped when it is empty — a season yet to start is all fixtures, and
+    /// one that is over is all results.</para>
+    /// </summary>
+    private IEnumerable<GameSection> Sections()
+    {
+        if (_games is null) yield break;
+
+        var fixtures = _games.Where(game => !HasFinalScore(game)).OldestFirst();
+        if (fixtures.Count > 0) yield return new GameSection(L["Fixtures"], fixtures);
+
+        var results = _games.Where(HasFinalScore).OldestFirst();
+        if (results.Count > 0) yield return new GameSection(L["Results"], results);
+    }
+
     /// <summary>The live screen runs a real clock and writes real substitution timings, so
     /// opening it on a fixture weeks out banks minutes against a match nobody is playing. The
     /// button that leads there only appears on the day itself.</summary>

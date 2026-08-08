@@ -77,6 +77,8 @@
   <!-- Games -->
   <data name="{0} match" xml:space="preserve"><value>{0} wedstrijd</value></data>
   <data name="{0} matches" xml:space="preserve"><value>{0} wedstrijden</value></data>
+  <data name="Fixtures" xml:space="preserve"><value>Programma</value></data>
+  <data name="Results" xml:space="preserve"><value>Uitslagen</value></data>
   <data name="New Game" xml:space="preserve"><value>Nieuwe wedstrijd</value></data>
   <data name="Edit Game" xml:space="preserve"><value>Wedstrijd bewerken</value></data>
   <data name="No games yet. Create your first game!" xml:space="preserve"><value>Nog geen wedstrijden. Maak je eerste wedstrijd aan!</value></data>
