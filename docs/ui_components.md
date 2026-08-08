@@ -289,8 +289,48 @@ height, because a 410px calendar genuinely does not fit a 390px-tall viewport.
 `MudDatePicker`'s popover is centred on the viewport instead of anchored to its input, and capped
 at `100dvh - 16px` with `overflow-y: auto` so landscape scrolls rather than clips. It applies to
 both dialogs that carry one — `GameDialog` and `SeasonDialog` on `/settings`. MudBlazor writes
-`left`/`top` inline from JS, so every positioning declaration needs `!important`. Day cells keep
-their 36px; that is already the smallest a finger reliably hits.
+`left`/`top` inline from JS, so every positioning declaration needs `!important`.
+
+The day cells are **resized**, not left at MudBlazor's 36px — that line used to say the 36px was
+"already the smallest a finger reliably hits" and it was wrong, which is why picking a day still
+misfired after the popover was centred. `--dp-day` on the popover sizes all seven columns from the
+viewport, bounded by what the height allows as well as the width, and every element that has to
+line up with a column reads it:
+
+| viewport | day cell | note |
+| --- | --- | --- |
+| 320x568 | 41.7px | the one phone that cannot reach 44px — seven of those need 308px and it has 308px |
+| 360x640 | 47.4px | |
+| 390x844 | 51.7px | |
+| 412x915 | 52px | the `clamp()` ceiling |
+| 844x390 | 36px | landscape is height-bound; the 100px banner halves to 56px so six rows still fit |
+
+The 2px side margins go with it, so the **column pitch is the target** — there are no dead gutters
+left to miss into, which the 40px pitch around a 36px cell used to have four of. Two knock-on rules
+are load-bearing: `.mud-picker-calendar-transition`'s `min-height` is the only thing reserving room
+for the grid (`.mud-picker-slide-transition` takes its children `position: absolute`), so it has to
+scale with the cell or taller rows draw over what follows; and the weekday letters carry the same
+width or the header stops lining up with the days.
+
+Days were not the only undersized target, and by the second report not even the main one — "it's
+mostly the month selection". Everything else a finger has to hit is raised to 44px too:
+
+| control | MudBlazor | here |
+| --- | --- | --- |
+| month name (opens the month grid) | 23px tall | 44px |
+| ‹ › month arrows | 40px | 44px |
+| toolbar year (opens the year list) | 40px | 44px |
+| year row in the list | 40px | 48px |
+
+The month name is the one worth remembering: it is a real `<button>` clamped to `height: 23px`
+because it doubles as the slide transition's viewport, and it sits in the 56px row the arrows
+already set — so 17px of dead div above and 16px below, with no layout change needed to fix it.
+Growing it also needs `bottom: 0` and flex centring on its label, which
+`.mud-picker-slide-transition > *` has pinned `position: absolute` to the top.
+
+In landscape the 56px toolbar has room for one 44px button, not two, so the date line is hidden and
+the year button keeps its target. That strands nothing: the picker's flow is **year → month → day**,
+and the date line only restates what is already in the field behind the popover.
 
 ## MudBlazor 9.x Notes
 - `ValidateAsync()` not `Validate()`

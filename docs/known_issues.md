@@ -52,6 +52,37 @@ Avoid repeating these mistakes:
   viewport instead of anchoring it. Give the popover an **explicit** width, never just a
   `max-width`: `.mud-picker-calendar` is a wrapping flex row whose min-content width is one 40px
   day cell, so a shrink-to-fit popover collapses the month into a single column.
+- **Centring the calendar was only half of it — the day cells are 36px, and that is too small.**
+  Reported twice: after the popover was centred, picking a day on a phone still misfired. MudBlazor's
+  `.mud-day` is `width/height: 36px; margin: 0 2px`, i.e. a 36px circle on a 40px column pitch with
+  rows flush — under Apple's 44px *and* Android's 48dp in both axes, and the 4px gutters between
+  columns are **dead**: a tap landing there hits `.mud-picker-calendar` and does nothing at all.
+  Worse, the popover was still pinned to 310px on a sheet that is now the full width of the phone,
+  so 40px of screen sat unused either side of the calendar and left live form controls exposed
+  there — with the picker open, `elementFromPoint` 14px outside the calendar returned the season
+  `MudSelect` underneath. `--dp-day` in app.css spends that width instead (41.7px at 320 wide up to
+  52px, sized by height as well so landscape doesn't blow past the viewport) and drops the side
+  margins so the column pitch *is* the target. See [ui_components.md](ui_components.md).
+- **The month name between the arrows is a 23px button, and it was the worst target of the lot.**
+  Reported as "it's mostly the month selection". `.mud-picker-calendar-header-transition` is a real
+  `<button>` — the one that opens the month grid — but MudBlazor gives it `height: 23px` because it
+  doubles as the slide transition's viewport. It sits in the 56px row the two 44px arrows set, so
+  there is **17px of dead div above it and 16px below**, and a thumb aimed at "augustus 2026" mostly
+  lands in one of those and does nothing. 44px fits that row with no layout change at all. Its label
+  is taken out of flow by `.mud-picker-slide-transition > *` (`position: absolute`, top/left/right
+  pinned), so growing the button also needs `bottom: 0` and flex centring or the text sticks to the
+  top edge. The toolbar's year button — the only way into the year list — was 64x40 and got the same
+  44px floor.
+- **The picker's flow is year → month → day, so the toolbar's date line is not an escape route.**
+  Worth knowing before hiding it (which `app.css` does in landscape, to buy a 44px year button in a
+  56px toolbar): picking a year lands on the month grid, and picking a month lands on the days. The
+  date button only restates what is already in the field behind the popover. Verified end to end at
+  every size, landscape included.
+- **Sizing a MudBlazor calendar means sizing `.mud-picker-calendar-transition` too.**
+  `.mud-picker-slide-transition > *` is `position: absolute`, so the grid is out of flow and that
+  container's `min-height` (MudBlazor's 216px = six 36px rows) is the *only* thing reserving room
+  for it. Grow the day cells without growing it and the last weeks are drawn straight over whatever
+  follows. Always six rows — the calendar renders 42 cells whatever the month.
 - **Buttons need clear space above them, not just their own size.** The game dialog's action row
   sat 28px under the last field, and `MudSelect`'s hit box reaches ~10px past its own underline —
   leaving 18px of dead space between "Annuleren" and the unavailable-players dropdown. Mobile

@@ -207,8 +207,8 @@ html, body {
 
 /* --- Date pickers on a phone ---
    Both dialogs that carry a MudDatePicker (new/edit match, and the season editor on /settings) are
-   smaller than the picker itself on a phone: the popover is 310x410 and anchored to the input's
-   left edge, which hung it 49px off a 320px-wide screen (the whole Saturday column was
+   smaller than the picker itself on a phone: MudBlazor's popover is 310x410 and anchored to the
+   input's left edge, which hung it 49px off a 320px-wide screen (the whole Saturday column was
    untappable) and, in landscape, 20px below a 390px-tall one.
 
    So the query is width **or** height — a landscape phone fails on height alone. Inside it the
@@ -216,8 +216,34 @@ html, body {
    writes `left`/`top` inline from JS, which is why every positioning line needs `!important`.
 
    Only .mud-popover-open is pinned; a closed popover keeps MudBlazor's off-screen -9999px parking
-   spot rather than sitting invisible in the middle of the page. */
+   spot rather than sitting invisible in the middle of the page.
+
+   Centring it was only half the job, and the half that was left is why picking a day still misfired
+   on a phone. MudBlazor's day is a 36px circle on a 40px column pitch (`.mud-day` is
+   `width/height: 36px; margin: 0 2px`) with rows flush at 36px. That is under Apple's 44px and
+   Android's 48dp minimum in both axes, and the 4px gutters between columns are dead — a tap landing
+   there hits `.mud-picker-calendar` and does nothing at all. Meanwhile the popover was pinned to
+   310px on a sheet that is now the full width of the phone, so 40px of screen sat unused on either
+   side of the calendar *and* left live form controls exposed there: with the picker open,
+   elementFromPoint 14px outside the calendar returns the season/venue MudSelect underneath.
+
+   --dp-day spends that width instead. Seven columns are sized from the viewport, the 2px side
+   margins go (so the column pitch *is* the target — no dead gutters left to miss into), and the
+   popover is sized to the row so only ~6px of form shows around it. 320px is the one phone that
+   cannot reach 44px — seven of those need 308px and it only has 308px of usable width — so it
+   settles at 41.7px, and every wider phone gets 44px or more.
+
+   It has to be the *smaller* of what the width and the height allow, or landscape breaks: 844px of
+   width would ask for 52px cells, and six rows of those plus the picker's chrome is 510px in a
+   390px-tall viewport — the popover would scroll for most of the month. --dp-chrome is everything
+   above the grid (toolbar, month nav, weekday letters, slack); the short-viewport block below
+   trims the toolbar and lowers it to match. */
 @media (max-width: 599.98px), (max-height: 559.98px) {
+    .mud-popover.mud-picker-popover {
+        --dp-chrome: 210px;
+        --dp-day: clamp(36px, min(calc((100vw - 28px) / 7), calc((100dvh - var(--dp-chrome)) / 6)), 52px);
+    }
+
     .mud-popover.mud-picker-popover.mud-popover-open {
         position: fixed !important;
         top: 50% !important;
@@ -226,18 +252,17 @@ html, body {
         bottom: auto !important;
         transform: translate(-50%, -50%);
         /* An explicit width, not max-width. .mud-picker-calendar is a wrapping flex row, so its
-           min-content width is a single 40px day cell — let the popover shrink-to-fit and the
-           month collapses into one tall column. */
-        width: min(310px, calc(100vw - 16px)) !important;
+           min-content width is a single day cell — let the popover shrink-to-fit and the month
+           collapses into one tall column. */
+        width: min(calc(var(--dp-day) * 7 + 16px), calc(100vw - 12px)) !important;
         max-width: none !important;
-        /* Landscape has no room for all 410px of it; scrolling beats clipping the last week. */
+        /* Landscape has no room for all of it; scrolling beats clipping the last week. */
         max-height: calc(100dvh - 16px);
         overflow-y: auto;
     }
 
     /* MudBlazor hard-codes 310px in four places. Now that the popover carries the width, the
-       containers just fill it — the day cells keep their own 36px, which is already the smallest
-       a finger can reliably hit. */
+       containers just fill it. */
     .mud-picker-popover .mud-picker,
     .mud-picker-popover .mud-picker-container,
     .mud-picker-popover .mud-picker-content,
@@ -246,6 +271,94 @@ html, body {
         min-width: 0;
         width: 100%;
         max-width: 100%;
+    }
+
+    /* The day itself, and the weekday letter above it, which has to keep the same column width or
+       the header stops lining up with the grid. The label is inside a max-height:16px flex row, so
+       it takes the width only. */
+    .mud-picker-popover .mud-picker-calendar .mud-day {
+        width: var(--dp-day);
+        height: var(--dp-day);
+        margin: 0;
+        font-size: .875rem;
+    }
+
+    .mud-picker-popover .mud-picker-calendar-header-day .mud-day-label {
+        width: var(--dp-day);
+        margin: 0;
+    }
+
+    /* .mud-picker-slide-transition takes its children out of flow (`position: absolute`), so this
+       min-height is the only thing reserving room for the grid — MudBlazor's 216px is six 36px
+       rows, and taller rows would otherwise be drawn over whatever follows. Always six rows: the
+       calendar renders 42 cells whatever the month. */
+    .mud-picker-popover .mud-picker-calendar-transition {
+        min-height: calc(var(--dp-day) * 6);
+    }
+
+    /* The other two views behind the same popover: the month grid off the header's month name, and
+       the year list off "2026" in the toolbar. 60px rows were already fine; the 40px year row was
+       not, and it is the one target in the picker a finger has to hit inside a scrolling list. */
+    .mud-picker-popover .mud-picker-year-container .mud-picker-year {
+        height: 48px;
+    }
+
+    /* 24px icon + 8px padding = a 40px arrow. These step the month, so they are tapped as often as
+       a day is. */
+    .mud-picker-popover .mud-picker-calendar-header-switch > .mud-icon-button {
+        padding: 10px;
+    }
+
+    /* "augustus 2026" between those arrows — the button that opens the month grid, and the one
+       reported as the worst of the lot. MudBlazor gives it `height: 23px` (it doubles as the slide
+       transition's viewport, hence the fixed height and overflow: hidden), so it is a 23px target
+       inside a 56px row: 17px of dead div above it and 16px below, and a thumb aimed at the month
+       name mostly lands in one of those and does nothing. 44px still fits the row the arrows
+       already set, so nothing moves. */
+    .mud-picker-popover .mud-picker-calendar-header-switch .mud-picker-calendar-header-transition {
+        height: 44px;
+    }
+
+    /* The label is taken out of flow by .mud-picker-slide-transition > * (`position: absolute` with
+       top/left/right pinned), so it would sit against the top of the taller button. Pinning bottom
+       too and centring in the box keeps the month name where it looks anchored. */
+    .mud-picker-popover .mud-picker-calendar-header-switch .mud-picker-calendar-header-transition > * {
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* The banner's year opens the year list — a 64x40 target, and the only way into it. */
+    .mud-picker-popover .mud-picker-datepicker-toolbar .mud-button-root {
+        min-height: 44px;
+    }
+}
+
+/* A landscape phone is short, not narrow, and the picker's 100px banner — the "za, 08 aug" restatement
+   of the date already in the field — is the one part of it that buys nothing. Halving it is what lets
+   six rows fit a 390px-tall viewport without the popover scrolling at all, so the last week of the
+   month is on screen rather than one flick below it. --dp-chrome drops by the 44px that frees, less
+   8px so a 390px-tall phone lands on 36px rows and 370px of content inside 374px of popover rather
+   than 4px over it. Shorter than that (a 360px-tall landscape phone, or a 320px-wide one turned
+   sideways) still scrolls — 6 rows at MudBlazor's own 36px plus the chrome is 370px however it is
+   sliced — but 44px less than it used to. */
+@media (max-height: 559.98px) {
+    .mud-popover.mud-picker-popover {
+        --dp-chrome: 174px;
+    }
+
+    .mud-picker-popover .mud-picker-toolbar {
+        height: 56px;
+    }
+
+    /* Which leaves room for one 44px button, not two, so the decorative half goes: "za, 08 aug"
+       only restates the date that is already in the field behind the popover and in the month
+       header below it. The year button stays, because it is the only way into the year list —
+       shrinking both to fit would be the same mistake this whole block exists to undo. Picking a
+       year returns to the calendar on its own, so nothing is stranded by dropping the date. */
+    .mud-picker-popover .mud-picker-datepicker-toolbar .mud-button-date {
+        display: none;
     }
 }
 
