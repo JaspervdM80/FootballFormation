@@ -67,14 +67,15 @@ public class MatchPreferencesService(
             if (season is null)
                 return Result.Failure<DateTime>("Season not found");
 
-            var latestGame = await db.Games
+            // The dates alone, and the latest picked from them: see GameOrdering.
+            var seasonDates = await db.Games
                 .Where(g => g.SeasonId == seasonId)
-                .OrderByDescending(g => g.Date)
-                .FirstOrDefaultAsync();
+                .Select(g => g.Date)
+                .ToListAsync();
 
             var matchDay = prefsResult.Value!.MatchDay;
             var today = time.GetLocalNow().Date;
-            var lastGame = latestGame?.Date.Date;
+            var lastGame = seasonDates.Count > 0 ? seasonDates.Max().Date : (DateTime?)null;
 
             // Only step off the last game while it is still ahead of us — that is the case this
             // was written for, a run of fixtures entered in advance. Once the last game is behind
@@ -115,15 +116,20 @@ public class MatchPreferencesService(
             .Select(s => (DateTime?)s.StartDate)
             .FirstOrDefaultAsync();
 
-        var source = await db.MatchPreferences
+        // One preferences row per season, so this is a handful of rows. See SeasonOrdering.
+        var byNewestSeason = (await db.MatchPreferences
             .Include(p => p.Season)
-            .Where(p => p.Season!.StartDate < startDate)
+            .ToListAsync())
+            .Where(p => p.Season is not null)
             .OrderByDescending(p => p.Season!.StartDate)
-            .FirstOrDefaultAsync()
-            ?? await db.MatchPreferences
-                .Include(p => p.Season)
-                .OrderByDescending(p => p.Season!.StartDate)
-                .FirstOrDefaultAsync();
+            .ThenBy(p => p.SeasonId)
+            .ToList();
+
+        // A season with no start date of its own has nothing to be "before", so it falls
+        // straight through to the newest row of any season.
+        var source = byNewestSeason
+            .FirstOrDefault(p => startDate is not null && p.Season!.StartDate.Date < startDate.Value.Date)
+            ?? byNewestSeason.FirstOrDefault();
 
         return source?.CopyFor(seasonId) ?? new MatchPreferences { SeasonId = seasonId };
     }

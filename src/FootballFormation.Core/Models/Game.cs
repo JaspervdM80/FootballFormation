@@ -161,6 +161,32 @@ public class Game
         goals.Count(g => g.IsOwnGoal || g.IsOpponentGoal);
 }
 
+/// <summary>
+/// Putting a set of games in date order.
+/// <para>
+/// SQLite has no date type — <see cref="Game.Date"/> lives in a TEXT column — so an
+/// <c>ORDER BY</c> in the database compares the <em>text</em> a date was written as rather than
+/// the date itself. The two only agree while every row was written in exactly the same format;
+/// one stored with a different separator or precision (a restored backup, a value written by
+/// anything but this app) lands in the wrong place and nothing on screen looks wrong. Sorting
+/// once the rows are materialised compares the parsed <see cref="DateTime"/>, which cannot drift.
+/// </para>
+/// <para>
+/// Both spell the tie-break out, so two fixtures on the same day keep the order they were
+/// entered in rather than whatever order the database handed them over in.
+/// </para>
+/// </summary>
+public static class GameOrdering
+{
+    /// <summary>Newest first — how the games list and the season reports read.</summary>
+    public static List<Game> NewestFirst(this IEnumerable<Game> games) =>
+        [.. games.OrderByDescending(g => g.Date).ThenBy(g => g.Id)];
+
+    /// <summary>Oldest first.</summary>
+    public static List<Game> OldestFirst(this IEnumerable<Game> games) =>
+        [.. games.OrderBy(g => g.Date).ThenBy(g => g.Id)];
+}
+
 public enum MatchState
 {
     NotStarted,

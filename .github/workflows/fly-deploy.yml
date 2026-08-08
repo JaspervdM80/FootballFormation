@@ -1,37 +1,32 @@
 name: Deploy to Fly.io
 
+# Only ever main. Pull requests are built by ci.yml, which has no deploy job at all — the two are
+# separate files so a pull request's checks cannot include anything called "deploy".
 on:
   push:
     branches: [main]
-  # Also on PRs into main: the build job is the gate that keeps a broken migration off the Fly
-  # volume, and running it only after the merge means finding out on the way to production. The
-  # deploy job below is guarded by an `if` so a pull request builds and tests but never deploys.
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
+# One deploy at a time: SQLite lives on a single volume and the app migrates on boot, so two
+# overlapping deploys race over one machine.
 concurrency:
   group: fly-deploy
   cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   # Gate: nothing reaches the Fly volume that doesn't compile and pass its tests. The app
   # auto-migrates on startup, so a broken build is a broken production database.
   build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: '10.0.x'
-      - run: dotnet restore
-      - run: dotnet build --no-restore --configuration Release
-      - run: dotnet test --no-build --configuration Release --verbosity normal
+    uses: ./.github/workflows/ci.yml
 
   deploy:
     needs: build
-    # Never from a pull request — a fork's PR must not be able to reach the deploy token.
-    if: github.event_name != 'pull_request'
+    # `workflow_dispatch` runs against any branch, and without this would put that branch on the
+    # production volume.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

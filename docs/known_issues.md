@@ -6,6 +6,24 @@ Avoid repeating these mistakes:
 - **UNIQUE constraint on save**: When re-saving `GamePlayerPosition` entities, always create NEW entities with `Id = 0`. Never re-add tracked entities with existing IDs — EF tries INSERT with the old PK.
 - **List value converters need ValueComparer**: Without it, EF won't detect changes to `List<PlayerPosition>` or `List<int>` properties.
 - **DB path must be absolute**: Use `%LOCALAPPDATA%\FootballFormation\` not relative paths (relative resolves to working directory, which changes).
+- **`ORDER BY` on a date sorts its text, not the date**: SQLite has no date type, so all eight
+  `DateTime` columns in this schema (`Game.Date`, `Game.ClockRunningSince`, `Season.StartDate`,
+  `Season.EndDate`, `GameComment.CreatedAt`/`EditedAt`, `GameGoal.RecordedAt`,
+  `GameSubstitution.RecordedAt`) are TEXT, and an `ORDER BY` or a `<`/`>` in the query compares the
+  string the value was written as. That matches date order only while every row carries
+  byte-identical formatting — one written with an ISO `T` separator instead of EF's space (a
+  restored backup, a value written by anything but this app) sorts as if the `T` were part of the
+  time, because `'T'` > `' '`. **Sort and compare dates after materialising the rows**, where the
+  parsed `DateTime` is what gets compared: `GameOrdering` (`Models/Game.cs`) and `SeasonOrdering`
+  (`Models/Season.cs`) do it with the tie-break spelled out, and `SeasonService` reads the whole
+  season table and does its window arithmetic in memory for the same reason — which is also what
+  lets `Season.Contains` be the single date-only definition of a window. `GameOrderingTests` and
+  `SeasonOrderingTests` pin it. The one deliberate exception is `LiveMatchService`'s
+  `Date >= today && Date < tomorrow`, a same-day range kept in SQL so the games table is not
+  loaded whole on every home-page hit.
+- **A timestamp in a filename is a different case, and it is fine**: `DatabaseSafety` names backups
+  `pre-migration-yyyyMMdd-HHmmss.db` and prunes by `OrderByDescending(f => f.Name)`. That format is
+  fixed-width, so lexicographic *is* chronological — the sort is on text by design, not by accident.
 - **The scaffolder ordered a destructive migration wrongly**: `AddSeasonSquads` had to copy `Players.IsGuest` into a new table *and* drop the column; EF emitted the `DropColumn` first, which would have wiped the source before the backfill ran. Always read and reorder the generated `Up()`.
 
 ## Data / domain

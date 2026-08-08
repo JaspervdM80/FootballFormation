@@ -160,7 +160,8 @@ public static class PlayerStatsReport
             Goals = gameStats.Sum(g => g.Goals),
             Assists = gameStats.Sum(g => g.Assists),
             Positions = positions,
-            Games = gameStats
+            // Newest first is this list's contract, not something to inherit from the caller.
+            Games = [.. gameStats.OrderByDescending(g => g.Game.Date).ThenBy(g => g.Game.Id)]
         };
     }
 

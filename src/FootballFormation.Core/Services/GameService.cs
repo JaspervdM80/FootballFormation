@@ -26,13 +26,13 @@ public class GameService(
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
-            var games = await db.Games
+            var games = (await db.Games
                 .AsNoTracking()
                 .Where(g => seasonId == null || g.SeasonId == seasonId)
                 .Include(g => g.Periods)
                 .Include(g => g.Goals)
-                .OrderByDescending(g => g.Date)
-                .ToListAsync();
+                .ToListAsync())
+                .NewestFirst();
 
             logger.LogDebug("Retrieved {Count} games for season {SeasonId}", games.Count, seasonId);
             return Result.Success(games);
@@ -44,7 +44,7 @@ public class GameService(
         {
             await using var db = await dbFactory.CreateDbContextAsync();
 
-            var games = await db.Games
+            var games = (await db.Games
                 .AsNoTracking()
                 .Where(g => seasonId == null || g.SeasonId == seasonId)
                 .Include(g => g.Periods)
@@ -54,8 +54,8 @@ public class GameService(
                 // GameMinutesReport); without them a live-tracked game reads as if the final
                 // lineup had been on the pitch from kick-off.
                 .Include(g => g.Substitutions)
-                .OrderByDescending(g => g.Date)
-                .ToListAsync();
+                .ToListAsync())
+                .NewestFirst();
 
             logger.LogDebug("Retrieved {Count} games with details for season {SeasonId}",
                 games.Count, seasonId);
@@ -241,11 +241,15 @@ public class GameService(
 
             includePrivate = includePrivate && await currentUser.IsAdminAsync();
 
-            var comments = await db.GameComments
+            // The tie-break runs the other way to a fixture list's: two comments written in the
+            // same instant are a feed, and the later one belongs on top.
+            var comments = (await db.GameComments
                 .Where(c => c.GameId == gameId && (includePrivate || c.IsPublic))
                 .Include(c => c.Author)
+                .ToListAsync())
                 .OrderByDescending(c => c.CreatedAt)
-                .ToListAsync();
+                .ThenByDescending(c => c.Id)
+                .ToList();
 
             logger.LogDebug("Retrieved {Count} comments for game {GameId} (private included: {IncludePrivate})",
                 comments.Count, gameId, includePrivate);

@@ -55,3 +55,23 @@ public class Season
         };
     }
 }
+
+/// <summary>
+/// Putting seasons in date order — the same rule as <see cref="GameOrdering"/> and for the same
+/// reason, <see cref="Season.StartDate"/> being a TEXT column too.
+/// <para>
+/// The table holds one row a year, so <c>SeasonService</c> reads all of it and does its window
+/// arithmetic in memory: the same reasoning applied to the comparisons as well as the ordering,
+/// which also lets <see cref="Season.Contains"/> be the single definition of a window.
+/// </para>
+/// </summary>
+public static class SeasonOrdering
+{
+    /// <summary>Newest first — what the picker and the current-season fallbacks want.</summary>
+    public static List<Season> NewestFirst(this IEnumerable<Season> seasons) =>
+        [.. seasons.OrderByDescending(s => s.StartDate).ThenBy(s => s.Id)];
+
+    /// <summary>Oldest first — the order the gap checks walk the windows in.</summary>
+    public static List<Season> OldestFirst(this IEnumerable<Season> seasons) =>
+        [.. seasons.OrderBy(s => s.StartDate).ThenBy(s => s.Id)];
+}

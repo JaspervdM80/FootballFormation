@@ -60,6 +60,22 @@ certificate are done (usually minutes after DNS propagates).
 Merging to `main` deploys automatically via GitHub Actions
 (`.github/workflows/fly-deploy.yml`, authenticated by the `FLY_API_TOKEN` repo secret —
 a scoped deploy token from `flyctl tokens create deploy --app gjs-meiden`).
+
+Pull requests are gated by a **separate** workflow, `.github/workflows/ci.yml` ("CI"), which runs
+`Build and test` — restore, a Release build (where warnings are errors) and the test suite. It
+holds no deploy job and no Fly token, so a pull request cannot reach the volume even in principle;
+the deploy workflow no longer triggers on `pull_request` at all. `fly-deploy.yml` calls the same
+CI workflow as its gate (`uses: ./.github/workflows/ci.yml`), so what runs before a deploy is
+literally what ran on the PR rather than a copy that can drift. Deploying additionally requires
+`main`, which stops a `workflow_dispatch` run against a feature branch from putting that branch
+into production.
+
+**Blocking the merge** is a repository setting, not something either workflow can do. Under
+*Settings → Branches → Branch protection rules* for `main`, enable **Require status checks to pass
+before merging** and select **`Build and test`**. GitHub then blocks the merge button while that
+check is queued or running, and while it is failing. Add *Require branches to be up to date before
+merging* if a PR should also re-run against a moved `main` before it can land.
+
 Manual deploys still work from the repo root:
 
 ```powershell

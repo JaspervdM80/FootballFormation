@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  # Every pull request, whatever it targets.
+  pull_request:
+  # Called by fly-deploy.yml, so the gate in front of a deploy is literally the same build and
+  # test a pull request ran, rather than a copy of it that can drift.
+  workflow_call:
+  workflow_dispatch:
+
+# Keyed by ref, so a pull request's checks start straight away instead of queueing behind a
+# deploy. A run on main is left to finish — its build is what a deploy is waiting on.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # Nothing here can deploy: this workflow holds no deploy job and no Fly token. That is the point
+  # of it being separate — a pull request cannot reach production by way of a misread condition.
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore
+      - run: dotnet build --no-restore --configuration Release
+      - run: dotnet test --no-build --configuration Release --verbosity normal

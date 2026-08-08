@@ -55,7 +55,7 @@ public static class SeasonStatsReport
             .ToList();
 
         var form = finished
-            .OrderByDescending(g => g.Date)
+            .NewestFirst()
             .Take(FormLength)
             .Select(ResultOf)
             .ToList();
