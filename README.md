@@ -116,9 +116,11 @@ outside Production *and* only for loopback callers.
 dotnet test
 ```
 
-`.github/workflows/fly-deploy.yml` runs `dotnet build -c Release` and `dotnet test` before every
-deploy, so both must pass. Note that `Directory.Build.props` sets `TreatWarningsAsErrors` in
-**Release only** — a warning that builds fine locally will fail CI. Build Release before pushing.
+`.github/workflows/ci.yml` runs `dotnet build -c Release` and `dotnet test`. It runs on every pull
+request, and `fly-deploy.yml` calls that same workflow as the gate its deploy job depends on — so
+the checks in front of production are literally the ones a pull request ran, not a copy that can
+drift. Note that `Directory.Build.props` sets `TreatWarningsAsErrors` in **Release only** — a
+warning that builds fine locally will fail CI. Build Release before pushing.
 
 ### Visual checks
 
