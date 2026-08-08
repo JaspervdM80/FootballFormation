@@ -308,6 +308,31 @@ html, body {
     .mud-picker-popover .mud-picker-calendar-header-switch > .mud-icon-button {
         padding: 10px;
     }
+
+    /* "augustus 2026" between those arrows — the button that opens the month grid, and the one
+       reported as the worst of the lot. MudBlazor gives it `height: 23px` (it doubles as the slide
+       transition's viewport, hence the fixed height and overflow: hidden), so it is a 23px target
+       inside a 56px row: 17px of dead div above it and 16px below, and a thumb aimed at the month
+       name mostly lands in one of those and does nothing. 44px still fits the row the arrows
+       already set, so nothing moves. */
+    .mud-picker-popover .mud-picker-calendar-header-switch .mud-picker-calendar-header-transition {
+        height: 44px;
+    }
+
+    /* The label is taken out of flow by .mud-picker-slide-transition > * (`position: absolute` with
+       top/left/right pinned), so it would sit against the top of the taller button. Pinning bottom
+       too and centring in the box keeps the month name where it looks anchored. */
+    .mud-picker-popover .mud-picker-calendar-header-switch .mud-picker-calendar-header-transition > * {
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* The banner's year opens the year list — a 64x40 target, and the only way into it. */
+    .mud-picker-popover .mud-picker-datepicker-toolbar .mud-button-root {
+        min-height: 44px;
+    }
 }
 
 /* A landscape phone is short, not narrow, and the picker's 100px banner — the "za, 08 aug" restatement
@@ -327,10 +352,13 @@ html, body {
         height: 56px;
     }
 
-    /* The banner's own type has to come down with it: MudBlazor's 2.125rem date over the 1rem year
-       is 68px of line box, which in 56px sat clipped top and bottom. 1.5rem lands the pair at 56px. */
+    /* Which leaves room for one 44px button, not two, so the decorative half goes: "za, 08 aug"
+       only restates the date that is already in the field behind the popover and in the month
+       header below it. The year button stays, because it is the only way into the year list —
+       shrinking both to fit would be the same mistake this whole block exists to undo. Picking a
+       year returns to the calendar on its own, so nothing is stranded by dropping the date. */
     .mud-picker-popover .mud-picker-datepicker-toolbar .mud-button-date {
-        font-size: 1.5rem;
+        display: none;
     }
 }
 

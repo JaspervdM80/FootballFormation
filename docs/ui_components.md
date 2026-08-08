@@ -312,6 +312,26 @@ for the grid (`.mud-picker-slide-transition` takes its children `position: absol
 scale with the cell or taller rows draw over what follows; and the weekday letters carry the same
 width or the header stops lining up with the days.
 
+Days were not the only undersized target, and by the second report not even the main one — "it's
+mostly the month selection". Everything else a finger has to hit is raised to 44px too:
+
+| control | MudBlazor | here |
+| --- | --- | --- |
+| month name (opens the month grid) | 23px tall | 44px |
+| ‹ › month arrows | 40px | 44px |
+| toolbar year (opens the year list) | 40px | 44px |
+| year row in the list | 40px | 48px |
+
+The month name is the one worth remembering: it is a real `<button>` clamped to `height: 23px`
+because it doubles as the slide transition's viewport, and it sits in the 56px row the arrows
+already set — so 17px of dead div above and 16px below, with no layout change needed to fix it.
+Growing it also needs `bottom: 0` and flex centring on its label, which
+`.mud-picker-slide-transition > *` has pinned `position: absolute` to the top.
+
+In landscape the 56px toolbar has room for one 44px button, not two, so the date line is hidden and
+the year button keeps its target. That strands nothing: the picker's flow is **year → month → day**,
+and the date line only restates what is already in the field behind the popover.
+
 ## MudBlazor 9.x Notes
 - `ValidateAsync()` not `Validate()`
 - `IReadOnlyCollection<T>` for multi-select `@bind-SelectedValues`
