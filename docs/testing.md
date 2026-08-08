@@ -48,4 +48,37 @@ what a service wrote without tracking interference.
 ## What is not covered
 
 No component tests — no bUnit. Razor markup and interaction are verified in a browser instead; see
-the `verify-ui` skill for the desktop/mobile × anonymous/admin matrix.
+the `verify-ui` skill for the desktop/mobile × anonymous/admin matrix, and the visual check below
+for the automated pass.
+
+## Visual checks
+
+`scripts/visual-check.sh` boots the app and screenshots every page into `artifacts/visual/`
+(ignored by git). It builds, starts the app on a **throwaway database** in a temp directory, signs
+in, seeds a small squad through the real dialogs, and captures each page at 1440×900. It exits
+non-zero if the browser logged an error, which is where a Blazor render failure shows up.
+
+Two things it has to work around, both of them the app behaving correctly:
+
+- A fresh admin still holds the password it was seeded with, and that **locks every route to
+  `/settings`** until it changes. Without that step every screenshot is the same page.
+- Changing a password **rotates the security stamp**, which invalidates the cookie issued before
+  it. The script signs in again afterwards, or it would browse as an anonymous visitor.
+
+It signs in through `/dev/login` — mapped only outside Production and only for loopback callers —
+so no password is typed into the login form.
+
+## Running it in Claude Code on the web
+
+Those containers are rebuilt per session and ship no .NET SDK, so without setup an agent can read
+the code but cannot compile it, run the tests, or open a page. `.claude/hooks/session-start.sh`
+installs it on session start.
+
+It takes the SDK from **Ubuntu 24.04's own archive** (`dotnet-sdk-10.0` in `noble-updates/main`),
+not from `dotnet-install.sh` — the container's egress policy blocks
+`builds.dotnet.microsoft.com`, so the usual installer 403s before it downloads anything.
+`api.nuget.org` is reachable, so `dotnet restore` works normally.
+
+Chromium is already in the image at `/opt/pw-browsers/chromium`; `scripts/visual-check.sh`
+installs the Playwright npm package on first use and drives that binary rather than downloading
+its own.

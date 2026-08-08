@@ -120,6 +120,24 @@ dotnet test
 deploy, so both must pass. Note that `Directory.Build.props` sets `TreatWarningsAsErrors` in
 **Release only** — a warning that builds fine locally will fail CI. Build Release before pushing.
 
+### Visual checks
+
+```bash
+scripts/visual-check.sh
+```
+
+Boots the app against a throwaway database, seeds a small squad through the real dialogs, and
+screenshots every page into `artifacts/visual/`. It fails if the browser logged an error, which is
+where a Blazor render failure surfaces. Nothing else in the repo checks that a page renders at all
+— the tests cover the domain rules. See [docs/testing.md](docs/testing.md).
+
+### Claude Code on the web
+
+Those containers ship no .NET SDK and are rebuilt every session, so
+`.claude/hooks/session-start.sh` installs it (and warms the NuGet cache) on session start —
+without it an agent can read this code but cannot build it, test it, or look at a page. It takes
+the SDK from Ubuntu's own archive because the egress policy blocks Microsoft's installer host.
+
 ## Deployment
 
 The app deploys to Fly.io (Amsterdam) behind **https://gjs-meiden.nl** — a single
