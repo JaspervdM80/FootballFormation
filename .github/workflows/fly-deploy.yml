@@ -33,7 +33,9 @@ jobs:
       # Pinned to the 1.6 tag's commit so upstream changes can't run unreviewed with our token
       - uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # 1.6
       # --ha=false: single machine only — SQLite lives on one volume (see docs/deployment.md)
-      - run: flyctl deploy --remote-only --ha=false
+      # --build-arg GIT_SHA: baked into the image and reported by /health, so the smoke check below
+      # can tell this release apart from whatever was serving before it.
+      - run: flyctl deploy --remote-only --ha=false --build-arg GIT_SHA=${{ github.sha }}
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
@@ -44,6 +46,10 @@ jobs:
       # Deliberately a one-shot request rather than a `[[http_service.checks]]` block in fly.toml:
       # Fly's proxy checks count towards the concurrency its autostop decision reads, so a check
       # every few seconds would hold the machine awake and undo scale-to-zero.
+      # A 200 alone would only prove *a* container is up. Comparing the commit /health reports
+      # against the one this run built is what proves the new release is the one serving — Fly can
+      # report a successful deploy while the previous machine carries on answering, and the site
+      # looks perfectly healthy in that state because it is; it is just the old site.
       - name: Smoke check
         run: |
           for attempt in 1 2 3 4 5; do
@@ -53,14 +59,23 @@ jobs:
             # exits non-zero there, and this script runs under `set -e`.
             code=$(curl -sS -o /tmp/health -w '%{http_code}' --max-time 30 https://gjs-meiden.nl/health) || code=000
             if [ "$code" = "200" ]; then
-              echo "Serving: $(cat /tmp/health)"
-              exit 0
+              # `|| served=` so malformed JSON is a failed attempt rather than a dead step.
+              served=$(jq -r '.version' /tmp/health) || served=
+              if [ "$served" = "$GITHUB_SHA" ]; then
+                echo "Serving $served"
+                cat /tmp/health
+                exit 0
+              fi
+              # Healthy, but still the previous release — it is probably mid-swap, so this is a
+              # retry rather than a failure until the attempts run out.
+              echo "Attempt $attempt: healthy but serving $served, waiting for $GITHUB_SHA"
+            else
+              echo "Attempt $attempt: HTTP $code"
             fi
-            echo "Attempt $attempt: HTTP $code"
             # The machine is usually cold-starting from zero, so back off rather than fail on the
             # first miss — 5s, 10s, 15s, 20s. No pause after the last one; nothing follows it.
             if [ "$attempt" -lt 5 ]; then sleep $((attempt * 5)); fi
           done
-          echo "::error::/health never returned 200 — the release deployed but is not serving."
+          echo "::error::/health never confirmed $GITHUB_SHA is serving — the release deployed but is not live."
           if [ -s /tmp/health ]; then cat /tmp/health; fi
           exit 1

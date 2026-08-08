@@ -4,6 +4,7 @@ using System.Threading.RateLimiting;
 using FootballFormation.Core.Data;
 using Microsoft.AspNetCore.DataProtection;
 using FootballFormation.Core.Models;
+using FootballFormation.Core.Reporting;
 using FootballFormation.Core.Security;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Navigation;
@@ -22,6 +23,14 @@ using Serilog;
 // Honors APP_DATA_DIR — the persistent volume when hosted (e.g. /data on Fly.io)
 var dbPath = DatabasePathHelper.GetDatabasePath();
 var appDataFolder = Path.GetDirectoryName(dbPath)!;
+
+// The commit this container was built from, baked in by the Dockerfile's GIT_SHA build arg. The
+// deploy workflow compares it against the commit it just built, which is how a deploy that
+// "succeeded" while the previous machine kept serving gets caught. "unknown" locally, where there
+// is no build arg and nothing comparing.
+var appVersion = Environment.GetEnvironmentVariable("APP_GIT_SHA") is { Length: > 0 } sha
+    ? sha
+    : "unknown";
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Debug()
@@ -218,25 +227,39 @@ try
     // answering 200 while SQLite is unreachable is precisely the false green that would make a
     // health check worse than none.
     //
+    // It reports the commit it was built from as well, because a 200 alone cannot tell the deploy
+    // whether the container answering is the one it just built — see HealthReport.
+    //
     // Polled once, by the deploy workflow's smoke step. There is deliberately no
     // `[[http_service.checks]]` block in fly.toml — Fly's proxy checks count towards the
     // concurrency its autostop decision reads, so a check every few seconds holds the machine
     // awake and quietly undoes scale-to-zero (see docs/deployment.md).
     app.MapGet("/health", async (IDbContextFactory<AppDbContext> dbFactory, CancellationToken ct) =>
     {
+        HealthStatus status;
         try
         {
             await using var db = await dbFactory.CreateDbContextAsync(ct);
             // A real query, not CanConnectAsync: for SQLite that only opens the file, which
             // succeeds against a database whose schema the migration left half-applied.
             await db.Seasons.CountAsync(ct);
-            return Results.Text("healthy");
+
+            var applied = (await db.Database.GetAppliedMigrationsAsync(ct)).Count();
+            var pending = (await db.Database.GetPendingMigrationsAsync(ct)).Count();
+            status = HealthReport.Build(appVersion, applied, pending);
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Health check failed");
-            return Results.Text("unhealthy", statusCode: StatusCodes.Status503ServiceUnavailable);
+            status = HealthReport.Unreachable(appVersion, ex.Message);
         }
+
+        if (!status.IsHealthy)
+            Log.Error("Health check reporting unhealthy: {Detail}", status.Detail);
+
+        return Results.Json(status, statusCode: status.IsHealthy
+            ? StatusCodes.Status200OK
+            : StatusCodes.Status503ServiceUnavailable);
     }).AllowAnonymous();
 
     app.MapPost("/auth/login", async (
