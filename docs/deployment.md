@@ -282,8 +282,8 @@ survives losing the volume.
 - **Both backup layers live in the same Fly account.** The snapshots are off-volume, not off-Fly:
   an account-level loss, or a `fly apps destroy` typed at the wrong app, still takes everything.
   A copy pulled down periodically (`fly ssh sftp get /data/footballformation.db`) and kept
-  elsewhere is what would close that; the roadmap's in-app database export is the same gap seen
-  from the other side.
+  elsewhere is what would close that. A one-click database export from inside the app would be the
+  same gap answered from the other side.
 - **Rolling back is the image, not the database.** `fly releases` and `fly deploy --image` undo the
   code cheaply and losslessly. Restoring the database stays manual and deliberate on purpose: live
   match mode writes continuously on match day, so an automatic restore would silently discard the

@@ -39,7 +39,7 @@ Avoid repeating these mistakes:
 - **`ShowMessageBox` removed**: Use custom `ConfirmDialog` component instead.
 - **Multi-select binding**: Use `IReadOnlyCollection<T>` not `IEnumerable<T>`.
 - **`RenderFragment` in code-behind**: Use `=> __builder =>` lambda pattern in `@code` block; can't use regular methods.
-- **Dropdowns rendered as a full-width band across the page**: `MudPopover` carries `.mud-paper`, and app.css's card rule set `position: relative` on it — same specificity as MudBlazor's `.mud-popover{position:absolute}` but later in source order, so it won. A relatively positioned block fills the popover provider's width and treats the placement JS's `left`/`top` as an offset from its static spot at the top of the page. Fixed with `.mud-popover.mud-paper{position:absolute}` (+ the `.mud-popover-fixed` variant). Watch for this whenever a global `.mud-*` rule touches layout.
+- **Dropdowns rendered as a full-width band across the page**: `MudPopover` carries `.mud-paper`, and app.css's card rule set `position: relative` on it — same specificity as MudBlazor's `.mud-popover{position:absolute}` but later in source order, so it won. A relatively positioned block fills the popover provider's width and treats the placement JS's `left`/`top` as an offset from its static spot at the top of the page. Fixed twice over: first by patch rules putting `position` back, and now — the current state — by the card rule never claiming a popover in the first place, `.mud-paper:not(.mud-popover):not(.mud-dialog)` in app.css. The patch rules are gone, so MudBlazor's own positioning is never disturbed and there is nothing left to restore. Watch for this whenever a global `.mud-*` rule touches layout: excluding the popover beats overriding it back.
 - **`MudMenu`'s `Class` lands on the root wrapper, not the activator button**: `Class="btn-gold"` painted an invisible `div` while the button kept MudBlazor's default filled colours. There is no `ActivatorClass` parameter in 9.7 — style `.<your-class>.mud-menu .mud-button-root` instead (see `.btn-gold.mud-menu` in app.css, and `SeasonPicker`'s `.season-picker .mud-button-root`).
 
 ## Touch / PWA
@@ -113,6 +113,9 @@ Avoid repeating these mistakes:
   `color-scheme: light`), and Blazor's stock reconnect overlay is light (now themed via
   `#components-reconnect-modal`, and `js/pwa.js` reloads the page once reconnection fails
   or on return to a dead tab).
+  **The reload needs its own guard, or it is the next bug.** A page that serves while the circuit
+  never connects — a blocked WebSocket, a dead network — would reload forever. `pwa.js` stamps
+  `sessionStorage` and refuses to reload twice inside ten seconds, leaving the overlay up instead.
 
 ## Localization
 - **Resource keys are English text, so watch for homographs**: "Home" was already the

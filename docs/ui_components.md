@@ -26,9 +26,12 @@
 - **Pitch → Pitch**: Swaps two players' slots (`Drag.FromSlotIndex` is set ⇒ the drop is a swap)
 - **Pitch → Sub bench**: Drop on empty bench area moves player to bench; drop **on a sub** swaps the two (`OnSwapFieldPlayerWithSub`)
 - **Sub bench → Pitch**: Sub takes the slot; the displaced starter goes to the bench
-- Click on assigned player = remove from position
-- `@ondragstart`/`@ondrop` sit on the **inner** circle (`.player-circle` / `.empty-circle`),
-  not on the `.position-slot` wrapper — relevant when scripting or testing a drag
+- Click on assigned player = remove from position (only while `Draggable`; elsewhere a tap raises
+  `OnPlayerClicked`)
+- `@ondragstart`/`@ondrop` sit on the **inner** element — the occupied chip `.pitch-player` and the
+  empty slot `.pitch-empty` — never on the `.pitch-slot` wrapper, which carries only the
+  coordinates. Relevant when scripting or testing a drag: a synthetic event aimed at the wrapper
+  reaches no handler
 - **Touch devices**: `wwwroot/js/drag-drop-touch.js` (Web project) converts touch gestures into
   synthetic `DragEvent`s with a real `DataTransfer` — Blazor ignores drag events without one.
   A floating ghost follows the finger; an 8px threshold separates taps from drags. Draggable

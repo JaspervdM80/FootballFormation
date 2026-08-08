@@ -94,9 +94,10 @@ has not — both have been real bugs here.
 
 ## Re-theming checklist for the responsive bits
 
-The two `pointer: coarse` blocks (`.action-btn`, `.goal-remove`) grow tap targets to 40px on a
-touch screen, and `@media (hover: hover)` guards the hover states so they do not stick after a tap.
-Keep both if you add interactive controls.
+The three `pointer: coarse` blocks (`.action-btn` in app.css, `.goal-remove` and `.comment-btn` in
+`MatchResult.razor.css`) grow tap targets to 40px on a touch screen, and `@media (hover: hover)`
+guards the hover states so they do not stick after a tap. Keep both halves if you add an
+interactive control — every plain `<button>` in this app has needed them.
 
 ## Naming debt
 
