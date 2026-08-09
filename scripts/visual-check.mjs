@@ -12,12 +12,18 @@
 //
 // Started by scripts/visual-check.sh, which boots the app first. Run that, not this.
 import { chromium } from 'playwright';
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { auditTouchTargets } from './touch-targets.mjs';
 
 const BASE = process.env.VISUAL_BASE_URL ?? 'http://127.0.0.1:5228';
 const OUT = process.env.VISUAL_OUT_DIR ?? 'artifacts/visual';
-const CHROME = process.env.VISUAL_CHROMIUM ?? '/opt/pw-browsers/chromium';
+
+// A Claude Code web container ships a Chromium at this path, at a revision that will not match
+// whatever `playwright` resolves to — so use the one that is there, and fall back to Playwright's
+// own everywhere else. `undefined` is the fallback on purpose: it means "resolve it yourself",
+// which is what a CI runner needs after `npx playwright install chromium`.
+const PREINSTALLED = '/opt/pw-browsers/chromium';
+const CHROME = process.env.VISUAL_CHROMIUM ?? (existsSync(PREINSTALLED) ? PREINSTALLED : undefined);
 
 // The seeded admin's own password. Only ever used against a throwaway database.
 const SEED_PASSWORD = 'admin';

@@ -1,26 +1,29 @@
-name: UI tests
+name: UI checks
 
-# A separate file, not a job inside ci.yml, and that is the whole point of it.
+# The two things that drive a browser, in one file that is separate from ci.yml — and that
+# separation is the whole point of it.
 #
 # fly-deploy.yml calls ci.yml wholesale (`uses: ./.github/workflows/ci.yml`), so every job in that
-# file is a gate in front of the production volume — adding this one there would mean a browser test
-# can block a deploy. It is also not what `main`'s ruleset requires to merge: that names
-# "Build and test", and this check stays advisory until it has a track record on real runners.
+# file is a gate in front of the production volume: adding either of these there would mean a
+# browser can block a deploy. Neither is what `main`'s ruleset requires to merge, which names
+# "Build and test", so both stay advisory until they have a track record on real runners.
 #
-# Promoting it later is one line in .github/rulesets/main-build-and-test.json, and nothing here.
+# Promoting one later is a line in .github/rulesets/main-build-and-test.json, and nothing here.
 on:
   pull_request:
   workflow_dispatch:
 
 concurrency:
-  group: ui-tests-${{ github.ref }}
+  group: ui-checks-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
 
 jobs:
-  ui:
+  # What the app does: the public/admin split, the dialogs, the match-day journey, both languages,
+  # the phone layout. See docs/testing.md.
+  playwright:
     name: Playwright
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -67,4 +70,42 @@ jobs:
           path: |
             tests/ui/playwright-report/
             tests/ui/test-results/
+          retention-days: 7
+
+  # Whether it renders at all, and whether a thumb can hit it. This is the only thing holding the
+  # Touch / PWA fixes in docs/known_issues.md in place — every one of them is CSS, and a MudBlazor
+  # upgrade or one more global .mud-* rule undoes any of them silently.
+  visual:
+    name: Visual check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - run: npm install --no-audit --no-fund
+        working-directory: scripts
+
+      - run: npx playwright install --with-deps chromium
+        working-directory: scripts
+
+      # The script owns its own build and its own throwaway database, and exits non-zero on a
+      # browser error or a touch target under its floor. visual-check.mjs resolves Chromium itself
+      # when the web container's copy is absent, which is the case here.
+      - run: scripts/visual-check.sh
+
+      # Uploaded on success too: the screenshots are the point of this job as much as the
+      # measurements are, and they are worth a look on a pull request that changed a page.
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: visual-check
+          path: artifacts/visual/
           retention-days: 7

@@ -125,8 +125,9 @@ busy loops competing for them, which stretched a run to 2.2–2.5 minutes and ch
 That is the retry-on-outcome design doing its job — `clickFor` absorbs a slow circuit instead of
 failing on it.
 
-It now runs on every pull request as **`.github/workflows/ui-tests.yml`** — its own file, and that
-is the point of it. `fly-deploy.yml` calls `ci.yml` wholesale, so a job added there would become a
+It now runs on every pull request as the `playwright` job in
+**`.github/workflows/ui-checks.yml`** — its own file, separate from `ci.yml`, and that is the point
+of it. `fly-deploy.yml` calls `ci.yml` wholesale, so a job added there would become a
 gate in front of the production volume, and a browser test should not be able to block a deploy.
 `main`'s ruleset still requires only **Build and test**, so this check is advisory: it reports, it
 does not block. Promoting it once it has a track record on real runners is one line in
@@ -186,7 +187,15 @@ Runs on every pull request as an advisory check — see "Is it stable enough for
 `scripts/visual-check.sh` boots the app and screenshots every page into `artifacts/visual/`
 (ignored by git). It builds, starts the app on a **throwaway database** in a temp directory, signs
 in, seeds a small squad through the real dialogs, and captures each page at 1440×900. It exits
-non-zero if the browser logged an error, which is where a Blazor render failure shows up.
+non-zero if the browser logged an error, which is where a Blazor render failure shows up, or if a
+touch target is under its floor.
+
+It runs on every pull request too, as the `visual` job in `ui-checks.yml` — advisory, like the
+Playwright job beside it. That job uploads `artifacts/visual/` whether it passed or not: the
+measurements are the part that can fail, but the screenshots are worth a look on a pull request that
+changed a page, and nothing else in CI produces one. Locally the harness drives the Chromium in a
+Claude Code web container; everywhere else `visual-check.mjs` lets Playwright resolve its own, which
+is what makes the job possible at all.
 
 Two things it has to work around, both of them the app behaving correctly:
 
