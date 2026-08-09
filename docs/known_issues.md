@@ -123,6 +123,21 @@ Avoid repeating these mistakes:
   flush so a tap that misses one hits the other and steps the wrong way. All three are fixed in
   `app.css`. The lesson is the ordering: three fixes had been argued for in prose here for months,
   and the first thing that measured them found three more in an afternoon.
+- **Widening that guard to `/games` found a card that had already run out of room.** The action
+  buttons on a game card were 40px under `(pointer: coarse)`, set deliberately and with a comment
+  saying a finger needs more than the 32px a mouse gets — four short of the floor, and separated by
+  2px gutters. Size and clearance are the two rules, so both were flagged the moment the page came
+  into scope. What the numbers did not say and the screenshot did is that the row had **already
+  overflowed**: five 40px buttons and their gaps left 42px of a 320px card for the opponent's name,
+  which wrapped underneath them and was drawn straight through them. And five is not the count —
+  the Live button joins on the day of the match, and six 44px buttons are 264px, more than any
+  phone can put beside anything at all. So below 600px the card is two lines: the match, then the
+  actions across the full width, flush and split evenly between however many there are
+  (`Games.razor.css`). That clears 44px by 0.7px on a 320px phone, which is why the card's
+  horizontal padding drops from 16px to 12px there — 16px leaves 260px and six buttons need 264.
+  **The audit only ever sees six because `visual-check.mjs` seeds its game dated *today*.** Move
+  that date and the widest row the app has quietly stops being measured, with nothing failing to
+  say so.
 - **A width-only media query does not cover a phone.** Turned sideways, a 390px-tall phone is 844px
   wide and every `max-width: 599.98px` rule stops applying — while the thumb does not change size.
   The picker block keys off `(max-width: 599.98px), (max-height: 559.98px)` for exactly this reason,

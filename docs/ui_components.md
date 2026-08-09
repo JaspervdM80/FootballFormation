@@ -130,6 +130,14 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   against a match nobody is playing. It disappears entirely once `Games.HasFinalScore(game)` — a
   settled game has nothing left to run, so the Result button beside it is the way in and a row
   click opens `/result`.
+- **The action row is a card of its own below 600px.** A game card carries five `.action-btn`
+  icons, six on match day when Live joins them, and on a touch screen those are 44px each — 264px,
+  which no phone has to spare beside an opponent's name. So `Games.razor.css` wraps the row onto
+  its own full-width line under the match and lets the buttons split it evenly, flush against each
+  other: a gap between two touch targets has to be nothing or at least 8px, and there is nowhere to
+  find five 8px gaps. The card's horizontal padding drops to 12px there so the six still clear 44px
+  on a 320px phone. `scripts/touch-targets.mjs` measures all of it — see
+  [testing.md](testing.md#touch-targets).
 - The page reads "today" from the injected `TimeProvider`, not `DateTime.Today`, the same way the
   services do — that is also what `IsIncomplete` (the missing-lineup flag) compares against.
 - `HasFinalScore` checks `MatchState` **as well as** the score fields, and must: `LiveMatchService`

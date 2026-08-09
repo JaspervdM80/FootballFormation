@@ -100,13 +100,32 @@
 }
 
 /* .badge-unavailable and the .action-btn family live in app.css — both are used by more than
-   this page, and a scoped rule reaches no other one. */
+   this page, and a scoped rule reaches no other one. `.game-actions .action-btn` below is the
+   exception that proves it: .game-actions exists only here, so the rule cannot reach the season
+   rows on /settings even though it names the same class. */
+
+/* On a touch screen the buttons sit flush. A 2px gap between two targets is a dead gutter — too
+   narrow to see or aim around, wide enough to swallow a tap, and awarded by the browser to
+   whichever neighbour has the larger contact area. A gap has to be nothing or at least 8px, and
+   with six buttons on a card there is nowhere to find five 8px gaps. See
+   scripts/touch-targets.mjs. */
+@media (pointer: coarse) {
+    .game-actions {
+        gap: 0;
+    }
+}
 
 @media (max-width: 599.98px) {
-    /* A phone has no room for everything on one line: keep it compact so the
-       action buttons stay inside the card instead of overflowing its edge. */
+    /* A phone has no room for everything on one line, so the actions get a line of their own
+       under the match they belong to. They used to share it, and on a 320px phone the opponent's
+       name ran underneath them: five 40px buttons left 42px for it. Six 44px buttons — match day,
+       when the Live button joins them — are 264px, which no phone can put beside a name at all. */
     .game-row {
         gap: 10px;
+        flex-wrap: wrap;
+        /* 16px each side left 260px inside the card on a 320px phone, four short of those six.
+           12px leaves 268px, so the narrowest phone the app supports still clears the floor. */
+        padding: 14px 12px;
     }
 
     /* Date on top of the opponent rather than side by side */
@@ -114,6 +133,17 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 2px;
+    }
+
+    /* The whole width, and split evenly between however many buttons the card carries — five on a
+       fixture, six on match day. Even rather than fixed so nothing is smaller than it has to be,
+       and flush so the row is one continuous surface with no gutter to lose a tap in. */
+    .game-actions {
+        flex-basis: 100%;
+    }
+
+    .game-actions .action-btn {
+        flex: 1;
     }
 
     /* Formation, absentees and guests are secondary detail — hide them on mobile */

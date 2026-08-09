@@ -302,9 +302,12 @@ const VIEWPORTS = [
 const rx = (nl, en) => new RegExp(`${nl}|${en}`, 'i');
 
 /**
- * Walks the new-match dialog and its date picker on a phone-sized touch context and audits each
- * screen. Those two are where every entry in the Touch / PWA section was found — the dialog is the
- * app's longest form and the only one filled in at a touchline, and the picker is inside it.
+ * Walks /games, the new-match dialog and its date picker on a phone-sized touch context and audits
+ * each screen. The dialog and the picker came first because every entry in the Touch / PWA section
+ * was found in one of them — the dialog is the app's longest form and the only one filled in at a
+ * touchline, and the picker is inside it. The games list came next because it is the page a phone
+ * opens most, and the row of icon buttons on every card is the densest cluster of targets in the
+ * app.
  */
 export async function auditTouchTargets({ browser, base, out, onError = () => {} }) {
   const dir = `${out}/touch`;
@@ -336,6 +339,22 @@ export async function auditTouchTargets({ browser, base, out, onError = () => {}
       report.push(`## ${viewport.name} — ${scene}`, '', table(audited.rows), '');
       await page.screenshot({ path: `${dir}/${viewport.name}-${scene.replace(/[ ,]+/g, '-')}.png` });
     };
+
+    // The page itself, before anything is opened on top of it: the header's Add button and the
+    // action row on every game card. Scoped to the main content rather than the document, so the
+    // app bar and the drawer stay a scene of their own rather than arriving inside this one.
+    //
+    // Waited for rather than assumed, and counted rather than merely found. The header renders
+    // before the games do, so measuring on arrival would sometimes measure a list that is still a
+    // spinner — and a list with no card in it measures the Add button, finds nothing wrong, and
+    // passes. Six is the widest the row ever gets, and it only gets there on the day of the match.
+    await waitUntil(page, async () =>
+      await page.locator('.game-cards .game-actions').first().locator('.action-btn').count() >= 6, {
+      what: "the seeded game's six match-day action buttons — visual-check.mjs seeds a game dated "
+        + 'today, and without that date the Live button never appears and the widest action row in '
+        + 'the app goes unmeasured',
+    });
+    await audit('games list', '.app-main');
 
     // Every wait below is on the thing itself rather than on a clock. MudBlazor scales a dialog and
     // a popover in, and measuring geometry mid-animation is how a full-width sheet reads 86% of its
@@ -379,7 +398,7 @@ export async function auditTouchTargets({ browser, base, out, onError = () => {}
     await waitForStableBox(popover);
     await audit('date picker, years', '.mud-picker-popover.mud-popover-open');
 
-    console.log(`${viewport.name.padEnd(8)} audited 5 screens`);
+    console.log(`${viewport.name.padEnd(8)} audited 6 screens`);
     await context.close();
   }
 

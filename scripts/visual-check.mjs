@@ -37,6 +37,8 @@ const SEED_PLAYERS = [
   ['Lotte', 'Visser', 1],
 ];
 
+const SEED_OPPONENT = 'SV Zwaluwen';
+
 const PAGES = [
   ['home', '/'],
   ['players', '/players'],
@@ -109,6 +111,35 @@ if (!(await page.getByText(SEED_PLAYERS[0][0]).count())) {
       async () => await page.locator('.mud-dialog').count() === 0, { settle: 10_000 });
     console.log(`seeded ${first} ${last} (#${shirt})`);
   }
+}
+
+// One game, dated today. An empty /games is a paragraph of text — no card to screenshot and no
+// action row to measure — and the date is the whole point of which card it is: the Live button
+// appears only on the day of the match, so match day is the day the action row carries six
+// buttons instead of five. That is the row a coach uses, and the one worth holding a floor under.
+await goto(page, `${BASE}/games`);
+if (!(await page.getByText(SEED_OPPONENT).count())) {
+  const dialog = page.locator('.mud-dialog');
+  const popover = page.locator('.mud-picker-popover.mud-popover-open');
+
+  await clickFor(page.getByRole('button', { name: rx('toevoegen', 'add') }).first(),
+    () => dialog.isVisible());
+  await dialog.locator('input').first().fill(SEED_OPPONENT);
+
+  // The dialog proposes the season's next match day, which is up to a week out. Walk the picker
+  // back to today instead: its cell is the one MudBlazor marks .mud-current, and it is either in
+  // the month the picker opened on or the one before it — never further, so one step back at most.
+  await clickFor(dialog.locator('.mud-input-adornment button').first(), () => popover.isVisible());
+  const todayCell = popover.locator('.mud-day.mud-current');
+  if (!(await todayCell.count())) {
+    await clickFor(popover.locator('.mud-picker-calendar-header-switch .mud-icon-button').first(),
+      async () => await todayCell.count() > 0);
+  }
+  await clickFor(todayCell, async () => await popover.count() === 0);
+
+  await clickFor(dialog.getByRole('button', { name: rx('opslaan', 'save') }),
+    async () => await page.locator('.mud-dialog').count() === 0, { settle: 10_000 });
+  console.log(`seeded a game vs ${SEED_OPPONENT}, today`);
 }
 
 for (const [name, path] of PAGES) {
