@@ -22,7 +22,9 @@ scripts/visual-check.sh        # boots the app, screenshots every page into arti
 ```
 
 `Directory.Build.props` sets `TreatWarningsAsErrors` in **Release only**. A Debug build that looks
-clean can still fail CI — **build Release before pushing**.
+clean can still fail CI — **build Release before pushing**. The one exception is `MSB3568`
+(duplicate resource name), promoted to an error in every configuration via
+`MSBuildWarningsAsErrors` because it silently changes what the app says.
 
 EF Core migrations are run from `Core` alone; `DesignTimeDbContextFactory` means no
 `--startup-project` is needed:

@@ -9,6 +9,15 @@
          this is what actually stops one landing; local Debug builds stay quick to iterate on. -->
     <TreatWarningsAsErrors Condition="'$(Configuration)' == 'Release'">true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <!-- MSB3568 is "duplicate resource name ... ignored", and it is the one warning in this build
+         that silently changes what the app says: resx names are case-insensitive, so a lowercase
+         service action phrase ("delete game") collides with a button label ("Delete Game") and the
+         first entry wins. The Dutch string is then wrong, from a build that was green.
+         TreatWarningsAsErrors above does not cover this. It is a compiler property, and MSB####
+         codes come from the MSBuild engine — a duplicate key warns and succeeds even in Release.
+         Promoting it needs MSBuildWarningsAsErrors, and it is unconditional on purpose: a
+         colliding key is never something to iterate past in Debug. -->
+    <MSBuildWarningsAsErrors>MSB3568</MSBuildWarningsAsErrors>
   </PropertyGroup>
 
 </Project>

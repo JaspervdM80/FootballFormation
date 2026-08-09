@@ -119,7 +119,9 @@ dotnet test
 request, and `fly-deploy.yml` calls that same workflow as the gate its deploy job depends on — so
 the checks in front of production are literally the ones a pull request ran, not a copy that can
 drift. Note that `Directory.Build.props` sets `TreatWarningsAsErrors` in **Release only** — a
-warning that builds fine locally will fail CI. Build Release before pushing.
+warning that builds fine locally will fail CI. Build Release before pushing. The exception is
+`MSB3568` (a duplicate resource name, which quietly changes what the app says), an error in every
+configuration.
 
 A ruleset makes that check binding: `main` takes pull requests only, and the merge button stays
 disabled until `Build and test` is green. It lives in `.github/rulesets/main-build-and-test.json`
