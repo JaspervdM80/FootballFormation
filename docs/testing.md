@@ -125,10 +125,18 @@ busy loops competing for them, which stretched a run to 2.2–2.5 minutes and ch
 That is the retry-on-outcome design doing its job — `clickFor` absorbs a slow circuit instead of
 failing on it.
 
-Two things would still need doing before it becomes a gate: the job has to install a Chromium
-(`npx playwright install --with-deps chromium`, and `playwright.config.js` already falls back to
-Playwright's own browser when `/opt/pw-browsers/chromium` is absent), and it should run as its own
-job rather than inside **Build and test**, so a failure there is legible as a UI failure.
+It now runs on every pull request as **`.github/workflows/ui-tests.yml`** — its own file, and that
+is the point of it. `fly-deploy.yml` calls `ci.yml` wholesale, so a job added there would become a
+gate in front of the production volume, and a browser test should not be able to block a deploy.
+`main`'s ruleset still requires only **Build and test**, so this check is advisory: it reports, it
+does not block. Promoting it once it has a track record on real runners is one line in
+`.github/rulesets/main-build-and-test.json` and nothing in the workflow.
+
+The job builds the app before Playwright starts it, so a cold compile is not competing with the
+`webServer` start-up timeout, and installs only Chromium. On a failure it uploads the HTML report and
+the traces — `trace: 'retain-on-failure'` means a failing test can be replayed step by step with
+`npx playwright show-trace`. `CI=true` turns on one retry, so a test that only passes on the retry is
+reported as flaky rather than quietly green.
 
 One test is calendar-dependent and skips rather than guesses: dating a match earlier in the current
 month has nothing to pick on the 1st, and stepping back a month could cross the season boundary the
@@ -171,7 +179,7 @@ also a Dutch test.
 Specs share one app and one database and run in a single worker, so they stay out of each other's
 way by naming what they create after themselves rather than by counting rows.
 
-Not wired into CI yet — deliberately. See the stability measurements above for what it would take.
+Runs on every pull request as an advisory check — see "Is it stable enough for CI?" above.
 
 ## Visual checks
 
