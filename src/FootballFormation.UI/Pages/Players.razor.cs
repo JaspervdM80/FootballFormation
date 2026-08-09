@@ -151,13 +151,37 @@ public partial class Players
         await LoadAsync();
     }
 
-    /// <summary>Deletes the person everywhere, cascading their lineup and goal rows in every
-    /// season. Rare and destructive — removing from a squad is almost always what is wanted.</summary>
+    /// <summary>Retires someone who has left the club, or brings them back. Nothing is destroyed
+    /// either way, so this is the action to reach for instead of Delete.</summary>
+    private async Task ToggleArchived(Player player)
+    {
+        var name = player.DisplayName;
+
+        // Only archiving asks. Restoring puts someone back into the pickers and costs nothing if it
+        // was not meant — a confirm there is a click that teaches people to click through confirms.
+        var confirmed = player.IsArchived || await DialogService.ConfirmAsync(
+            L["Archive player"],
+            L["Archive {0}? They keep every appearance, goal and season they played, and stop being offered for seasons to come.", name],
+            "Archive");
+        if (!confirmed) return;
+
+        var result = await PlayerService.SetArchivedAsync(player.Id, !player.IsArchived);
+        Snackbar.Report(L, result, player.IsArchived
+            ? L["{0} is back in the squad lists", name]
+            : L["{0} archived", name]);
+        await LoadAsync();
+    }
+
+    /// <summary>
+    /// Deletes the person outright. The service refuses once they have played, so the dialog says
+    /// what is about to be lost rather than asking a bare "are you sure" about a cascade nobody can
+    /// see: it is the confirmation for someone entered by mistake, and the refusal carries the rest.
+    /// </summary>
     private async Task DeletePlayer(Player player)
     {
         var confirmed = await DialogService.ConfirmDeleteAsync(
             L["Delete Player"],
-            L["Are you sure you want to delete {0}?", player.DisplayName]);
+            L["Delete {0} from every season, along with any minutes and goals on record? Archive them instead to keep their history.", player.DisplayName]);
         if (!confirmed) return;
 
         var result = await PlayerService.DeleteAsync(player.Id);

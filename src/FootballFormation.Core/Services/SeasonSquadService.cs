@@ -51,7 +51,12 @@ public class SeasonSquadService(
             return Result.Success(new SeasonSquads(members));
         });
 
-    /// <summary>People on file who are not in this season's squad — the "add existing player" picker.</summary>
+    /// <summary>People on file who are not in this season's squad — the "add existing player" picker.
+    /// <para>
+    /// Archived players are left out: they are the ones who have left, and offering them here is
+    /// what would make archiving pointless. Restoring one on the squad page puts them back in this
+    /// list.
+    /// </para></summary>
     public Task<Result<List<Player>>> GetNonMembersAsync(int seasonId) =>
         ServiceOperation.RunAsync(logger, "load players outside the squad", async () =>
         {
@@ -59,6 +64,7 @@ public class SeasonSquadService(
 
             var players = await db.Players
                 .AsNoTracking()
+                .Where(p => !p.IsArchived)
                 .Where(p => !db.SeasonSquadMembers.Any(m => m.SeasonId == seasonId && m.PlayerId == p.Id))
                 .OrderBy(p => p.ShirtNumber ?? int.MaxValue)
                 .ThenBy(p => p.FirstName)
@@ -182,6 +188,11 @@ public class SeasonSquadService(
     /// <summary>
     /// Populates a season's squad from another one, preserving guest status. Idempotent — players
     /// already in the target are skipped, so running it twice adds nothing.
+    /// <para>
+    /// Archived players are skipped too. Copying forward is the one action that turns last year's
+    /// squad into next year's, so carrying someone who has left across the summer would undo their
+    /// archiving every time a season is set up.
+    /// </para>
     /// </summary>
     /// <returns>How many members were added.</returns>
     public Task<Result<int>> CopyFromAsync(int fromSeasonId, int toSeasonId) =>
@@ -219,8 +230,14 @@ public class SeasonSquadService(
                 .ToListAsync();
             var existing = already.ToHashSet();
 
+            var archived = await db.Players
+                .Where(p => p.IsArchived)
+                .Select(p => p.Id)
+                .ToListAsync();
+            var left = archived.ToHashSet();
+
             var added = sourceMembers
-                .Where(m => !existing.Contains(m.PlayerId))
+                .Where(m => !existing.Contains(m.PlayerId) && !left.Contains(m.PlayerId))
                 .Select(m => new SeasonSquadMember
                 {
                     SeasonId = toSeasonId,
@@ -232,7 +249,8 @@ public class SeasonSquadService(
             db.SeasonSquadMembers.AddRange(added);
             await db.SaveChangesAsync();
 
-            logger.LogInformation("Copied {Count} squad members from {From} to {To} ({Skipped} already present)",
+            logger.LogInformation(
+                "Copied {Count} squad members from {From} to {To} ({Skipped} already there or archived)",
                 added.Count, source.Name, target.Name, sourceMembers.Count - added.Count);
             return Result.Success(added.Count);
         });

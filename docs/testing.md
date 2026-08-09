@@ -22,6 +22,7 @@ Every test class, so a gap here is visible rather than assumed:
 | Live match | `LiveMatchServiceTests` | Clock banking, period transitions, substitution undo |
 | Games and comments | `GameServiceTests`, `GameCommentTests` | Season derivation on create, scalar-only update, and the public/private split |
 | Seasons and squads | `SeasonServiceTests`, `SeasonSquadServiceTests` | Gapless windows, the single current season, copy-forward and the removal guards |
+| Players | `PlayerServiceTests` | That deleting someone who has played is refused, and that archiving them changes nothing already recorded |
 | Match preferences | `MatchPreferencesServiceTests` | Per-season inheritance, and next-match dates staying inside the window |
 | **Authorization** | `AuthorizationTests` | That every write refuses a non-admin *at the service*, not only in the markup — the guard the whole write path rests on |
 | Accounts | `UserServiceTests`, `SeededAdminTests` | Credentials, security stamps, the last-admin guard, and the seeded account being no working login |

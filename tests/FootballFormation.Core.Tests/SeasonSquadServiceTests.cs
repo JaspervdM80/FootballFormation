@@ -155,6 +155,40 @@ public class SeasonSquadServiceTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task An_archived_player_is_not_offered_for_a_squad()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(2);
+        await Players.SetArchivedAsync(players[0].Id, true);
+
+        var outside = await Squads.GetNonMembersAsync(season.Id);
+
+        // Offering someone who has left is what would make archiving them pointless.
+        Assert.Equal([players[1].Id], outside.Value!.Select(p => p.Id));
+    }
+
+    [Fact]
+    public async Task Copying_a_squad_forward_leaves_the_archived_players_behind()
+    {
+        var last = await SeedSeasonAsync(covering: Now.AddYears(-1), isCurrent: false);
+        var next = await SeedSeasonAsync(covering: Now);
+        var players = await SeedPlayersAsync(2);
+        await Squads.AddMemberAsync(last.Id, players[0].Id);
+        await Squads.AddMemberAsync(last.Id, players[1].Id);
+
+        await Players.SetArchivedAsync(players[1].Id, true);
+
+        var copied = await Squads.CopyFromAsync(last.Id, next.Id);
+
+        // Setting up a new season is the one moment that would otherwise undo the archiving, every
+        // year. The player stays in last season's squad, where they belong.
+        Assert.Equal(1, copied.Value);
+        Assert.Equal([players[0].Id],
+            Read().SeasonSquadMembers.Where(m => m.SeasonId == next.Id).Select(m => m.PlayerId));
+        Assert.Equal(2, Read().SeasonSquadMembers.Count(m => m.SeasonId == last.Id));
+    }
+
+    [Fact]
     public async Task The_previous_season_is_the_one_immediately_before()
     {
         var oldest = await SeedSeasonAsync(covering: Now.AddYears(-2), isCurrent: false);

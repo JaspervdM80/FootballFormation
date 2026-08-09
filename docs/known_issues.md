@@ -41,7 +41,8 @@ Avoid repeating these mistakes:
 - **The scaffolder ordered a destructive migration wrongly**: `AddSeasonSquads` had to copy `Players.IsGuest` into a new table *and* drop the column; EF emitted the `DropColumn` first, which would have wiped the source before the backfill ran. Always read and reorder the generated `Up()`.
 
 ## Data / domain
-- **Deleting a player is destructive across every season**: `PlayerService.DeleteAsync` cascades their `GamePlayerPosition` and `GameGoal` rows, so last season's top scorer disappears from last season's stats. Pre-existing, but more visible now that old seasons are browsable. Prefer **removing them from the current season's squad** on `/players` — that keeps all history. Soft-delete (`IsArchived`) would be the real fix if this ever bites.
+- **Deleting a player used to be destructive across every season**: `PlayerService.DeleteAsync` cascades their `GamePlayerPosition` rows and nulls their `GameGoal` scorer, so last season's top scorer disappeared from last season's stats — from a confirm that said nothing about it. Fixed by `ArchivePlayersInsteadOfDeleting`: delete now **refuses** for anyone with a lineup or goal row anywhere, and `Player.IsArchived` is the way to retire someone. Worth knowing when the refusal surprises you: the counts are deliberately **not** scoped to a season, unlike `SeasonSquadService.RemoveMemberAsync`'s, because the cascade is not either.
+- **Archiving is a filter on the future, not on the past**: only the "add existing player" picker and copy-forward look at `IsArchived`. `PlayerService.GetAllAsync` deliberately still returns archived players — it is the id → name lookup the match report and live screen resolve against, so filtering it would blank a scorer out of a game they scored in, which is the very thing archiving exists to prevent. Same reasoning for `Game.IsInRoster`: a past game has to be judged the way it was played. If a picker ever *should* hide them, filter at that call site, not in the lookup.
 
 ## Blazor / MudBlazor 9.x
 - **Dialogs not showing**: `MudDialogProvider` must be inside an interactive render mode. Fixed by setting `@rendermode="InteractiveServer"` on both `<Routes>` and `<HeadOutlet>` in App.razor.
@@ -135,7 +136,9 @@ Avoid repeating these mistakes:
 - **Case-insensitivity bites the service action phrases**: `ServiceOperation`'s actions are
   lowercase verb phrases ("delete game"), and several collided with existing capitalized button
   labels ("Delete Game"). MSBuild warns `MSB3568: Duplicate resource name ... ignored` and the
-  first entry silently wins. Reuse the existing key rather than adding a lowercase twin.
+  first entry silently wins. Reuse the existing key rather than adding a lowercase twin — or, when
+  the phrase has to differ because it is substituted into a sentence ("archive the player" beside
+  the menu item "Archive player"), word it so the two are not the same key.
   **This one now fails the build** — `Directory.Build.props` promotes MSB3568 to an error. The trap
   worth remembering is *why it took a second property*: `TreatWarningsAsErrors` is a compiler
   property and does not touch `MSB####` codes, so a duplicate key warned and built green even in

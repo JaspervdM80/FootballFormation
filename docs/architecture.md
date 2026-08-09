@@ -52,7 +52,8 @@ Reporting/
                            the rule that pending migrations mean unhealthy. Pure, so it is tested
 Services/
   ServiceOperation.cs     — Shared try/catch + error logging wrapper for all service methods
-  PlayerService.cs        — CRUD, returns Result<T>
+  PlayerService.cs        — CRUD + SetArchived; delete refuses for anyone who has played, so a
+                            person is retired rather than taken out of past seasons
   SeasonService.cs        — CRUD + SetCurrent/FindForDate/GetOrCreateForDate/EnsureCurrentSeason/CloseSeasonGaps
   SeasonSquadService.cs   — Squad membership: get/add/remove/set-guest/copy-forward, with guards
   GameService.cs          — CRUD + SavePeriodLineupAsync, optional seasonId filter, returns Result<T>
