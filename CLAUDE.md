@@ -96,7 +96,9 @@ by every component on the page and two concurrent queries throw.
 Date` sorts the string the value happened to be written as. Materialise first, then use
 `GameOrdering` / `SeasonOrdering`. `LiveMatchService`'s same-day `Date >= today && Date < tomorrow`
 is the one comparison left in SQL, kept there so the home page does not load the games table whole;
-everything else compares dates in memory.
+everything else compares dates in memory. `DateInSqlInterceptor` enforces this across the whole test
+suite, so a query that breaks the rule fails a test rather than sorting almost-right — the exception
+opts out by name with `.TagWith(QueryTags.ComparesDatesInSql)`.
 
 **Take the clock from the injected `TimeProvider`**, never `DateTime.UtcNow` or `DateTime.Today` —
 in services and in pages alike. Tests drive `FakeTimeProvider`.
