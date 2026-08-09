@@ -57,10 +57,11 @@
   <data name="Preferred Position" xml:space="preserve"><value>Voorkeurspositie</value></data>
   <data name="Alternative Positions" xml:space="preserve"><value>Alternatieve posities</value></data>
   <data name="GUEST" xml:space="preserve"><value>GAST</value></data>
+  <data name="ARCHIVED" xml:space="preserve"><value>GEARCHIVEERD</value></data>
   <data name="Player {0} updated" xml:space="preserve"><value>Speler {0} bijgewerkt</value></data>
   <data name="Player {0} deleted" xml:space="preserve"><value>Speler {0} verwijderd</value></data>
   <data name="Delete Player" xml:space="preserve"><value>Speler verwijderen</value></data>
-  <data name="Are you sure you want to delete {0}?" xml:space="preserve"><value>Weet je zeker dat je {0} wilt verwijderen?</value></data>
+  <data name="Delete {0} from every season, along with any minutes and goals on record? Archive them instead to keep their history." xml:space="preserve"><value>{0} uit elk seizoen verwijderen, samen met alle vastgelegde speeltijd en doelpunten? Archiveer de speler in plaats daarvan om de geschiedenis te bewaren.</value></data>
 
   <!-- Player dialog -->
   <data name="First Name" xml:space="preserve"><value>Voornaam</value></data>
@@ -290,6 +291,12 @@
   <data name="Show {0}" xml:space="preserve"><value>Toon {0}</value></data>
   <data name="Everyone on file is already in this squad." xml:space="preserve"><value>Iedereen staat al in deze selectie.</value></data>
   <data name="Delete player permanently" xml:space="preserve"><value>Speler definitief verwijderen</value></data>
+  <data name="Archive player" xml:space="preserve"><value>Speler archiveren</value></data>
+  <data name="Restore player" xml:space="preserve"><value>Speler terughalen</value></data>
+  <data name="Archive" xml:space="preserve"><value>Archiveren</value></data>
+  <data name="Archive {0}? They keep every appearance, goal and season they played, and stop being offered for seasons to come." xml:space="preserve"><value>{0} archiveren? Alle wedstrijden, doelpunten en seizoenen blijven bewaard, en de speler wordt niet meer aangeboden voor volgende seizoenen.</value></data>
+  <data name="{0} archived" xml:space="preserve"><value>{0} is gearchiveerd</value></data>
+  <data name="{0} is back in the squad lists" xml:space="preserve"><value>{0} staat weer in de selectielijsten</value></data>
   <data name="Please select a player" xml:space="preserve"><value>Kies een speler</value></data>
   <data name="More" xml:space="preserve"><value>Meer</value></data>
   <data name="This date starts a new season — its squad is empty until you fill it in on the squad page." xml:space="preserve"><value>Deze datum start een nieuw seizoen — de selectie is leeg tot je die op de selectiepagina invult.</value></data>
@@ -469,9 +476,11 @@
   <data name="{0} has already played this season" xml:space="preserve"><value>{0} heeft dit seizoen al gespeeld</value></data>
   <data name="{0} has goals or assists this season" xml:space="preserve"><value>{0} heeft dit seizoen doelpunten of assists</value></data>
   <data name="{0} is already in the {1} squad" xml:space="preserve"><value>{0} zit al in de selectie van {1}</value></data>
+  <data name="{0} has already played — archive them instead of deleting them" xml:space="preserve"><value>{0} heeft al gespeeld — archiveer de speler in plaats van te verwijderen</value></data>
 
   <!-- Service actions — substituted into "Failed to {0}" -->
   <data name="add the player to the squad" xml:space="preserve"><value>speler aan de selectie toevoegen</value></data>
+  <data name="archive the player" xml:space="preserve"><value>speler archiveren</value></data>
   <data name="calculate next match date" xml:space="preserve"><value>volgende wedstrijddatum berekenen</value></data>
   <data name="change the squad status" xml:space="preserve"><value>selectiestatus wijzigen</value></data>
   <data name="close season gaps" xml:space="preserve"><value>gaten tussen seizoenen sluiten</value></data>

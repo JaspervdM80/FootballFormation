@@ -237,9 +237,20 @@ the game screens, and for `/games/{id}/overview` the editor for an admin, `/game
 Season-scoped: it follows the season picker and shows that season's squad, not everyone on file.
 
 - Row actions (admin only): **guest toggle**, **remove from squad** (person-remove), and an
-  overflow `MudMenu` holding "Edit player" and "Delete player permanently". Removing from a squad is
-  the everyday action; deleting a *person* cascades their lineup and goal rows in every season, so
-  it is demoted out of the icon row.
+  overflow `MudMenu` holding "Edit player", "Archive player" / "Restore player", and "Delete player
+  permanently". Removing from a squad is the everyday action; the two that act on the *person* are
+  demoted out of the icon row, with archive listed above delete because it is what is almost always
+  meant.
+- **Archive vs delete.** Archiving retires someone who has left the club: nothing they are in
+  changes, they simply stop being offered for seasons still to come (see
+  [models.md](models.md#archiving-and-why-deleting-is-guarded)). Its confirm says so; the delete
+  confirm now spells out what would be lost and points at archiving, instead of a bare "are you
+  sure" about a cascade nobody can see. `PlayerService.DeleteAsync` refuses anyway once the player
+  has played, so the dialog is the explanation and the service is the guard.
+- An archived player keeps their place in the squads of the seasons they played and is badged
+  **`ARCHIVED`** (`.badge-archived` — the quietest badge on the row; it states an absence rather
+  than warning about one). That badge is also the only place the restore action lives, so switching
+  the season picker to a season they played is how you find them again.
 - "Add Player" is a `MudMenu` with two items: **New player** (creates the person *and* adds them to
   this squad in one action) and **Existing player** (`SquadMemberDialog`, picking from
   `GetNonMembersAsync` — someone from an earlier season, or a guest being promoted).

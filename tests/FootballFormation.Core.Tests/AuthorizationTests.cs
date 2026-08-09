@@ -75,6 +75,20 @@ public class AuthorizationTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task An_anonymous_caller_cannot_archive_a_player()
+    {
+        var players = await SeedPlayersAsync(1);
+
+        CurrentUser.IsAdmin = false;
+
+        var result = await Players.SetArchivedAsync(players[0].Id, true);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ServiceOperation.NotAllowedKey, result.ErrorKey);
+        Assert.False(Read().Players.Single().IsArchived);
+    }
+
+    [Fact]
     public async Task An_anonymous_caller_cannot_drive_a_live_match()
     {
         var season = await SeedSeasonAsync();

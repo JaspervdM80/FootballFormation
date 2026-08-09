@@ -126,6 +126,12 @@
                 {
                     <span class="badge-guest">@L["GUEST"]</span>
                 }
+                @* An archived player still belongs to the seasons they played, so they stay in this
+                   list — the badge is what says they are no longer being picked for new ones. *@
+                @if (context.Player!.IsArchived)
+                {
+                    <span class="badge-archived">@L["ARCHIVED"]</span>
+                }
                 @* The whole row navigates to the player's stats, which nothing on it said out
                    loud. The chevron rides with the name so it works in both the desktop table
                    and the stacked mobile card, where the row is a two-column grid. *@
@@ -159,12 +165,16 @@
                                    Style="color: var(--ink-subtle);"
                                    aria-label="@L["Remove from squad"]"
                                    OnClick="() => RemoveMember(context)" />
-                    @* Editing the person and deleting them outright are rarer than squad changes,
-                       so they sit behind an overflow menu. *@
+                    @* Editing the person, retiring them and deleting them outright are all rarer
+                       than squad changes, so they sit behind an overflow menu. Archive is listed
+                       above Delete because it is the one that is almost always meant. *@
                     <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true"
                              AriaLabel="@L["More"]"
                              Style="color: var(--ink-subtle);">
                         <MudMenuItem OnClick="() => OpenEditDialog(context.Player!)">@L["Edit Player"]</MudMenuItem>
+                        <MudMenuItem OnClick="() => ToggleArchived(context.Player!)">
+                            @(context.Player!.IsArchived ? L["Restore player"] : L["Archive player"])
+                        </MudMenuItem>
                         <MudMenuItem OnClick="() => DeletePlayer(context.Player!)">@L["Delete player permanently"]</MudMenuItem>
                     </MudMenu>
                 </span>
