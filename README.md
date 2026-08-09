@@ -139,7 +139,12 @@ scripts/visual-check.sh
 Boots the app against a throwaway database, seeds a small squad through the real dialogs, and
 screenshots every page into `artifacts/visual/`. It fails if the browser logged an error, which is
 where a Blazor render failure surfaces. Nothing else in the repo checks that a page renders at all
-— the tests cover the domain rules. See [docs/testing.md](docs/testing.md).
+— the tests cover the domain rules.
+
+It then measures rather than looks: the match dialog and its date picker are reopened at 320, 360
+and landscape phone sizes and every touch target is checked for the 44px minimum and for dead space
+between it and its neighbours. That is the only thing holding the touch fixes in
+[docs/known_issues.md](docs/known_issues.md) in place. See [docs/testing.md](docs/testing.md).
 
 ### Claude Code on the web
 

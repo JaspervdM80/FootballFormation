@@ -88,6 +88,45 @@ Two things it has to work around, both of them the app behaving correctly:
 It signs in through `/dev/login` — mapped only outside Production and only for loopback callers —
 so no password is typed into the login form.
 
+## Touch targets
+
+The same run then stops looking and starts measuring. `scripts/touch-targets.mjs` reopens the app
+in three phone-sized touch contexts — **320×568**, **360×640** and **844×390** landscape, the sizes
+[known_issues.md](known_issues.md) argues from — and walks the new-match dialog and its date picker:
+the form at the top and scrolled to the bottom, then the picker's day, month and year views. Five
+screens per size, screenshotted into `artifacts/visual/touch/` with every measurement written to
+`report.md` beside them.
+
+It exists because the Touch / PWA section of `known_issues.md` is the longest in the file, every
+entry in it was reported from a touchline — twice — and all of them are held in place by CSS that
+nothing verified. Two rules:
+
+- **Size.** Every hit-testable element is at least **44×44** CSS px. That is what a 36px day cell,
+  a 23px month name, a 40px year button and a 36.5px "Annuleren" each failed.
+- **Clearance.** The gap between a target and its nearest neighbour above or beside it is either
+  nothing — they meet, so there is no hole — or at least **8px**. Anything between is a dead
+  gutter: too narrow to see or aim around, wide enough to swallow a tap, and awarded by the browser
+  to whichever neighbour has the larger contact area. This is the measurement `elementFromPoint`
+  cannot make; it reports both neighbours as perfectly reachable. The 4px gutters between
+  MudBlazor's day cells were exactly this.
+
+Together they are the column-pitch guarantee: with no dead gutter left, the distance between two
+column centres *is* the cell's own width.
+
+Where the geometry provably cannot reach 44px the number is written down in `RECORDED_FLOORS` with
+the reason — a 320px phone has 308px of usable width for seven columns, and a landscape phone is
+too short for six 44px rows. **A recorded floor is still a floor**: the run fails if the element
+drops below the number recorded for it, so an allowance cannot quietly become a regression.
+
+Two things the measurement deliberately skips. A target only half inside its scroll container is
+not a small target — scroll it back and it is the size it always was — so the size check waits
+until it is whole. And two targets in different scroll containers are however far apart the scroll
+position leaves them, which is not a fact about the layout, so no clearance is reported across that
+boundary.
+
+Adding a screen is a few lines in `auditTouchTargets`. The dialog and the picker are covered first
+because every entry in that doc section was found in one of them.
+
 ## Running it in Claude Code on the web
 
 Those containers are rebuilt per session and ship no .NET SDK, so without setup an agent can read

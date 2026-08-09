@@ -5,9 +5,15 @@
 // throws on first render passes CI and is only caught by eye. Each run also collects browser
 // console errors, which is where a Blazor render failure surfaces.
 //
+// It then measures rather than looks: touch-targets.mjs re-walks the new-match dialog and its date
+// picker on three phone-sized viewports and fails the run on a target under 44px or a dead gap
+// between two of them. That half is not about a page rendering at all — it is the only thing
+// holding the Touch / PWA fixes in docs/known_issues.md in place.
+//
 // Started by scripts/visual-check.sh, which boots the app first. Run that, not this.
 import { chromium } from 'playwright';
 import { mkdirSync } from 'node:fs';
+import { auditTouchTargets } from './touch-targets.mjs';
 
 const BASE = process.env.VISUAL_BASE_URL ?? 'http://127.0.0.1:5228';
 const OUT = process.env.VISUAL_OUT_DIR ?? 'artifacts/visual';
@@ -105,10 +111,22 @@ for (const [name, path] of PAGES) {
   console.log(`${name.padEnd(9)} ${path.padEnd(10)} ${(heading ?? '').trim().slice(0, 40)}`);
 }
 
+console.log('\nMeasuring touch targets...');
+const tooSmall = await auditTouchTargets({ browser, base: BASE, out: OUT, onError: e => errors.push(e) });
+
 await browser.close();
 
+if (tooSmall.length) {
+  console.error(`\n${tooSmall.length} touch target problem(s):`);
+  for (const f of tooSmall) {
+    console.error(`  ${f.viewport}  ${f.scene}  ${f.label}\n    ${f.check}: ${f.detail}`);
+  }
+}
 if (errors.length) {
   console.error(`\n${errors.length} browser error(s):\n${errors.join('\n')}`);
+}
+if (tooSmall.length || errors.length) {
   process.exit(1);
 }
-console.log(`\nNo browser errors. Screenshots in ${OUT}/`);
+console.log(`\nNo browser errors, every touch target clears its floor.`);
+console.log(`Screenshots in ${OUT}/, touch measurements in ${OUT}/touch/report.md`);

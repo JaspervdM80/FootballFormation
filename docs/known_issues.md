@@ -52,6 +52,14 @@ Avoid repeating these mistakes:
 - **Multi-select binding**: Use `IReadOnlyCollection<T>` not `IEnumerable<T>`.
 - **`RenderFragment` in code-behind**: Use `=> __builder =>` lambda pattern in `@code` block; can't use regular methods.
 - **Dropdowns rendered as a full-width band across the page**: `MudPopover` carries `.mud-paper`, and app.css's card rule set `position: relative` on it — same specificity as MudBlazor's `.mud-popover{position:absolute}` but later in source order, so it won. A relatively positioned block fills the popover provider's width and treats the placement JS's `left`/`top` as an offset from its static spot at the top of the page. Fixed twice over: first by patch rules putting `position` back, and now — the current state — by the card rule never claiming a popover in the first place, `.mud-paper:not(.mud-popover):not(.mud-dialog)` in app.css. The patch rules are gone, so MudBlazor's own positioning is never disturbed and there is nothing left to restore. Watch for this whenever a global `.mud-*` rule touches layout: excluding the popover beats overriding it back.
+- **An open dialog locks the page by shrinking `<body>`, which breaks any geometry you measure from
+  the DOM.** MudBlazor adds `scroll-locked-no-padding` — `overflow: hidden` on a `<body>` whose box
+  is then *shorter than the viewport*. Walk an element's ancestors intersecting every clipping box,
+  the obvious way to work out what is actually on screen, and the answer is that every dialog and
+  popover in the app is half scrolled out of view. It is not: an ancestor's overflow only clips a
+  descendant it is a containing block for, and MudBlazor's dialog container is `position: fixed`, so
+  a plain `overflow: hidden` on `<body>` cannot clip it. `scripts/touch-targets.mjs` carries that
+  rule (`containsFor`); it was worth about an hour of believing the buttons were off screen.
 - **`MudMenu`'s `Class` lands on the root wrapper, not the activator button**: `Class="btn-gold"` painted an invisible `div` while the button kept MudBlazor's default filled colours. There is no `ActivatorClass` parameter in 9.7 — style `.<your-class>.mud-menu .mud-button-root` instead (see `.btn-gold.mud-menu` in app.css, and `SeasonPicker`'s `.season-picker .mud-button-root`).
 
 ## Touch / PWA
@@ -102,6 +110,23 @@ Avoid repeating these mistakes:
   select is the far bigger target, so a thumb aimed at the button opened the dropdown instead.
   This is invisible to `document.elementFromPoint`, which reports the button as reachable — the
   measurement that finds it is the **gap** to the nearest interactive element above.
+- **All of the above is now measured, and the measuring found three more.** Everything in this
+  section was CSS that nothing verified — a MudBlazor upgrade or one more global `.mud-*` rule would
+  have undone any of it silently, which is how the day cells shipped twice. `scripts/visual-check.sh`
+  now reopens the match dialog and its date picker at 320x568, 360x640 and 844x390 and fails on a
+  target under 44x44 or a gap that is neither zero nor at least 8px (see
+  [testing.md](testing.md#touch-targets)). Its first run reported: a **landscape phone got 36.5px
+  action buttons**, because the `.dialog-sheet` block is width-only and 844px is not below 600px —
+  the same geometry that was reported for "Annuleren" in the first place; **6px of dead space** on
+  either side of the picker's month name, from MudBlazor's `margin: 6px` on the arrows, in the row
+  this file already calls the worst of the picker; and a numeric field's **24x16 steppers**, stacked
+  flush so a tap that misses one hits the other and steps the wrong way. All three are fixed in
+  `app.css`. The lesson is the ordering: three fixes had been argued for in prose here for months,
+  and the first thing that measured them found three more in an afternoon.
+- **A width-only media query does not cover a phone.** Turned sideways, a 390px-tall phone is 844px
+  wide and every `max-width: 599.98px` rule stops applying — while the thumb does not change size.
+  The picker block keys off `(max-width: 599.98px), (max-height: 559.98px)` for exactly this reason,
+  and anything about touch rather than layout belongs in that query, not the sheet's.
 - **Do not leave two nested scroll containers in a dialog.** MudBlazor makes both `.mud-dialog`
   and `.mud-dialog-content` scrollable. A flick can move either one, and on iOS a tap landing
   during momentum scrolling resolves against wherever the other has since moved to. `.dialog-sheet`
