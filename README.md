@@ -77,7 +77,9 @@ FootballFormation/
 
 ### Prerequisites
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download) — `global.json` pins the exact build, so
+  install the version it names (`rollForward` is `disable`, and `dotnet` will say so if it is
+  missing)
 
 ### Run
 
@@ -144,7 +146,9 @@ where a Blazor render failure surfaces. Nothing else in the repo checks that a p
 Those containers ship no .NET SDK and are rebuilt every session, so
 `.claude/hooks/session-start.sh` installs it (and warms the NuGet cache) on session start —
 without it an agent can read this code but cannot build it, test it, or look at a page. It takes
-the SDK from Ubuntu's own archive because the egress policy blocks Microsoft's installer host.
+the SDK from Ubuntu's own archive because the egress policy blocks Microsoft's installer host, and
+checks that what apt handed over satisfies `global.json` — CI installs the version that same file
+names, so a green check and a web session compile the same code.
 
 ## Deployment
 

@@ -7,3 +7,10 @@ docs/
 *.md
 Dockerfile
 fly.toml
+
+# global.json pins the exact SDK that CI and a Claude Code web container both install, so the two
+# provably compile the same code. It is deliberately kept out of the image: the pinned build is
+# 10.0.110, from Ubuntu's archive, and Microsoft publishes no container image for it — the newest
+# 1xx tag on MCR is 10.0.103. Copying the pin in would make `sdk:10.0` fail to satisfy it and every
+# deploy would stop. See docs/known_issues.md, "the SDK the pin cannot reach".
+global.json

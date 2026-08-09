@@ -10,6 +10,7 @@ custom domains at the lowest price point (~$3–5/month, less with scale-to-zero
 | File | Purpose |
 |------|---------|
 | `Dockerfile` | Multi-stage build (SDK → aspnet runtime), listens on 8080 |
+| `global.json` | Pins the SDK for CI and web containers. `.dockerignore` keeps it out of the image, which builds on `sdk:10.0` — see [known_issues.md](known_issues.md) |
 | `fly.toml` | App `gjs-meiden`, volume `data` mounted at `/data` with 30-day snapshot retention, scale-to-zero enabled |
 | `Program.cs` | `APP_DATA_DIR` env var overrides the data folder (DB, logs, data-protection keys); maps `/health` |
 
