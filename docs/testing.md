@@ -67,9 +67,76 @@ what a service wrote without tracking interference.
 
 ## What is not covered
 
-No component tests — no bUnit. Razor markup and interaction are verified in a browser instead; see
-the `verify-ui` skill for the desktop/mobile × anonymous/admin matrix, and the visual check below
-for the automated pass.
+No component tests — no bUnit. A Razor component is never rendered in isolation; the UI is checked
+by driving the real app in a real browser, which is what `tests/ui` (behaviour) and
+`scripts/visual-check.sh` (rendering and touch geometry) do. The `verify-ui` skill still describes
+the manual desktop/mobile × anonymous/admin matrix for anything neither of those covers.
+
+## UI tests (`tests/ui`)
+
+```bash
+cd tests/ui
+npm install          # first time only
+npm test             # everything, ~1 minute
+npm test -- squad    # specs matching "squad"
+npm run test:headed  # watch it happen
+npm run report       # the HTML report from the last run
+```
+
+Playwright, driving the app the way a coach does. `run.mjs` makes a throwaway data directory,
+Playwright's `webServer` starts the app against it, and the whole thing is deleted afterwards — no
+run can touch a real database. Nothing is stubbed: these are the real dialogs, the real SQLite, the
+real SignalR circuit.
+
+| Spec | What it holds |
+| --- | --- |
+| `smoke.spec.js` | Every page renders, is interactive, and is not still spinning |
+| `authorization.spec.js` | The public/admin split — a visitor reads the squad, fixtures and stats, is offered no control that writes, and is bounced from `/settings` and `/users` with the route it wanted remembered |
+| `squad.spec.js` | Adding, editing and archiving a player; a nameless player is refused and told why |
+| `games.spec.js` | Creating, editing and deleting a match; season defaults filling the form; the missing-lineup warning appearing only for a match already played |
+| `match-day.spec.js` | The journey the app exists for: drag a lineup onto the pitch, save it, run the match live, log goals, blow the whistle, and find the scoreline on the games list |
+| `localization.spec.js` | Dutch by default, the switcher moving the whole app to English, and the choice surviving a navigation |
+| `mobile.touchline.spec.js` | The phone layout — the drawer, the full-screen match sheet, the stacked squad — in the `mobile` project on a Pixel 7 |
+
+### The one thing to know before writing a test here
+
+**A Blazor Server page renders twice, and the first one is a lie.** The prerender is complete and
+correct-looking, with every button visible and enabled and none of them wired to anything. A click
+that lands in that window is swallowed with no error, and a `fill()` writes into an input the server
+never hears about — so the form then submits the values it was prerendered with.
+
+Two obvious readiness signals are both wrong, measured on `/settings`:
+
+| Signal | Handlers actually attached |
+| --- | --- |
+| `domcontentloaded`, `window.Blazor` is already true | 0 of 12 buttons |
+| the circuit's first WebSocket frame | still 0 — that frame is the handshake |
+| a `_bl_*` attribute is present | 15, about 230ms in |
+
+Blazor's renderer writes `_bl_<guid>` onto every element it wires an event to, so that attribute is
+the signal. `goto()` waits for it, and `waitForHandlers()` waits for one specific element. This is
+why there is not a single fixed sleep in the directory, and adding one is how the suite starts
+failing on a slow machine.
+
+The other half of the answer is `clickFor(locator, expectation)`: it clicks, checks for the outcome,
+and clicks again if it has not happened. Use it for anything idempotent. **Do not** use it for
+anything that is not — the seeded-password change is clicked exactly once on purpose, because a
+second attempt would use a password that is no longer current.
+
+### Fixtures and isolation
+
+`global-setup.js` runs once and leaves the app in a state a spec can start from: the language pinned
+to English (so a selector is the same string as the source text it came from), the seeded admin's
+password changed — it locks every route to `/settings` until it is — a small squad named `Fixture
+…`, and one match on file for the specs that only read. It saves two browser states, an admin one
+and a visitor one that carries the language cookie and nothing else, so an anonymous test is not
+also a Dutch test.
+
+Specs share one app and one database and run in a single worker, so they stay out of each other's
+way by naming what they create after themselves rather than by counting rows.
+
+Not wired into CI yet — deliberately. It is a `webServer` and a Chromium away from being a job, but
+the merge button is gated on **Build and test**, and a suite this new should earn that first.
 
 ## Visual checks
 

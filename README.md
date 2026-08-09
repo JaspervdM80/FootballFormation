@@ -130,6 +130,17 @@ disabled until `Build and test` is green. It lives in `.github/rulesets/main-bui
 and has to be imported into the repository's settings once — see
 [docs/deployment.md](docs/deployment.md#only-a-green-build-can-be-merged).
 
+### UI tests
+
+```bash
+cd tests/ui && npm install && npm test
+```
+
+Playwright, driving the real app in a browser against a database that exists only for the run: the
+public/admin split, the squad and match dialogs, the full match-day journey from dragging a lineup
+to blowing the final whistle, both languages, and the phone layout. About a minute, 32 tests, not
+yet part of the CI gate. See [docs/testing.md](docs/testing.md#ui-tests-testsui).
+
 ### Visual checks
 
 ```bash

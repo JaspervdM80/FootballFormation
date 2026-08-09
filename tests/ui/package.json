@@ -1,0 +1,14 @@
+{
+  "name": "footballformation-ui-tests",
+  "private": true,
+  "description": "Playwright UI tests. Drives the real app in a browser against a throwaway database.",
+  "type": "module",
+  "scripts": {
+    "test": "node run.mjs",
+    "test:headed": "node run.mjs --headed",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1"
+  }
+}

@@ -70,6 +70,14 @@ out/
 scripts/node_modules/
 scripts/package-lock.json
 
+# Playwright UI tests. The signed-in browser states under .auth/ are credentials for the throwaway
+# database a run creates, and everything else here is a run's own output.
+tests/ui/node_modules/
+tests/ui/package-lock.json
+tests/ui/.auth/
+tests/ui/test-results/
+tests/ui/playwright-report/
+
 # Claude Code. The session-start hook and the settings that register it are shared, because a web
 # session with no .NET SDK cannot build or test this app at all. Personal overrides stay local.
 .claude/*
