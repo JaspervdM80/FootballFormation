@@ -97,6 +97,42 @@ real SignalR circuit.
 | `match-day.spec.js` | The journey the app exists for: drag a lineup onto the pitch, save it, run the match live, log goals, blow the whistle, and find the scoreline on the games list |
 | `localization.spec.js` | Dutch by default, the switcher moving the whole app to English, and the choice surviving a navigation |
 | `mobile.touchline.spec.js` | The phone layout — the drawer, the full-screen match sheet, the stacked squad — in the `mobile` project on a Pixel 7 |
+| `selectors.spec.js` | A test for the tests — see below |
+
+### The test that guards the tests
+
+Almost every assertion proving an *absence* is a count of zero, and a count of zero is also what a
+selector returns when the class it names no longer exists. Rename `.game-row` and "a visitor is
+offered no Delete button" becomes true because nothing is called that any more — the suite stays
+green while the check is gone.
+
+Most of those assertions are already paired with a positive one in the same spec (the missing-lineup
+warning is asserted present on a played match and absent on a future one; the drawer is asserted out
+of the viewport and then in it). But pairing is a convention, not a guard. `selectors.spec.js` is the
+guard: every app-owned class name the suite reaches for has to still exist somewhere in `src`. It
+reads the source rather than the browser, because putting the app into the state each class appears
+in is most of the rest of this directory, and a rename is the thing that actually happens. MudBlazor's
+own classes are deliberately not in the list — those are not ours to rename, and an upgrade that
+drops one shows up as a spec failing for real.
+
+Adding a spec that leans on a new app class means adding it to `SELECTORS` too.
+
+### Is it stable enough for CI?
+
+Measured, not assumed. Eleven consecutive full runs at the time of writing, every one green:
+eight on an idle machine at about a minute each, and three pinned to two cores with three
+busy loops competing for them, which stretched a run to 2.2–2.5 minutes and changed nothing else.
+That is the retry-on-outcome design doing its job — `clickFor` absorbs a slow circuit instead of
+failing on it.
+
+Two things would still need doing before it becomes a gate: the job has to install a Chromium
+(`npx playwright install --with-deps chromium`, and `playwright.config.js` already falls back to
+Playwright's own browser when `/opt/pw-browsers/chromium` is absent), and it should run as its own
+job rather than inside **Build and test**, so a failure there is legible as a UI failure.
+
+One test is calendar-dependent and skips rather than guesses: dating a match earlier in the current
+month has nothing to pick on the 1st, and stepping back a month could cross the season boundary the
+date decides the season from.
 
 ### The one thing to know before writing a test here
 
@@ -135,8 +171,7 @@ also a Dutch test.
 Specs share one app and one database and run in a single worker, so they stay out of each other's
 way by naming what they create after themselves rather than by counting rows.
 
-Not wired into CI yet — deliberately. It is a `webServer` and a Chromium away from being a job, but
-the merge button is gated on **Build and test**, and a suite this new should earn that first.
+Not wired into CI yet — deliberately. See the stability measurements above for what it would take.
 
 ## Visual checks
 

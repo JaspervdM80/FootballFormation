@@ -30,7 +30,8 @@ async function fillLineup(page, limit = 4) {
   const chips = page.locator('.pitch .pitch-player');
 
   await expect(available.first()).toBeVisible();
-  const placed = Math.min(limit, await available.count());
+  const squad = await available.count();
+  const placed = Math.min(limit, squad);
 
   for (let i = 0; i < placed; i++) {
     // Always the first of each: a placed player leaves the list, and a filled slot stops being empty.
@@ -43,26 +44,27 @@ async function fillLineup(page, limit = 4) {
     () => expect(page.getByText('All lineups saved', { exact: false })).toBeVisible(),
     { settle: 10_000 },
   );
-  return placed;
+  return { placed, squad };
 }
 
 test('a lineup dragged onto the pitch is still there after a reload', async ({ page }) => {
   const id = await matchWithId(page, 'FC Wedstrijddag');
 
-  const placed = await fillLineup(page);
+  const { placed, squad } = await fillLineup(page);
   expect(placed, 'the seeded squad should be draggable onto the pitch').toBeGreaterThan(0);
 
   // A reload is the only proof that Save reached the database, not just the circuit's memory.
   await goto(page, `/games/${id}/formation`);
   await expect(page.locator('.pitch .pitch-player')).toHaveCount(placed);
 
-  // And a player on the pitch is no longer offered in the list beside it.
-  await expect(page.locator('.draggable-player')).toHaveCount(0);
+  // And a player on the pitch is no longer offered in the list beside it. Counted as a difference
+  // rather than as zero, so adding a fixture player does not quietly break this.
+  await expect(page.locator('.draggable-player')).toHaveCount(squad - placed);
 });
 
 test('a match is run from the live screen and its score reaches the result', async ({ page }) => {
   const id = await matchWithId(page, 'FC Uitslag');
-  const placed = await fillLineup(page, 2);
+  const { placed } = await fillLineup(page, 2);
 
   await goto(page, `/games/${id}/live`);
   // "Us" and "them" are always these two, whatever order the venue puts them in on screen.

@@ -64,6 +64,11 @@ test('deleting a match asks first, and the match survives a cancel', async ({ pa
 });
 
 test('only a match already played is flagged for its missing lineup', async ({ page }) => {
+  // On the first of the month there is no earlier day to pick, and stepping back a month would risk
+  // crossing the season boundary that the date decides the season from. Skipping one day in thirty
+  // beats a test that fails on the 1st and passes on the 2nd.
+  test.skip(new Date().getDate() === 1, 'no earlier day in the current month to date a match to');
+
   // A future fixture is legitimately empty — the lineup is built on the day — so the warning is
   // about a match that has been played and whose playing time can therefore never be recovered.
   await createMatch(page, { opponent: 'FC Toekomst' });
