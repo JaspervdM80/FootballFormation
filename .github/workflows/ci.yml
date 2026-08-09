@@ -25,9 +25,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      # The SDK comes from global.json, not from a floating '10.0.x' — that resolved to a different
+      # *feature band* than the one a Claude Code web container installs (10.0.302 against 10.0.110),
+      # and an RZ2005 Razor error once failed there while this build stayed green. global.json sets
+      # rollForward: disable, so a runner that happens to preinstall a newer 10.x cannot be picked
+      # up instead of the version installed here.
       - uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '10.0.x'
+          global-json-file: global.json
       - run: dotnet restore
       - run: dotnet build --no-restore --configuration Release
       - run: dotnet test --no-build --configuration Release --verbosity normal

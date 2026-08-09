@@ -22,7 +22,9 @@ scripts/visual-check.sh        # boots the app, screenshots every page into arti
 ```
 
 `Directory.Build.props` sets `TreatWarningsAsErrors` in **Release only**. A Debug build that looks
-clean can still fail CI — **build Release before pushing**.
+clean can still fail CI — **build Release before pushing**. The one exception is `MSB3568`
+(duplicate resource name), promoted to an error in every configuration via
+`MSBuildWarningsAsErrors` because it silently changes what the app says.
 
 EF Core migrations are run from `Core` alone; `DesignTimeDbContextFactory` means no
 `--startup-project` is needed:
@@ -188,10 +190,14 @@ the NuGet cache. It has to be Ubuntu's: the container's egress policy blocks
 `builds.dotnet.microsoft.com`, so `dotnet-install.sh` 403s. Chromium is already at
 `/opt/pw-browsers/chromium` and `visual-check.sh` drives it rather than downloading one.
 
-One consequence worth knowing: that SDK (10.0.110) and the one `actions/setup-dotnet` resolves for
-`10.0.x` in CI are not always the same build, and at least one Razor error has appeared on the
-former while CI stayed green. A green check is not proof it builds in a web session — and the
-reverse.
+That SDK and CI's used to be different builds — a Razor error once appeared on the former while CI
+stayed green — so **`global.json` pins 10.0.110 with `rollForward: disable`** and `ci.yml` installs
+from that file. A green check now means the same SDK compiled it.
+
+The pin is what Ubuntu ships, which is the one thing here that cannot be chosen, so bumping it
+follows the archive rather than leading it. `.dockerignore` keeps `global.json` out of the image on
+purpose — no container image exists for the pinned build — so the deploy still builds on `sdk:10.0`.
+See `docs/known_issues.md`, "the SDK the pin cannot reach", before changing any of it.
 
 Locally the database and logs live under `%LOCALAPPDATA%\FootballFormation\`; set `APP_DATA_DIR` to
 put them elsewhere (it is `/data` in the container).

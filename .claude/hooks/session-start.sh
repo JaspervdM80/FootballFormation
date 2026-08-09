@@ -31,7 +31,19 @@ if ! command -v dotnet >/dev/null 2>&1; then
   DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends dotnet-sdk-10.0
 fi
 
-dotnet --version
+# global.json pins the exact SDK, so this container and CI compile the same code rather than two
+# feature bands of it. What apt hands over is the only candidate — builds.dotnet.microsoft.com is
+# blocked here, so a second version cannot be fetched — which makes an archive that has moved past
+# the pin a dead end worth naming now, not at the first confusing build error.
+if ! (cd "$REPO" && dotnet --version >/dev/null 2>&1); then
+  echo "The installed SDK does not satisfy $REPO/global.json." >&2
+  echo "  installed: $(dotnet --list-sdks | tr '\n' ' ')" >&2
+  echo "Ubuntu's archive is the only SDK source this container can reach, so bump the version in" >&2
+  echo "global.json to match it — CI installs whatever that file names, so the two stay together." >&2
+  exit 1
+fi
+
+(cd "$REPO" && dotnet --version)
 
 # Warms the NuGet cache into the cached container image, so the first build of the session is a
 # build rather than a download.
