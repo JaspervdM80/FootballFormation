@@ -30,6 +30,7 @@
 // catches the button, and the report below prints the measured gap above every target so the
 // numbers those doc entries argue from stay in front of whoever reads the artifact next.
 import { mkdirSync, writeFileSync } from 'node:fs';
+import { clickFor, goto, waitForStableBox, waitUntil } from './blazor.mjs';
 
 export const MIN_TARGET = 44;
 
@@ -324,10 +325,8 @@ export async function auditTouchTargets({ browser, base, out, onError = () => {}
     page.on('console', m => { if (m.type() === 'error') onError(`[console ${viewport.name}] ${m.text()}`); });
     page.on('pageerror', e => onError(`[pageerror ${viewport.name}] ${e.message}`));
 
-    await page.goto(`${base}/dev/login`, { waitUntil: 'networkidle' });
-    await page.waitForTimeout(800);
-    await page.goto(`${base}/games`, { waitUntil: 'networkidle' });
-    await page.waitForTimeout(1500);
+    await goto(page, `${base}/dev/login`);
+    await goto(page, `${base}/games`);
 
     const audit = async (scene, root) => {
       const targets = await measureTargets(page, root);
@@ -338,29 +337,46 @@ export async function auditTouchTargets({ browser, base, out, onError = () => {}
       await page.screenshot({ path: `${dir}/${viewport.name}-${scene.replace(/[ ,]+/g, '-')}.png` });
     };
 
-    await page.getByRole('button', { name: rx('toevoegen', 'add') }).first().click();
-    await page.waitForTimeout(1500);
+    // Every wait below is on the thing itself rather than on a clock. MudBlazor scales a dialog and
+    // a popover in, and measuring geometry mid-animation is how a full-width sheet reads 86% of its
+    // width — so each one is measured only once its box has stopped moving.
+    const dialog = page.locator('.mud-dialog');
+    const popover = page.locator('.mud-picker-popover.mud-popover-open');
+
+    await clickFor(page.getByRole('button', { name: rx('toevoegen', 'add') }).first(),
+      () => dialog.isVisible());
+    await waitForStableBox(dialog);
+
     // The form is taller than any phone, and a target below the fold is clipped out of the
     // measurement — so measure it from both ends. The half nobody sees first is the half with the
     // action row in it.
     await audit('new match dialog', '.mud-dialog');
-    await page.locator('.mud-dialog-content').first().evaluate(el => { el.scrollTop = el.scrollHeight; });
-    await page.waitForTimeout(600);
+
+    const content = page.locator('.mud-dialog-content').first();
+    await content.evaluate(el => { el.scrollTop = el.scrollHeight; });
+    await waitUntil(page, async () => {
+      const at = await content.evaluate(el => el.scrollTop + el.clientHeight >= el.scrollHeight - 1);
+      return at;
+    }, { what: 'the dialog to reach the bottom of its scroll' });
     await audit('new match dialog, scrolled down', '.mud-dialog');
 
     // The calendar icon at the end of the date field — the only way into the picker on a phone.
-    await page.locator('.mud-dialog .mud-input-adornment button').first().click();
-    await page.waitForTimeout(1800);
+    await clickFor(page.locator('.mud-dialog .mud-input-adornment button').first(),
+      () => popover.isVisible());
+    await waitForStableBox(popover);
     await audit('date picker, days', '.mud-picker-popover.mud-popover-open');
 
     // The two views behind the same popover, each reached by its own button: the month grid off the
-    // month name, and the year list off the toolbar's year.
-    await page.locator('.mud-picker-calendar-header-transition').first().click();
-    await page.waitForTimeout(1200);
+    // month name, and the year list off the toolbar's year. Each swaps the popover's contents, so
+    // the wait is for the new view's own elements rather than for the popover, which never left.
+    await clickFor(page.locator('.mud-picker-calendar-header-transition').first(),
+      async () => await popover.locator('.mud-picker-month').count() > 0);
+    await waitForStableBox(popover);
     await audit('date picker, months', '.mud-picker-popover.mud-popover-open');
 
-    await page.locator('.mud-picker-datepicker-toolbar .mud-button-root').first().click();
-    await page.waitForTimeout(1200);
+    await clickFor(page.locator('.mud-picker-datepicker-toolbar .mud-button-root').first(),
+      async () => await popover.locator('.mud-picker-year').count() > 0);
+    await waitForStableBox(popover);
     await audit('date picker, years', '.mud-picker-popover.mud-popover-open');
 
     console.log(`${viewport.name.padEnd(8)} audited 5 screens`);

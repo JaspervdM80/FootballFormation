@@ -9,13 +9,25 @@ name: UI checks
 # "Build and test", so both stay advisory until they have a track record on real runners.
 #
 # Promoting one later is a line in .github/rulesets/main-build-and-test.json, and nothing here.
+#
+# Triggered by the push rather than by the pull request, which is not a detail: GitHub does not
+# start a workflow run for an event it attributes to an app token, so a pull request opened by one
+# — which is how the branches in this repo tend to be opened — sits with no checks at all until
+# somebody pushes again. A push always belongs to whoever pushed, so it always runs, and the run
+# still shows up on the pull request because a check attaches to the commit rather than to the
+# event. One run per push either way, where having both triggers would mean two.
+#
+# The trade is fork pull requests, which push here never sees. `main` takes pull requests from this
+# repository only, so today that costs nothing — but it is the reason ci.yml keeps `pull_request`
+# alongside its push trigger rather than swapping to this shape.
 on:
-  pull_request:
+  push:
+    branches-ignore: [main]
   workflow_dispatch:
 
 concurrency:
   group: ui-checks-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 permissions:
   contents: read

@@ -1,8 +1,19 @@
 name: CI
 
 on:
-  # Every pull request, whatever it targets.
+  # Every pull request, whatever it targets. Kept for pull requests from a fork, which the push
+  # trigger below never sees.
   pull_request:
+  # And every push to a branch, because GitHub starts no workflow run for an event it attributes to
+  # an app token — so a pull request opened by one sits with no "Build and test" at all, and the
+  # merge button stays disabled until somebody pushes again. A push always belongs to whoever
+  # pushed. main is excluded: fly-deploy.yml calls this workflow there.
+  #
+  # The cost is that a pull request from this repository now builds twice, once per event. That is
+  # about a minute of runner time and no risk — both runs test the same commit — and it buys a gate
+  # that reports without being poked.
+  push:
+    branches-ignore: [main]
   # Called by fly-deploy.yml, so the gate in front of a deploy is literally the same build and
   # test a pull request ran, rather than a copy of it that can drift.
   workflow_call:
