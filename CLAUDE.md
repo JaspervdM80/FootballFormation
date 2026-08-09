@@ -18,7 +18,8 @@ as in the markup. The UI is Dutch by default with English available.
 dotnet build -c Release        # what CI builds — warnings are errors here (see below)
 dotnet test                    # 352 tests, xUnit v3, real SQLite
 cd src/FootballFormation.Web && dotnet run     # http://localhost:5228
-scripts/visual-check.sh        # boots the app, screenshots every page into artifacts/visual/
+cd tests/ui && npm test        # 33 Playwright tests in a browser, ~1 min (npm install first)
+scripts/visual-check.sh        # screenshots every page, then measures every touch target
 ```
 
 `Directory.Build.props` sets `TreatWarningsAsErrors` in **Release only**. A Debug build that looks
