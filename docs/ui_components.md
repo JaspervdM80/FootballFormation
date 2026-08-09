@@ -295,9 +295,24 @@ dialog becomes a full-screen sheet:
   or a thumb aimed at "Annuleren" gets snapped to the unavailable-players select instead.
 - The sheet covers the app bar, so `.mud-dialog-title` takes over the top safe-area inset.
 
-Deliberately width-only, so a **landscape** phone keeps an ordinary centred dialog — a full-screen
-sheet 844px wide is not an improvement. The date-picker rule below is the one that also keys off
-height, because a 410px calendar genuinely does not fit a 390px-tall viewport.
+The sheet *layout* is deliberately width-only, so a **landscape** phone keeps an ordinary centred
+dialog — a full-screen sheet 844px wide is not an improvement.
+
+Two rules are not part of that layout and so sit in their own query, `max-width: 599.98px` **or**
+`max-height: 559.98px` — the same one the date picker uses, because turned sideways a phone is
+short rather than narrow but it is still a thumb:
+
+- **The action buttons' 44px floor.** Left inside the sheet block it did not apply in landscape, so
+  a landscape phone got MudBlazor's own 36.5px buttons — the exact geometry that was reported. The
+  touch-target guard measures this at 844x390.
+- **A numeric field's steppers are hidden.** `.mud-input-numeric-spin` is two 24x16 buttons stacked
+  flush inside a 32px input row: a third of the 44px floor, no gap between them, and opposite
+  effects, so a tap that misses one hits the other and counts down instead of up. Two 44px targets
+  cannot fit a 48px field, so on a phone they go and the field is what it already was — a number
+  you type, behind a numeric keyboard. It affects all three `MudNumericField`s (match duration,
+  the default on `/settings`, shirt number); above 600px the arrows are back. Match MudBlazor's own
+  specificity when overriding it — its rule is
+  `.mud-input-control.mud-input-number-control .mud-input-numeric-spin`, so a bare class loses.
 
 ### Date pickers below 600px (or 560px tall)
 `MudDatePicker`'s popover is centred on the viewport instead of anchored to its input, and capped
@@ -342,9 +357,18 @@ already set — so 17px of dead div above and 16px below, with no layout change 
 Growing it also needs `bottom: 0` and flex centring on its label, which
 `.mud-picker-slide-transition > *` has pinned `position: absolute` to the top.
 
+That header row also had the same dead gutters the day grid did: MudBlazor gives the arrows
+`margin: 6px`, leaving 6px of nothing between each arrow and the month name. The margin stays on
+the vertical axis, where it sets the row's height, and goes sideways; the month button takes
+`flex: 1` and grows to meet the arrows, so the row is three targets edge to edge.
+
 In landscape the 56px toolbar has room for one 44px button, not two, so the date line is hidden and
 the year button keeps its target. That strands nothing: the picker's flow is **year → month → day**,
 and the date line only restates what is already in the field behind the popover.
+
+Every number in this section is now measured on each `scripts/visual-check.sh` run — see
+[testing.md](testing.md#touch-targets). Changing one of them means changing what the guard measures,
+not just what this page says.
 
 ## MudBlazor 9.x Notes
 - `ValidateAsync()` not `Validate()`

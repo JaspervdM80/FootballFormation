@@ -1,0 +1,70 @@
+name: UI tests
+
+# A separate file, not a job inside ci.yml, and that is the whole point of it.
+#
+# fly-deploy.yml calls ci.yml wholesale (`uses: ./.github/workflows/ci.yml`), so every job in that
+# file is a gate in front of the production volume — adding this one there would mean a browser test
+# can block a deploy. It is also not what `main`'s ruleset requires to merge: that names
+# "Build and test", and this check stays advisory until it has a track record on real runners.
+#
+# Promoting it later is one line in .github/rulesets/main-build-and-test.json, and nothing here.
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ui-tests-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  ui:
+    name: Playwright
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      # The same SDK ci.yml installs and a web container installs — see global.json, and
+      # docs/known_issues.md, "The SDK the pin cannot reach", before changing it.
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      # Pinned rather than left to whatever the image ships: tests/ui/run.mjs uses
+      # `import.meta.dirname`, which needs Node 20.11 or newer. 22 is a deliberate floor, not the
+      # newest — the suite needs nothing above it.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      # Built here rather than left to the `dotnet run` in playwright.config.js's webServer, so a
+      # cold compile is not competing with that server's start-up timeout.
+      - run: dotnet build -c Release
+
+      # No lockfile: tests/ui/package-lock.json is git-ignored, the same as scripts/'s.
+      - run: npm install --no-audit --no-fund
+        working-directory: tests/ui
+
+      # Only Chromium. The suite runs one browser, and --with-deps brings the system libraries the
+      # runner image does not have.
+      - run: npx playwright install --with-deps chromium
+        working-directory: tests/ui
+
+      # run.mjs makes the throwaway database, Playwright's webServer starts the app against it, and
+      # both are cleaned up when this exits. CI=true is already set, which turns on one retry — a
+      # test that only passes on that retry is reported as flaky rather than quietly green.
+      - run: npm test
+        working-directory: tests/ui
+
+      # Traces and screenshots are written for failures only, so this uploads nothing on a green run.
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            tests/ui/playwright-report/
+            tests/ui/test-results/
+          retention-days: 7

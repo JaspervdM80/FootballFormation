@@ -161,12 +161,23 @@ needs no fixture.
 Test names are sentences:
 `A_match_in_progress_is_never_complete_however_many_goals_are_logged`.
 
-There are **no component tests** (no bUnit). Razor markup is verified in a browser instead:
-`scripts/visual-check.sh` boots the app on a throwaway database, signs in via `/dev/login`, seeds a
-squad through the real dialogs and screenshots every page, failing if the browser logged an error.
-That is the only automated check that a page renders at all. (`docs/testing.md` also references a
-`verify-ui` skill for the manual desktop/mobile × anonymous/admin matrix; it is not part of this
-repository.)
+There are **no component tests** (no bUnit). The UI is checked by driving the real app in a real
+browser, in two places, both against a throwaway database:
+
+- **`cd tests/ui && npm test`** — Playwright, ~33 tests, about a minute. Runs on every pull request
+  via `ui-tests.yml`, advisory rather than the merge gate. Behaviour: the public/admin
+  split, the squad and match dialogs, the whole match-day journey from dragging a lineup to blowing
+  the final whistle, both languages, and the phone layout. Read
+  [docs/testing.md](docs/testing.md#ui-tests-testsui) **before adding one** — a Blazor Server page
+  renders twice and the prerender is fully clickable and completely inert, so `goto()` waits for
+  Blazor's `_bl_*` attributes and `clickFor()` clicks for an outcome. There are no fixed sleeps in
+  that directory; do not introduce one.
+- **`scripts/visual-check.sh`** — not in CI. Screenshots every page, then measures every touch target
+  on three phone viewports against the 44px floor. The only check that a page renders at all, and the only
+  thing holding the Touch / PWA fixes in `known_issues.md` in place.
+
+(`docs/testing.md` also references a `verify-ui` skill for the manual desktop/mobile × anonymous/
+admin matrix; it is not part of this repository.)
 
 ## Workflow
 
