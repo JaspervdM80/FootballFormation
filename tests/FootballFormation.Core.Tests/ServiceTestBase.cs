@@ -107,10 +107,18 @@ public abstract class ServiceTestBase : IDisposable
     /// <summary>
     /// Hands every caller a new context over the one open connection, which is what keeps the
     /// in-memory database alive between them.
+    /// <para>
+    /// <see cref="DateInSqlInterceptor"/> rides along on every one of them, so the whole suite —
+    /// not a single test that has to remember to look — is what stops a date comparison reaching
+    /// SQL.
+    /// </para>
     /// </summary>
     private sealed class TestDbContextFactory(SqliteConnection connection) : IDbContextFactory<AppDbContext>
     {
         public AppDbContext CreateDbContext() =>
-            new(new DbContextOptionsBuilder<AppDbContext>().UseSqlite(connection).Options);
+            new(new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite(connection)
+                .AddInterceptors(new DateInSqlInterceptor())
+                .Options);
     }
 }

@@ -93,8 +93,11 @@ public class LiveMatchService(
             var today = time.GetLocalNow().Date;
             var tomorrow = today.AddDays(1);
 
+            // The one date comparison left in SQL, so this does not read every game ever played on
+            // each home-page hit. The tag is what says so out loud — see QueryTags.
             game = (await db.Games
                 .AsNoTracking()
+                .TagWith(QueryTags.ComparesDatesInSql)
                 .Where(g => g.Date >= today && g.Date < tomorrow)
                 .ToListAsync())
                 .OrderBy(g => g.MatchState == MatchState.Finished)

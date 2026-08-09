@@ -172,7 +172,7 @@ public class SeasonServiceTests : ServiceTestBase
         var closed = await Seasons.CloseSeasonGapsAsync();
 
         Assert.Equal(1, closed.Value);
-        var repaired = Read().Seasons.OrderBy(s => s.StartDate).Last();
+        var repaired = Read().Seasons.ToList().NewestFirst().First();
         Assert.Equal(first.EndDate.Date.AddDays(1), repaired.StartDate.Date);
     }
 

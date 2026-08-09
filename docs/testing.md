@@ -39,6 +39,16 @@ Every test class, so a gap here is visible rather than assumed:
   a test passing there can still fail against the database the app ships with.
 - **Services are constructed in `ServiceTestBase`,** not in each test class, so the wiring lives in
   one place.
+- **Every query the suite makes is watched for a date comparison in SQL.**
+  `ServiceTestBase` registers `DateInSqlInterceptor` on the context factory, so any query that
+  sorts or compares one of the schema's TEXT date columns in SQL throws
+  `DateComparedInSqlException` naming the column — whichever test happened to run it. The rule it
+  enforces is in [known_issues.md](known_issues.md); the short version is materialise first, then
+  order the objects with `GameOrdering` / `SeasonOrdering`.
+  The columns come from the EF model rather than a hand-kept list, so a new `DateTime` property is
+  covered as soon as it is mapped. A query that genuinely has to compare in SQL opts out with
+  `.TagWith(QueryTags.ComparesDatesInSql)` — one does, and `DateInSqlGuardTests` pins both the
+  refusal and the exemption.
 - **Time is injected.** `FakeTimeProvider` drives the match clock, so
   `Time.Advance(TimeSpan.FromMinutes(7))` is a seven-minute half rather than a sleep. Never use
   `DateTime.UtcNow` in a service — take `TimeProvider`.

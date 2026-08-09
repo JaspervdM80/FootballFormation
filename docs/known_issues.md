@@ -21,6 +21,17 @@ Avoid repeating these mistakes:
   `SeasonOrderingTests` pin it. The one deliberate exception is `LiveMatchService`'s
   `Date >= today && Date < tomorrow`, a same-day range kept in SQL so the games table is not
   loaded whole on every home-page hit.
+  **The rule is now mechanical, because prose could not hold it.** `DateInSqlInterceptor`, wired
+  into `ServiceTestBase`'s context factory, reads the SQL of every query the suite runs and throws
+  on a date column in an `ORDER BY` or an inequality — so a new query that reintroduces this fails
+  whichever test first executes it, rather than sorting almost-right until a backup is restored.
+  Its column list comes from the EF model, so it covers a date property from the moment it is
+  mapped. The exception opts out by name with `.TagWith(QueryTags.ComparesDatesInSql)`, which is
+  the only way past and is meant to be argued for.
+  Two things it does not catch: SQL no test ever executes (nothing watches a path the suite does
+  not walk), and equality on a date. `=` compares text just as fragilely, but an `UPDATE ... SET
+  "Date" = @p0` is an assignment wearing the same syntax, so flagging the operator would fail every
+  write. Inequality and `ORDER BY` are unambiguous, which is why the guard stops there.
 - **Sorting backup filenames as text is a different case, and it is fine**: `DatabaseSafety` names
   backups `pre-migration-<last applied migration>.db` and prunes by `OrderByDescending(f => f.Name)`.
   A migration id begins with the fixed-width timestamp it was scaffolded at, so lexicographic *is*
