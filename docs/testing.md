@@ -117,6 +117,21 @@ drops one shows up as a spec failing for real.
 
 Adding a spec that leans on a new app class means adding it to `SELECTORS` too.
 
+### What triggers these
+
+Both jobs in `ui-checks.yml` run **on push to any branch but `main`**, not on `pull_request`, and
+that is not a detail. GitHub starts no workflow run for an event it attributes to an app token, so a
+pull request opened by one — which is how the branches here tend to be opened — sits with no checks
+at all until somebody pushes again. A push always belongs to whoever pushed. The run still appears
+on the pull request, because a check attaches to the commit rather than to the event, and one
+trigger means one run where two would mean two.
+
+`ci.yml` keeps `pull_request` **and** gained the same push trigger, for the same reason: without it
+the required **Build and test** never reported on an app-opened pull request and the merge button
+stayed disabled. It keeps both because a fork's pull request is invisible to push, and the deploy
+gate is the wrong place to give that up. The cost is that a pull request from this repository builds
+twice — about a minute of runner time, testing the same commit twice.
+
 ### Is it stable enough for CI?
 
 Measured, not assumed. Eleven consecutive full runs at the time of writing, every one green:
@@ -125,8 +140,9 @@ busy loops competing for them, which stretched a run to 2.2–2.5 minutes and ch
 That is the retry-on-outcome design doing its job — `clickFor` absorbs a slow circuit instead of
 failing on it.
 
-It now runs on every pull request as **`.github/workflows/ui-tests.yml`** — its own file, and that
-is the point of it. `fly-deploy.yml` calls `ci.yml` wholesale, so a job added there would become a
+It now runs on every pull request as the `playwright` job in
+**`.github/workflows/ui-checks.yml`** — its own file, separate from `ci.yml`, and that is the point
+of it. `fly-deploy.yml` calls `ci.yml` wholesale, so a job added there would become a
 gate in front of the production volume, and a browser test should not be able to block a deploy.
 `main`'s ruleset still requires only **Build and test**, so this check is advisory: it reports, it
 does not block. Promoting it once it has a track record on real runners is one line in
@@ -162,6 +178,20 @@ the signal. `goto()` waits for it, and `waitForHandlers()` waits for one specifi
 why there is not a single fixed sleep in the directory, and adding one is how the suite starts
 failing on a slow machine.
 
+The same rule now holds in `scripts/`, where `blazor.mjs` carries `goto`, `clickFor`,
+`waitForStableBox` and `waitUntil` for the visual harness. That harness was written before any of
+this was understood and was built on fourteen fixed sleeps; replacing them with waits on the thing
+itself took a local run from **123s to 67s** and made it steadier rather than less safe — verified
+by reintroducing the three regressions it exists to catch and watching it fail on all of them. The
+two copies are deliberate: `scripts/` and `tests/ui/` are separate npm packages with different
+dependencies, and a dozen duplicated lines beat a cross-package import. Change one, look at the
+other.
+
+`waitForStableBox` is the one worth knowing about. MudBlazor scales a dialog and a popover in, so
+anything measured the moment it becomes visible is measured mid-animation — a full-width sheet reads
+about 86% of its width. Two identical bounding boxes a frame apart is the exact answer, and it costs
+what the animation actually takes rather than what a sleep guessed.
+
 The other half of the answer is `clickFor(locator, expectation)`: it clicks, checks for the outcome,
 and clicks again if it has not happened. Use it for anything idempotent. **Do not** use it for
 anything that is not — the seeded-password change is clicked exactly once on purpose, because a
@@ -186,7 +216,15 @@ Runs on every pull request as an advisory check — see "Is it stable enough for
 `scripts/visual-check.sh` boots the app and screenshots every page into `artifacts/visual/`
 (ignored by git). It builds, starts the app on a **throwaway database** in a temp directory, signs
 in, seeds a small squad through the real dialogs, and captures each page at 1440×900. It exits
-non-zero if the browser logged an error, which is where a Blazor render failure shows up.
+non-zero if the browser logged an error, which is where a Blazor render failure shows up, or if a
+touch target is under its floor.
+
+It runs on every push to a branch too, as the `visual` job in `ui-checks.yml` — advisory, like the
+Playwright job beside it, and reported on whatever pull request that commit belongs to. That job uploads `artifacts/visual/` whether it passed or not: the
+measurements are the part that can fail, but the screenshots are worth a look on a pull request that
+changed a page, and nothing else in CI produces one. Locally the harness drives the Chromium in a
+Claude Code web container; everywhere else `visual-check.mjs` lets Playwright resolve its own, which
+is what makes the job possible at all.
 
 Two things it has to work around, both of them the app behaving correctly:
 
