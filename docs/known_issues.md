@@ -258,6 +258,16 @@ Avoid repeating these mistakes:
 ## General
 - **Port already in use**: Kill orphaned process with `taskkill //PID <pid> //F`.
 - **File locked during build**: Stop the running app before rebuilding.
+- **A published app started from the wrong directory serves every static file as 200 with an empty
+  body.** The content root of a published app is the *working directory*, which is why the
+  Dockerfile sets `WORKDIR /app` before its entry point. Run
+  `dotnet path/to/publish/FootballFormation.Web.dll` from anywhere else and it boots, `/health`
+  answers healthy, the page renders complete and correct — and `blazor.web.js` comes back
+  `Content-Length: 0`, so `window.Blazor` is never defined, no circuit connects, and nothing is
+  interactive. There is no error anywhere: not in the app log, not in the browser console, not in
+  the network panel, where every request is a green 200. It surfaces only as every `_bl_*` wait in
+  the UI harnesses timing out. Both places that start a published app (`ci.yml`'s browser jobs, via
+  `UI_TEST_APP_DLL` and `VISUAL_APP_DLL`) `cd` into the artifact first.
 - **`.count()` is the one Playwright query that does not wait, and it fails open.** Every other
   locator call in `tests/ui` retries until its timeout; `count()` answers from the DOM as it stands
   right now. `if (await dialog.count()) await confirmDialog(...)` therefore read zero before a

@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 const PORT = Number(process.env.UI_TEST_PORT ?? 5299);
@@ -23,6 +23,15 @@ export const VISITOR_STATE = join(import.meta.dirname, '.auth/visitor.json');
 const PREINSTALLED_CHROMIUM = '/opt/pw-browsers/chromium';
 export const CHROMIUM_PATH = process.env.UI_TEST_CHROMIUM
   ?? (existsSync(PREINSTALLED_CHROMIUM) ? PREINSTALLED_CHROMIUM : undefined);
+
+// CI builds the app once, in its own job, and hands both browser jobs the published output — so
+// point this at that copy and start it directly rather than paying for a second compile here. Left
+// unset locally, where `dotnet run` off the sources is the whole point: it picks up an edit.
+const APP_DLL = process.env.UI_TEST_APP_DLL;
+const START_APP = APP_DLL
+  ? `dotnet ${basename(APP_DLL)} --urls ${BASE_URL}`
+  : 'dotnet run --project ../../src/FootballFormation.Web/FootballFormation.Web.csproj'
+    + ` -c Release --urls ${BASE_URL}`;
 
 export default defineConfig({
   testDir: './specs',
@@ -70,8 +79,13 @@ export default defineConfig({
 
   // Started before globalSetup, which is what lets that setup sign in over HTTP.
   webServer: {
-    command: 'dotnet run --project ../../src/FootballFormation.Web/FootballFormation.Web.csproj'
-      + ` -c Release --urls ${BASE_URL}`,
+    command: START_APP,
+    // A published app has to be started *from its own directory*, the way the Dockerfile's WORKDIR
+    // does it: the content root is the working directory, and from anywhere else MapStaticAssets
+    // answers 200 with an empty body for every file — blazor.web.js included, so the page renders,
+    // looks right, and never becomes interactive. Left undefined otherwise, so the command above
+    // keeps resolving `--project ../../src/...` against this config's own directory.
+    cwd: APP_DLL ? dirname(APP_DLL) : undefined,
     url: `${BASE_URL}/health`,
     // Development, because /dev/login — the route that signs a browser in without a password — is
     // mapped only outside Production, and only for loopback callers.
@@ -81,8 +95,9 @@ export default defineConfig({
       DOTNET_NOLOGO: '1',
       DOTNET_CLI_TELEMETRY_OPTOUT: '1',
     },
-    // A cold `dotnet build` on a first run is most of this.
-    timeout: 240_000,
+    // A cold `dotnet build` on a first run is most of this. A published app skips that entirely and
+    // is up in a couple of seconds, so the long timeout only ever applies to the local shape.
+    timeout: APP_DLL ? 60_000 : 240_000,
     reuseExistingServer: false,
     stdout: 'ignore',
     stderr: 'pipe',

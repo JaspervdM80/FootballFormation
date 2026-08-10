@@ -1,28 +1,23 @@
 name: CI
 
+# The whole pipeline for a change, in one file and in one shape: build it, test it, publish it,
+# then drive a browser over the thing that was published. The commit is compiled exactly once —
+# `dotnet publish --no-build` reuses what `dotnet build` produced and what `dotnet test` ran
+# against, so the app the browsers see is the app the unit tests passed on, not a rebuild of it.
+
 on:
-  # Every pull request, whatever it targets. Kept for pull requests from a fork, which the push
-  # trigger below never sees.
+  # The merge ref, which is the only thing worth building. `actions/checkout` resolves a
+  # `pull_request` event to `refs/pull/N/merge` — this branch already merged into main — where a
+  # push event checks out the branch tip on its own. `strict_required_status_checks_policy` is
+  # deliberately off (see docs/deployment.md), so a branch can merge without being rebuilt against
+  # a moved main, and this event is what covers that. It also covers a fork's pull request.
   pull_request:
-  # And every push to a branch, because GitHub starts no workflow run for an event it attributes to
-  # an app token — so a pull request opened by one sits with no "Build and test" at all, and the
-  # merge button stays disabled until somebody pushes again. A push always belongs to whoever
-  # pushed. main is excluded: fly-deploy.yml calls this workflow there.
-  #
-  # The cost is that a pull request from this repository builds twice, once per event — about a
-  # minute of runner time, and free, since Actions minutes on a public repository are.
-  #
-  # The two runs are not testing the same thing, which is the part worth knowing. `actions/checkout`
-  # resolves a `pull_request` event to `refs/pull/N/merge` — this branch already merged into main —
-  # while the push event checks out the branch tip as it stands. Since
-  # `strict_required_status_checks_policy` is deliberately off (see docs/deployment.md), a branch
-  # can merge without ever being rebuilt against a moved main, and the pull_request run is the only
-  # one testing that combination. Both report as "Build and test", so either satisfies the ruleset.
-  push:
-    branches-ignore: [main]
-  # Called by fly-deploy.yml, so the gate in front of a deploy is literally the same build and
-  # test a pull request ran, rather than a copy of it that can drift.
+  # Called by fly-deploy.yml, so the gate in front of a deploy is literally the same build and test
+  # a pull request ran, rather than a copy of it that can drift. The browser jobs below opt out of
+  # this event: they are advisory, and a flaky browser should not be able to hold up a release.
   workflow_call:
+  # The escape hatch. Runs everything, browsers included — useful for checking a branch that has no
+  # pull request yet, and for the case where a pull request somehow shows no checks at all.
   workflow_dispatch:
 
 # Keyed by ref, so a pull request's checks start straight away instead of queueing behind a
@@ -35,13 +30,15 @@ permissions:
   contents: read
 
 jobs:
-  # Nothing here can deploy: this workflow holds no deploy job and no Fly token. That is the point
-  # of it being separate — a pull request cannot reach production by way of a misread condition.
+  # The required check. `main`'s ruleset names "Build and test" exactly, so renaming this job means
+  # editing .github/rulesets/main-build-and-test.json to match — see docs/deployment.md.
   build:
     name: Build and test
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+
       # The SDK comes from global.json, not from a floating '10.0.x' — that resolved to a different
       # *feature band* than the one a Claude Code web container installs (10.0.302 against 10.0.110),
       # and an RZ2005 Razor error once failed there while this build stayed green. global.json sets
@@ -50,6 +47,185 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
+
+      # Keyed on what decides the graph — the central package versions, the project files, and the
+      # SDK pin — so a run that changes none of them restores from disk instead of from nuget.org.
+      # `restore-keys` means a run that *does* change one still starts from the last good cache and
+      # fetches only what moved.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', '**/*.csproj', 'global.json') }}
+          restore-keys: nuget-${{ runner.os }}-
+
       - run: dotnet restore
       - run: dotnet build --no-restore --configuration Release
       - run: dotnet test --no-build --configuration Release --verbosity normal
+
+      # The one compile in this pipeline ends here. `--no-build` publishes what the two steps above
+      # already produced; without it this would be a second compile of the same commit.
+      #
+      # ReadyToRun off, which the Dockerfile leaves on: it forces a runtime-identifier-specific
+      # publish, which `--no-build` cannot satisfy, and pre-compiling to native code buys a faster
+      # first render that nothing downstream measures.
+      - name: Publish the app the browser jobs will run
+        run: >-
+          dotnet publish src/FootballFormation.Web/FootballFormation.Web.csproj
+          -c Release --no-build -p:PublishReadyToRun=false -o artifacts/app
+
+      # 84MB of the 104MB published is SQLitePCLRaw's native library for every architecture it
+      # supports, riscv64 and mips64 included. The runner is one of them, and this is uploaded once
+      # and downloaded twice — so keep the one it will actually load. 104MB down to 23MB.
+      - name: Drop the native libraries for other architectures
+        run: find artifacts/app/runtimes -mindepth 1 -maxdepth 1 ! -name linux-x64 -exec rm -rf {} +
+
+      # A day, because nothing reads this after the run that made it — unlike the reports below,
+      # which are uploaded for a person to open.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: app
+          path: artifacts/app/
+          retention-days: 1
+
+  # What the app does: the public/admin split, the dialogs, the match-day journey, both languages,
+  # the phone layout. See docs/testing.md.
+  #
+  # Advisory. `main`'s ruleset requires "Build and test" and nothing else, so this reports without
+  # blocking a merge — promoting it once it has a track record on real runners is one line in
+  # .github/rulesets/main-build-and-test.json and nothing here. It also skips the workflow_call
+  # event, which is fly-deploy.yml asking for its gate: a browser should not stand between a merged
+  # pull request and a release.
+  playwright:
+    name: Playwright
+    needs: build
+    if: github.event_name != 'workflow_call'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      # The runtime to start the published app with — this job never compiles anything. setup-dotnet
+      # is what puts the pinned build on the runner, and it is a second or two when the version is
+      # already in the image's cache.
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      # Pinned rather than left to whatever the image ships: tests/ui/run.mjs uses
+      # `import.meta.dirname`, which needs Node 20.11 or newer. 22 is a deliberate floor, not the
+      # newest — the suite needs nothing above it.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: app
+          path: artifacts/app
+
+      # No lockfile: tests/ui/package-lock.json is git-ignored, the same as scripts/'s — so the
+      # cache is keyed on the manifest that decides what npm resolves, and ~/.npm is the download
+      # cache rather than node_modules, which npm still has to link on every run.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-ui-${{ hashFiles('tests/ui/package.json') }}
+          restore-keys: npm-${{ runner.os }}-ui-
+
+      # The browser download, which is most of the install step below — about 10 seconds of it on a
+      # hit. `playwright install` still runs: it is a no-op when the revision is already there, and
+      # it is what fetches a new one when a patch release moves the revision without moving
+      # package.json.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-ui-${{ hashFiles('tests/ui/package.json') }}
+          restore-keys: playwright-${{ runner.os }}-ui-
+
+      - run: npm install --no-audit --no-fund
+        working-directory: tests/ui
+
+      # Only Chromium. The suite runs one browser, and --with-deps brings the system libraries the
+      # runner image does not have.
+      - run: npx playwright install --with-deps chromium
+        working-directory: tests/ui
+
+      # run.mjs makes the throwaway database, Playwright's webServer starts the published app
+      # against it, and both are cleaned up when this exits. UI_TEST_APP_DLL is what points that
+      # webServer at the artifact instead of compiling its own. CI=true is already set, which turns
+      # on one retry — a test that only passes on that retry is reported as flaky, not quietly green.
+      - run: npm test
+        working-directory: tests/ui
+        env:
+          UI_TEST_APP_DLL: ${{ github.workspace }}/artifacts/app/FootballFormation.Web.dll
+
+      # Traces and screenshots are written for failures only, so this uploads nothing on a green run.
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            tests/ui/playwright-report/
+            tests/ui/test-results/
+          retention-days: 7
+
+  # Whether it renders at all, and whether a thumb can hit it. This is the only thing holding the
+  # Touch / PWA fixes in docs/known_issues.md in place — every one of them is CSS, and a MudBlazor
+  # upgrade or one more global .mud-* rule undoes any of them silently. Advisory, and skipped for
+  # workflow_call, for the same reasons as the job above.
+  visual:
+    name: Visual check
+    needs: build
+    if: github.event_name != 'workflow_call'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: app
+          path: artifacts/app
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-scripts-${{ hashFiles('scripts/package.json') }}
+          restore-keys: npm-${{ runner.os }}-scripts-
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-scripts-${{ hashFiles('scripts/package.json') }}
+          restore-keys: playwright-${{ runner.os }}-scripts-
+
+      - run: npm install --no-audit --no-fund
+        working-directory: scripts
+
+      - run: npx playwright install --with-deps chromium
+        working-directory: scripts
+
+      # The script owns its own throwaway database and exits non-zero on a browser error or a touch
+      # target under its floor. VISUAL_APP_DLL hands it the published app, so it starts that rather
+      # than building one. visual-check.mjs resolves Chromium itself when the web container's copy
+      # is absent, which is the case here.
+      - run: scripts/visual-check.sh
+        env:
+          VISUAL_APP_DLL: ${{ github.workspace }}/artifacts/app/FootballFormation.Web.dll
+
+      # Uploaded on success too: the screenshots are the point of this job as much as the
+      # measurements are, and they are worth a look on a pull request that changed a page.
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: visual-check
+          path: artifacts/visual/
+          retention-days: 7

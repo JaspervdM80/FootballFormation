@@ -166,14 +166,14 @@ There are **no component tests** (no bUnit). The UI is checked by driving the re
 browser, in two places, both against a throwaway database:
 
 - **`cd tests/ui && npm test`** — Playwright, ~33 tests, about a minute. Runs on every pull request
-  via `ui-checks.yml`, advisory rather than the merge gate. Behaviour: the public/admin
+  as a job in `ci.yml`, advisory rather than the merge gate. Behaviour: the public/admin
   split, the squad and match dialogs, the whole match-day journey from dragging a lineup to blowing
   the final whistle, both languages, and the phone layout. Read
   [docs/testing.md](docs/testing.md#ui-tests-testsui) **before adding one** — a Blazor Server page
   renders twice and the prerender is fully clickable and completely inert, so `goto()` waits for
   Blazor's `_bl_*` attributes and `clickFor()` clicks for an outcome. There are no fixed sleeps in
   that directory; do not introduce one.
-- **`scripts/visual-check.sh`** — the second job in `ui-checks.yml`, also advisory. Screenshots every
+- **`scripts/visual-check.sh`** — the `Visual check` job in `ci.yml`, also advisory. Screenshots every
   page, then measures every touch target on three phone viewports against the 44px floor. The only check that a page renders at all, and the only
   thing holding the Touch / PWA fixes in `known_issues.md` in place.
 

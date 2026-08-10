@@ -139,8 +139,8 @@ cd tests/ui && npm install && npm test
 Playwright, driving the real app in a browser against a database that exists only for the run: the
 public/admin split, the squad and match dialogs, the full match-day journey from dragging a lineup
 to blowing the final whistle, both languages, and the phone layout. About a minute, 33 tests. Runs
-on every pull request via `.github/workflows/ui-checks.yml`, as an advisory check rather than the
-merge gate. See [docs/testing.md](docs/testing.md#ui-tests-testsui).
+on every pull request as the `Playwright` job in `.github/workflows/ci.yml`, against the app that
+workflow published — an advisory check rather than the merge gate. See [docs/testing.md](docs/testing.md#ui-tests-testsui).
 
 ### Visual checks
 
@@ -157,7 +157,8 @@ It then measures rather than looks: the match dialog and its date picker are reo
 and landscape phone sizes and every touch target is checked for the 44px minimum and for dead space
 between it and its neighbours. That is the only thing holding the touch fixes in
 [docs/known_issues.md](docs/known_issues.md) in place, so it runs on every pull request too — the
-second job in `ui-checks.yml`, advisory like the first, and it uploads its screenshots either way.
+`Visual check` job in `ci.yml`, advisory like the one beside it, and it uploads its screenshots
+either way.
 See [docs/testing.md](docs/testing.md).
 
 ### Claude Code on the web
