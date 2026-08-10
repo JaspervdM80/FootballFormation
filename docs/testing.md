@@ -94,7 +94,7 @@ real SignalR circuit.
 | `authorization.spec.js` | The public/admin split — a visitor reads the squad, fixtures and stats, is offered no control that writes, and is bounced from `/settings` and `/users` with the route it wanted remembered |
 | `squad.spec.js` | Adding, editing and archiving a player; a nameless player is refused and told why |
 | `games.spec.js` | Creating, editing and deleting a match; season defaults filling the form; the missing-lineup warning appearing only for a match already played |
-| `match-day.spec.js` | The journey the app exists for: drag a lineup onto the pitch, save it, run the match live, log goals, blow the whistle, and find the scoreline on the games list |
+| `match-day.spec.js` | The journey the app exists for: drag a lineup onto the pitch, save it, run the match live, log goals, blow the whistle, and find the scoreline on the games list — plus the playing-time table dropping its `~` estimate for the match clock once that has happened |
 | `localization.spec.js` | Dutch by default, the switcher moving the whole app to English, and the choice surviving a navigation |
 | `mobile.touchline.spec.js` | The phone layout — the drawer, the full-screen match sheet, the stacked squad — in the `mobile` project on a Pixel 7 |
 | `selectors.spec.js` | A test for the tests — see below |

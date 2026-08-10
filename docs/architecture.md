@@ -39,9 +39,9 @@ Data/
 Reporting/
   GameMinutesReport.cs    — Playing time for one game: real timings when run live, plan otherwise
   PlayingTimeReport.cs    — The playing-time table (PlayingTimeRow, PeriodDetail, PeriodPlayStatus).
-                           Deliberately the planned periods × period length estimate: it serves the
-                           builder, where nothing has been played yet. PlayerStatsReport is the one
-                           that switched to real timings via GameMinutesReport
+                           Minutes from GameMinutesReport once a game has been run live, the planned
+                           periods × period length estimate before that; PlayingTimeRow.IsActual says
+                           which. The per-period cells always come from the line-up being edited
   LiveMinutesReport.cs    — Exact minutes on the pitch during a live match
   SeasonStatsReport.cs    — Team totals + form for /stats (SeasonStats, GameResult)
   PlayerStatsReport.cs    — Per-player aggregates (PlayerStats, PositionStat, PlayerGameStat)

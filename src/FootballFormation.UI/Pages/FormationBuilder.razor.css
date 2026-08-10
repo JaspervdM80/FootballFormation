@@ -178,6 +178,25 @@
     border: none;
 }
 
+/* Minutes read off the match clock, and minutes that are only what the line-up plans for.
+   The estimate keeps the "~" it is prefixed with in the markup; the colour is the quieter half
+   of the signal. Same convention as the player report — see docs/ui_components.md. */
+.pt-exact {
+    color: var(--ink);
+}
+
+.pt-est {
+    color: var(--ink-muted);
+    font-weight: 500;
+}
+
+.playtime-note {
+    margin-top: 10px;
+    font-size: 0.65rem;
+    line-height: 1.4;
+    color: var(--ink-muted);
+}
+
 /* MudBlazor's md boundary — the same one FormationOverview stacks its pitches at, so the two
    formation screens reflow together rather than one pixel apart. See docs/theming.md. */
 @media (max-width: 959.98px) {

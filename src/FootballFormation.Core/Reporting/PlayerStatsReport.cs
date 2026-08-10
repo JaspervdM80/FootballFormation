@@ -114,7 +114,7 @@ public static class PlayerStatsReport
                 seconds += span;
             }
 
-            var minutes = ToMinutes(seconds);
+            var minutes = GameMinutesReport.ToMinutes(seconds);
 
             // Own goals don't count towards the scorer's tally.
             var goals = game.Goals.Count(g => g.ScorerId == player.Id && !g.IsOwnGoal);
@@ -134,13 +134,13 @@ public static class PlayerStatsReport
         }
 
         var totalSeconds = positionSeconds.Values.Sum();
-        var totalMinutes = ToMinutes(totalSeconds);
+        var totalMinutes = GameMinutesReport.ToMinutes(totalSeconds);
 
         var positions = positionSeconds
             .Select(kv => new PositionStat
             {
                 Position = kv.Key,
-                Minutes = ToMinutes(kv.Value),
+                Minutes = GameMinutesReport.ToMinutes(kv.Value),
                 // From seconds, so the share is exact even where the rounded minutes are not.
                 Percentage = totalSeconds > 0
                     ? Math.Round((double)kv.Value / totalSeconds * 100, 0)
@@ -155,7 +155,7 @@ public static class PlayerStatsReport
             Player = player,
             GamesPlayed = gameStats.Count(g => g.Played),
             TotalMinutes = totalMinutes,
-            GoalkeeperMinutes = ToMinutes(positionSeconds.GetValueOrDefault(PlayerPosition.GK)),
+            GoalkeeperMinutes = GameMinutesReport.ToMinutes(positionSeconds.GetValueOrDefault(PlayerPosition.GK)),
             AvailableMinutes = availableMinutes,
             Goals = gameStats.Sum(g => g.Goals),
             Assists = gameStats.Sum(g => g.Assists),
@@ -164,8 +164,4 @@ public static class PlayerStatsReport
             Games = [.. gameStats.OrderByDescending(g => g.Game.Date).ThenBy(g => g.Game.Id)]
         };
     }
-
-    /// <summary>Rounds to the nearest minute rather than truncating: a half whistled at 29:50 is
-    /// 30 minutes played, not 29.</summary>
-    private static int ToMinutes(int seconds) => (int)Math.Round(seconds / 60.0);
 }
