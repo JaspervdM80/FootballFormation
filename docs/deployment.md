@@ -224,6 +224,60 @@ fly deploy
 
 Either way, migrations run automatically on startup, same as locally.
 
+## The repository is public, and what a stranger can actually do
+
+`gjs-meiden` is a **public** repository with forking enabled, no forks, one collaborator
+(`JaspervdM80`, admin) and no outside collaborators. Anyone on GitHub can read it, fork it, open an
+issue, and open a pull request. None of that is a way in, and it is worth being precise about why,
+because the honest answer is not "the ruleset stops them".
+
+**Merging needs write access, and nobody else has any.** A stranger's pull request is a request; the
+merge button is only rendered for a collaborator. The ruleset on `main` is the second line, not the
+first — it means even an account *with* write access cannot push to `main` directly or merge past a
+red `Build and test`, because `bypass_actors` is empty.
+
+**Deploying needs the token, and a fork cannot see it.** GitHub withholds every secret from a
+workflow triggered by a fork's pull request and issues it a read-only `GITHUB_TOKEN`. Since
+`FLY_API_TOKEN` moved onto the `production` environment, it is not a repository secret at all any
+more, and the environment admits `main` only.
+
+**What is genuinely open is the runner.** `ci.yml` triggers on `pull_request`, so a fork's pull
+request runs `dotnet restore`, `dotnet build` and `dotnet test` **on our runner, from their
+branch** — a build target, a test, or a `nuget.config` in that branch is arbitrary code execution
+by definition. With no secrets and a read-only token the blast radius is a throwaway container and
+the Actions minutes it burns, not the repository and not the volume. GitHub's default for a public
+repository, *Require approval for first-time contributors*, stops that only the first time; a
+stranger who has landed one trivial pull request runs unattended after that. Close it:
+
+> *Settings → Actions → General → Fork pull request workflows from outside collaborators* →
+> **Require approval for all outside collaborators**.
+
+`ui-checks.yml` is not exposed the same way: it triggers on `push`, and a push to a fork runs in the
+fork's own Actions, not here. That is a side effect of the trigger choice explained in that file,
+not a security decision — if it ever gains a `pull_request` trigger, it gains this exposure too.
+Neither file uses `pull_request_target`, which is the trigger that *does* hand a fork's branch a
+writable token, and neither should.
+
+**Forking cannot be switched off on a public repository** — the setting exists only for private
+repositories in an organisation. Making this repository private is the only thing that removes fork
+pull requests and drive-by issues outright, and it is a product decision rather than a security one.
+
+**The realistic route to a stranger merging is none of the above.** It is the owner's account, an
+installed GitHub App carrying write access, or a deploy key with write enabled — none of which a
+branch rule touches. Worth confirming periodically:
+
+| Where | What to check |
+|---|---|
+| *Settings → Collaborators* | Only `JaspervdM80`, and no pending invitations |
+| *Settings → Integrations → GitHub Apps* | Every installed app, and whether it needs write |
+| *Settings → Deploy keys* | Empty, or nothing with **Allow write access** |
+| *Settings → Actions → General* | Workflow permissions **read-only**, and *Allow GitHub Actions to create and approve pull requests* **off** |
+| Account settings | Two-factor authentication or a passkey on the owner account |
+
+The three workflows here each declare `permissions: contents: read` at the top, so the token they
+get is read-only regardless of what the repository default is set to. The repository default still
+matters for anything added later that forgets to.
+
 ## A deploy has to prove it serves
 
 `flyctl deploy` reporting success only means the machine started. After it, the workflow requests
