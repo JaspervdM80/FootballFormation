@@ -9,12 +9,9 @@ namespace FootballFormation.Core.Services;
 /// instead of a raw exception. Expected failures (not found, validation) are returned
 /// by the operation itself as a <see cref="Result"/> and pass through untouched.
 /// <para>
-/// It is also where a cancelled call stops being an exception. Every service method takes a
-/// <see cref="CancellationToken"/> and hands it to EF, so abandoning a query throws
-/// <see cref="OperationCanceledException"/> from somewhere inside the lambda. That is not a
-/// failure — it is the caller having left — so it is caught ahead of the general handler and
-/// answered with <see cref="Result.Cancelled()"/>. Without that, every navigation-away would log
-/// an error and raise a "Failed to load games" snackbar on the page the visitor moved to.
+/// A cancelled call is answered with <see cref="Result.Cancelled()"/> instead. Without that, every
+/// navigation-away would log an error and raise a snackbar on the page the visitor moved to —
+/// see docs/patterns.md.
 /// </para>
 /// </summary>
 public static class ServiceOperation
@@ -29,8 +26,7 @@ public static class ServiceOperation
     internal static async Task<Result> RunAsync(
         ILogger logger, string action, CancellationToken cancellationToken, Func<Task<Result>> operation)
     {
-        // Answered before the lambda runs, so the contract holds even for an operation that never
-        // gets as far as an EF call that would observe the token.
+        // Before the lambda, so the contract holds even if nothing inside observes the token.
         if (cancellationToken.IsCancellationRequested) return Abandoned(logger, action);
 
         try
@@ -48,7 +44,6 @@ public static class ServiceOperation
         }
     }
 
-    /// <inheritdoc cref="RunAsync(ILogger, string, CancellationToken, Func{Task{Result}})"/>
     internal static async Task<Result<T>> RunAsync<T>(
         ILogger logger, string action, CancellationToken cancellationToken, Func<Task<Result<T>>> operation)
     {
@@ -101,18 +96,13 @@ public static class ServiceOperation
         return await RunAsync(logger, action, cancellationToken, operation);
     }
 
-    /// <summary>
-    /// Debug, not Warning: a visitor leaving a page is the most ordinary thing the app does, and
-    /// on a phone on a bad connection it happens constantly. It is logged at all only because
-    /// "the query stopped and nothing was shown" is otherwise invisible when tracing one request.
-    /// </summary>
+    /// <summary>Debug, not Warning: a visitor leaving a page is the most ordinary thing there is.</summary>
     private static Result Abandoned(ILogger logger, string action)
     {
         logger.LogDebug("Gave up trying to {Action}: the caller went away", action);
         return Result.Cancelled();
     }
 
-    /// <inheritdoc cref="Abandoned(ILogger, string)"/>
     private static Result<T> Abandoned<T>(ILogger logger, string action)
     {
         logger.LogDebug("Gave up trying to {Action}: the caller went away", action);

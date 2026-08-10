@@ -29,8 +29,7 @@ public partial class PlayerStats
 
         var playerResult = await PlayerService.GetByIdAsync(PlayerId, Cancellation);
 
-        // A load the visitor walked out on is not a missing player: redirecting on one would
-        // throw them off whichever page they navigated to. See CancellableComponent.
+        // Not a missing player — the visitor left. Redirecting would move them again.
         if (playerResult.IsCancelled) return;
 
         if (!Snackbar.ReportFailure(L, playerResult))

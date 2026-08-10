@@ -10,15 +10,9 @@ public class Result
     public bool IsFailure => !IsSuccess;
 
     /// <summary>
-    /// The caller went away before the operation finished — a navigation, a closed tab, a dropped
-    /// circuit — so nobody is waiting for the answer.
-    /// <para>
-    /// It is a <see cref="IsFailure"/> as well, deliberately: every existing "did that work?" check
-    /// then treats an abandoned call as "no", which is the only safe reading. What separates it is
-    /// that it carries no message, because there is nothing to say and no one to say it to. The UI
-    /// layer (<c>UiFeedback</c>) checks this before it reaches for the snackbar, or an ordinary
-    /// navigation-away would raise "Failed to load games" on the page the visitor moved to.
-    /// </para>
+    /// The caller went away before the operation finished. An <see cref="IsFailure"/> too, so every
+    /// "did that work?" check reads it as no — but carrying no message, so there is nothing for the
+    /// UI to show. See docs/patterns.md.
     /// </summary>
     public bool IsCancelled { get; }
 
@@ -58,7 +52,6 @@ public class Result
     /// for anything variable rather than interpolating, or the message cannot be translated.</param>
     public static Result Failure(string errorKey, params object[] args) => new(false, errorKey, args);
 
-    /// <summary>The outcome of a call whose caller gave up on it. See <see cref="IsCancelled"/>.</summary>
     public static Result Cancelled() => new(false, null, [], isCancelled: true);
 
     public static Result<T> Success<T>(T value) => new(value, true, null, []);
@@ -66,14 +59,9 @@ public class Result
     public static Result<T> Failure<T>(string errorKey, params object[] args) =>
         new(default, false, errorKey, args);
 
-    /// <inheritdoc cref="Cancelled()"/>
     public static Result<T> Cancelled<T>() => new(default, false, null, [], isCancelled: true);
 
-    /// <summary>
-    /// Carries a failure over to a different value type, keeping key and arguments intact — and
-    /// keeping a cancellation a cancellation, so an abandoned call stays silent however many
-    /// services it is handed through.
-    /// </summary>
+    /// <summary>Carries a failure — or a cancellation — to a different value type, intact.</summary>
     public Result<T> To<T>() => new(default, IsSuccess, ErrorKey, _errorArgs, IsCancelled);
 }
 

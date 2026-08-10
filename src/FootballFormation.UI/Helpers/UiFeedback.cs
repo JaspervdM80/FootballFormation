@@ -9,12 +9,9 @@ namespace FootballFormation.UI.Helpers;
 /// Bridges the service-layer <see cref="Result"/> pattern and MudBlazor's snackbar so
 /// pages don't repeat the same success/error branch after every service call.
 /// <para>
-/// A cancelled result gets no snackbar at all. It means the caller went away — the visitor
-/// navigated, closed the tab, lost the circuit — and the snackbar lives on the circuit rather than
-/// on the page that started the call, so reporting one would raise "Failed to load games" on
-/// whichever page they went to instead. Both methods still answer false, because "carry on" is not
-/// the right answer either; a caller whose failure branch does something visible should check
-/// <see cref="Result.IsCancelled"/> first (see <c>CancellableComponent</c>).
+/// A cancelled result gets no snackbar: the snackbar belongs to the circuit rather than to the page
+/// that made the call, so reporting one would raise it on the page the visitor moved to. Both
+/// methods still answer false.
 /// </para>
 /// </summary>
 public static class UiFeedback

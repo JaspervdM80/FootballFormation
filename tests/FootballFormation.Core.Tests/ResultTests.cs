@@ -64,8 +64,7 @@ public class ResultTests
     {
         var result = Result.Cancelled();
 
-        // A failure, so every existing "did that work?" check reads it as no. But with no key, so
-        // the layer that shows messages has nothing to show — see UiFeedback.
+        // A failure, so every "did that work?" check reads it as no — but with nothing to show.
         Assert.True(result.IsCancelled);
         Assert.True(result.IsFailure);
         Assert.Null(result.ErrorKey);
@@ -75,9 +74,7 @@ public class ResultTests
     [Fact]
     public void Carrying_a_cancellation_to_another_type_keeps_it_a_cancellation()
     {
-        // Services hand results up through each other — GameService.CreateAsync carries
-        // SeasonService's over with To<Game>(). If the flag were dropped there, an abandoned call
-        // would arrive at the page as a messageless failure and raise an empty snackbar.
+        // Drop the flag here and an abandoned call arrives as a messageless failure — an empty snackbar.
         var carried = Result.Cancelled<int>().To<string>();
 
         Assert.True(carried.IsCancelled);

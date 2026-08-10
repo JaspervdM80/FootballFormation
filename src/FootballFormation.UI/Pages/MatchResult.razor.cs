@@ -102,8 +102,7 @@ public partial class MatchResult
 
         var gameResult = await GameService.GetByIdAsync(GameId, Cancellation);
 
-        // Walking out of the page is not a missing game — redirecting on one would move a visitor
-        // who has already gone somewhere else. See CancellableComponent.
+        // Not a missing game — the visitor left. Redirecting would move them again.
         if (gameResult.IsCancelled) return;
 
         if (!Snackbar.ReportFailure(L, gameResult))

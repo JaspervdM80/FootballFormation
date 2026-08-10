@@ -38,8 +38,7 @@ public partial class FormationBuilder
     {
         var gameResult = await GameService.GetByIdAsync(GameId, Cancellation);
 
-        // An abandoned load is not a missing game, and must not redirect: the visitor is already
-        // on another page by then. See CancellableComponent.
+        // Not a missing game — the visitor left. Redirecting would move them again.
         if (gameResult.IsCancelled) return;
 
         if (!Snackbar.ReportFailure(L, gameResult))

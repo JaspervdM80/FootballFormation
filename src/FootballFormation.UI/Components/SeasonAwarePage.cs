@@ -15,11 +15,6 @@ namespace FootballFormation.UI.Components;
 /// Override <see cref="LoadAsync"/> with whatever the page shows. It is called once on init and
 /// again after every season change.
 /// </para>
-/// <para>
-/// Being a <see cref="CancellableComponent"/>, it also hands its pages a
-/// <see cref="CancellableComponent.Cancellation"/> token to give their reads — a season-filtered
-/// load is exactly the kind of query worth abandoning when the visitor moves on.
-/// </para>
 /// </summary>
 public abstract class SeasonAwarePage : CancellableComponent
 {
@@ -31,9 +26,8 @@ public abstract class SeasonAwarePage : CancellableComponent
     protected override async Task OnInitializedAsync()
     {
         // The season filter has to be resolved before the first query. Memoized in SeasonState,
-        // so the layout's picker and this page share the one round trip — which is also why no
-        // Cancellation token goes in: the task belongs to the circuit, not to this page, and
-        // cancelling it would take the app bar's picker down with it.
+        // so the layout's picker and this page share the one round trip — and why it gets no
+        // Cancellation: the task belongs to the circuit, not to this page.
         await SeasonState.EnsureLoadedAsync();
         SeasonState.OnChanged += OnSeasonChanged;
 
