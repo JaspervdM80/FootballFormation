@@ -51,7 +51,9 @@ Reporting/
   HealthReport.cs         — Whether a booted container is actually serving: the /health payload and
                            the rule that pending migrations mean unhealthy. Pure, so it is tested
 Services/
-  ServiceOperation.cs     — Shared try/catch + error logging wrapper for all service methods
+  ServiceOperation.cs     — Shared try/catch + error logging wrapper for all service methods, and
+                            where a cancelled call stops being an exception: OperationCanceledException
+                            is caught ahead of the general handler and answered with Result.Cancelled()
   PlayerService.cs        — CRUD + SetArchived; delete refuses for anyone who has played, so a
                             person is retired rather than taken out of past seasons
   SeasonService.cs        — CRUD + SetCurrent/FindForDate/GetOrCreateForDate/EnsureCurrentSeason/CloseSeasonGaps
@@ -67,7 +69,8 @@ Services/
                             ValidateCredentialsAsync/FindForSessionAsync/ChangePasswordAsync, which
                             return raw values rather than Result so a failed login says nothing
                             about why. Refuses to remove or demote the last admin.
-Result.cs                — Result and Result<T>: success/failure with a translatable error key
+Result.cs                — Result and Result<T>: success/failure with a translatable error key, plus
+                           IsCancelled — a failure carrying no message, for a caller who went away
 ```
 
 ## UI (`src/FootballFormation.UI/`) — Razor Class Library
@@ -97,7 +100,9 @@ Components/
   Pitch.razor(.cs)(.css)            — The pitch. Read-only by default; Draggable for the builder,
                                       OnPlayerClicked for the live screen, Size for chip scale
   PlayerLabel.razor                 — A player as one line of text: "#7 Jasper"
-  SeasonAwarePage.cs                — Base for pages that follow the season picker
+  CancellableComponent.cs           — Base for any component that reads: owns the CancellationToken its
+                                      service reads take, tripped when the component is disposed
+  SeasonAwarePage.cs                — Base for pages that follow the season picker (a CancellableComponent)
   PlayerList.razor(.cs)(.css)       — Draggable player cards (HTML5 drag API)
   SubstituteBench.razor(.cs)(.css)  — Substitute drop zone with remove buttons
   SeasonPicker.razor(.cs)           — Global season filter; rendered in both the app bar and the drawer
@@ -115,8 +120,8 @@ State/
   SeasonState.cs              — Scoped: the selected season, shared by the layout and the pages
 Helpers/
   PitchPositionHelper.cs      — Maps PlayerPosition → (left%, top%) coordinates
-  UiFeedback.cs               — Snackbar.Report()/ReportFailure() over Result (translates the error),
-                                shared LockedDialog options
+  UiFeedback.cs               — Snackbar.Report()/ReportFailure() over Result (translates the error,
+                                stays silent about a cancelled one), shared LockedDialog options
   DialogPrompts.cs            — ConfirmAsync()/ConfirmDeleteAsync(), and PromptAsync()/PromptValueAsync()
                                 for an editing dialog that returns a value
   LineupDragState.cs          — In-flight drag on the formation builder

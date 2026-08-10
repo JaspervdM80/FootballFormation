@@ -8,6 +8,11 @@ namespace FootballFormation.UI.Helpers;
 /// <summary>
 /// Bridges the service-layer <see cref="Result"/> pattern and MudBlazor's snackbar so
 /// pages don't repeat the same success/error branch after every service call.
+/// <para>
+/// A cancelled result gets no snackbar: the snackbar belongs to the circuit rather than to the page
+/// that made the call, so reporting one would raise it on the page the visitor moved to. Both
+/// methods still answer false.
+/// </para>
 /// </summary>
 public static class UiFeedback
 {
@@ -36,6 +41,8 @@ public static class UiFeedback
             return true;
         }
 
+        if (result.IsCancelled) return false;
+
         snackbar.Add(Translate(localizer, result), Severity.Error);
         return false;
     }
@@ -47,6 +54,8 @@ public static class UiFeedback
         Result result)
     {
         if (result.IsSuccess) return true;
+
+        if (result.IsCancelled) return false;
 
         snackbar.Add(Translate(localizer, result), Severity.Error);
         return false;

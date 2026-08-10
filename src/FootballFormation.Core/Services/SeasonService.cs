@@ -13,14 +13,14 @@ public class SeasonService(
     ILogger<SeasonService> logger)
 {
     /// <summary>Newest first — the season picker and the current-season fallbacks rely on it.</summary>
-    public Task<Result<List<Season>>> GetAllAsync() =>
-        ServiceOperation.RunAsync(logger, "load seasons", async () =>
+    public Task<Result<List<Season>>> GetAllAsync(CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "load seasons", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var seasons = (await db.Seasons
                 .AsNoTracking()
-                .ToListAsync())
+                .ToListAsync(cancellationToken))
                 .NewestFirst();
 
             logger.LogDebug("Retrieved {Count} seasons", seasons.Count);
@@ -32,17 +32,17 @@ public class SeasonService(
     /// sibling of <see cref="GetOrCreateForDateAsync"/>, for callers that must not create a season
     /// as a side effect — e.g. the game dialog reacting to a date the user may still cancel.
     /// </summary>
-    public Task<Result<Season?>> FindForDateAsync(DateTime date) =>
-        ServiceOperation.RunAsync(logger, "look up the season for that date", async () =>
+    public Task<Result<Season?>> FindForDateAsync(DateTime date, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "look up the season for that date", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var day = date.Date;
 
             // Matched in memory so Season.Contains decides it — the one date-only definition of
             // a window. Windows do not overlap, so newest-first only breaks a tie a healthy
             // database never has. See SeasonOrdering.
-            var seasons = await db.Seasons.AsNoTracking().ToListAsync();
+            var seasons = await db.Seasons.AsNoTracking().ToListAsync(cancellationToken);
             var season = seasons.NewestFirst().FirstOrDefault(s => s.Contains(day));
 
             return Result.Success(season);
@@ -52,14 +52,15 @@ public class SeasonService(
     /// The season covering <paramref name="date"/>, created on the fly when a game is scheduled
     /// beyond the seasons defined so far. Season windows are gapless, so this always resolves.
     /// </summary>
-    public Task<Result<Season>> GetOrCreateForDateAsync(DateTime date) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "find the season for that date", async () =>
+    public Task<Result<Season>> GetOrCreateForDateAsync(
+        DateTime date, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "find the season for that date", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var day = date.Date;
 
-            var lookup = await FindForDateAsync(day);
+            var lookup = await FindForDateAsync(day, cancellationToken);
             if (lookup.IsFailure) return lookup.To<Season>();
             if (lookup.Value is not null) return Result.Success(lookup.Value);
 
@@ -68,7 +69,7 @@ public class SeasonService(
             // CreateFor always returns a full July–June window. If the date sits in a gap narrower
             // than that, the window would overlap the seasons on either side, so clamp it to them:
             // auto-creation can then only ever fill a hole, never straddle its neighbours.
-            var existing = (await db.Seasons.AsNoTracking().ToListAsync()).OldestFirst();
+            var existing = (await db.Seasons.AsNoTracking().ToListAsync(cancellationToken)).OldestFirst();
 
             var previous = existing.Where(s => s.EndDate.Date < day).MaxBy(s => s.EndDate.Date);
 
@@ -81,23 +82,23 @@ public class SeasonService(
                 season.EndDate = following.StartDate.Date.AddDays(-1);
 
             db.Seasons.Add(season);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Created season {SeasonName} for date {Date} (ID: {SeasonId})",
                 season.Name, day.ToString("yyyy-MM-dd"), season.Id);
             return Result.Success(season);
         });
 
-    public Task<Result<Season>> CreateAsync(Season season) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "create season", async () =>
+    public Task<Result<Season>> CreateAsync(Season season, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "create season", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var validation = await ValidateAsync(db, season);
+            var validation = await ValidateAsync(db, season, cancellationToken);
             if (validation.IsFailure) return validation.To<Season>();
 
             db.Seasons.Add(season);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Created season {SeasonName} ({Start} - {End}) (ID: {SeasonId})",
                 season.Name, season.StartDate.ToString("yyyy-MM-dd"),
@@ -105,27 +106,27 @@ public class SeasonService(
             return Result.Success(season);
         });
 
-    public Task<Result> UpdateAsync(Season season) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "update season", async () =>
+    public Task<Result> UpdateAsync(Season season, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "update season", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var validation = await ValidateAsync(db, season);
+            var validation = await ValidateAsync(db, season, cancellationToken);
             if (validation.IsFailure) return validation;
 
             db.Seasons.Update(season);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Updated season {SeasonName} (ID: {SeasonId})", season.Name, season.Id);
             return Result.Success();
         });
 
-    public Task<Result> DeleteAsync(int id) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "delete season", async () =>
+    public Task<Result> DeleteAsync(int id, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "delete season", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var season = await db.Seasons.FindAsync(id);
+            var season = await db.Seasons.FindAsync([id], cancellationToken);
             if (season is null)
             {
                 logger.LogWarning("Cannot delete season {SeasonId}: not found", id);
@@ -134,7 +135,7 @@ public class SeasonService(
 
             // The FK is Restrict, so refuse here with something readable rather than letting the
             // caller hit a raw DbUpdateException.
-            var gameCount = await db.Games.CountAsync(g => g.SeasonId == id);
+            var gameCount = await db.Games.CountAsync(g => g.SeasonId == id, cancellationToken);
             if (gameCount > 0)
             {
                 logger.LogWarning("Cannot delete season {SeasonName}: {Count} games still assigned",
@@ -149,18 +150,18 @@ public class SeasonService(
             }
 
             db.Seasons.Remove(season);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Deleted season {SeasonName} (ID: {SeasonId})", season.Name, season.Id);
             return Result.Success();
         });
 
-    public Task<Result> SetCurrentAsync(int id) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "switch season", async () =>
+    public Task<Result> SetCurrentAsync(int id, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "switch season", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var seasons = await db.Seasons.ToListAsync();
+            var seasons = await db.Seasons.ToListAsync(cancellationToken);
             var target = seasons.FirstOrDefault(s => s.Id == id);
 
             if (target is null)
@@ -171,7 +172,7 @@ public class SeasonService(
 
             // One SaveChanges, so "exactly one current season" is never briefly broken.
             foreach (var season in seasons) season.IsCurrent = season.Id == id;
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Current season set to {SeasonName} (ID: {SeasonId})", target.Name, target.Id);
             return Result.Success();
@@ -188,12 +189,12 @@ public class SeasonService(
     /// <see cref="Game.SeasonId"/> is stored on the game itself.
     /// </para>
     /// </summary>
-    public Task<Result<int>> CloseSeasonGapsAsync() =>
-        ServiceOperation.RunAsync(logger, "close season gaps", async () =>
+    public Task<Result<int>> CloseSeasonGapsAsync(CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "close season gaps", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var seasons = (await db.Seasons.ToListAsync()).OldestFirst();
+            var seasons = (await db.Seasons.ToListAsync(cancellationToken)).OldestFirst();
             var closed = 0;
 
             for (int i = 1; i < seasons.Count; i++)
@@ -213,7 +214,7 @@ public class SeasonService(
                 closed++;
             }
 
-            if (closed > 0) await db.SaveChangesAsync();
+            if (closed > 0) await db.SaveChangesAsync(cancellationToken);
             return Result.Success(closed);
         });
 
@@ -221,19 +222,19 @@ public class SeasonService(
     /// Idempotent startup guard. Runs on every boot so a fresh install — whose migration backfill
     /// found no games to derive seasons from — still has a current season to fall back on.
     /// </summary>
-    public Task<Result<Season>> EnsureCurrentSeasonAsync() =>
-        ServiceOperation.RunAsync(logger, "prepare seasons", async () =>
+    public Task<Result<Season>> EnsureCurrentSeasonAsync(CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "prepare seasons", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var current = await db.Seasons.FirstOrDefaultAsync(s => s.IsCurrent);
+            var current = await db.Seasons.FirstOrDefaultAsync(s => s.IsCurrent, cancellationToken);
             if (current is not null) return Result.Success(current);
 
-            var newest = (await db.Seasons.ToListAsync()).NewestFirst().FirstOrDefault();
+            var newest = (await db.Seasons.ToListAsync(cancellationToken)).NewestFirst().FirstOrDefault();
             if (newest is not null)
             {
                 newest.IsCurrent = true;
-                await db.SaveChangesAsync();
+                await db.SaveChangesAsync(cancellationToken);
 
                 logger.LogInformation("Marked season {SeasonName} as current (ID: {SeasonId})",
                     newest.Name, newest.Id);
@@ -243,14 +244,14 @@ public class SeasonService(
             var season = Season.CreateFor(time.GetLocalNow().Date);
             season.IsCurrent = true;
             db.Seasons.Add(season);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Seeded first season {SeasonName} (ID: {SeasonId})", season.Name, season.Id);
             return Result.Success(season);
         });
 
     /// <summary>Rules the dialog deliberately does not enforce, so any caller gets them.</summary>
-    private async Task<Result> ValidateAsync(AppDbContext db, Season season)
+    private async Task<Result> ValidateAsync(AppDbContext db, Season season, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(season.Name))
         {
@@ -270,7 +271,7 @@ public class SeasonService(
         var others = (await db.Seasons
             .AsNoTracking()
             .Where(s => s.Id != season.Id)
-            .ToListAsync())
+            .ToListAsync(cancellationToken))
             .OldestFirst();
 
         var overlapping = others.FirstOrDefault(s =>

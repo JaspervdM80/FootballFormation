@@ -60,6 +60,38 @@ public class ResultTests
     }
 
     [Fact]
+    public void A_cancelled_result_is_a_failure_with_nothing_to_say()
+    {
+        var result = Result.Cancelled();
+
+        // A failure, so every "did that work?" check reads it as no — but with nothing to show.
+        Assert.True(result.IsCancelled);
+        Assert.True(result.IsFailure);
+        Assert.Null(result.ErrorKey);
+        Assert.Null(result.Error);
+    }
+
+    [Fact]
+    public void Carrying_a_cancellation_to_another_type_keeps_it_a_cancellation()
+    {
+        // Drop the flag here and an abandoned call arrives as a messageless failure — an empty snackbar.
+        var carried = Result.Cancelled<int>().To<string>();
+
+        Assert.True(carried.IsCancelled);
+        Assert.True(carried.IsFailure);
+        Assert.Null(carried.ErrorKey);
+    }
+
+    [Fact]
+    public void Reading_the_value_of_a_cancelled_result_says_the_caller_went_away()
+    {
+        var result = Result.Cancelled<string>();
+
+        var ex = Assert.Throws<InvalidOperationException>(() => result.Value);
+        Assert.Contains("cancelled", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Formatting_is_culture_invariant_so_the_key_and_the_arguments_stay_separable()
     {
         var original = System.Globalization.CultureInfo.CurrentCulture;

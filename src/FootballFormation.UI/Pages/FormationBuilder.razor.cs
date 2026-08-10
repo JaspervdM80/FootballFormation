@@ -36,7 +36,11 @@ public partial class FormationBuilder
 
     protected override async Task OnInitializedAsync()
     {
-        var gameResult = await GameService.GetByIdAsync(GameId);
+        var gameResult = await GameService.GetByIdAsync(GameId, Cancellation);
+
+        // Not a missing game — the visitor left. Redirecting would move them again.
+        if (gameResult.IsCancelled) return;
+
         if (!Snackbar.ReportFailure(L, gameResult))
         {
             Logger.LogWarning("Game {GameId} not found, redirecting to games list", GameId);
@@ -46,12 +50,12 @@ public partial class FormationBuilder
 
         GameData = gameResult.Value!;
 
-        var squadResult = await SquadService.GetSquadAsync(GameData.SeasonId);
+        var squadResult = await SquadService.GetSquadAsync(GameData.SeasonId, Cancellation);
         Squad = Snackbar.ReportFailure(L, squadResult) ? squadResult.Value! : SeasonSquad.Empty;
 
         // The full pool is still needed: a player who was lined up but has since left the squad
         // must stay visible in the playing-time table (see GetPlayingTimeData).
-        var playersResult = await PlayerService.GetAllAsync();
+        var playersResult = await PlayerService.GetAllAsync(Cancellation);
         AllPlayers = Snackbar.ReportFailure(L, playersResult) ? playersResult.Value! : [];
 
         CacheLineups();
@@ -286,7 +290,7 @@ public partial class FormationBuilder
         Logger.LogInformation("Saved all lineups for game {GameId}", GameId);
 
         // Reload so the cached entries carry the DB-generated IDs
-        var gameResult = await GameService.GetByIdAsync(GameId);
+        var gameResult = await GameService.GetByIdAsync(GameId, Cancellation);
         if (gameResult.IsSuccess)
         {
             GameData = gameResult.Value!;

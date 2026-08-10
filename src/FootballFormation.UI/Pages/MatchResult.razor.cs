@@ -100,7 +100,11 @@ public partial class MatchResult
         IsAdmin = authState.User.IsAdmin();
         CurrentUserId = authState.User.UserId();
 
-        var gameResult = await GameService.GetByIdAsync(GameId);
+        var gameResult = await GameService.GetByIdAsync(GameId, Cancellation);
+
+        // Not a missing game — the visitor left. Redirecting would move them again.
+        if (gameResult.IsCancelled) return;
+
         if (!Snackbar.ReportFailure(L, gameResult))
         {
             Trail.Redirect(AppRoutes.Games);
@@ -111,12 +115,12 @@ public partial class MatchResult
         ScoreHome = GameData.ScoreHome;
         ScoreAway = GameData.ScoreAway;
 
-        var squadResult = await SquadService.GetSquadAsync(GameData.SeasonId);
+        var squadResult = await SquadService.GetSquadAsync(GameData.SeasonId, Cancellation);
         Squad = squadResult.IsSuccess ? squadResult.Value! : SeasonSquad.Empty;
 
         // Anyone who actually appeared stays selectable as a scorer regardless of current
         // membership, so the full pool is still loaded.
-        var playersResult = await PlayerService.GetAllAsync();
+        var playersResult = await PlayerService.GetAllAsync(Cancellation);
         AllPlayers = playersResult.IsSuccess ? playersResult.Value! : [];
 
         await ReloadComments();
@@ -213,13 +217,13 @@ public partial class MatchResult
 
     private async Task ReloadComments()
     {
-        var result = await GameService.GetCommentsAsync(GameId, includePrivate: IsAdmin);
+        var result = await GameService.GetCommentsAsync(GameId, includePrivate: IsAdmin, Cancellation);
         Comments = result.IsSuccess ? result.Value! : [];
     }
 
     private async Task ReloadGame()
     {
-        var gameResult = await GameService.GetByIdAsync(GameId);
+        var gameResult = await GameService.GetByIdAsync(GameId, Cancellation);
         if (gameResult.IsSuccess) GameData = gameResult.Value;
     }
 

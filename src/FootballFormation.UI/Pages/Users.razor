@@ -1,5 +1,6 @@
 @page "/users"
 @attribute [Authorize(Roles = AppRoles.Admin)]
+@inherits CancellableComponent
 
 <PageTitle>@L["Users"]</PageTitle>
 

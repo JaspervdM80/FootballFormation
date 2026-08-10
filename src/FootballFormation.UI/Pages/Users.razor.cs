@@ -33,7 +33,7 @@ public partial class Users
 
     private async Task LoadUsers()
     {
-        var result = await UserService.GetAllAsync();
+        var result = await UserService.GetAllAsync(Cancellation);
         _users = Snackbar.ReportFailure(L, result) ? result.Value : [];
     }
 

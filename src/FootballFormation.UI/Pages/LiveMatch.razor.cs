@@ -21,7 +21,7 @@ public record MatchEvent(int Minute, DateTime RecordedAt, bool IsGoal, GameGoal?
 /// The sideline screen. An admin runs the clock and records what happens; everyone else sees the
 /// same page read-only and updating live, so there is one URL to share during a match.
 /// </summary>
-public partial class LiveMatch : IDisposable
+public partial class LiveMatch
 {
     [Inject] private LiveMatchService Live { get; set; } = null!;
     [Inject] private PlayerService PlayerService { get; set; } = null!;
@@ -242,10 +242,10 @@ public partial class LiveMatch : IDisposable
 
         // Anyone who appeared stays nameable regardless of current squad membership, matching
         // how MatchResult loads its player pool.
-        var playersResult = await PlayerService.GetAllAsync();
+        var playersResult = await PlayerService.GetAllAsync(Cancellation);
         AllPlayers = playersResult.IsSuccess ? playersResult.Value! : [];
 
-        var squadResult = await SquadService.GetSquadAsync(GameData!.SeasonId);
+        var squadResult = await SquadService.GetSquadAsync(GameData!.SeasonId, Cancellation);
         Squad = squadResult.IsSuccess ? squadResult.Value! : SeasonSquad.Empty;
 
         Notifier.Changed += OnLiveChanged;
@@ -279,7 +279,7 @@ public partial class LiveMatch : IDisposable
 
     private async Task<bool> ReloadAsync()
     {
-        var result = await Live.GetLiveAsync(GameId);
+        var result = await Live.GetLiveAsync(GameId, Cancellation);
         if (!Snackbar.ReportFailure(L, result))
         {
             Trail.Redirect(AppRoutes.Games);
@@ -373,12 +373,16 @@ public partial class LiveMatch : IDisposable
 
     private void NavigateToResult() => Navigation.NavigateTo(AppRoutes.Result(GameId));
 
-    public void Dispose()
+    public override void Dispose()
     {
         Notifier.Changed -= OnLiveChanged;
 
-        if (_tick is null) return;
-        _tick.Elapsed -= OnTick;
-        _tick.Dispose();
+        if (_tick is not null)
+        {
+            _tick.Elapsed -= OnTick;
+            _tick.Dispose();
+        }
+
+        base.Dispose();
     }
 }

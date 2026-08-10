@@ -16,7 +16,7 @@ namespace FootballFormation.UI.Components;
 /// again after every season change.
 /// </para>
 /// </summary>
-public abstract class SeasonAwarePage : ComponentBase, IDisposable
+public abstract class SeasonAwarePage : CancellableComponent
 {
     [Inject] protected SeasonState SeasonState { get; set; } = null!;
 
@@ -26,7 +26,8 @@ public abstract class SeasonAwarePage : ComponentBase, IDisposable
     protected override async Task OnInitializedAsync()
     {
         // The season filter has to be resolved before the first query. Memoized in SeasonState,
-        // so the layout's picker and this page share the one round trip.
+        // so the layout's picker and this page share the one round trip — and why it gets no
+        // Cancellation: the task belongs to the circuit, not to this page.
         await SeasonState.EnsureLoadedAsync();
         SeasonState.OnChanged += OnSeasonChanged;
 
@@ -49,9 +50,9 @@ public abstract class SeasonAwarePage : ComponentBase, IDisposable
         StateHasChanged();
     });
 
-    public virtual void Dispose()
+    public override void Dispose()
     {
         SeasonState.OnChanged -= OnSeasonChanged;
-        GC.SuppressFinalize(this);
+        base.Dispose();
     }
 }

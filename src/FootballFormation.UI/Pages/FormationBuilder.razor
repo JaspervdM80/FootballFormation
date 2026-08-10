@@ -1,5 +1,6 @@
 @page "/games/{GameId:int}/formation"
 @attribute [Authorize(Roles = AppRoles.Admin)]
+@inherits CancellableComponent
 
 <PageTitle>@L["Formation Builder"]</PageTitle>
 

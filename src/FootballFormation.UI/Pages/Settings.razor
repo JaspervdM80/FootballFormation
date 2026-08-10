@@ -1,5 +1,6 @@
 @page "/settings"
 @attribute [Authorize(Roles = AppRoles.Admin)]
+@inherits CancellableComponent
 
 <PageTitle>@L["Match Preferences"]</PageTitle>
 

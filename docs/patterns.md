@@ -44,6 +44,52 @@ _players = Snackbar.ReportFailure(L, players) ? players.Value : [];
 rather than a per-entity id. Entity ids are still structured-logged on the `Information` and
 `Warning` lines around it, and the exception carries the stack trace.
 
+## Cancellation: the third outcome
+Every public service method takes a trailing `CancellationToken cancellationToken = default` and
+hands it to every EF call underneath — `ToListAsync`, `FirstOrDefaultAsync`, `FindAsync`,
+`SaveChangesAsync`, `CreateDbContextAsync`, the lot. `ServiceOperation` is where it is threaded, so
+the parameter is a property of the shape rather than something each method wires up:
+
+```csharp
+public Task<Result<List<Player>>> GetAllAsync(CancellationToken cancellationToken = default) =>
+    ServiceOperation.RunAsync(logger, "load players", cancellationToken, async () =>
+    {
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+        var players = await db.Players.AsNoTracking().ToListAsync(cancellationToken);
+        return Result.Success(players);
+    });
+```
+
+**A cancelled call is not a failed one.** This is a Blazor Server app: a visitor navigating away,
+closing the tab or losing their circuit is the most ordinary event there is, and on a phone at a
+touchline it happens constantly. So `RunAsync` catches `OperationCanceledException` *ahead of* the
+general handler and returns `Result.Cancelled()` — no `LogError`, no stack trace, and no
+`"Failed to load games"` message. Without that, threading the token would have turned every
+navigation-away into a logged error and a red snackbar on the page the visitor moved to.
+
+`Result.Cancelled()` is still an `IsFailure`, deliberately: every existing "did that work?" check
+reads it as no, which is the only safe answer. What sets it apart is `IsCancelled` and an
+`ErrorKey` of null. Three consequences worth knowing:
+
+- `UiFeedback.Report`/`ReportFailure` show nothing for one and return false. The snackbar belongs
+  to the circuit, not to the page that started the call.
+- `Result.To<T>()` carries the flag, so a cancellation stays a cancellation through however many
+  services hand it up (`GameService.CreateAsync` → `SeasonService.GetOrCreateForDateAsync`).
+- The catch filter is `when (cancellationToken.IsCancellationRequested)`. An
+  `OperationCanceledException` raised while the caller's token is untouched is *not* the caller
+  leaving — it is a bug — and still falls through to the error log.
+
+**Which calls get a token, in the UI.** Reads do; writes do not. Pages take theirs from
+`CancellableComponent.Cancellation` (see ui_components.md), which trips on disposal. A write is
+deliberately left on `default`: an admin who taps "finish match" and then loses the circuit must
+still have finished the match, and abandoning a dispatched write to save a few milliseconds of
+SQLite is the wrong trade. The rule is *the token goes on the calls whose only purpose is to show
+something*.
+
+`SeasonState.EnsureLoadedAsync()` is the other deliberate omission — the task is memoized and
+shared by the layout's picker and whichever page is open, so cancelling it on behalf of one page
+would take the app bar down with it.
+
 ## Logging
 - **Framework**: Microsoft.Extensions.Logging via Serilog
 - **Sink**: Console + rolling file at `%LOCALAPPDATA%\FootballFormation\logs\`

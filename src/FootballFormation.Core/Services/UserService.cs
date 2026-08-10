@@ -29,10 +29,11 @@ public class UserService(
 
     // ---------------------------------------------------------------- authentication
 
-    public async Task<AppUser?> ValidateCredentialsAsync(string username, string password)
+    public async Task<AppUser?> ValidateCredentialsAsync(
+        string username, string password, CancellationToken cancellationToken = default)
     {
-        await using var db = await dbFactory.CreateDbContextAsync();
-        return await VerifyAsync(db, username, password);
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+        return await VerifyAsync(db, username, password, cancellationToken);
     }
 
     /// <summary>
@@ -40,18 +41,21 @@ public class UserService(
     /// since the cookie was issued. Called on every authenticated request — see OnValidatePrincipal
     /// in Program.cs — so it reads no-tracking and touches one row by key.
     /// </summary>
-    public async Task<AppUser?> FindForSessionAsync(int userId, string securityStamp)
+    public async Task<AppUser?> FindForSessionAsync(
+        int userId, string securityStamp, CancellationToken cancellationToken = default)
     {
-        await using var db = await dbFactory.CreateDbContextAsync();
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
         var user = await db.Users
             .AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Id == userId);
+            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 
         return user?.SecurityStamp == securityStamp ? user : null;
     }
 
-    public async Task<PasswordChangeResult> ChangePasswordAsync(string username, string currentPassword, string newPassword)
+    public async Task<PasswordChangeResult> ChangePasswordAsync(
+        string username, string currentPassword, string newPassword,
+        CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(newPassword) || newPassword.Length < MinPasswordLength)
             return PasswordChangeResult.PasswordTooShort;
@@ -61,9 +65,9 @@ public class UserService(
 
         // One context for both the check and the write: the user has to stay tracked between them,
         // or the new hash is set on an entity nothing is going to save.
-        await using var db = await dbFactory.CreateDbContextAsync();
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-        var user = await VerifyAsync(db, username, currentPassword);
+        var user = await VerifyAsync(db, username, currentPassword, cancellationToken);
         if (user is null) return PasswordChangeResult.InvalidCurrentPassword;
 
         user.PasswordHash = Hasher.HashPassword(user, newPassword);
@@ -74,7 +78,7 @@ public class UserService(
         // next request re-reads the flag rather than trusting the claim minted at login.
         user.MustChangePassword = false;
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Password changed for user {Username}", username);
         return PasswordChangeResult.Success;
@@ -83,22 +87,24 @@ public class UserService(
     // ---------------------------------------------------------------- management
 
     /// <summary>By name, because that is the column the user list is read down.</summary>
-    public Task<Result<List<AppUser>>> GetAllAsync() =>
-        ServiceOperation.RunAsync(logger, "load users", async () =>
+    public Task<Result<List<AppUser>>> GetAllAsync(CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "load users", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var users = await db.Users
                 .AsNoTracking()
                 .OrderBy(u => u.DisplayName)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             logger.LogDebug("Retrieved {Count} users", users.Count);
             return Result.Success(users);
         });
 
-    public Task<Result<AppUser>> CreateAsync(string displayName, string username, string password, UserRole role) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "create the user", async () =>
+    public Task<Result<AppUser>> CreateAsync(
+        string displayName, string username, string password, UserRole role,
+        CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "create the user", cancellationToken, async () =>
         {
             var validation = ValidateFields(displayName, username);
             if (validation.IsFailure) return validation.To<AppUser>();
@@ -106,10 +112,10 @@ public class UserService(
             if (password.Length < MinPasswordLength)
                 return Result.Failure<AppUser>(PasswordTooShortKey, MinPasswordLength);
 
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             username = username.Trim();
-            if (await db.Users.AnyAsync(u => u.Username == username))
+            if (await db.Users.AnyAsync(u => u.Username == username, cancellationToken))
                 return Result.Failure<AppUser>(DuplicateLoginKey, username);
 
             var user = new AppUser
@@ -122,7 +128,7 @@ public class UserService(
             user.PasswordHash = Hasher.HashPassword(user, password);
 
             db.Users.Add(user);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Created user {Username} ({UserId}) with role {Role}", user.Username, user.Id, role);
             return Result.Success(user);
@@ -132,24 +138,26 @@ public class UserService(
     /// Name, login and role. The password is deliberately not here — changing it has to invalidate
     /// sessions, so it is its own action (<see cref="SetPasswordAsync"/>).
     /// </summary>
-    public Task<Result> UpdateAsync(int id, string displayName, string username, UserRole role) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "update the user", async () =>
+    public Task<Result> UpdateAsync(
+        int id, string displayName, string username, UserRole role,
+        CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "update the user", cancellationToken, async () =>
         {
             var validation = ValidateFields(displayName, username);
             if (validation.IsFailure) return validation;
 
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
             if (user is null) return NotFound(id);
 
             username = username.Trim();
-            if (await db.Users.AnyAsync(u => u.Username == username && u.Id != id))
+            if (await db.Users.AnyAsync(u => u.Username == username && u.Id != id, cancellationToken))
                 return Result.Failure(DuplicateLoginKey, username);
 
             // Demoting the last admin locks everyone out of the pages that create users, with no
             // way back in short of editing the database by hand.
-            if (user.Role == UserRole.Admin && role != UserRole.Admin && await IsLastAdminAsync(db, id))
+            if (user.Role == UserRole.Admin && role != UserRole.Admin && await IsLastAdminAsync(db, id, cancellationToken))
                 return Result.Failure(LastAdminKey);
 
             user.DisplayName = displayName.Trim();
@@ -162,45 +170,46 @@ public class UserService(
                 user.SecurityStamp = NewStamp();
             }
 
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Updated user {Username} ({UserId}) to role {Role}", user.Username, id, role);
             return Result.Success();
         });
 
     /// <summary>An admin resetting someone else's password, without knowing the old one.</summary>
-    public Task<Result> SetPasswordAsync(int id, string newPassword) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "set the password", async () =>
+    public Task<Result> SetPasswordAsync(
+        int id, string newPassword, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "set the password", cancellationToken, async () =>
         {
             if (string.IsNullOrEmpty(newPassword) || newPassword.Length < MinPasswordLength)
                 return Result.Failure(PasswordTooShortKey, MinPasswordLength);
 
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
             if (user is null) return NotFound(id);
 
             user.PasswordHash = Hasher.HashPassword(user, newPassword);
             user.SecurityStamp = NewStamp();
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Password reset for user {Username} ({UserId})", user.Username, id);
             return Result.Success();
         });
 
-    public Task<Result> DeleteAsync(int id) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "delete the user", async () =>
+    public Task<Result> DeleteAsync(int id, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "delete the user", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
             if (user is null) return NotFound(id);
 
-            if (user.Role == UserRole.Admin && await IsLastAdminAsync(db, id))
+            if (user.Role == UserRole.Admin && await IsLastAdminAsync(db, id, cancellationToken))
                 return Result.Failure(LastAdminKey);
 
             db.Users.Remove(user);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Deleted user {Username} ({UserId})", user.Username, id);
             return Result.Success();
@@ -216,10 +225,10 @@ public class UserService(
     /// without leaving a working admin login on the internet.
     /// </para>
     /// </summary>
-    public async Task EnsureAdminSeededAsync()
+    public async Task EnsureAdminSeededAsync(CancellationToken cancellationToken = default)
     {
-        await using var db = await dbFactory.CreateDbContextAsync();
-        if (await db.Users.AnyAsync()) return;
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+        if (await db.Users.AnyAsync(cancellationToken)) return;
 
         var admin = new AppUser
         {
@@ -231,7 +240,7 @@ public class UserService(
         };
         admin.PasswordHash = Hasher.HashPassword(admin, "admin");
         db.Users.Add(admin);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(cancellationToken);
 
         logger.LogWarning("Default admin account created (username: admin, password: admin). " +
                           "It cannot do anything until the password is changed on /settings.");
@@ -243,9 +252,10 @@ public class UserService(
     /// The credential check itself, on a context the caller owns. Returns the tracked user so a
     /// caller that needs to write to it can, and null when the credentials do not match.
     /// </summary>
-    private static async Task<AppUser?> VerifyAsync(AppDbContext db, string username, string password)
+    private static async Task<AppUser?> VerifyAsync(
+        AppDbContext db, string username, string password, CancellationToken cancellationToken)
     {
-        var user = await db.Users.FirstOrDefaultAsync(u => u.Username == username);
+        var user = await db.Users.FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
 
         // Always run a hash verification to keep timing constant whether or not
         // the username exists, mitigating user-enumeration via response time.
@@ -261,14 +271,15 @@ public class UserService(
         if (result == PasswordVerificationResult.SuccessRehashNeeded)
         {
             user.PasswordHash = Hasher.HashPassword(user, password);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
         }
 
         return user;
     }
 
-    private static Task<bool> IsLastAdminAsync(AppDbContext db, int excludingId) =>
-        db.Users.AllAsync(u => u.Id == excludingId || u.Role != UserRole.Admin);
+    private static Task<bool> IsLastAdminAsync(
+        AppDbContext db, int excludingId, CancellationToken cancellationToken) =>
+        db.Users.AllAsync(u => u.Id == excludingId || u.Role != UserRole.Admin, cancellationToken);
 
     private static Result ValidateFields(string displayName, string username)
     {

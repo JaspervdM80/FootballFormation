@@ -10,7 +10,14 @@ public class Result
     public bool IsFailure => !IsSuccess;
 
     /// <summary>
-    /// The failure in English, ready to display as-is. Null on success.
+    /// The caller went away before the operation finished. An <see cref="IsFailure"/> too, so every
+    /// "did that work?" check reads it as no — but carrying no message, so there is nothing for the
+    /// UI to show. See docs/patterns.md.
+    /// </summary>
+    public bool IsCancelled { get; }
+
+    /// <summary>
+    /// The failure in English, ready to display as-is. Null on success and on a cancellation.
     /// </summary>
     public string? Error { get; }
 
@@ -25,10 +32,11 @@ public class Result
     /// <summary>The values for <see cref="ErrorKey"/>'s placeholders, in order.</summary>
     public IReadOnlyList<object> ErrorArgs => _errorArgs;
 
-    protected Result(bool isSuccess, string? errorKey, object[] errorArgs)
+    protected Result(bool isSuccess, string? errorKey, object[] errorArgs, bool isCancelled = false)
     {
         IsSuccess = isSuccess;
         ErrorKey = errorKey;
+        IsCancelled = isCancelled;
         _errorArgs = errorArgs;
 
         Error = errorKey is null
@@ -44,21 +52,25 @@ public class Result
     /// for anything variable rather than interpolating, or the message cannot be translated.</param>
     public static Result Failure(string errorKey, params object[] args) => new(false, errorKey, args);
 
+    public static Result Cancelled() => new(false, null, [], isCancelled: true);
+
     public static Result<T> Success<T>(T value) => new(value, true, null, []);
 
     public static Result<T> Failure<T>(string errorKey, params object[] args) =>
         new(default, false, errorKey, args);
 
-    /// <summary>Carries a failure over to a different value type, keeping key and arguments intact.</summary>
-    public Result<T> To<T>() => new(default, IsSuccess, ErrorKey, _errorArgs);
+    public static Result<T> Cancelled<T>() => new(default, false, null, [], isCancelled: true);
+
+    /// <summary>Carries a failure — or a cancellation — to a different value type, intact.</summary>
+    public Result<T> To<T>() => new(default, IsSuccess, ErrorKey, _errorArgs, IsCancelled);
 }
 
 public class Result<T> : Result
 {
     private readonly T? _value;
 
-    internal Result(T? value, bool isSuccess, string? errorKey, object[] errorArgs)
-        : base(isSuccess, errorKey, errorArgs) =>
+    internal Result(T? value, bool isSuccess, string? errorKey, object[] errorArgs, bool isCancelled = false)
+        : base(isSuccess, errorKey, errorArgs, isCancelled) =>
         _value = value;
 
     /// <summary>
@@ -68,6 +80,7 @@ public class Result<T> : Result
     /// </summary>
     public T? Value => IsSuccess
         ? _value
-        : throw new InvalidOperationException(
-            $"Cannot read the value of a failed result: {Error}");
+        : throw new InvalidOperationException(IsCancelled
+            ? "Cannot read the value of a cancelled result: the caller went away before it had one"
+            : $"Cannot read the value of a failed result: {Error}");
 }
