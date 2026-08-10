@@ -111,6 +111,35 @@ test('a match is run from the live screen and its score reaches the result', asy
   await expect(gameRow(page, 'FC Uitslag').locator('.game-score')).toHaveText(/1\s*.\s*1/);
 });
 
+test('the playing-time table drops its estimate once the match has been run', async ({ page }) => {
+  const id = await matchWithId(page, 'FC Speeltijd');
+  await fillLineup(page, 2);
+
+  // Nothing has been played yet, so the totals are only what the lineup plans for. The table says
+  // so with a "~" on every total and a footnote under it.
+  const totals = page.locator('.playtime-table .pt-total');
+  await expect(totals.first()).toContainText('~');
+  await expect(page.locator('.playtime-note')).toBeVisible();
+
+  await goto(page, `/games/${id}/live`);
+  await clickFor(
+    page.getByRole('button', { name: 'Start match' }),
+    () => expect(page.getByRole('button', { name: 'Finish match' })).toBeVisible(),
+  );
+  await clickFor(
+    page.locator('.live-controls').getByRole('button', { name: 'Finish match' }),
+    () => expect(page.locator('.mud-dialog')).toBeVisible(),
+  );
+  await submitDialog(page, 'Finish match');
+  await expect(page.getByRole('button', { name: 'Edit result' })).toBeVisible();
+
+  // The same table now reads the match clock instead — whistled off within seconds of kick-off, so
+  // the honest answer is nought minutes rather than the half the lineup was planned for.
+  await goto(page, `/games/${id}/formation`);
+  await expect(totals.first()).not.toContainText('~');
+  await expect(page.locator('.playtime-note')).toHaveCount(0);
+});
+
 test('minutes played show up in the statistics once a match is complete', async ({ page }) => {
   await goto(page, '/stats');
 

@@ -29,6 +29,7 @@ const SELECTORS = {
   'the games list': ['game-row', 'game-section', 'game-date', 'game-score', 'opp-prefix'],
   'a match still missing its lineup': ['nolineup-icon', 'action-needs-lineup'],
   'the formation builder': ['pitch', 'pitch-empty', 'pitch-player', 'draggable-player'],
+  'the playing-time table': ['playtime-table', 'pt-total', 'playtime-note'],
   'the live screen': ['live-lineup', 'live-controls', 'live-score-value', 'live-score-away'],
   'the phone layout': ['dialog-sheet', 'stacked-table', 'topbar-nav'],
   'the squad': ['badge-archived'],

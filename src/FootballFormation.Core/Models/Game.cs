@@ -90,14 +90,22 @@ public class Game
     public bool HasActualTimings => Periods.Any(p => p.StartedAtSeconds is not null);
 
     /// <summary>
+    /// The seconds the match really ran, summed over the periods that were played out. A period
+    /// still in progress contributes nothing — it has no final whistle to measure against — which
+    /// matches what <c>GameMinutesReport</c> credits when no clock reading is passed to it.
+    /// Zero on a game that was never run live; ask <see cref="HasActualTimings"/> first.
+    /// </summary>
+    public int PlayedDurationSeconds => Periods
+        .Where(p => p.StartedAtSeconds is not null && p.EndedAtSeconds is not null)
+        .Sum(p => p.EndedAtSeconds!.Value - p.StartedAtSeconds!.Value);
+
+    /// <summary>
     /// How long the match really lasted, summed over the periods that were played out. Falls back
     /// to the scheduled duration when the game was never run live. This is the denominator for a
     /// player's available minutes, so utilisation cannot exceed 100% on a match that over-ran.
     /// </summary>
     public int PlayedDurationMinutes => HasActualTimings
-        ? Periods
-            .Where(p => p.StartedAtSeconds is not null && p.EndedAtSeconds is not null)
-            .Sum(p => p.EndedAtSeconds!.Value - p.StartedAtSeconds!.Value) / 60
+        ? PlayedDurationSeconds / 60
         : GameDurationMinutes;
 
     /// <summary>

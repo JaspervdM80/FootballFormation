@@ -138,12 +138,13 @@ lives: an own goal counts for the opponent, so it is excluded from ours and incl
 **`Game.IsComplete` decides whether a game counts towards statistics at all**: the final whistle
 went on the live screen, or the game was never run live and has a final score on file. A match in
 progress is never complete however many goals are logged, or the season table and the scorer lists
-would shift while it is still being played. Four more computed members support the reports:
+would shift while it is still being played. Five more computed members support the reports:
 
 | Member | Answers |
 |---|---|
 | `HasLineup` | Does any period have someone on the pitch? Needs `PlayerPositions` loaded |
 | `HasActualTimings` | Was any period actually kicked off, i.e. are there real timings to prefer over the plan? |
+| `PlayedDurationSeconds` | The same sum in seconds, without the fallback — the denominator for a share of one game's playing time, where truncating to minutes would let an ever-present player round past 100% |
 | `PlayedDurationMinutes` | How long the match really lasted, summed over the periods played out; falls back to `GameDurationMinutes`. The denominator for utilisation, so a match that over-ran cannot push anyone past 100% |
 | `CurrentOrLastPeriod()` | The period the match is *about*: the live one, else the last played, else the first — so the live screen is never blank |
 

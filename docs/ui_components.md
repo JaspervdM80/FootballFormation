@@ -19,6 +19,10 @@
 - Actions: Save All, Copy to Next Period
 - Playing time table is built by `PlayingTimeReport.Build(...)`, not by the page; it renders
   whenever there are players (it does not wait for every period to be filled)
+- Its totals read the match clock once the game has been run live, and are the planned
+  `periods × period length` estimate before that. An estimate is written `~30 min` in the muted
+  ink and the table carries a footnote — the same `~` the player report uses, so the mark means
+  one thing across the app. The choice is per game, so every row of one table is marked alike
 
 ## Drag & Drop (HTML5 API)
 - **Player list → Pitch**: Assigns player to position slot

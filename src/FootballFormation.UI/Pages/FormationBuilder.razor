@@ -217,7 +217,10 @@
                     </MudTd>
                 }
                 <MudTd DataLabel="@L["Total"]" Class="pt-total" Style="text-align:center">
-                    <strong style="color: var(--ink);">@context.TotalMinutes min</strong>
+                    <strong class="@(context.IsActual ? "pt-exact" : "pt-est")"
+                            title="@(context.IsActual ? null : L["Estimated from the planned line-up — this match was not tracked live."].Value)">
+                        @(context.IsActual ? "" : "~")@context.TotalMinutes min
+                    </strong>
                 </MudTd>
                 <MudTd DataLabel="%" Class="pt-percent" Style="text-align:center">
                     <MudProgressLinear Value="@context.Percentage" Color="@GetTimeColor(context.Percentage)"
@@ -227,5 +230,11 @@
                 </MudTd>
             </RowTemplate>
         </MudTable>
+        @if (!GameData.HasActualTimings)
+        {
+            <div class="playtime-note">
+                @L["~ estimated from the planned line-up; matches tracked live use the real clock and substitutions."]
+            </div>
+        }
     </MudPaper>
 }
