@@ -261,11 +261,15 @@ stranger who has landed one trivial pull request runs unattended after that. Clo
 > *Settings → Actions → General → Fork pull request workflows from outside collaborators* →
 > **Require approval for all outside collaborators**.
 
-`ui-checks.yml` is not exposed the same way: it triggers on `push`, and a push to a fork runs in the
-fork's own Actions, not here. That is a side effect of the trigger choice explained in that file,
-not a security decision — if it ever gains a `pull_request` trigger, it gains this exposure too.
-Neither file uses `pull_request_target`, which is the trigger that *does* hand a fork's branch a
-writable token, and neither should.
+**That now covers the browser jobs too, which it did not use to.** They lived in a `ui-checks.yml`
+that triggered on `push`, and a push to a fork runs in the fork's own Actions rather than here.
+Folding them into `ci.yml` put them on `pull_request` with everything else, so a fork's branch also
+gets `npm install`, a Chromium download and a browser driving its code on our runner. That is more
+arbitrary code execution in the same throwaway container with the same read-only token — the
+setting above is what bounds it, and it matters more than it did.
+
+`ci.yml` does not use `pull_request_target`, which is the trigger that *does* hand a fork's branch a
+writable token, and it should not.
 
 **Forking cannot be switched off on a public repository** — the setting exists only for private
 repositories in an organisation. Making this repository private is the only thing that removes fork

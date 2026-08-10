@@ -117,50 +117,37 @@ drops one shows up as a spec failing for real.
 
 Adding a spec that leans on a new app class means adding it to `SELECTORS` too.
 
-### What triggers these
+### One pipeline, one compile
 
-The two files trigger on opposite events, and both choices are deliberate.
+Everything lives in `.github/workflows/ci.yml`, in three jobs on one chain:
 
-**`ci.yml` takes `pull_request` only.** It is the merge gate, so the thing worth building is what
-merging would produce: `actions/checkout` resolves a `pull_request` event to `refs/pull/N/merge`,
-the branch already merged into `main`, where a push event checks out the branch tip on its own.
-With `strict_required_status_checks_policy` off (see `deployment.md`) a branch can merge without
-being rebuilt against a moved `main`, so the merge ref is the only run that covers that. It also
-covers a fork's pull request, which push never sees.
+```
+Build and test ──┬── Playwright
+  (required)     └── Visual check
+                       (both advisory)
+```
 
-It used to carry a push trigger as well, which meant every pull request from this repository built
-twice. The reason was real at the time — GitHub starts no workflow run for an event it attributes
-to an app token, and a pull request opened by one sat with no **Build and test** at all while the
-merge button stayed disabled. It is not what happens now: the run history shows `pull_request` runs
-appearing at open time on commits pushed hours earlier with no push in between, on pull requests
-opened exactly that way. If it ever regresses, the symptom is a pull request whose checks never
-appear rather than a red one; `workflow_dispatch` is the escape hatch, and one more commit also
-does it.
+**`Build and test`** restores, builds Release, runs `dotnet test`, then publishes — and the publish
+is `--no-build`, so it hands on exactly what the unit tests just ran against rather than compiling
+the commit a second time. It prunes the published `runtimes/` to `linux-x64` and uploads the result
+as the `app` artifact.
 
-**`ui-checks.yml` takes `push` to any branch but `main`.** These two are advisory and want the
-branch tip — they report on a branch before a pull request exists for it, which is when a page that
-renders blank is cheapest to find. The run still appears on the pull request, because a check
-attaches to the commit rather than to the event.
+**`Playwright` and `Visual check`** download that artifact and start it. Neither calls a compiler;
+they install the .NET SDK only for the runtime to run `dotnet FootballFormation.Web.dll` with.
+`UI_TEST_APP_DLL` (Playwright's `webServer`) and `VISUAL_APP_DLL` (`visual-check.sh`) are what point
+each harness at the artifact. Both are unset locally, where building from the sources is the whole
+point, and each harness falls back to the `dotnet run` it always used.
 
-### One build, two browsers
+This replaced a `ui-checks.yml` that lived beside `ci.yml` and compiled the commit twice more, plus
+a third time inside Playwright's `dotnet run`. Four compiles of one commit became one.
 
-`ui-checks.yml` used to compile the same commit in both of its jobs, and the Playwright job
-compiled it *again* from inside `dotnet run`. It now has three jobs: `app` publishes once, and
-`playwright` and `visual` both `needs: app` and start the published output they download from it.
-
-That is why those two jobs still install the .NET SDK but never call the compiler — they need the
-runtime to start `dotnet FootballFormation.Web.dll`, nothing more. `UI_TEST_APP_DLL` (Playwright's
-`webServer`) and `VISUAL_APP_DLL` (`visual-check.sh`) are what point each harness at it. Both are
-unset locally, where building from the sources is the whole point, and each harness falls back to
-the `dotnet run` it always used.
-
-Three things about the `app` job are deliberate:
+Three details are deliberate:
 
 - **Publish, not build.** The output has to survive the trip to another runner. A published
   directory is self-describing; a `bin/` tree needs the SDK and the sources it was built from.
-- **`-p:PublishReadyToRun=false`.** The Dockerfile leaves R2R on, which forces a
-  runtime-identifier-specific publish. Pre-compiling to native code buys a faster first render that
-  nothing here measures.
+- **`-p:PublishReadyToRun=false`.** The Dockerfile leaves R2R on, and it forces a
+  runtime-identifier-specific publish that `--no-build` cannot satisfy. It also buys a faster first
+  render that nothing downstream measures.
 - **The `runtimes/` prune.** 84MB of the 104MB published is SQLitePCLRaw's native library for every
   architecture it supports, riscv64 and mips64 included. Keeping only `linux-x64` takes the
   artifact — uploaded once, downloaded twice — to 23MB.
@@ -171,6 +158,31 @@ keyed on the manifests that decide what they resolve to (`Directory.Packages.pro
 no-op when the revision is already there, and it is what fetches a new one when a patch release of
 Playwright moves the browser revision without moving `package.json`.
 
+### What triggers it
+
+**`pull_request`, and that is the whole of it.** The merge ref is the thing worth building:
+`actions/checkout` resolves a `pull_request` event to `refs/pull/N/merge`, the branch already merged
+into `main`, where a push event checks out the branch tip on its own. With
+`strict_required_status_checks_policy` off (see `deployment.md`) a branch can merge without being
+rebuilt against a moved `main`, so this is the only event that covers that combination. It covers a
+fork's pull request too.
+
+`ci.yml` used to carry a `push` trigger as well, and `ui-checks.yml` ran on push alone, so a pull
+request built four times over two files. The push trigger had a real reason once — GitHub starts no
+workflow run for an event it attributes to an app token, and a pull request opened by one sat with
+no **Build and test** while the merge button stayed disabled. That is no longer what happens: the
+run history shows `pull_request` runs appearing at open time on commits pushed hours earlier with no
+push in between, on pull requests opened exactly that way.
+
+The cost of dropping push is that a branch gets no CI until a pull request exists for it. If the
+app-token behaviour ever regresses, the symptom is a pull request whose checks never appear rather
+than a red one — `workflow_dispatch` is the escape hatch and runs the browsers too, and one more
+commit on the branch also does it.
+
+**`workflow_call`** is `fly-deploy.yml` asking for its gate, and the two browser jobs skip that
+event by `if`. A deploy waits on the build and the unit tests; an advisory browser job should not
+stand between a merged pull request and a release.
+
 ### Is it stable enough for CI?
 
 Measured, not assumed. Eleven consecutive full runs at the time of writing, every one green:
@@ -179,20 +191,16 @@ busy loops competing for them, which stretched a run to 2.2–2.5 minutes and ch
 That is the retry-on-outcome design doing its job — `clickFor` absorbs a slow circuit instead of
 failing on it.
 
-It now runs on every pull request as the `playwright` job in
-**`.github/workflows/ui-checks.yml`** — its own file, separate from `ci.yml`, and that is the point
-of it. `fly-deploy.yml` calls `ci.yml` wholesale, so a job added there would become a
-gate in front of the production volume, and a browser test should not be able to block a deploy.
-`main`'s ruleset still requires only **Build and test**, so this check is advisory: it reports, it
-does not block. Promoting it once it has a track record on real runners is one line in
+It runs on every pull request as the `playwright` job in **`.github/workflows/ci.yml`**. `main`'s
+ruleset requires only **Build and test**, so this check is advisory: it reports, it does not block.
+Promoting it once it has a track record on real runners is one line in
 `.github/rulesets/main-build-and-test.json` and nothing in the workflow.
 
-The job no longer builds anything. `ui-checks.yml` compiles the commit once, in an `app` job the
-other two depend on, and Playwright starts that published copy — see "One build, two browsers"
-below. It installs only Chromium. On a failure it uploads the HTML report and
-the traces — `trace: 'retain-on-failure'` means a failing test can be replayed step by step with
-`npx playwright show-trace`. `CI=true` turns on one retry, so a test that only passes on the retry is
-reported as flaky rather than quietly green.
+The job compiles nothing — it starts the app the `Build and test` job published, so a cold compile
+is never competing with the `webServer` start-up timeout. It installs only Chromium. On a failure it
+uploads the HTML report and the traces — `trace: 'retain-on-failure'` means a failing test can be
+replayed step by step with `npx playwright show-trace`. `CI=true` turns on one retry, so a test that
+only passes on the retry is reported as flaky rather than quietly green.
 
 One test is calendar-dependent and skips rather than guesses: dating a match earlier in the current
 month has nothing to pick on the 1st, and stepping back a month could cross the season boundary the
@@ -260,10 +268,10 @@ non-zero if the browser logged an error, which is where a Blazor render failure 
 touch target is under its floor.
 
 Setting `VISUAL_APP_DLL` to a published `FootballFormation.Web.dll` skips the build and runs that
-copy instead — which is how the `visual` job does it, against the app the `app` job published.
+copy instead — which is how the `Visual check` job does it, against what `Build and test` published.
 
-It runs on every push to a branch too, as the `visual` job in `ui-checks.yml` — advisory, like the
-Playwright job beside it, and reported on whatever pull request that commit belongs to. That job uploads `artifacts/visual/` whether it passed or not: the
+It runs on every pull request as the `visual` job in `ci.yml` — advisory, like the Playwright job
+beside it. That job uploads `artifacts/visual/` whether it passed or not: the
 measurements are the part that can fail, but the screenshots are worth a look on a pull request that
 changed a page, and nothing else in CI produces one. Locally the harness drives the Chromium in a
 Claude Code web container; everywhere else `visual-check.mjs` lets Playwright resolve its own, which

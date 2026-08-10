@@ -266,8 +266,8 @@ Avoid repeating these mistakes:
   `Content-Length: 0`, so `window.Blazor` is never defined, no circuit connects, and nothing is
   interactive. There is no error anywhere: not in the app log, not in the browser console, not in
   the network panel, where every request is a green 200. It surfaces only as every `_bl_*` wait in
-  the UI harnesses timing out. Both places that start a published app (`ui-checks.yml`'s browser
-  jobs, via `UI_TEST_APP_DLL` and `VISUAL_APP_DLL`) `cd` into the artifact first.
+  the UI harnesses timing out. Both places that start a published app (`ci.yml`'s browser jobs, via
+  `UI_TEST_APP_DLL` and `VISUAL_APP_DLL`) `cd` into the artifact first.
 - **`.count()` is the one Playwright query that does not wait, and it fails open.** Every other
   locator call in `tests/ui` retries until its timeout; `count()` answers from the DOM as it stands
   right now. `if (await dialog.count()) await confirmDialog(...)` therefore read zero before a
