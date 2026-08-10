@@ -482,12 +482,15 @@ html, body {
     background: color-mix(in srgb, var(--color-warning) 12%, transparent);
 }
 
-/* A finger needs more than the 32px the pointer version uses, and up to five of these sit
-   side by side on a game card. */
+/* A finger needs more than the 32px the pointer version uses. 40px was the first answer and it was
+   short of the 44px floor on every phone viewport — the guess nobody could check until /games came
+   into scripts/touch-targets.mjs. Six of these sit side by side on a game card on match day; how
+   they are arranged so six of them fit is Games.razor.css's problem, but none of them is under 44
+   anywhere. */
 @media (pointer: coarse) {
     .action-btn {
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
     }
 }
 
@@ -595,6 +598,17 @@ html, body {
     align-items: center;
     gap: 2px;
     flex-shrink: 0;
+}
+
+/* Flush on a touch screen, for the same reason the game card's action row is: 2px between two
+   targets is a dead gutter — too narrow to see or aim around, wide enough to swallow a tap, and
+   handed by the browser to whichever neighbour has the larger contact area. A gap has to be
+   nothing or at least 8px. See scripts/touch-targets.mjs. (/settings is not in that audit's scope
+   yet — this row is the same three-button shape as the game card's, fixed with it.) */
+@media (pointer: coarse) {
+    .season-row-actions {
+        gap: 0;
+    }
 }
 
 /* Gold button style */
@@ -974,6 +988,20 @@ html, body {
     .squad-actions {
         flex-direction: column-reverse;
         align-items: stretch !important;
+    }
+}
+
+/* A header action is 36.5px tall — MudBlazor's own height — and collapsing its label to an icon
+   above makes it 51.6x32. Both are under the 44px floor. Keyed on the pointer rather than the
+   width, because the landscape case is the one a width query misses: a phone turned sideways is
+   844px wide, so the block above stops applying while the thumb does not change size. A minimum
+   only, so a labelled button keeps whatever height its text asks for. */
+@media (pointer: coarse) {
+    .btn-gold.mud-button-root,
+    .btn-gold .mud-button-root,
+    .btn-compact.mud-button-root,
+    .btn-compact .mud-button-root {
+        min-height: 44px;
     }
 }
 
