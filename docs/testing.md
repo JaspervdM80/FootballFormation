@@ -19,7 +19,7 @@ Every test class, so a gap here is visible rather than assumed:
 | Formations | `FormationTypeTests` | Each shape must field exactly ten outfield players |
 | Report builders | `GameMinutesReportTests`, `PlayerStatsReportTests`, `SeasonStatsReportTests`, `PlayingTimeReportTests`, `PlannedChangesReportTests`, `MatchClockReportTests` | Minutes and statistics — wrong answers here are invisible until a season is over |
 | Position fit | `PositionFitHelperTests` | The five tiers that colour every chip |
-| Live match | `LiveMatchServiceTests` | Clock banking, period transitions, substitution undo |
+| Live match | `LiveMatchServiceTests`, `MatchClockServiceTests`, `MatchGoalServiceTests`, `MatchSubstitutionServiceTests` | Split the way the services are: the live screen's read and the home-page match, clock banking and period transitions, the live goal minute, the slot swap and its undo. All four share `LiveMatchTestBase` |
 | Games and comments | `GameServiceTests`, `GameCommentTests` | Season derivation on create, scalar-only update, and the public/private split |
 | Seasons and squads | `SeasonServiceTests`, `SeasonSquadServiceTests` | Gapless windows, the single current season, copy-forward and the removal guards |
 | Players | `PlayerServiceTests` | That deleting someone who has played is refused, and that archiving them changes nothing already recorded |

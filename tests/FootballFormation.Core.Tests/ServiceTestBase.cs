@@ -43,8 +43,18 @@ public abstract class ServiceTestBase : IDisposable
         Games = new GameService(DbFactory, Seasons, CurrentUser, Time, NullLogger<GameService>.Instance);
         Preferences = new MatchPreferencesService(DbFactory, Time, CurrentUser,
             NullLogger<MatchPreferencesService>.Instance);
-        Live = new LiveMatchService(DbFactory, Games, new LiveMatchNotifier(), Time, CurrentUser,
-            NullLogger<LiveMatchService>.Instance);
+        Live = new LiveMatchService(DbFactory, Time, NullLogger<LiveMatchService>.Instance);
+
+        // One notifier across the three, as in the app: they are separate services, but a
+        // spectator's screen does not care which of them changed the match.
+        var notifier = new LiveMatchNotifier();
+        MatchClock = new MatchClockService(DbFactory, notifier, Time, CurrentUser,
+            NullLogger<MatchClockService>.Instance);
+        Goals = new MatchGoalService(DbFactory, Games, notifier, Time, CurrentUser,
+            NullLogger<MatchGoalService>.Instance);
+        Subs = new MatchSubstitutionService(DbFactory, notifier, Time, CurrentUser,
+            NullLogger<MatchSubstitutionService>.Instance);
+
         Users = new UserService(DbFactory, CurrentUser, NullLogger<UserService>.Instance);
     }
 
@@ -65,7 +75,15 @@ public abstract class ServiceTestBase : IDisposable
     protected SeasonSquadService Squads { get; }
     protected GameService Games { get; }
     protected MatchPreferencesService Preferences { get; }
+
+    /// <summary>Reading a live match. The three below are how one is written to.</summary>
     protected LiveMatchService Live { get; }
+
+    /// <summary>The match clock, not the <see cref="TimeProvider"/> driving it — that is <see cref="Time"/>.</summary>
+    protected MatchClockService MatchClock { get; }
+
+    protected MatchGoalService Goals { get; }
+    protected MatchSubstitutionService Subs { get; }
     protected UserService Users { get; }
 
     /// <summary>A fresh context, for reading back what a service wrote without tracking interference.</summary>

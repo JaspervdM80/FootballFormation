@@ -119,7 +119,7 @@ public class ServiceLifetimeTests : ServiceTestBase
     [Fact]
     public async Task A_goal_logged_live_is_committed_before_the_scoreline_is_recomputed()
     {
-        // LogGoalAsync writes through GameService (its own context) and then re-reads the goals to
+        // MatchGoalService writes through GameService (its own context) and then re-reads the goals to
         // sync the score. If the write were not committed first the score would lag by one.
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(2);
@@ -131,8 +131,8 @@ public class ServiceLifetimeTests : ServiceTestBase
             SeasonId = season.Id
         });
 
-        await Live.StartMatchAsync(created.Value!.Id);
-        await Live.LogGoalAsync(created.Value.Id, players[0].Id, null, false, false);
+        await MatchClock.StartMatchAsync(created.Value!.Id);
+        await Goals.LogGoalAsync(created.Value.Id, players[0].Id, null, false, false);
 
         await using var db = Read();
         var stored = await db.Games.FirstAsync(g => g.Id == created.Value.Id);

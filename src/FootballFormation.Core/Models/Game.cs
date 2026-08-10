@@ -151,6 +151,18 @@ public class Game
     }
 
     /// <summary>
+    /// The period actually being played, or null before kick-off, at a break and after the final
+    /// whistle. Stricter than <see cref="CurrentOrLastPeriod"/>, which always names a period if
+    /// there is one to name: this is the one a substitution or a period change may touch.
+    /// </summary>
+    public GamePeriod? LivePeriod() =>
+        LivePeriodId is null ? null : Periods.FirstOrDefault(p => p.Id == LivePeriodId);
+
+    /// <summary>The first period that has not been kicked off yet, in playing order.</summary>
+    public GamePeriod? NextPeriod() =>
+        Periods.OrderBy(p => p.PeriodType).FirstOrDefault(p => p.StartedAtSeconds is null);
+
+    /// <summary>
     /// The match clock in seconds at <paramref name="utcNow"/>. Callers that only need a settled
     /// value (a paused clock, a finished match) can pass any instant.
     /// </summary>

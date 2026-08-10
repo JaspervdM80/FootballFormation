@@ -17,8 +17,8 @@ public static class QueryTags
     /// </para>
     /// <para>
     /// Adding it to a new query is a decision to be argued for, not a way to quiet a failing test.
-    /// The one holder today is <c>LiveMatchService</c>'s same-day window, which stays in SQL so the
-    /// home page does not load the games table whole on every hit.
+    /// The one holder today is <c>LiveMatchService.GetTodaysMatchAsync</c>'s same-day window, kept
+    /// in SQL so the home page does not load the games table whole on every hit.
     /// </para>
     /// </summary>
     public const string ComparesDatesInSql = "compares dates in SQL on purpose (see QueryTags)";

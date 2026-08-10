@@ -36,9 +36,9 @@ public class GameMinutes
 /// A game that was run live carries the truth: <see cref="GamePeriod.StartedAtSeconds"/> and
 /// <see cref="GamePeriod.EndedAtSeconds"/> say when each period ran, and the
 /// <see cref="GameSubstitution"/> rows say who swapped with whom, when, and into which position.
-/// The lineup alone cannot express any of that — <c>LiveMatchService.SubstituteAsync</c> rewrites
-/// it in place, so afterwards it only shows the <em>final</em> occupants. A game that was never run
-/// live has no timings at all, and there the planned lineup is the only answer available.
+/// The lineup alone cannot express any of that — <c>MatchSubstitutionService</c> rewrites it in
+/// place, so afterwards it only shows the <em>final</em> occupants. A game that was never run live
+/// has no timings at all, and there the planned lineup is the only answer available.
 /// </para>
 /// <para>
 /// The choice is made per game, not per period, on <see cref="Game.HasActualTimings"/>: once a

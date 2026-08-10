@@ -38,7 +38,7 @@ public class GameSubstitution
 
     /// <summary>
     /// The minute as a football timeline writes it: the first minute of play is 1', not 0'. Goals
-    /// are stamped the same way in <c>LiveMatchService.LogGoalAsync</c>, so the two line up.
+    /// are stamped the same way in <c>MatchGoalService.LogGoalAsync</c>, so the two line up.
     /// </summary>
     public int Minute => (AtSeconds / 60) + 1;
 }

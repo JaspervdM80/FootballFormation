@@ -224,7 +224,7 @@ the opening minute is the normal case, not the edge case. The live timeline sort
 historic events in the same minute keep an arbitrary (but stable) order.
 
 The lineup stays the source of truth for *who stands where*; this records **when** the swap
-happened, which the period lineup alone cannot express. `LiveMatchService.SubstituteAsync` writes
+happened, which the period lineup alone cannot express. `MatchSubstitutionService.SubstituteAsync` writes
 both in one `SaveChangesAsync`, so they cannot diverge — and it updates the lineup **in place**
 rather than going through `GameService.SavePeriodLineupAsync`, which is delete-and-reinsert.
 

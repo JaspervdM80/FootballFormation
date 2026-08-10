@@ -96,7 +96,7 @@ public class AuthorizationTests : ServiceTestBase
 
         CurrentUser.IsAdmin = false;
 
-        var result = await Live.StartMatchAsync(game.Value!.Id);
+        var result = await MatchClock.StartMatchAsync(game.Value!.Id);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ServiceOperation.NotAllowedKey, result.ErrorKey);
