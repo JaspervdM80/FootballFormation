@@ -266,6 +266,15 @@ Avoid repeating these mistakes:
   guard was also unnecessary: `ToggleArchived` only skips the confirm when *restoring*. Prefer
   `openDialog()`, which asserts visibility and waits; reach for `count()` only to assert that
   something is *absent*, and even then `toHaveCount(0)` is the waiting version.
+- **Waiting for a consequence is not waiting for the navigation it causes.** Changing the seeded
+  admin's password rotates the security stamp, `OnValidatePrincipal` rejects the cookie issued
+  before it, and the circuit navigates to `/login`. `visual-check.mjs` waited for the *notice* to
+  clear, which happens when the component re-renders — earlier than the drop. Signing in on that
+  signal starts a navigation while the circuit's own is still in flight, and Playwright abandons the
+  new one: `Navigation to "/dev/login" is interrupted by another navigation to "/login"`, killing the
+  run before its first screenshot. Wait on `page.waitForURL` for the landing. Any Blazor flow that
+  ends in a server-driven redirect has this shape — the redirect is the thing to wait for, not the
+  re-render that precedes it.
 - **A retry does not get a clean database, so one flake can look like a hard failure.** `run.mjs`
   builds a single throwaway database per run, and Playwright's CI retry re-runs the test against
   whatever the failed attempt left behind. A test that creates a player and then fails will, on its
