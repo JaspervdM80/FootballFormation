@@ -1,25 +1,23 @@
 name: CI
 
 on:
-  # Every pull request, whatever it targets. Kept for pull requests from a fork, which the push
-  # trigger below never sees.
+  # Every pull request, whatever it targets, and nothing else — this is the only event that builds
+  # what merging would actually produce. `actions/checkout` resolves a `pull_request` event to
+  # `refs/pull/N/merge`, the branch already merged into main, where a push event checks out the
+  # branch tip on its own. Since `strict_required_status_checks_policy` is deliberately off (see
+  # docs/deployment.md), a branch can merge without being rebuilt against a moved main, so the
+  # merge ref is the one worth testing. It also covers a fork's pull request, which push never sees.
+  #
+  # This carried a `push: branches-ignore: [main]` trigger too, which meant every pull request from
+  # this repository built twice. That existed because GitHub starts no workflow run for an event it
+  # attributes to an app token, so a pull request opened by one sat with no "Build and test" and the
+  # merge button stayed disabled. That is no longer what happens: the run history shows
+  # `pull_request` runs appearing at open time on commits pushed hours earlier, with no push in
+  # between, on pull requests opened exactly that way.
+  #
+  # If it ever regresses, the symptom is a pull request whose checks never appear — not a red one.
+  # `workflow_dispatch` below is the escape hatch, and one more commit on the branch also does it.
   pull_request:
-  # And every push to a branch, because GitHub starts no workflow run for an event it attributes to
-  # an app token — so a pull request opened by one sits with no "Build and test" at all, and the
-  # merge button stays disabled until somebody pushes again. A push always belongs to whoever
-  # pushed. main is excluded: fly-deploy.yml calls this workflow there.
-  #
-  # The cost is that a pull request from this repository builds twice, once per event — about a
-  # minute of runner time, and free, since Actions minutes on a public repository are.
-  #
-  # The two runs are not testing the same thing, which is the part worth knowing. `actions/checkout`
-  # resolves a `pull_request` event to `refs/pull/N/merge` — this branch already merged into main —
-  # while the push event checks out the branch tip as it stands. Since
-  # `strict_required_status_checks_policy` is deliberately off (see docs/deployment.md), a branch
-  # can merge without ever being rebuilt against a moved main, and the pull_request run is the only
-  # one testing that combination. Both report as "Build and test", so either satisfies the ruleset.
-  push:
-    branches-ignore: [main]
   # Called by fly-deploy.yml, so the gate in front of a deploy is literally the same build and
   # test a pull request ran, rather than a copy of it that can drift.
   workflow_call:

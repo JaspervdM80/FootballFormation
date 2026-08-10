@@ -102,6 +102,12 @@ never reports leaves a PR pending forever rather than mergeable, so `ci.yml` del
 `paths:` filter — adding one later to "skip CI for docs" would silently wedge every docs-only PR.
 If the job is ever renamed, the ruleset's `context` must be renamed with it.
 
+`ci.yml` triggers on `pull_request` alone, so that event is now the *only* thing that reports this
+check — it also carried a `push` trigger until every pull request was found to be building twice
+(see `testing.md`, "What triggers these"). A pull request showing no checks at all, rather than a
+red one, is what a regression here looks like: re-run it from *Actions → CI → Run workflow*, or push
+one more commit.
+
 **A restricted actions policy stops the check before it can report — and it looks like nothing ran.**
 Under *Settings → Actions → General → Actions permissions*, the owner-only option ("Allow
 JaspervdM80 actions and reusable workflows") blocks every third-party action. Both workflows here

@@ -119,21 +119,28 @@ Adding a spec that leans on a new app class means adding it to `SELECTORS` too.
 
 ### What triggers these
 
-Both jobs in `ui-checks.yml` run **on push to any branch but `main`**, not on `pull_request`, and
-that is not a detail. GitHub starts no workflow run for an event it attributes to an app token, so a
-pull request opened by one — which is how the branches here tend to be opened — sits with no checks
-at all until somebody pushes again. A push always belongs to whoever pushed. The run still appears
-on the pull request, because a check attaches to the commit rather than to the event, and one
-trigger means one run where two would mean two.
+The two files trigger on opposite events, and both choices are deliberate.
 
-`ci.yml` keeps `pull_request` **and** gained the same push trigger, for the same reason: without it
-the required **Build and test** never reported on an app-opened pull request and the merge button
-stayed disabled. It keeps both because a fork's pull request is invisible to push, and the deploy
-gate is the wrong place to give that up. The cost is that a pull request from this repository builds
-twice — about a minute of runner time, testing the same commit twice. That is the one duplicate
-left on purpose, and the two runs are not quite the same test: `actions/checkout` resolves a
-`pull_request` event to `refs/pull/N/merge`, the branch already merged into `main`, while the push
-event checks out the branch tip as it stands.
+**`ci.yml` takes `pull_request` only.** It is the merge gate, so the thing worth building is what
+merging would produce: `actions/checkout` resolves a `pull_request` event to `refs/pull/N/merge`,
+the branch already merged into `main`, where a push event checks out the branch tip on its own.
+With `strict_required_status_checks_policy` off (see `deployment.md`) a branch can merge without
+being rebuilt against a moved `main`, so the merge ref is the only run that covers that. It also
+covers a fork's pull request, which push never sees.
+
+It used to carry a push trigger as well, which meant every pull request from this repository built
+twice. The reason was real at the time — GitHub starts no workflow run for an event it attributes
+to an app token, and a pull request opened by one sat with no **Build and test** at all while the
+merge button stayed disabled. It is not what happens now: the run history shows `pull_request` runs
+appearing at open time on commits pushed hours earlier with no push in between, on pull requests
+opened exactly that way. If it ever regresses, the symptom is a pull request whose checks never
+appear rather than a red one; `workflow_dispatch` is the escape hatch, and one more commit also
+does it.
+
+**`ui-checks.yml` takes `push` to any branch but `main`.** These two are advisory and want the
+branch tip — they report on a branch before a pull request exists for it, which is when a page that
+renders blank is cheapest to find. The run still appears on the pull request, because a check
+attaches to the commit rather than to the event.
 
 ### One build, two browsers
 

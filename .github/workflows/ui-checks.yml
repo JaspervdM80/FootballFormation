@@ -15,16 +15,17 @@ name: UI checks
 # built it again from inside `dotnet run`. Everything downstream of `app` therefore needs the
 # runtime, not the sources: it starts `dotnet FootballFormation.Web.dll` from the artifact.
 #
-# Triggered by the push rather than by the pull request, which is not a detail: GitHub does not
-# start a workflow run for an event it attributes to an app token, so a pull request opened by one
-# — which is how the branches in this repo tend to be opened — sits with no checks at all until
-# somebody pushes again. A push always belongs to whoever pushed, so it always runs, and the run
-# still shows up on the pull request because a check attaches to the commit rather than to the
-# event. One run per push either way, where having both triggers would mean two.
+# Triggered by the push rather than by the pull request, which is the opposite of ci.yml next door
+# and deliberate in both places. These two are advisory and want the branch tip: they report on a
+# branch before a pull request exists for it, which is when a page that renders blank is cheapest
+# to find. ci.yml is the merge gate, so it wants the merge ref instead, and takes `pull_request`.
+# The run still shows up on the pull request either way, because a check attaches to the commit
+# rather than to the event.
 #
-# The trade is fork pull requests, which push here never sees. `main` takes pull requests from this
-# repository only, so today that costs nothing — but it is the reason ci.yml keeps `pull_request`
-# alongside its push trigger rather than swapping to this shape.
+# The trade is fork pull requests, which push here never sees — a push to a fork runs in the fork's
+# own Actions, not here. `main` takes pull requests from this repository only, so today that costs
+# nothing, and see docs/deployment.md before giving this a `pull_request` trigger: it would put a
+# stranger's branch on our runner, which is a decision ci.yml has already made for itself.
 on:
   push:
     branches-ignore: [main]
