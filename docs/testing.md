@@ -130,7 +130,39 @@ trigger means one run where two would mean two.
 the required **Build and test** never reported on an app-opened pull request and the merge button
 stayed disabled. It keeps both because a fork's pull request is invisible to push, and the deploy
 gate is the wrong place to give that up. The cost is that a pull request from this repository builds
-twice — about a minute of runner time, testing the same commit twice.
+twice — about a minute of runner time, testing the same commit twice. That is the one duplicate
+left on purpose, and the two runs are not quite the same test: `actions/checkout` resolves a
+`pull_request` event to `refs/pull/N/merge`, the branch already merged into `main`, while the push
+event checks out the branch tip as it stands.
+
+### One build, two browsers
+
+`ui-checks.yml` used to compile the same commit in both of its jobs, and the Playwright job
+compiled it *again* from inside `dotnet run`. It now has three jobs: `app` publishes once, and
+`playwright` and `visual` both `needs: app` and start the published output they download from it.
+
+That is why those two jobs still install the .NET SDK but never call the compiler — they need the
+runtime to start `dotnet FootballFormation.Web.dll`, nothing more. `UI_TEST_APP_DLL` (Playwright's
+`webServer`) and `VISUAL_APP_DLL` (`visual-check.sh`) are what point each harness at it. Both are
+unset locally, where building from the sources is the whole point, and each harness falls back to
+the `dotnet run` it always used.
+
+Three things about the `app` job are deliberate:
+
+- **Publish, not build.** The output has to survive the trip to another runner. A published
+  directory is self-describing; a `bin/` tree needs the SDK and the sources it was built from.
+- **`-p:PublishReadyToRun=false`.** The Dockerfile leaves R2R on, which forces a
+  runtime-identifier-specific publish. Pre-compiling to native code buys a faster first render that
+  nothing here measures.
+- **The `runtimes/` prune.** 84MB of the 104MB published is SQLitePCLRaw's native library for every
+  architecture it supports, riscv64 and mips64 included. Keeping only `linux-x64` takes the
+  artifact — uploaded once, downloaded twice — to 23MB.
+
+NuGet packages, the npm cache and the Playwright browser download are all cached between runs,
+keyed on the manifests that decide what they resolve to (`Directory.Packages.props` and the
+`.csproj` files; each `package.json`). `npx playwright install` still runs on a cache hit: it is a
+no-op when the revision is already there, and it is what fetches a new one when a patch release of
+Playwright moves the browser revision without moving `package.json`.
 
 ### Is it stable enough for CI?
 
@@ -148,8 +180,9 @@ gate in front of the production volume, and a browser test should not be able to
 does not block. Promoting it once it has a track record on real runners is one line in
 `.github/rulesets/main-build-and-test.json` and nothing in the workflow.
 
-The job builds the app before Playwright starts it, so a cold compile is not competing with the
-`webServer` start-up timeout, and installs only Chromium. On a failure it uploads the HTML report and
+The job no longer builds anything. `ui-checks.yml` compiles the commit once, in an `app` job the
+other two depend on, and Playwright starts that published copy — see "One build, two browsers"
+below. It installs only Chromium. On a failure it uploads the HTML report and
 the traces — `trace: 'retain-on-failure'` means a failing test can be replayed step by step with
 `npx playwright show-trace`. `CI=true` turns on one retry, so a test that only passes on the retry is
 reported as flaky rather than quietly green.
@@ -218,6 +251,9 @@ Runs on every pull request as an advisory check — see "Is it stable enough for
 in, seeds a small squad through the real dialogs, and captures each page at 1440×900. It exits
 non-zero if the browser logged an error, which is where a Blazor render failure shows up, or if a
 touch target is under its floor.
+
+Setting `VISUAL_APP_DLL` to a published `FootballFormation.Web.dll` skips the build and runs that
+copy instead — which is how the `visual` job does it, against the app the `app` job published.
 
 It runs on every push to a branch too, as the `visual` job in `ui-checks.yml` — advisory, like the
 Playwright job beside it, and reported on whatever pull request that commit belongs to. That job uploads `artifacts/visual/` whether it passed or not: the

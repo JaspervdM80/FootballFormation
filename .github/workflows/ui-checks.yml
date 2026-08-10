@@ -10,6 +10,11 @@ name: UI checks
 #
 # Promoting one later is a line in .github/rulesets/main-build-and-test.json, and nothing here.
 #
+# The app is built once, by the `app` job, and both browser jobs run *that* copy — they used to
+# compile their own, which meant this file built the same commit twice and the Playwright job
+# built it again from inside `dotnet run`. Everything downstream of `app` therefore needs the
+# runtime, not the sources: it starts `dotnet FootballFormation.Web.dll` from the artifact.
+#
 # Triggered by the push rather than by the pull request, which is not a detail: GitHub does not
 # start a workflow run for an event it attributes to an app token, so a pull request opened by one
 # — which is how the branches in this repo tend to be opened — sits with no checks at all until
@@ -33,17 +38,62 @@ permissions:
   contents: read
 
 jobs:
-  # What the app does: the public/admin split, the dialogs, the match-day journey, both languages,
-  # the phone layout. See docs/testing.md.
-  playwright:
-    name: Playwright
+  # The one compile in this file. Publishing rather than building, because the output has to survive
+  # the trip to another runner: a published directory is self-describing and runs with `dotnet
+  # <dll>`, where a bin/ tree would need the SDK and the sources it was built from to line up.
+  app:
+    name: Build app
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
 
       # The same SDK ci.yml installs and a web container installs — see global.json, and
       # docs/known_issues.md, "The SDK the pin cannot reach", before changing it.
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', '**/*.csproj', 'global.json') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # ReadyToRun off, which the Dockerfile leaves on: it forces a runtime-identifier-specific
+      # publish, and pre-compiling to native code buys a faster first render that no test here
+      # measures. Release regardless — TreatWarningsAsErrors only applies to that configuration,
+      # and running a Debug build in the browser would be testing something the deploy never ships.
+      - run: >-
+          dotnet publish src/FootballFormation.Web/FootballFormation.Web.csproj
+          -c Release -p:PublishReadyToRun=false -o artifacts/app
+
+      # 84MB of the 104MB published is SQLitePCLRaw's native library for every architecture it
+      # supports, riscv64 and mips64 included. The runner is one of them, and the artifact is
+      # uploaded once and downloaded twice — so keep the one it will actually load.
+      - name: Drop the native libraries for other architectures
+        run: find artifacts/app/runtimes -mindepth 1 -maxdepth 1 ! -name linux-x64 -exec rm -rf {} +
+
+      # A day, because nothing reads this after the run that made it — unlike the reports below,
+      # which are uploaded for a person to open.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: app
+          path: artifacts/app/
+          retention-days: 1
+
+  # What the app does: the public/admin split, the dialogs, the match-day journey, both languages,
+  # the phone layout. See docs/testing.md.
+  playwright:
+    name: Playwright
+    needs: app
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      # The runtime to start the published app with. setup-dotnet is what puts the pinned build on
+      # the runner, and it is a second or two when the version is already in the image's cache.
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
@@ -55,11 +105,29 @@ jobs:
         with:
           node-version: 22
 
-      # Built here rather than left to the `dotnet run` in playwright.config.js's webServer, so a
-      # cold compile is not competing with that server's start-up timeout.
-      - run: dotnet build -c Release
+      - uses: actions/download-artifact@v7
+        with:
+          name: app
+          path: artifacts/app
 
-      # No lockfile: tests/ui/package-lock.json is git-ignored, the same as scripts/'s.
+      # No lockfile: tests/ui/package-lock.json is git-ignored, the same as scripts/'s — so the
+      # cache is keyed on the manifest that decides what npm resolves, and ~/.npm is the download
+      # cache rather than node_modules, which npm still has to link on every run.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-ui-${{ hashFiles('tests/ui/package.json') }}
+          restore-keys: npm-${{ runner.os }}-ui-
+
+      # The browser download, which is most of the install step below. `playwright install` still
+      # runs on a hit — it is a no-op when the revision is already there, and it is what fetches a
+      # new one when a patch release of Playwright moves the revision without moving package.json.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-ui-${{ hashFiles('tests/ui/package.json') }}
+          restore-keys: playwright-${{ runner.os }}-ui-
+
       - run: npm install --no-audit --no-fund
         working-directory: tests/ui
 
@@ -69,10 +137,14 @@ jobs:
         working-directory: tests/ui
 
       # run.mjs makes the throwaway database, Playwright's webServer starts the app against it, and
-      # both are cleaned up when this exits. CI=true is already set, which turns on one retry — a
-      # test that only passes on that retry is reported as flaky rather than quietly green.
+      # both are cleaned up when this exits. UI_TEST_APP_DLL is what makes that webServer run the
+      # published app from the `app` job instead of compiling one. CI=true is already set, which
+      # turns on one retry — a test that only passes on that retry is reported as flaky rather than
+      # quietly green.
       - run: npm test
         working-directory: tests/ui
+        env:
+          UI_TEST_APP_DLL: ${{ github.workspace }}/artifacts/app/FootballFormation.Web.dll
 
       # Traces and screenshots are written for failures only, so this uploads nothing on a green run.
       - if: failure()
@@ -89,6 +161,7 @@ jobs:
   # upgrade or one more global .mud-* rule undoes any of them silently.
   visual:
     name: Visual check
+    needs: app
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -102,16 +175,36 @@ jobs:
         with:
           node-version: 22
 
+      - uses: actions/download-artifact@v7
+        with:
+          name: app
+          path: artifacts/app
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-scripts-${{ hashFiles('scripts/package.json') }}
+          restore-keys: npm-${{ runner.os }}-scripts-
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-scripts-${{ hashFiles('scripts/package.json') }}
+          restore-keys: playwright-${{ runner.os }}-scripts-
+
       - run: npm install --no-audit --no-fund
         working-directory: scripts
 
       - run: npx playwright install --with-deps chromium
         working-directory: scripts
 
-      # The script owns its own build and its own throwaway database, and exits non-zero on a
-      # browser error or a touch target under its floor. visual-check.mjs resolves Chromium itself
-      # when the web container's copy is absent, which is the case here.
+      # The script owns its own throwaway database and exits non-zero on a browser error or a touch
+      # target under its floor. VISUAL_APP_DLL hands it the app the `app` job built, so the build it
+      # would otherwise do itself does not happen a second time. visual-check.mjs resolves Chromium
+      # itself when the web container's copy is absent, which is the case here.
       - run: scripts/visual-check.sh
+        env:
+          VISUAL_APP_DLL: ${{ github.workspace }}/artifacts/app/FootballFormation.Web.dll
 
       # Uploaded on success too: the screenshots are the point of this job as much as the
       # measurements are, and they are worth a look on a pull request that changed a page.

@@ -50,6 +50,15 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
+      # Keyed on what decides the graph — the central package versions, the project files, and the
+      # SDK pin — so a run that changes none of them restores from disk instead of from nuget.org.
+      # `restore-keys` means a run that *does* change one still starts from the last good cache and
+      # fetches only what moved.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', '**/*.csproj', 'global.json') }}
+          restore-keys: nuget-${{ runner.os }}-
       - run: dotnet restore
       - run: dotnet build --no-restore --configuration Release
       - run: dotnet test --no-build --configuration Release --verbosity normal
