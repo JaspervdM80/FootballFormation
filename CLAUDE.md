@@ -183,11 +183,14 @@ admin matrix; it is not part of this repository.)
 ## Workflow
 
 - Work on a feature branch. `main` takes pull requests only, and the merge button stays disabled
-  until **Build and test** is green (`.github/rulesets/main-build-and-test.json`).
+  until **Build and test** is green and every review thread is resolved
+  (`.github/rulesets/main-build-and-test.json`).
 - `ci.yml` runs `dotnet build -c Release` + `dotnet test` on every pull request. `fly-deploy.yml`
   *calls that same workflow* as the gate its deploy job depends on, then smoke-checks `/health`
   until it reports the commit that was just built.
-- Merging to `main` deploys to production. There is no staging environment.
+- Merging to `main` *proposes* a deploy; it does not perform one. The deploy job runs in the
+  `production` environment, which has a required reviewer, so the run waits at *Waiting* until the
+  maintainer approves it. There is no staging environment — that approval is the last look.
 - Commit messages are plain imperative sentences describing the intent, not conventional-commit
   prefixes: *"Let a deploy recognise its own release, not just a live one"*, *"Split the games list
   on the scoreline, not the calendar"*.

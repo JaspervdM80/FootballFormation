@@ -24,10 +24,24 @@ jobs:
 
   deploy:
     needs: build
-    # `workflow_dispatch` runs against any branch, and without this would put that branch on the
-    # production volume.
-    if: github.ref == 'refs/heads/main'
+    # `workflow_dispatch` runs against any branch, and without the ref check would put that branch
+    # on the production volume. The actor check is about *who*: a dispatch can be started by anyone
+    # with write access, and while the environment's reviewer below would stop it anyway, refusing
+    # it here keeps a run that was never going to deploy out of the approval queue.
+    if: >-
+      github.ref == 'refs/heads/main'
+      && (github.event_name != 'workflow_dispatch' || github.actor == github.repository_owner)
     runs-on: ubuntu-latest
+    # The gate that decides *whether* a release goes out, and the only place the Fly token exists.
+    # `production` carries a required reviewer, so this job holds at "Waiting" until a human
+    # approves it — merging to main proposes a deploy rather than performing one. It also carries a
+    # deployment branch policy of `main` only, which is what stops a workflow added on a feature
+    # branch from reading FLY_API_TOKEN at all: an environment secret is unreachable from a ref the
+    # environment does not admit. See docs/deployment.md — none of it lives in this file, and the
+    # environment has to exist before this workflow runs.
+    environment:
+      name: production
+      url: https://gjs-meiden.nl
     steps:
       - uses: actions/checkout@v7
       # Pinned to the 1.6 tag's commit so upstream changes can't run unreviewed with our token
