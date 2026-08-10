@@ -11,7 +11,7 @@ namespace FootballFormation.UI.Pages;
 /// the home page is the shortest route to it for anyone who was sent the site rather than a link
 /// to the game.
 /// </summary>
-public partial class Home : IDisposable
+public partial class Home
 {
     [Inject] private LiveMatchService Live { get; set; } = null!;
     [Inject] private LiveMatchNotifier Notifier { get; set; } = null!;
@@ -60,7 +60,7 @@ public partial class Home : IDisposable
 
     private async Task LoadTodaysGameAsync()
     {
-        var result = await Live.GetTodaysMatchAsync();
+        var result = await Live.GetTodaysMatchAsync(Cancellation);
         TodaysGame = result.IsSuccess ? result.Value : null;
     }
 
@@ -97,5 +97,9 @@ public partial class Home : IDisposable
         if (e.Key is "Enter" or " ") Open(url);
     }
 
-    public void Dispose() => Notifier.Changed -= OnLiveChanged;
+    public override void Dispose()
+    {
+        Notifier.Changed -= OnLiveChanged;
+        base.Dispose();
+    }
 }

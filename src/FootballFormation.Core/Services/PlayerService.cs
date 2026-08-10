@@ -21,28 +21,28 @@ public class PlayerService(
     /// <see cref="SeasonSquadService.GetNonMembersAsync"/> and
     /// <see cref="SeasonSquadService.CopyFromAsync"/> — not the past.
     /// </para></summary>
-    public Task<Result<List<Player>>> GetAllAsync() =>
-        ServiceOperation.RunAsync(logger, "load players", async () =>
+    public Task<Result<List<Player>>> GetAllAsync(CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "load players", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var players = await db.Players
                 .AsNoTracking()
                 .OrderBy(p => p.ShirtNumber ?? int.MaxValue)
                 .ThenBy(p => p.FirstName)
                 .ThenBy(p => p.Surname)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             logger.LogDebug("Retrieved {Count} players", players.Count);
             return Result.Success(players);
         });
 
-    public Task<Result<Player>> GetByIdAsync(int id) =>
-        ServiceOperation.RunAsync(logger, "load player", async () =>
+    public Task<Result<Player>> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "load player", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var player = await db.Players.FindAsync(id);
+            var player = await db.Players.FindAsync([id], cancellationToken);
             if (player is null)
             {
                 logger.LogWarning("Player {PlayerId} not found", id);
@@ -52,25 +52,25 @@ public class PlayerService(
             return Result.Success(player);
         });
 
-    public Task<Result<Player>> CreateAsync(Player player) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "create player", async () =>
+    public Task<Result<Player>> CreateAsync(Player player, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "create player", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             db.Players.Add(player);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Created player {PlayerName} (ID: {PlayerId})", player.DisplayName, player.Id);
             return Result.Success(player);
         });
 
-    public Task<Result> UpdateAsync(Player player) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "update player", async () =>
+    public Task<Result> UpdateAsync(Player player, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "update player", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             db.Players.Update(player);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Updated player {PlayerName} (ID: {PlayerId})", player.DisplayName, player.Id);
             return Result.Success();
@@ -80,14 +80,14 @@ public class PlayerService(
     /// Retires someone from the club, or brings them back. The person's rows are not touched, so
     /// the seasons they played read exactly as they did — see <see cref="Player.IsArchived"/>.
     /// </summary>
-    public Task<Result> SetArchivedAsync(int id, bool archived) =>
+    public Task<Result> SetArchivedAsync(int id, bool archived, CancellationToken cancellationToken = default) =>
         // "archive the player", not "archive player": resx keys are case-insensitive and the menu
         // item on /players is "Archive player", which would be the same key. See known_issues.md.
-        ServiceOperation.RunAdminAsync(currentUser, logger, "archive the player", async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "archive the player", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var player = await db.Players.FindAsync(id);
+            var player = await db.Players.FindAsync([id], cancellationToken);
             if (player is null)
             {
                 logger.LogWarning("Cannot archive player {PlayerId}: not found", id);
@@ -95,7 +95,7 @@ public class PlayerService(
             }
 
             player.IsArchived = archived;
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("{PlayerName} (ID: {PlayerId}) is now {Status}",
                 player.DisplayName, player.Id, archived ? "archived" : "active");
@@ -112,20 +112,20 @@ public class PlayerService(
     /// it is actually for — a mistyped name added minutes ago, with nothing behind it yet.
     /// </para>
     /// </summary>
-    public Task<Result> DeleteAsync(int id) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "delete player", async () =>
+    public Task<Result> DeleteAsync(int id, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "delete player", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var player = await db.Players.FindAsync(id);
+            var player = await db.Players.FindAsync([id], cancellationToken);
             if (player is null)
             {
                 logger.LogWarning("Cannot delete player {PlayerId}: not found", id);
                 return Result.Failure("Player not found");
             }
 
-            var appearances = await db.GamePlayerPositions.CountAsync(pp => pp.PlayerId == id);
-            var contributions = await db.GameGoals.CountAsync(g => g.ScorerId == id || g.AssisterId == id);
+            var appearances = await db.GamePlayerPositions.CountAsync(pp => pp.PlayerId == id, cancellationToken);
+            var contributions = await db.GameGoals.CountAsync(g => g.ScorerId == id || g.AssisterId == id, cancellationToken);
             if (appearances + contributions > 0)
             {
                 logger.LogWarning(
@@ -136,7 +136,7 @@ public class PlayerService(
             }
 
             db.Players.Remove(player);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Deleted player {PlayerName} (ID: {PlayerId})", player.DisplayName, player.Id);
             return Result.Success();

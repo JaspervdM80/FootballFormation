@@ -69,7 +69,7 @@ public partial class Settings
             return;
         }
 
-        var prefsResult = await PreferencesService.GetAsync(_prefsSeasonId);
+        var prefsResult = await PreferencesService.GetAsync(_prefsSeasonId, Cancellation);
         if (!Snackbar.ReportFailure(L, prefsResult)) return;
 
         _prefs = prefsResult.Value;
@@ -84,7 +84,7 @@ public partial class Settings
 
     private async Task LoadSeasons()
     {
-        var result = await SeasonService.GetAllAsync();
+        var result = await SeasonService.GetAllAsync(Cancellation);
         _seasons = Snackbar.ReportFailure(L, result) ? result.Value : [];
     }
 
@@ -165,7 +165,7 @@ public partial class Settings
 
     private async Task RefreshNextMatchDate()
     {
-        var dateResult = await PreferencesService.GetNextMatchDateAsync(_prefsSeasonId);
+        var dateResult = await PreferencesService.GetNextMatchDateAsync(_prefsSeasonId, Cancellation);
         if (dateResult.IsSuccess) _nextMatchDate = dateResult.Value;
     }
 

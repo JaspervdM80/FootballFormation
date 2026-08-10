@@ -132,7 +132,7 @@ try
                 if (stamp is not null && int.TryParse(userId, out var id))
                 {
                     var users = context.HttpContext.RequestServices.GetRequiredService<UserService>();
-                    if (await users.FindForSessionAsync(id, stamp) is not null) return;
+                    if (await users.FindForSessionAsync(id, stamp, context.HttpContext.RequestAborted) is not null) return;
                 }
 
                 context.RejectPrincipal();
@@ -274,7 +274,7 @@ try
         var returnUrl = form["returnUrl"].ToString();
         var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
-        var user = await userService.ValidateCredentialsAsync(username, password);
+        var user = await userService.ValidateCredentialsAsync(username, password, context.RequestAborted);
         if (user is null)
         {
             logger.LogWarning("Failed login attempt for user '{Username}' from {Ip}", username, ip);
@@ -314,7 +314,7 @@ try
             if (remote is null || !IPAddress.IsLoopback(remote))
                 return Results.NotFound();
 
-            var usersResult = await userService.GetAllAsync();
+            var usersResult = await userService.GetAllAsync(context.RequestAborted);
             if (usersResult.IsFailure) return Results.NotFound();
 
             // The seeded account by preference, otherwise the oldest admin. Deterministic on

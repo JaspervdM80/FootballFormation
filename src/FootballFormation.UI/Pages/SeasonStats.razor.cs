@@ -33,11 +33,11 @@ public partial class SeasonStats
 
         // The squad is the authoritative roster, so the player list comes from it rather than from
         // every person on file. That is what stops a past season showing today's squad.
-        var squadsResult = await SquadService.GetSquadsAsync(SeasonId);
+        var squadsResult = await SquadService.GetSquadsAsync(SeasonId, Cancellation);
         var squads = Snackbar.ReportFailure(L, squadsResult) ? squadsResult.Value! : SeasonSquads.Empty;
         var players = squads.AllPlayers;
 
-        var gamesResult = await GameService.GetAllWithDetailsAsync(SeasonId);
+        var gamesResult = await GameService.GetAllWithDetailsAsync(SeasonId, Cancellation);
         var games = Snackbar.ReportFailure(L, gamesResult) ? gamesResult.Value! : [];
 
         // Build takes the games and squads as parameters, so filtering at the call site is all a

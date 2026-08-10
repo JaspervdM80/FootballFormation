@@ -27,7 +27,12 @@ public partial class PlayerStats
     {
         _loaded = false;
 
-        var playerResult = await PlayerService.GetByIdAsync(PlayerId);
+        var playerResult = await PlayerService.GetByIdAsync(PlayerId, Cancellation);
+
+        // A load the visitor walked out on is not a missing player: redirecting on one would
+        // throw them off whichever page they navigated to. See CancellableComponent.
+        if (playerResult.IsCancelled) return;
+
         if (!Snackbar.ReportFailure(L, playerResult))
         {
             Trail.Redirect(AppRoutes.Players);
@@ -37,10 +42,10 @@ public partial class PlayerStats
         // Squads carry per-season guest status, which decides whether a game counts towards this
         // player's available minutes. GetByIdAsync stays: the page is reachable for anyone on file,
         // including someone who is in no current squad.
-        var squadsResult = await SquadService.GetSquadsAsync(SeasonId);
+        var squadsResult = await SquadService.GetSquadsAsync(SeasonId, Cancellation);
         var squads = Snackbar.ReportFailure(L, squadsResult) ? squadsResult.Value! : SeasonSquads.Empty;
 
-        var gamesResult = await GameService.GetAllWithDetailsAsync(SeasonId);
+        var gamesResult = await GameService.GetAllWithDetailsAsync(SeasonId, Cancellation);
         var games = Snackbar.ReportFailure(L, gamesResult) ? gamesResult.Value! : [];
 
         _stats = PlayerStatsReport.Build(playerResult.Value!, games, squads);

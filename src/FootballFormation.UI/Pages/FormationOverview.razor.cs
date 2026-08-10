@@ -33,7 +33,12 @@ public partial class FormationOverview
         var authState = await AuthStateTask;
         IsAnonymous = !authState.User.IsAdmin();
 
-        var result = await GameService.GetByIdAsync(GameId);
+        var result = await GameService.GetByIdAsync(GameId, Cancellation);
+
+        // Not a missing game — the visitor left. Redirecting one would land them back on /games
+        // from wherever they actually went. See CancellableComponent.
+        if (result.IsCancelled) return;
+
         if (result.IsFailure || result.Value is null)
         {
             Logger.LogWarning("Game {GameId} not found for overview", GameId);

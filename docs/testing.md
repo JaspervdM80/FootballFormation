@@ -28,12 +28,20 @@ Every test class, so a gap here is visible rather than assumed:
 | Accounts | `UserServiceTests`, `SeededAdminTests` | Credentials, security stamps, the last-admin guard, and the seeded account being no working login |
 | Boot safety | `DatabaseSafetyTests`, `HealthReportTests` | The pre-migration snapshot and what `/health` is allowed to call healthy |
 | Service lifetime | `ServiceLifetimeTests` | Concurrent reads, and detached entities round-tripping through update |
-| `Result` | `ResultTests` | Error keys, arguments, and the guard on reading a failed value |
+| `Result` | `ResultTests` | Error keys, arguments, the guard on reading a failed value, and that a cancellation stays one when carried between types |
+| Cancellation | `CancellationTests` | That a caller going away is an ordinary outcome and not a logged error — including that an `OperationCanceledException` nobody asked for still is one |
 
 ## Conventions
 
 - **Test names are sentences.** `A_match_in_progress_is_never_complete_however_many_goals_are_logged`
   says what the rule is; a failure names the rule that broke.
+- **`xUnit1051` is suppressed, and that is not an oversight.** The analyzer wants
+  `TestContext.Current.CancellationToken` on every EF call; these tests run against in-memory SQLite
+  in milliseconds, where the token would be noise on hundreds of call sites and buy no
+  responsiveness. Production request lifetime is a different question, answered by the token every
+  service method takes (see [patterns.md](patterns.md#cancellation-the-third-outcome)) —
+  `CancellationTests` passes those tokens explicitly, which is the point. The two are unrelated;
+  leave the `NoWarn` alone.
 - **Real SQLite, not the in-memory provider.** `ServiceTestBase` opens a `Filename=:memory:`
   connection and keeps it open for the test. The services lean on foreign keys, unique indexes,
   cascade behaviour and the CSV value converters — the in-memory provider enforces none of that, so

@@ -34,7 +34,7 @@ public partial class Games
     protected override async Task LoadAsync()
     {
         // Details variant loads the period lineups so we can flag games missing one.
-        var result = await GameService.GetAllWithDetailsAsync(SeasonId);
+        var result = await GameService.GetAllWithDetailsAsync(SeasonId, Cancellation);
         _games = Snackbar.ReportFailure(L, result) ? result.Value : [];
     }
 

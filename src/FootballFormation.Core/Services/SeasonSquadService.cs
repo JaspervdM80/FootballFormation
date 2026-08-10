@@ -19,16 +19,16 @@ public class SeasonSquadService(
 {
     /// <summary>One season's squad, players loaded. An empty squad is a valid answer — a new
     /// season has none until it is copied forward or filled in.</summary>
-    public Task<Result<SeasonSquad>> GetSquadAsync(int seasonId) =>
-        ServiceOperation.RunAsync(logger, "load the squad", async () =>
+    public Task<Result<SeasonSquad>> GetSquadAsync(int seasonId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "load the squad", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var members = await db.SeasonSquadMembers
                 .AsNoTracking()
                 .Where(m => m.SeasonId == seasonId)
                 .Include(m => m.Player)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             logger.LogDebug("Retrieved {Count} squad members for season {SeasonId}", members.Count, seasonId);
             return Result.Success(new SeasonSquad(seasonId, members));
@@ -36,16 +36,17 @@ public class SeasonSquadService(
 
     /// <param name="seasonId">Limits the result to one season. Null loads every season — what the
     /// stats pages need on "All seasons", where a report walks games across them.</param>
-    public Task<Result<SeasonSquads>> GetSquadsAsync(int? seasonId = null) =>
-        ServiceOperation.RunAsync(logger, "load the squads", async () =>
+    public Task<Result<SeasonSquads>> GetSquadsAsync(
+        int? seasonId = null, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "load the squads", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var members = await db.SeasonSquadMembers
                 .AsNoTracking()
                 .Where(m => seasonId == null || m.SeasonId == seasonId)
                 .Include(m => m.Player)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             logger.LogDebug("Retrieved {Count} squad members for season {SeasonId}", members.Count, seasonId);
             return Result.Success(new SeasonSquads(members));
@@ -57,10 +58,11 @@ public class SeasonSquadService(
     /// what would make archiving pointless. Restoring one on the squad page puts them back in this
     /// list.
     /// </para></summary>
-    public Task<Result<List<Player>>> GetNonMembersAsync(int seasonId) =>
-        ServiceOperation.RunAsync(logger, "load players outside the squad", async () =>
+    public Task<Result<List<Player>>> GetNonMembersAsync(
+        int seasonId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "load players outside the squad", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var players = await db.Players
                 .AsNoTracking()
@@ -69,25 +71,26 @@ public class SeasonSquadService(
                 .OrderBy(p => p.ShirtNumber ?? int.MaxValue)
                 .ThenBy(p => p.FirstName)
                 .ThenBy(p => p.Surname)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             logger.LogDebug("Retrieved {Count} players outside season {SeasonId}", players.Count, seasonId);
             return Result.Success(players);
         });
 
-    public Task<Result<SeasonSquadMember>> AddMemberAsync(int seasonId, int playerId, bool isGuest = false) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "add the player to the squad", async () =>
+    public Task<Result<SeasonSquadMember>> AddMemberAsync(
+        int seasonId, int playerId, bool isGuest = false, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "add the player to the squad", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var season = await db.Seasons.FindAsync(seasonId);
+            var season = await db.Seasons.FindAsync([seasonId], cancellationToken);
             if (season is null)
             {
                 logger.LogWarning("Cannot add player {PlayerId}: season {SeasonId} not found", playerId, seasonId);
                 return Result.Failure<SeasonSquadMember>("Season not found");
             }
 
-            var player = await db.Players.FindAsync(playerId);
+            var player = await db.Players.FindAsync([playerId], cancellationToken);
             if (player is null)
             {
                 logger.LogWarning("Cannot add player {PlayerId} to season {SeasonName}: player not found",
@@ -98,7 +101,7 @@ public class SeasonSquadService(
             // The unique index is the net; refuse here so the caller gets something readable
             // instead of a raw DbUpdateException.
             var exists = await db.SeasonSquadMembers
-                .AnyAsync(m => m.SeasonId == seasonId && m.PlayerId == playerId);
+                .AnyAsync(m => m.SeasonId == seasonId && m.PlayerId == playerId, cancellationToken);
             if (exists)
             {
                 logger.LogWarning("Player {PlayerName} is already in the {SeasonName} squad",
@@ -108,7 +111,7 @@ public class SeasonSquadService(
 
             var member = new SeasonSquadMember { SeasonId = seasonId, PlayerId = playerId, IsGuest = isGuest };
             db.SeasonSquadMembers.Add(member);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Added {PlayerName} to the {SeasonName} squad (guest: {IsGuest})",
                 player.DisplayName, season.Name, isGuest);
@@ -117,14 +120,15 @@ public class SeasonSquadService(
 
     /// <summary>Refuses once the player has recorded minutes or goals in this season — removing
     /// them would silently rewrite that season's stats.</summary>
-    public Task<Result> RemoveMemberAsync(int seasonId, int playerId) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "remove the player from the squad", async () =>
+    public Task<Result> RemoveMemberAsync(
+        int seasonId, int playerId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "remove the player from the squad", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var member = await db.SeasonSquadMembers
                 .Include(m => m.Player)
-                .FirstOrDefaultAsync(m => m.SeasonId == seasonId && m.PlayerId == playerId);
+                .FirstOrDefaultAsync(m => m.SeasonId == seasonId && m.PlayerId == playerId, cancellationToken);
 
             if (member is null)
             {
@@ -136,7 +140,7 @@ public class SeasonSquadService(
             var name = member.Player?.DisplayName ?? $"Player {playerId}";
 
             var appearances = await db.GamePlayerPositions
-                .CountAsync(pp => pp.PlayerId == playerId && pp.GamePeriod!.Game!.SeasonId == seasonId);
+                .CountAsync(pp => pp.PlayerId == playerId && pp.GamePeriod!.Game!.SeasonId == seasonId, cancellationToken);
             if (appearances > 0)
             {
                 logger.LogWarning("Cannot remove {PlayerName} from season {SeasonId}: {Count} lineup entries",
@@ -146,7 +150,7 @@ public class SeasonSquadService(
 
             var contributions = await db.GameGoals
                 .CountAsync(g => (g.ScorerId == playerId || g.AssisterId == playerId)
-                                 && g.Game!.SeasonId == seasonId);
+                                 && g.Game!.SeasonId == seasonId, cancellationToken);
             if (contributions > 0)
             {
                 logger.LogWarning("Cannot remove {PlayerName} from season {SeasonId}: {Count} goal entries",
@@ -155,20 +159,21 @@ public class SeasonSquadService(
             }
 
             db.SeasonSquadMembers.Remove(member);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Removed {PlayerName} from the squad of season {SeasonId}", name, seasonId);
             return Result.Success();
         });
 
-    public Task<Result> SetGuestAsync(int seasonId, int playerId, bool isGuest) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "change the squad status", async () =>
+    public Task<Result> SetGuestAsync(
+        int seasonId, int playerId, bool isGuest, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "change the squad status", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var member = await db.SeasonSquadMembers
                 .Include(m => m.Player)
-                .FirstOrDefaultAsync(m => m.SeasonId == seasonId && m.PlayerId == playerId);
+                .FirstOrDefaultAsync(m => m.SeasonId == seasonId && m.PlayerId == playerId, cancellationToken);
 
             if (member is null)
             {
@@ -178,7 +183,7 @@ public class SeasonSquadService(
             }
 
             member.IsGuest = isGuest;
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("{PlayerName} is now a {Status} in season {SeasonId}",
                 member.Player?.DisplayName, isGuest ? "guest" : "squad player", seasonId);
@@ -195,10 +200,11 @@ public class SeasonSquadService(
     /// </para>
     /// </summary>
     /// <returns>How many members were added.</returns>
-    public Task<Result<int>> CopyFromAsync(int fromSeasonId, int toSeasonId) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "copy the squad", async () =>
+    public Task<Result<int>> CopyFromAsync(
+        int fromSeasonId, int toSeasonId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "copy the squad", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             if (fromSeasonId == toSeasonId)
             {
@@ -206,8 +212,8 @@ public class SeasonSquadService(
                 return Result.Failure<int>("Cannot copy a squad onto itself");
             }
 
-            var source = await db.Seasons.FindAsync(fromSeasonId);
-            var target = await db.Seasons.FindAsync(toSeasonId);
+            var source = await db.Seasons.FindAsync([fromSeasonId], cancellationToken);
+            var target = await db.Seasons.FindAsync([toSeasonId], cancellationToken);
             if (source is null || target is null)
             {
                 logger.LogWarning("Cannot copy squad {From} -> {To}: season not found", fromSeasonId, toSeasonId);
@@ -216,7 +222,7 @@ public class SeasonSquadService(
 
             var sourceMembers = await db.SeasonSquadMembers
                 .Where(m => m.SeasonId == fromSeasonId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             if (sourceMembers.Count == 0)
             {
@@ -227,13 +233,13 @@ public class SeasonSquadService(
             var already = await db.SeasonSquadMembers
                 .Where(m => m.SeasonId == toSeasonId)
                 .Select(m => m.PlayerId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
             var existing = already.ToHashSet();
 
             var archived = await db.Players
                 .Where(p => p.IsArchived)
                 .Select(p => p.Id)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
             var left = archived.ToHashSet();
 
             var added = sourceMembers
@@ -247,7 +253,7 @@ public class SeasonSquadService(
                 .ToList();
 
             db.SeasonSquadMembers.AddRange(added);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation(
                 "Copied {Count} squad members from {From} to {To} ({Skipped} already there or archived)",
@@ -257,19 +263,20 @@ public class SeasonSquadService(
 
     /// <summary>The season immediately before this one, for the copy-forward offer. A null value
     /// with a successful result means there is no earlier season — a normal state, not an error.</summary>
-    public Task<Result<Season?>> FindPreviousSeasonAsync(int seasonId) =>
-        ServiceOperation.RunAsync(logger, "find the previous season", async () =>
+    public Task<Result<Season?>> FindPreviousSeasonAsync(
+        int seasonId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "find the previous season", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var season = await db.Seasons.FindAsync(seasonId);
+            var season = await db.Seasons.FindAsync([seasonId], cancellationToken);
             if (season is null)
             {
                 logger.LogWarning("Cannot find the previous season: season {SeasonId} not found", seasonId);
                 return Result.Failure<Season?>("Season not found");
             }
 
-            var previous = (await db.Seasons.AsNoTracking().ToListAsync())
+            var previous = (await db.Seasons.AsNoTracking().ToListAsync(cancellationToken))
                 .NewestFirst()
                 .FirstOrDefault(s => s.StartDate.Date < season.StartDate.Date);
 

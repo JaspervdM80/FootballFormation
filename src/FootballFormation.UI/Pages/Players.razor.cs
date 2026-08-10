@@ -40,10 +40,10 @@ public partial class Players
             return;
         }
 
-        var squadResult = await SquadService.GetSquadAsync(seasonId);
+        var squadResult = await SquadService.GetSquadAsync(seasonId, Cancellation);
         _squad = Snackbar.ReportFailure(L, squadResult) ? squadResult.Value! : SeasonSquad.Empty;
 
-        var previousResult = await SquadService.FindPreviousSeasonAsync(seasonId);
+        var previousResult = await SquadService.FindPreviousSeasonAsync(seasonId, Cancellation);
         if (previousResult.IsSuccess) _previousSeason = previousResult.Value;
 
         _loaded = true;
@@ -93,7 +93,7 @@ public partial class Players
     {
         if (SeasonId is not { } seasonId) return;
 
-        var candidatesResult = await SquadService.GetNonMembersAsync(seasonId);
+        var candidatesResult = await SquadService.GetNonMembersAsync(seasonId, Cancellation);
         if (!Snackbar.ReportFailure(L, candidatesResult)) return;
 
         var candidates = candidatesResult.Value!;

@@ -178,6 +178,38 @@ page without a refresh.
 - Sorting is unavailable on mobile — MudBlazor collapses the header to zero height in card
   mode. Pre-existing, not caused by the grid override.
 
+## A page stops reading when the visitor leaves (`Components/CancellableComponent.cs`)
+Blazor Server gives a component no request lifetime of its own. A page that starts a query in
+`OnInitializedAsync` and is then navigated away from leaves that query running against the SQLite
+volume with nobody left to render it — and on the phone-on-a-bad-connection this app is built for,
+circuits drop constantly.
+
+`CancellableComponent` is the seam: it owns a `CancellationTokenSource` cancelled on disposal and
+exposes `Cancellation`. Every page or dialog that reads inherits it (`SeasonAwarePage` does, so its
+four pages get it for free), and the token goes on every service **read**:
+
+```csharp
+// .razor — the base class goes here, never on the partial class (CS0263)
+@inherits CancellableComponent
+
+// .razor.cs
+var result = await GameService.GetAllWithDetailsAsync(SeasonId, Cancellation);
+_games = Snackbar.ReportFailure(L, result) ? result.Value : [];
+```
+
+- **Writes deliberately get no token.** An admin who taps "finish match" and then loses their
+  circuit must still have finished the match. See [patterns.md](patterns.md#cancellation-the-third-outcome).
+- **The `ReportFailure` line does not change.** A cancelled read comes back as
+  `Result.IsCancelled`, and `UiFeedback` keeps quiet about one — otherwise leaving a page would
+  raise "Failed to load games" on the page the visitor went to, since the snackbar belongs to the
+  circuit rather than to the page that made the call.
+- **What a caller must add is a check before anything the visitor would notice — a redirect above
+  all.** `if (result.IsCancelled) return;` goes ahead of the not-found branch on `/games/{id}/result`,
+  `/games/{id}/formation`, `/games/{id}/overview` and `/players/{id}/stats`. Without it, abandoning
+  one of those loads bounces the visitor off whichever page they had just navigated to.
+- **Overriding `Dispose` means calling `base.Dispose()`** — `Home` and `LiveMatch` both do, to
+  unsubscribe from `LiveMatchNotifier` (and to stop the clock timer) before the base cancels.
+
 ## Season picker (`Components/SeasonPicker.razor`)
 The global season filter, backed by the scoped `SeasonState` (see
 [patterns.md](patterns.md#ui-state-services)).

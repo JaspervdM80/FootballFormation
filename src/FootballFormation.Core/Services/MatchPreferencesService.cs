@@ -17,32 +17,32 @@ public class MatchPreferencesService(
     /// recent earlier season's settings rather than the hardcoded ones — game length and formation
     /// usually carry over, so inheriting is what keeps per-season storage from costing the user work.
     /// </summary>
-    public Task<Result<MatchPreferences>> GetAsync(int seasonId) =>
-        ServiceOperation.RunAsync(logger, "load preferences", async () =>
+    public Task<Result<MatchPreferences>> GetAsync(int seasonId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "load preferences", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             if (seasonId <= 0)
                 return Result.Failure<MatchPreferences>("No season selected");
 
-            var prefs = await db.MatchPreferences.FirstOrDefaultAsync(p => p.SeasonId == seasonId);
+            var prefs = await db.MatchPreferences.FirstOrDefaultAsync(p => p.SeasonId == seasonId, cancellationToken);
             if (prefs is not null) return Result.Success(prefs);
 
-            prefs = await SeedForAsync(db, seasonId);
+            prefs = await SeedForAsync(db, seasonId, cancellationToken);
             db.MatchPreferences.Add(prefs);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Created match preferences for season {SeasonId} (ID: {Id})", seasonId, prefs.Id);
             return Result.Success(prefs);
         });
 
-    public Task<Result> SaveAsync(MatchPreferences prefs) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "save preferences", async () =>
+    public Task<Result> SaveAsync(MatchPreferences prefs, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "save preferences", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             db.MatchPreferences.Update(prefs);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Saved match preferences for season {SeasonId}: {Duration}min, {Split}, {Formation}, {MatchDay}",
                 prefs.SeasonId, prefs.GameDurationMinutes, prefs.DefaultSplitType, prefs.DefaultFormation, prefs.MatchDay);
@@ -54,16 +54,17 @@ public class MatchPreferencesService(
     /// season's games count, and the answer is kept inside its window — scheduling the opening
     /// fixture of a future season must not propose a date from the season we are living in.
     /// </summary>
-    public Task<Result<DateTime>> GetNextMatchDateAsync(int seasonId) =>
-        ServiceOperation.RunAsync(logger, "calculate next match date", async () =>
+    public Task<Result<DateTime>> GetNextMatchDateAsync(
+        int seasonId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "calculate next match date", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var prefsResult = await GetAsync(seasonId);
+            var prefsResult = await GetAsync(seasonId, cancellationToken);
             if (prefsResult.IsFailure)
                 return prefsResult.To<DateTime>();
 
-            var season = await db.Seasons.FirstOrDefaultAsync(s => s.Id == seasonId);
+            var season = await db.Seasons.FirstOrDefaultAsync(s => s.Id == seasonId, cancellationToken);
             if (season is null)
                 return Result.Failure<DateTime>("Season not found");
 
@@ -71,7 +72,7 @@ public class MatchPreferencesService(
             var seasonDates = await db.Games
                 .Where(g => g.SeasonId == seasonId)
                 .Select(g => g.Date)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             var matchDay = prefsResult.Value!.MatchDay;
             var today = time.GetLocalNow().Date;
@@ -109,17 +110,18 @@ public class MatchPreferencesService(
     /// A fresh row for a season, copied from the newest season <em>before</em> it that has one.
     /// Falls back to the newest row of any season, then to the model's own defaults.
     /// </summary>
-    private static async Task<MatchPreferences> SeedForAsync(AppDbContext db, int seasonId)
+    private static async Task<MatchPreferences> SeedForAsync(
+        AppDbContext db, int seasonId, CancellationToken cancellationToken)
     {
         var startDate = await db.Seasons
             .Where(s => s.Id == seasonId)
             .Select(s => (DateTime?)s.StartDate)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
         // One preferences row per season, so this is a handful of rows. See SeasonOrdering.
         var byNewestSeason = (await db.MatchPreferences
             .Include(p => p.Season)
-            .ToListAsync())
+            .ToListAsync(cancellationToken))
             .Where(p => p.Season is not null)
             .OrderByDescending(p => p.Season!.StartDate)
             .ThenBy(p => p.SeasonId)

@@ -60,6 +60,41 @@ public class ResultTests
     }
 
     [Fact]
+    public void A_cancelled_result_is_a_failure_with_nothing_to_say()
+    {
+        var result = Result.Cancelled();
+
+        // A failure, so every existing "did that work?" check reads it as no. But with no key, so
+        // the layer that shows messages has nothing to show — see UiFeedback.
+        Assert.True(result.IsCancelled);
+        Assert.True(result.IsFailure);
+        Assert.Null(result.ErrorKey);
+        Assert.Null(result.Error);
+    }
+
+    [Fact]
+    public void Carrying_a_cancellation_to_another_type_keeps_it_a_cancellation()
+    {
+        // Services hand results up through each other — GameService.CreateAsync carries
+        // SeasonService's over with To<Game>(). If the flag were dropped there, an abandoned call
+        // would arrive at the page as a messageless failure and raise an empty snackbar.
+        var carried = Result.Cancelled<int>().To<string>();
+
+        Assert.True(carried.IsCancelled);
+        Assert.True(carried.IsFailure);
+        Assert.Null(carried.ErrorKey);
+    }
+
+    [Fact]
+    public void Reading_the_value_of_a_cancelled_result_says_the_caller_went_away()
+    {
+        var result = Result.Cancelled<string>();
+
+        var ex = Assert.Throws<InvalidOperationException>(() => result.Value);
+        Assert.Contains("cancelled", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Formatting_is_culture_invariant_so_the_key_and_the_arguments_stay_separable()
     {
         var original = System.Globalization.CultureInfo.CurrentCulture;

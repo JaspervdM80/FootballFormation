@@ -55,7 +55,7 @@ public partial class GameDialog
     {
         await SeasonState.EnsureLoadedAsync();
 
-        var seasonsResult = await SeasonService.GetAllAsync();
+        var seasonsResult = await SeasonService.GetAllAsync(Cancellation);
         if (seasonsResult.IsSuccess)
         {
             Seasons = seasonsResult.Value!;
@@ -74,7 +74,7 @@ public partial class GameDialog
 
             await ApplySeasonDefaultsAsync(seasonId);
 
-            var dateResult = await PreferencesService.GetNextMatchDateAsync(seasonId);
+            var dateResult = await PreferencesService.GetNextMatchDateAsync(seasonId, Cancellation);
             if (dateResult.IsSuccess)
             {
                 Date = dateResult.Value;
@@ -112,7 +112,7 @@ public partial class GameDialog
         {
             // FindForDateAsync, not GetOrCreateForDateAsync: typing a date into a dialog the user
             // may still cancel must never create a season. GameService.CreateAsync creates it on save.
-            var seasonResult = await SeasonService.FindForDateAsync(Date ?? DateTime.Today);
+            var seasonResult = await SeasonService.FindForDateAsync(Date ?? DateTime.Today, Cancellation);
             seasonId = seasonResult.IsSuccess ? seasonResult.Value?.Id ?? 0 : 0;
             SeasonNotCreatedYet = seasonId == 0;
         }
@@ -123,7 +123,7 @@ public partial class GameDialog
         }
         else
         {
-            var squadResult = await SquadService.GetSquadAsync(seasonId);
+            var squadResult = await SquadService.GetSquadAsync(seasonId, Cancellation);
             Squad = squadResult.IsSuccess ? squadResult.Value! : SeasonSquad.Empty;
         }
 
@@ -146,7 +146,7 @@ public partial class GameDialog
     {
         if (seasonId <= 0) return;
 
-        var prefsResult = await PreferencesService.GetAsync(seasonId);
+        var prefsResult = await PreferencesService.GetAsync(seasonId, Cancellation);
         if (prefsResult.IsFailure) return;
 
         var prefs = prefsResult.Value!;

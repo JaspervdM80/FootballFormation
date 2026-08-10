@@ -32,10 +32,10 @@ public class LiveMatchService(
     /// Everything the live screen renders, in one round trip: the periods with their lineups and
     /// players, the goals, and the substitutions with both players named.
     /// </summary>
-    public Task<Result<Game>> GetLiveAsync(int gameId) =>
-        ServiceOperation.RunAsync(logger, "load live match", async () =>
+    public Task<Result<Game>> GetLiveAsync(int gameId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "load live match", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             // No tracking, and it matters: a spectator's circuit keeps one scoped DbContext for
             // its whole life, so a tracked Game would keep returning the score, clock and state
@@ -54,7 +54,7 @@ public class LiveMatchService(
                     .ThenInclude(s => s.PlayerOff)
                 .Include(g => g.Substitutions)
                     .ThenInclude(s => s.PlayerOn)
-                .FirstOrDefaultAsync(g => g.Id == gameId);
+                .FirstOrDefaultAsync(g => g.Id == gameId, cancellationToken);
 
             if (game is null)
             {
@@ -71,10 +71,10 @@ public class LiveMatchService(
     /// through the match, until the final score is in — so match day is signposted all day rather
     /// than only between kick-off and the last whistle.
     /// </summary>
-    public Task<Result<Game?>> GetTodaysMatchAsync() =>
-        ServiceOperation.RunAsync(logger, "find today's match", async () =>
+    public Task<Result<Game?>> GetTodaysMatchAsync(CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "find today's match", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             // A match in progress wins whatever the calendar says: it can have been kicked off
             // before midnight, and it is the one someone standing at a pitch is watching. Nothing
@@ -82,7 +82,7 @@ public class LiveMatchService(
             var game = (await db.Games
                 .AsNoTracking()
                 .Where(g => g.MatchState == MatchState.InProgress)
-                .ToListAsync())
+                .ToListAsync(cancellationToken))
                 .NewestFirst()
                 .FirstOrDefault();
 
@@ -99,7 +99,7 @@ public class LiveMatchService(
                 .AsNoTracking()
                 .TagWith(QueryTags.ComparesDatesInSql)
                 .Where(g => g.Date >= today && g.Date < tomorrow)
-                .ToListAsync())
+                .ToListAsync(cancellationToken))
                 .OrderBy(g => g.MatchState == MatchState.Finished)
                 .ThenBy(g => g.Date)
                 .ThenBy(g => g.Id)
@@ -108,12 +108,12 @@ public class LiveMatchService(
             return Result.Success(game);
         });
 
-    public Task<Result<Game>> StartMatchAsync(int gameId) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "start match", async () =>
+    public Task<Result<Game>> StartMatchAsync(int gameId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "start match", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var game = await LoadWithPeriodsAsync(db, gameId);
+            var game = await LoadWithPeriodsAsync(db, gameId, cancellationToken);
             if (game is null) return NotFound(gameId);
 
             if (game.MatchState != MatchState.NotStarted)
@@ -129,35 +129,35 @@ public class LiveMatchService(
             first.StartedAtSeconds = 0;
             first.EndedAtSeconds = null;
 
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Started live match {GameId} at period {PeriodId}", gameId, first.Id);
             return Notified(game);
         });
 
-    public Task<Result<Game>> PauseClockAsync(int gameId) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "pause the clock", async () =>
+    public Task<Result<Game>> PauseClockAsync(int gameId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "pause the clock", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var game = await LoadWithPeriodsAsync(db, gameId);
+            var game = await LoadWithPeriodsAsync(db, gameId, cancellationToken);
             if (game is null) return NotFound(gameId);
 
             if (!game.IsClockRunning) return Result.Failure<Game>("The clock is not running");
 
             BankClock(game);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Paused clock for game {GameId} at {Seconds}s",
                 gameId, game.ClockAccumulatedSeconds);
             return Notified(game);
         });
 
-    public Task<Result<Game>> ResumeClockAsync(int gameId) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "resume the clock", async () =>
+    public Task<Result<Game>> ResumeClockAsync(int gameId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "resume the clock", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var game = await LoadWithPeriodsAsync(db, gameId);
+            var game = await LoadWithPeriodsAsync(db, gameId, cancellationToken);
             if (game is null) return NotFound(gameId);
 
             if (game.MatchState != MatchState.InProgress)
@@ -167,7 +167,7 @@ public class LiveMatchService(
                 return Result.Failure<Game>("Start the next period before resuming the clock");
 
             game.ClockRunningSince = UtcNow;
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Resumed clock for game {GameId} at {Seconds}s",
                 gameId, game.ClockAccumulatedSeconds);
@@ -175,12 +175,12 @@ public class LiveMatchService(
         });
 
     /// <summary>Whistles the current period off. The clock stops and no period is live until the next one starts.</summary>
-    public Task<Result<Game>> EndPeriodAsync(int gameId) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "end the period", async () =>
+    public Task<Result<Game>> EndPeriodAsync(int gameId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "end the period", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var game = await LoadWithPeriodsAsync(db, gameId);
+            var game = await LoadWithPeriodsAsync(db, gameId, cancellationToken);
             if (game is null) return NotFound(gameId);
 
             var current = CurrentPeriod(game);
@@ -190,18 +190,18 @@ public class LiveMatchService(
             current.EndedAtSeconds = game.ClockAccumulatedSeconds;
             game.LivePeriodId = null;
 
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Ended period {PeriodId} of game {GameId} at {Seconds}s",
                 current.Id, gameId, current.EndedAtSeconds);
             return Notified(game);
         });
 
-    public Task<Result<Game>> StartNextPeriodAsync(int gameId) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "start the next period", async () =>
+    public Task<Result<Game>> StartNextPeriodAsync(int gameId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "start the next period", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var game = await LoadWithPeriodsAsync(db, gameId);
+            var game = await LoadWithPeriodsAsync(db, gameId, cancellationToken);
             if (game is null) return NotFound(gameId);
 
             if (game.MatchState != MatchState.InProgress)
@@ -219,7 +219,7 @@ public class LiveMatchService(
             game.LivePeriodId = next.Id;
             game.ClockRunningSince = UtcNow;
 
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Started period {PeriodId} of game {GameId} at {Seconds}s",
                 next.Id, gameId, next.StartedAtSeconds);
             return Notified(game);
@@ -230,12 +230,12 @@ public class LiveMatchService(
     /// quarter boundaries that are not a real break (see <see cref="PeriodTypeExtensions.IsFollowedByBreak"/>).
     /// The lineup changes over, the running time does not.
     /// </summary>
-    public Task<Result<Game>> AdvancePeriodAsync(int gameId) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "start the next period", async () =>
+    public Task<Result<Game>> AdvancePeriodAsync(int gameId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "start the next period", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var game = await LoadWithPeriodsAsync(db, gameId);
+            var game = await LoadWithPeriodsAsync(db, gameId, cancellationToken);
             if (game is null) return NotFound(gameId);
 
             var current = CurrentPeriod(game);
@@ -253,18 +253,18 @@ public class LiveMatchService(
             next.EndedAtSeconds = null;
             game.LivePeriodId = next.Id;
 
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Game {GameId} rolled from period {From} into {To} at {Seconds}s",
                 gameId, current.Id, next.Id, elapsed);
             return Notified(game);
         });
 
-    public Task<Result<Game>> FinishMatchAsync(int gameId) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "finish the match", async () =>
+    public Task<Result<Game>> FinishMatchAsync(int gameId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "finish the match", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var game = await LoadWithPeriodsAsync(db, gameId);
+            var game = await LoadWithPeriodsAsync(db, gameId, cancellationToken);
             if (game is null) return NotFound(gameId);
 
             if (game.MatchState == MatchState.NotStarted)
@@ -278,11 +278,11 @@ public class LiveMatchService(
             game.LivePeriodId = null;
             game.MatchState = MatchState.Finished;
 
-            var goals = await db.GameGoals.Where(g => g.GameId == gameId).ToListAsync();
+            var goals = await db.GameGoals.Where(g => g.GameId == gameId).ToListAsync(cancellationToken);
             game.ScoreHome = Game.CountOurGoals(goals);
             game.ScoreAway = Game.CountTheirGoals(goals);
 
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Finished game {GameId} at {Home}-{Away} after {Seconds}s",
                 gameId, game.ScoreHome, game.ScoreAway, game.ClockAccumulatedSeconds);
             return Notified(game);
@@ -290,14 +290,15 @@ public class LiveMatchService(
 
     /// <param name="scorerId">Null for an opponent goal — we do not track their players.</param>
     public Task<Result<GameGoal>> LogGoalAsync(
-        int gameId, int? scorerId, int? assisterId, bool isOwnGoal, bool isOpponentGoal) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "log the goal", async () =>
+        int gameId, int? scorerId, int? assisterId, bool isOwnGoal, bool isOpponentGoal,
+        CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "log the goal", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             // Periods included: the minute follows the scoreboard clock, which is measured from
             // the half being played rather than from kick-off.
-            var game = await LoadWithPeriodsAsync(db, gameId);
+            var game = await LoadWithPeriodsAsync(db, gameId, cancellationToken);
             if (game is null) return Result.Failure<GameGoal>("Game with ID {0} not found", gameId);
 
             if (scorerId is null && !isOpponentGoal)
@@ -319,24 +320,25 @@ public class LiveMatchService(
                 IsOpponentGoal = isOpponentGoal
             };
 
-            var added = await games.AddGoalAsync(goal);
+            var added = await games.AddGoalAsync(goal, cancellationToken);
             if (added.IsFailure) return added;
 
-            await SyncScoreAsync(db, gameId);
+            await SyncScoreAsync(db, gameId, cancellationToken);
             notifier.Notify(gameId);
             return added;
         });
 
     /// <summary>Removes a goal and pulls the scoreline back in step with what is left.</summary>
-    public Task<Result> RemoveGoalAsync(int gameId, int goalId) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "remove the goal", async () =>
+    public Task<Result> RemoveGoalAsync(
+        int gameId, int goalId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "remove the goal", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var removed = await games.RemoveGoalAsync(goalId);
+            var removed = await games.RemoveGoalAsync(goalId, cancellationToken);
             if (removed.IsFailure) return removed;
 
-            await SyncScoreAsync(db, gameId);
+            await SyncScoreAsync(db, gameId, cancellationToken);
             notifier.Notify(gameId);
             return Result.Success();
         });
@@ -346,22 +348,23 @@ public class LiveMatchService(
     /// currently being played: the outgoing player's slot and position change hands, and the swap
     /// is recorded with the minute it happened.
     /// </summary>
-    public Task<Result<GameSubstitution>> SubstituteAsync(int gameId, int playerOffId, int playerOnId) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "make the substitution", async () =>
+    public Task<Result<GameSubstitution>> SubstituteAsync(
+        int gameId, int playerOffId, int playerOnId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "make the substitution", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             if (playerOffId == playerOnId)
                 return Result.Failure<GameSubstitution>("A player cannot be substituted for themselves");
 
-            var game = await LoadWithPeriodsAsync(db, gameId);
+            var game = await LoadWithPeriodsAsync(db, gameId, cancellationToken);
             if (game is null) return Result.Failure<GameSubstitution>("Game with ID {0} not found", gameId);
 
             var period = CurrentPeriod(game);
             if (period is null)
                 return Result.Failure<GameSubstitution>("No period is currently being played");
 
-            await db.Entry(period).Collection(p => p.PlayerPositions).LoadAsync();
+            await db.Entry(period).Collection(p => p.PlayerPositions).LoadAsync(cancellationToken);
 
             var off = period.PlayerPositions.FirstOrDefault(pp => pp.PlayerId == playerOffId);
             if (off is null || off.IsSubstitute)
@@ -407,10 +410,10 @@ public class LiveMatchService(
             db.GameSubstitutions.Add(sub);
 
             // One SaveChanges: the lineup change and the record of it must never diverge.
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
-            await db.Entry(sub).Reference(s => s.PlayerOff).LoadAsync();
-            await db.Entry(sub).Reference(s => s.PlayerOn).LoadAsync();
+            await db.Entry(sub).Reference(s => s.PlayerOff).LoadAsync(cancellationToken);
+            await db.Entry(sub).Reference(s => s.PlayerOn).LoadAsync(cancellationToken);
 
             logger.LogInformation("Game {GameId}: {Off} off, {On} on at {Seconds}s in period {PeriodId}",
                 gameId, playerOffId, playerOnId, sub.AtSeconds, period.Id);
@@ -423,22 +426,22 @@ public class LiveMatchService(
     /// Undoes a substitution. Only the most recent one in its period can go, because reversing an
     /// older swap would fight every change made on that slot since.
     /// </summary>
-    public Task<Result> RemoveSubstitutionAsync(int subId) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "undo the substitution", async () =>
+    public Task<Result> RemoveSubstitutionAsync(int subId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "undo the substitution", cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync();
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var sub = await db.GameSubstitutions.FindAsync(subId);
+            var sub = await db.GameSubstitutions.FindAsync([subId], cancellationToken);
             if (sub is null) return Result.Failure("Substitution not found");
 
             var isNewest = !await db.GameSubstitutions
-                .AnyAsync(s => s.GamePeriodId == sub.GamePeriodId && s.AtSeconds > sub.AtSeconds);
+                .AnyAsync(s => s.GamePeriodId == sub.GamePeriodId && s.AtSeconds > sub.AtSeconds, cancellationToken);
             if (!isNewest)
                 return Result.Failure("Only the most recent substitution of a period can be undone");
 
             var positions = await db.GamePlayerPositions
                 .Where(pp => pp.GamePeriodId == sub.GamePeriodId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             var on = positions.FirstOrDefault(pp => pp.PlayerId == sub.PlayerOnId);
             var off = positions.FirstOrDefault(pp => pp.PlayerId == sub.PlayerOffId);
@@ -457,7 +460,7 @@ public class LiveMatchService(
             }
 
             db.GameSubstitutions.Remove(sub);
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Undid substitution {SubId} in game {GameId}", subId, sub.GameId);
             notifier.Notify(sub.GameId);
@@ -481,19 +484,20 @@ public class LiveMatchService(
     private static GamePeriod? NextPeriod(Game game) =>
         game.Periods.OrderBy(p => p.PeriodType).FirstOrDefault(p => p.StartedAtSeconds is null);
 
-    private static Task<Game?> LoadWithPeriodsAsync(AppDbContext db, int gameId) =>
-        db.Games.Include(g => g.Periods).FirstOrDefaultAsync(g => g.Id == gameId);
+    private static Task<Game?> LoadWithPeriodsAsync(
+        AppDbContext db, int gameId, CancellationToken cancellationToken) =>
+        db.Games.Include(g => g.Periods).FirstOrDefaultAsync(g => g.Id == gameId, cancellationToken);
 
     /// <summary>Rewrites the scoreline from the logged goals, so the live score is never guessed at.</summary>
-    private static async Task SyncScoreAsync(AppDbContext db, int gameId)
+    private static async Task SyncScoreAsync(AppDbContext db, int gameId, CancellationToken cancellationToken)
     {
-        var game = await db.Games.FindAsync(gameId);
+        var game = await db.Games.FindAsync([gameId], cancellationToken);
         if (game is null) return;
 
-        var goals = await db.GameGoals.Where(g => g.GameId == gameId).ToListAsync();
+        var goals = await db.GameGoals.Where(g => g.GameId == gameId).ToListAsync(cancellationToken);
         game.ScoreHome = Game.CountOurGoals(goals);
         game.ScoreAway = Game.CountTheirGoals(goals);
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     private Result<Game> Notified(Game game)
