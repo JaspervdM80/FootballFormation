@@ -60,9 +60,13 @@ test('archiving retires a player without erasing the seasons they played', async
   await addPlayer(page, { firstName: 'Vertrokken', surname: 'Speler', shirt: 79 });
 
   await playerMenuItem(page, 'Vertrokken Speler', 'Archive player');
-  // Archiving is a decision about the future, so it asks before taking someone off the picker.
-  const confirm = page.locator('.mud-dialog');
-  if (await confirm.count()) await confirmDialog(page, 'Archive');
+  // Archiving is a decision about the future, so it always asks before taking someone off the
+  // picker — `ToggleArchived` only skips the confirm when *restoring*, and this player is new.
+  // Waited for rather than counted: `.count()` is the one query in this suite that does not
+  // auto-wait, so on a loaded runner it read zero before the dialog had rendered, skipped the
+  // confirm, and left the player un-archived — and the badge assertion below is what noticed.
+  await openDialog(page);
+  await confirmDialog(page, 'Archive');
 
   await goto(page, '/players');
   const row = playerRow(page, 'Vertrokken Speler');

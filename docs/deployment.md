@@ -58,9 +58,12 @@ certificate are done (usually minutes after DNS propagates).
 
 ## Redeploying after changes
 
-Merging to `main` deploys automatically via GitHub Actions
-(`.github/workflows/fly-deploy.yml`, authenticated by the `FLY_API_TOKEN` repo secret —
-a scoped deploy token from `flyctl tokens create deploy --app gjs-meiden`).
+Merging to `main` *proposes* a deploy via GitHub Actions (`.github/workflows/fly-deploy.yml`,
+authenticated by the `FLY_API_TOKEN` secret — a scoped deploy token from
+`flyctl tokens create deploy --app gjs-meiden`). It does not perform one: the deploy job names the
+**`production` environment**, which holds a required reviewer, so the run stops at *Waiting* until
+somebody approves it. See [Only one person can deploy](#only-one-person-can-deploy) below — that
+environment, not this workflow, is where the token lives and where the decision is made.
 
 Pull requests are gated by a **separate** workflow, `.github/workflows/ci.yml` ("CI"), which runs
 `Build and test` — restore, a Release build (where warnings are errors) and the test suite. It
@@ -121,28 +124,162 @@ If the policy must stay restricted, the allow-list needs **both** of:
 | `superfly/*` | `superfly/flyctl-actions/setup-flyctl` — `fly-deploy.yml` |
 
 **The second is the one that bites quietly.** `ci.yml` uses no third-party action, so ticking only
-the GitHub box turns every check green while `fly-deploy.yml` still fails at startup — and since
-merging is what deploys, the symptom is not a red build but a site that silently stops updating.
+the GitHub box turns every check green while `fly-deploy.yml` still fails at startup — a refused run
+creates no job, so there is no approval waiting for you either, and the symptom is not a red build
+but a site that silently stops updating.
 Whenever this policy is touched, check the deploy workflow too, not just the pull request.
 
 **Deliberately not enabled: *require branches to be up to date*** (`strict_required_status_checks_policy`).
 It would force every PR to re-run against a moved `main` before landing, which for a single-maintainer
 repo is mostly friction. The case it protects against — a PR that passed against a stale `main` and
 breaks once merged — is already caught before it can reach production, because `fly-deploy.yml` runs
-the same CI workflow again on `main` and the deploy job depends on it. Turn it on if that changes.
+the same CI workflow again on `main` and the deploy job depends on it. It is also partly covered on
+the pull request itself: `actions/checkout` resolves a `pull_request` event to `refs/pull/N/merge`,
+so the second of the two `Build and test` runs a pull request produces is building this branch
+*already merged into* `main`. Turn the policy on if that changes.
 
 **The escape hatch is the ruleset, not a bypass.** With `bypass_actors` empty there is no way to
 merge past a red build quietly; an emergency means setting the ruleset to *Disabled*, which is a
 visible, logged act that shows up in the repo's rule insights. That is the intended trade — the
 guard is worth little if the person most likely to be in a hurry can step around it silently.
 
-Manual deploys still work from the repo root:
+**`required_approving_review_count` is 0, and one account is the reason.** GitHub refuses to let
+anyone approve their own pull request — the *Approve* radio is not rendered on your own PR, and the
+API answers `422 Can not approve your own pull request`. There is no setting that relaxes it; every
+neighbouring knob (`require_last_push_approval`, an environment's *Prevent self-review*) only
+tightens it. This repository has exactly one collaborator, and **the pull requests an assistant
+opens are authored by that same account** — Claude Code pushes with the owner's token, so #46, #48
+and #57 all read `JaspervdM80` however they were written. So a required approval here has only two
+settings, and neither is a gate: raise the count and *every* pull request becomes unmergeable,
+including the assistant's; grant *Repository admin* a bypass to fix that and every pull request is
+exempt again. GitHub cannot tell a maintainer's own work from an agent acting as them, because
+there is nothing in the request that differs.
+
+What is enabled instead is **`required_review_thread_resolution`**, which does bite with one
+account: it needs no approval, only that every review comment thread is resolved before the merge
+button unlocks. Leave a note on a diff and the merge waits for you to deal with it.
+
+The requirement that actually stops unreviewed code reaching people is one layer further on — it
+guards the deploy rather than the merge, and it is described next. **Adding a second account as a
+collaborator is the only way to make the merge itself require another pair of eyes**; if that
+happens, set the count to 1 and leave `bypass_actors` empty.
+
+## Only one person can deploy
+
+Three things could put a release on the volume, and each is closed separately.
+
+**A push to `main`.** Impossible directly — the ruleset above requires a pull request and grants no
+bypass — and merging no longer deploys on its own. `fly-deploy.yml`'s deploy job names the
+`production` environment, which carries a **required reviewer**; the job holds at *Waiting* and
+Fly is never contacted until that person clicks *Approve*. Unlike a pull request approval, GitHub
+does permit approving your own deployment: the *Prevent self-review* checkbox on the environment
+is opt-in and stays off here, which is exactly what makes this gate work for a single maintainer
+where the review gate cannot.
+
+**A `workflow_dispatch` run.** Anyone with write access can start one. The job's `if` refuses a
+dispatch from anybody but `github.repository_owner`, and refuses any ref that is not `main`. The
+environment reviewer would catch it regardless; the condition keeps a run that was never going to
+deploy from queueing for approval.
+
+**Reading the token out of a workflow on a branch.** This is the one a branch rule does not cover.
+A repository secret is readable by any workflow in the repository, so a `.github/workflows/*.yml`
+added on a feature branch could have printed `FLY_API_TOKEN` and deployed from a laptop afterwards
+— no merge and no approval involved. `FLY_API_TOKEN` is therefore an **environment** secret on
+`production`, not a repository secret, and `production` sets its deployment branch policy to `main`
+only. A job that does not name the environment cannot see the secret; a job that does name it is
+refused on any other ref, before it starts. Keeping a copy at repository level would reopen the
+hole silently, so there must not be one.
+
+Setting that up is manual — nothing in a repository can grant itself these, for the same reason a
+repository cannot grant itself branch protection:
+
+> *Settings → Environments → New environment → `production`* → tick **Required reviewers** and add
+> yourself → under **Deployment branches and tags** choose *Selected branches* and add `main` →
+> **Save**. Then *Environment secrets → Add secret* → `FLY_API_TOKEN`, and **delete the
+> repository-level secret of the same name** under *Settings → Secrets and variables → Actions*.
+
+**Create the environment before this workflow reaches `main`.** A job naming an environment that
+does not exist does not fail — GitHub creates it silently, with no reviewer and no branch policy —
+and repository secrets are still visible to it. The first merge would deploy straight through, and
+nothing about the run would look wrong.
+
+**An unapproved run holds the concurrency group.** `concurrency: fly-deploy` has
+`cancel-in-progress: false`, so a release left waiting for approval parks every later one behind
+it. That is the right trade for a single volume that migrates on boot, but it means "approve or
+cancel" rather than "ignore".
+
+**Outside GitHub, the token and the Fly org are the boundary.** The workflow's token is scoped with
+`flyctl tokens create deploy --app gjs-meiden`, so it can deploy this app and nothing else. Anyone
+in the Fly organisation can still `fly deploy` from their own machine, and no GitHub setting reaches
+that — audit both directly:
+
+```powershell
+fly orgs show <org>      # who else can deploy this app at all
+fly tokens list          # revoke anything unrecognised with: fly tokens revoke <id>
+```
+
+Manual deploys from the repo root still work, and deliberately skip every gate above — the approval,
+the CI gate, and the smoke check:
 
 ```powershell
 fly deploy
 ```
 
 Either way, migrations run automatically on startup, same as locally.
+
+## The repository is public, and what a stranger can actually do
+
+`gjs-meiden` is a **public** repository with forking enabled, no forks, one collaborator
+(`JaspervdM80`, admin) and no outside collaborators. Anyone on GitHub can read it, fork it, open an
+issue, and open a pull request. None of that is a way in, and it is worth being precise about why,
+because the honest answer is not "the ruleset stops them".
+
+**Merging needs write access, and nobody else has any.** A stranger's pull request is a request; the
+merge button is only rendered for a collaborator. The ruleset on `main` is the second line, not the
+first — it means even an account *with* write access cannot push to `main` directly or merge past a
+red `Build and test`, because `bypass_actors` is empty.
+
+**Deploying needs the token, and a fork cannot see it.** GitHub withholds every secret from a
+workflow triggered by a fork's pull request and issues it a read-only `GITHUB_TOKEN`. Since
+`FLY_API_TOKEN` moved onto the `production` environment, it is not a repository secret at all any
+more, and the environment admits `main` only.
+
+**What is genuinely open is the runner.** `ci.yml` triggers on `pull_request`, so a fork's pull
+request runs `dotnet restore`, `dotnet build` and `dotnet test` **on our runner, from their
+branch** — a build target, a test, or a `nuget.config` in that branch is arbitrary code execution
+by definition. With no secrets and a read-only token the blast radius is a throwaway container and
+the Actions minutes it burns, not the repository and not the volume. GitHub's default for a public
+repository, *Require approval for first-time contributors*, stops that only the first time; a
+stranger who has landed one trivial pull request runs unattended after that. Close it:
+
+> *Settings → Actions → General → Fork pull request workflows from outside collaborators* →
+> **Require approval for all outside collaborators**.
+
+`ui-checks.yml` is not exposed the same way: it triggers on `push`, and a push to a fork runs in the
+fork's own Actions, not here. That is a side effect of the trigger choice explained in that file,
+not a security decision — if it ever gains a `pull_request` trigger, it gains this exposure too.
+Neither file uses `pull_request_target`, which is the trigger that *does* hand a fork's branch a
+writable token, and neither should.
+
+**Forking cannot be switched off on a public repository** — the setting exists only for private
+repositories in an organisation. Making this repository private is the only thing that removes fork
+pull requests and drive-by issues outright, and it is a product decision rather than a security one.
+
+**The realistic route to a stranger merging is none of the above.** It is the owner's account, an
+installed GitHub App carrying write access, or a deploy key with write enabled — none of which a
+branch rule touches. Worth confirming periodically:
+
+| Where | What to check |
+|---|---|
+| *Settings → Collaborators* | Only `JaspervdM80`, and no pending invitations |
+| *Settings → Integrations → GitHub Apps* | Every installed app, and whether it needs write |
+| *Settings → Deploy keys* | Empty, or nothing with **Allow write access** |
+| *Settings → Actions → General* | Workflow permissions **read-only**, and *Allow GitHub Actions to create and approve pull requests* **off** |
+| Account settings | Two-factor authentication or a passkey on the owner account |
+
+The three workflows here each declare `permissions: contents: read` at the top, so the token they
+get is read-only regardless of what the repository default is set to. The repository default still
+matters for anything added later that forgets to.
 
 ## A deploy has to prove it serves
 

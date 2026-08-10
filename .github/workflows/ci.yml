@@ -9,9 +9,15 @@ on:
   # merge button stays disabled until somebody pushes again. A push always belongs to whoever
   # pushed. main is excluded: fly-deploy.yml calls this workflow there.
   #
-  # The cost is that a pull request from this repository now builds twice, once per event. That is
-  # about a minute of runner time and no risk — both runs test the same commit — and it buys a gate
-  # that reports without being poked.
+  # The cost is that a pull request from this repository builds twice, once per event — about a
+  # minute of runner time, and free, since Actions minutes on a public repository are.
+  #
+  # The two runs are not testing the same thing, which is the part worth knowing. `actions/checkout`
+  # resolves a `pull_request` event to `refs/pull/N/merge` — this branch already merged into main —
+  # while the push event checks out the branch tip as it stands. Since
+  # `strict_required_status_checks_policy` is deliberately off (see docs/deployment.md), a branch
+  # can merge without ever being rebuilt against a moved main, and the pull_request run is the only
+  # one testing that combination. Both report as "Build and test", so either satisfies the ruleset.
   push:
     branches-ignore: [main]
   # Called by fly-deploy.yml, so the gate in front of a deploy is literally the same build and

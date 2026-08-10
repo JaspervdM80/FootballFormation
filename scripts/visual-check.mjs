@@ -14,7 +14,7 @@
 import { chromium } from 'playwright';
 import { existsSync, mkdirSync } from 'node:fs';
 import { auditTouchTargets } from './touch-targets.mjs';
-import { clickFor, goto, waitUntil } from './blazor.mjs';
+import { clickFor, goto } from './blazor.mjs';
 
 const BASE = process.env.VISUAL_BASE_URL ?? 'http://127.0.0.1:5228';
 const OUT = process.env.VISUAL_OUT_DIR ?? 'artifacts/visual';
@@ -83,8 +83,13 @@ if (await notice.count()) {
   // change rotates the security stamp, OnValidatePrincipal rejects the cookie issued before it, and
   // the circuit is dropped onto the login page, which is the observable outcome.
   await page.getByRole('button', { name: rx('wachtwoord wijzigen', 'change password') }).click();
-  await waitUntil(page, async () => await notice.count() === 0,
-    { timeout: 20_000, what: 'the seeded-password notice to clear' });
+  // Waited for the landing, not for the notice to go. Both follow the same change, but the notice
+  // clears the moment the component re-renders and the drop onto /login happens after that — so
+  // signing in on the notice signal starts a navigation to /dev/login while the circuit's own
+  // navigation is still in flight, and Playwright abandons ours: "Navigation to /dev/login is
+  // interrupted by another navigation to /login". That kills the run before its first screenshot.
+  // The URL is the only signal that says the drop has finished rather than that it is coming.
+  await page.waitForURL(/\/login(\?|$)/, { timeout: 20_000 });
 
   await signIn();
   console.log('changed the seeded admin password and signed back in');
