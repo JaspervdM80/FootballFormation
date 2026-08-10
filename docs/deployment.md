@@ -133,7 +133,10 @@ Whenever this policy is touched, check the deploy workflow too, not just the pul
 It would force every PR to re-run against a moved `main` before landing, which for a single-maintainer
 repo is mostly friction. The case it protects against — a PR that passed against a stale `main` and
 breaks once merged — is already caught before it can reach production, because `fly-deploy.yml` runs
-the same CI workflow again on `main` and the deploy job depends on it. Turn it on if that changes.
+the same CI workflow again on `main` and the deploy job depends on it. It is also partly covered on
+the pull request itself: `actions/checkout` resolves a `pull_request` event to `refs/pull/N/merge`,
+so the second of the two `Build and test` runs a pull request produces is building this branch
+*already merged into* `main`. Turn the policy on if that changes.
 
 **The escape hatch is the ruleset, not a bypass.** With `bypass_actors` empty there is no way to
 merge past a red build quietly; an emergency means setting the ruleset to *Disabled*, which is a
