@@ -192,11 +192,20 @@ export async function pickEarlierThisMonth(page, scope) {
   // later month — so walk back to this one first. Without this the helper picks day N of whatever
   // month it happened to open on, which is how a "match already played" ended up in the future
   // while every assertion about it still passed.
+  // The header *slides* rather than swapping its text — the element is a
+  // .mud-picker-slide-transition — so for a moment after a click it still reads the month just
+  // left. Reading again straight away spends a second click on a month already stepped past, which
+  // is how this walked to July while asking for August. Each step therefore waits for the text to
+  // actually change before the next one reads it, and picks its direction from that settled value
+  // so an overshoot walks back rather than spiralling away from the target.
   const header = popover.locator('.mud-picker-calendar-header-transition');
   const thisMonth = new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' });
   for (let step = 0; step < 24; step++) {
-    if ((await header.innerText()).trim().toLowerCase() === thisMonth.toLowerCase()) break;
-    await popover.getByLabel(/^Previous month/).click();
+    const shown = (await header.innerText()).trim();
+    if (shown.toLowerCase() === thisMonth.toLowerCase()) break;
+    const goBack = new Date(`1 ${shown}`) > new Date(`1 ${thisMonth}`);
+    await popover.getByLabel(goBack ? /^Previous month/ : /^Next month/).click();
+    await expect(header).not.toHaveText(shown, { timeout: 5_000 });
   }
   await expect(header).toHaveText(thisMonth, { ignoreCase: true });
 

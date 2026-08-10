@@ -60,6 +60,13 @@ Avoid repeating these mistakes:
   descendant it is a containing block for, and MudBlazor's dialog container is `position: fixed`, so
   a plain `overflow: hidden` on `<body>` cannot clip it. `scripts/touch-targets.mjs` carries that
   rule (`containsFor`); it was worth about an hour of believing the buttons were off screen.
+- **The date picker's month header slides, so it reads the month you just left.** The element is a
+  `.mud-picker-slide-transition`, and for a moment after *Previous month* it still reports the old
+  text. A loop that clicks and then immediately re-reads therefore spends a second click on a month
+  it had already stepped past — `pickEarlierThisMonth` walked to July while asserting August, on a
+  loaded CI runner only. Wait for the header text to *change* after each click before reading it
+  again, and choose the direction from that settled value so an overshoot walks back instead of
+  spiralling. Anything that steps a MudBlazor picker has this shape.
 - **`MudMenu`'s `Class` lands on the root wrapper, not the activator button**: `Class="btn-gold"` painted an invisible `div` while the button kept MudBlazor's default filled colours. There is no `ActivatorClass` parameter in 9.7 — style `.<your-class>.mud-menu .mud-button-root` instead (see `.btn-gold.mud-menu` in app.css, and `SeasonPicker`'s `.season-picker .mud-button-root`).
 
 ## Touch / PWA
@@ -251,3 +258,17 @@ Avoid repeating these mistakes:
 ## General
 - **Port already in use**: Kill orphaned process with `taskkill //PID <pid> //F`.
 - **File locked during build**: Stop the running app before rebuilding.
+- **`.count()` is the one Playwright query that does not wait, and it fails open.** Every other
+  locator call in `tests/ui` retries until its timeout; `count()` answers from the DOM as it stands
+  right now. `if (await dialog.count()) await confirmDialog(...)` therefore read zero before a
+  MudBlazor dialog had rendered, skipped the confirmation entirely, and let the test carry on
+  against a player who was never archived — green locally for months, red on a loaded runner. The
+  guard was also unnecessary: `ToggleArchived` only skips the confirm when *restoring*. Prefer
+  `openDialog()`, which asserts visibility and waits; reach for `count()` only to assert that
+  something is *absent*, and even then `toHaveCount(0)` is the waiting version.
+- **A retry does not get a clean database, so one flake can look like a hard failure.** `run.mjs`
+  builds a single throwaway database per run, and Playwright's CI retry re-runs the test against
+  whatever the failed attempt left behind. A test that creates a player and then fails will, on its
+  retry, be adding that player a second time — `playerRow(...).first()` may match the wrong row, and
+  the report says `1 failed` rather than `1 flaky`. Read a two-attempt failure as "flaked, then hit
+  dirty state", not as proof the behaviour is genuinely broken.
