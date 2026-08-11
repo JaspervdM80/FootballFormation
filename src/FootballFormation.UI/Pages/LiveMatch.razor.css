@@ -93,13 +93,10 @@
     color: #fff;
 }
 
-/* Still being played, but past the end of the half — not the same green as a half in hand. */
-.live-status-extra {
-    background: var(--color-warning);
-    color: #fff;
-}
-
-.live-status-paused {
+/* Still being played, but past the end of the half — not the same green as a half in hand. And
+   the break between two periods, which is the only other time the clock is not moving. */
+.live-status-extra,
+.live-status-break {
     background: var(--color-warning);
     color: #fff;
 }
@@ -109,24 +106,20 @@
     color: #fff;
 }
 
-/* Clock controls */
-.live-control-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.live-control-row > * {
-    flex: 1 1 45%;
-}
-
+/* The clock controls (.live-control-row) are laid out in app.css: every child is a MudButton,
+   and scoped CSS never reaches a child component's root element. */
 .live-pitch-hint {
     display: block;
     margin-bottom: 6px;
     color: var(--ink-subtle);
 }
 
-/* Bench strip under the pitch */
+/* Bench strip under the pitch, and the checkbox that folds it away. The checkbox's own touch
+   target is sized in app.css — this rule reaches the wrapper, not the MudBlazor component in it. */
+.live-bench-toggle {
+    margin-top: 6px;
+}
+
 .live-bench {
     display: flex;
     flex-wrap: wrap;
@@ -161,94 +154,6 @@
 }
 
 .live-bench-number {
-    font-weight: 800;
-    color: var(--ink-muted);
-}
-
-/* Changes due halfway through the half, read off the planned line-ups */
-.live-planned {
-    display: flex;
-    flex-direction: column;
-}
-
-.live-planned-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 0;
-    font-size: 0.85rem;
-    border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
-}
-
-.live-planned-row:last-child {
-    border-bottom: none;
-}
-
-.live-planned-pos {
-    min-width: 42px;
-    font-size: 0.7rem;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    color: var(--ink-muted);
-}
-
-/* Who leaves is settled information; who arrives is the thing to act on. */
-.live-planned-off {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    color: var(--ink-muted);
-    text-decoration: line-through;
-}
-
-.live-planned-arrow {
-    flex: none;
-    color: var(--ink-faint);
-}
-
-.live-planned-on {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-weight: 700;
-    color: var(--ink);
-}
-
-/* Position shuffles, listed as chips under the swaps so they read as a footnote to them */
-.live-planned-moves {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    margin-top: 10px;
-}
-
-.live-planned-moves-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--ink-muted);
-}
-
-.live-planned-move {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 10px;
-    border-radius: 999px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    background: color-mix(in srgb, var(--ink) 7%, transparent);
-    color: var(--ink);
-}
-
-.live-planned-move-pos {
-    font-size: 0.7rem;
     font-weight: 800;
     color: var(--ink-muted);
 }
@@ -298,6 +203,15 @@
 
 .live-event-sub {
     font-size: 0.75rem;
+    color: var(--ink-muted);
+}
+
+/* The scoreline a goal produced, parked on the right where every row lines its digits up. */
+.live-event-score {
+    flex: none;
+    font-size: 0.85rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
     color: var(--ink-muted);
 }
 

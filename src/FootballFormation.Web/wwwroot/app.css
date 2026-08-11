@@ -728,9 +728,9 @@ html, body {
 }
 
 /* --- Live match ---
-   These three sit here rather than in LiveMatch.razor.css because they target MudBlazor
-   components (two MudPapers and a MudButton), and scoped CSS never reaches a child
-   component's root element. The rest of that page's styling is scoped as normal. */
+   These sit here rather than in LiveMatch.razor.css because they target MudBlazor components
+   (two MudPapers and the buttons inside them), and scoped CSS never reaches a child component's
+   root element. The rest of that page's styling is scoped as normal. */
 .live-scoreboard,
 .live-controls {
     border-radius: 16px;
@@ -744,6 +744,34 @@ html, body {
     flex: 1;
     /* Thumb-sized: pressed while watching the pitch, not the phone. */
     min-height: 56px;
+}
+
+/* The clock controls. A grid rather than a wrapping flex row: how many buttons the panel holds
+   depends on where the match is, and equal columns keep them the same width and the same height
+   whichever set is showing. The odd one out spans the row instead of sitting half-width beside a
+   gap — which is every case with a single button, and the third of three. */
+.live-control-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.live-control-row > * {
+    width: 100%;
+    /* Not as tall as a scoring button: those are the ones pressed without looking. */
+    min-height: 48px;
+}
+
+.live-control-row > *:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+}
+
+/* The "Show subs" checkbox is dense, which is right on a desktop and under the 44px floor on the
+   phone this screen is actually used on. Its label is the target, so the height goes there. */
+@media (pointer: coarse) {
+    .live-bench-toggle .mud-checkbox {
+        min-height: 44px;
+    }
 }
 
 /* On a phone what just happened matters more than where everyone stands, so the line-up card

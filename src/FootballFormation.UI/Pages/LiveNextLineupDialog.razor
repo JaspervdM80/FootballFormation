@@ -1,0 +1,28 @@
+@inject IStringLocalizer<Strings> L
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.body2">
+            @L["The line-up planned for the rest of this half takes over. The clock keeps running."]
+        </MudText>
+
+        @if (Changes.IsEmpty)
+        {
+            <MudText Typo="Typo.body2" Class="mt-3" Style="color: var(--ink-muted);">
+                @L["Nobody changes — the next line-up is the one already on the pitch."]
+            </MudText>
+        }
+        else
+        {
+            <div class="next-lineup-changes">
+                <PlannedChangesList Changes="Changes" />
+            </div>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Accept">
+            @L["Next line-up"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>

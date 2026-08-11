@@ -28,4 +28,11 @@ public class GameGoal
     /// moment they were typed, which is the best available answer and never reorders a live match.
     /// </summary>
     public DateTime RecordedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Which end of the scoreline this goal lands on. The rule is stated once here because two
+    /// places count goals: <see cref="Game.CountOurGoals"/> totals a finished match, and
+    /// <c>ScoreProgressionReport</c> walks them one at a time for the live timeline.
+    /// </summary>
+    public bool CountsForUs => !IsOwnGoal && !IsOpponentGoal;
 }

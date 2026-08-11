@@ -18,8 +18,11 @@ namespace FootballFormation.UI.Pages;
 /// share a <paramref name="RecordedAt"/>, and rows older than that column all read
 /// <c>0001-01-01</c>. Across the two kinds the ids come from different tables, so a tie there is
 /// arbitrary — but it is stable, which is what the list needs.
+/// <paramref name="Score"/> is the scoreline as it stood after a goal, and null for a substitution.
 /// </summary>
-public record MatchEvent(int Minute, DateTime RecordedAt, int Id, bool IsGoal, GameGoal? Goal, GameSubstitution? Substitution);
+public record MatchEvent(
+    int Minute, DateTime RecordedAt, int Id, bool IsGoal, GameGoal? Goal, GameSubstitution? Substitution,
+    MatchScore? Score = null);
 
 /// <summary>
 /// The sideline screen. An admin runs the clock and records what happens; everyone else sees the
@@ -50,6 +53,13 @@ public partial class LiveMatch
     private List<Player> AllPlayers { get; set; } = [];
     private SeasonSquad Squad { get; set; } = SeasonSquad.Empty;
     private bool _isAdmin;
+
+    /// <summary>
+    /// Whether the bench strip under the pitch is drawn. Per circuit and not stored: it is a
+    /// glance-vs-space choice made in the moment, and it survives the live reloads because those
+    /// replace the data rather than the component.
+    /// </summary>
+    private bool ShowSubs { get; set; } = true;
 
     /// <summary>
     /// Drives the clock display only. The elapsed value is derived from the anchor the server
@@ -158,19 +168,21 @@ public partial class LiveMatch
         null or MatchState.NotStarted => L["Not started"],
         MatchState.Finished => L["Full time"],
         _ when !IsLivePeriod => L["Break"],
-        _ when !GameData.IsClockRunning => L["Paused"],
         // The half is played out and play has not stopped — the thing to say is how much longer.
         _ when Clock.IsInAdditionalTime => L["Additional time"],
         _ => L[DisplayHalfLabel ?? "In progress"]
     };
 
-    /// <summary>Drives the colour of the status chip: only a running clock counts as live.</summary>
+    /// <summary>
+    /// Drives the colour of the status chip. A live period always has a running clock — nothing
+    /// stops one short of the whistle — so the third arm here is the break between two periods.
+    /// </summary>
     private string StatusCssClass => GameData?.MatchState switch
     {
         MatchState.InProgress when GameData.IsClockRunning && Clock.IsInAdditionalTime =>
             "live-status live-status-extra",
         MatchState.InProgress when GameData.IsClockRunning => "live-status live-status-running",
-        MatchState.InProgress => "live-status live-status-paused",
+        MatchState.InProgress => "live-status live-status-break",
         MatchState.Finished => "live-status live-status-done",
         _ => "live-status"
     };
@@ -227,7 +239,12 @@ public partial class LiveMatch
         {
             if (GameData is null) return [];
 
-            var goals = GameData.Goals.Select(g => new MatchEvent(g.Minute ?? 0, g.RecordedAt, g.Id, true, g, null));
+            // Counted forwards over the whole match, then looked up per goal: this list runs
+            // newest first, so a total accumulated while rendering it would count down.
+            var progression = ScoreProgressionReport.Build(GameData.Goals);
+
+            var goals = GameData.Goals.Select(g =>
+                new MatchEvent(g.Minute ?? 0, g.RecordedAt, g.Id, true, g, null, progression[g.Id]));
             var subs = GameData.Substitutions.Select(s => new MatchEvent(s.Minute, s.RecordedAt, s.Id, false, null, s));
 
             // A goal and the sub that followed it commonly share a minute; the entry time keeps
@@ -263,7 +280,7 @@ public partial class LiveMatch
         _tick.Start();
     }
 
-    /// <summary>Only repaints while the clock is actually moving — a paused screen has nothing to redraw.</summary>
+    /// <summary>Only repaints while the clock is actually moving — at a break there is nothing to redraw.</summary>
     private void OnTick(object? sender, ElapsedEventArgs e)
     {
         if (GameData?.IsClockRunning != true) return;
@@ -302,20 +319,25 @@ public partial class LiveMatch
     private async Task StartMatch() =>
         Snackbar.Report(L, await ClockService.StartMatchAsync(GameId), L["Match started"]);
 
-    private async Task PauseClock() =>
-        Snackbar.Report(L, await ClockService.PauseClockAsync(GameId), L["Clock paused"], Severity.Info);
-
-    private async Task ResumeClock() =>
-        Snackbar.Report(L, await ClockService.ResumeClockAsync(GameId), L["Clock running"], Severity.Info);
-
     private async Task EndPeriod() =>
         Snackbar.Report(L, await ClockService.EndPeriodAsync(GameId), L["Period ended"], Severity.Info);
 
     private async Task StartNextPeriod() =>
         Snackbar.Report(L, await ClockService.StartNextPeriodAsync(GameId), L["Next period started"]);
 
-    private async Task AdvancePeriod() =>
+    /// <summary>
+    /// Rolls the next planned line-up onto the pitch, after showing what that changes. Confirmed
+    /// rather than immediate because it is the one control here with no way back: advancing a
+    /// period rewrites who is on, and the timeline records no such event to undo.
+    /// </summary>
+    private async Task AdvancePeriod()
+    {
+        var confirmed = await DialogService.PromptValueAsync<LiveNextLineupDialog, bool>(
+            L["Next line-up"], p => p.Add(x => x.Changes, PlannedChanges));
+        if (confirmed is null) return;
+
         Snackbar.Report(L, await ClockService.AdvancePeriodAsync(GameId), L["Next period started"]);
+    }
 
     private async Task FinishMatch()
     {
@@ -353,26 +375,58 @@ public partial class LiveMatch
         Snackbar.Report(L, await SubService.RemoveSubstitutionAsync(sub.Id),
             L["Substitution undone"], Severity.Warning);
 
-    /// <summary>Tapping a player on the pitch asks who replaces them.</summary>
-    private async Task OpenSubDialog(int playerOffId)
+    /// <summary>
+    /// Tapping a player on the pitch asks what happens to them: someone comes on for them, or they
+    /// trade positions with a team-mate who stays on.
+    /// </summary>
+    private async Task OpenSubDialog(int playerId)
     {
         if (!CanSubstitute) return;
 
-        var playerOff = FindPlayer(playerOffId);
-        if (playerOff is null) return;
+        var tapped = OnPitch.FirstOrDefault(p => p.PlayerId == playerId);
+        if (tapped is null || FindPlayer(playerId) is not { } player) return;
 
-        var playerOnId = await DialogService.PromptValueAsync<LiveSubDialog, int>(
+        var choice = await DialogService.PromptAsync<LiveSubDialog, LiveSubChoice>(
             L["Substitution"],
             p =>
             {
-                p.Add(x => x.PlayerOff, playerOff);
+                p.Add(x => x.Player, player);
+                p.Add(x => x.Position, tapped.Position);
                 p.Add(x => x.Bench, SubCandidates);
+                p.Add(x => x.OnPitch, SwapCandidates(playerId));
             });
-        if (playerOnId is null) return;
+        if (choice is null) return;
 
-        var sub = await SubService.SubstituteAsync(GameId, playerOffId, playerOnId.Value);
+        if (choice.IsPositionSwap)
+        {
+            var swap = await SubService.SwapPositionsAsync(GameId, playerId, choice.PlayerId);
+            Snackbar.Report(L, swap, L["Positions swapped"]);
+            return;
+        }
+
+        var sub = await SubService.SubstituteAsync(GameId, playerId, choice.PlayerId);
         Snackbar.Report(L, sub, L["Substitution made"]);
     }
+
+    /// <summary>
+    /// Who the tapped player can trade positions with: the rest of the pitch, in slot order so the
+    /// list reads like a team sheet rather than in whatever order the lineup rows were stored.
+    /// </summary>
+    private List<PitchPlayer> SwapCandidates(int playerId) =>
+        [.. OnPitch
+            .Where(p => p.PlayerId != playerId)
+            .OrderBy(p => p.SlotIndex)
+            .Select(p => (Entry: p, Player: FindPlayer(p.PlayerId)))
+            .Where(x => x.Player is not null)
+            .Select(x => new PitchPlayer(x.Player!, x.Entry.Position))];
+
+    /// <summary>
+    /// A scoreline for the timeline, in the same order as the scoreboard above it — the home side
+    /// on the left, whoever that is. <see cref="MatchScore"/> itself is always ours first.
+    /// </summary>
+    private string ScoreText(MatchScore score) => GameData?.IsHomeGame == false
+        ? $"{score.Them}–{score.Us}"
+        : $"{score.Us}–{score.Them}";
 
     private Player? FindPlayer(int playerId) => AllPlayers.FirstOrDefault(p => p.Id == playerId);
 

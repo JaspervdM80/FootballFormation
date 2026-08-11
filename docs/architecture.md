@@ -52,7 +52,10 @@ Reporting/
   PlayerStatsReport.cs    — Per-player aggregates (PlayerStats, PositionStat, PlayerGameStat)
   PositionFitHelper.cs    — 5-tier position fit: Preferred, NaturalFit, Alternative, Compatible, OutOfPosition
   MatchClockReport.cs     — Derives the live clock and period state from the stored anchor + banked total
-  PlannedChangesReport.cs — What the next period changes versus the one on the pitch
+  PlannedChangesReport.cs — What the next period changes versus the one on the pitch (rendered by
+                           UI/Components/PlannedChangesList, shared by the live card and its dialog)
+  ScoreProgressionReport.cs — The score after each goal (MatchScore), for the live timeline —
+                           counted forwards because that list runs newest first
   HealthReport.cs         — Whether a booted container is actually serving: the /health payload and
                            the rule that pending migrations mean unhealthy. Pure, so it is tested
 Services/
@@ -68,13 +71,16 @@ Services/
                             renders, GetTodaysMatchAsync for the home-page banner (in-progress
                             first, else today's fixture, upcoming or finished). Writing to one is
                             the three services below, split by what happens on the touchline
-  MatchClockService.cs    — The clock and the run of play: kick-off, pause/resume, ending a period,
-                            starting or rolling into the next one, the final whistle. The
-                            arithmetic a season's statistics are built from
+  MatchClockService.cs    — The clock and the run of play: kick-off, ending a period, starting or
+                            rolling into the next one, the final whistle. The arithmetic a
+                            season's statistics are built from. There is no pause — the clock
+                            runs from kick-off to the whistle and only a period boundary stops it
   MatchGoalService.cs     — Goals logged live: storage delegated to GameService, the live minute
                             and the recomputed scoreline added here
   MatchSubstitutionService.cs — The slot swap and the record of it, in one SaveChanges, plus undoing
-                            the most recent one of a period
+                            the most recent one of a period, plus SwapPositionsAsync — two players
+                            already on trading slots, which writes no substitution row (so the undo
+                            reads the slot back off the pitch, not off the row)
   LiveMatchOperation.cs   — The write shape those three share: RunAdminAsync plus, on success, one
                             LiveMatchNotifier call naming the game that changed
   LiveMatchQueries.cs     — The tracked load they all start from (the game with its periods, via
@@ -104,7 +110,10 @@ Pages/
   MatchResult.razor(.cs)(.css)— /games/{id}/result — Score and goal entry
   LiveMatch.razor(.cs)(.css)  — /games/{id}/live — Sideline screen: clock, subs, goals; admin drives, others watch
   LiveGoalDialog.razor(.cs)   — Dialog: scorer, assister, own-goal toggle
-  LiveSubDialog.razor(.cs)(.css) — Dialog: pick the replacement for a player tapped on the pitch
+  LiveSubDialog.razor(.cs)(.css) — Dialog: for a player tapped on the pitch, either a replacement
+                                from the bench or a position swap with someone already on
+  LiveNextLineupDialog.razor(.cs)(.css) — Dialog: what rolling on to the next line-up will change,
+                                asked before it is done — advancing a period has no undo
   SeasonDialog.razor(.cs)     — Dialog: season name, start date, end date
   Settings.razor(.cs)         — /settings — Match preferences, own password, season management
   Users.razor(.cs)            — /users — Accounts: add, edit, reset password, delete (Admin only)
@@ -117,6 +126,8 @@ Components/
   Pitch.razor(.cs)(.css)            — The pitch. Read-only by default; Draggable for the builder,
                                       OnPlayerClicked for the live screen, Size for chip scale
   PlayerLabel.razor                 — A player as one line of text: "#7 Jasper"
+  PlannedChangesList.razor(.css)    — What the next line-up does, as a team sheet; shared by the live
+                                      screen's card and the dialog that asks before applying it
   CancellableComponent.cs           — Base for any component that reads: owns the CancellationToken its
                                       service reads take, tripped when the component is disposed
   SeasonAwarePage.cs                — Base for pages that follow the season picker (a CancellableComponent)

@@ -107,14 +107,50 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   the score, clock and state from its first load while newly inserted goals appear alongside them —
   a live screen stuck at the old scoreline. Identity resolution keeps shared `Player` rows single.
 - Controls are context-sensitive, and **only half time is a break**. A quarters game is still two
-  halves: Q1→Q2 and Q3→Q4 offer "Start Q2"/"Start Q4", which call `AdvancePeriodAsync` and roll
-  the lineup over *without stopping the clock*. Only after the first half or Q2 does the screen
-  offer "Half time" (`EndPeriodAsync`, which does stop it) followed by "Start Q3". The rule lives
-  in `PeriodTypeExtensions.IsFollowedByBreak`, not in the page.
+  halves: mid-half the screen offers **"Next line-up"**, which calls `AdvancePeriodAsync` and rolls
+  the *next quarter's planned lineup* onto the pitch without stopping the clock. It **asks first**
+  (`LiveNextLineupDialog`), listing the swaps and moves it is about to make: advancing a period has
+  no undo — no timeline event records it — and the changes used to be readable only from a card
+  further down the screen. Only after the first
+  half or Q2 does the screen offer "Half time" (`EndPeriodAsync`, which does stop it) followed by
+  "Start 2nd half". The rule lives in `PeriodTypeExtensions.IsFollowedByBreak`, not in the page.
+- **There is no pause.** The clock runs from kick-off until the period is whistled off, and only
+  a period boundary stops it — `PauseClockAsync`/`ResumeClockAsync` are gone from
+  `MatchClockService` too, not just from the screen. A youth match is not paused at the touchline,
+  and a clock a stray tap can stop is a clock the season's minutes cannot be trusted from. So a
+  live period always has a running clock, which is why the status chip's third state is the break
+  between two periods (`.live-status-break`) rather than a paused one.
+- **The controls are a two-column grid, laid out in `app.css`.** How many buttons the panel holds
+  depends on where the match is, so equal columns keep them the same size whichever set is showing,
+  and `:last-child:nth-child(odd)` spans the odd one out across the row. It has to be `app.css`:
+  the children are `MudButton`s, and the old scoped `.live-control-row > *` rule never matched
+  them — the classic CSS-isolation miss, and why they used not to fill the panel.
 - The pitch shows the live period; at the break and after full time the last one played, and before
-  kick-off the first — so it is never blank when a lineup exists.
+  kick-off the first — so it is never blank when a lineup exists. A **"Show subs" checkbox** folds
+  the bench strip under it away; the state is per circuit and deliberately not stored.
+- **Tapping a player offers two changes, one dropdown each** (`LiveSubDialog`): someone comes on for
+  them (`SubstituteAsync`), or they trade positions with a team-mate who stays on
+  (`SwapPositionsAsync`). Choosing in either list clears the other, so the single action button
+  always has exactly one change to make and says which — "Make substitution" or "Swap positions".
+  A position swap writes no `GameSubstitution`: nobody's minutes changed, and a row there would say
+  they did. The price is the *split by position* — `GameMinutesReport` reads the lineup as it finally
+  stands, so after a swap the whole period is credited to the position each player moved **into**
+  (pinned by `A_position_change_with_no_substitution_credits_the_position_it_ended_in`). Totals are
+  unaffected. Undoing a substitution therefore follows the slot rather than the recorded one: a swap
+  can have moved it since, and handing the recorded slot back would seat two players in it.
+  Each select's `Placeholder` is set **only** when its list is empty — MudSelect shows a
+  placeholder whenever nothing is chosen, so a standing "nobody is on the bench" greets a full bench.
+- **Every goal on the timeline carries the score it made it** (`ScoreProgressionReport`), in the
+  scoreboard's order — home side first. It is counted forwards over the whole match and looked up
+  by goal id, because the timeline itself runs newest first and a total accumulated while rendering
+  would count down.
 - Finishing asks for confirmation via `DialogPrompts.ConfirmAsync` (not `ConfirmDeleteAsync`,
-  whose button says "Delete").
+  whose button says "Delete"). "Next line-up" needs a list rather than a sentence, so it has its own
+  dialog and goes through `PromptValueAsync<…, bool>` instead.
+- **`PlannedChangesList` is the one rendering of what the next line-up does.** The card and the
+  dialog show the same thing, so the markup and its `.planned-*` styling live in the component —
+  scoped CSS follows the file that owns the elements, so moving the markup and leaving the CSS
+  behind would have left both callers unstyled.
 - **Minutes played is admin-only** (`LiveMinutesReport`), and shows exact time on the pitch rather
   than the `periodsPlaying × periodDuration` estimate the planning screens use. It is a computed
   property, so the running player's total climbs with the clock tick.

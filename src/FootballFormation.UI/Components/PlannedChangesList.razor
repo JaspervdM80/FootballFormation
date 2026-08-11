@@ -1,0 +1,40 @@
+@*
+    What the next line-up does, as a team sheet: who is swapped, and underneath, who only moves.
+
+    Two places show exactly this — the live screen's "Changes at half-way" card and the dialog that
+    asks before the same changes are carried out — so the markup and its styling live here once.
+*@
+@inject IStringLocalizer<Strings> L
+
+<div class="planned">
+    @foreach (var change in Changes.Substitutions)
+    {
+        <div class="planned-row">
+            <span class="planned-pos">@change.Position.ToString()</span>
+            <span class="planned-off">@(change.PlayerOff?.ShortName ?? "—")</span>
+            @* Plain text, not a MudIcon: scoped CSS never reaches a child component's root element. *@
+            <span class="planned-arrow">→</span>
+            <span class="planned-on">@(change.PlayerOn?.ShortName ?? "—")</span>
+        </div>
+    }
+</div>
+
+@* Secondary: nobody leaves the pitch, so this never competes with the swaps above. *@
+@if (Changes.Moves.Count > 0)
+{
+    <div class="planned-moves">
+        <span class="planned-moves-label">@L["Position changes"]</span>
+        @foreach (var move in Changes.Moves)
+        {
+            <span class="planned-move">
+                @move.Player.ShortName
+                <span class="planned-move-pos">@move.From.ToString() → @move.To.ToString()</span>
+            </span>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public PlannedChanges Changes { get; set; } = PlannedChanges.None;
+}
