@@ -233,7 +233,10 @@ is the shape SQLite rejects, and neither leg is nullable, so deleting a player w
 fails loudly instead of silently rewriting match history.
 
 Only the **most recent** substitution of a period can be undone (`RemoveSubstitutionAsync`);
-reversing an older swap would fight every change made on that slot since.
+reversing an older swap would fight every change made on that slot since. "Most recent" is
+`AtSeconds` then `Id`: a double substitution puts two rows in the same second, and the id is what
+says which of them came second. `GameMinutesReport` walks them in that same order — see
+[known_issues.md](known_issues.md#data--domain).
 
 ## GameComment
 | Property | Type | Notes |
