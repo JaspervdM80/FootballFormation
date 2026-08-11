@@ -126,15 +126,12 @@ public class SeasonSquadService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var member = await db.SeasonSquadMembers
-                .Include(m => m.Player)
-                .FirstOrDefaultAsync(m => m.SeasonId == seasonId && m.PlayerId == playerId, cancellationToken);
-
+            var member = await FindMemberAsync(db, seasonId, playerId, cancellationToken);
             if (member is null)
             {
                 logger.LogWarning("Cannot remove player {PlayerId} from season {SeasonId}: not in the squad",
                     playerId, seasonId);
-                return Result.Failure("Player is not in this squad");
+                return NotInSquad();
             }
 
             var name = member.Player?.DisplayName ?? $"Player {playerId}";
@@ -171,15 +168,12 @@ public class SeasonSquadService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var member = await db.SeasonSquadMembers
-                .Include(m => m.Player)
-                .FirstOrDefaultAsync(m => m.SeasonId == seasonId && m.PlayerId == playerId, cancellationToken);
-
+            var member = await FindMemberAsync(db, seasonId, playerId, cancellationToken);
             if (member is null)
             {
                 logger.LogWarning("Cannot change status of player {PlayerId} in season {SeasonId}: not in the squad",
                     playerId, seasonId);
-                return Result.Failure("Player is not in this squad");
+                return NotInSquad();
             }
 
             member.IsGuest = isGuest;
@@ -282,4 +276,19 @@ public class SeasonSquadService(
 
             return Result.Success<Season?>(previous);
         });
+
+    /// <summary>
+    /// The load both membership writes start from: the row with its player, tracked so it can be
+    /// changed or removed. The player is there for the log lines and the failure messages, which
+    /// name a person rather than an id.
+    /// </summary>
+    private static Task<SeasonSquadMember?> FindMemberAsync(
+        AppDbContext db, int seasonId, int playerId, CancellationToken cancellationToken) =>
+        db.SeasonSquadMembers
+            .Include(m => m.Player)
+            .FirstOrDefaultAsync(m => m.SeasonId == seasonId && m.PlayerId == playerId, cancellationToken);
+
+    /// <summary>One message for someone who is not in the squad, so both writes say the same thing
+    /// — and, the message being the resource key, translate to the same thing too.</summary>
+    private static Result NotInSquad() => Result.Failure("Player is not in this squad");
 }
