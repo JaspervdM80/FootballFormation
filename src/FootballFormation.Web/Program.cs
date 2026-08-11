@@ -54,7 +54,21 @@ try
     builder.Host.UseSerilog();
 
     builder.Services.AddRazorComponents()
-        .AddInteractiveServerComponents();
+        .AddInteractiveServerComponents(options =>
+        {
+            // Switching away from the app on a phone suspends the tab and kills the circuit's
+            // WebSocket, and the state that circuit is holding is the whole live match screen. The
+            // stock three minutes is shorter than a half-time break, so someone who put their phone
+            // away came back to a rebuilt page instead of rejoining the circuit still sitting there.
+            //
+            // The retained-count cap is what keeps that affordable: reading is public, so anyone
+            // walking past the fixtures list leaves a circuit behind, and each one holds its render
+            // tree and its DI scope on a 512MB machine for the whole window. Twenty is more than
+            // this club has open at once, and dropping one early costs a reload — which is exactly
+            // what the stock three minutes was costing anyway.
+            options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(10);
+            options.DisconnectedCircuitMaxRetained = 20;
+        });
 
     builder.Services.AddMudServices();
 

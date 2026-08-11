@@ -45,7 +45,10 @@
     <script src="js/screenshot.js"></script>
     <script src="js/drag-drop-touch.js"></script>
     <script src="js/pwa.js"></script>
-    <script src="@Assets["_framework/blazor.web.js"]"></script>
+    @* autostart="false" hands the start to blazor-reconnect.js, which is the only place the
+       reconnect retry schedule can be set. Keep the two adjacent and in this order. *@
+    <script src="@Assets["_framework/blazor.web.js"]" autostart="false"></script>
+    <script src="js/blazor-reconnect.js"></script>
 </body>
 
 </html>

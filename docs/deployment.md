@@ -457,3 +457,9 @@ curl https://gjs-meiden.nl/health                       # does it serve? ("healt
 - Single 512 MB shared-CPU machine ≈ $3–4/month if it ran 24/7 — treat that as the ceiling.
 - **Do not** scale to more than one machine: SQLite lives on one volume; a second machine
   would get its own empty volume and a split-brain database.
+- The price of scale-to-zero is paid on the live match screen, and it is worth knowing before
+  someone reports it as a bug. A stopped machine has no circuits, so a phone returning to a match
+  after the machine went down cannot rejoin — it reloads, and pays the cold start plus the page's
+  own load on top. `DisconnectedCircuitRetentionPeriod` (see `Program.cs`) covers stepping away
+  from a machine that is still up; nothing on the app side covers one that isn't. `min_machines_running = 1`
+  would, at the cost of running 24/7 — a deliberate trade, not an oversight.

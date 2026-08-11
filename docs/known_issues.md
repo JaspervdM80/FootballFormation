@@ -189,6 +189,28 @@ Avoid repeating these mistakes:
   **The reload needs its own guard, or it is the next bug.** A page that serves while the circuit
   never connects — a blocked WebSocket, a dead network — would reload forever. `pwa.js` stamps
   `sessionStorage` and refuses to reload twice inside ten seconds, leaving the overlay up instead.
+- **"Reconnecting..." for ten seconds on a circuit that was never gone.** Reported from the
+  touchline: start a match, switch to another app, come back, and the overlay sits there. Nothing in
+  this app was waiting — it is Blazor's default retry schedule meeting a phone that has just woken.
+  The defaults (read them in `blazor.web.js`, they are not in the docs) are `maxRetries: 30` and
+  `attempt < 10 ? 0 : attempt < 20 ? 5000 : 30000`: **the first ten attempts have no delay between
+  them at all**. A phone coming out of suspension has no network for the first moment, so all ten
+  are spent and failed in a fraction of a second, and every real reconnect therefore starts from
+  the five-second bucket. One or two of those is the ten seconds. Blazor does cut a pending wait
+  short on `visibilitychange`, which does not help here — the retries only start once you are
+  already looking at the page. Fixed in `js/blazor-reconnect.js` (one immediate attempt, then one a
+  second), which is why `App.razor` loads `blazor.web.js` with `autostart="false"`: the schedule
+  cannot be set any other way.
+- **Past the retention period there is no reconnect at all — it is a reload.** `ConnectCircuit`
+  returns false for a circuit the server has already evicted, and with no persisted circuit state
+  configured the client goes straight to the rejected state, i.e. a fresh page. The window is
+  `CircuitOptions.DisconnectedCircuitRetentionPeriod`, three minutes by default and ten here, which
+  is the difference between rejoining a running match screen and reloading it. Two things fall
+  outside it whatever the setting, and both always cost a reload: a machine Fly has scaled to zero
+  (a restarted process has no circuits), and a deploy. Retention is bounded by
+  `DisconnectedCircuitMaxRetained` as well as by time — reading is public here, so every passer-by
+  leaves a circuit behind, and a long window with the stock cap of 100 is a memory bill on a 512MB
+  machine.
 
 ## Localization
 - **Resource keys are English text, so watch for homographs**: "Home" was already the
