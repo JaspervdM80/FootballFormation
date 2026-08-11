@@ -145,6 +145,38 @@ public class MatchSubstitutionServiceTests : LiveMatchTestBase
     }
 
     [Fact]
+    public async Task Of_two_substitutions_in_the_same_second_only_the_later_one_can_be_undone()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        // A double substitution: two taps on the touchline, one second on the match clock.
+        Time.Advance(TimeSpan.FromMinutes(10));
+        var first = await Subs.SubstituteAsync(game.Id, players[1].Id, players[2].Id);
+        var second = await Subs.SubstituteAsync(game.Id, players[2].Id, players[3].Id);
+
+        Assert.Equal(first.Value!.AtSeconds, second.Value!.AtSeconds);
+
+        var refused = await Subs.RemoveSubstitutionAsync(first.Value.Id);
+        Assert.True(refused.IsFailure);
+        Assert.Equal("Only the most recent substitution of a period can be undone", refused.Error);
+
+        Assert.True((await Subs.RemoveSubstitutionAsync(second.Value.Id)).IsSuccess);
+
+        Db.ChangeTracker.Clear();
+        var live = await ReloadAsync(game.Id);
+        var period = await Db.GamePeriods
+            .Include(p => p.PlayerPositions)
+            .FirstAsync(p => p.Id == live.LivePeriodId);
+
+        // Undoing the earlier one would have left players[2] and players[3] both holding slot 5.
+        Assert.Equal([players[2].Id], period.PlayerPositions
+            .Where(p => p.SlotIndex == 5)
+            .Select(p => p.PlayerId));
+    }
+
+    [Fact]
     public async Task Undoing_a_substitution_that_is_not_there_is_refused()
     {
         var result = await Subs.RemoveSubstitutionAsync(999);

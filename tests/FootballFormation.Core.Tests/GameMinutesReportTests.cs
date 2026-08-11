@@ -128,6 +128,37 @@ public class GameMinutesReportTests
     }
 
     [Fact]
+    public void Two_substitutions_on_one_slot_in_the_same_second_are_walked_in_the_order_they_were_made()
+    {
+        var game = TestData.Game();
+        // Player 3 holds the slot at the end: player 2 came on for player 1, then straight back off
+        // for player 3 — a change made and corrected in the same second.
+        var period = game.AddPeriod(PeriodType.FirstHalf,
+            TestData.Starter(3, PlayerPosition.CM, 5),
+            TestData.Sub(1),
+            TestData.Sub(2));
+
+        period.StartedAtSeconds = 0;
+        period.EndedAtSeconds = 1800;
+        var first = TestData.Substitution(game, period, offId: 1, onId: 2, atSeconds: 900, position: PlayerPosition.CM, slot: 5);
+        var then = TestData.Substitution(game, period, offId: 2, onId: 3, atSeconds: 900, position: PlayerPosition.CM, slot: 5);
+
+        // RecordedAt cannot separate them: two changes entered in one instant share it, and rows
+        // written before the column existed all default to 0001-01-01. Only the id is left.
+        first.RecordedAt = then.RecordedAt = default;
+
+        // EF hands the rows over in no promised order, so only the tie-break settles the chain.
+        game.Substitutions.Reverse();
+
+        var minutes = GameMinutesReport.Build(game);
+
+        Assert.Equal(900, minutes.SecondsFor(1));    // started, came off on 15'
+        Assert.Equal(0, minutes.SecondsFor(2));      // on and off again in the same second
+        Assert.Equal(900, minutes.SecondsFor(3));    // played the second half of the period
+        Assert.Contains(2, minutes.PlayerIds);
+    }
+
+    [Fact]
     public void A_running_period_is_closed_off_by_the_current_clock()
     {
         var game = TestData.Game();

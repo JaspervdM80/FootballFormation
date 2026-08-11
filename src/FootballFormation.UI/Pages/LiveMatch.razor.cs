@@ -14,8 +14,12 @@ namespace FootballFormation.UI.Pages;
 /// <summary>
 /// One entry on the match timeline — a goal or a substitution — so both can be listed together.
 /// <paramref name="RecordedAt"/> orders events that share a minute, which the minute alone cannot.
+/// <paramref name="Id"/> settles the rest: two entries of the same kind entered in one instant
+/// share a <paramref name="RecordedAt"/>, and rows older than that column all read
+/// <c>0001-01-01</c>. Across the two kinds the ids come from different tables, so a tie there is
+/// arbitrary — but it is stable, which is what the list needs.
 /// </summary>
-public record MatchEvent(int Minute, DateTime RecordedAt, bool IsGoal, GameGoal? Goal, GameSubstitution? Substitution);
+public record MatchEvent(int Minute, DateTime RecordedAt, int Id, bool IsGoal, GameGoal? Goal, GameSubstitution? Substitution);
 
 /// <summary>
 /// The sideline screen. An admin runs the clock and records what happens; everyone else sees the
@@ -223,14 +227,17 @@ public partial class LiveMatch
         {
             if (GameData is null) return [];
 
-            var goals = GameData.Goals.Select(g => new MatchEvent(g.Minute ?? 0, g.RecordedAt, true, g, null));
-            var subs = GameData.Substitutions.Select(s => new MatchEvent(s.Minute, s.RecordedAt, false, null, s));
+            var goals = GameData.Goals.Select(g => new MatchEvent(g.Minute ?? 0, g.RecordedAt, g.Id, true, g, null));
+            var subs = GameData.Substitutions.Select(s => new MatchEvent(s.Minute, s.RecordedAt, s.Id, false, null, s));
 
             // A goal and the sub that followed it commonly share a minute; the entry time keeps
             // them in the order they actually happened rather than the order they were queried.
+            // The id then settles a double substitution, so the entry this list shows on top is
+            // the one MatchSubstitutionService.RemoveSubstitutionAsync will let an admin undo.
             return [.. goals.Concat(subs)
                 .OrderByDescending(e => e.Minute)
-                .ThenByDescending(e => e.RecordedAt)];
+                .ThenByDescending(e => e.RecordedAt)
+                .ThenByDescending(e => e.Id)];
         }
     }
 

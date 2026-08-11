@@ -118,8 +118,14 @@ public class MatchSubstitutionService(
             var sub = await db.GameSubstitutions.FindAsync([subId], cancellationToken);
             if (sub is null) return Result.Failure<int>("Substitution not found");
 
+            // A double substitution is two taps in a row, and AtSeconds is whole seconds, so the
+            // two changes routinely share one. The id settles which came second; without it both
+            // pass for "most recent" and undoing the earlier leaves two players in the same slot.
             var isNewest = !await db.GameSubstitutions
-                .AnyAsync(s => s.GamePeriodId == sub.GamePeriodId && s.AtSeconds > sub.AtSeconds, cancellationToken);
+                .AnyAsync(s => s.GamePeriodId == sub.GamePeriodId
+                               && (s.AtSeconds > sub.AtSeconds
+                                   || (s.AtSeconds == sub.AtSeconds && s.Id > sub.Id)),
+                          cancellationToken);
             if (!isNewest)
                 return Result.Failure<int>("Only the most recent substitution of a period can be undone");
 
