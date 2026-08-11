@@ -96,6 +96,88 @@ public class MatchSubstitutionServiceTests : LiveMatchTestBase
     }
 
     [Fact]
+    public async Task Two_players_on_the_pitch_trade_their_slots_and_their_positions()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        Time.Advance(TimeSpan.FromMinutes(12));
+        var result = await Subs.SwapPositionsAsync(game.Id, players[0].Id, players[1].Id);
+
+        Assert.True(result.IsSuccess);
+
+        var live = await ReloadAsync(game.Id);
+        var period = await Db.GamePeriods
+            .Include(p => p.PlayerPositions)
+            .FirstAsync(p => p.Id == live.LivePeriodId);
+
+        var keeper = period.PlayerPositions.Single(p => p.PlayerId == players[0].Id);
+        var midfielder = period.PlayerPositions.Single(p => p.PlayerId == players[1].Id);
+
+        Assert.Equal(5, keeper.SlotIndex);
+        Assert.Equal(PlayerPosition.CM, keeper.Position);
+        Assert.Equal(0, midfielder.SlotIndex);
+        Assert.Equal(PlayerPosition.GK, midfielder.Position);
+        Assert.False(keeper.IsSubstitute);
+        Assert.False(midfielder.IsSubstitute);
+    }
+
+    [Fact]
+    public async Task A_position_swap_is_not_a_substitution_and_is_never_written_down_as_one()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        Assert.True((await Subs.SwapPositionsAsync(game.Id, players[0].Id, players[1].Id)).IsSuccess);
+
+        // Nobody left the pitch, so nobody's minutes changed — and a row here would say they did.
+        Assert.Empty(await Db.GameSubstitutions.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Only_two_players_who_are_both_on_can_swap_positions()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        // players[2] is on the bench; bringing them on is a substitution, not a swap.
+        var result = await Subs.SwapPositionsAsync(game.Id, players[1].Id, players[2].Id);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Both players have to be on the pitch to swap positions", result.Error);
+    }
+
+    [Fact]
+    public async Task A_player_cannot_swap_positions_with_themselves()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        var result = await Subs.SwapPositionsAsync(game.Id, players[1].Id, players[1].Id);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("A player cannot swap positions with themselves", result.Error);
+    }
+
+    [Fact]
+    public async Task A_position_swap_needs_a_period_to_be_running()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        await MatchClock.EndPeriodAsync(game.Id);
+        var players = await PlayersAsync();
+
+        var result = await Subs.SwapPositionsAsync(game.Id, players[0].Id, players[1].Id);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("No period is currently being played", result.Error);
+    }
+
+    [Fact]
     public async Task Undoing_the_most_recent_substitution_restores_the_slot()
     {
         var game = await SeedGameAsync();
@@ -122,6 +204,38 @@ public class MatchSubstitutionServiceTests : LiveMatchTestBase
         Assert.True(benched.IsSubstitute);
         Assert.Null(benched.SlotIndex);
         Assert.Empty(await Db.GameSubstitutions.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Undoing_a_substitution_follows_the_slot_a_later_position_swap_moved_it_to()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        // players[1] holds slot 5, players[0] slot 0. Bring players[2] on for players[1], then let
+        // them swap with the keeper — so the slot the substitution recorded is somebody else's now.
+        Time.Advance(TimeSpan.FromMinutes(10));
+        var sub = await Subs.SubstituteAsync(game.Id, players[1].Id, players[2].Id);
+        Assert.True((await Subs.SwapPositionsAsync(game.Id, players[2].Id, players[0].Id)).IsSuccess);
+
+        Assert.True((await Subs.RemoveSubstitutionAsync(sub.Value!.Id)).IsSuccess);
+
+        Db.ChangeTracker.Clear();
+        var live = await ReloadAsync(game.Id);
+        var period = await Db.GamePeriods
+            .Include(p => p.PlayerPositions)
+            .FirstAsync(p => p.Id == live.LivePeriodId);
+
+        var starters = period.PlayerPositions.Where(p => !p.IsSubstitute).ToList();
+
+        // Handing back the recorded slot would have put players[1] into slot 5 alongside players[0]
+        // and left slot 0 empty. They take over where the player coming off was actually standing.
+        Assert.Equal(starters.Count, starters.Select(p => p.SlotIndex).Distinct().Count());
+        Assert.Equal(0, starters.Single(p => p.PlayerId == players[1].Id).SlotIndex);
+        Assert.Equal(PlayerPosition.GK, starters.Single(p => p.PlayerId == players[1].Id).Position);
+        Assert.Equal(5, starters.Single(p => p.PlayerId == players[0].Id).SlotIndex);
+        Assert.True(period.PlayerPositions.Single(p => p.PlayerId == players[2].Id).IsSubstitute);
     }
 
     [Fact]

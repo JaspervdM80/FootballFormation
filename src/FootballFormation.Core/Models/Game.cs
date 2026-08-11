@@ -42,8 +42,8 @@ public class Game
     public MatchState MatchState { get; set; } = MatchState.NotStarted;
 
     /// <summary>
-    /// UTC instant the match clock was last started or resumed; null whenever the clock is not
-    /// running. The clock is stored as an anchor rather than a ticking value so every viewer
+    /// UTC instant the match clock was last started — at kick-off, or when a period took over from
+    /// a break; null whenever the clock is not running. The clock is stored as an anchor rather than a ticking value so every viewer
     /// derives the same elapsed time without the server having to push each second.
     /// </summary>
     public DateTime? ClockRunningSince { get; set; }
@@ -164,7 +164,7 @@ public class Game
 
     /// <summary>
     /// The match clock in seconds at <paramref name="utcNow"/>. Callers that only need a settled
-    /// value (a paused clock, a finished match) can pass any instant.
+    /// value (a stopped clock, a finished match) can pass any instant.
     /// </summary>
     public int ElapsedSecondsAt(DateTime utcNow) => ClockAccumulatedSeconds +
         (ClockRunningSince is null ? 0 : Math.Max(0, (int)(utcNow - ClockRunningSince.Value).TotalSeconds));
@@ -174,11 +174,11 @@ public class Game
     /// so it is excluded here and included in <see cref="CountTheirGoals"/>.
     /// </summary>
     public static int CountOurGoals(IEnumerable<GameGoal> goals) =>
-        goals.Count(g => !g.IsOwnGoal && !g.IsOpponentGoal);
+        goals.Count(g => g.CountsForUs);
 
     /// <summary>Their goals: everything the opponent scored, plus our own goals.</summary>
     public static int CountTheirGoals(IEnumerable<GameGoal> goals) =>
-        goals.Count(g => g.IsOwnGoal || g.IsOpponentGoal);
+        goals.Count(g => !g.CountsForUs);
 }
 
 /// <summary>

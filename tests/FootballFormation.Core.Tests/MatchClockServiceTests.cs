@@ -67,60 +67,18 @@ public class MatchClockServiceTests : LiveMatchTestBase
     // ---- The clock -------------------------------------------------------------------------
 
     [Fact]
-    public async Task Pausing_banks_the_time_run_so_far_and_stops_the_anchor()
+    public async Task The_clock_runs_from_kick_off_until_the_period_is_whistled_off()
     {
         var game = await SeedGameAsync();
         await MatchClock.StartMatchAsync(game.Id);
 
+        // There is nothing that stops it in between: no pause, no resume. Whatever the touchline
+        // does with the screen, the seconds the season's minutes are built from keep counting.
         Time.Advance(TimeSpan.FromMinutes(7));
-        await MatchClock.PauseClockAsync(game.Id);
 
-        var paused = await ReloadAsync(game.Id);
-        Assert.Equal(420, paused.ClockAccumulatedSeconds);
-        Assert.False(paused.IsClockRunning);
-    }
-
-    [Fact]
-    public async Task Time_spent_paused_is_not_counted()
-    {
-        var game = await SeedGameAsync();
-        await MatchClock.StartMatchAsync(game.Id);
-
-        Time.Advance(TimeSpan.FromMinutes(7));
-        await MatchClock.PauseClockAsync(game.Id);
-
-        Time.Advance(TimeSpan.FromMinutes(30));      // a long injury stoppage
-        await MatchClock.ResumeClockAsync(game.Id);
-
-        Time.Advance(TimeSpan.FromMinutes(3));
-
-        var resumed = await ReloadAsync(game.Id);
-        Assert.Equal(600, resumed.ElapsedSecondsAt(Time.GetUtcNow().UtcDateTime));
-    }
-
-    [Fact]
-    public async Task Pausing_a_stopped_clock_is_refused()
-    {
-        var game = await SeedGameAsync();
-        await MatchClock.StartMatchAsync(game.Id);
-        await MatchClock.PauseClockAsync(game.Id);
-
-        var result = await MatchClock.PauseClockAsync(game.Id);
-
-        Assert.True(result.IsFailure);
-        Assert.Equal("The clock is not running", result.Error);
-    }
-
-    [Fact]
-    public async Task Resuming_a_running_clock_is_refused()
-    {
-        var game = await SeedGameAsync();
-        await MatchClock.StartMatchAsync(game.Id);
-
-        var result = await MatchClock.ResumeClockAsync(game.Id);
-
-        Assert.True(result.IsFailure);
-        Assert.Equal("The clock is already running", result.Error);
+        var running = await ReloadAsync(game.Id);
+        Assert.True(running.IsClockRunning);
+        Assert.Equal(420, running.ElapsedSecondsAt(Time.GetUtcNow().UtcDateTime));
     }
 
     // ---- Periods ---------------------------------------------------------------------------
@@ -191,6 +149,35 @@ public class MatchClockServiceTests : LiveMatchTestBase
         Assert.Equal(900, periods[1].StartedAtSeconds);   // both ends read the same instant
         Assert.Equal(periods[1].Id, advanced.LivePeriodId);
         Assert.True(advanced.IsClockRunning);
+    }
+
+    [Fact]
+    public async Task Advancing_restarts_a_clock_that_an_older_build_left_stopped()
+    {
+        // Nothing here can stop a live period's clock any more, but a row written while there was
+        // a pause button can be in exactly that state. Rolling on to the next line-up while the
+        // anchor stayed null would bank no minutes for the rest of the half.
+        var game = await SeedGameAsync(GameSplitType.Quarters);
+        await MatchClock.StartMatchAsync(game.Id);
+
+        Time.Advance(TimeSpan.FromMinutes(15));
+
+        // Through ReloadAsync, which clears the change tracker first: the copy this context has
+        // held since the seed still reads ClockRunningSince = null, so assigning null to *that*
+        // is not a change EF would detect, and the anchor the service wrote would survive.
+        var paused = await ReloadAsync(game.Id);
+        paused.ClockAccumulatedSeconds = 900;
+        paused.ClockRunningSince = null;
+        await Db.SaveChangesAsync();
+
+        Assert.True((await MatchClock.AdvancePeriodAsync(game.Id)).IsSuccess);
+
+        var advanced = await ReloadAsync(game.Id);
+        Assert.True(advanced.IsClockRunning);
+        Assert.Equal(900, advanced.Periods.OrderBy(p => p.PeriodType).ToList()[1].StartedAtSeconds);
+
+        Time.Advance(TimeSpan.FromMinutes(5));
+        Assert.Equal(1200, advanced.ElapsedSecondsAt(Time.GetUtcNow().UtcDateTime));
     }
 
     [Fact]

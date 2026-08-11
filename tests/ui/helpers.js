@@ -160,7 +160,7 @@ export async function playerMenuItem(page, name, item) {
  * list is keyed on visually. Only the opponent is required; the rest of the form is already filled
  * in from the season's preferences, which is the point of those defaults.
  */
-export async function createMatch(page, { opponent, venue, matchType } = {}) {
+export async function createMatch(page, { opponent, venue, matchType, split } = {}) {
   await goto(page, '/games');
   const panel = page.locator('.mud-dialog');
   await clickFor(page.getByRole('button', { name: 'Add' }).first(), () => expect(panel).toBeVisible());
@@ -168,6 +168,9 @@ export async function createMatch(page, { opponent, venue, matchType } = {}) {
   await fillField(panel, 'Opponent', opponent);
   if (venue) await chooseOption(page, panel, 'Venue', venue);
   if (matchType) await chooseOption(page, panel, 'Match Type', matchType);
+  // "Quarters" is the split that gives a half two line-ups, and so the only one whose live screen
+  // ever offers "Next line-up".
+  if (split) await chooseOption(page, panel, 'Game Split', split);
   await submitDialog(page);
 
   await expect(gameRow(page, opponent)).toBeVisible();
