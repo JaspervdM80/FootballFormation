@@ -80,6 +80,39 @@ by driving the real app in a real browser, which is what `tests/ui` (behaviour) 
 `scripts/visual-check.sh` (rendering and touch geometry) do. The `verify-ui` skill still describes
 the manual desktop/mobile × anonymous/admin matrix for anything neither of those covers.
 
+## Coverage
+
+```bash
+scripts/coverage.sh                        # run the suite with the collector, judge this branch
+COVERAGE_BASE=HEAD~1 scripts/coverage.sh   # against another base
+COVERAGE_THRESHOLD=90 scripts/coverage.sh
+COVERAGE_SKIP_TEST=1 scripts/coverage.sh   # re-judge the last run without re-running the suite
+```
+
+`coverlet.collector` writes a Cobertura report into `artifacts/coverage/`, and `coverage.mjs`
+answers the only question a review can act on: **is the code this branch changed covered?** The
+floor is **80% of the changed lines**, and the script exits non-zero under it, so it works as a
+pipeline step as it stands.
+
+**The gate is the change, not the repository, and that is the whole design.** Core is above 96%
+line coverage, so a solution-wide 80% gate would pass with an entirely untested new service in the
+diff — the number would move by tenths. The script takes the added and rewritten lines from
+`git diff --unified=0` against the merge base (uncommitted work included), keeps the ones the
+instrumenter counted as coverable, and reports per file with the uncovered line numbers.
+
+Three things are deliberately outside the number:
+
+- **`UI` and `Web` are not measured at all.** The test project references `Core` alone, and the
+  other two have no unit tests by design — `tests/ui` and `visual-check.sh` are what cover them.
+  A change there is reported as unmeasured rather than counted as a miss.
+- **Migrations are excluded.** A `Down()` is never executed by the suite and never will be;
+  counting scaffolded code would make the gate a lottery on how much of it a change touched.
+- **`DesignTimeDbContextFactory`** exists for `dotnet ef` and runs in no test.
+
+Branch coverage sits near 75% and is reported for information, not gated — the line floor is what
+the `code-reviewer` agent enforces. And a floor is not a target: 100% of a change whose only test
+asserts it doesn't throw is worth less than 85% with the rule pinned.
+
 ## UI tests (`tests/ui`)
 
 ```bash

@@ -20,6 +20,7 @@ dotnet test                    # 374 tests, xUnit v3, real SQLite
 cd src/FootballFormation.Web && dotnet run     # http://localhost:5228
 cd tests/ui && npm test        # 34 Playwright tests in a browser, ~1 min (npm install first)
 scripts/visual-check.sh        # screenshots every page, then measures every touch target
+scripts/coverage.sh            # coverage of the lines this branch changed, 80% floor
 ```
 
 `Directory.Build.props` sets `TreatWarningsAsErrors` in **Release only**. A Debug build that looks
@@ -201,9 +202,11 @@ admin matrix; it is not part of this repository.)
 - Before opening a pull request, run the **`code-reviewer`** agent
   (`.claude/agents/code-reviewer.md`) over the change. It reviews comment hygiene — redundant and
   over-explaining comments out, rationale that changes a future decision kept — plus DRY and SOLID
-  as this codebase applies them, and it knows the deliberate exceptions (no interfaces for
-  services, the live-match split, repetition in test arrangement). It reports by default and only
-  edits when asked to apply its findings.
+  as this codebase applies them, the traps in `known_issues.md`, the circuit-lifecycle and
+  `Result` call-site rules, the resx keys a new string needs, and coverage of the changed lines
+  (`scripts/coverage.sh`, 80% floor). It knows the deliberate exceptions — no interfaces for
+  services, the live-match split, no component tests, repetition in test arrangement — so it does
+  not argue with them. It reports by default and only edits when asked to apply its findings.
 
 ## Environment notes
 
