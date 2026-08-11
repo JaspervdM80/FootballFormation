@@ -31,7 +31,8 @@ const SELECTORS = {
   'the formation builder': ['pitch', 'pitch-empty', 'pitch-player', 'draggable-player'],
   'the playing-time table': ['playtime-table', 'pt-total', 'playtime-note'],
   'the live screen': ['live-lineup', 'live-controls', 'live-score-value', 'live-score-away',
-                      'live-event', 'live-event-score', 'live-bench', 'live-bench-toggle'],
+                      'live-event', 'live-event-score', 'live-bench', 'live-bench-toggle',
+                      'planned-row'],
   'the phone layout': ['dialog-sheet', 'stacked-table', 'topbar-nav'],
   'the squad': ['badge-archived'],
 };

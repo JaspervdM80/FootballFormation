@@ -108,8 +108,10 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   a live screen stuck at the old scoreline. Identity resolution keeps shared `Player` rows single.
 - Controls are context-sensitive, and **only half time is a break**. A quarters game is still two
   halves: mid-half the screen offers **"Next line-up"**, which calls `AdvancePeriodAsync` and rolls
-  the *next quarter's planned lineup* onto the pitch without stopping the clock — the changes it is
-  about to make are the ones listed in the "Changes at half-way" card above it. Only after the first
+  the *next quarter's planned lineup* onto the pitch without stopping the clock. It **asks first**
+  (`LiveNextLineupDialog`), listing the swaps and moves it is about to make: advancing a period has
+  no undo — no timeline event records it — and the changes used to be readable only from a card
+  further down the screen. Only after the first
   half or Q2 does the screen offer "Half time" (`EndPeriodAsync`, which does stop it) followed by
   "Start 2nd half". The rule lives in `PeriodTypeExtensions.IsFollowedByBreak`, not in the page.
 - **There is no pause.** The clock runs from kick-off until the period is whistled off, and only
@@ -138,7 +140,12 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   by goal id, because the timeline itself runs newest first and a total accumulated while rendering
   would count down.
 - Finishing asks for confirmation via `DialogPrompts.ConfirmAsync` (not `ConfirmDeleteAsync`,
-  whose button says "Delete").
+  whose button says "Delete"). "Next line-up" needs a list rather than a sentence, so it has its own
+  dialog and goes through `PromptValueAsync<…, bool>` instead.
+- **`PlannedChangesList` is the one rendering of what the next line-up does.** The card and the
+  dialog show the same thing, so the markup and its `.planned-*` styling live in the component —
+  scoped CSS follows the file that owns the elements, so moving the markup and leaving the CSS
+  behind would have left both callers unstyled.
 - **Minutes played is admin-only** (`LiveMinutesReport`), and shows exact time on the pitch rather
   than the `periodsPlaying × periodDuration` estimate the planning screens use. It is a computed
   property, so the running player's total climbs with the clock tick.

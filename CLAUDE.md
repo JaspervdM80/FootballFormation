@@ -18,7 +18,7 @@ as in the markup. The UI is Dutch by default with English available.
 dotnet build -c Release        # what CI builds — warnings are errors here (see below)
 dotnet test                    # 386 tests, xUnit v3, real SQLite
 cd src/FootballFormation.Web && dotnet run     # http://localhost:5228
-cd tests/ui && npm test        # 36 Playwright tests in a browser, ~1 min (npm install first)
+cd tests/ui && npm test        # 37 Playwright tests in a browser, ~1 min (npm install first)
 scripts/visual-check.sh        # screenshots every page, then measures every touch target
 scripts/coverage.sh            # coverage of the lines this branch changed, 80% floor
 ```
@@ -166,7 +166,7 @@ Test names are sentences:
 There are **no component tests** (no bUnit). The UI is checked by driving the real app in a real
 browser, in two places, both against a throwaway database:
 
-- **`cd tests/ui && npm test`** — Playwright, ~36 tests, about a minute. Runs on every pull request
+- **`cd tests/ui && npm test`** — Playwright, ~37 tests, about a minute. Runs on every pull request
   as a job in `ci.yml`, advisory rather than the merge gate. Behaviour: the public/admin
   split, the squad and match dialogs, the whole match-day journey from dragging a lineup to blowing
   the final whistle, both languages, and the phone layout. Read

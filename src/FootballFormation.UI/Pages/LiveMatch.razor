@@ -174,33 +174,7 @@
         {
             <MudPaper Class="pa-4" Elevation="2" Style="border-radius: 16px;">
                 <div class="card-label">@L["Changes at half-way"]</div>
-                <div class="live-planned">
-                    @foreach (var change in planned.Substitutions)
-                    {
-                        <div class="live-planned-row">
-                            <span class="live-planned-pos">@change.Position.ToString()</span>
-                            <span class="live-planned-off">@(change.PlayerOff?.ShortName ?? "—")</span>
-                            @* Plain text, not a MudIcon: scoped CSS never reaches a child component's root element. *@
-                            <span class="live-planned-arrow">→</span>
-                            <span class="live-planned-on">@(change.PlayerOn?.ShortName ?? "—")</span>
-                        </div>
-                    }
-                </div>
-
-                @* Secondary: nobody leaves the pitch, so this never competes with the swaps above. *@
-                @if (planned.Moves.Count > 0)
-                {
-                    <div class="live-planned-moves">
-                        <span class="live-planned-moves-label">@L["Position changes"]</span>
-                        @foreach (var move in planned.Moves)
-                        {
-                            <span class="live-planned-move">
-                                @move.Player.ShortName
-                                <span class="live-planned-move-pos">@move.From.ToString() → @move.To.ToString()</span>
-                            </span>
-                        }
-                    </div>
-                }
+                <PlannedChangesList Changes="planned" />
             </MudPaper>
         }
     </AuthorizeView>

@@ -325,8 +325,19 @@ public partial class LiveMatch
     private async Task StartNextPeriod() =>
         Snackbar.Report(L, await ClockService.StartNextPeriodAsync(GameId), L["Next period started"]);
 
-    private async Task AdvancePeriod() =>
+    /// <summary>
+    /// Rolls the next planned line-up onto the pitch, after showing what that changes. Confirmed
+    /// rather than immediate because it is the one control here with no way back: advancing a
+    /// period rewrites who is on, and the timeline records no such event to undo.
+    /// </summary>
+    private async Task AdvancePeriod()
+    {
+        var confirmed = await DialogService.PromptValueAsync<LiveNextLineupDialog, bool>(
+            L["Next line-up"], p => p.Add(x => x.Changes, PlannedChanges));
+        if (confirmed is null) return;
+
         Snackbar.Report(L, await ClockService.AdvancePeriodAsync(GameId), L["Next period started"]);
+    }
 
     private async Task FinishMatch()
     {
