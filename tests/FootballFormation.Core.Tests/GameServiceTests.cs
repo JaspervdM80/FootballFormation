@@ -8,8 +8,8 @@ namespace FootballFormation.Core.Tests;
 /// loaded with its whole graph attached, which makes "save this row" and "save everything reachable
 /// from this row" easy to confuse — and the difference is a season of lineups.
 /// <para>
-/// One read is pinned here too, for the same reason: a single game comes back through the include
-/// chain the live screen also uses, and a level dropped from a shared chain fails silently.
+/// One read is pinned here too: a single game loads through the same <c>GameQueries</c> shapes the
+/// live screen uses, and a level dropped from a shared chain fails silently.
 /// </para>
 /// </summary>
 public class GameServiceTests : ServiceTestBase
@@ -35,9 +35,6 @@ public class GameServiceTests : ServiceTestBase
 
         var loaded = (await Games.GetByIdAsync(game.Id)).Value!;
 
-        // GameQueries.WithNamedLineups + WithGoalsAndScorers, the same pair GetLiveAsync composes.
-        // Lose a level from either and the result page renders an empty navigation rather than
-        // failing, so the graph is asserted whole.
         Assert.Equal([PeriodType.FirstHalf, PeriodType.SecondHalf], loaded.Periods.Select(p => p.PeriodType));
         Assert.Equal(players[0].Id, loaded.Periods[0].PlayerPositions.Single().Player!.Id);
         Assert.Equal(players[1].Id, loaded.Goals.Single().Scorer!.Id);

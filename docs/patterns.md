@@ -169,21 +169,17 @@ seasons, so each game resolves *its own* season's squad.
       .FirstOrDefaultAsync(g => g.Id == gameId, cancellationToken);
   ```
 
-  Three pairs, shallow then deep over the same navigation — `WithPeriods` /
-  `WithPeriodLineups` / `WithNamedLineups`, `WithGoals` / `WithGoalsAndScorers`,
-  `WithSubstitutions` / `WithSubstitutionPlayers`. Compose one of each pair, never both: EF
-  rejects a filtered and an unfiltered include of one navigation in a single query.
-  `WithGoalsAndScorers` and `WithSubstitutionPlayers` include their collection **twice**, because
-  EF needs a fresh `Include` to hang a second `ThenInclude` off the same navigation, and the two
-  spellings must match.
+  Pairs, shallow then deep over one navigation: `WithPeriods` / `WithPeriodLineups` /
+  `WithNamedLineups`, `WithGoals` / `WithGoalsAndScorers`, `WithSubstitutions` /
+  `WithSubstitutionPlayers`. Compose one of a pair, never both — EF rejects a filtered and an
+  unfiltered include of the same navigation in one query, which is also why the deep ones include
+  their collection twice.
 
-  This is **deliberately not a repository.** The methods stay `IQueryable`, so tracking, filtering,
-  ordering and tagging remain the caller's — each of those is a decision somebody made for a
-  documented reason (`GetLiveAsync`'s `AsNoTrackingWithIdentityResolution` for the Blazor circuit,
-  `GetTodaysMatchAsync`'s `QueryTags.ComparesDatesInSql`), and none of them belongs in a shared
-  helper. There is no interface and nothing to register. Only the include chain is shared, because
-  that is the part that drifted: a six-level chain spelled out in two files fails *silently* when
-  one copy changes — the page just renders with a navigation quietly unpopulated.
+  **Deliberately not a repository:** they stay `IQueryable`, so tracking, filtering, ordering and
+  tagging remain the caller's, each being a decision made for a documented reason
+  (`AsNoTrackingWithIdentityResolution` for the Blazor circuit, `QueryTags.ComparesDatesInSql`).
+  Only the chain is shared, because that is the part that drifted — spelled out in two files it
+  fails *silently* when one copy changes.
 - **Value converters**: `List<PlayerPosition>` → comma-separated ints; `List<int>` → comma-separated values. Both need `ValueComparer` for change tracking.
 - **SavePeriodLineupAsync**: Deletes all existing positions, then inserts fresh entities with `Id = 0` to avoid UNIQUE constraint errors (never reuse tracked entity IDs). Both halves run inside one `BeginTransactionAsync` — delete-then-insert needs all of it or none, or a failed insert leaves the period with no lineup at all rather than the one it had.
 - **Auto-migration**: `db.Database.MigrateAsync()` in Program.cs startup

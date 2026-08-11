@@ -8,7 +8,7 @@ namespace FootballFormation.Core.Services;
 /// The load every touchline write starts from, described once for the three services that share
 /// it: the game with its periods, tracked so it can be written back. The clock does its arithmetic
 /// on them, a goal takes its minute from the period being played, and a substitution moves a slot
-/// inside one. The include chain itself is <see cref="GameQueries"/>'s, like every other game read.
+/// inside one.
 /// </summary>
 internal static class LiveMatchQueries
 {

@@ -37,10 +37,8 @@ Data/
   DesignTimeDbContextFactory.cs — Lets dotnet-ef build the context from Core alone, so migration
                            commands need no --startup-project
   GameQueries.cs          — The include chains a Game is loaded with, named once as IQueryable
-                           extensions and composed at the call site: WithPeriods /
-                           WithPeriodLineups / WithNamedLineups, WithGoals / WithGoalsAndScorers,
-                           WithSubstitutions / WithSubstitutionPlayers. Not a repository —
-                           tracking, filtering and tagging stay the caller's
+                           extensions and composed at the call site. Not a repository: tracking,
+                           filtering and tagging stay the caller's
   QueryTags.cs            — TagWith markers. Holds ComparesDatesInSql, the only way past the test
                            suite's DateInSqlInterceptor
 Reporting/
