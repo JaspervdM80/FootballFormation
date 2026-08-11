@@ -198,6 +198,12 @@ admin matrix; it is not part of this repository.)
   you to call out a migration or a change to what an anonymous visitor can see.
 - `.editorconfig` codifies the existing style (CRLF, 4 spaces, file-scoped namespaces, `_camelCase`
   private fields, braces on their own line). Don't let a formatter reformat files you didn't change.
+- Before opening a pull request, run the **`code-reviewer`** agent
+  (`.claude/agents/code-reviewer.md`) over the change. It reviews comment hygiene — redundant and
+  over-explaining comments out, rationale that changes a future decision kept — plus DRY and SOLID
+  as this codebase applies them, and it knows the deliberate exceptions (no interfaces for
+  services, the live-match split, repetition in test arrangement). It reports by default and only
+  edits when asked to apply its findings.
 
 ## Environment notes
 
