@@ -97,6 +97,21 @@ public class SeasonSquadServiceTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task Both_membership_writes_refuse_a_non_member_in_the_same_words()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(1);
+
+        var removed = await Squads.RemoveMemberAsync(season.Id, players[0].Id);
+        var madeGuest = await Squads.SetGuestAsync(season.Id, players[0].Id, isGuest: true);
+
+        // Same load, same refusal — and the message is the resource key, so two spellings would be
+        // one translated string and one English one.
+        Assert.True(removed.IsFailure);
+        Assert.Equal(removed.ErrorKey, madeGuest.ErrorKey);
+    }
+
+    [Fact]
     public async Task Guest_status_can_be_switched_both_ways()
     {
         var season = await SeedSeasonAsync();

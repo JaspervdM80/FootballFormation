@@ -7,9 +7,40 @@ namespace FootballFormation.Core.Tests;
 /// Writing a game without disturbing what hangs off it. The pages hand these methods a Game they
 /// loaded with its whole graph attached, which makes "save this row" and "save everything reachable
 /// from this row" easy to confuse — and the difference is a season of lineups.
+/// <para>
+/// One read is pinned here too: a single game loads through the same <c>GameQueries</c> shapes the
+/// live screen uses, and a level dropped from a shared chain fails silently.
+/// </para>
 /// </summary>
 public class GameServiceTests : ServiceTestBase
 {
+    [Fact]
+    public async Task Loading_one_game_brings_back_its_lineups_and_both_players_on_a_goal()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(3);
+        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
+
+        var period = Read().GamePeriods.First(p => p.GameId == game.Id);
+        await Games.SavePeriodLineupAsync(period.Id, [
+            TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0)
+        ]);
+        await Games.AddGoalAsync(new GameGoal
+        {
+            GameId = game.Id,
+            ScorerId = players[1].Id,
+            AssisterId = players[2].Id,
+            Minute = 12
+        });
+
+        var loaded = (await Games.GetByIdAsync(game.Id)).Value!;
+
+        Assert.Equal([PeriodType.FirstHalf, PeriodType.SecondHalf], loaded.Periods.Select(p => p.PeriodType));
+        Assert.Equal(players[0].Id, loaded.Periods[0].PlayerPositions.Single().Player!.Id);
+        Assert.Equal(players[1].Id, loaded.Goals.Single().Scorer!.Id);
+        Assert.Equal(players[2].Id, loaded.Goals.Single().Assister!.Id);
+    }
+
     [Fact]
     public async Task Editing_a_game_leaves_its_lineups_goals_and_substitutions_alone()
     {
