@@ -219,9 +219,13 @@ bench, never both and never twice.
 
 `RecordedAt` exists on both `GameGoal` and `GameSubstitution` because the minute alone cannot order
 a timeline: a goal and the substitution that followed it routinely share one, and several events in
-the opening minute is the normal case, not the edge case. The live timeline sorts by minute then by
-`RecordedAt`, both descending. Rows written before the column existed default to `0001-01-01`, so
-historic events in the same minute keep an arbitrary (but stable) order.
+the opening minute is the normal case, not the edge case. The live timeline sorts by minute, then by
+`RecordedAt`, then by `Id`, all descending. Rows written before the column existed default to
+`0001-01-01`, and two changes entered in one instant share it, so `RecordedAt` cannot settle a
+double substitution on its own — the id is the last word, and it is the same one
+`RemoveSubstitutionAsync` uses, so the entry the timeline puts on top is the entry whose Undo works.
+Ids from the two tables are not comparable with each other, so a goal and a substitution that tie on
+both minute and `RecordedAt` keep an arbitrary (but stable) order.
 
 The lineup stays the source of truth for *who stands where*; this records **when** the swap
 happened, which the period lineup alone cannot express. `MatchSubstitutionService.SubstituteAsync` writes

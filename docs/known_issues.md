@@ -49,8 +49,10 @@ Avoid repeating these mistakes:
   `s.AtSeconds > sub.AtSeconds` alone, which both rows of such a pair passed — undoing the earlier
   one restored the player it took off into a slot the later one had already given away, leaving two
   players on the same slot and a timeline naming someone who was not on the pitch. The guard now
-  tie-breaks on `s.Id`, which is monotonic, and `GameMinutesReport` orders the substitutions it
-  rewinds the same way. **`RecordedAt` is not the tie-break to reach for**: two changes entered in
+  tie-breaks on `s.Id`, which is monotonic (the column is `AUTOINCREMENT`, so a rowid is never
+  reused), and `GameMinutesReport` orders the substitutions it rewinds the same way. So does
+  `LiveMatch.Timeline` — all three have to agree, or the entry the admin sees on top is not the one
+  whose Undo is allowed. **`RecordedAt` is not the tie-break to reach for**: two changes entered in
   one instant share it, and rows written before the column existed all default to `0001-01-01`.
   Every test that predated this advanced `FakeTimeProvider` between substitutions, which is why it
   went unseen — the two that pin it now deliberately do not.
