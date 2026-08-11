@@ -61,6 +61,10 @@ test('a dropped circuit is retried every second, not every five', async ({ page 
     .filter(e => e.state === 'retrying')
     .map(e => e.secondsToNextAttempt);
 
+  // Before reading the waits, prove there are some. A reload — pwa.js's, or Blazor's own on a
+  // rejected circuit — takes `window.__reconnectEvents` with it, and `Math.max()` of nothing is
+  // -Infinity, which would sail through the assertion below with nothing measured at all.
+  expect(waits.length, 'no reconnect attempts were recorded — did the page reload?').toBeGreaterThan(0);
   expect(Math.max(...waits), `waits between attempts, in seconds: ${waits}`).toBeLessThanOrEqual(1);
 });
 

@@ -198,9 +198,16 @@ Avoid repeating these mistakes:
   are spent and failed in a fraction of a second, and every real reconnect therefore starts from
   the five-second bucket. One or two of those is the ten seconds. Blazor does cut a pending wait
   short on `visibilitychange`, which does not help here — the retries only start once you are
-  already looking at the page. Fixed in `js/blazor-reconnect.js` (one immediate attempt, then one a
-  second), which is why `App.razor` loads `blazor.web.js` with `autostart="false"`: the schedule
-  cannot be set any other way.
+  already looking at the page. Fixed by the `Blazor.start` call in `App.razor` — one immediate
+  attempt, then one a second — which is why that file loads `blazor.web.js` with
+  `autostart="false"`: the schedule cannot be set any other way. **Keep that call inline.** In a
+  file under `js/` it becomes a second thing the app's whole interactivity depends on arriving,
+  and one that fails silently, exactly like the empty `blazor.web.js` two entries down.
+  While you are in there: the retry callback is documented as receiving `maxRetries` as a second
+  argument and is called with one, so a guard reading it is dead code — the retry loop applies the
+  cap. And whatever the schedule is, keep its total near the retention period below. Blazor giving
+  up is what marks the dialog failed, and a failed dialog is `pwa.js` reloading a page whose
+  network may still be down — onto the browser's error page, where nothing retries at all.
 - **Past the retention period there is no reconnect at all — it is a reload.** `ConnectCircuit`
   returns false for a circuit the server has already evicted, and with no persisted circuit state
   configured the client goes straight to the rejected state, i.e. a fresh page. The window is
@@ -208,9 +215,11 @@ Avoid repeating these mistakes:
   is the difference between rejoining a running match screen and reloading it. Two things fall
   outside it whatever the setting, and both always cost a reload: a machine Fly has scaled to zero
   (a restarted process has no circuits), and a deploy. Retention is bounded by
-  `DisconnectedCircuitMaxRetained` as well as by time — reading is public here, so every passer-by
-  leaves a circuit behind, and a long window with the stock cap of 100 is a memory bill on a 512MB
-  machine.
+  `DisconnectedCircuitMaxRetained` as well as by time, and **lowering that to buy back the memory a
+  longer window costs is a trap**: a slot given up is a circuit evicted early, and the coach's is as
+  likely as anyone's. It stays at the stock 100. Little occupies it in practice — a tab closed
+  properly sends a disconnect beacon and gives its circuit up immediately, so only unclean
+  disconnects park at all.
 
 ## Localization
 - **Resource keys are English text, so watch for homographs**: "Home" was already the

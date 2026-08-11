@@ -61,13 +61,13 @@ try
             // stock three minutes is shorter than a half-time break, so someone who put their phone
             // away came back to a rebuilt page instead of rejoining the circuit still sitting there.
             //
-            // The retained-count cap is what keeps that affordable: reading is public, so anyone
-            // walking past the fixtures list leaves a circuit behind, and each one holds its render
-            // tree and its DI scope on a 512MB machine for the whole window. Twenty is more than
-            // this club has open at once, and dropping one early costs a reload — which is exactly
-            // what the stock three minutes was costing anyway.
+            // `DisconnectedCircuitMaxRetained` is deliberately left at its default of 100. Tripling
+            // the window triples how long each retained circuit occupies a slot, so capping the
+            // count was tempting — but a slot taken is the coach's circuit evicted, which is the
+            // one this exists for, and the count stays small on its own: only an *unclean*
+            // disconnect parks a circuit at all. A tab closed properly sends a disconnect beacon
+            // and gives its circuit up on the spot.
             options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(10);
-            options.DisconnectedCircuitMaxRetained = 20;
         });
 
     builder.Services.AddMudServices();
