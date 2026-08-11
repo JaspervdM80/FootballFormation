@@ -47,12 +47,11 @@ public abstract class ServiceTestBase : IDisposable
 
         // One notifier across the three, as in the app: they are separate services, but a
         // spectator's screen does not care which of them changed the match.
-        var notifier = new LiveMatchNotifier();
-        MatchClock = new MatchClockService(DbFactory, notifier, Time, CurrentUser,
+        MatchClock = new MatchClockService(DbFactory, Notifier, Time, CurrentUser,
             NullLogger<MatchClockService>.Instance);
-        Goals = new MatchGoalService(DbFactory, Games, notifier, Time, CurrentUser,
+        Goals = new MatchGoalService(DbFactory, Games, Notifier, Time, CurrentUser,
             NullLogger<MatchGoalService>.Instance);
-        Subs = new MatchSubstitutionService(DbFactory, notifier, Time, CurrentUser,
+        Subs = new MatchSubstitutionService(DbFactory, Notifier, Time, CurrentUser,
             NullLogger<MatchSubstitutionService>.Instance);
 
         Users = new UserService(DbFactory, CurrentUser, NullLogger<UserService>.Instance);
@@ -75,6 +74,12 @@ public abstract class ServiceTestBase : IDisposable
     protected SeasonSquadService Squads { get; }
     protected GameService Games { get; }
     protected MatchPreferencesService Preferences { get; }
+
+    /// <summary>
+    /// The one every live write announces itself on, shared by the three services below the way the
+    /// singleton is in the app. Subscribe to it to see what a spectator's screen would be told.
+    /// </summary>
+    protected LiveMatchNotifier Notifier { get; } = new();
 
     /// <summary>Reading a live match. The three below are how one is written to.</summary>
     protected LiveMatchService Live { get; }
