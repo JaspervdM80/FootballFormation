@@ -112,11 +112,12 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   about to make are the ones listed in the "Changes at half-way" card above it. Only after the first
   half or Q2 does the screen offer "Half time" (`EndPeriodAsync`, which does stop it) followed by
   "Start 2nd half". The rule lives in `PeriodTypeExtensions.IsFollowedByBreak`, not in the page.
-- **There is no pause button.** Nothing on the screen stops a running clock any more: a youth match
-  is not paused at the touchline, and the button was one more thing to hit by accident.
-  `PauseClockAsync` survives in `MatchClockService` (a match paused before it went has to be
-  resumable, which is the only thing "Resume" now appears for — a live period whose clock is
-  stopped), but nothing renders a control that calls it.
+- **There is no pause.** The clock runs from kick-off until the period is whistled off, and only
+  a period boundary stops it — `PauseClockAsync`/`ResumeClockAsync` are gone from
+  `MatchClockService` too, not just from the screen. A youth match is not paused at the touchline,
+  and a clock a stray tap can stop is a clock the season's minutes cannot be trusted from. So a
+  live period always has a running clock, which is why the status chip's third state is the break
+  between two periods (`.live-status-break`) rather than a paused one.
 - **The controls are a two-column grid, laid out in `app.css`.** How many buttons the panel holds
   depends on where the match is, so equal columns keep them the same size whichever set is showing,
   and `:last-child:nth-child(odd)` spans the odd one out across the row. It has to be `app.css`:

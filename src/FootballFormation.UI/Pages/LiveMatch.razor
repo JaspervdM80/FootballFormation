@@ -61,15 +61,6 @@
                 <div class="live-control-row">
                     @if (IsLivePeriod)
                     {
-                        @* Nothing here stops the clock any more, so this only appears for a match
-                           paused by the button that used to. See ResumeClock. *@
-                        @if (!GameData.IsClockRunning)
-                        {
-                            <MudButton Variant="Variant.Outlined" Class="btn-ghost"
-                                       StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="ResumeClock">
-                                @L["Resume"]
-                            </MudButton>
-                        }
                         @* A quarter boundary is not a stoppage, it is the planned line-up change
                            partway through the half — so it is named after what it does. *@
                         @if (BreakFollowsCurrentPeriod)

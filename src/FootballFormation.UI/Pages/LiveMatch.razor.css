@@ -93,13 +93,10 @@
     color: #fff;
 }
 
-/* Still being played, but past the end of the half — not the same green as a half in hand. */
-.live-status-extra {
-    background: var(--color-warning);
-    color: #fff;
-}
-
-.live-status-paused {
+/* Still being played, but past the end of the half — not the same green as a half in hand. And
+   the break between two periods, which is the only other time the clock is not moving. */
+.live-status-extra,
+.live-status-break {
     background: var(--color-warning);
     color: #fff;
 }

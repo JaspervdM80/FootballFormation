@@ -108,7 +108,7 @@ is actually happening at the touchline rather than along a data-access seam:
 | Service | Owns |
 | --- | --- |
 | `LiveMatchService` | Reading: `GetLiveAsync` for the live screen, `GetTodaysMatchAsync` for the home banner. Both public, like every other read |
-| `MatchClockService` | Kick-off, pause/resume, ending a period, starting or rolling into the next, the final whistle — and `BankClock`, the only thing that moves seconds about |
+| `MatchClockService` | Kick-off, ending a period, starting or rolling into the next, the final whistle — and `BankClock`, the only thing that moves seconds about. No pause: only a period boundary stops the clock |
 | `MatchGoalService` | The live minute a goal is stamped with and the scoreline recomputed from the goals on file. Storage itself still delegates to `GameService` |
 | `MatchSubstitutionService` | The slot swap and the record of it, in one `SaveChanges`, and undoing the most recent one of a period |
 

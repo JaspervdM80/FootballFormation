@@ -70,9 +70,10 @@ Services/
                             renders, GetTodaysMatchAsync for the home-page banner (in-progress
                             first, else today's fixture, upcoming or finished). Writing to one is
                             the three services below, split by what happens on the touchline
-  MatchClockService.cs    — The clock and the run of play: kick-off, pause/resume, ending a period,
-                            starting or rolling into the next one, the final whistle. The
-                            arithmetic a season's statistics are built from
+  MatchClockService.cs    — The clock and the run of play: kick-off, ending a period, starting or
+                            rolling into the next one, the final whistle. The arithmetic a
+                            season's statistics are built from. There is no pause — the clock
+                            runs from kick-off to the whistle and only a period boundary stops it
   MatchGoalService.cs     — Goals logged live: storage delegated to GameService, the live minute
                             and the recomputed scoreline added here
   MatchSubstitutionService.cs — The slot swap and the record of it, in one SaveChanges, plus undoing

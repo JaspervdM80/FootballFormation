@@ -187,11 +187,9 @@
   <data name="Not started" xml:space="preserve"><value>Nog niet begonnen</value></data>
   <data name="In progress" xml:space="preserve"><value>Bezig</value></data>
   <data name="Break" xml:space="preserve"><value>Rust</value></data>
-  <data name="Paused" xml:space="preserve"><value>Gepauzeerd</value></data>
   <data name="Additional time" xml:space="preserve"><value>Extra tijd</value></data>
   <data name="Full time" xml:space="preserve"><value>Einde wedstrijd</value></data>
   <data name="Start match" xml:space="preserve"><value>Wedstrijd starten</value></data>
-  <data name="Resume" xml:space="preserve"><value>Hervatten</value></data>
   <data name="Half time" xml:space="preserve"><value>Rust</value></data>
   <data name="Start {0}" xml:space="preserve"><value>{0} starten</value></data>
   <data name="Next line-up" xml:space="preserve"><value>Volgende opstelling</value></data>
@@ -214,7 +212,6 @@
   <data name="Remove" xml:space="preserve"><value>Verwijderen</value></data>
   <data name="Undo" xml:space="preserve"><value>Ongedaan maken</value></data>
   <data name="Match started" xml:space="preserve"><value>Wedstrijd gestart</value></data>
-  <data name="Clock running" xml:space="preserve"><value>Klok loopt</value></data>
   <data name="Period ended" xml:space="preserve"><value>Speeldeel beëindigd</value></data>
   <data name="Next period started" xml:space="preserve"><value>Volgend speeldeel gestart</value></data>
   <data name="Match finished" xml:space="preserve"><value>Wedstrijd afgesloten</value></data>
@@ -465,12 +462,9 @@
   <data name="Season {0} has no squad to copy" xml:space="preserve"><value>Seizoen {0} heeft geen selectie om te kopiëren</value></data>
   <data name="Season {0} is the current season" xml:space="preserve"><value>Seizoen {0} is het huidige seizoen</value></data>
   <data name="Season {0} still has {1} games" xml:space="preserve"><value>Seizoen {0} heeft nog {1} wedstrijden</value></data>
-  <data name="Start the next period before resuming the clock" xml:space="preserve"><value>Start de volgende periode voordat je de klok hervat</value></data>
   <data name="Substitution not found" xml:space="preserve"><value>Wissel niet gevonden</value></data>
   <data name="That player is already on the pitch" xml:space="preserve"><value>Die speler staat al op het veld</value></data>
   <data name="That player is not on the pitch" xml:space="preserve"><value>Die speler staat niet op het veld</value></data>
-  <data name="The clock is already running" xml:space="preserve"><value>De klok loopt al</value></data>
-  <data name="The clock is not running" xml:space="preserve"><value>De klok loopt niet</value></data>
   <data name="The end date must be after the start date" xml:space="preserve"><value>De einddatum moet na de startdatum liggen</value></data>
   <data name="These dates overlap season {0}" xml:space="preserve"><value>Deze datums overlappen seizoen {0}</value></data>
   <data name="This game has no periods to play" xml:space="preserve"><value>Deze wedstrijd heeft geen periodes om te spelen</value></data>
@@ -519,13 +513,11 @@
   <data name="log the goal" xml:space="preserve"><value>doelpunt vastleggen</value></data>
   <data name="look up the season for that date" xml:space="preserve"><value>seizoen bij die datum opzoeken</value></data>
   <data name="make the substitution" xml:space="preserve"><value>wissel doorvoeren</value></data>
-  <data name="pause the clock" xml:space="preserve"><value>klok pauzeren</value></data>
   <data name="prepare seasons" xml:space="preserve"><value>seizoenen voorbereiden</value></data>
   <data name="remove comment" xml:space="preserve"><value>opmerking verwijderen</value></data>
   <data name="remove goal" xml:space="preserve"><value>doelpunt verwijderen</value></data>
   <data name="remove the goal" xml:space="preserve"><value>doelpunt verwijderen</value></data>
   <data name="remove the player from the squad" xml:space="preserve"><value>speler uit de selectie verwijderen</value></data>
-  <data name="resume the clock" xml:space="preserve"><value>klok hervatten</value></data>
   <data name="save lineup" xml:space="preserve"><value>opstelling opslaan</value></data>
   <data name="set the password" xml:space="preserve"><value>wachtwoord instellen</value></data>
   <data name="start the next period" xml:space="preserve"><value>volgende periode starten</value></data>

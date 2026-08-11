@@ -67,60 +67,18 @@ public class MatchClockServiceTests : LiveMatchTestBase
     // ---- The clock -------------------------------------------------------------------------
 
     [Fact]
-    public async Task Pausing_banks_the_time_run_so_far_and_stops_the_anchor()
+    public async Task The_clock_runs_from_kick_off_until_the_period_is_whistled_off()
     {
         var game = await SeedGameAsync();
         await MatchClock.StartMatchAsync(game.Id);
 
+        // There is nothing that stops it in between: no pause, no resume. Whatever the touchline
+        // does with the screen, the seconds the season's minutes are built from keep counting.
         Time.Advance(TimeSpan.FromMinutes(7));
-        await MatchClock.PauseClockAsync(game.Id);
 
-        var paused = await ReloadAsync(game.Id);
-        Assert.Equal(420, paused.ClockAccumulatedSeconds);
-        Assert.False(paused.IsClockRunning);
-    }
-
-    [Fact]
-    public async Task Time_spent_paused_is_not_counted()
-    {
-        var game = await SeedGameAsync();
-        await MatchClock.StartMatchAsync(game.Id);
-
-        Time.Advance(TimeSpan.FromMinutes(7));
-        await MatchClock.PauseClockAsync(game.Id);
-
-        Time.Advance(TimeSpan.FromMinutes(30));      // a long injury stoppage
-        await MatchClock.ResumeClockAsync(game.Id);
-
-        Time.Advance(TimeSpan.FromMinutes(3));
-
-        var resumed = await ReloadAsync(game.Id);
-        Assert.Equal(600, resumed.ElapsedSecondsAt(Time.GetUtcNow().UtcDateTime));
-    }
-
-    [Fact]
-    public async Task Pausing_a_stopped_clock_is_refused()
-    {
-        var game = await SeedGameAsync();
-        await MatchClock.StartMatchAsync(game.Id);
-        await MatchClock.PauseClockAsync(game.Id);
-
-        var result = await MatchClock.PauseClockAsync(game.Id);
-
-        Assert.True(result.IsFailure);
-        Assert.Equal("The clock is not running", result.Error);
-    }
-
-    [Fact]
-    public async Task Resuming_a_running_clock_is_refused()
-    {
-        var game = await SeedGameAsync();
-        await MatchClock.StartMatchAsync(game.Id);
-
-        var result = await MatchClock.ResumeClockAsync(game.Id);
-
-        Assert.True(result.IsFailure);
-        Assert.Equal("The clock is already running", result.Error);
+        var running = await ReloadAsync(game.Id);
+        Assert.True(running.IsClockRunning);
+        Assert.Equal(420, running.ElapsedSecondsAt(Time.GetUtcNow().UtcDateTime));
     }
 
     // ---- Periods ---------------------------------------------------------------------------

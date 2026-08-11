@@ -168,19 +168,21 @@ public partial class LiveMatch
         null or MatchState.NotStarted => L["Not started"],
         MatchState.Finished => L["Full time"],
         _ when !IsLivePeriod => L["Break"],
-        _ when !GameData.IsClockRunning => L["Paused"],
         // The half is played out and play has not stopped — the thing to say is how much longer.
         _ when Clock.IsInAdditionalTime => L["Additional time"],
         _ => L[DisplayHalfLabel ?? "In progress"]
     };
 
-    /// <summary>Drives the colour of the status chip: only a running clock counts as live.</summary>
+    /// <summary>
+    /// Drives the colour of the status chip. A live period always has a running clock — nothing
+    /// stops one short of the whistle — so the third arm here is the break between two periods.
+    /// </summary>
     private string StatusCssClass => GameData?.MatchState switch
     {
         MatchState.InProgress when GameData.IsClockRunning && Clock.IsInAdditionalTime =>
             "live-status live-status-extra",
         MatchState.InProgress when GameData.IsClockRunning => "live-status live-status-running",
-        MatchState.InProgress => "live-status live-status-paused",
+        MatchState.InProgress => "live-status live-status-break",
         MatchState.Finished => "live-status live-status-done",
         _ => "live-status"
     };
@@ -278,7 +280,7 @@ public partial class LiveMatch
         _tick.Start();
     }
 
-    /// <summary>Only repaints while the clock is actually moving — a paused screen has nothing to redraw.</summary>
+    /// <summary>Only repaints while the clock is actually moving — at a break there is nothing to redraw.</summary>
     private void OnTick(object? sender, ElapsedEventArgs e)
     {
         if (GameData?.IsClockRunning != true) return;
@@ -316,14 +318,6 @@ public partial class LiveMatch
     // Clock controls. Each service call notifies every viewer, which is what reloads this page too.
     private async Task StartMatch() =>
         Snackbar.Report(L, await ClockService.StartMatchAsync(GameId), L["Match started"]);
-
-    /// <summary>
-    /// Only offered when a period is live and its clock is somehow stopped, which nothing on this
-    /// screen can now cause — the pause button is gone. It stays as the way out for a match that
-    /// was paused before it went, since without it that match could never be run to full time.
-    /// </summary>
-    private async Task ResumeClock() =>
-        Snackbar.Report(L, await ClockService.ResumeClockAsync(GameId), L["Clock running"], Severity.Info);
 
     private async Task EndPeriod() =>
         Snackbar.Report(L, await ClockService.EndPeriodAsync(GameId), L["Period ended"], Severity.Info);

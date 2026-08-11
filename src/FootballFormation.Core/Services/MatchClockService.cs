@@ -7,7 +7,12 @@ using Microsoft.Extensions.Logging;
 namespace FootballFormation.Core.Services;
 
 /// <summary>
-/// The clock and the run of play: kick-off, the pauses, the period changes and the final whistle.
+/// The clock and the run of play: kick-off, the period changes and the final whistle.
+/// <para>
+/// There is no pause: the clock runs from kick-off until the period is whistled off, and only a
+/// period boundary stops it. A youth match is not paused at the touchline, and a clock that could
+/// be stopped by a stray tap is a clock the season's minutes cannot be trusted from.
+/// </para>
 /// <para>
 /// This is where the arithmetic a season's statistics are built on lives — the banked seconds and
 /// the started/ended marks on each period are what <c>GameMinutesReport</c> later credits players
@@ -54,48 +59,6 @@ public class MatchClockService(
 
             await db.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Started live match {GameId} at period {PeriodId}", gameId, first.Id);
-            return Result.Success(game);
-        });
-
-    public Task<Result<Game>> PauseClockAsync(int gameId, CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "pause the clock",
-            cancellationToken, async () =>
-        {
-            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
-
-            var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
-            if (game is null) return NotFound(gameId);
-
-            if (!game.IsClockRunning) return Result.Failure<Game>("The clock is not running");
-
-            BankClock(game);
-            await db.SaveChangesAsync(cancellationToken);
-
-            logger.LogInformation("Paused clock for game {GameId} at {Seconds}s",
-                gameId, game.ClockAccumulatedSeconds);
-            return Result.Success(game);
-        });
-
-    public Task<Result<Game>> ResumeClockAsync(int gameId, CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "resume the clock",
-            cancellationToken, async () =>
-        {
-            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
-
-            var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
-            if (game is null) return NotFound(gameId);
-
-            if (game.MatchState != MatchState.InProgress)
-                return Result.Failure<Game>("This match is not in progress");
-            if (game.IsClockRunning) return Result.Failure<Game>("The clock is already running");
-            if (game.LivePeriodId is null)
-                return Result.Failure<Game>("Start the next period before resuming the clock");
-
-            game.ClockRunningSince = UtcNow;
-            await db.SaveChangesAsync(cancellationToken);
-
-            logger.LogInformation("Resumed clock for game {GameId} at {Seconds}s",
-                gameId, game.ClockAccumulatedSeconds);
             return Result.Success(game);
         });
 
