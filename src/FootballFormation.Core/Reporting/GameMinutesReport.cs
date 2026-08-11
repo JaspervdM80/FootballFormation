@@ -46,12 +46,14 @@ public class GameMinutes
 /// its lineup a full period's minutes would invent playing time.
 /// </para>
 /// <para>
-/// Known limitation: only a substitution records a position change, so a player who shifts
-/// position mid-period without one keeps the earlier position for those minutes. The live screen's
-/// position swap (<c>MatchSubstitutionService.SwapPositionsAsync</c>) is exactly that case: it
-/// rewrites the lineup and writes nothing down, because a <see cref="GameSubstitution"/> would say
-/// someone left the pitch. Totals stay right; the per-position split lags a swap. That is a gap in
-/// what gets recorded, not in this calculation.
+/// Known limitation: only a substitution records a position change. The walk below starts from the
+/// lineup as it <em>finally</em> stands and rewinds substitution rows, so a player who shifts
+/// position mid-period without one is credited the position they ended in for the whole period,
+/// the minutes before the shift included. The live screen's position swap
+/// (<c>MatchSubstitutionService.SwapPositionsAsync</c>) is exactly that case: it rewrites the
+/// lineup and writes nothing down, because a <see cref="GameSubstitution"/> would say someone left
+/// the pitch. Totals stay right; only the split by position does. That is a gap in what gets
+/// recorded, not in this calculation.
 /// </para>
 /// </summary>
 public static class GameMinutesReport

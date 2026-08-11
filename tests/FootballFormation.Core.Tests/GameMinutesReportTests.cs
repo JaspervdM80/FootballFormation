@@ -105,6 +105,33 @@ public class GameMinutesReportTests
     }
 
     [Fact]
+    public void A_position_change_with_no_substitution_credits_the_position_it_ended_in()
+    {
+        // The known limitation this report documents, pinned so it cannot change unnoticed. The
+        // live screen's position swap rewrites the lineup and records nothing, and the walk below
+        // starts from the lineup as it finally stands — so the whole period is credited to the
+        // position each player *moved into*, the minutes before the swap included.
+        var game = TestData.Game();
+        var period = game.AddPeriod(PeriodType.FirstHalf,
+            TestData.Starter(1, PlayerPosition.CM, 5),      // started in goal, swapped at half-way
+            TestData.Starter(2, PlayerPosition.GK, 0));     // and the other way round
+
+        period.StartedAtSeconds = 0;
+        period.EndedAtSeconds = 1200;
+
+        var minutes = GameMinutesReport.Build(game);
+
+        Assert.Equal(new Dictionary<PlayerPosition, int> { [PlayerPosition.CM] = 1200 },
+            minutes.PositionsFor(1));
+        Assert.Equal(new Dictionary<PlayerPosition, int> { [PlayerPosition.GK] = 1200 },
+            minutes.PositionsFor(2));
+
+        // The totals — what the season's statistics are actually built from — are untouched.
+        Assert.Equal(1200, minutes.SecondsFor(1));
+        Assert.Equal(1200, minutes.SecondsFor(2));
+    }
+
+    [Fact]
     public void Two_substitutions_in_the_same_second_subtract_no_time()
     {
         var game = TestData.Game();

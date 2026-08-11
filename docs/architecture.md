@@ -79,7 +79,8 @@ Services/
                             and the recomputed scoreline added here
   MatchSubstitutionService.cs — The slot swap and the record of it, in one SaveChanges, plus undoing
                             the most recent one of a period, plus SwapPositionsAsync — two players
-                            already on trading slots, which writes no substitution row
+                            already on trading slots, which writes no substitution row (so the undo
+                            reads the slot back off the pitch, not off the row)
   LiveMatchOperation.cs   — The write shape those three share: RunAdminAsync plus, on success, one
                             LiveMatchNotifier call naming the game that changed
   LiveMatchQueries.cs     — The tracked load they all start from (the game with its periods, via

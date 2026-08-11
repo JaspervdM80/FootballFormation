@@ -295,6 +295,23 @@ Avoid repeating these mistakes:
   MudBlazor component's root goes in `app.css`, next to `.live-scoreboard` and `.live-action-btn`,
   which are there for the same reason.
 
+## Live match
+- **A change to the pitch that writes no row is invisible to everything that reads the rows.**
+  `SwapPositionsAsync` moves two players between slots without a `GameSubstitution`, which is right
+  — nobody left the pitch — but two readers assumed the rows were the whole story.
+  `RemoveSubstitutionAsync` handed back the slot the *substitution* recorded, so subbing into slot
+  5, swapping that player to slot 0 and then undoing seated two players in slot 5 and emptied
+  slot 0; it now reads the slot off the player coming off instead. And `GameMinutesReport` seeds
+  from the lineup as it finally stands, so a swap credits **the position moved into** for the whole
+  period, earlier minutes included — the opposite of what its comment used to claim. Totals are
+  right either way; only the split by position is affected, and a test pins it.
+- **Removing a control does not remove the state it could leave behind.** Deleting pause/resume
+  left `MatchState=InProgress` + a live period + `ClockRunningSince=null` unreachable going
+  forward, but still storable by a row an older build wrote. `AdvancePeriodAsync` deliberately
+  leaves the anchor alone — so on such a row it would roll on to the next line-up with the clock
+  still frozen, banking no minutes for the rest of the half while the dialog promised the opposite.
+  It now restarts a stopped anchor, which is a no-op for every game that was never paused.
+
 ## General
 - **Port already in use**: Kill orphaned process with `taskkill //PID <pid> //F`.
 - **File locked during build**: Stop the running app before rebuilding.

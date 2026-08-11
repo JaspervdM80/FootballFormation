@@ -133,7 +133,12 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   (`SwapPositionsAsync`). Choosing in either list clears the other, so the single action button
   always has exactly one change to make and says which — "Make substitution" or "Swap positions".
   A position swap writes no `GameSubstitution`: nobody's minutes changed, and a row there would say
-  they did. Each select's `Placeholder` is set **only** when its list is empty — MudSelect shows a
+  they did. The price is the *split by position* — `GameMinutesReport` reads the lineup as it finally
+  stands, so after a swap the whole period is credited to the position each player moved **into**
+  (pinned by `A_position_change_with_no_substitution_credits_the_position_it_ended_in`). Totals are
+  unaffected. Undoing a substitution therefore follows the slot rather than the recorded one: a swap
+  can have moved it since, and handing the recorded slot back would seat two players in it.
+  Each select's `Placeholder` is set **only** when its list is empty — MudSelect shows a
   placeholder whenever nothing is chosen, so a standing "nobody is on the bench" greets a full bench.
 - **Every goal on the timeline carries the score it made it** (`ScoreProgressionReport`), in the
   scoreboard's order — home side first. It is counted forwards over the whole match and looked up

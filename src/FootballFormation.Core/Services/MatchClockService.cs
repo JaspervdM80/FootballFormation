@@ -144,6 +144,13 @@ public class MatchClockService(
             next.EndedAtSeconds = null;
             game.LivePeriodId = next.Id;
 
+            // Nothing this app still does can stop a live period's clock, but a row stored by a
+            // build that had a pause button can be in exactly that state — and rolling on to the
+            // next line-up while the clock stayed frozen would bank no minutes for the rest of the
+            // half. Restarting the anchor from the banked total is what "the clock keeps running"
+            // means, and it is a no-op for every game that was not left paused.
+            game.ClockRunningSince ??= UtcNow;
+
             await db.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Game {GameId} rolled from period {From} into {To} at {Seconds}s",
                 gameId, current.Id, next.Id, elapsed);

@@ -109,9 +109,13 @@ public class MatchSubstitutionService(
     /// <summary>
     /// Swaps the pitch slots — and with them the positions — of two players who are both already
     /// on. Nobody enters or leaves the match, so this writes no <see cref="GameSubstitution"/>:
-    /// the rows exist to say who was on the pitch when, and a shuffle changes none of that. What
-    /// it does cost is the position half of the minutes report, which keeps crediting both players
-    /// the position they started the period in (see <c>GameMinutesReport</c>).
+    /// the rows exist to say who was on the pitch when, and a shuffle changes none of that.
+    /// <para>
+    /// What it costs is the position half of the minutes report. <c>GameMinutesReport</c> reads the
+    /// lineup as it finally stands and rewinds only substitution rows, so after a swap each player
+    /// is credited the position they moved <em>into</em> for the whole period — including the
+    /// minutes before the swap. Totals are unaffected; only the split by position is.
+    /// </para>
     /// </summary>
     public Task<Result> SwapPositionsAsync(
         int gameId, int playerAId, int playerBId, CancellationToken cancellationToken = default) =>
@@ -180,6 +184,13 @@ public class MatchSubstitutionService(
             var on = positions.FirstOrDefault(pp => pp.PlayerId == sub.PlayerOnId);
             var off = positions.FirstOrDefault(pp => pp.PlayerId == sub.PlayerOffId);
 
+            // Where the incoming player is standing *now*, not where they came on. A position swap
+            // moves a slot without writing a row here, so the slot this substitution recorded may
+            // belong to somebody else by now — handing it back would put two players in it and
+            // leave another empty. The recorded slot is only the fallback for a missing row.
+            var slot = on?.SlotIndex ?? sub.SlotIndex;
+            var position = on is { IsSubstitute: false } ? on.Position : sub.Position;
+
             if (on is not null)
             {
                 on.SlotIndex = null;
@@ -188,8 +199,8 @@ public class MatchSubstitutionService(
 
             if (off is not null)
             {
-                off.SlotIndex = sub.SlotIndex;
-                off.Position = sub.Position;
+                off.SlotIndex = slot;
+                off.Position = position;
                 off.IsSubstitute = false;
             }
 

@@ -152,6 +152,35 @@ public class MatchClockServiceTests : LiveMatchTestBase
     }
 
     [Fact]
+    public async Task Advancing_restarts_a_clock_that_an_older_build_left_stopped()
+    {
+        // Nothing here can stop a live period's clock any more, but a row written while there was
+        // a pause button can be in exactly that state. Rolling on to the next line-up while the
+        // anchor stayed null would bank no minutes for the rest of the half.
+        var game = await SeedGameAsync(GameSplitType.Quarters);
+        await MatchClock.StartMatchAsync(game.Id);
+
+        Time.Advance(TimeSpan.FromMinutes(15));
+
+        // Through ReloadAsync, which clears the change tracker first: the copy this context has
+        // held since the seed still reads ClockRunningSince = null, so assigning null to *that*
+        // is not a change EF would detect, and the anchor the service wrote would survive.
+        var paused = await ReloadAsync(game.Id);
+        paused.ClockAccumulatedSeconds = 900;
+        paused.ClockRunningSince = null;
+        await Db.SaveChangesAsync();
+
+        Assert.True((await MatchClock.AdvancePeriodAsync(game.Id)).IsSuccess);
+
+        var advanced = await ReloadAsync(game.Id);
+        Assert.True(advanced.IsClockRunning);
+        Assert.Equal(900, advanced.Periods.OrderBy(p => p.PeriodType).ToList()[1].StartedAtSeconds);
+
+        Time.Advance(TimeSpan.FromMinutes(5));
+        Assert.Equal(1200, advanced.ElapsedSecondsAt(Time.GetUtcNow().UtcDateTime));
+    }
+
+    [Fact]
     public async Task Advancing_past_the_last_period_is_refused()
     {
         var game = await SeedGameAsync();
