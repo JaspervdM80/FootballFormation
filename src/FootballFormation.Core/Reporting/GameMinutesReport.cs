@@ -85,7 +85,10 @@ public static class GameMinutesReport
             var subs = game.Substitutions
                 .Where(s => s.GamePeriodId == period.Id)
                 .OrderBy(s => s.AtSeconds)
-                .ThenBy(s => s.RecordedAt)
+                // Two changes in the same second are a double substitution, and the walk below
+                // only rewinds to the right kick-off lineup if it takes them in the order they
+                // were made. The id is what says so — RecordedAt can be the same instant too.
+                .ThenBy(s => s.Id)
                 .ToList();
 
             // The lineup records where everyone stands *now*. Rewinding this period's
