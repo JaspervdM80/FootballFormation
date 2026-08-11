@@ -189,6 +189,37 @@ Avoid repeating these mistakes:
   **The reload needs its own guard, or it is the next bug.** A page that serves while the circuit
   never connects — a blocked WebSocket, a dead network — would reload forever. `pwa.js` stamps
   `sessionStorage` and refuses to reload twice inside ten seconds, leaving the overlay up instead.
+- **"Reconnecting..." for ten seconds on a circuit that was never gone.** Reported from the
+  touchline: start a match, switch to another app, come back, and the overlay sits there. Nothing in
+  this app was waiting — it is Blazor's default retry schedule meeting a phone that has just woken.
+  The defaults (read them in `blazor.web.js`, they are not in the docs) are `maxRetries: 30` and
+  `attempt < 10 ? 0 : attempt < 20 ? 5000 : 30000`: **the first ten attempts have no delay between
+  them at all**. A phone coming out of suspension has no network for the first moment, so all ten
+  are spent and failed in a fraction of a second, and every real reconnect therefore starts from
+  the five-second bucket. One or two of those is the ten seconds. Blazor does cut a pending wait
+  short on `visibilitychange`, which does not help here — the retries only start once you are
+  already looking at the page. Fixed by the `Blazor.start` call in `App.razor` — one immediate
+  attempt, then one a second — which is why that file loads `blazor.web.js` with
+  `autostart="false"`: the schedule cannot be set any other way. **Keep that call inline.** In a
+  file under `js/` it becomes a second thing the app's whole interactivity depends on arriving,
+  and one that fails silently, exactly like the empty `blazor.web.js` two entries down.
+  While you are in there: the retry callback is documented as receiving `maxRetries` as a second
+  argument and is called with one, so a guard reading it is dead code — the retry loop applies the
+  cap. And whatever the schedule is, keep its total near the retention period below. Blazor giving
+  up is what marks the dialog failed, and a failed dialog is `pwa.js` reloading a page whose
+  network may still be down — onto the browser's error page, where nothing retries at all.
+- **Past the retention period there is no reconnect at all — it is a reload.** `ConnectCircuit`
+  returns false for a circuit the server has already evicted, and with no persisted circuit state
+  configured the client goes straight to the rejected state, i.e. a fresh page. The window is
+  `CircuitOptions.DisconnectedCircuitRetentionPeriod`, three minutes by default and ten here, which
+  is the difference between rejoining a running match screen and reloading it. Two things fall
+  outside it whatever the setting, and both always cost a reload: a machine Fly has scaled to zero
+  (a restarted process has no circuits), and a deploy. Retention is bounded by
+  `DisconnectedCircuitMaxRetained` as well as by time, and **lowering that to buy back the memory a
+  longer window costs is a trap**: a slot given up is a circuit evicted early, and the coach's is as
+  likely as anyone's. It stays at the stock 100. Little occupies it in practice — a tab closed
+  properly sends a disconnect beacon and gives its circuit up immediately, so only unclean
+  disconnects park at all.
 
 ## Localization
 - **Resource keys are English text, so watch for homographs**: "Home" was already the

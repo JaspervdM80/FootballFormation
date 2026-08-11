@@ -54,7 +54,21 @@ try
     builder.Host.UseSerilog();
 
     builder.Services.AddRazorComponents()
-        .AddInteractiveServerComponents();
+        .AddInteractiveServerComponents(options =>
+        {
+            // Switching away from the app on a phone suspends the tab and kills the circuit's
+            // WebSocket, and the state that circuit is holding is the whole live match screen. The
+            // stock three minutes is shorter than a half-time break, so someone who put their phone
+            // away came back to a rebuilt page instead of rejoining the circuit still sitting there.
+            //
+            // `DisconnectedCircuitMaxRetained` is deliberately left at its default of 100. Tripling
+            // the window triples how long each retained circuit occupies a slot, so capping the
+            // count was tempting — but a slot taken is the coach's circuit evicted, which is the
+            // one this exists for, and the count stays small on its own: only an *unclean*
+            // disconnect parks a circuit at all. A tab closed properly sends a disconnect beacon
+            // and gives its circuit up on the spot.
+            options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(10);
+        });
 
     builder.Services.AddMudServices();
 

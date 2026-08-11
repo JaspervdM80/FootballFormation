@@ -160,6 +160,7 @@ real SignalR circuit.
 | `match-day.spec.js` | The journey the app exists for: drag a lineup onto the pitch, save it, run the match live, log goals, blow the whistle, and find the scoreline on the games list — plus the playing-time table dropping its `~` estimate for the match clock once that has happened |
 | `localization.spec.js` | Dutch by default, the switcher moving the whole app to English, and the choice surviving a navigation |
 | `mobile.touchline.spec.js` | The phone layout — the drawer, the full-screen match sheet, the stacked squad — in the `mobile` project on a Pixel 7 |
+| `reconnect.spec.js` | Losing the circuit and getting it back: the retry schedule a suspended phone rejoins on, and the rejoined page still being interactive |
 | `selectors.spec.js` | A test for the tests — see below |
 
 ### The test that guards the tests
@@ -179,6 +180,26 @@ own classes are deliberately not in the list — those are not ours to rename, a
 drops one shows up as a spec failing for real.
 
 Adding a spec that leans on a new app class means adding it to `SELECTORS` too.
+
+### Breaking the circuit on purpose
+
+`reconnect.spec.js` is the one spec that takes the connection away, and three things about it cost
+an afternoon to find:
+
+- **`context.setOffline(true)` does not drop an established WebSocket.** It blocks new requests, so
+  the socket to a loopback server stays up and Blazor never notices anything. Use
+  `Blazor._internal.forceCloseConnection()`, which is the hook Blazor's own end-to-end tests use —
+  the client stops its connection, the server retains the circuit, and the rejoin that follows is
+  the real one. Refusing `**/_blazor/negotiate**` with a route is then what keeps the rejoin from
+  succeeding, i.e. what stands in for a phone whose network is not back yet.
+- **Don't wait on the overlay to prove a rejoin happened.** With the network right there the rejoin
+  lands on the first attempt, and `#components-reconnect-modal` can appear and disappear between two
+  polls. Blazor dispatches `components-reconnect-state-changed` on that element for every step —
+  `show`, `retrying` with the attempt number and `secondsToNextAttempt`, then `hide` or `rejected` —
+  and reading that stream is the same story without the race. It is also the only way to assert on
+  the *schedule* rather than on a duration, which is what the spec is actually about.
+- It imports Playwright's `test`, not `fixtures.js`. The console-error guard would fail a spec whose
+  whole point is refused requests.
 
 ### One pipeline, one compile
 

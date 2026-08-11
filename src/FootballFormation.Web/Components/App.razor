@@ -45,7 +45,41 @@
     <script src="js/screenshot.js"></script>
     <script src="js/drag-drop-touch.js"></script>
     <script src="js/pwa.js"></script>
-    <script src="@Assets["_framework/blazor.web.js"]"></script>
+    @* Blazor is started by hand here, because the reconnect retry schedule below cannot be set any
+       other way. Inline rather than a file under js/ on purpose: with autostart="false" nothing
+       starts the circuit if that script fails to arrive, and the page would render, look right and
+       be permanently inert — the same silent death known_issues.md records for an empty
+       blazor.web.js, but with a second file able to cause it. *@
+    <script src="@Assets["_framework/blazor.web.js"]" autostart="false"></script>
+    <script>
+        // The stock schedule is ten attempts with no delay between them at all, then five seconds
+        // between each one after that. A phone coming out of suspension has no network for the
+        // first moment, so all ten immediate attempts are spent and failed in a fraction of a
+        // second — and every return to the app therefore starts from the five-second bucket,
+        // showing "Reconnecting..." for ten seconds or more over a circuit the server was holding
+        // the whole time.
+        //
+        // One immediate attempt, which is what a circuit that is genuinely still there rejoins on,
+        // and then one a second while the radio comes back, which is where a real reconnect lands.
+        //
+        // Give up after roughly the ten minutes Program.cs asks the server to hold a disconnected
+        // circuit for. Sooner, and js/pwa.js reloads a page whose network is still down, landing on
+        // the browser's own error page with nothing left that retries; later, and the reload that
+        // has become the only way back is merely being postponed.
+        //
+        // The callback is documented as taking maxRetries as a second argument, but Blazor calls it
+        // with one — a `previousAttempts >= maxRetries` guard here would be dead code. The retry
+        // loop enforces the cap itself.
+        Blazor.start({
+            circuit: {
+                reconnectionOptions: {
+                    maxRetries: 136,
+                    retryIntervalMilliseconds: previousAttempts =>
+                        previousAttempts === 0 ? 0 : previousAttempts < 20 ? 1000 : 5000
+                }
+            }
+        });
+    </script>
 </body>
 
 </html>
