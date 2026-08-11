@@ -25,9 +25,13 @@
                the change is tested. -->
           <ExcludeByFile>**/Migrations/*.cs,**/DesignTimeDbContextFactory.cs,**/*.razor,**/*.razor.cs,**/*.g.cs,**/*.designer.cs</ExcludeByFile>
 
-          <!-- The same code under its generated name, plus anything a person deliberately marked.
-               These are coverlet's defaults, restated because setting the element replaces them. -->
-          <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+          <!-- Anything a person deliberately marked. These are coverlet's defaults, restated
+               because setting the element replaces them. CompilerGeneratedAttribute is not one of
+               them and stays out on purpose: it does not just tag lambdas and iterator state
+               machines, it is also how the compiler marks every async method body and every
+               auto-property, so it would take most of ServiceOperation and DatabaseSafety and five
+               model files out of the report along with them. -->
+          <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
         </Configuration>
       </DataCollector>
     </DataCollectors>

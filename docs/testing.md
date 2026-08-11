@@ -115,18 +115,23 @@ below is out of the report entirely — not merely out of the judgement:
   `visual-check.sh` instead, and a change there is reported as unmeasured rather than as a miss.
 - **Migrations and the model snapshot.** A `Down()` is never executed by the suite and never will
   be, and counting scaffolded code makes the gate a lottery on how much of it a change touched.
-  They were the bulk of what the collector counted: excluding them took `Core` from a comfortable
-  96.4% over 9,960 lines to an honest 95.1% over 2,152.
+  Excluding them took `Core` from a comfortable 96.4% over 9,960 lines to an honest 93.3% over
+  2,509.
 - **`DesignTimeDbContextFactory`**, which exists for `dotnet ef` and runs in no test.
-- **Generated and deliberately-marked code**, by attribute — `GeneratedCode`, `CompilerGenerated`,
-  `ExcludeFromCodeCoverage`, `Obsolete`.
+- **Generated and deliberately-marked code**, by attribute — `GeneratedCode`, `ExcludeFromCodeCoverage`,
+  `Obsolete`. `CompilerGeneratedAttribute` is deliberately *not* one of them: it is not just
+  lambdas and iterator state machines, it is how the compiler marks every `async` method body and
+  every auto-property, and excluding it took `ServiceOperation.RunAdminAsync` — the write guard
+  every service call goes through — and most of `DatabaseSafety` out of the report along with the
+  scaffolding. A change that silently stopped judging the admin check would be worse than the
+  scaffolding problem this file exists to fix.
 
-`coverage.mjs` still recognises migrations, `DesignTimeDbContextFactory`, and anything outside
-`Core`, not to exclude them twice but to *name* them: a file the report never mentions would
-otherwise vanish from the diff silently, and a reviewer has to know the change contains code this
-number says nothing about. They are listed under the table, as excluded or as unmeasured.
+`coverage.mjs` still recognises migrations and `DesignTimeDbContextFactory` by name, and treats any
+other changed `Core` file the report never mentions the same way: named under the table as excluded
+rather than dropped from the diff silently, because a reviewer has to know the change contains code
+this number says nothing about.
 
-Branch coverage sits near 78% and is reported for information, not gated — the line floor is what
+Branch coverage sits near 75% and is reported for information, not gated — the line floor is what
 the `code-reviewer` agent enforces. And a floor is not a target: 100% of a change whose only test
 asserts it doesn't throw is worth less than 85% with the rule pinned.
 

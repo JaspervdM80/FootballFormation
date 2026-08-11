@@ -15,10 +15,9 @@ const THRESHOLD = Number(process.env.COVERAGE_THRESHOLD ?? 80);
 const BASE = process.env.COVERAGE_BASE ?? 'origin/main';
 const REPORT_DIR = process.env.COVERAGE_DIR ?? join(REPO, 'artifacts/coverage');
 
-// Scaffolded or design-time only. coverage.runsettings keeps these out of the report itself, so
-// their lines are not coverable here and would be dropped silently; the list exists to name them
-// in the output instead, because a reviewer has to know the diff contains code this number is
-// saying nothing about.
+// Scaffolded or design-time only, named ahead of the report rather than discovered from it — see
+// the `!files.has(key)` check below for the general case, which catches everything else
+// coverage.runsettings excludes.
 const EXCLUDED = [/^Migrations\//, /^Data\/DesignTimeDbContextFactory\.cs$/];
 
 const git = (...args) => execFileSync('git', args, { cwd: REPO, encoding: 'utf8' });
@@ -37,9 +36,16 @@ function parseCobertura(path) {
     const xml = readFileSync(path, 'utf8');
     const root = (xml.match(/<source>([^<]*)<\/source>/) ?? [, ''])[1];
     // Branches are read off the root element rather than summed: a <line> carries its taken/total
-    // in a condition-coverage string, and the totals are already there to be read.
-    const header = (xml.match(/<coverage[^>]*>/) ?? [''])[0];
-    const headerNumber = name => Number((header.match(new RegExp(`${name}="([^"]*)"`)) ?? [, 0])[1]);
+    // in a condition-coverage string, and the totals are already there to be read. Failing loudly
+    // here matters because pct(0, 0) reads as a trivial 100% pass everywhere else in this script —
+    // exactly the reading a missing attribute must never get.
+    const header = (xml.match(/<coverage[^>]*>/) ?? [])[0];
+    if (!header) throw new Error(`${path}: no <coverage> root element — not a Cobertura report`);
+    const headerNumber = name => {
+        const m = header.match(new RegExp(`${name}="([^"]*)"`));
+        if (!m) throw new Error(`${path}: <coverage> element has no ${name} attribute`);
+        return Number(m[1]);
+    };
     const branches = { covered: headerNumber('branches-covered'), valid: headerNumber('branches-valid') };
     const files = new Map();
     let totals = { covered: 0, valid: 0 };
@@ -120,9 +126,18 @@ for (const [path, added] of byFile) {
         excluded.push(path);
         continue;
     }
+    // A file coverage.runsettings excludes by attribute or by a pattern EXCLUDED does not know
+    // about (a new generated-code shape, say) never appears in the report at all. That is
+    // different from a file that IS in the report but whose particular added lines all landed on
+    // a brace, a using, a blank: only the first is worth naming, so a changed file the runsettings
+    // dropped is never mistaken for one this diff simply didn't touch anywhere coverable.
+    if (!files.has(key)) {
+        excluded.push(path);
+        continue;
+    }
     // A line absent from the report is not coverable — a brace, a using, a field declaration, a
     // blank. Only lines the instrumenter counted are judged, so whitespace can't dilute the number.
-    const lines = files.get(key) ?? new Map();
+    const lines = files.get(key);
     const coverable = [...added].filter(n => lines.has(n));
     if (coverable.length === 0) continue;
     const hit = coverable.filter(n => lines.get(n) > 0);
@@ -164,7 +179,7 @@ if (unmeasured.length) {
     for (const p of unmeasured) console.log(`    ${p}`);
 }
 if (excluded.length) {
-    console.log(`\n  Excluded (scaffolded or design-time):`);
+    console.log(`\n  Excluded from the report (coverage.runsettings):`);
     for (const p of excluded) console.log(`    ${p}`);
 }
 
@@ -210,7 +225,7 @@ if (process.env.GITHUB_STEP_SUMMARY) {
             ...paths.map(p => `- \`${p}\``), '', '</details>', ''] : [];
     md.push(
         ...details('Not measured here — no unit tests by design, see <code>tests/ui</code> and <code>scripts/visual-check.sh</code>', unmeasured),
-        ...details('Excluded — scaffolded or design-time', excluded),
+        ...details('Excluded from the report — see coverage.runsettings', excluded),
         `**${verdict}**`,
     );
 
