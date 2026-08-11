@@ -174,11 +174,11 @@ public class Game
     /// so it is excluded here and included in <see cref="CountTheirGoals"/>.
     /// </summary>
     public static int CountOurGoals(IEnumerable<GameGoal> goals) =>
-        goals.Count(g => !g.IsOwnGoal && !g.IsOpponentGoal);
+        goals.Count(g => g.CountsForUs);
 
     /// <summary>Their goals: everything the opponent scored, plus our own goals.</summary>
     public static int CountTheirGoals(IEnumerable<GameGoal> goals) =>
-        goals.Count(g => g.IsOwnGoal || g.IsOpponentGoal);
+        goals.Count(g => !g.CountsForUs);
 }
 
 /// <summary>

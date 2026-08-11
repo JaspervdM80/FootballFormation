@@ -109,24 +109,20 @@
     color: #fff;
 }
 
-/* Clock controls */
-.live-control-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.live-control-row > * {
-    flex: 1 1 45%;
-}
-
+/* The clock controls (.live-control-row) are laid out in app.css: every child is a MudButton,
+   and scoped CSS never reaches a child component's root element. */
 .live-pitch-hint {
     display: block;
     margin-bottom: 6px;
     color: var(--ink-subtle);
 }
 
-/* Bench strip under the pitch */
+/* Bench strip under the pitch, and the checkbox that folds it away. The checkbox's own touch
+   target is sized in app.css — this rule reaches the wrapper, not the MudBlazor component in it. */
+.live-bench-toggle {
+    margin-top: 6px;
+}
+
 .live-bench {
     display: flex;
     flex-wrap: wrap;
@@ -298,6 +294,15 @@
 
 .live-event-sub {
     font-size: 0.75rem;
+    color: var(--ink-muted);
+}
+
+/* The scoreline a goal produced, parked on the right where every row lines its digits up. */
+.live-event-score {
+    flex: none;
+    font-size: 0.85rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
     color: var(--ink-muted);
 }
 

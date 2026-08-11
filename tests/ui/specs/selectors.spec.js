@@ -30,7 +30,8 @@ const SELECTORS = {
   'a match still missing its lineup': ['nolineup-icon', 'action-needs-lineup'],
   'the formation builder': ['pitch', 'pitch-empty', 'pitch-player', 'draggable-player'],
   'the playing-time table': ['playtime-table', 'pt-total', 'playtime-note'],
-  'the live screen': ['live-lineup', 'live-controls', 'live-score-value', 'live-score-away'],
+  'the live screen': ['live-lineup', 'live-controls', 'live-score-value', 'live-score-away',
+                      'live-event', 'live-event-score', 'live-bench', 'live-bench-toggle'],
   'the phone layout': ['dialog-sheet', 'stacked-table', 'topbar-nav'],
   'the squad': ['badge-archived'],
 };

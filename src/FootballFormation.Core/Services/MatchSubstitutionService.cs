@@ -7,8 +7,9 @@ using Microsoft.Extensions.Logging;
 namespace FootballFormation.Core.Services;
 
 /// <summary>
-/// Substitutions during a match: a slot and a position change hands between two players, and the
-/// swap is written down with the minute it happened.
+/// Who stands where once a match is under way: a substitution, where a slot and a position change
+/// hands between the pitch and the bench and the swap is written down with the minute it happened,
+/// and a straight position swap between two players already on.
 /// <para>
 /// The most intricate write in the app, and the reason it sits on its own: the lineup and the
 /// record of the change go in with one <c>SaveChanges</c>, because every minutes report is built
@@ -103,6 +104,49 @@ public class MatchSubstitutionService(
                 gameId, playerOffId, playerOnId, sub.AtSeconds, period.Id);
 
             return Result.Success(sub);
+        });
+
+    /// <summary>
+    /// Swaps the pitch slots — and with them the positions — of two players who are both already
+    /// on. Nobody enters or leaves the match, so this writes no <see cref="GameSubstitution"/>:
+    /// the rows exist to say who was on the pitch when, and a shuffle changes none of that. What
+    /// it does cost is the position half of the minutes report, which keeps crediting both players
+    /// the position they started the period in (see <c>GameMinutesReport</c>).
+    /// </summary>
+    public Task<Result> SwapPositionsAsync(
+        int gameId, int playerAId, int playerBId, CancellationToken cancellationToken = default) =>
+        LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "swap the positions",
+            cancellationToken, async () =>
+        {
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            if (playerAId == playerBId)
+                return Result.Failure<int>("A player cannot swap positions with themselves");
+
+            var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
+            if (game is null) return LiveMatchQueries.GameNotFound<int>(gameId);
+
+            var period = game.LivePeriod();
+            if (period is null)
+                return Result.Failure<int>("No period is currently being played");
+
+            await db.Entry(period).Collection(p => p.PlayerPositions).LoadAsync(cancellationToken);
+
+            var a = period.PlayerPositions.FirstOrDefault(pp => pp.PlayerId == playerAId);
+            var b = period.PlayerPositions.FirstOrDefault(pp => pp.PlayerId == playerBId);
+
+            if (a is null || a.IsSubstitute || b is null || b.IsSubstitute)
+                return Result.Failure<int>("Both players have to be on the pitch to swap positions");
+
+            (a.SlotIndex, b.SlotIndex) = (b.SlotIndex, a.SlotIndex);
+            (a.Position, b.Position) = (b.Position, a.Position);
+
+            await db.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation("Game {GameId}: {A} and {B} swapped positions in period {PeriodId}",
+                gameId, playerAId, playerBId, period.Id);
+
+            return Result.Success(gameId);
         });
 
     /// <summary>

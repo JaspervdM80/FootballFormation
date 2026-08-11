@@ -32,6 +32,8 @@ public class LiveMatchNotificationTests : LiveMatchTestBase
         // Asked for by the substitution's own id, so this one names the game only after doing it.
         Assert.True((await Subs.RemoveSubstitutionAsync(sub.Value!.Id)).IsSuccess);
 
+        Assert.True((await Subs.SwapPositionsAsync(game.Id, players[0].Id, players[1].Id)).IsSuccess);
+
         Assert.True((await MatchClock.AdvancePeriodAsync(game.Id)).IsSuccess);
         Assert.True((await MatchClock.PauseClockAsync(game.Id)).IsSuccess);
         Assert.True((await MatchClock.ResumeClockAsync(game.Id)).IsSuccess);
@@ -39,8 +41,8 @@ public class LiveMatchNotificationTests : LiveMatchTestBase
         Assert.True((await MatchClock.StartNextPeriodAsync(game.Id)).IsSuccess);
         Assert.True((await MatchClock.FinishMatchAsync(game.Id)).IsSuccess);
 
-        // Eleven writes, eleven announcements, each naming this match.
-        Assert.Equal(11, _announced.Count);
+        // Twelve writes, twelve announcements, each naming this match.
+        Assert.Equal(12, _announced.Count);
         Assert.All(_announced, id => Assert.Equal(game.Id, id));
     }
 
@@ -56,6 +58,7 @@ public class LiveMatchNotificationTests : LiveMatchTestBase
         Assert.True((await Goals.LogGoalAsync(game.Id, null, null, false, false)).IsFailure);
         Assert.True((await Goals.RemoveGoalAsync(game.Id, 999)).IsFailure);
         Assert.True((await Subs.SubstituteAsync(game.Id, 999, 998)).IsFailure);
+        Assert.True((await Subs.SwapPositionsAsync(game.Id, 999, 998)).IsFailure);
         Assert.True((await Subs.RemoveSubstitutionAsync(999)).IsFailure);
 
         Assert.Empty(_announced);

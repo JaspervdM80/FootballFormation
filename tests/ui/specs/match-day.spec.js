@@ -95,6 +95,11 @@ test('a match is run from the live screen and its score reaches the result', asy
     () => expect(theirScore).toHaveText('1'),
   );
 
+  // Each goal carries the score it made it, newest first — so the equaliser reads 1–1 above the
+  // opener's 1–0. Counted forwards over the match, which is the only way to get that off a list
+  // that runs backwards.
+  await expect(page.locator('.live-event .live-event-score')).toHaveText(['1–1', '1–0']);
+
   // The final whistle asks first, and its confirming button carries the same words as the one that
   // opened it — so the click has to be scoped to the control panel, or the locator matches both.
   await clickFor(
@@ -109,6 +114,53 @@ test('a match is run from the live screen and its score reaches the result', asy
   const results = page.locator('.game-section', { hasText: 'Results' });
   await expect(results.locator('.game-row', { hasText: 'FC Uitslag' })).toHaveCount(1);
   await expect(gameRow(page, 'FC Uitslag').locator('.game-score')).toHaveText(/1\s*.\s*1/);
+});
+
+test('tapping a player on the pitch offers a substitution and a position swap', async ({ page }) => {
+  const id = await matchWithId(page, 'FC Wisselen');
+  await fillLineup(page, 2);
+
+  await goto(page, `/games/${id}/live`);
+  await clickFor(
+    page.getByRole('button', { name: 'Start match' }),
+    () => expect(page.getByRole('button', { name: 'Finish match' })).toBeVisible(),
+  );
+
+  const chips = page.locator('.live-lineup .pitch-player');
+  const first = chips.first();
+  const before = await first.textContent();
+
+  await clickFor(first, () => expect(page.locator('.mud-dialog')).toBeVisible());
+  const dialog = await openDialog(page);
+
+  // Two lists, and the button names whichever one was used.
+  await expect(dialog.getByRole('button', { name: 'Make substitution' })).toBeDisabled();
+  await chooseOption(page, dialog, 'Swaps position with', '#');
+  await submitDialog(page, 'Swap positions');
+  await expect(page.getByText('Positions swapped', { exact: false })).toBeVisible();
+
+  // Both are still on — a swap is not a substitution — and they have changed places, so the chip
+  // that was first now names the other player. Nothing reaches the timeline.
+  await expect(chips).toHaveCount(2);
+  await expect(first).not.toHaveText(before);
+  await expect(page.locator('.live-event')).toHaveCount(0);
+});
+
+test('the bench strip can be folded away while the match is being run', async ({ page }) => {
+  const id = await matchWithId(page, 'FC Bank');
+  await fillLineup(page, 2);
+
+  await goto(page, `/games/${id}/live`);
+  await clickFor(
+    page.getByRole('button', { name: 'Start match' }),
+    () => expect(page.getByRole('button', { name: 'Finish match' })).toBeVisible(),
+  );
+
+  await expect(page.locator('.live-bench')).toBeVisible();
+  await clickFor(
+    page.locator('.live-bench-toggle input[type=checkbox]'),
+    () => expect(page.locator('.live-bench')).toHaveCount(0),
+  );
 });
 
 test('the playing-time table drops its estimate once the match has been run', async ({ page }) => {

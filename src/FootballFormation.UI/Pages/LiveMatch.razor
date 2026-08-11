@@ -61,14 +61,9 @@
                 <div class="live-control-row">
                     @if (IsLivePeriod)
                     {
-                        @if (GameData.IsClockRunning)
-                        {
-                            <MudButton Variant="Variant.Outlined" Class="btn-ghost"
-                                       StartIcon="@Icons.Material.Filled.Pause" OnClick="PauseClock">
-                                @L["Pause"]
-                            </MudButton>
-                        }
-                        else
+                        @* Nothing here stops the clock any more, so this only appears for a match
+                           paused by the button that used to. See ResumeClock. *@
+                        @if (!GameData.IsClockRunning)
                         {
                             <MudButton Variant="Variant.Outlined" Class="btn-ghost"
                                        StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="ResumeClock">
@@ -88,7 +83,7 @@
                         {
                             <MudButton Variant="Variant.Filled" Class="btn-gold"
                                        StartIcon="@Icons.Material.Filled.SwapHoriz" OnClick="AdvancePeriod">
-                                @L["Change line-up"]
+                                @L["Next line-up"]
                             </MudButton>
                         }
                     }
@@ -133,7 +128,7 @@
             @if (CanSubstitute)
             {
                 <MudText Typo="Typo.caption" Class="live-pitch-hint">
-                    @L["Tap a player to substitute them."]
+                    @L["Tap a player to substitute them or change their position."]
                 </MudText>
             }
 
@@ -142,26 +137,37 @@
                    HidePositionFit="!_isAdmin"
                    OnPlayerClicked="@(CanSubstitute ? EventCallback.Factory.Create<int>(this, OpenSubDialog) : default)" />
 
-            <div class="live-bench">
-                <span class="live-bench-label">@L["Subs"]:</span>
-                @if (OnBench.Count == 0)
-                {
-                    <span class="live-bench-empty">@L["No subs"]</span>
-                }
-                else
-                {
-                    @foreach (var sub in OnBench)
-                    {
-                        <span class="live-bench-chip">
-                            @if (sub.Player?.ShirtNumber is not null)
-                            {
-                                <span class="live-bench-number">#@sub.Player.ShirtNumber</span>
-                            }
-                            @PlayerLabel(sub.PlayerId)
-                        </span>
-                    }
-                }
+            @* The bench is reference material, not something to act on, so it can be folded away
+               to keep the pitch and the controls on one phone screen. *@
+            <div class="live-bench-toggle">
+                <MudCheckBox T="bool" @bind-Value="ShowSubs" Dense="true" Size="Size.Small" Color="Color.Primary">
+                    @L["Show subs"]
+                </MudCheckBox>
             </div>
+
+            @if (ShowSubs)
+            {
+                <div class="live-bench">
+                    <span class="live-bench-label">@L["Subs"]:</span>
+                    @if (OnBench.Count == 0)
+                    {
+                        <span class="live-bench-empty">@L["No subs"]</span>
+                    }
+                    else
+                    {
+                        @foreach (var sub in OnBench)
+                        {
+                            <span class="live-bench-chip">
+                                @if (sub.Player?.ShirtNumber is not null)
+                                {
+                                    <span class="live-bench-number">#@sub.Player.ShirtNumber</span>
+                                }
+                                @PlayerLabel(sub.PlayerId)
+                            </span>
+                        }
+                    }
+                </div>
+            }
         }
     </MudPaper>
 
@@ -266,6 +272,12 @@
                                 <div class="live-event-sub">↔ @PlayerLabel(sub.PlayerOffId)</div>
                             }
                         </div>
+                        @* The score the goal made it, in the scoreboard's order. Reading it off the
+                           list is otherwise impossible: the list runs backwards. *@
+                        @if (entry.Score is { } score)
+                        {
+                            <span class="live-event-score">@ScoreText(score)</span>
+                        }
                         <AuthorizeView Roles="@AppRoles.Admin" Context="auth">
                             @if (entry.Goal is { } goalToRemove)
                             {
