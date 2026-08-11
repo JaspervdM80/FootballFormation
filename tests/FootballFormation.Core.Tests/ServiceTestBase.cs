@@ -43,8 +43,15 @@ public abstract class ServiceTestBase : IDisposable
         Games = new GameService(DbFactory, Seasons, CurrentUser, Time, NullLogger<GameService>.Instance);
         Preferences = new MatchPreferencesService(DbFactory, Time, CurrentUser,
             NullLogger<MatchPreferencesService>.Instance);
-        Live = new LiveMatchService(DbFactory, Games, new LiveMatchNotifier(), Time, CurrentUser,
-            NullLogger<LiveMatchService>.Instance);
+        Live = new LiveMatchService(DbFactory, Time, NullLogger<LiveMatchService>.Instance);
+
+        MatchClock = new MatchClockService(DbFactory, Notifier, Time, CurrentUser,
+            NullLogger<MatchClockService>.Instance);
+        Goals = new MatchGoalService(DbFactory, Games, Notifier, Time, CurrentUser,
+            NullLogger<MatchGoalService>.Instance);
+        Subs = new MatchSubstitutionService(DbFactory, Notifier, Time, CurrentUser,
+            NullLogger<MatchSubstitutionService>.Instance);
+
         Users = new UserService(DbFactory, CurrentUser, NullLogger<UserService>.Instance);
     }
 
@@ -65,7 +72,21 @@ public abstract class ServiceTestBase : IDisposable
     protected SeasonSquadService Squads { get; }
     protected GameService Games { get; }
     protected MatchPreferencesService Preferences { get; }
+
+    /// <summary>
+    /// The one every live write announces itself on, shared by the three services below the way the
+    /// singleton is in the app. Subscribe to it to see what a spectator's screen would be told.
+    /// </summary>
+    protected LiveMatchNotifier Notifier { get; } = new();
+
+    /// <summary>Reading a live match. The three below are how one is written to.</summary>
     protected LiveMatchService Live { get; }
+
+    /// <summary>The match clock, not the <see cref="TimeProvider"/> driving it — that is <see cref="Time"/>.</summary>
+    protected MatchClockService MatchClock { get; }
+
+    protected MatchGoalService Goals { get; }
+    protected MatchSubstitutionService Subs { get; }
     protected UserService Users { get; }
 
     /// <summary>A fresh context, for reading back what a service wrote without tracking interference.</summary>

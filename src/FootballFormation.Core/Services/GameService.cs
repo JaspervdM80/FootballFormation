@@ -15,7 +15,7 @@ public class GameService(
 {
     /// <summary>
     /// The clock for anything this service stamps. Injected rather than read from
-    /// <see cref="DateTime.UtcNow"/> for the same reason <see cref="LiveMatchService"/> does it:
+    /// <see cref="DateTime.UtcNow"/> for the same reason <see cref="MatchClockService"/> does it:
     /// a timestamp a test cannot control is a timestamp a test cannot assert on.
     /// </summary>
     private DateTime UtcNow => time.GetUtcNow().UtcDateTime;

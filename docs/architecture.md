@@ -59,9 +59,21 @@ Services/
   SeasonService.cs        — CRUD + SetCurrent/FindForDate/GetOrCreateForDate/EnsureCurrentSeason/CloseSeasonGaps
   SeasonSquadService.cs   — Squad membership: get/add/remove/set-guest/copy-forward, with guards
   GameService.cs          — CRUD + SavePeriodLineupAsync, optional seasonId filter, returns Result<T>
-  LiveMatchService.cs     — Runs a match live: clock, period transitions, goals, substitutions,
-                            GetTodaysMatchAsync for the home-page banner (in-progress first,
-                            else today's fixture, upcoming or finished)
+  LiveMatchService.cs     — Reads a match being played: GetLiveAsync for everything the live screen
+                            renders, GetTodaysMatchAsync for the home-page banner (in-progress
+                            first, else today's fixture, upcoming or finished). Writing to one is
+                            the three services below, split by what happens on the touchline
+  MatchClockService.cs    — The clock and the run of play: kick-off, pause/resume, ending a period,
+                            starting or rolling into the next one, the final whistle. The
+                            arithmetic a season's statistics are built from
+  MatchGoalService.cs     — Goals logged live: storage delegated to GameService, the live minute
+                            and the recomputed scoreline added here
+  MatchSubstitutionService.cs — The slot swap and the record of it, in one SaveChanges, plus undoing
+                            the most recent one of a period
+  LiveMatchOperation.cs   — The write shape those three share: RunAdminAsync plus, on success, one
+                            LiveMatchNotifier call naming the game that changed
+  LiveMatchQueries.cs     — The load they all start from (the game with its periods) and the one
+                            "game not found" message
   LiveMatchNotifier.cs    — Singleton: fans live match changes out to every open circuit
   MatchPreferencesService.cs — Per-season prefs: GetAsync(seasonId)/SaveAsync,
                             GetNextMatchDateAsync(seasonId)

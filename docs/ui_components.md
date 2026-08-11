@@ -89,11 +89,17 @@ there, so a lineup can never be laid out one way on one screen and another way o
 Phone-first single column (`max-width: 560px`), no `[Authorize]`: admin drives it, everyone else
 watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="@AppRoles.Admin">`.
 
+- **It injects four services, one per thing it does**: `LiveMatchService` to read the match,
+  `MatchClockService` for the clock buttons, `MatchGoalService` for the goal dialogs and
+  `MatchSubstitutionService` for the pitch taps. That is the intended shape — see
+  [patterns.md](patterns.md#when-a-service-gets-long-split-it-by-use-case--not-into-layers).
+
 - **The clock never round-trips.** A per-circuit 1-second `System.Timers.Timer` re-renders
   `Game.ElapsedSecondsAt(DateTime.UtcNow)` from the anchor the server stored, and it repaints only
   while the clock is running. See [models.md](models.md#game).
-- **Spectators are pushed to via the singleton `LiveMatchNotifier`.** `LiveMatchService` raises it
-  after every successful mutation; the page filters on its own `GameId`, reloads and
+- **Spectators are pushed to via the singleton `LiveMatchNotifier`.** No service raises it by hand:
+  `LiveMatchOperation` — the shape every touchline write runs inside — does it after a successful
+  one, naming the game that changed. The page filters on its own `GameId`, reloads and
   `InvokeAsync(StateHasChanged)`, and unsubscribes in `Dispose`. In-process only — fine for the
   single Fly.io instance, but it needs a backplane if the app is ever scaled out.
 - **`GetLiveAsync` is `AsNoTrackingWithIdentityResolution`, and it has to be.** A spectator's
@@ -144,7 +150,7 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   [testing.md](testing.md#touch-targets).
 - The page reads "today" from the injected `TimeProvider`, not `DateTime.Today`, the same way the
   services do — that is also what `IsIncomplete` (the missing-lineup flag) compares against.
-- `HasFinalScore` checks `MatchState` **as well as** the score fields, and must: `LiveMatchService`
+- `HasFinalScore` checks `MatchState` **as well as** the score fields, and must: `MatchGoalService`
   writes `ScoreHome`/`ScoreAway` on every goal, so a score alone only means the game has started.
   Testing the score by itself would hide the Live button on the very match being played.
 

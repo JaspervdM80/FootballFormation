@@ -101,10 +101,45 @@ would take the app bar down with it.
 Services are injected as concrete types. Don't add `IPlayerService` etc. unless a second
 implementation actually exists.
 
+## When a service gets long, split it by use case — not into layers
+The live match is the worked example. It was one 514-line service and is now four, cut along what
+is actually happening at the touchline rather than along a data-access seam:
+
+| Service | Owns |
+| --- | --- |
+| `LiveMatchService` | Reading: `GetLiveAsync` for the live screen, `GetTodaysMatchAsync` for the home banner. Both public, like every other read |
+| `MatchClockService` | Kick-off, pause/resume, ending a period, starting or rolling into the next, the final whistle — and `BankClock`, the only thing that moves seconds about |
+| `MatchGoalService` | The live minute a goal is stamped with and the scoreline recomputed from the goals on file. Storage itself still delegates to `GameService` |
+| `MatchSubstitutionService` | The slot swap and the record of it, in one `SaveChanges`, and undoing the most recent one of a period |
+
+What made the cut worth making was not the line count: the clock arithmetic and the substitution
+slot-swapping shared a type, a `UtcNow` and a set of private helpers, so reading either meant paging
+past the other. What *not* to do instead — pull the data access out from under it — would have
+fought the rule that each operation opens its own short-lived context, which the file already
+followed correctly throughout.
+
+Three things fall out of a split like this, and they are the parts worth copying:
+
+- **Pure helpers over an entity move onto the entity.** `CurrentPeriod` and `NextPeriod` were
+  private statics over a `Game`; they are `Game.LivePeriod()` and `Game.NextPeriod()` now, beside
+  `Game.CurrentOrLastPeriod()`, and the live page reads its "next period" from the same one. A
+  helper that *mutates*, like `BankClock`, stays with the service that owns the writing.
+- **What every piece still shares gets named once.** `LiveMatchQueries` holds the load they all
+  start from (the game with its periods) and the single "game not found" message.
+- **Anything every method had to remember becomes part of the operation shape.** Each write used to
+  end with `notifier.Notify(gameId)`; three services each remembering that is worse than one, so
+  `LiveMatchOperation.RunAdminAsync` wraps `ServiceOperation.RunAdminAsync` and makes the call
+  itself on success — the same move the admin check already is. Its second overload is for the one
+  write named by something other than a game (undoing a substitution, which is found by its own id):
+  the operation answers with the id of the game it changed, and the caller gets a plain `Result`.
+
+A page injecting all four is fine and expected. A *facade* over them would be the signal that the
+split was cut along the wrong line.
+
 ## Domain logic on the model
 Anything computable without the database lives on the entity, not in a service or a page:
 `Game.PeriodCount`, `Game.PeriodDurationMinutes`, `Game.IsInRoster`, `Game.SelectRoster`,
-`GameSplitTypeExtensions.PeriodCount()/PeriodLabel()`. `PeriodCount` derives from
+`Game.LivePeriod()`, `Game.NextPeriod()`, `GameSplitTypeExtensions.PeriodCount()/PeriodLabel()`. `PeriodCount` derives from
 `PeriodTypeExtensions.ForSplitType`, so the count can never drift from the periods actually created.
 
 ### Pass a value object, don't eager-load a navigation
@@ -197,7 +232,10 @@ builder.Services.AddScoped<PlayerService>();
 builder.Services.AddScoped<SeasonService>();
 builder.Services.AddScoped<SeasonSquadService>();
 builder.Services.AddScoped<GameService>();
-builder.Services.AddScoped<LiveMatchService>();
+builder.Services.AddScoped<LiveMatchService>();          // reading a live match
+builder.Services.AddScoped<MatchClockService>();         // writing to one, split by what happens
+builder.Services.AddScoped<MatchGoalService>();          // on the touchline: the clock, the goals,
+builder.Services.AddScoped<MatchSubstitutionService>();  // the substitutions
 builder.Services.AddScoped<MatchPreferencesService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<SeasonState>();       // UI state, see "UI state services"
@@ -209,7 +247,7 @@ circuits or a substitution on the sideline would never reach the parents watchin
 is stateless.
 
 Service-to-service edges are kept few and named: `GameService` injects `SeasonService` so that
-"every game has a season" is an invariant no caller can bypass, and `LiveMatchService` injects
+"every game has a season" is an invariant no caller can bypass, and `MatchGoalService` injects
 `GameService` so goal storage has one implementation. `SeasonSquadService` deliberately takes
 none — it queries `db.Seasons` directly. It is separate from `SeasonService` because the two own
 different things: the season lifecycle and its `IsCurrent` invariant, versus squad membership.

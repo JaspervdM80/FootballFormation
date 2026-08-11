@@ -79,7 +79,7 @@ try
             x => x.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
     // The match clock. Injected rather than read from DateTime.UtcNow so the live-match timing
-    // logic is deterministic under test — see LiveMatchService.
+    // logic is deterministic under test — see MatchClockService.
     builder.Services.AddSingleton(TimeProvider.System);
 
     // Who the services think is calling. Scoped, so it answers for the circuit that made the call.
@@ -91,6 +91,9 @@ try
     builder.Services.AddScoped<SeasonSquadService>();
     builder.Services.AddScoped<GameService>();
     builder.Services.AddScoped<LiveMatchService>();
+    builder.Services.AddScoped<MatchClockService>();
+    builder.Services.AddScoped<MatchGoalService>();
+    builder.Services.AddScoped<MatchSubstitutionService>();
     builder.Services.AddScoped<MatchPreferencesService>();
     builder.Services.AddScoped<UserService>();
 

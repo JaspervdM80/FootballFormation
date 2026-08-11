@@ -40,9 +40,9 @@ public class PlayingTimeRow
 /// <para>
 /// Minutes come from <see cref="GameMinutesReport"/> once a game has been run live: the match
 /// clock and the substitutions say what really happened, and the lineup — which
-/// <c>LiveMatchService.SubstituteAsync</c> rewrites in place — no longer does. A game that was
-/// never run live has no timings to read, so the plan is the only answer available and the
-/// estimate stands. The choice is per game, and every row of one table shares it.
+/// <c>MatchSubstitutionService</c> rewrites in place — no longer does. A game that was never run
+/// live has no timings to read, so the plan is the only answer available and the estimate stands.
+/// The choice is per game, and every row of one table shares it.
 /// </para>
 /// <para>
 /// The per-period cells are a different question and always come from the lineups this page is
