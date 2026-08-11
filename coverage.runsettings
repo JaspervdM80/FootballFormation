@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What the coverage collector is allowed to count. Used by scripts/coverage.sh and by the
+     `dotnet test` step in .github/workflows/ci.yml, so a local run and a CI run judge the same set
+     of lines. See docs/testing.md. -->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+
+          <!-- Modules. The report is Core-only today because the test project references Core
+               alone, and UI and Web are covered by tests/ui and visual-check.sh rather than by
+               unit tests. Naming them anyway keeps that true by construction: adding a reference
+               to UI for one helper would otherwise drop every Razor component into the number at
+               0%, and the first thing anyone would do with that number is stop reading it. -->
+          <Exclude>[FootballFormation.UI]*,[FootballFormation.Web]*</Exclude>
+
+          <!-- Files. A .razor compiles to a generated class whose lines map back to markup, and a
+               .razor.cs is the other half of that same partial class — neither is reachable
+               without rendering a component, which no test here does. Migrations and the model
+               snapshot are scaffolded, and a Down() is never executed by the suite and never will
+               be. DesignTimeDbContextFactory exists for `dotnet ef` and runs in no test. Counting
+               any of them measures how much scaffolding a change happened to touch, not whether
+               the change is tested. -->
+          <ExcludeByFile>**/Migrations/*.cs,**/DesignTimeDbContextFactory.cs,**/*.razor,**/*.razor.cs,**/*.g.cs,**/*.designer.cs</ExcludeByFile>
+
+          <!-- The same code under its generated name, plus anything a person deliberately marked.
+               These are coverlet's defaults, restated because setting the element replaces them. -->
+          <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
