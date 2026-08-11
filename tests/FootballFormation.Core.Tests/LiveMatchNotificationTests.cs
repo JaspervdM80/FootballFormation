@@ -29,8 +29,7 @@ public class LiveMatchNotificationTests : LiveMatchTestBase
 
         var sub = await Subs.SubstituteAsync(game.Id, players[1].Id, players[2].Id);
         Assert.True(sub.IsSuccess);
-        // Asked for by the substitution's own id: this one only learns which game it changed by
-        // doing the work, and it still has to name it.
+        // Asked for by the substitution's own id, so this one names the game only after doing it.
         Assert.True((await Subs.RemoveSubstitutionAsync(sub.Value!.Id)).IsSuccess);
 
         Assert.True((await MatchClock.AdvancePeriodAsync(game.Id)).IsSuccess);

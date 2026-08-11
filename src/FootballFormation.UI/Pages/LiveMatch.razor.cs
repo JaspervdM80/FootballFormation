@@ -24,13 +24,9 @@ public record MatchEvent(int Minute, DateTime RecordedAt, bool IsGoal, GameGoal?
 public partial class LiveMatch
 {
     [Inject] private LiveMatchService Live { get; set; } = null!;
-
-    // Reading the match is one service; writing to it is three, split by what is happening on the
-    // touchline — the clock, the goals, the substitutions.
     [Inject] private MatchClockService ClockService { get; set; } = null!;
     [Inject] private MatchGoalService GoalService { get; set; } = null!;
     [Inject] private MatchSubstitutionService SubService { get; set; } = null!;
-
     [Inject] private PlayerService PlayerService { get; set; } = null!;
     [Inject] private SeasonSquadService SquadService { get; set; } = null!;
     [Inject] private LiveMatchNotifier Notifier { get; set; } = null!;

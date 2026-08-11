@@ -21,8 +21,7 @@ public class MatchGoalService(
     ICurrentUser currentUser,
     ILogger<MatchGoalService> logger)
 {
-    /// <summary>Injected rather than read from <see cref="DateTime.UtcNow"/>, so the minute a goal
-    /// is stamped with is exactly the one a test drove the match to — see <see cref="MatchClockService"/>.</summary>
+    /// <summary>The match clock — injected, for the reason <see cref="MatchClockService"/> gives.</summary>
     private DateTime UtcNow => time.GetUtcNow().UtcDateTime;
 
     /// <param name="scorerId">Null for an opponent goal — we do not track their players.</param>

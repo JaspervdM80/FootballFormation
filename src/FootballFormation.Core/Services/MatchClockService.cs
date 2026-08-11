@@ -207,8 +207,8 @@ public class MatchClockService(
             game.LivePeriodId = null;
             game.MatchState = MatchState.Finished;
 
-            // The last recount of the scoreline, and the one that settles it: from here the game is
-            // complete and counts towards the season, so it must agree with the goals on file.
+            // Recounted here rather than through MatchGoalService: this is the recount that settles
+            // the game, and from here it counts towards the season.
             var goals = await db.GameGoals.Where(g => g.GameId == gameId).ToListAsync(cancellationToken);
             game.ScoreHome = Game.CountOurGoals(goals);
             game.ScoreAway = Game.CountTheirGoals(goals);

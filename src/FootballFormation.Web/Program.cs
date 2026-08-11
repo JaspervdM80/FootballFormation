@@ -91,13 +91,9 @@ try
     builder.Services.AddScoped<SeasonSquadService>();
     builder.Services.AddScoped<GameService>();
     builder.Services.AddScoped<LiveMatchService>();
-
-    // The three ways a match being played is written to, one per thing that happens on the
-    // touchline — see LiveMatchService.
     builder.Services.AddScoped<MatchClockService>();
     builder.Services.AddScoped<MatchGoalService>();
     builder.Services.AddScoped<MatchSubstitutionService>();
-
     builder.Services.AddScoped<MatchPreferencesService>();
     builder.Services.AddScoped<UserService>();
 

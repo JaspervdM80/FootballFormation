@@ -45,8 +45,6 @@ public abstract class ServiceTestBase : IDisposable
             NullLogger<MatchPreferencesService>.Instance);
         Live = new LiveMatchService(DbFactory, Time, NullLogger<LiveMatchService>.Instance);
 
-        // One notifier across the three, as in the app: they are separate services, but a
-        // spectator's screen does not care which of them changed the match.
         MatchClock = new MatchClockService(DbFactory, Notifier, Time, CurrentUser,
             NullLogger<MatchClockService>.Instance);
         Goals = new MatchGoalService(DbFactory, Games, Notifier, Time, CurrentUser,

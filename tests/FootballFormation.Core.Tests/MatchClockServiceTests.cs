@@ -3,9 +3,8 @@ using FootballFormation.Core.Models;
 namespace FootballFormation.Core.Tests;
 
 /// <summary>
-/// The clock and period arithmetic — the numbers a season's statistics are later built from —
-/// driven against a real SQLite database so the value converters, cascade rules and unique indexes
-/// are exercised too: an in-memory provider would accept schemas SQLite rejects.
+/// The clock and period arithmetic — the numbers a season's statistics are later built from, and
+/// the reason the match is driven to exact instants here rather than to a wall clock.
 /// </summary>
 public class MatchClockServiceTests : LiveMatchTestBase
 {

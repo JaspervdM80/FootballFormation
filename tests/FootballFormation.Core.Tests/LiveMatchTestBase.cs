@@ -5,12 +5,8 @@ namespace FootballFormation.Core.Tests;
 
 /// <summary>
 /// What the live-match test classes share: a game laid out in periods with a lineup on the pitch,
-/// and a reload that reads back what a service actually wrote.
-/// <para>
-/// The touchline is four services — reading the match, the clock, the goals and the substitutions —
-/// and each has its own test class, but they are all about the same match being played, so the
-/// fixture is described once here.
-/// </para>
+/// and a reload that reads back what a service actually wrote. Each touchline service has its own
+/// class, but they are all about the same match being played, so the fixture is described here once.
 /// </summary>
 public abstract class LiveMatchTestBase : ServiceTestBase
 {

@@ -8,10 +8,9 @@ namespace FootballFormation.Core.Services;
 /// <see cref="ServiceOperation.RunAdminAsync{T}"/> does, and then — only when the write succeeded —
 /// one <see cref="LiveMatchNotifier"/> notification naming the game that changed.
 /// <para>
-/// The notification belongs to the shape rather than to a line at the end of every method, in the
-/// way the admin check already does. Three services now write to a match being played, and a
-/// spectator's screen silently going stale is not a bug any of them should be able to reintroduce
-/// by forgetting a call.
+/// Part of the shape rather than a line at the end of every method, the way the admin check already
+/// is: three services write to a match being played now, and a spectator's screen silently going
+/// stale should not be a bug any of them can reintroduce by forgetting a call.
 /// </para>
 /// </summary>
 internal static class LiveMatchOperation

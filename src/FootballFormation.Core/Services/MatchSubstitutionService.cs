@@ -11,10 +11,9 @@ namespace FootballFormation.Core.Services;
 /// swap is written down with the minute it happened.
 /// <para>
 /// The most intricate write in the app, and the reason it sits on its own: the lineup and the
-/// record of the change go in with one <c>SaveChanges</c>, because the two describing different
-/// afternoons is what every minutes report would then report. It needs the clock only to ask the
-/// game how far it has run (<see cref="Game.ElapsedSecondsAt"/>), so it stays independent of
-/// <see cref="MatchClockService"/>.
+/// record of the change go in with one <c>SaveChanges</c>, because every minutes report is built
+/// from the two agreeing. It asks the clock only how far the game has run
+/// (<see cref="Game.ElapsedSecondsAt"/>), so it stays independent of <see cref="MatchClockService"/>.
 /// </para>
 /// </summary>
 public class MatchSubstitutionService(
@@ -24,8 +23,7 @@ public class MatchSubstitutionService(
     ICurrentUser currentUser,
     ILogger<MatchSubstitutionService> logger)
 {
-    /// <summary>Injected rather than read from <see cref="DateTime.UtcNow"/>, so a substitution
-    /// records the instant a test drove the match to — see <see cref="MatchClockService"/>.</summary>
+    /// <summary>The match clock — injected, for the reason <see cref="MatchClockService"/> gives.</summary>
     private DateTime UtcNow => time.GetUtcNow().UtcDateTime;
 
     /// <summary>
@@ -112,8 +110,6 @@ public class MatchSubstitutionService(
     /// older swap would fight every change made on that slot since.
     /// </summary>
     public Task<Result> RemoveSubstitutionAsync(int subId, CancellationToken cancellationToken = default) =>
-        // The one live write named by something other than a game: which match it belongs to is
-        // read off the substitution, and answering with that id is what tells the viewers.
         LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "undo the substitution",
             cancellationToken, async () =>
         {
