@@ -283,6 +283,13 @@ A review that cries wolf gets skimmed, and then the real finding is missed too. 
 - Cap the nitpicks. If you have more than three **Consider** items, keep the best three.
 - Prefer one accurate Blocking finding to nine speculative ones.
 
+**This file is the calibration record.** When a run produces a finding a human has to overrule, or
+misses one a human has to add, the correction belongs *here* — a note in a pull request thread is
+lost by the next branch. Noise tightens the do-not-flag list above; a miss becomes a bullet in
+whichever section should have owned it; a comment this agent wanted to delete and shouldn't have
+becomes a new **keep** example in §2, quoted verbatim. Issue #72 tracks that loop until the report
+needs no correction two branches running.
+
 ## 12. Report
 
 Rank findings by what they cost, most serious first. For each:
