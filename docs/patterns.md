@@ -124,8 +124,9 @@ Three things fall out of a split like this, and they are the parts worth copying
   private statics over a `Game`; they are `Game.LivePeriod()` and `Game.NextPeriod()` now, beside
   `Game.CurrentOrLastPeriod()`, and the live page reads its "next period" from the same one. A
   helper that *mutates*, like `BankClock`, stays with the service that owns the writing.
-- **What every piece still shares gets named once.** `LiveMatchQueries` holds the load they all
-  start from (the game with its periods) and the single "game not found" message.
+- **What every piece still shares gets named once.** `LiveMatchQueries` holds the tracked load they
+  all start from (the game with its periods, shaped by `GameQueries.WithPeriods`) and the single
+  "game not found" message.
 - **Anything every method had to remember becomes part of the operation shape.** Each write used to
   end with `notifier.Notify(gameId)`; three services each remembering that is worse than one, so
   `LiveMatchOperation.RunAdminAsync` wraps `ServiceOperation.RunAdminAsync` and makes the call
@@ -156,6 +157,33 @@ seasons, so each game resolves *its own* season's squad.
 
 ## EF Core Conventions
 - **DbContext**: `AppDbContext` with primary constructor
+- **Include chains are named, not respelled.** `Core/Data/GameQueries.cs` holds every shape a
+  `Game` is loaded in, as `IQueryable<Game>` extension methods composed at the call site:
+
+  ```csharp
+  var game = await db.Games
+      .AsNoTrackingWithIdentityResolution()
+      .WithNamedLineups()
+      .WithGoalsAndScorers()
+      .WithSubstitutionPlayers()
+      .FirstOrDefaultAsync(g => g.Id == gameId, cancellationToken);
+  ```
+
+  Three pairs, shallow then deep over the same navigation — `WithPeriods` /
+  `WithPeriodLineups` / `WithNamedLineups`, `WithGoals` / `WithGoalsAndScorers`,
+  `WithSubstitutions` / `WithSubstitutionPlayers`. Compose one of each pair, never both: EF
+  rejects a filtered and an unfiltered include of one navigation in a single query.
+  `WithGoalsAndScorers` and `WithSubstitutionPlayers` include their collection **twice**, because
+  EF needs a fresh `Include` to hang a second `ThenInclude` off the same navigation, and the two
+  spellings must match.
+
+  This is **deliberately not a repository.** The methods stay `IQueryable`, so tracking, filtering,
+  ordering and tagging remain the caller's — each of those is a decision somebody made for a
+  documented reason (`GetLiveAsync`'s `AsNoTrackingWithIdentityResolution` for the Blazor circuit,
+  `GetTodaysMatchAsync`'s `QueryTags.ComparesDatesInSql`), and none of them belongs in a shared
+  helper. There is no interface and nothing to register. Only the include chain is shared, because
+  that is the part that drifted: a six-level chain spelled out in two files fails *silently* when
+  one copy changes — the page just renders with a navigation quietly unpopulated.
 - **Value converters**: `List<PlayerPosition>` → comma-separated ints; `List<int>` → comma-separated values. Both need `ValueComparer` for change tracking.
 - **SavePeriodLineupAsync**: Deletes all existing positions, then inserts fresh entities with `Id = 0` to avoid UNIQUE constraint errors (never reuse tracked entity IDs). Both halves run inside one `BeginTransactionAsync` — delete-then-insert needs all of it or none, or a failed insert leaves the period with no lineup at all rather than the one it had.
 - **Auto-migration**: `db.Database.MigrateAsync()` in Program.cs startup

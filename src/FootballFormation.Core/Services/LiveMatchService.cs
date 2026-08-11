@@ -35,17 +35,9 @@ public class LiveMatchService(
             // resolution keeps the shared Player rows as single instances.
             var game = await db.Games
                 .AsNoTrackingWithIdentityResolution()
-                .Include(g => g.Periods.OrderBy(p => p.PeriodType))
-                    .ThenInclude(p => p.PlayerPositions)
-                        .ThenInclude(pp => pp.Player)
-                .Include(g => g.Goals)
-                    .ThenInclude(gl => gl.Scorer)
-                .Include(g => g.Goals)
-                    .ThenInclude(gl => gl.Assister)
-                .Include(g => g.Substitutions)
-                    .ThenInclude(s => s.PlayerOff)
-                .Include(g => g.Substitutions)
-                    .ThenInclude(s => s.PlayerOn)
+                .WithNamedLineups()
+                .WithGoalsAndScorers()
+                .WithSubstitutionPlayers()
                 .FirstOrDefaultAsync(g => g.Id == gameId, cancellationToken);
 
             if (game is null)

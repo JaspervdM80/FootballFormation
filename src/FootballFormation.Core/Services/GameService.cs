@@ -30,8 +30,8 @@ public class GameService(
             var games = (await db.Games
                 .AsNoTracking()
                 .Where(g => seasonId == null || g.SeasonId == seasonId)
-                .Include(g => g.Periods)
-                .Include(g => g.Goals)
+                .WithPeriods()
+                .WithGoals()
                 .ToListAsync(cancellationToken))
                 .NewestFirst();
 
@@ -49,13 +49,9 @@ public class GameService(
             var games = (await db.Games
                 .AsNoTracking()
                 .Where(g => seasonId == null || g.SeasonId == seasonId)
-                .Include(g => g.Periods)
-                    .ThenInclude(p => p.PlayerPositions)
-                .Include(g => g.Goals)
-                // Statistics reconstruct playing time from the substitutions (see
-                // GameMinutesReport); without them a live-tracked game reads as if the final
-                // lineup had been on the pitch from kick-off.
-                .Include(g => g.Substitutions)
+                .WithPeriodLineups()
+                .WithGoals()
+                .WithSubstitutions()
                 .ToListAsync(cancellationToken))
                 .NewestFirst();
 
@@ -69,19 +65,10 @@ public class GameService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            // Goals are included twice because EF needs a fresh Include to hang a second
-            // ThenInclude off the same navigation. Both must be spelled identically — a filtered
-            // and an unfiltered include of one collection is ambiguous. Callers that care about
-            // order sort for themselves (MatchResult.razor).
             var game = await db.Games
                 .AsNoTracking()
-                .Include(g => g.Periods.OrderBy(p => p.PeriodType))
-                    .ThenInclude(p => p.PlayerPositions)
-                        .ThenInclude(pp => pp.Player)
-                .Include(g => g.Goals)
-                    .ThenInclude(gl => gl.Scorer)
-                .Include(g => g.Goals)
-                    .ThenInclude(gl => gl.Assister)
+                .WithNamedLineups()
+                .WithGoalsAndScorers()
                 .FirstOrDefaultAsync(g => g.Id == id, cancellationToken);
 
             if (game is null)

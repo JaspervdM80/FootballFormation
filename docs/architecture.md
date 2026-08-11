@@ -36,6 +36,13 @@ Data/
                            foreign-key checks. See deployment.md
   DesignTimeDbContextFactory.cs — Lets dotnet-ef build the context from Core alone, so migration
                            commands need no --startup-project
+  GameQueries.cs          — The include chains a Game is loaded with, named once as IQueryable
+                           extensions and composed at the call site: WithPeriods /
+                           WithPeriodLineups / WithNamedLineups, WithGoals / WithGoalsAndScorers,
+                           WithSubstitutions / WithSubstitutionPlayers. Not a repository —
+                           tracking, filtering and tagging stay the caller's
+  QueryTags.cs            — TagWith markers. Holds ComparesDatesInSql, the only way past the test
+                           suite's DateInSqlInterceptor
 Reporting/
   GameMinutesReport.cs    — Playing time for one game: real timings when run live, plan otherwise
   PlayingTimeReport.cs    — The playing-time table (PlayingTimeRow, PeriodDetail, PeriodPlayStatus).
@@ -72,8 +79,8 @@ Services/
                             the most recent one of a period
   LiveMatchOperation.cs   — The write shape those three share: RunAdminAsync plus, on success, one
                             LiveMatchNotifier call naming the game that changed
-  LiveMatchQueries.cs     — The load they all start from (the game with its periods) and the one
-                            "game not found" message
+  LiveMatchQueries.cs     — The tracked load they all start from (the game with its periods, via
+                            GameQueries) and the one "game not found" message
   LiveMatchNotifier.cs    — Singleton: fans live match changes out to every open circuit
   MatchPreferencesService.cs — Per-season prefs: GetAsync(seasonId)/SaveAsync,
                             GetNextMatchDateAsync(seasonId)
