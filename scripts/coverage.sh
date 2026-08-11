@@ -21,7 +21,10 @@ if [ -z "${COVERAGE_SKIP_TEST:-}" ]; then
   rm -rf "$OUT"
   # Release, like CI — warnings are errors there, so a coverage run that passes in Debug and fails
   # the build in CI would be the worst of both.
-  dotnet test "$REPO" -c Release --collect:"XPlat Code Coverage" --results-directory "$OUT"
+  # coverage.runsettings is what decides which files the collector counts, and CI's test step
+  # passes the same file — a local number and a pipeline number mean the same thing.
+  dotnet test "$REPO" -c Release --collect:"XPlat Code Coverage" \
+    --settings "$REPO/coverage.runsettings" --results-directory "$OUT"
 fi
 
 COVERAGE_DIR="$OUT" node "$REPO/scripts/coverage.mjs"

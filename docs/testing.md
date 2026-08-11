@@ -91,8 +91,8 @@ COVERAGE_SKIP_TEST=1 scripts/coverage.sh   # re-judge the last run without re-ru
 
 `coverlet.collector` writes a Cobertura report into `artifacts/coverage/`, and `coverage.mjs`
 answers the only question a review can act on: **is the code this branch changed covered?** The
-floor is **80% of the changed lines**, and the script exits non-zero under it, so it works as a
-pipeline step as it stands.
+floor is **80% of the changed lines**, and the script exits non-zero under it, which is exactly how
+CI runs it — see [the Coverage job](#one-pipeline-one-compile).
 
 **The gate is the change, not the repository, and that is the whole design.** Core is above 96%
 line coverage, so a solution-wide 80% gate would pass with an entirely untested new service in the
@@ -100,14 +100,36 @@ diff — the number would move by tenths. The script takes the added and rewritt
 `git diff --unified=0` against the merge base (uncommitted work included), keeps the ones the
 instrumenter counted as coverable, and reports per file with the uncovered line numbers.
 
-Three things are deliberately outside the number:
+### What the collector may count
 
-- **`UI` and `Web` are not measured at all.** The test project references `Core` alone, and the
-  other two have no unit tests by design — `tests/ui` and `visual-check.sh` are what cover them.
-  A change there is reported as unmeasured rather than counted as a miss.
-- **Migrations are excluded.** A `Down()` is never executed by the suite and never will be;
-  counting scaffolded code would make the gate a lottery on how much of it a change touched.
-- **`DesignTimeDbContextFactory`** exists for `dotnet ef` and runs in no test.
+`coverage.runsettings` at the repository root is what decides, and both `scripts/coverage.sh` and
+CI's test step pass it, so a local number and a pipeline number mean the same thing. Everything
+below is out of the report entirely — not merely out of the judgement:
+
+- **`UI` and `Web`**, by module (`[FootballFormation.UI]*`, `[FootballFormation.Web]*`) and by
+  file (`**/*.razor`, `**/*.razor.cs`). The test project references `Core` alone, so nothing from
+  either is instrumented today; naming them keeps that true the day somebody adds a reference for
+  one helper. A `.razor` compiles to a generated class whose lines map back to markup and a
+  `.razor.cs` is the other half of that same partial class — neither is reachable without rendering
+  a component, and nothing in `tests/` renders one. Those two are covered by `tests/ui` and
+  `visual-check.sh` instead, and a change there is reported as unmeasured rather than as a miss.
+- **Migrations and the model snapshot.** A `Down()` is never executed by the suite and never will
+  be, and counting scaffolded code makes the gate a lottery on how much of it a change touched.
+  Excluding them took `Core` from a comfortable 96.4% over 9,960 lines to an honest 93.3% over
+  2,509.
+- **`DesignTimeDbContextFactory`**, which exists for `dotnet ef` and runs in no test.
+- **Generated and deliberately-marked code**, by attribute — `GeneratedCode`, `ExcludeFromCodeCoverage`,
+  `Obsolete`. `CompilerGeneratedAttribute` is deliberately *not* one of them: it is not just
+  lambdas and iterator state machines, it is how the compiler marks every `async` method body and
+  every auto-property, and excluding it took `ServiceOperation.RunAdminAsync` — the write guard
+  every service call goes through — and most of `DatabaseSafety` out of the report along with the
+  scaffolding. A change that silently stopped judging the admin check would be worse than the
+  scaffolding problem this file exists to fix.
+
+`coverage.mjs` still recognises migrations and `DesignTimeDbContextFactory` by name, and treats any
+other changed `Core` file the report never mentions the same way: named under the table as excluded
+rather than dropped from the diff silently, because a reviewer has to know the change contains code
+this number says nothing about.
 
 Branch coverage sits near 75% and is reported for information, not gated — the line floor is what
 the `code-reviewer` agent enforces. And a floor is not a target: 100% of a change whose only test
@@ -160,18 +182,34 @@ Adding a spec that leans on a new app class means adding it to `SELECTORS` too.
 
 ### One pipeline, one compile
 
-Everything lives in `.github/workflows/ci.yml`, in three jobs on one chain:
+Everything lives in `.github/workflows/ci.yml`, in four jobs on one chain:
 
 ```
-Build and test ──┬── Playwright
-  (required)     └── Visual check
-                       (both advisory)
+Build and test ──┬── Coverage
+  (required)     ├── Playwright
+                 └── Visual check
+                       (all three advisory)
 ```
 
 **`Build and test`** restores, builds Release, runs `dotnet test`, then publishes — and the publish
 is `--no-build`, so it hands on exactly what the unit tests just ran against rather than compiling
 the commit a second time. It prunes the published `runtimes/` to `linux-x64` and uploads the result
-as the `app` artifact.
+as the `app` artifact. The test step carries `--collect:"XPlat Code Coverage" --settings
+coverage.runsettings`, so the report comes out of the run that is already the gate rather than out
+of a second run of the same tests, and it is uploaded as the `coverage` artifact.
+
+**`Coverage`** downloads that report and runs `scripts/coverage.mjs` over it — the same script and
+the same 80% floor as a local `scripts/coverage.sh`, with `COVERAGE_BASE` pointed at the pull
+request's base branch. It is the one job checked out with `fetch-depth: 0`, because judging a
+change means diffing against its merge base and a single-commit checkout has nothing to diff
+against. It compiles nothing and needs no browser, so it is Node and a git history and is over in
+seconds. The verdict, the whole-project line and branch numbers, and a per-file table with the
+uncovered line numbers are written to `$GITHUB_STEP_SUMMARY` — the run's own front page, so the
+result is read without opening a log or downloading the Cobertura report.
+
+Advisory, like the browser jobs below: it goes red under the floor without blocking a merge, since
+`main`'s ruleset names **Build and test** and nothing else. Promoting it is one line in
+`.github/rulesets/main-build-and-test.json` and nothing in the workflow.
 
 **`Playwright` and `Visual check`** download that artifact and start it. Neither calls a compiler;
 they install the .NET SDK only for the runtime to run `dotnet FootballFormation.Web.dll` with.

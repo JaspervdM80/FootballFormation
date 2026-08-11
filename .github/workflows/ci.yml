@@ -1,7 +1,9 @@
 name: CI
 
 # The whole pipeline for a change, in one file and in one shape: build it, test it, publish it,
-# then drive a browser over the thing that was published. The commit is compiled exactly once —
+# then drive a browser over the thing that was published and judge what the tests covered. The
+# coverage report comes out of the gate's own test run, so the number is about the code that
+# passed rather than a second run of it. The commit is compiled exactly once —
 # `dotnet publish --no-build` reuses what `dotnet build` produced and what `dotnet test` ran
 # against, so the app the browsers see is the app the unit tests passed on, not a rebuild of it.
 
@@ -60,7 +62,23 @@ jobs:
 
       - run: dotnet restore
       - run: dotnet build --no-restore --configuration Release
-      - run: dotnet test --no-build --configuration Release --verbosity normal
+
+      # The collector rides along with the run this gate already does — one test run, not a second
+      # one for the number. coverage.runsettings decides which files it may count (the same file
+      # scripts/coverage.sh passes), and the Coverage job below is what judges the report.
+      - name: Test, with the coverage collector attached
+        run: >-
+          dotnet test --no-build --configuration Release --verbosity normal
+          --collect:"XPlat Code Coverage" --settings coverage.runsettings
+          --results-directory artifacts/coverage
+
+      # Handed to the Coverage job below, and kept for the week a reviewer might want to open the
+      # Cobertura report itself rather than the summary that job writes.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: artifacts/coverage/
+          retention-days: 7
 
       # The one compile in this pipeline ends here. `--no-build` publishes what the two steps above
       # already produced; without it this would be a second compile of the same commit.
@@ -79,13 +97,53 @@ jobs:
       - name: Drop the native libraries for other architectures
         run: find artifacts/app/runtimes -mindepth 1 -maxdepth 1 ! -name linux-x64 -exec rm -rf {} +
 
-      # A day, because nothing reads this after the run that made it — unlike the reports below,
-      # which are uploaded for a person to open.
+      # A day, because nothing reads this after the run that made it — unlike the reports, which
+      # are uploaded for a person to open.
       - uses: actions/upload-artifact@v7
         with:
           name: app
           path: artifacts/app/
           retention-days: 1
+
+  # Whether the code this branch changed is tested. Not the repository's overall percentage, which
+  # a review cannot act on — Core sits above 95%, so a solution-wide 80% gate would pass with an
+  # entirely untested new service in the diff. scripts/coverage.mjs takes the added and rewritten
+  # lines, keeps the ones the instrumenter counted as coverable, and holds them to an 80% floor;
+  # docs/testing.md has the reasoning. The result is written to this run's summary page, so the
+  # number is read without opening a log or downloading the report.
+  #
+  # Advisory, like the two browser jobs: it goes red under the floor but `main`'s ruleset requires
+  # "Build and test" alone, so it reports rather than blocks. It needs no compiler — the report was
+  # produced by the test run above — so it is node and a git history, and it is over in seconds.
+  coverage:
+    name: Coverage
+    needs: build
+    if: github.event_name != 'workflow_call'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # The whole history, unlike every other job here: judging the change means diffing against
+      # the merge base, and the single-commit checkout the others get has nothing to diff against.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - uses: actions/download-artifact@v7
+        with:
+          name: coverage
+          path: artifacts/coverage
+
+      # The base branch rather than a hardcoded main, so a pull request onto a release branch is
+      # judged on what it actually changed. workflow_dispatch has no pull request and falls back to
+      # the repository's default branch.
+      - name: Judge the lines this change touched
+        run: node scripts/coverage.mjs
+        env:
+          COVERAGE_BASE: origin/${{ github.event.pull_request.base.ref || github.event.repository.default_branch }}
 
   # What the app does: the public/admin split, the dialogs, the match-day journey, both languages,
   # the phone layout. See docs/testing.md.
