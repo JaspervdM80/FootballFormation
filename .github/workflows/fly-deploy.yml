@@ -5,7 +5,15 @@ name: Deploy to Fly.io
 on:
   push:
     branches: [main]
+  # The confirmation is what the gate job and the environment reviewer used to be for this route:
+  # both went when merging became the release, and a dispatch has neither a pull request behind it
+  # nor a pause in front of it. A stray "Run workflow" click would otherwise replace the container
+  # that is serving, which on a match day drops the live screen's circuits.
   workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type "deploy" to replace what is serving right now
+        required: true
 
 # One deploy at a time: SQLite lives on a single volume and the app migrates on boot, so two
 # overlapping deploys race over one machine.
@@ -17,27 +25,30 @@ permissions:
   contents: read
 
 jobs:
-  # Gate: nothing reaches the Fly volume that doesn't compile and pass its tests. The app
-  # auto-migrates on startup, so a broken build is a broken production database.
-  build:
-    uses: ./.github/workflows/ci.yml
-
+  # The merge is the decision. Every check on the pull request had to be green before it could land,
+  # and the branch had to be up to date with main to get there, so this starts the moment the merge
+  # commit exists — no gate job, no approval, nobody to wait for. The compile still happens: flyctl
+  # builds the image from the Dockerfile, so a merge that does not build never reaches the volume,
+  # and the smoke check below is what proves the one that did is serving.
   deploy:
-    needs: build
-    # `workflow_dispatch` runs against any branch, and without the ref check would put that branch
-    # on the production volume. The actor check is about *who*: a dispatch can be started by anyone
-    # with write access, and while the environment's reviewer below would stop it anyway, refusing
-    # it here keeps a run that was never going to deploy out of the approval queue.
+    # Three conditions, and only the first applies to a merge. `workflow_dispatch` runs against any
+    # branch, and without the ref check would put that branch on the production volume; the actor
+    # check is about *who*, since a dispatch can be started by anyone with write access; the input
+    # is about *meant to*. A merge is none of these — it arrives already reviewed by four green
+    # checks — so the `push` arm passes on the ref alone and deploys with nothing to fill in.
+    #
+    # On a push `inputs.confirm` is null, which is why the dispatch conditions sit behind the
+    # event_name test rather than beside it.
     if: >-
       github.ref == 'refs/heads/main'
-      && (github.event_name != 'workflow_dispatch' || github.actor == github.repository_owner)
+      && (github.event_name != 'workflow_dispatch'
+          || (github.actor == github.repository_owner && inputs.confirm == 'deploy'))
     runs-on: ubuntu-latest
-    # The gate that decides *whether* a release goes out, and the only place the Fly token exists.
-    # `production` carries a required reviewer, so this job holds at "Waiting" until a human
-    # approves it — merging to main proposes a deploy rather than performing one. It also carries a
-    # deployment branch policy of `main` only, which is what stops a workflow added on a feature
-    # branch from reading FLY_API_TOKEN at all: an environment secret is unreachable from a ref the
-    # environment does not admit. See docs/deployment.md — none of it lives in this file, and the
+    # Not a gate any more — the only place the Fly token exists. `production` carries a deployment
+    # branch policy of `main` only, which is what stops a workflow added on a feature branch from
+    # reading FLY_API_TOKEN at all: an environment secret is unreachable from a ref the environment
+    # does not admit. Its *Required reviewers* box is deliberately empty, which is what makes a
+    # merge deploy on its own. See docs/deployment.md — none of it lives in this file, and the
     # environment has to exist before this workflow runs.
     environment:
       name: production

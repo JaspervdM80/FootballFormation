@@ -2,10 +2,16 @@
 
 `tests/FootballFormation.Core.Tests` — xUnit v3. Run with `dotnet test` from the repo root.
 
-CI runs `dotnet build -c Release` and `dotnet test` as a **gate**: the Fly.io deploy job depends on
-it, so nothing reaches the production volume that doesn't compile and pass. Before that gate
-existed a push to `main` deployed straight to production, and the app auto-migrates on boot — a bad
-migration reached a live database on startup.
+CI runs `dotnet build -c Release` and `dotnet test` as a **gate on the merge**: it is one of the four
+checks that have to be green before a pull request can land, and since landing is what deploys, a
+commit that does not compile or does not pass never becomes a release. The gate used to sit one step
+later — the deploy job depended on a re-run of this workflow — and it moved forward when merging
+became the release. What stands between a merge and the volume now is the Docker build, which
+compiles the app again and fails the deploy if it cannot, and the `/health` smoke check, which
+refuses to call the release good until the new commit is the one answering.
+
+Getting that ordering right matters because the app auto-migrates on boot: a bad migration reaches a
+live database on startup, and the only cheap place to catch it is here.
 
 ## What is covered
 
@@ -207,9 +213,10 @@ Everything lives in `.github/workflows/ci.yml`, in four jobs on one chain:
 
 ```
 Build and test ──┬── Coverage
-  (required)     ├── Playwright
+                 ├── Playwright
                  └── Visual check
-                       (all three advisory)
+
+        (all four are required checks)
 ```
 
 **`Build and test`** restores, builds Release, runs `dotnet test`, then publishes — and the publish
@@ -228,9 +235,10 @@ seconds. The verdict, the whole-project line and branch numbers, and a per-file 
 uncovered line numbers are written to `$GITHUB_STEP_SUMMARY` — the run's own front page, so the
 result is read without opening a log or downloading the Cobertura report.
 
-Advisory, like the browser jobs below: it goes red under the floor without blocking a merge, since
-`main`'s ruleset names **Build and test** and nothing else. Promoting it is one line in
-`.github/rulesets/main-build-and-test.json` and nothing in the workflow.
+Blocking, like the browser jobs below: `main`'s ruleset names all four checks, so going under the
+floor keeps the merge button disabled. That is safe to require because the floor is on the lines a
+change *touched* — a pull request with no coverable line in it measures nothing and passes, rather
+than wedging on a division by zero.
 
 **`Playwright` and `Visual check`** download that artifact and start it. Neither calls a compiler;
 they install the .NET SDK only for the runtime to run `dotnet FootballFormation.Web.dll` with.
@@ -262,10 +270,10 @@ Playwright moves the browser revision without moving `package.json`.
 
 **`pull_request`, and that is the whole of it.** The merge ref is the thing worth building:
 `actions/checkout` resolves a `pull_request` event to `refs/pull/N/merge`, the branch already merged
-into `main`, where a push event checks out the branch tip on its own. With
-`strict_required_status_checks_policy` off (see `deployment.md`) a branch can merge without being
-rebuilt against a moved `main`, so this is the only event that covers that combination. It covers a
-fork's pull request too.
+into `main`, where a push event checks out the branch tip on its own. Merging is what deploys and
+nothing re-runs on `main` afterwards, so this event is the last word on the commit that reaches the
+volume — `strict_required_status_checks_policy` is on (see `deployment.md`) so the branch cannot
+have gone stale underneath it. It covers a fork's pull request too.
 
 `ci.yml` used to carry a `push` trigger as well, and `ui-checks.yml` ran on push alone, so a pull
 request built four times over two files. The push trigger had a real reason once — GitHub starts no
@@ -279,9 +287,10 @@ app-token behaviour ever regresses, the symptom is a pull request whose checks n
 than a red one — `workflow_dispatch` is the escape hatch and runs the browsers too, and one more
 commit on the branch also does it.
 
-**`workflow_call`** is `fly-deploy.yml` asking for its gate, and the two browser jobs skip that
-event by `if`. A deploy waits on the build and the unit tests; an advisory browser job should not
-stand between a merged pull request and a release.
+**`workflow_dispatch`** is the escape hatch, and the only other trigger. `ci.yml` used to expose a
+**`workflow_call`** as well, which is how `fly-deploy.yml` re-ran the build as its gate — the browser
+jobs opted out of that event so a flake could not hold up a release. Both are gone: the deploy has no
+gate job any more, the merge is the release, and every job here blocks the merge instead.
 
 ### Is it stable enough for CI?
 
@@ -291,10 +300,11 @@ busy loops competing for them, which stretched a run to 2.2–2.5 minutes and ch
 That is the retry-on-outcome design doing its job — `clickFor` absorbs a slow circuit instead of
 failing on it.
 
-It runs on every pull request as the `playwright` job in **`.github/workflows/ci.yml`**. `main`'s
-ruleset requires only **Build and test**, so this check is advisory: it reports, it does not block.
-Promoting it once it has a track record on real runners is one line in
-`.github/rulesets/main-build-and-test.json` and nothing in the workflow.
+It runs on every pull request as the `playwright` job in **`.github/workflows/ci.yml`**, and `main`'s
+ruleset names it, so a red run holds the merge. It was advisory until merging became the release;
+once nothing re-tests on `main`, a browser failure has to be dealt with on the pull request or not at
+all. The other side of that trade is that a flake blocks too — re-run the job from the run's page,
+because `.github/rulesets/main-every-check-green.json` grants no bypass to anyone.
 
 The job compiles nothing — it starts the app the `Build and test` job published, so a cold compile
 is never competing with the `webServer` start-up timeout. It installs only Chromium. On a failure it
@@ -357,7 +367,7 @@ also a Dutch test.
 Specs share one app and one database and run in a single worker, so they stay out of each other's
 way by naming what they create after themselves rather than by counting rows.
 
-Runs on every pull request as an advisory check — see "Is it stable enough for CI?" above.
+Runs on every pull request as a required check — see "Is it stable enough for CI?" above.
 
 ## Visual checks
 
@@ -370,8 +380,9 @@ touch target is under its floor.
 Setting `VISUAL_APP_DLL` to a published `FootballFormation.Web.dll` skips the build and runs that
 copy instead — which is how the `Visual check` job does it, against what `Build and test` published.
 
-It runs on every pull request as the `visual` job in `ci.yml` — advisory, like the Playwright job
-beside it. That job uploads `artifacts/visual/` whether it passed or not: the
+It runs on every pull request as the `visual` job in `ci.yml` — required, like the Playwright job
+beside it, so a page that stops rendering stops the merge. That job uploads `artifacts/visual/`
+whether it passed or not: the
 measurements are the part that can fail, but the screenshots are worth a look on a pull request that
 changed a page, and nothing else in CI produces one. Locally the harness drives the Chromium in a
 Claude Code web container; everywhere else `visual-check.mjs` lets Playwright resolve its own, which

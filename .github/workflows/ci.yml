@@ -8,22 +8,20 @@ name: CI
 # against, so the app the browsers see is the app the unit tests passed on, not a rebuild of it.
 
 on:
-  # The merge ref, which is the only thing worth building. `actions/checkout` resolves a
-  # `pull_request` event to `refs/pull/N/merge` — this branch already merged into main — where a
-  # push event checks out the branch tip on its own. `strict_required_status_checks_policy` is
-  # deliberately off (see docs/deployment.md), so a branch can merge without being rebuilt against
-  # a moved main, and this event is what covers that. It also covers a fork's pull request.
+  # The event that reports these four checks in the ordinary course of things, and the merge ref is
+  # the thing worth building: `actions/checkout` resolves a `pull_request` event to
+  # `refs/pull/N/merge`, this branch already merged into main, where a push event would check out
+  # the branch tip on its own. Nothing runs on main afterwards — merging deploys — so what goes
+  # green here is the last word on the commit that reaches the volume. It covers a fork's pull
+  # request too.
   pull_request:
-  # Called by fly-deploy.yml, so the gate in front of a deploy is literally the same build and test
-  # a pull request ran, rather than a copy of it that can drift. The browser jobs below opt out of
-  # this event: they are advisory, and a flaky browser should not be able to hold up a release.
-  workflow_call:
-  # The escape hatch. Runs everything, browsers included — useful for checking a branch that has no
-  # pull request yet, and for the case where a pull request somehow shows no checks at all.
+  # The escape hatch, for a branch with no pull request yet and for the case where a pull request
+  # somehow shows no checks at all. It reports the same four contexts, so it can unlock a merge on
+  # its own — off the branch tip rather than the merge ref. See docs/deployment.md.
   workflow_dispatch:
 
-# Keyed by ref, so a pull request's checks start straight away instead of queueing behind a
-# deploy. A run on main is left to finish — its build is what a deploy is waiting on.
+# Keyed by ref, so pushing again to a pull request cancels that pull request's run and nothing
+# else. A dispatched run is left to finish: it was asked for by hand.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -32,8 +30,10 @@ permissions:
   contents: read
 
 jobs:
-  # The required check. `main`'s ruleset names "Build and test" exactly, so renaming this job means
-  # editing .github/rulesets/main-build-and-test.json to match — see docs/deployment.md.
+  # All four jobs here are required checks, and `main`'s ruleset names each of them by the `name:`
+  # it declares — so renaming one means editing .github/rulesets/main-every-check-green.json in the
+  # same change, or the merge button waits forever on a check nothing reports. See
+  # docs/deployment.md.
   build:
     name: Build and test
     runs-on: ubuntu-latest
@@ -112,13 +112,14 @@ jobs:
   # docs/testing.md has the reasoning. The result is written to this run's summary page, so the
   # number is read without opening a log or downloading the report.
   #
-  # Advisory, like the two browser jobs: it goes red under the floor but `main`'s ruleset requires
-  # "Build and test" alone, so it reports rather than blocks. It needs no compiler — the report was
-  # produced by the test run above — so it is node and a git history, and it is over in seconds.
+  # Blocking, like the two browser jobs below: under the floor, the merge button stays disabled. A
+  # change that touches no coverable line — docs, CSS, a workflow — measures nothing and passes, so
+  # requiring this cannot wedge a pull request that had no code in it. It needs no compiler, the
+  # report having come out of the test run above, so it is node and a git history and it is over in
+  # seconds.
   coverage:
     name: Coverage
     needs: build
-    if: github.event_name != 'workflow_call'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -148,15 +149,12 @@ jobs:
   # What the app does: the public/admin split, the dialogs, the match-day journey, both languages,
   # the phone layout. See docs/testing.md.
   #
-  # Advisory. `main`'s ruleset requires "Build and test" and nothing else, so this reports without
-  # blocking a merge — promoting it once it has a track record on real runners is one line in
-  # .github/rulesets/main-build-and-test.json and nothing here. It also skips the workflow_call
-  # event, which is fly-deploy.yml asking for its gate: a browser should not stand between a merged
-  # pull request and a release.
+  # Blocking. Merging is now the release, and nothing re-tests on main afterwards, so a browser
+  # failure is dealt with here or not at all. The cost is that a flake holds the merge: re-run the
+  # job from the Actions page, because the ruleset grants no bypass to anyone.
   playwright:
     name: Playwright
     needs: build
-    if: github.event_name != 'workflow_call'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -229,12 +227,11 @@ jobs:
 
   # Whether it renders at all, and whether a thumb can hit it. This is the only thing holding the
   # Touch / PWA fixes in docs/known_issues.md in place — every one of them is CSS, and a MudBlazor
-  # upgrade or one more global .mud-* rule undoes any of them silently. Advisory, and skipped for
-  # workflow_call, for the same reasons as the job above.
+  # upgrade or one more global .mud-* rule undoes any of them silently. Blocking, for the same
+  # reason as the job above.
   visual:
     name: Visual check
     needs: build
-    if: github.event_name != 'workflow_call'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

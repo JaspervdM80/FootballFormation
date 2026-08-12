@@ -17,7 +17,7 @@ src/
 ├── FootballFormation.UI     — Razor Class Library: pages, components, theming, layout
 └── FootballFormation.Web    — Blazor host: Program.cs, App.razor, Routes.razor
 tests/
-└── FootballFormation.Core.Tests — xUnit; runs as a CI gate before deploy (see testing.md)
+└── FootballFormation.Core.Tests — xUnit; one of the four checks a merge waits for (see testing.md)
 ```
 
 UI is a separate RCL for future **MAUI Blazor Hybrid** reuse. Statistics and playing-time
