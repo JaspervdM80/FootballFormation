@@ -55,11 +55,11 @@ public partial class LiveMatch
     private bool _isAdmin;
 
     /// <summary>
-    /// Whether the bench strip under the pitch is drawn. Per circuit and not stored: it is a
-    /// glance-vs-space choice made in the moment, and it survives the live reloads because those
-    /// replace the data rather than the component.
+    /// Whether the timeline lists substitutions alongside the goals. Per circuit and not stored:
+    /// it is a glance-vs-detail choice made in the moment, and it survives the live reloads
+    /// because those replace the data rather than the component.
     /// </summary>
-    private bool ShowSubs { get; set; } = true;
+    private bool ShowSubstitutions { get; set; } = true;
 
     /// <summary>
     /// Drives the clock display only. The elapsed value is derived from the anchor the server
@@ -158,9 +158,16 @@ public partial class LiveMatch
     /// on the pitch right now — so a live substitution already made drops out of the list.
     /// </summary>
     private PlannedChanges PlannedChanges =>
-        DisplayPeriod is { } current && MidHalfSuccessor is { } next
-            ? PlannedChangesReport.Build(current, next, FindPlayer)
+        GameData is { } game && DisplayPeriod is { } current && MidHalfSuccessor is { } next
+            ? PlannedChangesReport.Build(current, next, FindPlayer,
+                game.Substitutions.Where(s => s.GamePeriodId == current.Id))
             : PlannedChanges.None;
+
+    /// <summary>
+    /// Whether the next line-up can be rolled on. Only during play: before kick-off the changes
+    /// are worth reading but there is no period running to advance out of.
+    /// </summary>
+    private bool CanAdvanceLineup => IsLivePeriod && MidHalfSuccessor is not null;
 
     /// <summary>What the match is doing right now, in one phrase under the clock.</summary>
     private string StatusLabel => GameData?.MatchState switch
@@ -232,7 +239,21 @@ public partial class LiveMatch
     private List<LiveMinutesRow> MinutesPlayed =>
         GameData is null ? [] : LiveMinutesReport.Build(GameData, ElapsedSeconds, FindPlayer);
 
-    /// <summary>Goals and substitutions on one timeline, most recent first.</summary>
+    /// <summary>
+    /// Whether those minutes are time actually played. Until the first kick-off there is none, and
+    /// the figures are the planned line-up costed at a full period each — a different thing, which
+    /// is why the card is headed differently rather than claiming minutes nobody has played yet.
+    /// </summary>
+    private bool MinutesAreActual => GameData?.HasActualTimings == true;
+
+    /// <summary>Whether anything at all has been recorded, filter or no filter.</summary>
+    private bool HasEvents => GameData is { } game && (game.Goals.Count > 0 || game.Substitutions.Count > 0);
+
+    /// <summary>
+    /// Goals and substitutions on one timeline, most recent first. Substitutions can be left out:
+    /// a match with a lot of rotation buries the goals among them, and the goals are what someone
+    /// scrolling back is usually after.
+    /// </summary>
     private List<MatchEvent> Timeline
     {
         get
@@ -245,7 +266,9 @@ public partial class LiveMatch
 
             var goals = GameData.Goals.Select(g =>
                 new MatchEvent(g.Minute ?? 0, g.RecordedAt, g.Id, true, g, null, progression[g.Id]));
-            var subs = GameData.Substitutions.Select(s => new MatchEvent(s.Minute, s.RecordedAt, s.Id, false, null, s));
+            IEnumerable<MatchEvent> subs = ShowSubstitutions
+                ? GameData.Substitutions.Select(s => new MatchEvent(s.Minute, s.RecordedAt, s.Id, false, null, s))
+                : [];
 
             // A goal and the sub that followed it commonly share a minute; the entry time keeps
             // them in the order they actually happened rather than the order they were queried.
@@ -326,18 +349,11 @@ public partial class LiveMatch
         Snackbar.Report(L, await ClockService.StartNextPeriodAsync(GameId), L["Next period started"]);
 
     /// <summary>
-    /// Rolls the next planned line-up onto the pitch, after showing what that changes. Confirmed
-    /// rather than immediate because it is the one control here with no way back: advancing a
-    /// period rewrites who is on, and the timeline records no such event to undo.
+    /// Rolls the next planned line-up onto the pitch. Asks nothing first: the button sits under
+    /// the list of exactly the changes it makes, which is what a confirmation would have said.
     /// </summary>
-    private async Task AdvancePeriod()
-    {
-        var confirmed = await DialogService.PromptValueAsync<LiveNextLineupDialog, bool>(
-            L["Next line-up"], p => p.Add(x => x.Changes, PlannedChanges));
-        if (confirmed is null) return;
-
+    private async Task AdvancePeriod() =>
         Snackbar.Report(L, await ClockService.AdvancePeriodAsync(GameId), L["Next period started"]);
-    }
 
     private async Task FinishMatch()
     {

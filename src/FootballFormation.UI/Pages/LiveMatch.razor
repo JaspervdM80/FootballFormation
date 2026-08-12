@@ -59,26 +59,16 @@
             else if (GameData.MatchState == MatchState.InProgress)
             {
                 <div class="live-control-row">
-                    @if (IsLivePeriod)
+                    @* A quarter boundary is not a stoppage but a planned line-up change, so it is
+                       carried out from the card that lists what it changes rather than from here. *@
+                    @if (BreakFollowsCurrentPeriod)
                     {
-                        @* A quarter boundary is not a stoppage, it is the planned line-up change
-                           partway through the half — so it is named after what it does. *@
-                        @if (BreakFollowsCurrentPeriod)
-                        {
-                            <MudButton Variant="Variant.Filled" Class="btn-gold"
-                                       StartIcon="@Icons.Material.Filled.SportsScore" OnClick="EndPeriod">
-                                @L["Half time"]
-                            </MudButton>
-                        }
-                        else if (MidHalfSuccessor is not null)
-                        {
-                            <MudButton Variant="Variant.Filled" Class="btn-gold"
-                                       StartIcon="@Icons.Material.Filled.SwapHoriz" OnClick="AdvancePeriod">
-                                @L["Next line-up"]
-                            </MudButton>
-                        }
+                        <MudButton Variant="Variant.Filled" Class="btn-gold"
+                                   StartIcon="@Icons.Material.Filled.SportsScore" OnClick="EndPeriod">
+                            @L["Half time"]
+                        </MudButton>
                     }
-                    else if (NextHalfLabel is { } startingNext)
+                    else if (!IsLivePeriod && NextHalfLabel is { } startingNext)
                     {
                         <MudButton Variant="Variant.Filled" Class="btn-gold"
                                    StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="StartNextPeriod">
@@ -128,53 +118,64 @@
                    HidePositionFit="!_isAdmin"
                    OnPlayerClicked="@(CanSubstitute ? EventCallback.Factory.Create<int>(this, OpenSubDialog) : default)" />
 
-            @* The bench is reference material, not something to act on, so it can be folded away
-               to keep the pitch and the controls on one phone screen. *@
-            <div class="live-bench-toggle">
-                <MudCheckBox T="bool" @bind-Value="ShowSubs" Dense="true" Size="Size.Small" Color="Color.Primary">
-                    @L["Show subs"]
-                </MudCheckBox>
+            <div class="live-bench">
+                <span class="live-bench-label">@L["Subs"]:</span>
+                @if (OnBench.Count == 0)
+                {
+                    <span class="live-bench-empty">@L["No subs"]</span>
+                }
+                else
+                {
+                    @foreach (var sub in OnBench)
+                    {
+                        <span class="live-bench-chip">
+                            @if (sub.Player?.ShirtNumber is not null)
+                            {
+                                <span class="live-bench-number">#@sub.Player.ShirtNumber</span>
+                            }
+                            @PlayerLabel(sub.PlayerId)
+                        </span>
+                    }
+                }
             </div>
-
-            @if (ShowSubs)
-            {
-                <div class="live-bench">
-                    <span class="live-bench-label">@L["Subs"]:</span>
-                    @if (OnBench.Count == 0)
-                    {
-                        <span class="live-bench-empty">@L["No subs"]</span>
-                    }
-                    else
-                    {
-                        @foreach (var sub in OnBench)
-                        {
-                            <span class="live-bench-chip">
-                                @if (sub.Player?.ShirtNumber is not null)
-                                {
-                                    <span class="live-bench-number">#@sub.Player.ShirtNumber</span>
-                                }
-                                @PlayerLabel(sub.PlayerId)
-                            </span>
-                        }
-                    }
-                </div>
-            }
         }
     </MudPaper>
 
     @* The quarters the line-up was planned in are never named on this screen, but the difference
        between them is exactly the set of changes due halfway through the half — which is the part
-       worth knowing at the touchline. Measured against the pitch as it stands, so a swap already
-       made live disappears from the list.
+       worth knowing at the touchline. Measured against the pitch as it stands, and stripped of the
+       swaps play has already overtaken, so nothing here is a change the coach cannot still make.
+       The button that carries them out sits at the foot of the list rather than up with the clock
+       controls, so the tap is made while reading what it is about to do.
        Admin only, like the minutes table: this is what the coach is about to do, not what has
        happened, and a plan on a shared screen invites being asked about before it is carried out. *@
     <AuthorizeView Roles="@AppRoles.Admin">
         @{ var planned = PlannedChanges; }
-        @if (!planned.IsEmpty)
+        @* An empty list is still worth a card while the change can be made — otherwise the only
+           way on to the next line-up would vanish exactly when nobody needs swapping. *@
+        @if (!planned.IsEmpty || CanAdvanceLineup)
         {
             <MudPaper Class="pa-4" Elevation="2" Style="border-radius: 16px;">
                 <div class="card-label">@L["Changes at half-way"]</div>
-                <PlannedChangesList Changes="planned" />
+
+                @if (planned.IsEmpty)
+                {
+                    <MudText Typo="Typo.body2" Style="color: var(--ink-subtle);">
+                        @L["Nobody changes — the next line-up is the one already on the pitch."]
+                    </MudText>
+                }
+                else
+                {
+                    <PlannedChangesList Changes="planned" />
+                }
+
+                @if (CanAdvanceLineup)
+                {
+                    <MudButton Variant="Variant.Filled" Class="btn-gold live-advance-btn" FullWidth="true"
+                               StartIcon="@Icons.Material.Filled.SwapHoriz" OnClick="AdvancePeriod">
+                        @L["Next line-up"]
+                    </MudButton>
+                }
             </MudPaper>
         }
     </AuthorizeView>
@@ -200,10 +201,20 @@
     <MudPaper Class="pa-4" Elevation="2" Style="border-radius: 16px;">
         <div class="card-label">@L["Timeline"]</div>
 
+        @* Rotation fills this list with swaps nobody is scrolling back for, so they fold away and
+           leave the goals on their own. *@
+        <div class="live-timeline-toggle">
+            <MudCheckBox T="bool" @bind-Value="ShowSubstitutions" Dense="true" Size="Size.Small" Color="Color.Primary">
+                @L["Show substitutions"]
+            </MudCheckBox>
+        </div>
+
         @if (Timeline.Count == 0)
         {
+            @* Two different emptinesses, and saying "nothing has happened" during a match with
+               three substitutions in it would be the checkbox's doing, not the truth. *@
             <MudText Typo="Typo.body2" Style="color: var(--ink-subtle);">
-                @L["Nothing has happened yet"]
+                @(HasEvents ? L["No goals yet"] : L["Nothing has happened yet"])
             </MudText>
         }
         else
@@ -265,7 +276,9 @@
 
     <AuthorizeView Roles="@AppRoles.Admin">
         <MudPaper Class="pa-4 live-minutes-card" Elevation="2" Style="border-radius: 16px;">
-            <div class="card-label">@L["Minutes played"]</div>
+            @* Before kick-off these are the minutes the line-up plans for, not minutes anyone has
+               played — the heading says which, because the numbers themselves cannot. *@
+            <div class="card-label">@(MinutesAreActual ? L["Minutes played"] : L["Planned minutes"])</div>
 
             @if (MinutesPlayed.Count == 0)
             {

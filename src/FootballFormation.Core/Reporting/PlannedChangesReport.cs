@@ -11,6 +11,23 @@ public record PlannedSubstitution(Player? PlayerOff, Player? PlayerOn, PlayerPos
 /// <summary>A player who stays on the pitch but in a different position.</summary>
 public record PlannedMove(Player Player, PlayerPosition From, PlayerPosition To);
 
+/// <summary>
+/// The same swap in terms of the line-up rows rather than the players, which is what carrying one
+/// out needs: a slot and a position change hands, and neither is a property of a name.
+/// </summary>
+public record PlannedSwap(GamePlayerPosition? Off, GamePlayerPosition? On);
+
+/// <summary>
+/// The swaps the next line-up implies, split by whether play has already answered them.
+/// <para>
+/// <paramref name="Overtaken"/> is the ones it has: the player the plan takes off went off live and
+/// somebody came on for them, so the plan's arrival is no longer wanted and the slot's occupant is
+/// no longer the player the plan meant to withdraw. <paramref name="Off"/> is never null there — a
+/// swap with nobody named to come off has nothing for play to overtake.
+/// </para>
+/// </summary>
+public record PlannedSwaps(List<PlannedSwap> Viable, List<PlannedSwap> Overtaken);
+
 /// <summary>What the next line-up does: who is swapped, and who shifts position.</summary>
 public record PlannedChanges(List<PlannedSubstitution> Substitutions, List<PlannedMove> Moves)
 {
@@ -28,6 +45,13 @@ public record PlannedChanges(List<PlannedSubstitution> Substitutions, List<Plann
 /// touches every slot while only one player actually leaves the pitch, and a flat list of slot
 /// differences buries that one substitution among six shuffles.
 /// </para>
+/// <para>
+/// Only the swaps still open to the coach are reported. Play overtakes a plan: once the player it
+/// takes off has been taken off live, the difference between the two line-ups still names their
+/// slot, but it now proposes to withdraw whoever came on for them — a substitution nobody planned.
+/// <see cref="Swaps"/> is the same walk without the names, and <c>MatchClockService</c> applies
+/// what it calls overtaken rather than deciding again, so the card and the button cannot part ways.
+/// </para>
 /// </summary>
 public static class PlannedChangesReport
 {
@@ -35,11 +59,85 @@ public static class PlannedChangesReport
     /// applied to it, so the changes shown stay true to who is actually on the pitch.</param>
     /// <param name="next">The period whose line-up takes over.</param>
     /// <param name="findPlayer">Resolves an id to a player; unknown ids come back as null.</param>
-    public static PlannedChanges Build(GamePeriod current, GamePeriod next, Func<int, Player?> findPlayer)
+    /// <param name="liveChanges">The substitutions already made in <paramref name="current"/>.
+    /// They decide which swaps are still worth showing — see <see cref="KickOffStarters"/>.</param>
+    public static PlannedChanges Build(
+        GamePeriod current,
+        GamePeriod next,
+        Func<int, Player?> findPlayer,
+        IEnumerable<GameSubstitution> liveChanges)
     {
         var before = StartersBySlot(current);
         var after = StartersBySlot(next);
 
+        return new PlannedChanges(
+            [.. PairUp(before, after, KickOffStarters(before.Values, liveChanges)).Viable
+                .Select(swap => Name(swap, findPlayer))],
+            Moves(before, after, findPlayer));
+    }
+
+    /// <summary>
+    /// The same swaps as line-up rows, for the caller that has to carry them out rather than
+    /// print them. See <see cref="PlannedSwaps"/> for what the two halves mean.
+    /// </summary>
+    public static PlannedSwaps Swaps(
+        GamePeriod current, GamePeriod next, IEnumerable<GameSubstitution> liveChanges)
+    {
+        var before = StartersBySlot(current);
+
+        return PairUp(before, StartersBySlot(next), KickOffStarters(before.Values, liveChanges));
+    }
+
+    /// <summary>
+    /// A swap as the screen says it. The position is the one being taken over, which for a player
+    /// coming off with nobody named to replace them is the one they are vacating.
+    /// </summary>
+    private static PlannedSubstitution Name(PlannedSwap swap, Func<int, Player?> findPlayer) =>
+        new(swap.Off is null ? null : findPlayer(swap.Off.PlayerId),
+            swap.On is null ? null : findPlayer(swap.On.PlayerId),
+            (swap.On ?? swap.Off)!.Position);
+
+    /// <summary>
+    /// Whether the coach can still make this swap as planned. It names the player the plan takes
+    /// off, and once the touchline has already taken them off the swap is about somebody else —
+    /// whoever inherited the slot — which is not what was planned for them. A swap with nobody
+    /// named to come off is kept: an unbalanced line-up is worth flagging.
+    /// </summary>
+    private static bool IsStillViable(PlannedSwap swap, HashSet<int> kickOffStarters) =>
+        swap.Off is null || kickOffStarters.Contains(swap.Off.PlayerId);
+
+    /// <summary>
+    /// Who was on the pitch when the period kicked off. The line-up records where everyone stands
+    /// <em>now</em>, so rewinding the substitutions made since is the only way back to the eleven
+    /// the plan was written against — the same walk <see cref="GameMinutesReport"/> makes.
+    /// </summary>
+    private static HashSet<int> KickOffStarters(
+        IEnumerable<GamePlayerPosition> onPitchNow, IEnumerable<GameSubstitution> liveChanges)
+    {
+        var starters = onPitchNow.Select(p => p.PlayerId).ToHashSet();
+
+        // Newest first, so a slot changing hands twice unwinds through the player who held it in
+        // between rather than skipping straight past them. The id settles a double substitution,
+        // where both changes share a second.
+        foreach (var sub in liveChanges.OrderByDescending(s => s.AtSeconds).ThenByDescending(s => s.Id))
+        {
+            starters.Remove(sub.PlayerOnId);
+            starters.Add(sub.PlayerOffId);
+        }
+
+        return starters;
+    }
+
+    /// <summary>
+    /// Matches who goes off to who comes on. An arrival is paired with whoever held the slot they
+    /// are taking, which is the swap a coach would call out; when that player is staying on the
+    /// pitch — a shuffle rather than a straight swap — the next unpaired departure is used instead.
+    /// </summary>
+    private static PlannedSwaps PairUp(
+        Dictionary<int, GamePlayerPosition> before,
+        Dictionary<int, GamePlayerPosition> after,
+        HashSet<int> kickOffStarters)
+    {
         var beforeIds = before.Values.Select(p => p.PlayerId).ToHashSet();
         var afterIds = after.Values.Select(p => p.PlayerId).ToHashSet();
 
@@ -50,24 +148,8 @@ public static class PlannedChangesReport
         var arriving = after.OrderBy(e => e.Key).Select(e => e.Value)
             .Where(p => !beforeIds.Contains(p.PlayerId)).ToList();
 
-        return new PlannedChanges(
-            PairUp(leaving, arriving, before, findPlayer),
-            Moves(before, after, findPlayer));
-    }
-
-    /// <summary>
-    /// Matches who goes off to who comes on. An arrival is paired with whoever held the slot they
-    /// are taking, which is the swap a coach would call out; when that player is staying on the
-    /// pitch — a shuffle rather than a straight swap — the next unpaired departure is used instead.
-    /// </summary>
-    private static List<PlannedSubstitution> PairUp(
-        List<GamePlayerPosition> leaving,
-        List<GamePlayerPosition> arriving,
-        Dictionary<int, GamePlayerPosition> before,
-        Func<int, Player?> findPlayer)
-    {
         var unpaired = new List<GamePlayerPosition>(leaving);
-        var substitutions = new List<PlannedSubstitution>();
+        var swaps = new List<PlannedSwap>();
 
         foreach (var on in arriving)
         {
@@ -77,17 +159,14 @@ public static class PlannedChangesReport
 
             if (off is not null) unpaired.Remove(off);
 
-            substitutions.Add(new PlannedSubstitution(
-                off is null ? null : findPlayer(off.PlayerId),
-                findPlayer(on.PlayerId),
-                on.Position));
+            swaps.Add(new PlannedSwap(off, on));
         }
 
         // Anyone left over comes off with nobody named to replace them.
-        substitutions.AddRange(unpaired.Select(off =>
-            new PlannedSubstitution(findPlayer(off.PlayerId), null, off.Position)));
+        swaps.AddRange(unpaired.Select(off => new PlannedSwap(off, null)));
 
-        return substitutions;
+        var byViability = swaps.ToLookup(swap => IsStillViable(swap, kickOffStarters));
+        return new PlannedSwaps([.. byViability[true]], [.. byViability[false]]);
     }
 
     private static List<PlannedMove> Moves(

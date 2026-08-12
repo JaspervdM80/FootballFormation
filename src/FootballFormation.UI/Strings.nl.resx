@@ -194,7 +194,6 @@
   <data name="Start {0}" xml:space="preserve"><value>{0} starten</value></data>
   <data name="Next line-up" xml:space="preserve"><value>Volgende opstelling</value></data>
   <data name="Changes at half-way" xml:space="preserve"><value>Wissels halverwege</value></data>
-  <data name="The line-up planned for the rest of this half takes over. The clock keeps running." xml:space="preserve"><value>De opstelling die voor de rest van deze helft gepland staat neemt het over. De klok loopt door.</value></data>
   <data name="Nobody changes — the next line-up is the one already on the pitch." xml:space="preserve"><value>Er verandert niemand — de volgende opstelling is die al in het veld staat.</value></data>
   <data name="Position changes" xml:space="preserve"><value>Positiewissels</value></data>
   <data name="Finish match" xml:space="preserve"><value>Wedstrijd afsluiten</value></data>
@@ -205,8 +204,10 @@
   <data name="Goal against" xml:space="preserve"><value>Tegen doelpunt</value></data>
   <data name="Timeline" xml:space="preserve"><value>Tijdlijn</value></data>
   <data name="Nothing has happened yet" xml:space="preserve"><value>Er is nog niets gebeurd</value></data>
-  <data name="Show subs" xml:space="preserve"><value>Wissels tonen</value></data>
+  <data name="Show substitutions" xml:space="preserve"><value>Wissels tonen</value></data>
+  <data name="No goals yet" xml:space="preserve"><value>Nog geen doelpunten</value></data>
   <data name="Minutes played" xml:space="preserve"><value>Gespeelde minuten</value></data>
+  <data name="Planned minutes" xml:space="preserve"><value>Opgestelde minuten</value></data>
   <data name="On the pitch" xml:space="preserve"><value>In het veld</value></data>
   <data name="Live now" xml:space="preserve"><value>Nu live</value></data>
   <!-- Home banner: the same fixture before kick-off -->

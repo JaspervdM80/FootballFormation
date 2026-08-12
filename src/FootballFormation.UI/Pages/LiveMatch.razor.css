@@ -114,12 +114,7 @@
     color: var(--ink-subtle);
 }
 
-/* Bench strip under the pitch, and the checkbox that folds it away. The checkbox's own touch
-   target is sized in app.css — this rule reaches the wrapper, not the MudBlazor component in it. */
-.live-bench-toggle {
-    margin-top: 6px;
-}
-
+/* Bench strip under the pitch */
 .live-bench {
     display: flex;
     flex-wrap: wrap;
@@ -164,7 +159,12 @@
     gap: 8px;
 }
 
-/* Timeline */
+/* Timeline, and the checkbox that folds the substitutions out of it. The checkbox's own touch
+   target is sized in app.css — this rule reaches the wrapper, not the MudBlazor component in it. */
+.live-timeline-toggle {
+    margin-bottom: 2px;
+}
+
 .live-timeline {
     display: flex;
     flex-direction: column;
