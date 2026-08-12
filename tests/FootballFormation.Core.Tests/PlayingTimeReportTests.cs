@@ -117,8 +117,7 @@ public class PlayingTimeReportTests
     [Fact]
     public void Share_is_measured_against_playable_minutes_so_a_full_game_reads_100()
     {
-        // 45 minutes in halves is 2 × 22 — the integer split drops a minute. Playing every period
-        // must still read 100%, not 98%.
+        // 45 minutes in halves is 2 × 22.5, and playing both of them is the whole match.
         var game = TestData.Game(durationMinutes: 45);
         var first = game.AddPeriod(PeriodType.FirstHalf);
         var second = game.AddPeriod(PeriodType.SecondHalf);
@@ -131,7 +130,7 @@ public class PlayingTimeReportTests
 
         var row = PlayingTimeReport.Build(game, [Starter], lineups).Single();
 
-        Assert.Equal(44, row.TotalMinutes);
+        Assert.Equal(45, row.TotalMinutes);
         Assert.Equal(100, row.Percentage);
     }
 

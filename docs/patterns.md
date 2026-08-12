@@ -139,9 +139,14 @@ split was cut along the wrong line.
 
 ## Domain logic on the model
 Anything computable without the database lives on the entity, not in a service or a page:
-`Game.PeriodCount`, `Game.PeriodDurationMinutes`, `Game.IsInRoster`, `Game.SelectRoster`,
-`Game.LivePeriod()`, `Game.NextPeriod()`, `GameSplitTypeExtensions.PeriodCount()/PeriodLabel()`. `PeriodCount` derives from
+`Game.PeriodCount`, `Game.PeriodDurationSeconds`, `Game.IsInRoster`, `Game.SelectRoster`,
+`Game.LivePeriod()`, `Game.NextPeriod()`,
+`GameSplitTypeExtensions.PeriodCount()/PeriodDurationSeconds()/PeriodLabel()`. `PeriodCount` derives from
 `PeriodTypeExtensions.ForSplitType`, so the count can never drift from the periods actually created.
+
+The split-type extensions take the duration as a parameter rather than a `Game`, so the game dialog
+can preview the split of a duration that has not been saved onto a game yet and get the same answer
+the saved game will give.
 
 ### Pass a value object, don't eager-load a navigation
 When a model rule needs data the entity doesn't own, hand it in as a parameter rather than relying

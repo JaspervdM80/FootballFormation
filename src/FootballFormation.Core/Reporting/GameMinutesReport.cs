@@ -76,7 +76,7 @@ public static class GameMinutesReport
                 // No timings anywhere in this game: everyone fielded gets the whole period in the
                 // position they were planned for. Substitutes get nothing, as before.
                 foreach (var entry in period.PlayerPositions.Where(p => !p.IsSubstitute))
-                    Credit(seconds, entry.PlayerId, entry.Position, game.PeriodDurationMinutes * 60);
+                    Credit(seconds, entry.PlayerId, entry.Position, game.PeriodDurationSeconds);
 
                 continue;
             }

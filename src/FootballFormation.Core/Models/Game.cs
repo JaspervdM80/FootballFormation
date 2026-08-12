@@ -63,8 +63,15 @@ public class Game
     /// <summary>How many periods this game is split into.</summary>
     public int PeriodCount => SplitType.PeriodCount();
 
-    /// <summary>Minutes each period lasts, assuming an even split of the game duration.</summary>
-    public int PeriodDurationMinutes => PeriodCount == 0 ? 0 : GameDurationMinutes / PeriodCount;
+    /// <summary>Seconds each period lasts on an even split of the game duration.</summary>
+    public int PeriodDurationSeconds => SplitType.PeriodDurationSeconds(GameDurationMinutes);
+
+    /// <summary>
+    /// Minutes each period lasts, fractional when the split does not land on a whole minute
+    /// (50 in quarters is 4 × 12.5). For display — the arithmetic uses
+    /// <see cref="PeriodDurationSeconds"/>.
+    /// </summary>
+    public decimal PeriodDurationMinutes => SplitType.PeriodDurationMinutes(GameDurationMinutes);
 
     /// <summary>
     /// True when at least one period has a player placed on the pitch. Only meaningful when
@@ -225,6 +232,22 @@ public static class GameSplitTypeExtensions
     /// <summary>Derived from the period table itself, so the two can never drift apart.</summary>
     public static int PeriodCount(this GameSplitType splitType) =>
         PeriodTypeExtensions.ForSplitType(splitType).Length;
+
+    /// <summary>
+    /// How long one period lasts, in seconds. Seconds rather than minutes because a duration that
+    /// splits into fractions of a minute (50 in quarters, 45 in halves) still splits exactly into
+    /// seconds — 60 divides by every period count there is — so the periods always add back up to
+    /// the full match length instead of quietly losing the remainder to integer division.
+    /// </summary>
+    public static int PeriodDurationSeconds(this GameSplitType splitType, int gameDurationMinutes)
+    {
+        var count = splitType.PeriodCount();
+        return count == 0 ? 0 : gameDurationMinutes * 60 / count;
+    }
+
+    /// <summary>The same length in minutes, fractional when it has to be. For display only.</summary>
+    public static decimal PeriodDurationMinutes(this GameSplitType splitType, int gameDurationMinutes) =>
+        splitType.PeriodDurationSeconds(gameDurationMinutes) / 60m;
 
     /// <summary>Singular noun for one period, for use in sentences ("copy to next half").</summary>
     public static string PeriodLabel(this GameSplitType splitType) =>
