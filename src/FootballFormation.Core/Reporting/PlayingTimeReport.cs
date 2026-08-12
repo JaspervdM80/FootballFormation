@@ -60,13 +60,13 @@ public static class PlayingTimeReport
 
         var actual = game.HasActualTimings ? GameMinutesReport.Build(game) : null;
 
-        // Against playable time, not GameDurationMinutes: with odd durations the integer period
-        // split drops a minute (45 in halves → 2×22), and playing every period should still read
-        // 100%. A tracked game is measured against the time it really ran, for the same reason —
-        // a half whistled off early must not cap everyone who played it at 80%.
+        // Against playable time, not GameDurationMinutes: a game whose periods are not all written
+        // up yet has less than a full match to share out, and playing every period there should
+        // still read 100%. A tracked game is measured against the time it really ran, for the same
+        // reason — a half whistled off early must not cap everyone who played it at 80%.
         var playableSeconds = actual is not null
             ? game.PlayedDurationSeconds
-            : orderedPeriods.Count * game.PeriodDurationMinutes * 60;
+            : orderedPeriods.Count * game.PeriodDurationSeconds;
 
         return roster
             .Select(player => BuildRow(game, player, orderedPeriods, periodLineups, actual, playableSeconds))
@@ -94,7 +94,7 @@ public static class PlayingTimeReport
 
             details[period.Id] = Describe(player, entry);
 
-            if (entry is { IsSubstitute: false }) plannedSeconds += game.PeriodDurationMinutes * 60;
+            if (entry is { IsSubstitute: false }) plannedSeconds += game.PeriodDurationSeconds;
         }
 
         var seconds = actual?.SecondsFor(player.Id) ?? plannedSeconds;

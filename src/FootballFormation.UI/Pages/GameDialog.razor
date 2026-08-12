@@ -50,10 +50,10 @@
             </MudSelect>
             <MudText Typo="Typo.caption" Color="Color.Tertiary" Class="mb-3">
                 @{
-                    var periods = SplitType == GameSplitType.Halves ? 2 : 4;
-                    var periodLength = GameDurationMinutes / periods;
+                    var periods = SplitType.PeriodCount();
+                    var periodLength = SplitType.PeriodDurationMinutes(GameDurationMinutes);
                 }
-                @periods x @periodLength min @L["per"] @L[SplitType.PeriodLabel()]
+                @periods x @periodLength.ToString("0.##") min @L["per"] @L[SplitType.PeriodLabel()]
             </MudText>
             <MudSelect T="int" Label="@L["Unavailable Players"]" MultiSelection="true"
                        @bind-SelectedValues="UnavailablePlayerIds"

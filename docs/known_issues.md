@@ -56,6 +56,16 @@ Avoid repeating these mistakes:
   one instant share it, and rows written before the column existed all default to `0001-01-01`.
   Every test that predated this advanced `FakeTimeProvider` between substitutions, which is why it
   went unseen — the two that pin it now deliberately do not.
+- **A period length in minutes silently loses the remainder**: `Game.PeriodDurationMinutes` used to
+  be `GameDurationMinutes / PeriodCount` in `int`, and every planned-minutes figure multiplied that
+  truncated number back by 60. A 50 minute match in quarters became 4 × 12, so the dialog offered
+  48 minutes of a 50 minute match, the playing-time table planned everyone 4 minutes short, and the
+  builder's caption disagreed with the duration printed next to it. The fix is the rule to keep:
+  **period length is carried in seconds** (`Game.PeriodDurationSeconds`), which is always exact
+  because 60 divides by every period count there is, and the minutes form is a `decimal` for
+  display only. `MatchClockReport` already worked in seconds for exactly this reason — it just did
+  the division itself instead of asking the model. Reach for `PeriodDurationSeconds` in any new
+  arithmetic; `PeriodDurationMinutes` only ever goes on screen.
 - **Archiving is a filter on the future, not on the past**: only the "add existing player" picker and copy-forward look at `IsArchived`. `PlayerService.GetAllAsync` deliberately still returns archived players — it is the id → name lookup the match report and live screen resolve against, so filtering it would blank a scorer out of a game they scored in, which is the very thing archiving exists to prevent. Same reasoning for `Game.IsInRoster`: a past game has to be judged the way it was played. If a picker ever *should* hide them, filter at that call site, not in the lookup.
 
 ## Blazor / MudBlazor 9.x

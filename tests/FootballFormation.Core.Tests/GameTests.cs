@@ -5,18 +5,34 @@ namespace FootballFormation.Core.Tests;
 public class GameTests
 {
     [Theory]
-    [InlineData(GameSplitType.Halves, 60, 2, 30)]
-    [InlineData(GameSplitType.Quarters, 60, 4, 15)]
-    // Odd durations truncate: 45 in halves is 2×22, and the lost minute is why PlayingTimeReport
-    // measures share against playable minutes rather than GameDurationMinutes.
-    [InlineData(GameSplitType.Halves, 45, 2, 22)]
+    [InlineData(GameSplitType.Halves, 60, 2, 30.0)]
+    [InlineData(GameSplitType.Quarters, 60, 4, 15.0)]
+    // A duration that does not divide into whole minutes keeps its fraction rather than truncating.
+    [InlineData(GameSplitType.Halves, 45, 2, 22.5)]
+    [InlineData(GameSplitType.Quarters, 50, 4, 12.5)]
+    [InlineData(GameSplitType.Quarters, 45, 4, 11.25)]
     public void Period_count_and_length_follow_the_split(
-        GameSplitType split, int duration, int expectedCount, int expectedLength)
+        GameSplitType split, int duration, int expectedCount, double expectedLength)
     {
         var game = TestData.Game(split: split, durationMinutes: duration);
 
         Assert.Equal(expectedCount, game.PeriodCount);
-        Assert.Equal(expectedLength, game.PeriodDurationMinutes);
+        Assert.Equal((decimal)expectedLength, game.PeriodDurationMinutes);
+    }
+
+    [Theory]
+    [InlineData(GameSplitType.Halves, 45)]
+    [InlineData(GameSplitType.Quarters, 50)]
+    [InlineData(GameSplitType.Quarters, 45)]
+    [InlineData(GameSplitType.Halves, 61)]
+    public void The_periods_always_add_back_up_to_the_full_match_length(
+        GameSplitType split, int duration)
+    {
+        // The reason period length is carried in seconds: a fraction of a minute per period used
+        // to be truncated away, so four quarters of a 50 minute match added up to 48.
+        var game = TestData.Game(split: split, durationMinutes: duration);
+
+        Assert.Equal(duration * 60, game.PeriodCount * game.PeriodDurationSeconds);
     }
 
     [Fact]

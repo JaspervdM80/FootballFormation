@@ -45,9 +45,9 @@ public static class MatchClockReport
     {
         if (displayPeriod is null) return MatchClock.BeforeKickOff;
 
-        // From seconds, not minutes: an odd duration (45 in two halves) would lose half a minute
-        // per half to integer division and the clock would never reach full time.
-        var halfSeconds = game.GameDurationMinutes * 60 / 2;
+        // Always halves, whatever the game is split into — a quarters game is still two halves,
+        // and the scoreboard counts in halves.
+        var halfSeconds = GameSplitType.Halves.PeriodDurationSeconds(game.GameDurationMinutes);
 
         var half = displayPeriod.PeriodType.Half();
         var plannedStart = half == PeriodType.FirstHalf ? 0 : halfSeconds;
