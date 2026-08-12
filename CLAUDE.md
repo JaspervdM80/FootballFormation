@@ -42,7 +42,7 @@ dotnet ef database update    --project src/FootballFormation.Core
 src/FootballFormation.Core/   Models, Data (EF Core), Reporting, Services, Result — no UI references
 src/FootballFormation.UI/     Razor Class Library: pages, components, navigation, state, theming
 src/FootballFormation.Web/    Host: Program.cs, App.razor, Routes.razor, wwwroot (CSS, JS, PWA)
-tests/FootballFormation.Core.Tests/   xUnit v3 — the CI gate the deploy depends on
+tests/FootballFormation.Core.Tests/   xUnit v3 — one of the four checks a merge waits for
 docs/                         The detailed documentation (see the index below)
 scripts/                      visual-check.sh + its Playwright driver
 ```

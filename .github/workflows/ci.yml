@@ -8,14 +8,16 @@ name: CI
 # against, so the app the browsers see is the app the unit tests passed on, not a rebuild of it.
 
 on:
-  # The only event that reports these four checks, and the merge ref is the thing worth building:
-  # `actions/checkout` resolves a `pull_request` event to `refs/pull/N/merge`, this branch already
-  # merged into main, where a push event would check out the branch tip on its own. Nothing runs on
-  # main afterwards — merging deploys — so what goes green here is the last word on the commit that
-  # reaches the volume. It covers a fork's pull request too.
+  # The event that reports these four checks in the ordinary course of things, and the merge ref is
+  # the thing worth building: `actions/checkout` resolves a `pull_request` event to
+  # `refs/pull/N/merge`, this branch already merged into main, where a push event would check out
+  # the branch tip on its own. Nothing runs on main afterwards — merging deploys — so what goes
+  # green here is the last word on the commit that reaches the volume. It covers a fork's pull
+  # request too.
   pull_request:
-  # The escape hatch. Useful for checking a branch that has no pull request yet, and for the case
-  # where a pull request somehow shows no checks at all.
+  # The escape hatch, for a branch with no pull request yet and for the case where a pull request
+  # somehow shows no checks at all. It reports the same four contexts, so it can unlock a merge on
+  # its own — off the branch tip rather than the merge ref. See docs/deployment.md.
   workflow_dispatch:
 
 # Keyed by ref, so pushing again to a pull request cancels that pull request's run and nothing

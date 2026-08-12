@@ -5,7 +5,15 @@ name: Deploy to Fly.io
 on:
   push:
     branches: [main]
+  # The confirmation is what the gate job and the environment reviewer used to be for this route:
+  # both went when merging became the release, and a dispatch has neither a pull request behind it
+  # nor a pause in front of it. A stray "Run workflow" click would otherwise replace the container
+  # that is serving, which on a match day drops the live screen's circuits.
   workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type "deploy" to replace what is serving right now
+        required: true
 
 # One deploy at a time: SQLite lives on a single volume and the app migrates on boot, so two
 # overlapping deploys race over one machine.
@@ -23,13 +31,18 @@ jobs:
   # builds the image from the Dockerfile, so a merge that does not build never reaches the volume,
   # and the smoke check below is what proves the one that did is serving.
   deploy:
-    # `workflow_dispatch` runs against any branch, and without the ref check would put that branch
-    # on the production volume. The actor check is about *who*: a dispatch can be started by anyone
-    # with write access. With no reviewer left on the environment these two conditions are the whole
-    # of what stands in front of a dispatched release, rather than a tidy-up in front of one.
+    # Three conditions, and only the first applies to a merge. `workflow_dispatch` runs against any
+    # branch, and without the ref check would put that branch on the production volume; the actor
+    # check is about *who*, since a dispatch can be started by anyone with write access; the input
+    # is about *meant to*. A merge is none of these — it arrives already reviewed by four green
+    # checks — so the `push` arm passes on the ref alone and deploys with nothing to fill in.
+    #
+    # On a push `inputs.confirm` is null, which is why the dispatch conditions sit behind the
+    # event_name test rather than beside it.
     if: >-
       github.ref == 'refs/heads/main'
-      && (github.event_name != 'workflow_dispatch' || github.actor == github.repository_owner)
+      && (github.event_name != 'workflow_dispatch'
+          || (github.actor == github.repository_owner && inputs.confirm == 'deploy'))
     runs-on: ubuntu-latest
     # Not a gate any more — the only place the Fly token exists. `production` carries a deployment
     # branch policy of `main` only, which is what stops a workflow added on a feature branch from

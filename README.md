@@ -59,7 +59,7 @@ FootballFormation/
 │   ├── FootballFormation.UI/      # Blazor components, pages, helpers, layout
 │   └── FootballFormation.Web/     # Host project, Program.cs, wwwroot
 ├── tests/
-│   └── FootballFormation.Core.Tests/   # Service and domain tests (gate the deploy)
+│   └── FootballFormation.Core.Tests/   # Service and domain tests (gate the merge)
 ├── docs/                          # Architecture & project documentation
 │   ├── project_overview.md
 │   ├── architecture.md
