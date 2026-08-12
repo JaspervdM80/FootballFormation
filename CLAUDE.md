@@ -174,8 +174,8 @@ browser, in two places, both against a throwaway database:
   renders twice and the prerender is fully clickable and completely inert, so `goto()` waits for
   Blazor's `_bl_*` attributes and `clickFor()` clicks for an outcome. There are no fixed sleeps in
   that directory; do not introduce one.
-- **`scripts/visual-check.sh`** — the `Visual check` job in `ci.yml`, also blocking. Screenshots every
-  page, then measures every touch target on three phone viewports against the 44px floor. The only check that a page renders at all, and the only
+- **`scripts/visual-check.sh`** — the `📸 Visual check` job in `ci.yml`, also blocking. Screenshots
+  every page, then measures every touch target on three phone viewports against the 44px floor. The only check that a page renders at all, and the only
   thing holding the Touch / PWA fixes in `known_issues.md` in place.
 
 (`docs/testing.md` also references a `verify-ui` skill for the manual desktop/mobile × anonymous/
@@ -184,12 +184,12 @@ admin matrix; it is not part of this repository.)
 ## Workflow
 
 - Work on a feature branch. `main` takes pull requests only, and the merge button stays disabled
-  until **all four** checks are green — **Build and test**, **Coverage**, **Playwright**, **Visual
-  check** — the branch is up to date with `main`, and every review thread is resolved
+  until **all four** checks are green — **🔨 Build and test**, **📊 Coverage**, **🎭 Playwright**,
+  **📸 Visual check** — the branch is up to date with `main`, and every review thread is resolved
   (`.github/rulesets/main-every-check-green.json`, which grants no bypass to anyone).
 - `ci.yml` runs `dotnet build -c Release` + `dotnet test` on every pull request. That test run
-  carries the coverage collector, and the **Coverage** job judges the lines the pull request changed
-  against the 80% floor and writes the numbers to the run's summary page. A change with no coverable
+  carries the coverage collector, and the **📊 Coverage** job judges the lines the pull request
+  changed against the 80% floor and writes the numbers to the run's summary page. A change with no coverable
   line in it passes rather than wedging.
 - **Merging to `main` releases.** `fly-deploy.yml` starts on the merge commit with no gate job and
   no approval, then smoke-checks `/health` until it reports the commit that was just built. There is

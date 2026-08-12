@@ -31,11 +31,12 @@ permissions:
 
 jobs:
   # All four jobs here are required checks, and `main`'s ruleset names each of them by the `name:`
-  # it declares — so renaming one means editing .github/rulesets/main-every-check-green.json in the
-  # same change, or the merge button waits forever on a check nothing reports. See
-  # docs/deployment.md.
+  # it declares — emoji included, since the context is matched as a whole string. Renaming one means
+  # editing .github/rulesets/main-every-check-green.json in the same change *and* re-importing it
+  # into the repository's settings, or the merge button waits forever on a check nothing reports.
+  # See docs/deployment.md.
   build:
-    name: Build and test
+    name: 🔨 Build and test
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -118,7 +119,7 @@ jobs:
   # report having come out of the test run above, so it is node and a git history and it is over in
   # seconds.
   coverage:
-    name: Coverage
+    name: 📊 Coverage
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -153,7 +154,7 @@ jobs:
   # failure is dealt with here or not at all. The cost is that a flake holds the merge: re-run the
   # job from the Actions page, because the ruleset grants no bypass to anyone.
   playwright:
-    name: Playwright
+    name: 🎭 Playwright
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -230,7 +231,7 @@ jobs:
   # upgrade or one more global .mud-* rule undoes any of them silently. Blocking, for the same
   # reason as the job above.
   visual:
-    name: Visual check
+    name: 📸 Visual check
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 20

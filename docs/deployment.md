@@ -69,12 +69,13 @@ the decision to merge and the decision to release are the same decision, taken o
 [Only a green build can be merged](#only-a-green-build-can-be-merged) below.
 
 Pull requests are gated by a **separate** workflow, `.github/workflows/ci.yml` ("CI"), which runs
-four jobs: `Build and test` (restore, a Release build where warnings are errors, and the test
-suite), `Coverage`, `Playwright` and `Visual check`. It holds no deploy job and no Fly token, so a
-pull request cannot reach the volume even in principle; the deploy workflow does not trigger on
-`pull_request` at all. Nothing re-runs on `main` afterwards — those four checks are the last word on
-the commit that reaches the volume. What compiles it again is the Docker build inside
-`flyctl deploy`, so a merge that does not build fails the deploy rather than shipping; what proves
+four jobs: `🔨 Build and test` (restore, a Release build where warnings are errors, and the test
+suite), `📊 Coverage`, `🎭 Playwright` and `📸 Visual check`. The emoji are part of each job's name
+and therefore part of the check's context — see the renaming note below. It holds no deploy job and
+no Fly token, so a pull request cannot reach the volume even in principle; the deploy workflow does
+not trigger on `pull_request` at all. Nothing re-runs on `main` afterwards — those four checks are
+the last word on the commit that reaches the volume. What compiles it again is the Docker build
+inside `flyctl deploy`, so a merge that does not build fails the deploy rather than shipping; what proves
 the result is live is the smoke check. Deploying also requires `main`, which stops a
 `workflow_dispatch` run against a feature branch from putting that branch into production.
 
@@ -85,8 +86,9 @@ until it is switched on a red PR merges as easily as a green one. `.github/rules
 is that setting, written down: a GitHub **ruleset** covering the default branch which
 
 - requires a pull request, so nothing lands on `main` by direct push;
-- requires **all four** checks — `Build and test`, `Coverage`, `Playwright` and `Visual check` — so
-  the merge button stays disabled while any of them is queued, running, or failing;
+- requires **all four** checks — `🔨 Build and test`, `📊 Coverage`, `🎭 Playwright` and
+  `📸 Visual check` — so the merge button stays disabled while any of them is queued, running, or
+  failing;
 - requires the branch to be **up to date with `main`** before it can land;
 - blocks deletion and force-pushes on `main`, since the deploy history is what a rollback reads;
 - grants **no bypass to anyone**, including the repo owner.
@@ -111,13 +113,20 @@ everything else.
 **All four have to run on every pull request, or the guard inverts.** A required check that never
 reports leaves a PR pending forever rather than mergeable, so `ci.yml` deliberately carries no
 `paths:` filter — adding one later to "skip CI for docs" would silently wedge every docs-only PR,
-and there are now four checks to wedge it rather than one. If a job is ever renamed, the ruleset's
-`context` must be renamed with it in the same change.
+and there are now four checks to wedge it rather than one.
 
-`Coverage` is safe to require for the same reason the filter is not: a change with no coverable line
-in it — docs, CSS, a workflow — measures nothing and passes, rather than dividing by zero and going
-red. It is the 80% floor on *changed* lines, so a pull request that touches no code has nothing to
-fall short of.
+**Renaming a job is renaming a required check**, and that includes putting an emoji in front of it:
+a context is matched as one whole string, so `Coverage` and `📊 Coverage` are two different checks
+and the first one stops reporting the moment the job is renamed. Three things move together — the
+job's `name:` in `ci.yml`, the `context` in the ruleset file, and the ruleset **in the repository's
+settings**, which only changes when the file is re-imported. Re-import while the renaming pull
+request is open, or that pull request waits forever on the old names it no longer reports: it is the
+one change whose own merge depends on the setting it edits.
+
+`📊 Coverage` is safe to require for the same reason the filter is not: a change with no coverable
+line in it — docs, CSS, a workflow — measures nothing and passes, rather than dividing by zero and
+going red. It is the 80% floor on *changed* lines, so a pull request that touches no code has
+nothing to fall short of.
 
 `ci.yml` triggers on `pull_request` and nothing else automatic — it also carried a `push` trigger
 until every pull request was found to be building twice (see `testing.md`, "What triggers it"). A

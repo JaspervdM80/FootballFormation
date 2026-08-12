@@ -212,21 +212,21 @@ an afternoon to find:
 Everything lives in `.github/workflows/ci.yml`, in four jobs on one chain:
 
 ```
-Build and test ──┬── Coverage
-                 ├── Playwright
-                 └── Visual check
+🔨 Build and test ──┬── 📊 Coverage
+                    ├── 🎭 Playwright
+                    └── 📸 Visual check
 
         (all four are required checks)
 ```
 
-**`Build and test`** restores, builds Release, runs `dotnet test`, then publishes — and the publish
-is `--no-build`, so it hands on exactly what the unit tests just ran against rather than compiling
+**`🔨 Build and test`** restores, builds Release, runs `dotnet test`, then publishes — and the
+publish is `--no-build`, so it hands on exactly what the unit tests just ran against rather than compiling
 the commit a second time. It prunes the published `runtimes/` to `linux-x64` and uploads the result
 as the `app` artifact. The test step carries `--collect:"XPlat Code Coverage" --settings
 coverage.runsettings`, so the report comes out of the run that is already the gate rather than out
 of a second run of the same tests, and it is uploaded as the `coverage` artifact.
 
-**`Coverage`** downloads that report and runs `scripts/coverage.mjs` over it — the same script and
+**`📊 Coverage`** downloads that report and runs `scripts/coverage.mjs` over it — the same script and
 the same 80% floor as a local `scripts/coverage.sh`, with `COVERAGE_BASE` pointed at the pull
 request's base branch. It is the one job checked out with `fetch-depth: 0`, because judging a
 change means diffing against its merge base and a single-commit checkout has nothing to diff
@@ -240,8 +240,9 @@ floor keeps the merge button disabled. That is safe to require because the floor
 change *touched* — a pull request with no coverable line in it measures nothing and passes, rather
 than wedging on a division by zero.
 
-**`Playwright` and `Visual check`** download that artifact and start it. Neither calls a compiler;
-they install the .NET SDK only for the runtime to run `dotnet FootballFormation.Web.dll` with.
+**`🎭 Playwright` and `📸 Visual check`** download that artifact and start it. Neither calls a
+compiler; they install the .NET SDK only for the runtime to run `dotnet FootballFormation.Web.dll`
+with.
 `UI_TEST_APP_DLL` (Playwright's `webServer`) and `VISUAL_APP_DLL` (`visual-check.sh`) are what point
 each harness at the artifact. Both are unset locally, where building from the sources is the whole
 point, and each harness falls back to the `dotnet run` it always used.
@@ -278,7 +279,7 @@ have gone stale underneath it. It covers a fork's pull request too.
 `ci.yml` used to carry a `push` trigger as well, and `ui-checks.yml` ran on push alone, so a pull
 request built four times over two files. The push trigger had a real reason once — GitHub starts no
 workflow run for an event it attributes to an app token, and a pull request opened by one sat with
-no **Build and test** while the merge button stayed disabled. That is no longer what happens: the
+no **🔨 Build and test** while the merge button stayed disabled. That is no longer what happens: the
 run history shows `pull_request` runs appearing at open time on commits pushed hours earlier with no
 push in between, on pull requests opened exactly that way.
 
@@ -306,7 +307,7 @@ once nothing re-tests on `main`, a browser failure has to be dealt with on the p
 all. The other side of that trade is that a flake blocks too — re-run the job from the run's page,
 because `.github/rulesets/main-every-check-green.json` grants no bypass to anyone.
 
-The job compiles nothing — it starts the app the `Build and test` job published, so a cold compile
+The job compiles nothing — it starts the app the `🔨 Build and test` job published, so a cold compile
 is never competing with the `webServer` start-up timeout. It installs only Chromium. On a failure it
 uploads the HTML report and the traces — `trace: 'retain-on-failure'` means a failing test can be
 replayed step by step with `npx playwright show-trace`. `CI=true` turns on one retry, so a test that
@@ -378,7 +379,8 @@ non-zero if the browser logged an error, which is where a Blazor render failure 
 touch target is under its floor.
 
 Setting `VISUAL_APP_DLL` to a published `FootballFormation.Web.dll` skips the build and runs that
-copy instead — which is how the `Visual check` job does it, against what `Build and test` published.
+copy instead — which is how the `📸 Visual check` job does it, against what `🔨 Build and test`
+published.
 
 It runs on every pull request as the `visual` job in `ci.yml` — required, like the Playwright job
 beside it, so a page that stops rendering stops the merge. That job uploads `artifacts/visual/`

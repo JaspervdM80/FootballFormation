@@ -124,11 +124,11 @@ Release before pushing. The exception is `MSB3568` (a duplicate resource name, w
 what the app says), an error in every configuration.
 
 A ruleset makes those checks binding: `main` takes pull requests only, the branch has to be up to
-date with `main`, and the merge button stays disabled until all four — `Build and test`, `Coverage`,
-`Playwright` and `Visual check` — are green. Merging is what releases: nothing runs on `main`
-afterwards, so those four are the last word on what reaches production. The ruleset lives in
-`.github/rulesets/main-every-check-green.json` and has to be imported into the repository's settings
-once — see [docs/deployment.md](docs/deployment.md#only-a-green-build-can-be-merged).
+date with `main`, and the merge button stays disabled until all four — `🔨 Build and test`,
+`📊 Coverage`, `🎭 Playwright` and `📸 Visual check` — are green. Merging is what releases: nothing
+runs on `main` afterwards, so those four are the last word on what reaches production. The ruleset
+lives in `.github/rulesets/main-every-check-green.json` and has to be imported into the repository's
+settings once — see [docs/deployment.md](docs/deployment.md#only-a-green-build-can-be-merged).
 
 ### UI tests
 
@@ -139,7 +139,7 @@ cd tests/ui && npm install && npm test
 Playwright, driving the real app in a browser against a database that exists only for the run: the
 public/admin split, the squad and match dialogs, the full match-day journey from dragging a lineup
 to blowing the final whistle, both languages, and the phone layout. About a minute, 34 tests. Runs
-on every pull request as the `Playwright` job in `.github/workflows/ci.yml`, against the app that
+on every pull request as the `🎭 Playwright` job in `.github/workflows/ci.yml`, against the app that
 workflow published — one of the four checks the merge waits for. See [docs/testing.md](docs/testing.md#ui-tests-testsui).
 
 ### Visual checks
@@ -157,7 +157,7 @@ It then measures rather than looks: the match dialog and its date picker are reo
 and landscape phone sizes and every touch target is checked for the 44px minimum and for dead space
 between it and its neighbours. That is the only thing holding the touch fixes in
 [docs/known_issues.md](docs/known_issues.md) in place, so it runs on every pull request too — the
-`Visual check` job in `ci.yml`, blocking like the one beside it, and it uploads its screenshots
+`📸 Visual check` job in `ci.yml`, blocking like the one beside it, and it uploads its screenshots
 either way.
 See [docs/testing.md](docs/testing.md).
 
