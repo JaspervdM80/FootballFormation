@@ -52,8 +52,10 @@ Reporting/
   PlayerStatsReport.cs    — Per-player aggregates (PlayerStats, PositionStat, PlayerGameStat)
   PositionFitHelper.cs    — 5-tier position fit: Preferred, NaturalFit, Alternative, Compatible, OutOfPosition
   MatchClockReport.cs     — Derives the live clock and period state from the stored anchor + banked total
-  PlannedChangesReport.cs — What the next period changes versus the one on the pitch (rendered by
-                           UI/Components/PlannedChangesList, shared by the live card and its dialog)
+  PlannedChangesReport.cs — What the next period changes versus the one on the pitch, minus the
+                           swaps play has already overtaken (Build() for the card in
+                           UI/Components/PlannedChangesList, Swaps() for MatchClockService, which
+                           applies the overtaken half rather than deciding again)
   ScoreProgressionReport.cs — The score after each goal (MatchScore), for the live timeline —
                            counted forwards because that list runs newest first
   HealthReport.cs         — Whether a booted container is actually serving: the /health payload and
@@ -112,8 +114,6 @@ Pages/
   LiveGoalDialog.razor(.cs)   — Dialog: scorer, assister, own-goal toggle
   LiveSubDialog.razor(.cs)(.css) — Dialog: for a player tapped on the pitch, either a replacement
                                 from the bench or a position swap with someone already on
-  LiveNextLineupDialog.razor(.cs)(.css) — Dialog: what rolling on to the next line-up will change,
-                                asked before it is done — advancing a period has no undo
   SeasonDialog.razor(.cs)     — Dialog: season name, start date, end date
   Settings.razor(.cs)         — /settings — Match preferences, own password, season management
   Users.razor(.cs)            — /users — Accounts: add, edit, reset password, delete (Admin only)
@@ -126,8 +126,8 @@ Components/
   Pitch.razor(.cs)(.css)            — The pitch. Read-only by default; Draggable for the builder,
                                       OnPlayerClicked for the live screen, Size for chip scale
   PlayerLabel.razor                 — A player as one line of text: "#7 Jasper"
-  PlannedChangesList.razor(.css)    — What the next line-up does, as a team sheet; shared by the live
-                                      screen's card and the dialog that asks before applying it
+  PlannedChangesList.razor(.css)    — What the next line-up does, as a team sheet, for the live
+                                      screen's "Changes at half-way" card
   CancellableComponent.cs           — Base for any component that reads: owns the CancellationToken its
                                       service reads take, tripped when the component is disposed
   SeasonAwarePage.cs                — Base for pages that follow the season picker (a CancellableComponent)
@@ -150,8 +150,8 @@ Helpers/
   PitchPositionHelper.cs      — Maps PlayerPosition → (left%, top%) coordinates
   UiFeedback.cs               — Snackbar.Report()/ReportFailure() over Result (translates the error,
                                 stays silent about a cancelled one), shared LockedDialog options
-  DialogPrompts.cs            — ConfirmAsync()/ConfirmDeleteAsync(), and PromptAsync()/PromptValueAsync()
-                                for an editing dialog that returns a value
+  DialogPrompts.cs            — ConfirmAsync()/ConfirmDeleteAsync(), and PromptAsync() for an
+                                editing dialog that returns a value
   LineupDragState.cs          — In-flight drag on the formation builder
   PrincipalExtensions.cs      — ClaimsPrincipal.IsAdmin()/DisplayName()/UserId(). Use IsAdmin(), never
                                 Identity.IsAuthenticated — the two only agree while Admin is the one role

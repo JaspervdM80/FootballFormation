@@ -1,5 +1,0 @@
-/* The list is a child component, so only its wrapper can be reached from here — which is all the
-   spacing this dialog needs. */
-.next-lineup-changes {
-    margin-top: 12px;
-}

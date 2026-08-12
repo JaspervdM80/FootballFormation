@@ -146,7 +146,7 @@ test('tapping a player on the pitch offers a substitution and a position swap', 
   await expect(page.locator('.live-event')).toHaveCount(0);
 });
 
-test('"Next line-up" says what it is about to change, and cancelling changes nothing', async ({ page }) => {
+test('the next line-up is rolled on from the card that lists what it changes', async ({ page }) => {
   // Quarters, so the first half is planned as two line-ups and the mid-half control appears.
   const id = await matchWithId(page, 'FC Kwarten', { split: 'Quarters' });
 
@@ -173,35 +173,33 @@ test('"Next line-up" says what it is about to change, and cancelling changes not
   );
 
   await goto(page, `/games/${id}/live`);
-  const nextLineup = page.locator('.live-controls').getByRole('button', { name: 'Next line-up' });
+  const nextLineup = page.getByRole('button', { name: 'Next line-up' });
+
+  // The changes are worth reading before kick-off, but there is no period running to advance out
+  // of yet, so the button that carries them out is not there.
+  await expect(page.locator('.planned-row').first()).toBeVisible();
+  await expect(nextLineup).toHaveCount(0);
+
   await clickFor(
     page.getByRole('button', { name: 'Start match' }),
     () => expect(nextLineup).toBeVisible(),
   );
 
-  await clickFor(nextLineup, () => expect(page.locator('.mud-dialog')).toBeVisible());
-  const dialog = await openDialog(page);
-
-  // The point of the dialog: the changes are in it, not on a card further down the screen.
-  await expect(dialog.locator('.planned-row').first()).toBeVisible();
-
+  // It belongs to the card, not to the clock controls: the tap is made while reading the list it
+  // sits under, which is why it no longer asks in a dialog first.
+  await expect(page.locator('.live-controls').getByRole('button', { name: 'Next line-up' })).toHaveCount(0);
   await clickFor(
-    dialog.getByRole('button', { name: 'Cancel' }),
-    () => expect(page.locator('.mud-dialog')).toHaveCount(0),
+    nextLineup,
+    () => expect(page.getByText('Next period started', { exact: false })).toBeVisible(),
   );
-  // Still the first quarter — cancelling a change with no undo has to actually cancel it.
-  await expect(nextLineup).toBeVisible();
-
-  await clickFor(nextLineup, () => expect(page.locator('.mud-dialog')).toBeVisible());
-  await submitDialog(page, 'Next line-up');
-  await expect(page.getByText('Next period started', { exact: false })).toBeVisible();
+  await expect(page.locator('.mud-dialog')).toHaveCount(0);
 
   // The second quarter is the last of the half, so the control it now offers is half time.
   await expect(page.locator('.live-controls').getByRole('button', { name: 'Half time' })).toBeVisible();
 });
 
-test('the bench strip can be folded away while the match is being run', async ({ page }) => {
-  const id = await matchWithId(page, 'FC Bank');
+test('the timeline can be narrowed to the goals', async ({ page }) => {
+  const id = await matchWithId(page, 'FC Tijdlijn');
   await fillLineup(page, 2);
 
   await goto(page, `/games/${id}/live`);
@@ -210,11 +208,29 @@ test('the bench strip can be folded away while the match is being run', async ({
     () => expect(page.getByRole('button', { name: 'Finish match' })).toBeVisible(),
   );
 
-  await expect(page.locator('.live-bench')).toBeVisible();
+  const events = page.locator('.live-event');
+
+  // One of each kind, so the filter has something to keep and something to drop.
+  await clickFor(page.getByRole('button', { name: 'Goal against' }), () => expect(events).toHaveCount(1));
+
   await clickFor(
-    page.locator('.live-bench-toggle input[type=checkbox]'),
-    () => expect(page.locator('.live-bench')).toHaveCount(0),
+    page.locator('.live-lineup .pitch-player').first(),
+    () => expect(page.locator('.mud-dialog')).toBeVisible(),
   );
+  const dialog = await openDialog(page);
+  await chooseOption(page, dialog, 'Comes on', '#');
+  await submitDialog(page, 'Make substitution');
+  await expect(events).toHaveCount(2);
+
+  // Only a goal carries a scoreline, so what is left is the goal rather than the substitution.
+  await clickFor(
+    page.locator('.live-timeline-toggle input[type=checkbox]'),
+    () => expect(events).toHaveCount(1),
+  );
+  await expect(page.locator('.live-event .live-event-score')).toHaveCount(1);
+
+  // The bench is no longer what this checkbox folds away — it stays put.
+  await expect(page.locator('.live-bench')).toBeVisible();
 });
 
 test('the playing-time table drops its estimate once the match has been run', async ({ page }) => {
@@ -227,11 +243,18 @@ test('the playing-time table drops its estimate once the match has been run', as
   await expect(totals.first()).toContainText('~');
   await expect(page.locator('.playtime-note')).toBeVisible();
 
+  // The live screen's own table says the same thing in its heading, because its numbers cannot:
+  // before kick-off they are what the line-up plans for, not time anyone has played.
   await goto(page, `/games/${id}/live`);
+  const minutesLabel = page.locator('.live-minutes-card .card-label');
+  await expect(minutesLabel).toHaveText('Planned minutes');
+
   await clickFor(
     page.getByRole('button', { name: 'Start match' }),
     () => expect(page.getByRole('button', { name: 'Finish match' })).toBeVisible(),
   );
+  await expect(minutesLabel).toHaveText('Minutes played');
+
   await clickFor(
     page.locator('.live-controls').getByRole('button', { name: 'Finish match' }),
     () => expect(page.locator('.mud-dialog')).toBeVisible(),

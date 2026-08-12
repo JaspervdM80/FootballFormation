@@ -107,11 +107,11 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   the score, clock and state from its first load while newly inserted goals appear alongside them —
   a live screen stuck at the old scoreline. Identity resolution keeps shared `Player` rows single.
 - Controls are context-sensitive, and **only half time is a break**. A quarters game is still two
-  halves: mid-half the screen offers **"Next line-up"**, which calls `AdvancePeriodAsync` and rolls
-  the *next quarter's planned lineup* onto the pitch without stopping the clock. It **asks first**
-  (`LiveNextLineupDialog`), listing the swaps and moves it is about to make: advancing a period has
-  no undo — no timeline event records it — and the changes used to be readable only from a card
-  further down the screen. Only after the first
+  halves, and the mid-half line-up change is not a clock control: **"Next line-up"** lives at the
+  foot of the "Changes at half-way" card (below), not in `.live-controls`. It calls
+  `AdvancePeriodAsync` and rolls the *next quarter's planned lineup* onto the pitch without
+  stopping the clock. It asks nothing first — the list it sits under already says what the tap is
+  about to do, which is what the dialog it replaced was for. Only after the first
   half or Q2 does the screen offer "Half time" (`EndPeriodAsync`, which does stop it) followed by
   "Start 2nd half". The rule lives in `PeriodTypeExtensions.IsFollowedByBreak`, not in the page.
 - **There is no pause.** The clock runs from kick-off until the period is whistled off, and only
@@ -126,8 +126,8 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   the children are `MudButton`s, and the old scoped `.live-control-row > *` rule never matched
   them — the classic CSS-isolation miss, and why they used not to fill the panel.
 - The pitch shows the live period; at the break and after full time the last one played, and before
-  kick-off the first — so it is never blank when a lineup exists. A **"Show subs" checkbox** folds
-  the bench strip under it away; the state is per circuit and deliberately not stored.
+  kick-off the first — so it is never blank when a lineup exists. The bench strip under it is
+  always drawn.
 - **Tapping a player offers two changes, one dropdown each** (`LiveSubDialog`): someone comes on for
   them (`SubstituteAsync`), or they trade positions with a team-mate who stays on
   (`SwapPositionsAsync`). Choosing in either list clears the other, so the single action button
@@ -144,16 +144,33 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   scoreboard's order — home side first. It is counted forwards over the whole match and looked up
   by goal id, because the timeline itself runs newest first and a total accumulated while rendering
   would count down.
+- A **"Show substitutions" checkbox** (`.live-timeline-toggle`) drops the substitutions from the
+  timeline and leaves the goals: a rotated squad buries the goals among swaps nobody is scrolling
+  back for. The state is per circuit and deliberately not stored.
 - Finishing asks for confirmation via `DialogPrompts.ConfirmAsync` (not `ConfirmDeleteAsync`,
-  whose button says "Delete"). "Next line-up" needs a list rather than a sentence, so it has its own
-  dialog and goes through `PromptValueAsync<…, bool>` instead.
-- **`PlannedChangesList` is the one rendering of what the next line-up does.** The card and the
-  dialog show the same thing, so the markup and its `.planned-*` styling live in the component —
-  scoped CSS follows the file that owns the elements, so moving the markup and leaving the CSS
-  behind would have left both callers unstyled.
+  whose button says "Delete").
+- **The "Changes at half-way" card is what the mid-half line-up change is made from.** It lists
+  what `PlannedChangesReport` makes of the difference between the two planned line-ups
+  (`PlannedChangesList`, which owns the `.planned-*` styling), and carries the "Next line-up"
+  button underneath. Admin only, like the minutes table. It stays on screen while the change can
+  be made even when nothing differs — otherwise the only way on to the next quarter would vanish
+  exactly when nobody needs swapping — and appears before kick-off, without the button, as
+  something to read.
+- **Only viable changes are listed, and only viable changes are made.** The report is handed the
+  substitutions already made in the period so it can rewind to the line-up that kicked off. A swap
+  whose outgoing player has since been taken off is dropped: the difference between the line-ups
+  still names their slot, but it now proposes withdrawing whoever came on for them, which nobody
+  planned. `AdvancePeriodAsync` drops the same swaps when it rolls the line-up on — it applies
+  `PlannedChangesReport.Swaps(...).Overtaken` rather than forming a second opinion, because a card
+  promising one thing while the button under it does another is worse than either behaviour alone.
+  An injury replacement therefore keeps the place for the rest of the half instead of lasting
+  exactly one quarter.
 - **Minutes played is admin-only** (`LiveMinutesReport`), and shows exact time on the pitch rather
   than the `periodsPlaying × periodDuration` estimate the planning screens use. It is a computed
-  property, so the running player's total climbs with the clock tick.
+  property, so the running player's total climbs with the clock tick. Until the first kick-off
+  there is no time played at all and the figures are the planned line-up costed at a full period
+  each, so the card is headed **"Planned minutes"** rather than "Minutes played"
+  (`Game.HasActualTimings`) — the numbers cannot say which they are, so the heading does.
 - **Mobile reorders the column with flex `order`**: what just happened matters more at a touchline
   than where everyone stands, so the line-up card (`.live-lineup`, `order: 1`) and the minutes
   table (`.live-minutes-card`, `order: 2`) drop below the timeline under 600px. Both rules live in

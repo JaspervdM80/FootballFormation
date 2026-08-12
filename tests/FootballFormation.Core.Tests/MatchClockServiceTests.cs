@@ -1,4 +1,5 @@
 using FootballFormation.Core.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace FootballFormation.Core.Tests;
 
@@ -178,6 +179,85 @@ public class MatchClockServiceTests : LiveMatchTestBase
 
         Time.Advance(TimeSpan.FromMinutes(5));
         Assert.Equal(1200, advanced.ElapsedSecondsAt(Time.GetUtcNow().UtcDateTime));
+    }
+
+    /// <summary>
+    /// The plan for the next quarter was written before the match. If it still takes off a player
+    /// who has already gone off, carrying it out pulls their replacement straight back off — so an
+    /// injury replacement would last exactly one quarter. The live screen drops that swap from
+    /// "Changes at half-way"; this is the half that makes the button agree with the card.
+    /// </summary>
+    [Fact]
+    public async Task Advancing_keeps_a_player_brought_on_live_rather_than_carrying_out_the_swap_they_answered()
+    {
+        var game = await SeedQuartersWithASwapAsync();
+        var players = await PlayersAsync();
+
+        await MatchClock.StartMatchAsync(game.Id);
+        Time.Advance(TimeSpan.FromMinutes(5));
+        // Not P3, who Q2 was going to bring on — an injury, and whoever was warm goes on.
+        Assert.True((await Subs.SubstituteAsync(game.Id, players[1].Id, players[3].Id)).IsSuccess);
+
+        Time.Advance(TimeSpan.FromMinutes(10));
+        Assert.True((await MatchClock.AdvancePeriodAsync(game.Id)).IsSuccess);
+
+        var q2 = await LineupAsync(game.Id, PeriodType.SecondQuarter);
+        var stayedOn = Assert.Single(q2, p => p.PlayerId == players[3].Id);
+        Assert.False(stayedOn.IsSubstitute);
+        Assert.Equal(5, stayedOn.SlotIndex);
+        Assert.Equal(PlayerPosition.CM, stayedOn.Position);
+
+        // And the arrival the plan named is on the bench rather than in the same slot.
+        Assert.True(q2.Single(p => p.PlayerId == players[2].Id).IsSubstitute);
+        Assert.Single(q2, p => p.SlotIndex == 5);
+    }
+
+    [Fact]
+    public async Task Advancing_carries_out_a_swap_the_match_has_not_already_answered()
+    {
+        var game = await SeedQuartersWithASwapAsync();
+        var players = await PlayersAsync();
+
+        await MatchClock.StartMatchAsync(game.Id);
+        Time.Advance(TimeSpan.FromMinutes(15));
+        Assert.True((await MatchClock.AdvancePeriodAsync(game.Id)).IsSuccess);
+
+        // Nothing overtook it, so the planned line-up rolls on untouched.
+        var q2 = await LineupAsync(game.Id, PeriodType.SecondQuarter);
+        Assert.Equal(5, q2.Single(p => p.PlayerId == players[2].Id).SlotIndex);
+        Assert.True(q2.Single(p => p.PlayerId == players[1].Id).IsSubstitute);
+    }
+
+    /// <summary>
+    /// A quarters game whose second quarter plans one swap: P2 comes off at CM for P3. Every
+    /// period is seeded with the same line-up, so the second one is rewritten here.
+    /// </summary>
+    private async Task<Game> SeedQuartersWithASwapAsync()
+    {
+        var game = await SeedGameAsync(GameSplitType.Quarters);
+        var players = await PlayersAsync();
+
+        var q2 = game.Periods.Single(p => p.PeriodType == PeriodType.SecondQuarter);
+        await Db.Entry(q2).Collection(p => p.PlayerPositions).LoadAsync();
+
+        var comingOff = q2.PlayerPositions.Single(p => p.PlayerId == players[1].Id);
+        var comingOn = q2.PlayerPositions.Single(p => p.PlayerId == players[2].Id);
+
+        (comingOff.SlotIndex, comingOff.IsSubstitute) = (null, true);
+        (comingOn.SlotIndex, comingOn.IsSubstitute) = (5, false);
+        comingOn.Position = PlayerPosition.CM;
+
+        await Db.SaveChangesAsync();
+        return game;
+    }
+
+    private async Task<List<GamePlayerPosition>> LineupAsync(int gameId, PeriodType period)
+    {
+        Db.ChangeTracker.Clear();
+
+        return await Db.GamePlayerPositions
+            .Where(p => p.GamePeriod.GameId == gameId && p.GamePeriod.PeriodType == period)
+            .ToListAsync();
     }
 
     [Fact]

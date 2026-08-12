@@ -276,9 +276,10 @@ Avoid repeating these mistakes:
   specify different base classes*, because the generated Razor partial already declares
   `: ComponentBase`. Use `@inherits SeasonAwarePage` in the markup file.
 - **A generic dialog result can't tell `default` from "cancelled"**: `PromptAsync<TDialog, TResult>`
-  is constrained to `class` for that reason; a dialog returning a value type uses
-  `PromptValueAsync`, which hands back `TValue?`. A dialog closing with `0` is otherwise
-  indistinguishable from the user pressing Cancel.
+  is constrained to `class` for that reason. A dialog closing with `0` is otherwise
+  indistinguishable from the user pressing Cancel, so one returning a value type needs its own
+  helper handing back `TValue?` — there was a `PromptValueAsync` doing exactly that until its last
+  caller went, and adding another value-typed dialog means writing it again.
 
 ## Result
 - **A cancelled call is a failure with no message, and both halves matter.** Threading a
@@ -346,11 +347,19 @@ Avoid repeating these mistakes:
   from the lineup as it finally stands, so a swap credits **the position moved into** for the whole
   period, earlier minutes included — the opposite of what its comment used to claim. Totals are
   right either way; only the split by position is affected, and a test pins it.
+- **Advancing a period rewrites the next period's stored line-up.** `AdvancePeriodAsync` is not
+  purely a clock move: where a live substitution has already answered one of the next line-up's
+  swaps, it keeps the player who came on and benches the arrival the plan named — otherwise an
+  injury replacement is pulled straight back off at the quarter boundary. So the line-up the
+  formation builder shows for Q2 after a match has been run is not necessarily the one that was
+  saved, and that is deliberate rather than a lost edit. The rule is `PlannedChangesReport.Swaps`,
+  shared with the live screen's "Changes at half-way" card so the list and the button cannot part
+  ways; change one and the other follows.
 - **Removing a control does not remove the state it could leave behind.** Deleting pause/resume
   left `MatchState=InProgress` + a live period + `ClockRunningSince=null` unreachable going
   forward, but still storable by a row an older build wrote. `AdvancePeriodAsync` deliberately
   leaves the anchor alone — so on such a row it would roll on to the next line-up with the clock
-  still frozen, banking no minutes for the rest of the half while the dialog promised the opposite.
+  still frozen, banking no minutes for the rest of the half while the screen said it kept running.
   It now restarts a stopped anchor, which is a no-op for every game that was never paused.
 
 ## General
