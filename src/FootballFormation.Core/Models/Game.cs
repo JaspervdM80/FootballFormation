@@ -186,6 +186,18 @@ public class Game
     /// <summary>Their goals: everything the opponent scored, plus our own goals.</summary>
     public static int CountTheirGoals(IEnumerable<GameGoal> goals) =>
         goals.Count(g => !g.CountsForUs);
+
+    /// <summary>
+    /// Rewrites the scoreline from <paramref name="goals"/>, so a live score is recounted rather
+    /// than incremented — the recount is what makes it self-correcting.
+    /// </summary>
+    public void CountScoreFrom(IEnumerable<GameGoal> goals)
+    {
+        var counted = goals as IReadOnlyCollection<GameGoal> ?? goals.ToList();
+
+        ScoreHome = CountOurGoals(counted);
+        ScoreAway = CountTheirGoals(counted);
+    }
 }
 
 /// <summary>

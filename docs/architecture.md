@@ -77,8 +77,9 @@ Services/
                             rolling into the next one, the final whistle. The arithmetic a
                             season's statistics are built from. There is no pause — the clock
                             runs from kick-off to the whistle and only a period boundary stops it
-  MatchGoalService.cs     — Goals logged live: storage delegated to GameService, the live minute
-                            and the recomputed scoreline added here
+  MatchGoalService.cs     — Goals logged live: the live minute added here, storage and the
+                            recounted scoreline delegated to GameService, which writes the two in
+                            one save (see patterns.md, "When two rows have to agree")
   MatchSubstitutionService.cs — The slot swap and the record of it, in one SaveChanges, plus undoing
                             the most recent one of a period, plus SwapPositionsAsync — two players
                             already on trading slots, which writes no substitution row (so the undo

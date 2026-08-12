@@ -1,3 +1,9 @@
+using System.Data.Common;
+using FootballFormation.Core.Data;
+using FootballFormation.Core.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
+
 namespace FootballFormation.Core.Tests;
 
 /// <summary>
@@ -86,5 +92,77 @@ public class MatchGoalServiceTests : LiveMatchTestBase
 
         Assert.True(result.IsFailure);
         Assert.Equal(1, (await ReloadAsync(game.Id)).ScoreHome);
+    }
+
+    /// <summary>
+    /// The goal row and the scoreline it produces are one write, not two. They used to be a save
+    /// each, in a context each — and no transaction spans two contexts, so a lock timeout or a
+    /// deploy restarting the container between them left the goal on file with a stale score
+    /// beside it. Counting the saves is how that stays fixed.
+    /// </summary>
+    [Fact]
+    public async Task A_logged_goal_and_the_scoreline_it_makes_are_written_in_one_save()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        var saves = new SaveCountingDbContextFactory(Db.Database.GetDbConnection());
+
+        var goal = await GoalsOver(saves).LogGoalAsync(game.Id, players[1].Id, null, false, false);
+
+        Assert.True(goal.IsSuccess);
+        Assert.Equal(1, (await ReloadAsync(game.Id)).ScoreHome);
+        Assert.Equal(1, saves.Count);
+    }
+
+    /// <inheritdoc cref="A_logged_goal_and_the_scoreline_it_makes_are_written_in_one_save"/>
+    [Fact]
+    public async Task Removing_a_goal_and_the_scoreline_it_leaves_are_written_in_one_save()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+        var goal = await Goals.LogGoalAsync(game.Id, players[1].Id, null, false, false);
+
+        var saves = new SaveCountingDbContextFactory(Db.Database.GetDbConnection());
+
+        var removed = await GoalsOver(saves).RemoveGoalAsync(game.Id, goal.Value!.Id);
+
+        Assert.True(removed.IsSuccess);
+        Assert.Equal(0, (await ReloadAsync(game.Id)).ScoreHome);
+        Assert.Equal(1, saves.Count);
+    }
+
+    /// <summary>The same service, wired to a factory that can be asked what it was made to write.</summary>
+    private MatchGoalService GoalsOver(IDbContextFactory<AppDbContext> factory) =>
+        new(factory,
+            new GameService(factory, Seasons, CurrentUser, Time, NullLogger<GameService>.Instance),
+            Notifier, Time, CurrentUser, NullLogger<MatchGoalService>.Instance);
+
+    /// <summary>
+    /// Hands out contexts over the test's one connection, like the base fixture does, and counts
+    /// the saves made through them.
+    /// </summary>
+    private sealed class SaveCountingDbContextFactory(DbConnection connection)
+        : IDbContextFactory<AppDbContext>
+    {
+        private int _count;
+
+        public int Count => _count;
+
+        public AppDbContext CreateDbContext()
+        {
+            var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite(connection)
+                .AddInterceptors(new DateInSqlInterceptor())
+                .Options);
+
+            db.SavedChanges += (_, _) => Interlocked.Increment(ref _count);
+            return db;
+        }
+
+        public Task<AppDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult(CreateDbContext());
     }
 }

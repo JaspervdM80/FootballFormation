@@ -168,7 +168,15 @@ public class GameService(
             return Result.Success();
         });
 
-    public Task<Result<GameGoal>> AddGoalAsync(GameGoal goal, CancellationToken cancellationToken = default) =>
+    /// <param name="recountScoreline">
+    /// True at the touchline, where the scoreline <em>is</em> the goals: the row and the recounted
+    /// score go in one <c>SaveChanges</c>, so no interruption can leave one written without the
+    /// other. False on the result page, where the score is typed by hand and the goal list is
+    /// allowed to be shorter than it — recounting there would turn a 3-1 into the two goals whose
+    /// scorer someone remembered.
+    /// </param>
+    public Task<Result<GameGoal>> AddGoalAsync(
+        GameGoal goal, bool recountScoreline = false, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAdminAsync(currentUser, logger, "add goal", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -179,6 +187,15 @@ public class GameService(
             // prevent. The initializer stays as a sensible default for a goal built outside a
             // service; when a service saves one, the service's clock decides.
             goal.RecordedAt = UtcNow;
+
+            if (recountScoreline)
+            {
+                var game = await db.Games.FindAsync([goal.GameId], cancellationToken);
+
+                // The goal is not on file yet, so it is counted in rather than queried back.
+                if (game is not null)
+                    game.CountScoreFrom([.. await GoalsOnFileAsync(db, goal.GameId, cancellationToken), goal]);
+            }
 
             db.GameGoals.Add(goal);
             await db.SaveChangesAsync(cancellationToken);
@@ -194,7 +211,9 @@ public class GameService(
             return Result.Success(goal);
         });
 
-    public Task<Result> RemoveGoalAsync(int goalId, CancellationToken cancellationToken = default) =>
+    /// <inheritdoc cref="AddGoalAsync(GameGoal, bool, CancellationToken)" path="/param[@name='recountScoreline']"/>
+    public Task<Result> RemoveGoalAsync(
+        int goalId, bool recountScoreline = false, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAdminAsync(currentUser, logger, "remove goal", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -206,12 +225,32 @@ public class GameService(
                 return Result.Failure("Goal not found");
             }
 
+            if (recountScoreline)
+            {
+                var game = await db.Games.FindAsync([goal.GameId], cancellationToken);
+
+                // This one is still on file, and the query hands back the very instance the change
+                // tracker holds, so it is dropped from the count by its id rather than by absence.
+                if (game is not null)
+                    game.CountScoreFrom((await GoalsOnFileAsync(db, goal.GameId, cancellationToken))
+                        .Where(g => g.Id != goalId));
+            }
+
             db.GameGoals.Remove(goal);
             await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Removed goal {GoalId}", goalId);
             return Result.Success();
         });
+
+    /// <summary>
+    /// A game's goals, read through the <em>same</em> context the caller is about to save: a
+    /// scoreline that follows from the goals has to be committed with them, and a transaction
+    /// cannot span two <see cref="AppDbContext"/> instances. See docs/patterns.md.
+    /// </summary>
+    private static Task<List<GameGoal>> GoalsOnFileAsync(
+        AppDbContext db, int gameId, CancellationToken cancellationToken) =>
+        db.GameGoals.Where(g => g.GameId == gameId).ToListAsync(cancellationToken);
 
     /// <param name="includePrivate">
     /// True only for an admin. The filter lives in the query rather than in the page so a private

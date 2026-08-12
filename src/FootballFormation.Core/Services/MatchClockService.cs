@@ -242,8 +242,7 @@ public class MatchClockService(
             // Recounted here rather than through MatchGoalService: this is the recount that settles
             // the game, and from here it counts towards the season.
             var goals = await db.GameGoals.Where(g => g.GameId == gameId).ToListAsync(cancellationToken);
-            game.ScoreHome = Game.CountOurGoals(goals);
-            game.ScoreAway = Game.CountTheirGoals(goals);
+            game.CountScoreFrom(goals);
 
             await db.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Finished game {GameId} at {Home}-{Away} after {Seconds}s",
