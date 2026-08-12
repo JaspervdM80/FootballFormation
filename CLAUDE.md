@@ -167,14 +167,14 @@ There are **no component tests** (no bUnit). The UI is checked by driving the re
 browser, in two places, both against a throwaway database:
 
 - **`cd tests/ui && npm test`** — Playwright, ~39 tests, about a minute. Runs on every pull request
-  as a job in `ci.yml`, advisory rather than the merge gate. Behaviour: the public/admin
+  as a job in `ci.yml`, and a red run holds the merge. Behaviour: the public/admin
   split, the squad and match dialogs, the whole match-day journey from dragging a lineup to blowing
   the final whistle, both languages, and the phone layout. Read
   [docs/testing.md](docs/testing.md#ui-tests-testsui) **before adding one** — a Blazor Server page
   renders twice and the prerender is fully clickable and completely inert, so `goto()` waits for
   Blazor's `_bl_*` attributes and `clickFor()` clicks for an outcome. There are no fixed sleeps in
   that directory; do not introduce one.
-- **`scripts/visual-check.sh`** — the `Visual check` job in `ci.yml`, also advisory. Screenshots every
+- **`scripts/visual-check.sh`** — the `Visual check` job in `ci.yml`, also blocking. Screenshots every
   page, then measures every touch target on three phone viewports against the 44px floor. The only check that a page renders at all, and the only
   thing holding the Touch / PWA fixes in `known_issues.md` in place.
 
@@ -184,16 +184,17 @@ admin matrix; it is not part of this repository.)
 ## Workflow
 
 - Work on a feature branch. `main` takes pull requests only, and the merge button stays disabled
-  until **Build and test** is green and every review thread is resolved
-  (`.github/rulesets/main-build-and-test.json`).
+  until **all four** checks are green — **Build and test**, **Coverage**, **Playwright**, **Visual
+  check** — the branch is up to date with `main`, and every review thread is resolved
+  (`.github/rulesets/main-every-check-green.json`, which grants no bypass to anyone).
 - `ci.yml` runs `dotnet build -c Release` + `dotnet test` on every pull request. That test run
-  carries the coverage collector, and an advisory **Coverage** job judges the lines the pull
-  request changed against the 80% floor and writes the numbers to the run's summary page.
-  `fly-deploy.yml` *calls that same workflow* as the gate its deploy job depends on, then
-  smoke-checks `/health` until it reports the commit that was just built.
-- Merging to `main` *proposes* a deploy; it does not perform one. The deploy job runs in the
-  `production` environment, which has a required reviewer, so the run waits at *Waiting* until the
-  maintainer approves it. There is no staging environment — that approval is the last look.
+  carries the coverage collector, and the **Coverage** job judges the lines the pull request changed
+  against the 80% floor and writes the numbers to the run's summary page. A change with no coverable
+  line in it passes rather than wedging.
+- **Merging to `main` releases.** `fly-deploy.yml` starts on the merge commit with no gate job and
+  no approval, then smoke-checks `/health` until it reports the commit that was just built. There is
+  no staging environment and nothing re-runs on `main`, so the four checks on the pull request are
+  the last look — which is why a flaky browser job is re-run rather than merged past.
 - Commit messages are plain imperative sentences describing the intent, not conventional-commit
   prefixes: *"Let a deploy recognise its own release, not just a live one"*, *"Split the games list
   on the scoreline, not the calendar"*.
