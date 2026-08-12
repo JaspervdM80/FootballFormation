@@ -47,10 +47,16 @@ Avoid repeating these mistakes:
   can throw, and a Fly.io deploy restarts the container mid-write. Logging a goal was shaped that
   way — insert through `GameService`, recount the scoreline through `MatchGoalService`'s own
   context — so an interruption between them left the goal on file behind a stale score. **When one
-  row is derived from another, load and write both through the same context and one `SaveChanges`**;
-  `GameService.AddGoalAsync(goal, recountScoreline: true)` is what that looks like. The saves are
-  counted in `MatchGoalServiceTests`, because from the outside two saves and one look identical
+  row is derived from another, write both through the same context and commit them once**;
+  `GameService.AddGoalAsync(goal, recountScoreline: true)` is what that looks like. The commits are
+  counted in `MatchGoalServiceTests`, because from the outside two commits and one look identical
   right up until something interrupts them.
+- **Collapsing that into a single `SaveChanges` looks tidier and reintroduces a lost update**: it
+  means counting the goals in memory and adding the new one to the total, which is a
+  read-modify-write on a row with no concurrency token. Two admins on the same live match — the
+  thing `LiveMatchNotifier` exists for — each read *n* goals and each write a scoreline of *n+1*,
+  and the score ends up one behind the goal list until the next recount repairs it. **Recount after
+  the write, inside the transaction**, where SQLite's write lock has already serialised the two.
 
 ## Data / domain
 - **Deleting a player used to be destructive across every season**: `PlayerService.DeleteAsync` cascades their `GamePlayerPosition` rows and nulls their `GameGoal` scorer, so last season's top scorer disappeared from last season's stats — from a confirm that said nothing about it. Fixed by `ArchivePlayersInsteadOfDeleting`: delete now **refuses** for anyone with a lineup or goal row anywhere, and `Player.IsArchived` is the way to retire someone. Worth knowing when the refusal surprises you: the counts are deliberately **not** scoped to a season, unlike `SeasonSquadService.RemoveMemberAsync`'s, because the cascade is not either.

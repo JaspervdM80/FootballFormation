@@ -101,9 +101,10 @@ there has to decide.
 
 ## When two rows have to agree, one context writes both
 One `SaveChangesAsync` is a transaction, so almost every mutating method here is atomic without
-saying anything: it opens a context, changes what it changes, and saves once.
-`GameService.SavePeriodLineupAsync` is the one that needs more and says so — delete-then-insert is
-two saves, wrapped in an explicit `BeginTransactionAsync`.
+saying anything: it opens a context, changes what it changes, and saves once. The two that need more
+say so with an explicit `BeginTransactionAsync` — `GameService.SavePeriodLineupAsync`, where
+delete-then-insert is two saves, and the goal writes below, where the second save has to read what
+the first one wrote.
 
 **What no transaction can cover is two `AppDbContext` instances.** Each operation opens its own from
 the factory, for the circuit reason above, and each context has its own connection. So a service
@@ -113,13 +114,20 @@ land in that gap. That is not hypothetical: the app migrates itself on boot, so 
 restart.
 
 The rule that follows: **when one row is derived from another, write them through one context and
-one save.** The live scoreline is the worked example. Logging a goal used to insert the row through
-`GameService` and then recount the score through `MatchGoalService`'s own context — two saves, and an
-interruption between them left the goal on file behind a stale scoreline. It is one save now:
-`GameService.AddGoalAsync(goal, recountScoreline: true)` counts the goals already on file, adds the
-new one in memory, sets the scoreline, and saves the insert and the update together.
-`RemoveGoalAsync` mirrors it. `MatchGoalServiceTests` asserts the count of saves, because "one
-write" is the property and it is invisible from the outside.
+commit them once.** The live scoreline is the worked example. Logging a goal used to insert the row
+through `GameService` and then recount the score through `MatchGoalService`'s own context — two
+saves in two contexts, and an interruption between them left the goal on file behind a stale
+scoreline. `GameService.AddGoalAsync(goal, recountScoreline: true)` now opens a transaction, saves
+the goal, recounts from the goals **then** on file, and commits both together. `RemoveGoalAsync`
+mirrors it. `MatchGoalServiceTests` counts the commits, because "one write" is the property and it
+is invisible from the outside until something interrupts the halves.
+
+**The recount goes after the save, not before it.** Counting the goals in memory and adding the new
+one to the total would be one save rather than two, which is tempting — and it would be a
+read-modify-write. Two touchline devices logging a goal in the same moment would each read *n* and
+each write *n+1*, leaving two goal rows behind a scoreline of one. Counting *after* the insert, with
+SQLite's write lock already held, makes the second one wait and then count both. The insert has to
+come first, so the two writes need the transaction rather than a shared `SaveChanges`.
 
 Two ways of getting there were considered and rejected, and both are worth not re-proposing:
 passing a context or a transaction from one service into another (which breaks the short-lived
