@@ -345,15 +345,16 @@ Avoid repeating these mistakes:
   5, swapping that player to slot 0 and then undoing seated two players in slot 5 and emptied
   slot 0; it now reads the slot off the player coming off instead. And `GameMinutesReport` seeds
   from the lineup as it finally stands, so a swap credits **the position moved into** for the whole
-  period, earlier minutes included — the opposite of what its comment used to claim. Totals are
+  half, earlier minutes included — the opposite of what its comment used to claim. Totals are
   right either way; only the split by position is affected, and a test pins it.
-- **A quarters match only ever kicks off two of its four periods.** The clock runs in halves, so
-  `Game.NextPeriod()` skips a period whose half has already been played and the second half opens
-  at Q3. Q2 and Q4 keep their planned line-ups and never get `StartedAtSeconds`, which is exactly
-  what `GameMinutesReport` needs — a period that was never kicked off contributes nothing, so the
-  half is credited to the line-up that played it plus the substitutions made during it. Do not
-  "fix" a Q2 with no timings, and do not read `PeriodCount` as a count of periods the clock stops
-  for.
+- **A quarters match only ever kicks off two of its four periods.** The live match knows halves
+  and nothing else: `Game.NextHalf()` skips a line-up whose half has already been played, so the
+  second half opens at Q3. Q2 and Q4 keep their planned line-ups and never get `StartedAtSeconds`,
+  which is exactly what `GameMinutesReport` needs — a line-up that was never kicked off contributes
+  nothing, so the half is credited to the line-up that played it plus the substitutions made during
+  it. Q2 and Q4 reach the touchline only as `Game.MidHalfPlan()`, behind the live screen's
+  `Changes (n)` pop-up. Do not "fix" a Q2 with no timings, and do not read `PeriodCount` as a count
+  of stages the clock stops for.
 - **A goal's minute is not one number.** `GameGoal.Minute` stops at the end of the half and
   `AdditionalMinute` counts the overrun beside it, because the two together are what orders a
   timeline: counted on into a single number, a goal at 35+2 reads 37 and sorts after a goal in the

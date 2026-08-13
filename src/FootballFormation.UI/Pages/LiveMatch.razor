@@ -60,18 +60,19 @@
             {
                 <div class="live-control-row">
                     @* The clock knows halves only. The line-up change partway through a half is
-                       made by hand from the pitch, so it has no control of its own here. *@
-                    @if (BreakFollowsCurrentPeriod)
+                       made by hand from the pitch, so it has no control of its own here — it is a
+                       reference, behind the button on the line-up card below. *@
+                    @if (HalfTimeFollows)
                     {
                         <MudButton Variant="Variant.Filled" Class="btn-gold"
-                                   StartIcon="@Icons.Material.Filled.SportsScore" OnClick="EndPeriod">
+                                   StartIcon="@Icons.Material.Filled.SportsScore" OnClick="EndHalf">
                             @L["Half time"]
                         </MudButton>
                     }
-                    else if (!IsLivePeriod && NextHalfLabel is { } startingNext)
+                    else if (!IsHalfInPlay && NextHalfLabel is { } startingNext)
                     {
                         <MudButton Variant="Variant.Filled" Class="btn-gold"
-                                   StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="StartNextPeriod">
+                                   StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="StartNextHalf">
                             @L["Start {0}", L[startingNext]]
                         </MudButton>
                     }
@@ -94,14 +95,27 @@
 
     @* .live-lineup drops this card below the timeline on a phone — see app.css. *@
     <MudPaper Class="pa-4 live-lineup" Elevation="2" Style="border-radius: 16px;">
-        <div class="card-label">
-            @(DisplayHalfLabel is { } half ? L[half] : L["Line-up"])
+        @* The half's name and, for the coach only, the way into what the plan still holds for it.
+           The button carries the count so the plan can be ignored at a glance when it is empty. *@
+        <div class="live-lineup-head">
+            <div class="card-label">
+                @(DisplayHalfLabel is { } half ? L[half] : L["Line-up"])
+            </div>
+            <AuthorizeView Roles="@AppRoles.Admin">
+                @if (PlannedChangeCount > 0)
+                {
+                    <MudButton Variant="Variant.Outlined" Class="btn-ghost live-plan-btn" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.SwapHoriz" OnClick="ShowPlannedChanges">
+                        @L["Changes ({0})", PlannedChangeCount]
+                    </MudButton>
+                }
+            </AuthorizeView>
         </div>
 
         @if (DisplayLineup.Count == 0)
         {
             <MudText Typo="Typo.body2" Style="color: var(--ink-subtle);">
-                @L["No line-up for this period yet — build one first."]
+                @L["No line-up for this half yet — build one first."]
             </MudText>
         }
         else
@@ -113,7 +127,7 @@
                 </MudText>
             }
 
-            @* OnPlayerClicked is left unset for spectators and between periods, which keeps the pitch inert. *@
+            @* OnPlayerClicked is left unset for spectators and at half time, which keeps the pitch inert. *@
             <Pitch Formation="DisplayFormation" Positions="OnPitch"
                    HidePositionFit="!_isAdmin"
                    OnPlayerClicked="@(CanSubstitute ? EventCallback.Factory.Create<int>(this, OpenSubDialog) : default)" />
@@ -140,24 +154,6 @@
             </div>
         }
     </MudPaper>
-
-    @* The quarters the line-up was planned in are never named on this screen, but the difference
-       between them is exactly the set of changes due halfway through the half — which is the part
-       worth knowing at the touchline. Measured against the pitch as it stands, and stripped of the
-       swaps play has already overtaken, so what is left is a list to work through by tapping the
-       players on the pitch above.
-       Admin only, like the minutes table: this is what the coach is about to do, not what has
-       happened, and a plan on a shared screen invites being asked about before it is carried out. *@
-    <AuthorizeView Roles="@AppRoles.Admin">
-        @{ var planned = PlannedChanges; }
-        @if (!planned.IsEmpty)
-        {
-            <MudPaper Class="pa-4" Elevation="2" Style="border-radius: 16px;">
-                <div class="card-label">@L["Changes at half-way"]</div>
-                <PlannedChangesList Changes="planned" />
-            </MudPaper>
-        }
-    </AuthorizeView>
 
     @* Nothing can be scored before kick-off, so the buttons stay out of the way entirely
        rather than sitting there greyed out above the start button. *@
@@ -262,7 +258,7 @@
             @if (MinutesPlayed.Count == 0)
             {
                 <MudText Typo="Typo.body2" Style="color: var(--ink-subtle);">
-                    @L["No line-up for this period yet — build one first."]
+                    @L["No line-up for this half yet — build one first."]
                 </MudText>
             }
             else

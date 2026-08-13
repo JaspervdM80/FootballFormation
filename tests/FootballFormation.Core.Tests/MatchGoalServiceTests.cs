@@ -35,8 +35,8 @@ public class MatchGoalServiceTests : LiveMatchTestBase
         var players = await PlayersAsync();
 
         Time.Advance(TimeSpan.FromMinutes(33));      // a first half that ran three minutes long
-        await MatchClock.EndPeriodAsync(game.Id);
-        await MatchClock.StartNextPeriodAsync(game.Id);
+        await MatchClock.EndHalfAsync(game.Id);
+        await MatchClock.StartNextHalfAsync(game.Id);
 
         Time.Advance(TimeSpan.FromMinutes(5));       // five minutes into the second half
 

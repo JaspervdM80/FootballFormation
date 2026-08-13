@@ -33,7 +33,7 @@ public class MatchGoalService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            // Periods included: the minute follows the scoreboard clock, which is measured from
+            // Line-ups included: the minute follows the scoreboard clock, which is measured from
             // the half being played rather than from kick-off.
             var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
             if (game is null) return LiveMatchQueries.GameNotFound<GameGoal>(gameId);
@@ -42,7 +42,7 @@ public class MatchGoalService(
                 return Result.Failure<GameGoal>("A goal for us needs a scorer");
 
             var clock = MatchClockReport.Build(
-                game, game.CurrentOrLastPeriod(), game.ElapsedSecondsAt(UtcNow));
+                game, game.CurrentOrLastHalf(), game.ElapsedSecondsAt(UtcNow));
 
             var goal = new GameGoal
             {

@@ -186,18 +186,16 @@
   <data name="Live" xml:space="preserve"><value>Live</value></data>
   <data name="Not started" xml:space="preserve"><value>Nog niet begonnen</value></data>
   <data name="In progress" xml:space="preserve"><value>Bezig</value></data>
-  <data name="Break" xml:space="preserve"><value>Rust</value></data>
   <data name="Additional time" xml:space="preserve"><value>Extra tijd</value></data>
   <data name="Full time" xml:space="preserve"><value>Einde wedstrijd</value></data>
   <data name="Start match" xml:space="preserve"><value>Wedstrijd starten</value></data>
   <data name="Half time" xml:space="preserve"><value>Rust</value></data>
   <data name="Start {0}" xml:space="preserve"><value>{0} starten</value></data>
-  <data name="Changes at half-way" xml:space="preserve"><value>Wissels halverwege</value></data>
   <data name="Position changes" xml:space="preserve"><value>Positiewissels</value></data>
   <data name="Finish match" xml:space="preserve"><value>Wedstrijd afsluiten</value></data>
   <data name="Edit result" xml:space="preserve"><value>Uitslag aanpassen</value></data>
   <data name="Line-up" xml:space="preserve"><value>Opstelling</value></data>
-  <data name="No line-up for this period yet — build one first." xml:space="preserve"><value>Nog geen opstelling voor dit deel — maak er eerst een.</value></data>
+  <data name="No line-up for this half yet — build one first." xml:space="preserve"><value>Nog geen opstelling voor deze helft — maak er eerst een.</value></data>
   <data name="Tap a player to substitute them or change their position." xml:space="preserve"><value>Tik op een speler om te wisselen of van positie te veranderen.</value></data>
   <data name="Goal against" xml:space="preserve"><value>Tegen doelpunt</value></data>
   <data name="Timeline" xml:space="preserve"><value>Tijdlijn</value></data>
@@ -213,8 +211,13 @@
   <data name="Remove" xml:space="preserve"><value>Verwijderen</value></data>
   <data name="Undo" xml:space="preserve"><value>Ongedaan maken</value></data>
   <data name="Match started" xml:space="preserve"><value>Wedstrijd gestart</value></data>
-  <data name="Period ended" xml:space="preserve"><value>Speeldeel beëindigd</value></data>
-  <data name="Next period started" xml:space="preserve"><value>Volgend speeldeel gestart</value></data>
+  <data name="Changes ({0})" xml:space="preserve"><value>Wijzigingen ({0})</value></data>
+  <data name="Changes to make" xml:space="preserve"><value>Nog door te voeren wijzigingen</value></data>
+  <data name="Nothing more is planned for this half." xml:space="preserve"><value>Er is niets meer gepland voor deze helft.</value></data>
+  <data name="Tap the players on the pitch to make these changes." xml:space="preserve"><value>Tik op de spelers in het veld om deze wijzigingen te maken.</value></data>
+  <data name="Close" xml:space="preserve"><value>Sluiten</value></data>
+  <data name="Half ended" xml:space="preserve"><value>Helft beëindigd</value></data>
+  <data name="Next half started" xml:space="preserve"><value>Volgende helft gestart</value></data>
   <data name="Match finished" xml:space="preserve"><value>Wedstrijd afgesloten</value></data>
   <data name="End the match and save the final score? You can still edit the result afterwards." xml:space="preserve"><value>Wedstrijd afsluiten en de eindstand opslaan? Je kunt de uitslag daarna nog aanpassen.</value></data>
   <data name="Goal" xml:space="preserve"><value>Doelpunt</value></data>
@@ -229,7 +232,7 @@
   <data name="Substitution undone" xml:space="preserve"><value>Wissel ongedaan gemaakt</value></data>
   <data name="Make substitution" xml:space="preserve"><value>Wissel doorvoeren</value></data>
   <data name="Comes on" xml:space="preserve"><value>Komt erin</value></data>
-  <data name="Nobody is on the bench for this period." xml:space="preserve"><value>Er zit niemand op de bank voor dit speeldeel.</value></data>
+  <data name="Nobody is on the bench for this half." xml:space="preserve"><value>Er zit niemand op de bank voor deze helft.</value></data>
   <data name="Swaps position with" xml:space="preserve"><value>Wisselt van positie met</value></data>
   <data name="Nobody else is on the pitch." xml:space="preserve"><value>Er staat niemand anders op het veld.</value></data>
   <data name="A position swap keeps both players on the pitch and is not a substitution." xml:space="preserve"><value>Bij een positiewissel blijven beide spelers op het veld; het is geen wissel.</value></data>
@@ -447,15 +450,15 @@
   <data name="Both players have to be on the pitch to swap positions" xml:space="preserve"><value>Beide spelers moeten op het veld staan om van positie te wisselen</value></data>
   <data name="Cannot copy a squad onto itself" xml:space="preserve"><value>Een selectie kan niet naar zichzelf gekopieerd worden</value></data>
   <data name="Comment not found" xml:space="preserve"><value>Opmerking niet gevonden</value></data>
-  <data name="End the current period first" xml:space="preserve"><value>Beëindig eerst de huidige periode</value></data>
-  <data name="Every period has been played — finish the match instead" xml:space="preserve"><value>Alle periodes zijn gespeeld — beëindig de wedstrijd</value></data>
+  <data name="End the current half first" xml:space="preserve"><value>Beëindig eerst de huidige helft</value></data>
+  <data name="Both halves have been played — finish the match instead" xml:space="preserve"><value>Beide helften zijn gespeeld — beëindig de wedstrijd</value></data>
   <data name="Game not found" xml:space="preserve"><value>Wedstrijd niet gevonden</value></data>
   <data name="Game with ID {0} not found" xml:space="preserve"><value>Wedstrijd met ID {0} niet gevonden</value></data>
   <data name="Goal not found" xml:space="preserve"><value>Doelpunt niet gevonden</value></data>
-  <data name="No period is currently being played" xml:space="preserve"><value>Er wordt op dit moment geen periode gespeeld</value></data>
+  <data name="No half is being played" xml:space="preserve"><value>Er wordt op dit moment geen helft gespeeld</value></data>
   <data name="No season selected" xml:space="preserve"><value>Geen seizoen geselecteerd</value></data>
   <data name="No seasons defined" xml:space="preserve"><value>Nog geen seizoenen ingesteld</value></data>
-  <data name="Only the most recent substitution of a period can be undone" xml:space="preserve"><value>Alleen de laatste wissel van een periode kan ongedaan gemaakt worden</value></data>
+  <data name="Only the most recent substitution of a half can be undone" xml:space="preserve"><value>Alleen de laatste wissel van een helft kan ongedaan gemaakt worden</value></data>
   <data name="Player is not in this squad" xml:space="preserve"><value>Speler zit niet in deze selectie</value></data>
   <data name="Player not found" xml:space="preserve"><value>Speler niet gevonden</value></data>
   <data name="Player with ID {0} not found" xml:space="preserve"><value>Speler met ID {0} niet gevonden</value></data>
@@ -468,7 +471,7 @@
   <data name="That player is not on the pitch" xml:space="preserve"><value>Die speler staat niet op het veld</value></data>
   <data name="The end date must be after the start date" xml:space="preserve"><value>De einddatum moet na de startdatum liggen</value></data>
   <data name="These dates overlap season {0}" xml:space="preserve"><value>Deze datums overlappen seizoen {0}</value></data>
-  <data name="This game has no periods to play" xml:space="preserve"><value>Deze wedstrijd heeft geen periodes om te spelen</value></data>
+  <data name="This game has no line-up to play" xml:space="preserve"><value>Deze wedstrijd heeft geen opstelling om te spelen</value></data>
   <data name="This leaves a gap after season {0} — it should start on {1}" xml:space="preserve"><value>Dit laat een gat na seizoen {0} — het zou moeten beginnen op {1}</value></data>
   <data name="This leaves a gap before season {0} — it should end on {1}" xml:space="preserve"><value>Dit laat een gat vóór seizoen {0} — het zou moeten eindigen op {1}</value></data>
   <data name="This match has already been started" xml:space="preserve"><value>Deze wedstrijd is al gestart</value></data>
@@ -492,7 +495,7 @@
   <data name="create season" xml:space="preserve"><value>seizoen aanmaken</value></data>
   <data name="create the user" xml:space="preserve"><value>gebruiker aanmaken</value></data>
   <data name="delete the user" xml:space="preserve"><value>gebruiker verwijderen</value></data>
-  <data name="end the period" xml:space="preserve"><value>periode beëindigen</value></data>
+  <data name="end the half" xml:space="preserve"><value>helft beëindigen</value></data>
   <data name="find the previous season" xml:space="preserve"><value>vorig seizoen zoeken</value></data>
   <data name="find the season for that date" xml:space="preserve"><value>seizoen bij die datum zoeken</value></data>
   <data name="find today&#x27;s match" xml:space="preserve"><value>wedstrijd van vandaag zoeken</value></data>
@@ -521,7 +524,7 @@
   <data name="remove the player from the squad" xml:space="preserve"><value>speler uit de selectie verwijderen</value></data>
   <data name="save lineup" xml:space="preserve"><value>opstelling opslaan</value></data>
   <data name="set the password" xml:space="preserve"><value>wachtwoord instellen</value></data>
-  <data name="start the next period" xml:space="preserve"><value>volgende periode starten</value></data>
+  <data name="start the next half" xml:space="preserve"><value>volgende helft starten</value></data>
   <data name="swap the positions" xml:space="preserve"><value>posities wisselen</value></data>
   <data name="switch season" xml:space="preserve"><value>van seizoen wisselen</value></data>
   <data name="undo the substitution" xml:space="preserve"><value>wissel ongedaan maken</value></data>

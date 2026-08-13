@@ -1,0 +1,40 @@
+@*
+    The changes planned for the middle of the half, as a reference the coach opens and closes.
+
+    Deliberately a dialog rather than a card on the live screen: the plan is not the match. What is
+    on the pitch is recorded by tapping players on the pitch itself, and a standing list of what
+    *ought* to happen next to it invites being read as the state of play. Here it is looked up,
+    acted on by hand, and dismissed.
+*@
+@inject IStringLocalizer<Strings> L
+
+<MudDialog>
+    <DialogContent>
+        @if (Changes.IsEmpty)
+        {
+            <MudText Typo="Typo.body2" Style="color: var(--ink-subtle);">
+                @L["Nothing more is planned for this half."]
+            </MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.caption" Style="color: var(--ink-muted); display: block;" Class="mb-2">
+                @L["Tap the players on the pitch to make these changes."]
+            </MudText>
+            <PlannedChangesList Changes="Changes" />
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Close">@L["Close"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public PlannedChanges Changes { get; set; } = PlannedChanges.None;
+
+    private void Close() => MudDialog.Cancel();
+}

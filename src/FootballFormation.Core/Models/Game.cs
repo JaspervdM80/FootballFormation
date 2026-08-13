@@ -27,6 +27,12 @@ public class Game
     /// <summary>The opponent's score. Not tied to venue — see <see cref="IsHomeGame"/>.</summary>
     public int? ScoreAway { get; set; }
 
+    /// <summary>
+    /// The line-ups this game is planned in. A match is played in two halves whatever the split
+    /// says; a period row is a <em>planned line-up</em> for a stretch of one, and a quarters game
+    /// simply plans two per half. The row that opens a half is the one the live match plays it
+    /// with, and the row after it inside the same half is a plan the coach carries out by hand.
+    /// </summary>
     public List<GamePeriod> Periods { get; set; } = [];
     public List<GameGoal> Goals { get; set; } = [];
     public List<GameSubstitution> Substitutions { get; set; } = [];
@@ -51,7 +57,11 @@ public class Game
     /// <summary>Seconds banked from earlier running stretches, excluding the current one.</summary>
     public int ClockAccumulatedSeconds { get; set; }
 
-    /// <summary>The period currently on the pitch. Null before kick-off, at the break, and after the final whistle.</summary>
+    /// <summary>
+    /// The line-up currently on the pitch — the row that opened the half being played. Null before
+    /// kick-off, at half time and after the final whistle, which are exactly the moments nothing
+    /// may be recorded against a half.
+    /// </summary>
     public int? LivePeriodId { get; set; }
 
     /// <summary>Squad players opted out of this game.</summary>
@@ -140,14 +150,14 @@ public class Game
     public bool IsClockRunning => ClockRunningSince is not null;
 
     /// <summary>
-    /// The period the match is currently about: the one being played; at a break and after the
-    /// final whistle the last one that was; and before kick-off the first one. Shared by the live
-    /// screen and the goal log so the minute written down is the one that was on screen.
+    /// The half the match is currently about, as the line-up it is played with: the one on the
+    /// pitch; at half time and after the final whistle the last one played; and before kick-off the
+    /// half the match opens with. Shared by the live screen and the goal log so the minute written
+    /// down is the one that was on screen.
     /// </summary>
-    public GamePeriod? CurrentOrLastPeriod()
+    public GamePeriod? CurrentOrLastHalf()
     {
-        if (LivePeriodId is { } liveId
-            && Periods.FirstOrDefault(p => p.Id == liveId) is { } live) return live;
+        if (LiveHalf() is { } live) return live;
 
         var lastPlayed = Periods
             .Where(p => p.StartedAtSeconds is not null)
@@ -158,24 +168,23 @@ public class Game
     }
 
     /// <summary>
-    /// The period actually being played, or null before kick-off, at a break and after the final
-    /// whistle. Stricter than <see cref="CurrentOrLastPeriod"/>, which always names a period if
-    /// there is one to name: this is the one a substitution or a period change may touch.
+    /// The half being played, as the line-up on the pitch, or null before kick-off, at half time
+    /// and after the final whistle. Stricter than <see cref="CurrentOrLastHalf"/>, which always
+    /// names a half if there is one to name: this is the one a substitution may touch.
     /// </summary>
-    public GamePeriod? LivePeriod() =>
+    public GamePeriod? LiveHalf() =>
         LivePeriodId is null ? null : Periods.FirstOrDefault(p => p.Id == LivePeriodId);
 
     /// <summary>
-    /// Where the clock goes next: the first period not yet kicked off, skipping any whose half has
-    /// already been played.
+    /// The half the clock goes to next, as the line-up it opens with — the first line-up not yet
+    /// kicked off whose half has not been played. Null once both halves have run.
     /// <para>
-    /// A quarters game is planned as two line-ups per half but played as two halves. The second
-    /// line-up of a half is a plan the coach carries out by hand, one substitution at a time — the
-    /// clock never stops for it — so once the first half has run, the next period the clock knows
-    /// about is the one that opens the second half, not the quarter left behind inside the first.
+    /// A quarters game is planned as two line-ups per half but played as two halves, so once the
+    /// first half has run the next half to kick off opens with the third quarter's line-up, not
+    /// with the second quarter's plan left behind inside the half just played.
     /// </para>
     /// </summary>
-    public GamePeriod? NextPeriod()
+    public GamePeriod? NextHalf()
     {
         var halvesPlayed = Periods
             .Where(p => p.StartedAtSeconds is not null)
@@ -186,6 +195,17 @@ public class Game
             .OrderBy(p => p.PeriodType)
             .FirstOrDefault(p => p.StartedAtSeconds is null && !halvesPlayed.Contains(p.PeriodType.Half()));
     }
+
+    /// <summary>
+    /// The line-up planned to take over partway through <paramref name="half"/>, or null when the
+    /// half is played out with the one it kicked off with. The clock never stops for it: it is a
+    /// plan the coach works through by hand, which is what makes it a reference rather than a step.
+    /// </summary>
+    public GamePeriod? MidHalfPlan(GamePeriod half) =>
+        Periods
+            .OrderBy(p => p.PeriodType)
+            .FirstOrDefault(p => p.PeriodType > half.PeriodType
+                                 && p.PeriodType.Half() == half.PeriodType.Half());
 
     /// <summary>
     /// The match clock in seconds at <paramref name="utcNow"/>. Callers that only need a settled

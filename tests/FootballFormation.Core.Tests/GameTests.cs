@@ -231,15 +231,41 @@ public class GameTests
         var game = QuartersGame();
 
         // Before kick-off the next period is simply the first one.
-        Assert.Equal(PeriodType.FirstQuarter, game.NextPeriod()!.PeriodType);
+        Assert.Equal(PeriodType.FirstQuarter, game.NextHalf()!.PeriodType);
 
         // The first half has been played, so the line-up planned for the rest of it is behind the
         // clock — the whistle hands over to the half that follows.
         game.Periods.Single(p => p.PeriodType == PeriodType.FirstQuarter).StartedAtSeconds = 0;
-        Assert.Equal(PeriodType.ThirdQuarter, game.NextPeriod()!.PeriodType);
+        Assert.Equal(PeriodType.ThirdQuarter, game.NextHalf()!.PeriodType);
 
         game.Periods.Single(p => p.PeriodType == PeriodType.ThirdQuarter).StartedAtSeconds = 1800;
-        Assert.Null(game.NextPeriod());
+        Assert.Null(game.NextHalf());
+    }
+
+    /// <summary>
+    /// The plan the live screen offers as a reference. It is the line-up that would take over
+    /// partway through the half, which only a quarters game has — and it is looked up from the
+    /// plan rather than the clock, so it reads the same before kick-off as during play.
+    /// </summary>
+    [Fact]
+    public void Only_a_half_planned_in_two_line_ups_has_a_plan_for_its_middle()
+    {
+        var quarters = QuartersGame();
+        var firstHalf = quarters.Periods.Single(p => p.PeriodType == PeriodType.FirstQuarter);
+        var secondHalf = quarters.Periods.Single(p => p.PeriodType == PeriodType.ThirdQuarter);
+
+        Assert.Equal(PeriodType.SecondQuarter, quarters.MidHalfPlan(firstHalf)!.PeriodType);
+        Assert.Equal(PeriodType.FourthQuarter, quarters.MidHalfPlan(secondHalf)!.PeriodType);
+
+        // The plan itself has nothing planned after it — the half ends there.
+        Assert.Null(quarters.MidHalfPlan(quarters.MidHalfPlan(firstHalf)!));
+
+        var halves = TestData.Game();
+        halves.AddPeriod(PeriodType.FirstHalf);
+        halves.AddPeriod(PeriodType.SecondHalf);
+
+        // The second half is not a change due inside the first — it is the next half.
+        Assert.Null(halves.MidHalfPlan(halves.Periods[0]));
     }
 
     private static Game QuartersGame() => new()

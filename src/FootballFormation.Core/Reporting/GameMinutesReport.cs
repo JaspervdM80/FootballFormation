@@ -11,7 +11,7 @@ public class GameMinutes
     /// <summary>Everyone named in a lineup or a substitution, including players with zero seconds.</summary>
     public required IReadOnlySet<int> PlayerIds { get; init; }
 
-    /// <summary>Who is on the pitch right now. Only populated while a period is live.</summary>
+    /// <summary>Who is on the pitch right now. Only populated while a half is being played.</summary>
     public required IReadOnlySet<int> OnPitchNow { get; init; }
 
     /// <summary>
@@ -34,21 +34,22 @@ public class GameMinutes
 /// a game's minutes come from what actually happened or from what was planned.
 /// <para>
 /// A game that was run live carries the truth: <see cref="GamePeriod.StartedAtSeconds"/> and
-/// <see cref="GamePeriod.EndedAtSeconds"/> say when each period ran, and the
+/// <see cref="GamePeriod.EndedAtSeconds"/> say when each half ran, and the
 /// <see cref="GameSubstitution"/> rows say who swapped with whom, when, and into which position.
 /// The lineup alone cannot express any of that — <c>MatchSubstitutionService</c> rewrites it in
 /// place, so afterwards it only shows the <em>final</em> occupants. A game that was never run live
 /// has no timings at all, and there the planned lineup is the only answer available.
 /// </para>
 /// <para>
-/// The choice is made per game, not per period, on <see cref="Game.HasActualTimings"/>: once a
-/// match has been run live, a period with no kick-off is one that was never played, and crediting
-/// its lineup a full period's minutes would invent playing time.
+/// The choice is made per game, not per line-up, on <see cref="Game.HasActualTimings"/>: once a
+/// match has been run live, a line-up with no kick-off is one the coach worked towards by hand
+/// inside a half that is already accounted for, and crediting it a full period's minutes would
+/// invent playing time.
 /// </para>
 /// <para>
 /// Known limitation: only a substitution records a position change. The walk below starts from the
 /// lineup as it <em>finally</em> stands and rewinds substitution rows, so a player who shifts
-/// position mid-period without one is credited the position they ended in for the whole period,
+/// position mid-half without one is credited the position they ended in for the whole half,
 /// the minutes before the shift included. The live screen's position swap
 /// (<c>MatchSubstitutionService.SwapPositionsAsync</c>) is exactly that case: it rewrites the
 /// lineup and writes nothing down, because a <see cref="GameSubstitution"/> would say someone left
@@ -58,7 +59,7 @@ public class GameMinutes
 /// </summary>
 public static class GameMinutesReport
 {
-    /// <param name="elapsedSeconds">The match clock right now, which closes off a running period.
+    /// <param name="elapsedSeconds">The match clock right now, which closes off the running half.
     /// Irrelevant for a settled game — any value will do.</param>
     public static GameMinutes Build(Game game, int elapsedSeconds = 0)
     {
@@ -81,7 +82,8 @@ public static class GameMinutesReport
                 continue;
             }
 
-            // A period that was never kicked off contributes no time — only a planned lineup.
+            // A line-up that was never kicked off contributes no time — it is a plan for the
+            // middle of a half whose minutes the half's own line-up already accounts for.
             if (period.StartedAtSeconds is not { } start) continue;
 
             var isLive = game.LivePeriodId == period.Id;
@@ -96,7 +98,7 @@ public static class GameMinutesReport
                 .ThenBy(s => s.Id)
                 .ToList();
 
-            // The lineup records where everyone stands *now*. Rewinding this period's
+            // The lineup records where everyone stands *now*. Rewinding this half's
             // substitutions recovers who stood where when it kicked off, which is the only point
             // the forward walk below can start from. GameSubstitution.Position is the position
             // that changed hands, so it hands the slot back to the player who came off.

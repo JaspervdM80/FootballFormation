@@ -6,9 +6,9 @@ namespace FootballFormation.Core.Services;
 
 /// <summary>
 /// The load every touchline write starts from, described once for the three services that share
-/// it: the game with its periods, tracked so it can be written back. The clock does its arithmetic
-/// on them, a goal takes its minute from the period being played, and a substitution moves a slot
-/// inside one.
+/// it: the game with its planned line-ups, tracked so it can be written back. The clock marks the
+/// half's line-up as it starts and ends, a goal takes its minute from the half being played, and a
+/// substitution moves a slot inside that half's line-up.
 /// </summary>
 internal static class LiveMatchQueries
 {

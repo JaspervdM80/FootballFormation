@@ -28,7 +28,7 @@ public record PlannedChanges(List<PlannedSubstitution> Substitutions, List<Plann
 /// <summary>
 /// The changes the planned line-ups imply. A quarters game is planned as two line-ups per half,
 /// and the difference between them is exactly what is due midway through that half — so the live
-/// screen can announce it without ever mentioning a quarter.
+/// screen can offer it as a reference without ever mentioning a quarter.
 /// <para>
 /// Substitutions and position moves are kept apart on purpose. Rewriting a back four commonly
 /// touches every slot while only one player actually leaves the pitch, and a flat list of slot
@@ -42,20 +42,20 @@ public record PlannedChanges(List<PlannedSubstitution> Substitutions, List<Plann
 /// </summary>
 public static class PlannedChangesReport
 {
-    /// <param name="current">The period being played. Live substitutions have already been
-    /// applied to it, so the changes shown stay true to who is actually on the pitch.</param>
-    /// <param name="next">The period whose line-up takes over.</param>
+    /// <param name="half">The line-up the half is being played with. Live substitutions have
+    /// already been applied to it, so the changes shown stay true to who is on the pitch.</param>
+    /// <param name="plan">The line-up planned to take over partway through that half.</param>
     /// <param name="findPlayer">Resolves an id to a player; unknown ids come back as null.</param>
-    /// <param name="liveChanges">The substitutions already made in <paramref name="current"/>.
+    /// <param name="liveChanges">The substitutions already made in <paramref name="half"/>.
     /// They decide which swaps are still worth showing — see <see cref="KickOffStarters"/>.</param>
     public static PlannedChanges Build(
-        GamePeriod current,
-        GamePeriod next,
+        GamePeriod half,
+        GamePeriod plan,
         Func<int, Player?> findPlayer,
         IEnumerable<GameSubstitution> liveChanges)
     {
-        var before = StartersBySlot(current);
-        var after = StartersBySlot(next);
+        var before = StartersBySlot(half);
+        var after = StartersBySlot(plan);
 
         return new PlannedChanges(
             [.. PairUp(before, after, KickOffStarters(before.Values, liveChanges))
@@ -82,7 +82,7 @@ public static class PlannedChangesReport
         swap.Off is null || kickOffStarters.Contains(swap.Off.PlayerId);
 
     /// <summary>
-    /// Who was on the pitch when the period kicked off. The line-up records where everyone stands
+    /// Who was on the pitch when the half kicked off. The line-up records where everyone stands
     /// <em>now</em>, so rewinding the substitutions made since is the only way back to the eleven
     /// the plan was written against — the same walk <see cref="GameMinutesReport"/> makes.
     /// </summary>
@@ -163,11 +163,11 @@ public static class PlannedChangesReport
     /// saved by an older build is not guaranteed to honour that, so the first entry wins rather
     /// than the lookup throwing on data that is already stored.
     /// </summary>
-    private static Dictionary<int, GamePlayerPosition> StartersBySlot(GamePeriod period)
+    private static Dictionary<int, GamePlayerPosition> StartersBySlot(GamePeriod lineup)
     {
         var bySlot = new Dictionary<int, GamePlayerPosition>();
 
-        foreach (var position in period.PlayerPositions.Where(p => !p.IsSubstitute && p.SlotIndex is not null))
+        foreach (var position in lineup.PlayerPositions.Where(p => !p.IsSubstitute && p.SlotIndex is not null))
             bySlot.TryAdd(position.SlotIndex!.Value, position);
 
         return bySlot;

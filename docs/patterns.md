@@ -108,9 +108,9 @@ is actually happening at the touchline rather than along a data-access seam:
 | Service | Owns |
 | --- | --- |
 | `LiveMatchService` | Reading: `GetLiveAsync` for the live screen, `GetTodaysMatchAsync` for the home banner. Both public, like every other read |
-| `MatchClockService` | Kick-off, ending a period, starting or rolling into the next, the final whistle — and `BankClock`, the only thing that moves seconds about. No pause: only a period boundary stops the clock |
+| `MatchClockService` | Kick-off, half time, starting the next half, the final whistle — and `BankClock`, the only thing that moves seconds about. No pause: only half time stops the clock |
 | `MatchGoalService` | The live minute a goal is stamped with and the scoreline recomputed from the goals on file. Storage itself still delegates to `GameService` |
-| `MatchSubstitutionService` | The slot swap and the record of it, in one `SaveChanges`, and undoing the most recent one of a period |
+| `MatchSubstitutionService` | The slot swap and the record of it, in one `SaveChanges`, and undoing the most recent one of a half |
 
 What made the cut worth making was not the line count: the clock arithmetic and the substitution
 slot-swapping shared a type, a `UtcNow` and a set of private helpers, so reading either meant paging
@@ -121,11 +121,12 @@ followed correctly throughout.
 Three things fall out of a split like this, and they are the parts worth copying:
 
 - **Pure helpers over an entity move onto the entity.** `CurrentPeriod` and `NextPeriod` were
-  private statics over a `Game`; they are `Game.LivePeriod()` and `Game.NextPeriod()` now, beside
-  `Game.CurrentOrLastPeriod()`, and the live page reads its "next period" from the same one. A
-  helper that *mutates*, like `BankClock`, stays with the service that owns the writing.
+  private statics over a `Game`; they are `Game.LiveHalf()` and `Game.NextHalf()` now, beside
+  `Game.CurrentOrLastHalf()` and `Game.MidHalfPlan()`, and the live page reads its "next half" and
+  the plan it offers as a reference from the same ones. A helper that *mutates*, like `BankClock`,
+  stays with the service that owns the writing.
 - **What every piece still shares gets named once.** `LiveMatchQueries` holds the tracked load they
-  all start from (the game with its periods, shaped by `GameQueries.WithPeriods`) and the single
+  all start from (the game with its planned line-ups, shaped by `GameQueries.WithPeriods`) and the single
   "game not found" message.
 - **Anything every method had to remember becomes part of the operation shape.** Each write used to
   end with `notifier.Notify(gameId)`; three services each remembering that is worse than one, so
@@ -140,7 +141,7 @@ split was cut along the wrong line.
 ## Domain logic on the model
 Anything computable without the database lives on the entity, not in a service or a page:
 `Game.PeriodCount`, `Game.PeriodDurationSeconds`, `Game.IsInRoster`, `Game.SelectRoster`,
-`Game.LivePeriod()`, `Game.NextPeriod()`,
+`Game.LiveHalf()`, `Game.NextHalf()`, `Game.MidHalfPlan()`,
 `GameSplitTypeExtensions.PeriodCount()/PeriodDurationSeconds()/PeriodLabel()`. `PeriodCount` derives from
 `PeriodTypeExtensions.ForSplitType`, so the count can never drift from the periods actually created.
 

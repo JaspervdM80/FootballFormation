@@ -7,15 +7,20 @@ using Microsoft.Extensions.Logging;
 namespace FootballFormation.Core.Services;
 
 /// <summary>
-/// The clock and the run of play: kick-off, the period changes and the final whistle.
+/// The clock and the run of play: kick-off, half time and the final whistle.
 /// <para>
-/// There is no pause: the clock runs from kick-off until the period is whistled off, and only a
-/// period boundary stops it. A youth match is not paused at the touchline, and a clock that could
-/// be stopped by a stray tap is a clock the season's minutes cannot be trusted from.
+/// A match is two halves, whether its line-ups were planned in halves or in quarters. A line-up
+/// planned for the middle of a half never reaches this service — the coach works through it by
+/// hand while the clock runs — so the only stoppage here is half time.
+/// </para>
+/// <para>
+/// There is no pause: the clock runs from kick-off until the half is whistled off. A youth match
+/// is not paused at the touchline, and a clock that could be stopped by a stray tap is a clock the
+/// season's minutes cannot be trusted from.
 /// </para>
 /// <para>
 /// This is where the arithmetic a season's statistics are built on lives — the banked seconds and
-/// the started/ended marks on each period are what <c>GameMinutesReport</c> later credits players
+/// the started/ended marks on each half are what <c>GameMinutesReport</c> later credits players
 /// with — so it is the piece of the live match kept on its own and driven to exact instants under
 /// test.
 /// </para>
@@ -29,7 +34,7 @@ public class MatchClockService(
 {
     /// <summary>
     /// The clock every match-time decision reads. Injected rather than taken straight from
-    /// <see cref="DateTime.UtcNow"/> so the period arithmetic can be driven to an exact instant
+    /// <see cref="DateTime.UtcNow"/> so the half arithmetic can be driven to an exact instant
     /// under test — it is the part of the live match most likely to be silently wrong, and a
     /// season's statistics depend on it.
     /// </summary>
@@ -48,7 +53,7 @@ public class MatchClockService(
                 return Result.Failure<Game>("This match has already been started");
 
             var first = game.Periods.OrderBy(p => p.PeriodType).FirstOrDefault();
-            if (first is null) return Result.Failure<Game>("This game has no periods to play");
+            if (first is null) return Result.Failure<Game>("This game has no line-up to play");
 
             game.MatchState = MatchState.InProgress;
             game.ClockAccumulatedSeconds = 0;
@@ -58,13 +63,14 @@ public class MatchClockService(
             first.EndedAtSeconds = null;
 
             await db.SaveChangesAsync(cancellationToken);
-            logger.LogInformation("Started live match {GameId} at period {PeriodId}", gameId, first.Id);
+            logger.LogInformation("Started live match {GameId} in the {Half} with line-up {PeriodId}",
+                gameId, first.PeriodType.Half(), first.Id);
             return Result.Success(game);
         });
 
-    /// <summary>Whistles the current period off. The clock stops and no period is live until the next one starts.</summary>
-    public Task<Result<Game>> EndPeriodAsync(int gameId, CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "end the period",
+    /// <summary>Whistles the half off. The clock stops and no half is live until the next kicks off.</summary>
+    public Task<Result<Game>> EndHalfAsync(int gameId, CancellationToken cancellationToken = default) =>
+        LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "end the half",
             cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -72,25 +78,25 @@ public class MatchClockService(
             var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
             if (game is null) return NotFound(gameId);
 
-            var current = game.LivePeriod();
-            if (current is null) return Result.Failure<Game>("No period is currently being played");
+            var current = game.LiveHalf();
+            if (current is null) return Result.Failure<Game>("No half is being played");
 
             BankClock(game);
             current.EndedAtSeconds = game.ClockAccumulatedSeconds;
             game.LivePeriodId = null;
 
             await db.SaveChangesAsync(cancellationToken);
-            logger.LogInformation("Ended period {PeriodId} of game {GameId} at {Seconds}s",
-                current.Id, gameId, current.EndedAtSeconds);
+            logger.LogInformation("Ended the {Half} of game {GameId} at {Seconds}s",
+                current.PeriodType.Half(), gameId, current.EndedAtSeconds);
             return Result.Success(game);
         });
 
     /// <summary>
-    /// Kicks off the half after the break. <see cref="Game.NextPeriod"/> decides which period that
-    /// is, and it skips the second line-up of a half already played — the clock runs in halves.
+    /// Kicks off the half after the break. <see cref="Game.NextHalf"/> decides which line-up opens
+    /// it, skipping any planned for the middle of the half just played.
     /// </summary>
-    public Task<Result<Game>> StartNextPeriodAsync(int gameId, CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "start the next period",
+    public Task<Result<Game>> StartNextHalfAsync(int gameId, CancellationToken cancellationToken = default) =>
+        LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "start the next half",
             cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -101,11 +107,11 @@ public class MatchClockService(
             if (game.MatchState != MatchState.InProgress)
                 return Result.Failure<Game>("This match is not in progress");
             if (game.LivePeriodId is not null)
-                return Result.Failure<Game>("End the current period first");
+                return Result.Failure<Game>("End the current half first");
 
-            var next = game.NextPeriod();
+            var next = game.NextHalf();
             if (next is null)
-                return Result.Failure<Game>("Every period has been played — finish the match instead");
+                return Result.Failure<Game>("Both halves have been played — finish the match instead");
 
             BankClock(game);
             next.StartedAtSeconds = game.ClockAccumulatedSeconds;
@@ -114,8 +120,8 @@ public class MatchClockService(
             game.ClockRunningSince = UtcNow;
 
             await db.SaveChangesAsync(cancellationToken);
-            logger.LogInformation("Started period {PeriodId} of game {GameId} at {Seconds}s",
-                next.Id, gameId, next.StartedAtSeconds);
+            logger.LogInformation("Started the {Half} of game {GameId} at {Seconds}s",
+                next.PeriodType.Half(), gameId, next.StartedAtSeconds);
             return Result.Success(game);
         });
 
@@ -133,7 +139,7 @@ public class MatchClockService(
 
             BankClock(game);
 
-            var current = game.LivePeriod();
+            var current = game.LiveHalf();
             if (current is not null) current.EndedAtSeconds = game.ClockAccumulatedSeconds;
 
             game.LivePeriodId = null;

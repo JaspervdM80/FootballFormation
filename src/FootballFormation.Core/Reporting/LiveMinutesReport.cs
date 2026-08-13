@@ -16,7 +16,7 @@ public record LiveMinutesRow(Player Player, int Seconds, bool IsOnPitch)
 /// </summary>
 public static class LiveMinutesReport
 {
-    /// <param name="elapsedSeconds">The match clock right now, which closes off the running period.</param>
+    /// <param name="elapsedSeconds">The match clock right now, which closes off the running half.</param>
     /// <param name="findPlayer">Resolves an id to a player; rows for unknown ids are dropped.</param>
     public static List<LiveMinutesRow> Build(Game game, int elapsedSeconds, Func<int, Player?> findPlayer)
     {

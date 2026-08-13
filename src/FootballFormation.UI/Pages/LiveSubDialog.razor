@@ -15,7 +15,7 @@
         @* The placeholder only ever explains an empty list. MudSelect shows it whenever nothing is
            chosen, so a standing "nobody is on the bench" would greet a full bench too. *@
         <MudSelect T="int?" @bind-Value="PlayerOnId" Label="@L["Comes on"]" Class="mt-4" Clearable="true"
-                   Placeholder="@(Bench.Count == 0 ? L["Nobody is on the bench for this period."].Value : null)"
+                   Placeholder="@(Bench.Count == 0 ? L["Nobody is on the bench for this half."].Value : null)"
                    Disabled="@(Bench.Count == 0)">
             @foreach (var player in Bench)
             {

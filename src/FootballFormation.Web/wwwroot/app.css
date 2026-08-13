@@ -766,6 +766,28 @@ html, body {
     grid-column: 1 / -1;
 }
 
+/* The line-up card's heading row: the half on the left, the way into the plan for it on the right.
+   .card-label carries its own bottom margin, so the row takes it over and the label gives it up —
+   otherwise the button sits 16px above the pitch and the label doesn't. */
+.live-lineup-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.live-lineup-head .card-label {
+    margin-bottom: 0;
+}
+
+.live-plan-btn {
+    flex: none;
+    /* Small on a desktop, still a thumb target on the phone this is opened on. */
+    min-height: 44px;
+    white-space: nowrap;
+}
+
 /* The timeline's "Show substitutions" checkbox is dense, which is right on a desktop and under the
    44px floor on the phone this screen is actually used on. Its label is the target, so the height
    goes there. */

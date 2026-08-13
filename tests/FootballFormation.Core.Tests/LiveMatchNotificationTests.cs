@@ -34,8 +34,8 @@ public class LiveMatchNotificationTests : LiveMatchTestBase
 
         Assert.True((await Subs.SwapPositionsAsync(game.Id, players[0].Id, players[1].Id)).IsSuccess);
 
-        Assert.True((await MatchClock.EndPeriodAsync(game.Id)).IsSuccess);
-        Assert.True((await MatchClock.StartNextPeriodAsync(game.Id)).IsSuccess);
+        Assert.True((await MatchClock.EndHalfAsync(game.Id)).IsSuccess);
+        Assert.True((await MatchClock.StartNextHalfAsync(game.Id)).IsSuccess);
         Assert.True((await MatchClock.FinishMatchAsync(game.Id)).IsSuccess);
 
         // Nine writes, nine announcements, each naming this match.
@@ -51,7 +51,7 @@ public class LiveMatchNotificationTests : LiveMatchTestBase
         _announced.Clear();
 
         // A rule broken and an unknown row, across all three services.
-        Assert.True((await MatchClock.StartNextPeriodAsync(game.Id)).IsFailure);
+        Assert.True((await MatchClock.StartNextHalfAsync(game.Id)).IsFailure);
         Assert.True((await Goals.LogGoalAsync(game.Id, null, null, false, false)).IsFailure);
         Assert.True((await Goals.RemoveGoalAsync(game.Id, 999)).IsFailure);
         Assert.True((await Subs.SubstituteAsync(game.Id, 999, 998)).IsFailure);

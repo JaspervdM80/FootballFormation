@@ -28,7 +28,7 @@ public class MatchSubstitutionService(
     private DateTime UtcNow => time.GetUtcNow().UtcDateTime;
 
     /// <summary>
-    /// Brings <paramref name="playerOnId"/> on for <paramref name="playerOffId"/> in the period
+    /// Brings <paramref name="playerOnId"/> on for <paramref name="playerOffId"/> in the half
     /// currently being played: the outgoing player's slot and position change hands, and the swap
     /// is recorded with the minute it happened.
     /// </summary>
@@ -45,13 +45,13 @@ public class MatchSubstitutionService(
             var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
             if (game is null) return LiveMatchQueries.GameNotFound<GameSubstitution>(gameId);
 
-            var period = game.LivePeriod();
-            if (period is null)
-                return Result.Failure<GameSubstitution>("No period is currently being played");
+            var half = game.LiveHalf();
+            if (half is null)
+                return Result.Failure<GameSubstitution>("No half is being played");
 
-            await db.Entry(period).Collection(p => p.PlayerPositions).LoadAsync(cancellationToken);
+            await db.Entry(half).Collection(p => p.PlayerPositions).LoadAsync(cancellationToken);
 
-            var off = period.PlayerPositions.FirstOrDefault(pp => pp.PlayerId == playerOffId);
+            var off = half.PlayerPositions.FirstOrDefault(pp => pp.PlayerId == playerOffId);
             if (off is null || off.IsSubstitute)
                 return Result.Failure<GameSubstitution>("That player is not on the pitch");
 
@@ -61,13 +61,13 @@ public class MatchSubstitutionService(
             off.SlotIndex = null;
             off.IsSubstitute = true;
 
-            var on = period.PlayerPositions.FirstOrDefault(pp => pp.PlayerId == playerOnId);
+            var on = half.PlayerPositions.FirstOrDefault(pp => pp.PlayerId == playerOnId);
             if (on is null)
             {
-                // Not benched for this period — someone who turned up late, or a lineup that was
+                // Not benched for this half — someone who turned up late, or a lineup that was
                 // never filled in. Adding them is friendlier than refusing the change mid-match.
-                on = new GamePlayerPosition { GamePeriodId = period.Id, PlayerId = playerOnId };
-                period.PlayerPositions.Add(on);
+                on = new GamePlayerPosition { GamePeriodId = half.Id, PlayerId = playerOnId };
+                half.PlayerPositions.Add(on);
             }
             else if (!on.IsSubstitute)
             {
@@ -81,7 +81,7 @@ public class MatchSubstitutionService(
             var sub = new GameSubstitution
             {
                 GameId = gameId,
-                GamePeriodId = period.Id,
+                GamePeriodId = half.Id,
                 PlayerOffId = playerOffId,
                 PlayerOnId = playerOnId,
                 AtSeconds = game.ElapsedSecondsAt(UtcNow),
@@ -100,8 +100,8 @@ public class MatchSubstitutionService(
             await db.Entry(sub).Reference(s => s.PlayerOff).LoadAsync(cancellationToken);
             await db.Entry(sub).Reference(s => s.PlayerOn).LoadAsync(cancellationToken);
 
-            logger.LogInformation("Game {GameId}: {Off} off, {On} on at {Seconds}s in period {PeriodId}",
-                gameId, playerOffId, playerOnId, sub.AtSeconds, period.Id);
+            logger.LogInformation("Game {GameId}: {Off} off, {On} on at {Seconds}s in the {Half}",
+                gameId, playerOffId, playerOnId, sub.AtSeconds, half.PeriodType.Half());
 
             return Result.Success(sub);
         });
@@ -113,7 +113,7 @@ public class MatchSubstitutionService(
     /// <para>
     /// What it costs is the position half of the minutes report. <c>GameMinutesReport</c> reads the
     /// lineup as it finally stands and rewinds only substitution rows, so after a swap each player
-    /// is credited the position they moved <em>into</em> for the whole period — including the
+    /// is credited the position they moved <em>into</em> for the whole half — including the
     /// minutes before the swap. Totals are unaffected; only the split by position is.
     /// </para>
     /// </summary>
@@ -130,14 +130,14 @@ public class MatchSubstitutionService(
             var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
             if (game is null) return LiveMatchQueries.GameNotFound<int>(gameId);
 
-            var period = game.LivePeriod();
-            if (period is null)
-                return Result.Failure<int>("No period is currently being played");
+            var half = game.LiveHalf();
+            if (half is null)
+                return Result.Failure<int>("No half is being played");
 
-            await db.Entry(period).Collection(p => p.PlayerPositions).LoadAsync(cancellationToken);
+            await db.Entry(half).Collection(p => p.PlayerPositions).LoadAsync(cancellationToken);
 
-            var a = period.PlayerPositions.FirstOrDefault(pp => pp.PlayerId == playerAId);
-            var b = period.PlayerPositions.FirstOrDefault(pp => pp.PlayerId == playerBId);
+            var a = half.PlayerPositions.FirstOrDefault(pp => pp.PlayerId == playerAId);
+            var b = half.PlayerPositions.FirstOrDefault(pp => pp.PlayerId == playerBId);
 
             if (a is null || a.IsSubstitute || b is null || b.IsSubstitute)
                 return Result.Failure<int>("Both players have to be on the pitch to swap positions");
@@ -147,14 +147,14 @@ public class MatchSubstitutionService(
 
             await db.SaveChangesAsync(cancellationToken);
 
-            logger.LogInformation("Game {GameId}: {A} and {B} swapped positions in period {PeriodId}",
-                gameId, playerAId, playerBId, period.Id);
+            logger.LogInformation("Game {GameId}: {A} and {B} swapped positions in the {Half}",
+                gameId, playerAId, playerBId, half.PeriodType.Half());
 
             return Result.Success(gameId);
         });
 
     /// <summary>
-    /// Undoes a substitution. Only the most recent one in its period can go, because reversing an
+    /// Undoes a substitution. Only the most recent one in its half can go, because reversing an
     /// older swap would fight every change made on that slot since.
     /// </summary>
     public Task<Result> RemoveSubstitutionAsync(int subId, CancellationToken cancellationToken = default) =>
@@ -175,7 +175,7 @@ public class MatchSubstitutionService(
                                    || (s.AtSeconds == sub.AtSeconds && s.Id > sub.Id)),
                           cancellationToken);
             if (!isNewest)
-                return Result.Failure<int>("Only the most recent substitution of a period can be undone");
+                return Result.Failure<int>("Only the most recent substitution of a half can be undone");
 
             var positions = await db.GamePlayerPositions
                 .Where(pp => pp.GamePeriodId == sub.GamePeriodId)

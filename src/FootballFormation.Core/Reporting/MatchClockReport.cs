@@ -31,18 +31,18 @@ public record MatchClock(int Seconds, int AdditionalSeconds, MatchMinute Minute)
 /// </summary>
 public static class MatchClockReport
 {
-    /// <param name="displayPeriod">The period on screen; its half decides where the clock starts
-    /// and where it stops. Null before there is anything to show.</param>
+    /// <param name="displayHalf">The half on screen, as the line-up it is played with. It decides
+    /// where the clock starts and where it stops. Null before there is anything to show.</param>
     /// <param name="elapsedSeconds">The real match clock right now.</param>
-    public static MatchClock Build(Game game, GamePeriod? displayPeriod, int elapsedSeconds)
+    public static MatchClock Build(Game game, GamePeriod? displayHalf, int elapsedSeconds)
     {
-        if (displayPeriod is null) return MatchClock.BeforeKickOff;
+        if (displayHalf is null) return MatchClock.BeforeKickOff;
 
-        // Always halves, whatever the game is split into — a quarters game is still two halves,
-        // and the scoreboard counts in halves.
+        // Always halves, whatever the line-ups were planned in — a quarters game is still two
+        // halves, and the scoreboard counts in halves.
         var halfSeconds = GameSplitType.Halves.PeriodDurationSeconds(game.GameDurationMinutes);
 
-        var half = displayPeriod.PeriodType.Half();
+        var half = displayHalf.PeriodType.Half();
         var plannedStart = half == PeriodType.FirstHalf ? 0 : halfSeconds;
 
         if (HalfKickedOffAt(game, half) is not { } actualStart)
@@ -71,11 +71,11 @@ public static class MatchClockReport
     /// <summary>
     /// The minute a substitution is written down against: the reading the clock showed when it was
     /// made, which is the half's reading and not the raw elapsed time. Falls back to the raw minute
-    /// for a substitution whose period was not loaded — a wrong-looking minute beats claiming 1'.
+    /// for a substitution whose half was not loaded — a wrong-looking minute beats claiming 1'.
     /// </summary>
     public static MatchMinute MinuteOf(Game game, GameSubstitution substitution) =>
-        game.Periods.FirstOrDefault(p => p.Id == substitution.GamePeriodId) is { } period
-            ? Build(game, period, substitution.AtSeconds).Minute
+        game.Periods.FirstOrDefault(p => p.Id == substitution.GamePeriodId) is { } half
+            ? Build(game, half, substitution.AtSeconds).Minute
             : PlainMinute(substitution.AtSeconds);
 
     /// <summary>
@@ -89,8 +89,8 @@ public static class MatchClockReport
     private static MatchMinute PlainMinute(int seconds) => new((seconds / 60) + 1, 0);
 
     /// <summary>
-    /// The real clock reading when this half kicked off — the earliest of its periods to start.
-    /// A quarters game has two periods per half and only the first of them opens the half.
+    /// The real clock reading when this half kicked off — the earliest of its line-ups to start.
+    /// A quarters game plans two line-ups per half and only the first of them opens the half.
     /// </summary>
     private static int? HalfKickedOffAt(Game game, PeriodType half)
     {

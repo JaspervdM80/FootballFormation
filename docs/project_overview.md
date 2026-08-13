@@ -40,7 +40,7 @@ calculation live in Core, not the UI, so they are testable and would come along 
 **Match day**
 - Formation builder with drag-and-drop onto a visual pitch, per-period lineups (halves or quarters)
 - Playing time overview (% of game time per player, with position-fit colours)
-- Live match mode (`/games/{id}/live`): a running clock, period transitions, timestamped
+- Live match mode (`/games/{id}/live`): a running clock in two halves, timestamped
   substitutions and goals. The admin drives it; everyone else watches the same URL read-only, with
   the clock derived from one stored anchor rather than pushed each second
 - Match results: final score, scorers, assists, own and opponent goals

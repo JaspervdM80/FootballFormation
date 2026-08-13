@@ -3,15 +3,15 @@ using FootballFormation.Core.Models;
 namespace FootballFormation.Core.Tests;
 
 /// <summary>
-/// The clock and period arithmetic — the numbers a season's statistics are later built from, and
-/// the reason the match is driven to exact instants here rather than to a wall clock.
+/// The clock and the two halves it runs — the numbers a season's statistics are later built from,
+/// and the reason the match is driven to exact instants here rather than to a wall clock.
 /// </summary>
 public class MatchClockServiceTests : LiveMatchTestBase
 {
     // ---- Starting and stopping -------------------------------------------------------------
 
     [Fact]
-    public async Task Starting_a_match_puts_the_first_period_on_the_pitch_with_a_zeroed_clock()
+    public async Task Starting_a_match_puts_the_first_half_on_the_pitch_with_a_zeroed_clock()
     {
         var game = await SeedGameAsync();
 
@@ -39,7 +39,7 @@ public class MatchClockServiceTests : LiveMatchTestBase
     }
 
     [Fact]
-    public async Task A_game_with_no_periods_cannot_kick_off()
+    public async Task A_game_with_no_line_up_at_all_cannot_kick_off()
     {
         var season = Season.CreateFor(KickOff);
         Db.Seasons.Add(season);
@@ -52,7 +52,7 @@ public class MatchClockServiceTests : LiveMatchTestBase
         var result = await MatchClock.StartMatchAsync(game.Id);
 
         Assert.True(result.IsFailure);
-        Assert.Equal("This game has no periods to play", result.Error);
+        Assert.Equal("This game has no line-up to play", result.Error);
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public class MatchClockServiceTests : LiveMatchTestBase
     // ---- The clock -------------------------------------------------------------------------
 
     [Fact]
-    public async Task The_clock_runs_from_kick_off_until_the_period_is_whistled_off()
+    public async Task The_clock_runs_from_kick_off_until_the_half_is_whistled_off()
     {
         var game = await SeedGameAsync();
         await MatchClock.StartMatchAsync(game.Id);
@@ -81,16 +81,16 @@ public class MatchClockServiceTests : LiveMatchTestBase
         Assert.Equal(420, running.ElapsedSecondsAt(Time.GetUtcNow().UtcDateTime));
     }
 
-    // ---- Periods ---------------------------------------------------------------------------
+    // ---- Halves ----------------------------------------------------------------------------
 
     [Fact]
-    public async Task Ending_a_period_stops_the_clock_and_leaves_nothing_live()
+    public async Task Ending_a_half_stops_the_clock_and_leaves_nothing_live()
     {
         var game = await SeedGameAsync();
         await MatchClock.StartMatchAsync(game.Id);
 
         Time.Advance(TimeSpan.FromMinutes(30));
-        await MatchClock.EndPeriodAsync(game.Id);
+        await MatchClock.EndHalfAsync(game.Id);
 
         var ended = await ReloadAsync(game.Id);
         Assert.Null(ended.LivePeriodId);
@@ -105,10 +105,10 @@ public class MatchClockServiceTests : LiveMatchTestBase
         await MatchClock.StartMatchAsync(game.Id);
 
         Time.Advance(TimeSpan.FromMinutes(30));
-        await MatchClock.EndPeriodAsync(game.Id);
+        await MatchClock.EndHalfAsync(game.Id);
 
         Time.Advance(TimeSpan.FromMinutes(15));      // half time
-        await MatchClock.StartNextPeriodAsync(game.Id);
+        await MatchClock.StartNextHalfAsync(game.Id);
 
         var second = await ReloadAsync(game.Id);
         var periods = second.Periods.OrderBy(p => p.PeriodType).ToList();
@@ -121,15 +121,15 @@ public class MatchClockServiceTests : LiveMatchTestBase
     }
 
     [Fact]
-    public async Task The_next_period_cannot_start_before_the_current_one_ends()
+    public async Task The_next_half_cannot_start_before_the_current_one_ends()
     {
         var game = await SeedGameAsync();
         await MatchClock.StartMatchAsync(game.Id);
 
-        var result = await MatchClock.StartNextPeriodAsync(game.Id);
+        var result = await MatchClock.StartNextHalfAsync(game.Id);
 
         Assert.True(result.IsFailure);
-        Assert.Equal("End the current period first", result.Error);
+        Assert.Equal("End the current half first", result.Error);
     }
 
     /// <summary>
@@ -144,8 +144,8 @@ public class MatchClockServiceTests : LiveMatchTestBase
         await MatchClock.StartMatchAsync(game.Id);
 
         Time.Advance(TimeSpan.FromMinutes(30));
-        await MatchClock.EndPeriodAsync(game.Id);
-        Assert.True((await MatchClock.StartNextPeriodAsync(game.Id)).IsSuccess);
+        await MatchClock.EndHalfAsync(game.Id);
+        Assert.True((await MatchClock.StartNextHalfAsync(game.Id)).IsSuccess);
 
         var second = await ReloadAsync(game.Id);
         var periods = second.Periods.OrderBy(p => p.PeriodType).ToList();
@@ -164,21 +164,21 @@ public class MatchClockServiceTests : LiveMatchTestBase
         await MatchClock.StartMatchAsync(game.Id);
 
         Time.Advance(TimeSpan.FromMinutes(30));
-        await MatchClock.EndPeriodAsync(game.Id);
-        await MatchClock.StartNextPeriodAsync(game.Id);
+        await MatchClock.EndHalfAsync(game.Id);
+        await MatchClock.StartNextHalfAsync(game.Id);
         Time.Advance(TimeSpan.FromMinutes(30));
-        await MatchClock.EndPeriodAsync(game.Id);
+        await MatchClock.EndHalfAsync(game.Id);
 
-        var result = await MatchClock.StartNextPeriodAsync(game.Id);
+        var result = await MatchClock.StartNextHalfAsync(game.Id);
 
         Assert.True(result.IsFailure);
-        Assert.Equal("Every period has been played — finish the match instead", result.Error);
+        Assert.Equal("Both halves have been played — finish the match instead", result.Error);
     }
 
     // ---- Finishing -------------------------------------------------------------------------
 
     [Fact]
-    public async Task Finishing_closes_the_running_period_and_writes_the_score_from_the_goals()
+    public async Task Finishing_closes_the_running_half_and_writes_the_score_from_the_goals()
     {
         var game = await SeedGameAsync();
         await MatchClock.StartMatchAsync(game.Id);

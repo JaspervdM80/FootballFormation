@@ -123,7 +123,7 @@ always had, and keeps games referencing a since-departed player rendering sensib
 | MatchState | MatchState | NotStarted / InProgress / Finished. Driven by the live match screen |
 | ClockRunningSince | DateTime? | UTC anchor; null whenever the clock is stopped |
 | ClockAccumulatedSeconds | int | Seconds banked from earlier running stretches |
-| LivePeriodId | int? | The period on the pitch. Null before kick-off, at the break and after full time |
+| LivePeriodId | int? | The line-up on the pitch — the row that opened the half being played. Null before kick-off, at half time and after full time |
 | Substitutions | List\<GameSubstitution\> | Cascade delete |
 | Comments | List\<GameComment\> | Cascade delete. Never eager-loaded — see GameComment |
 
@@ -145,10 +145,13 @@ would shift while it is still being played. More computed members support the re
 | `PeriodDurationSeconds` | How long one period lasts on an even split. **Seconds, not minutes** — a duration that splits into fractions of a minute (50 in quarters is 4 × 12.5) still splits exactly into seconds, so the periods add back up to the full match length. Every planned-minutes calculation reads this one |
 | `PeriodDurationMinutes` | The same length as a `decimal`, fractional when it has to be. Display only |
 | `HasLineup` | Does any period have someone on the pitch? Needs `PlayerPositions` loaded |
-| `HasActualTimings` | Was any period actually kicked off, i.e. are there real timings to prefer over the plan? |
+| `HasActualTimings` | Was any half actually kicked off, i.e. are there real timings to prefer over the plan? |
 | `PlayedDurationSeconds` | The same sum in seconds, without the fallback — the denominator for a share of one game's playing time, where truncating to minutes would let an ever-present player round past 100% |
 | `PlayedDurationMinutes` | How long the match really lasted, summed over the periods played out; falls back to `GameDurationMinutes`. The denominator for utilisation, so a match that over-ran cannot push anyone past 100% |
-| `CurrentOrLastPeriod()` | The period the match is *about*: the live one, else the last played, else the first — so the live screen is never blank |
+| `CurrentOrLastHalf()` | The half the match is *about*, as the line-up it is played with: the live one, else the last played, else the one the match opens with — so the live screen is never blank |
+| `LiveHalf()` | The half on the pitch, or null before kick-off, at half time and after full time. What a substitution may touch |
+| `NextHalf()` | The half the clock goes to next, as the line-up opening it. Skips a line-up planned for the middle of a half already played, so a quarters second half opens at Q3 |
+| `MidHalfPlan(half)` | The line-up planned to take over partway through that half, or null. Only a quarters game has one, and the clock never stops for it — the live screen offers it as a reference |
 
 A game's season is resolved in `GameService.CreateAsync`: `SeasonId == 0` means "auto by date"
 (the game dialog's default) and is looked up via `SeasonService.GetOrCreateForDateAsync`, creating
@@ -171,14 +174,19 @@ season's squad — so a player who was a guest one year and a regular the next i
 each. `PlayerStatsReport.Build` and `SeasonStatsReport.Build` both take `SeasonSquads` for this reason.
 
 ## GamePeriod
+One **planned line-up**, for a half or for a quarter. The match itself is only ever two halves, so
+the row that opens a half is the one the live screen plays, times and records against, while a row
+planned for the middle of a half stays a plan and is never kicked off. `PeriodType.Half()` maps one
+to the other.
+
 | Property | Type | Notes |
 |---|---|---|
 | Id | int | PK |
 | GameId | int | FK → Game (cascade delete) |
 | PeriodType | PeriodType | FirstHalf, SecondHalf, FirstQuarter..FourthQuarter |
 | FormationTypeOverride | FormationType? | Null = use game's formation |
-| StartedAtSeconds | int? | Match-clock second it kicked off. Null unless run live |
-| EndedAtSeconds | int? | Match-clock second it was whistled off |
+| StartedAtSeconds | int? | Match-clock second the half this opens kicked off. Null unless run live, and always null for a plan for the middle of a half |
+| EndedAtSeconds | int? | Match-clock second that half was whistled off |
 | PlayerPositions | List\<GamePlayerPosition\> | |
 
 ## GamePlayerPosition
@@ -220,7 +228,7 @@ bench, never both and never twice.
 | RecordedAt | DateTime | UTC entry time — orders events that share a minute |
 
 A substitution has no stored minute: `MatchClockReport.MinuteOf` derives it from `AtSeconds` and
-the period the change belongs to, so it reads off the same scoreboard clock a goal was stamped from
+the half the change belongs to, so it reads off the same scoreboard clock a goal was stamped from
 rather than the raw elapsed time. A goal cannot be derived that way — one typed in on `/result` has
 no clock behind it at all — which is why its minute is stored, both halves of it.
 
@@ -235,7 +243,7 @@ Ids from the two tables are not comparable with each other, so a goal and a subs
 both minute and `RecordedAt` keep an arbitrary (but stable) order.
 
 The lineup stays the source of truth for *who stands where*; this records **when** the swap
-happened, which the period lineup alone cannot express. `MatchSubstitutionService.SubstituteAsync` writes
+happened, which the line-up alone cannot express. `MatchSubstitutionService.SubstituteAsync` writes
 both in one `SaveChangesAsync`, so they cannot diverge — and it updates the lineup **in place**
 rather than going through `GameService.SavePeriodLineupAsync`, which is delete-and-reinsert.
 
@@ -243,7 +251,7 @@ Both player legs are `Restrict`, not `Cascade`: two cascading paths from `Player
 is the shape SQLite rejects, and neither leg is nullable, so deleting a player who was substituted
 fails loudly instead of silently rewriting match history.
 
-Only the **most recent** substitution of a period can be undone (`RemoveSubstitutionAsync`);
+Only the **most recent** substitution of a half can be undone (`RemoveSubstitutionAsync`);
 reversing an older swap would fight every change made on that slot since. "Most recent" is
 `AtSeconds` then `Id`: a double substitution puts two rows in the same second, and the id is what
 says which of them came second. `GameMinutesReport` walks them in that same order — see

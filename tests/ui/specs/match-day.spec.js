@@ -146,8 +146,8 @@ test('tapping a player on the pitch offers a substitution and a position swap', 
   await expect(page.locator('.live-event')).toHaveCount(0);
 });
 
-test('a quarters half lists the changes due in it and is run as one half', async ({ page }) => {
-  // Quarters, so the first half is planned as two line-ups and the changes card has something in it.
+test('a quarters half keeps its changes in a pop-up and is run as one half', async ({ page }) => {
+  // Quarters, so the first half is planned as two line-ups and the plan has something in it.
   const id = await matchWithId(page, 'FC Kwarten', { split: 'Quarters' });
 
   const available = page.locator('.draggable-player');
@@ -174,10 +174,20 @@ test('a quarters half lists the changes due in it and is run as one half', async
 
   await goto(page, `/games/${id}/live`);
 
-  // The changes are worth reading before kick-off too, and they are all the screen says about the
-  // quarter boundary: there is no control that rolls the next line-up on, only the pitch above.
-  await expect(page.locator('.planned-row').first()).toBeVisible();
+  // The plan is a reference, not part of the screen: nothing about the quarter boundary is on the
+  // page until it is asked for, and there is no control that rolls the next line-up on either.
+  await expect(page.locator('.planned-row')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Next line-up' })).toHaveCount(0);
+
+  // Worth reading before kick-off too, so the button is there from the start.
+  await clickFor(
+    page.getByRole('button', { name: /^Changes \(\d+\)$/ }),
+    () => expect(page.locator('.mud-dialog .planned-row').first()).toBeVisible(),
+  );
+  await clickFor(
+    page.locator('.mud-dialog').getByRole('button', { name: 'Close' }),
+    () => expect(page.locator('.mud-dialog')).toHaveCount(0),
+  );
 
   await clickFor(
     page.getByRole('button', { name: 'Start match' }),
