@@ -21,7 +21,6 @@ public class MatchSubstitutionServiceTests : LiveMatchTestBase
 
         Assert.True(result.IsSuccess);
         Assert.Equal(720, result.Value!.AtSeconds);
-        Assert.Equal(13, result.Value.Minute);
         Assert.Equal(PlayerPosition.CM, result.Value.Position);
         Assert.Equal(5, result.Value.SlotIndex);
 
@@ -86,13 +85,13 @@ public class MatchSubstitutionServiceTests : LiveMatchTestBase
     {
         var game = await SeedGameAsync();
         await MatchClock.StartMatchAsync(game.Id);
-        await MatchClock.EndPeriodAsync(game.Id);
+        await MatchClock.EndHalfAsync(game.Id);
         var players = await PlayersAsync();
 
         var result = await Subs.SubstituteAsync(game.Id, players[1].Id, players[2].Id);
 
         Assert.True(result.IsFailure);
-        Assert.Equal("No period is currently being played", result.Error);
+        Assert.Equal("No half is being played", result.Error);
     }
 
     [Fact]
@@ -168,13 +167,13 @@ public class MatchSubstitutionServiceTests : LiveMatchTestBase
     {
         var game = await SeedGameAsync();
         await MatchClock.StartMatchAsync(game.Id);
-        await MatchClock.EndPeriodAsync(game.Id);
+        await MatchClock.EndHalfAsync(game.Id);
         var players = await PlayersAsync();
 
         var result = await Subs.SwapPositionsAsync(game.Id, players[0].Id, players[1].Id);
 
         Assert.True(result.IsFailure);
-        Assert.Equal("No period is currently being played", result.Error);
+        Assert.Equal("No half is being played", result.Error);
     }
 
     [Fact]
@@ -255,7 +254,7 @@ public class MatchSubstitutionServiceTests : LiveMatchTestBase
         var result = await Subs.RemoveSubstitutionAsync(first.Value!.Id);
 
         Assert.True(result.IsFailure);
-        Assert.Equal("Only the most recent substitution of a period can be undone", result.Error);
+        Assert.Equal("Only the most recent substitution of a half can be undone", result.Error);
     }
 
     [Fact]
@@ -274,7 +273,7 @@ public class MatchSubstitutionServiceTests : LiveMatchTestBase
 
         var refused = await Subs.RemoveSubstitutionAsync(first.Value.Id);
         Assert.True(refused.IsFailure);
-        Assert.Equal("Only the most recent substitution of a period can be undone", refused.Error);
+        Assert.Equal("Only the most recent substitution of a half can be undone", refused.Error);
 
         Assert.True((await Subs.RemoveSubstitutionAsync(second.Value.Id)).IsSuccess);
 

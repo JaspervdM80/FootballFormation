@@ -12,7 +12,7 @@ Models/
   Game.cs                — Game entity (incl. SeasonId + live match clock/state), GameSplitType and MatchState enums
   GamePeriod.cs          — GamePeriod entity, PeriodType enum, PeriodTypeExtensions
   GamePlayerPosition.cs  — Links player to position in a period (IsSubstitute flag)
-  GameGoal.cs            — A goal: scorer (null for the opponent), assister, minute, own/opponent flags
+  GameGoal.cs            — A goal: scorer (null for the opponent), assister, minute (+ stoppage), own/opponent flags
   GameSubstitution.cs    — A timestamped change made during a live match
   MatchPreferences.cs    — Per-season game defaults (duration, split, formation, match day)
   GameComment.cs         — An admin's note on a game: body, public/private, author, edited marker
@@ -51,11 +51,11 @@ Reporting/
   SeasonStatsReport.cs    — Team totals + form for /stats (SeasonStats, GameResult)
   PlayerStatsReport.cs    — Per-player aggregates (PlayerStats, PositionStat, PlayerGameStat)
   PositionFitHelper.cs    — 5-tier position fit: Preferred, NaturalFit, Alternative, Compatible, OutOfPosition
-  MatchClockReport.cs     — Derives the live clock and period state from the stored anchor + banked total
-  PlannedChangesReport.cs — What the next period changes versus the one on the pitch, minus the
-                           swaps play has already overtaken (Build() for the card in
-                           UI/Components/PlannedChangesList, Swaps() for MatchClockService, which
-                           applies the overtaken half rather than deciding again)
+  MatchClockReport.cs     — Derives the live clock and the half's reading from the stored anchor +
+                           banked total, and the MatchMinute an event is written down against
+  PlannedChangesReport.cs — What the plan for the middle of a half changes versus the line-up on the
+                           pitch, minus the swaps play has already overtaken, for
+                           UI/Components/PlannedChangesList
   ScoreProgressionReport.cs — The score after each goal (MatchScore), for the live timeline —
                            counted forwards because that list runs newest first
   HealthReport.cs         — Whether a booted container is actually serving: the /health payload and
@@ -73,21 +73,22 @@ Services/
                             renders, GetTodaysMatchAsync for the home-page banner (in-progress
                             first, else today's fixture, upcoming or finished). Writing to one is
                             the three services below, split by what happens on the touchline
-  MatchClockService.cs    — The clock and the run of play: kick-off, ending a period, starting or
-                            rolling into the next one, the final whistle. The arithmetic a
-                            season's statistics are built from. There is no pause — the clock
-                            runs from kick-off to the whistle and only a period boundary stops it
+  MatchClockService.cs    — The clock and the run of play: kick-off, half time, starting the next
+                            half, the final whistle. A match is two halves whatever its line-ups
+                            were planned in. The arithmetic a season's statistics are built from.
+                            There is no pause — the clock runs from kick-off to the whistle and
+                            only half time stops it
   MatchGoalService.cs     — Goals logged live: the live minute added here, storage and the
                             recounted scoreline delegated to GameService, which writes the two in
                             one save (see patterns.md, "When two rows have to agree")
   MatchSubstitutionService.cs — The slot swap and the record of it, in one SaveChanges, plus undoing
-                            the most recent one of a period, plus SwapPositionsAsync — two players
+                            the most recent one of a half, plus SwapPositionsAsync — two players
                             already on trading slots, which writes no substitution row (so the undo
                             reads the slot back off the pitch, not off the row)
   LiveMatchOperation.cs   — The write shape those three share: RunAdminAsync plus, on success, one
                             LiveMatchNotifier call naming the game that changed
-  LiveMatchQueries.cs     — The tracked load they all start from (the game with its periods, via
-                            GameQueries) and the one "game not found" message
+  LiveMatchQueries.cs     — The tracked load they all start from (the game with its planned
+                            line-ups, via GameQueries) and the one "game not found" message
   LiveMatchNotifier.cs    — Singleton: fans live match changes out to every open circuit
   MatchPreferencesService.cs — Per-season prefs: GetAsync(seasonId)/SaveAsync,
                             GetNextMatchDateAsync(seasonId)
@@ -115,6 +116,8 @@ Pages/
   LiveGoalDialog.razor(.cs)   — Dialog: scorer, assister, own-goal toggle
   LiveSubDialog.razor(.cs)(.css) — Dialog: for a player tapped on the pitch, either a replacement
                                 from the bench or a position swap with someone already on
+  PlannedChangesDialog.razor  — Dialog: the changes still planned for the middle of this half, as a
+                                reference to work through by tapping the pitch. Writes nothing
   SeasonDialog.razor(.cs)     — Dialog: season name, start date, end date
   Settings.razor(.cs)         — /settings — Match preferences, own password, season management
   Users.razor(.cs)            — /users — Accounts: add, edit, reset password, delete (Admin only)
@@ -128,7 +131,7 @@ Components/
                                       OnPlayerClicked for the live screen, Size for chip scale
   PlayerLabel.razor                 — A player as one line of text: "#7 Jasper"
   PlannedChangesList.razor(.css)    — What the next line-up does, as a team sheet, for the live
-                                      screen's "Changes at half-way" card
+                                      screen's PlannedChangesDialog
   CancellableComponent.cs           — Base for any component that reads: owns the CancellationToken its
                                       service reads take, tripped when the component is disposed
   SeasonAwarePage.cs                — Base for pages that follow the season picker (a CancellableComponent)

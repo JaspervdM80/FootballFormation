@@ -146,8 +146,8 @@ test('tapping a player on the pitch offers a substitution and a position swap', 
   await expect(page.locator('.live-event')).toHaveCount(0);
 });
 
-test('the next line-up is rolled on from the card that lists what it changes', async ({ page }) => {
-  // Quarters, so the first half is planned as two line-ups and the mid-half control appears.
+test('a quarters half keeps its changes in a pop-up and is run as one half', async ({ page }) => {
+  // Quarters, so the first half is planned as two line-ups and the plan has something in it.
   const id = await matchWithId(page, 'FC Kwarten', { split: 'Quarters' });
 
   const available = page.locator('.draggable-player');
@@ -155,7 +155,7 @@ test('the next line-up is rolled on from the card that lists what it changes', a
   const chips = page.locator('.pitch .pitch-player');
 
   // Q1 takes the front of the squad list and Q2 the back, so the two line-ups genuinely differ and
-  // the dialog has changes to list.
+  // the card has changes to list.
   await expect(available.first()).toBeVisible();
   for (let i = 0; i < 3; i++) {
     await available.first().dragTo(emptySlots.first());
@@ -173,29 +173,35 @@ test('the next line-up is rolled on from the card that lists what it changes', a
   );
 
   await goto(page, `/games/${id}/live`);
-  const nextLineup = page.getByRole('button', { name: 'Next line-up' });
 
-  // The changes are worth reading before kick-off, but there is no period running to advance out
-  // of yet, so the button that carries them out is not there.
-  await expect(page.locator('.planned-row').first()).toBeVisible();
-  await expect(nextLineup).toHaveCount(0);
+  // The plan is a reference, not part of the screen: nothing about the quarter boundary is on the
+  // page until it is asked for, and there is no control that rolls the next line-up on either.
+  await expect(page.locator('.planned-row')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Next line-up' })).toHaveCount(0);
+
+  // Worth reading before kick-off too, so the button is there from the start.
+  await clickFor(
+    page.getByRole('button', { name: /^Changes \(\d+\)$/ }),
+    () => expect(page.locator('.mud-dialog .planned-row').first()).toBeVisible(),
+  );
+  await clickFor(
+    page.locator('.mud-dialog').getByRole('button', { name: 'Close' }),
+    () => expect(page.locator('.mud-dialog')).toHaveCount(0),
+  );
 
   await clickFor(
     page.getByRole('button', { name: 'Start match' }),
-    () => expect(nextLineup).toBeVisible(),
+    () => expect(page.getByRole('button', { name: 'Finish match' })).toBeVisible(),
   );
 
-  // It belongs to the card, not to the clock controls: the tap is made while reading the list it
-  // sits under, which is why it no longer asks in a dialog first.
-  await expect(page.locator('.live-controls').getByRole('button', { name: 'Next line-up' })).toHaveCount(0);
+  // The clock runs in halves however the line-ups were planned, so the control on offer during the
+  // first quarter is already half time — the second quarter is never a period the clock stops for.
+  const controls = page.locator('.live-controls');
+  await expect(controls.getByRole('button', { name: 'Next line-up' })).toHaveCount(0);
   await clickFor(
-    nextLineup,
-    () => expect(page.getByText('Next period started', { exact: false })).toBeVisible(),
+    controls.getByRole('button', { name: 'Half time' }),
+    () => expect(controls.getByRole('button', { name: 'Start 2nd Half' })).toBeVisible(),
   );
-  await expect(page.locator('.mud-dialog')).toHaveCount(0);
-
-  // The second quarter is the last of the half, so the control it now offers is half time.
-  await expect(page.locator('.live-controls').getByRole('button', { name: 'Half time' })).toBeVisible();
 });
 
 test('the timeline can be narrowed to the goals', async ({ page }) => {

@@ -1,5 +1,11 @@
 namespace FootballFormation.Core.Models;
 
+/// <summary>
+/// One planned line-up, for a half or for a quarter. The match itself is only ever two halves —
+/// see <see cref="PeriodTypeExtensions.Half"/> — so the row that opens a half carries that half's
+/// timings and everything the live screen records, while a row planned for the middle of a half
+/// stays a plan and is never kicked off.
+/// </summary>
 public class GamePeriod
 {
     public int Id { get; set; }
@@ -9,12 +15,13 @@ public class GamePeriod
     public FormationType? FormationTypeOverride { get; set; }
 
     /// <summary>
-    /// Match-clock second this period kicked off, set by the live match screen. Null for periods
-    /// that were never run live — the lineup builder does not need it.
+    /// Match-clock second the half this line-up opens kicked off, set by the live match screen.
+    /// Null for a line-up that was never run live — a plan for the middle of a half, or a game
+    /// never played from the touchline. The lineup builder does not need it.
     /// </summary>
     public int? StartedAtSeconds { get; set; }
 
-    /// <summary>Match-clock second this period was whistled off. Null while it is still running.</summary>
+    /// <summary>Match-clock second that half was whistled off. Null while it is still running.</summary>
     public int? EndedAtSeconds { get; set; }
 
     public List<GamePlayerPosition> PlayerPositions { get; set; } = [];
@@ -42,15 +49,6 @@ public static class PeriodTypeExtensions
         PeriodType.FourthQuarter => "Q4",
         _ => period.ToString()
     };
-
-    /// <summary>
-    /// Whether play actually stops after this period. A quarters game is still two halves: the
-    /// teams roll straight from Q1 into Q2 and from Q3 into Q4 without leaving the pitch, and the
-    /// only real break is half time. This is what stops the live screen offering a whistle after
-    /// every quarter.
-    /// </summary>
-    public static bool IsFollowedByBreak(this PeriodType period) =>
-        period is PeriodType.FirstHalf or PeriodType.SecondQuarter;
 
     /// <summary>
     /// The half this period is played in. Quarters are a planning device — a way to write two

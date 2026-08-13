@@ -43,8 +43,8 @@ public class MatchGoalServiceTests : LiveMatchTestBase
         var players = await PlayersAsync();
 
         Time.Advance(TimeSpan.FromMinutes(33));      // a first half that ran three minutes long
-        await MatchClock.EndPeriodAsync(game.Id);
-        await MatchClock.StartNextPeriodAsync(game.Id);
+        await MatchClock.EndHalfAsync(game.Id);
+        await MatchClock.StartNextHalfAsync(game.Id);
 
         Time.Advance(TimeSpan.FromMinutes(5));       // five minutes into the second half
 
@@ -52,6 +52,25 @@ public class MatchGoalServiceTests : LiveMatchTestBase
 
         // 35:xx on the clock, so the 36th minute — not the 39th the raw elapsed time would give.
         Assert.Equal(36, goal.Value!.Minute);
+    }
+
+    /// <summary>
+    /// A goal after the half has been played out is written 30+2, not 32. The two halves of the
+    /// minute are stored apart because that is what keeps it above the restart on the timeline.
+    /// </summary>
+    [Fact]
+    public async Task A_goal_in_stoppage_time_is_stamped_with_the_minute_it_is_added_to()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        Time.Advance(TimeSpan.FromMinutes(31));      // one minute past a 30-minute half
+
+        var goal = await Goals.LogGoalAsync(game.Id, players[1].Id, null, false, false);
+
+        Assert.Equal(30, goal.Value!.Minute);
+        Assert.Equal(2, goal.Value.AdditionalMinute);
     }
 
     [Fact]

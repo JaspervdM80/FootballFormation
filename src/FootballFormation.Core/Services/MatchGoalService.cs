@@ -34,7 +34,7 @@ public class MatchGoalService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            // Periods included: the minute follows the scoreboard clock, which is measured from
+            // Line-ups included: the minute follows the scoreboard clock, which is measured from
             // the half being played rather than from kick-off.
             var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
             if (game is null) return LiveMatchQueries.GameNotFound<GameGoal>(gameId);
@@ -43,7 +43,7 @@ public class MatchGoalService(
                 return Result.Failure<GameGoal>("A goal for us needs a scorer");
 
             var clock = MatchClockReport.Build(
-                game, game.CurrentOrLastPeriod(), game.ElapsedSecondsAt(UtcNow));
+                game, game.CurrentOrLastHalf(), game.ElapsedSecondsAt(UtcNow));
 
             var goal = new GameGoal
             {
@@ -51,9 +51,10 @@ public class MatchGoalService(
                 ScorerId = scorerId,
                 AssisterId = assisterId,
                 // The minute the clock showed, so an over-running first half does not push every
-                // second-half goal out by the overrun. Stoppage time counts on past the cap rather
-                // than pinning several goals to the same minute.
-                Minute = clock.Minute,
+                // second-half goal out by the overrun. Stoppage time is kept in the second half of
+                // the pair — see GameGoal.AdditionalMinute for why it is not folded into the first.
+                Minute = clock.Minute.Minute,
+                AdditionalMinute = clock.Minute.Additional,
                 IsOwnGoal = isOwnGoal,
                 IsOpponentGoal = isOpponentGoal
             };

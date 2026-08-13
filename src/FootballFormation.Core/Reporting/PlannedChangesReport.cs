@@ -12,21 +12,10 @@ public record PlannedSubstitution(Player? PlayerOff, Player? PlayerOn, PlayerPos
 public record PlannedMove(Player Player, PlayerPosition From, PlayerPosition To);
 
 /// <summary>
-/// The same swap in terms of the line-up rows rather than the players, which is what carrying one
-/// out needs: a slot and a position change hands, and neither is a property of a name.
+/// The same swap in terms of the line-up rows rather than the players: a slot and a position
+/// change hands, and neither is a property of a name.
 /// </summary>
-public record PlannedSwap(GamePlayerPosition? Off, GamePlayerPosition? On);
-
-/// <summary>
-/// The swaps the next line-up implies, split by whether play has already answered them.
-/// <para>
-/// <paramref name="Overtaken"/> is the ones it has: the player the plan takes off went off live and
-/// somebody came on for them, so the plan's arrival is no longer wanted and the slot's occupant is
-/// no longer the player the plan meant to withdraw. <paramref name="Off"/> is never null there — a
-/// swap with nobody named to come off has nothing for play to overtake.
-/// </para>
-/// </summary>
-public record PlannedSwaps(List<PlannedSwap> Viable, List<PlannedSwap> Overtaken);
+internal record PlannedSwap(GamePlayerPosition? Off, GamePlayerPosition? On);
 
 /// <summary>What the next line-up does: who is swapped, and who shifts position.</summary>
 public record PlannedChanges(List<PlannedSubstitution> Substitutions, List<PlannedMove> Moves)
@@ -39,7 +28,7 @@ public record PlannedChanges(List<PlannedSubstitution> Substitutions, List<Plann
 /// <summary>
 /// The changes the planned line-ups imply. A quarters game is planned as two line-ups per half,
 /// and the difference between them is exactly what is due midway through that half — so the live
-/// screen can announce it without ever mentioning a quarter.
+/// screen can offer it as a reference without ever mentioning a quarter.
 /// <para>
 /// Substitutions and position moves are kept apart on purpose. Rewriting a back four commonly
 /// touches every slot while only one player actually leaves the pitch, and a flat list of slot
@@ -49,43 +38,29 @@ public record PlannedChanges(List<PlannedSubstitution> Substitutions, List<Plann
 /// Only the swaps still open to the coach are reported. Play overtakes a plan: once the player it
 /// takes off has been taken off live, the difference between the two line-ups still names their
 /// slot, but it now proposes to withdraw whoever came on for them — a substitution nobody planned.
-/// <see cref="Swaps"/> is the same walk without the names, and <c>MatchClockService</c> applies
-/// what it calls overtaken rather than deciding again, so the card and the button cannot part ways.
 /// </para>
 /// </summary>
 public static class PlannedChangesReport
 {
-    /// <param name="current">The period being played. Live substitutions have already been
-    /// applied to it, so the changes shown stay true to who is actually on the pitch.</param>
-    /// <param name="next">The period whose line-up takes over.</param>
+    /// <param name="half">The line-up the half is being played with. Live substitutions have
+    /// already been applied to it, so the changes shown stay true to who is on the pitch.</param>
+    /// <param name="plan">The line-up planned to take over partway through that half.</param>
     /// <param name="findPlayer">Resolves an id to a player; unknown ids come back as null.</param>
-    /// <param name="liveChanges">The substitutions already made in <paramref name="current"/>.
+    /// <param name="liveChanges">The substitutions already made in <paramref name="half"/>.
     /// They decide which swaps are still worth showing — see <see cref="KickOffStarters"/>.</param>
     public static PlannedChanges Build(
-        GamePeriod current,
-        GamePeriod next,
+        GamePeriod half,
+        GamePeriod plan,
         Func<int, Player?> findPlayer,
         IEnumerable<GameSubstitution> liveChanges)
     {
-        var before = StartersBySlot(current);
-        var after = StartersBySlot(next);
+        var before = StartersBySlot(half);
+        var after = StartersBySlot(plan);
 
         return new PlannedChanges(
-            [.. PairUp(before, after, KickOffStarters(before.Values, liveChanges)).Viable
+            [.. PairUp(before, after, KickOffStarters(before.Values, liveChanges))
                 .Select(swap => Name(swap, findPlayer))],
             Moves(before, after, findPlayer));
-    }
-
-    /// <summary>
-    /// The same swaps as line-up rows, for the caller that has to carry them out rather than
-    /// print them. See <see cref="PlannedSwaps"/> for what the two halves mean.
-    /// </summary>
-    public static PlannedSwaps Swaps(
-        GamePeriod current, GamePeriod next, IEnumerable<GameSubstitution> liveChanges)
-    {
-        var before = StartersBySlot(current);
-
-        return PairUp(before, StartersBySlot(next), KickOffStarters(before.Values, liveChanges));
     }
 
     /// <summary>
@@ -107,7 +82,7 @@ public static class PlannedChangesReport
         swap.Off is null || kickOffStarters.Contains(swap.Off.PlayerId);
 
     /// <summary>
-    /// Who was on the pitch when the period kicked off. The line-up records where everyone stands
+    /// Who was on the pitch when the half kicked off. The line-up records where everyone stands
     /// <em>now</em>, so rewinding the substitutions made since is the only way back to the eleven
     /// the plan was written against — the same walk <see cref="GameMinutesReport"/> makes.
     /// </summary>
@@ -133,7 +108,7 @@ public static class PlannedChangesReport
     /// are taking, which is the swap a coach would call out; when that player is staying on the
     /// pitch — a shuffle rather than a straight swap — the next unpaired departure is used instead.
     /// </summary>
-    private static PlannedSwaps PairUp(
+    private static List<PlannedSwap> PairUp(
         Dictionary<int, GamePlayerPosition> before,
         Dictionary<int, GamePlayerPosition> after,
         HashSet<int> kickOffStarters)
@@ -165,8 +140,7 @@ public static class PlannedChangesReport
         // Anyone left over comes off with nobody named to replace them.
         swaps.AddRange(unpaired.Select(off => new PlannedSwap(off, null)));
 
-        var byViability = swaps.ToLookup(swap => IsStillViable(swap, kickOffStarters));
-        return new PlannedSwaps([.. byViability[true]], [.. byViability[false]]);
+        return [.. swaps.Where(swap => IsStillViable(swap, kickOffStarters))];
     }
 
     private static List<PlannedMove> Moves(
@@ -189,11 +163,11 @@ public static class PlannedChangesReport
     /// saved by an older build is not guaranteed to honour that, so the first entry wins rather
     /// than the lookup throwing on data that is already stored.
     /// </summary>
-    private static Dictionary<int, GamePlayerPosition> StartersBySlot(GamePeriod period)
+    private static Dictionary<int, GamePlayerPosition> StartersBySlot(GamePeriod lineup)
     {
         var bySlot = new Dictionary<int, GamePlayerPosition>();
 
-        foreach (var position in period.PlayerPositions.Where(p => !p.IsSubstitute && p.SlotIndex is not null))
+        foreach (var position in lineup.PlayerPositions.Where(p => !p.IsSubstitute && p.SlotIndex is not null))
             bySlot.TryAdd(position.SlotIndex!.Value, position);
 
         return bySlot;

@@ -81,7 +81,7 @@ there, so a lineup can never be laid out one way on one screen and another way o
 - `OnPlayerClicked` is **optional**. Unset (and not draggable), the pitch is inert — which is what
   the overview and every spectator wants. Set, occupied slots gain `.pitch-clickable` (pointer
   cursor, press feedback) and tapping one raises the player id. The live match screen wires it only
-  when the viewer is an admin *and* a period is actually being played.
+  when the viewer is an admin *and* a half is actually being played.
 - The five fit colors are tokens in `theme.css` (`--fit-*`), shared with the builder's legend and
   its playing-time dots — one definition, three consumers.
 
@@ -106,35 +106,36 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   circuit keeps one scoped `AppDbContext` for its whole life, so a tracked `Game` keeps returning
   the score, clock and state from its first load while newly inserted goals appear alongside them —
   a live screen stuck at the old scoreline. Identity resolution keeps shared `Player` rows single.
-- Controls are context-sensitive, and **only half time is a break**. A quarters game is still two
-  halves, and the mid-half line-up change is not a clock control: **"Next line-up"** lives at the
-  foot of the "Changes at half-way" card (below), not in `.live-controls`. It calls
-  `AdvancePeriodAsync` and rolls the *next quarter's planned lineup* onto the pitch without
-  stopping the clock. It asks nothing first — the list it sits under already says what the tap is
-  about to do, which is what the dialog it replaced was for. Only after the first
-  half or Q2 does the screen offer "Half time" (`EndPeriodAsync`, which does stop it) followed by
-  "Start 2nd half". The rule lives in `PeriodTypeExtensions.IsFollowedByBreak`, not in the page.
-- **There is no pause.** The clock runs from kick-off until the period is whistled off, and only
-  a period boundary stops it — `PauseClockAsync`/`ResumeClockAsync` are gone from
-  `MatchClockService` too, not just from the screen. A youth match is not paused at the touchline,
-  and a clock a stray tap can stop is a clock the season's minutes cannot be trusted from. So a
-  live period always has a running clock, which is why the status chip's third state is the break
-  between two periods (`.live-status-break`) rather than a paused one.
+- **This screen knows halves and nothing else.** A quarters game is two halves with two line-ups
+  each, and the second line-up of a half is a plan the coach works through by hand on the pitch —
+  nothing rolls it on, the clock never stops for it, and it is never a stage of the match here. So
+  the controls are the same for both splits: "Half time" (`EndHalfAsync`) while a half is being
+  played and one is still to come, then "Start 2nd half" (`StartNextHalfAsync`), and "Finish match"
+  throughout. `Game.NextHalf()` is what skips the quarter left behind inside a half already played,
+  so the second half opens at Q3 and Q2 is never kicked off — a line-up with no timings costs
+  `GameMinutesReport` nothing, which is what leaves the whole half credited to the line-up that
+  actually played it plus the substitutions made during it.
+- **There is no pause.** The clock runs from kick-off until the half is whistled off, and only half
+  time stops it — `PauseClockAsync`/`ResumeClockAsync` are gone from `MatchClockService` too, not
+  just from the screen. A youth match is not paused at the touchline, and a clock a stray tap can
+  stop is a clock the season's minutes cannot be trusted from. So a half being played always has a
+  running clock, which is why the status chip's third state is half time (`.live-status-break`)
+  rather than a paused one.
 - **The controls are a two-column grid, laid out in `app.css`.** How many buttons the panel holds
   depends on where the match is, so equal columns keep them the same size whichever set is showing,
   and `:last-child:nth-child(odd)` spans the odd one out across the row. It has to be `app.css`:
   the children are `MudButton`s, and the old scoped `.live-control-row > *` rule never matched
   them — the classic CSS-isolation miss, and why they used not to fill the panel.
-- The pitch shows the live period; at the break and after full time the last one played, and before
-  kick-off the first — so it is never blank when a lineup exists. The bench strip under it is
-  always drawn.
+- The pitch shows the half being played; at half time and after full time the last one played, and
+  before kick-off the half the match opens with — so it is never blank when a lineup exists. The
+  bench strip under it is always drawn.
 - **Tapping a player offers two changes, one dropdown each** (`LiveSubDialog`): someone comes on for
   them (`SubstituteAsync`), or they trade positions with a team-mate who stays on
   (`SwapPositionsAsync`). Choosing in either list clears the other, so the single action button
   always has exactly one change to make and says which — "Make substitution" or "Swap positions".
   A position swap writes no `GameSubstitution`: nobody's minutes changed, and a row there would say
   they did. The price is the *split by position* — `GameMinutesReport` reads the lineup as it finally
-  stands, so after a swap the whole period is credited to the position each player moved **into**
+  stands, so after a swap the whole half is credited to the position each player moved **into**
   (pinned by `A_position_change_with_no_substitution_credits_the_position_it_ended_in`). Totals are
   unaffected. Undoing a substitution therefore follows the slot rather than the recorded one: a swap
   can have moved it since, and handing the recorded slot back would seat two players in it.
@@ -144,27 +145,35 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   scoreboard's order — home side first. It is counted forwards over the whole match and looked up
   by goal id, because the timeline itself runs newest first and a total accumulated while rendering
   would count down.
+- **Events are written and ordered as `MatchMinute`, a pair — 35, or 35+2 in stoppage time.** The
+  minute alone cannot order them: once a half is played out the scoreboard clock stops, so a goal
+  two minutes into first-half stoppage and one just after the restart both read in the thirties and
+  a single counted-on number puts them the wrong way round. A goal stores both halves of the pair
+  (`GameGoal.Minute` + `AdditionalMinute`); a substitution derives its own from `AtSeconds` and the
+  half it belongs to (`MatchClockReport.MinuteOf`), so a second-half swap is written off the
+  scoreboard clock rather than the raw elapsed time. The timeline, the result page's goal list and
+  `ScoreProgressionReport` all sort on the pair, then `RecordedAt`, then the id.
 - A **"Show substitutions" checkbox** (`.live-timeline-toggle`) drops the substitutions from the
   timeline and leaves the goals: a rotated squad buries the goals among swaps nobody is scrolling
   back for. The state is per circuit and deliberately not stored.
 - Finishing asks for confirmation via `DialogPrompts.ConfirmAsync` (not `ConfirmDeleteAsync`,
   whose button says "Delete").
-- **The "Changes at half-way" card is what the mid-half line-up change is made from.** It lists
-  what `PlannedChangesReport` makes of the difference between the two planned line-ups
-  (`PlannedChangesList`, which owns the `.planned-*` styling), and carries the "Next line-up"
-  button underneath. Admin only, like the minutes table. It stays on screen while the change can
-  be made even when nothing differs — otherwise the only way on to the next quarter would vanish
-  exactly when nobody needs swapping — and appears before kick-off, without the button, as
-  something to read.
-- **Only viable changes are listed, and only viable changes are made.** The report is handed the
-  substitutions already made in the period so it can rewind to the line-up that kicked off. A swap
-  whose outgoing player has since been taken off is dropped: the difference between the line-ups
-  still names their slot, but it now proposes withdrawing whoever came on for them, which nobody
-  planned. `AdvancePeriodAsync` drops the same swaps when it rolls the line-up on — it applies
-  `PlannedChangesReport.Swaps(...).Overtaken` rather than forming a second opinion, because a card
-  promising one thing while the button under it does another is worse than either behaviour alone.
-  An injury replacement therefore keeps the place for the rest of the half instead of lasting
-  exactly one quarter.
+- **The plan for the middle of a half is a pop-up, not part of the screen.** The line-up card's
+  heading carries a `Changes (n)` button (`.live-lineup-head`, `.live-plan-btn` in `app.css`) that
+  opens `PlannedChangesDialog`; the dialog renders what `PlannedChangesReport` makes of the
+  difference between the two planned line-ups (`PlannedChangesList`, which owns the `.planned-*`
+  styling). Each line is carried out by tapping that player on the pitch — the dialog writes
+  nothing. Admin only, like the minutes table.
+  <br>A pop-up rather than a card because the plan is not the match: standing beside the live
+  line-up it reads as the state of play, and a shared screen invites being asked about a change
+  before it is made. Behind a button it is looked up, acted on and dismissed, and the count on the
+  button says whether opening it is worth the tap. It is there before kick-off too, as something to
+  read; nothing left to change means no button.
+- **Only viable changes are listed.** The report is handed the substitutions already made in the
+  half so it can rewind to the line-up that kicked off. A swap whose outgoing player has since
+  been taken off is dropped: the difference between the line-ups still names their slot, but it now
+  proposes withdrawing whoever came on for them, which nobody planned. An injury replacement
+  therefore stays on for the rest of the half rather than being listed to come straight back off.
 - **Minutes played is admin-only** (`LiveMinutesReport`), and shows exact time on the pitch rather
   than the `periodsPlaying × periodDuration` estimate the planning screens use. It is a computed
   property, so the running player's total climbs with the clock tick. Until the first kick-off

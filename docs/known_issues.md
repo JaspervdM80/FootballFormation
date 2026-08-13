@@ -363,22 +363,23 @@ Avoid repeating these mistakes:
   5, swapping that player to slot 0 and then undoing seated two players in slot 5 and emptied
   slot 0; it now reads the slot off the player coming off instead. And `GameMinutesReport` seeds
   from the lineup as it finally stands, so a swap credits **the position moved into** for the whole
-  period, earlier minutes included — the opposite of what its comment used to claim. Totals are
+  half, earlier minutes included — the opposite of what its comment used to claim. Totals are
   right either way; only the split by position is affected, and a test pins it.
-- **Advancing a period rewrites the next period's stored line-up.** `AdvancePeriodAsync` is not
-  purely a clock move: where a live substitution has already answered one of the next line-up's
-  swaps, it keeps the player who came on and benches the arrival the plan named — otherwise an
-  injury replacement is pulled straight back off at the quarter boundary. So the line-up the
-  formation builder shows for Q2 after a match has been run is not necessarily the one that was
-  saved, and that is deliberate rather than a lost edit. The rule is `PlannedChangesReport.Swaps`,
-  shared with the live screen's "Changes at half-way" card so the list and the button cannot part
-  ways; change one and the other follows.
-- **Removing a control does not remove the state it could leave behind.** Deleting pause/resume
-  left `MatchState=InProgress` + a live period + `ClockRunningSince=null` unreachable going
-  forward, but still storable by a row an older build wrote. `AdvancePeriodAsync` deliberately
-  leaves the anchor alone — so on such a row it would roll on to the next line-up with the clock
-  still frozen, banking no minutes for the rest of the half while the screen said it kept running.
-  It now restarts a stopped anchor, which is a no-op for every game that was never paused.
+- **A quarters match only ever kicks off two of its four periods.** The live match knows halves
+  and nothing else: `Game.NextHalf()` skips a line-up whose half has already been played, so the
+  second half opens at Q3. Q2 and Q4 keep their planned line-ups and never get `StartedAtSeconds`,
+  which is exactly what `GameMinutesReport` needs — a line-up that was never kicked off contributes
+  nothing, so the half is credited to the line-up that played it plus the substitutions made during
+  it. Q2 and Q4 reach the touchline only as `Game.MidHalfPlan()`, behind the live screen's
+  `Changes (n)` pop-up. Do not "fix" a Q2 with no timings, and do not read `PeriodCount` as a count
+  of stages the clock stops for.
+- **A goal's minute is not one number.** `GameGoal.Minute` stops at the end of the half and
+  `AdditionalMinute` counts the overrun beside it, because the two together are what orders a
+  timeline: counted on into a single number, a goal at 35+2 reads 37 and sorts after a goal in the
+  36th minute of the second half, which happened a minute later. Rows written before the split have
+  `AdditionalMinute = 0` and keep whatever number they were given — the migration deliberately does
+  not backfill, because nothing left in the row says whether a 37 was stoppage time or typed in by
+  hand.
 
 ## General
 - **Port already in use**: Kill orphaned process with `taskkill //PID <pid> //F`.

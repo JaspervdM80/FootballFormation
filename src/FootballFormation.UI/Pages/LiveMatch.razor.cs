@@ -13,6 +13,8 @@ namespace FootballFormation.UI.Pages;
 
 /// <summary>
 /// One entry on the match timeline — a goal or a substitution — so both can be listed together.
+/// <paramref name="Minute"/> is the scoreboard reading rather than the raw elapsed time, which is
+/// what keeps a first-half stoppage entry above the restart instead of below it.
 /// <paramref name="RecordedAt"/> orders events that share a minute, which the minute alone cannot.
 /// <paramref name="Id"/> settles the rest: two entries of the same kind entered in one instant
 /// share a <paramref name="RecordedAt"/>, and rows older than that column all read
@@ -21,8 +23,8 @@ namespace FootballFormation.UI.Pages;
 /// <paramref name="Score"/> is the scoreline as it stood after a goal, and null for a substitution.
 /// </summary>
 public record MatchEvent(
-    int Minute, DateTime RecordedAt, int Id, bool IsGoal, GameGoal? Goal, GameSubstitution? Substitution,
-    MatchScore? Score = null);
+    MatchMinute Minute, DateTime RecordedAt, int Id, bool IsGoal, GameGoal? Goal,
+    GameSubstitution? Substitution, MatchScore? Score = null);
 
 /// <summary>
 /// The sideline screen. An admin runs the clock and records what happens; everyone else sees the
@@ -76,7 +78,7 @@ public partial class LiveMatch
     /// </summary>
     private MatchClock Clock => GameData is null
         ? MatchClock.BeforeKickOff
-        : MatchClockReport.Build(GameData, DisplayPeriod, ElapsedSeconds);
+        : MatchClockReport.Build(GameData, DisplayHalf, ElapsedSeconds);
 
     private static string Mmss(int seconds) => $"{seconds / 60:D2}:{seconds % 60:D2}";
 
@@ -85,19 +87,20 @@ public partial class LiveMatch
     private string AdditionalDisplay => Mmss(Clock.AdditionalSeconds);
 
     /// <summary>
-    /// The period on screen: the one being played; at the break and after the whistle the last one
-    /// that was; and before kick-off the first one, so the pitch is never blank when a line-up exists.
+    /// The half on screen, as the line-up it is played with: the one being played; at half time and
+    /// after the whistle the last one that was; and before kick-off the half the match opens with,
+    /// so the pitch is never blank when a line-up exists.
     /// </summary>
-    private GamePeriod? DisplayPeriod => GameData?.CurrentOrLastPeriod();
+    private GamePeriod? DisplayHalf => GameData?.CurrentOrLastHalf();
 
-    private bool IsLivePeriod => GameData?.LivePeriodId is not null;
+    private bool IsHalfInPlay => GameData?.LivePeriodId is not null;
 
-    private List<GamePlayerPosition> DisplayLineup => DisplayPeriod?.PlayerPositions ?? [];
+    private List<GamePlayerPosition> DisplayLineup => DisplayHalf?.PlayerPositions ?? [];
 
     private List<GamePlayerPosition> OnPitch => [.. DisplayLineup.Where(p => !p.IsSubstitute)];
 
     /// <summary>
-    /// The bench for this period. A lineup can outlive the roster it was built from — someone
+    /// The bench for this half. A lineup can outlive the roster it was built from — someone
     /// marked unavailable, or dropped from the squad, keeps their saved substitute row — and
     /// listing them as a sub would offer a player who is not at the match.
     /// </summary>
@@ -108,81 +111,71 @@ public partial class LiveMatch
         GameData is not null && FindPlayer(playerId) is { } player && GameData.IsInRoster(player, Squad);
 
     private FormationType DisplayFormation =>
-        DisplayPeriod?.FormationTypeOverride ?? GameData?.FormationType ?? FormationType.F442;
+        DisplayHalf?.FormationTypeOverride ?? GameData?.FormationType ?? FormationType.F442;
 
-    /// <summary>Whether the sub controls can do anything — needs an admin and a period in play.</summary>
-    private bool CanSubstitute => _isAdmin && IsLivePeriod;
+    /// <summary>Whether the sub controls can do anything — needs an admin and a half in play.</summary>
+    private bool CanSubstitute => _isAdmin && IsHalfInPlay;
 
-    /// <summary>The first period not yet kicked off — where the clock goes next, if anywhere.</summary>
-    private GamePeriod? NextPeriod => GameData?.NextPeriod();
-
-    /// <summary>
-    /// The half on the clock, which is the only division this screen names. Quarters exist to
-    /// plan two line-ups per half; nobody standing at the pitch thinks in them, so Q1 and Q2 both
-    /// read as the first half here and the line-up change between them is announced on its own.
-    /// </summary>
-    private string? DisplayHalfLabel => DisplayPeriod?.PeriodType.HalfDisplayName();
-
-    /// <summary>Half the buttons would kick off, or null once every period has been played.</summary>
-    private string? NextHalfLabel => NextPeriod?.PeriodType.HalfDisplayName();
+    /// <summary>The half not yet kicked off — where the clock goes next, if anywhere.</summary>
+    private GamePeriod? NextHalf => GameData?.NextHalf();
 
     /// <summary>
-    /// Whether the period being played ends in a real stoppage. Only half time does; a quarter
-    /// boundary rolls straight on, so the screen offers the line-up change rather than a whistle.
+    /// The half on the clock, which is the only division this screen names. Quarters exist to plan
+    /// two line-ups per half; nobody standing at the pitch thinks in them, so the second line-up of
+    /// a half never appears here as a stage of the match — only behind
+    /// <see cref="ShowPlannedChanges"/>, as a plan to work through.
     /// </summary>
-    private bool BreakFollowsCurrentPeriod =>
-        DisplayPeriod is { } period && IsLivePeriod && period.PeriodType.IsFollowedByBreak();
+    private string? DisplayHalfLabel => DisplayHalf?.PeriodType.HalfDisplayName();
+
+    /// <summary>Half the buttons would kick off, or null once both have been played.</summary>
+    private string? NextHalfLabel => NextHalf?.PeriodType.HalfDisplayName();
 
     /// <summary>
-    /// The period whose line-up takes over partway through the half on screen, if there is one.
-    /// Read from the period order rather than the clock, so the changes due can be looked up
-    /// before kick-off as well as during play. Null once the match is over.
+    /// Whether whistling the half off leads to half time rather than to the end of the match. A
+    /// match is two halves, so before full time there is exactly one stoppage — and after it
+    /// <see cref="NextHalf"/> is null and the only control left is the final whistle.
     /// </summary>
-    private GamePeriod? MidHalfSuccessor
-    {
-        get
-        {
-            if (GameData is null || GameData.MatchState == MatchState.Finished) return null;
-            if (DisplayPeriod is not { } current) return null;
-
-            var next = GameData.Periods
-                .OrderBy(p => p.PeriodType)
-                .FirstOrDefault(p => p.PeriodType > current.PeriodType);
-
-            return next?.PeriodType.Half() == current.PeriodType.Half() ? next : null;
-        }
-    }
+    private bool HalfTimeFollows => IsHalfInPlay && NextHalf is not null;
 
     /// <summary>
     /// The swaps the planned line-ups imply for the middle of this half, measured against who is
-    /// on the pitch right now — so a live substitution already made drops out of the list.
+    /// on the pitch right now — so a live substitution already made drops out of the list. They are
+    /// carried out by hand, one tap on the pitch at a time; nothing here rolls them on at once.
+    /// <para>
+    /// Looked up from the planned line-ups rather than from the clock, so the changes due can be
+    /// read before kick-off as well as during play. Empty once the match is over — there is
+    /// nothing left to plan for.
+    /// </para>
     /// </summary>
     private PlannedChanges PlannedChanges =>
-        GameData is { } game && DisplayPeriod is { } current && MidHalfSuccessor is { } next
-            ? PlannedChangesReport.Build(current, next, FindPlayer,
-                game.Substitutions.Where(s => s.GamePeriodId == current.Id))
+        GameData is { MatchState: not MatchState.Finished } game
+        && DisplayHalf is { } half
+        && game.MidHalfPlan(half) is { } plan
+            ? PlannedChangesReport.Build(half, plan, FindPlayer,
+                game.Substitutions.Where(s => s.GamePeriodId == half.Id))
             : PlannedChanges.None;
 
     /// <summary>
-    /// Whether the next line-up can be rolled on. Only during play: before kick-off the changes
-    /// are worth reading but there is no period running to advance out of.
+    /// How many changes the plan still holds. It is what the button opening the plan says, and
+    /// whether it is shown at all — a count is enough to know if the tap is worth making.
     /// </summary>
-    private bool CanAdvanceLineup => IsLivePeriod && MidHalfSuccessor is not null;
+    private int PlannedChangeCount =>
+        PlannedChanges.Substitutions.Count + PlannedChanges.Moves.Count;
 
     /// <summary>What the match is doing right now, in one phrase under the clock.</summary>
     private string StatusLabel => GameData?.MatchState switch
     {
         null or MatchState.NotStarted => L["Not started"],
         MatchState.Finished => L["Full time"],
-        _ when !IsLivePeriod => L["Break"],
+        _ when !IsHalfInPlay => L["Half time"],
         // The half is played out and play has not stopped — the thing to say is how much longer.
         _ when Clock.IsInAdditionalTime => L["Additional time"],
         _ => L[DisplayHalfLabel ?? "In progress"]
     };
 
     /// <summary>
-    /// Drives the colour of the status chip. A live period always has a running clock — nothing
-    /// stops one short of the whistle — so the third arm here is the break between two periods.
+    /// Drives the colour of the status chip. A half being played always has a running clock —
+    /// nothing stops one short of the whistle — so the third arm here is half time.
     /// </summary>
     private string StatusCssClass => GameData?.MatchState switch
     {
@@ -215,7 +208,7 @@ public partial class LiveMatch
     }
 
     /// <summary>
-    /// Who can come on: the bench for this period, plus anyone in the roster with no lineup entry
+    /// Who can come on: the bench for this half, plus anyone in the roster with no lineup entry
     /// at all — a late arrival should not be locked out of a match already under way.
     /// </summary>
     private List<Player> SubCandidates
@@ -264,10 +257,11 @@ public partial class LiveMatch
             // newest first, so a total accumulated while rendering it would count down.
             var progression = ScoreProgressionReport.Build(GameData.Goals);
 
-            var goals = GameData.Goals.Select(g =>
-                new MatchEvent(g.Minute ?? 0, g.RecordedAt, g.Id, true, g, null, progression[g.Id]));
+            var goals = GameData.Goals.Select(g => new MatchEvent(
+                MatchClockReport.MinuteOf(g) ?? default, g.RecordedAt, g.Id, true, g, null, progression[g.Id]));
             IEnumerable<MatchEvent> subs = ShowSubstitutions
-                ? GameData.Substitutions.Select(s => new MatchEvent(s.Minute, s.RecordedAt, s.Id, false, null, s))
+                ? GameData.Substitutions.Select(s => new MatchEvent(
+                    MatchClockReport.MinuteOf(GameData, s), s.RecordedAt, s.Id, false, null, s))
                 : [];
 
             // A goal and the sub that followed it commonly share a minute; the entry time keeps
@@ -342,18 +336,18 @@ public partial class LiveMatch
     private async Task StartMatch() =>
         Snackbar.Report(L, await ClockService.StartMatchAsync(GameId), L["Match started"]);
 
-    private async Task EndPeriod() =>
-        Snackbar.Report(L, await ClockService.EndPeriodAsync(GameId), L["Period ended"], Severity.Info);
+    private async Task EndHalf() =>
+        Snackbar.Report(L, await ClockService.EndHalfAsync(GameId), L["Half ended"], Severity.Info);
 
-    private async Task StartNextPeriod() =>
-        Snackbar.Report(L, await ClockService.StartNextPeriodAsync(GameId), L["Next period started"]);
+    private async Task StartNextHalf() =>
+        Snackbar.Report(L, await ClockService.StartNextHalfAsync(GameId), L["Next half started"]);
 
-    /// <summary>
-    /// Rolls the next planned line-up onto the pitch. Asks nothing first: the button sits under
-    /// the list of exactly the changes it makes, which is what a confirmation would have said.
-    /// </summary>
-    private async Task AdvancePeriod() =>
-        Snackbar.Report(L, await ClockService.AdvancePeriodAsync(GameId), L["Next period started"]);
+    /// <summary>Opens the plan for the middle of this half. Nothing here writes anything.</summary>
+    private Task ShowPlannedChanges() =>
+        DialogService.ShowAsync<PlannedChangesDialog>(
+            L["Changes to make"],
+            new DialogParameters<PlannedChangesDialog> { { x => x.Changes, PlannedChanges } },
+            UiFeedback.LockedDialog);
 
     private async Task FinishMatch()
     {

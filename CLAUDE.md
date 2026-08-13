@@ -16,7 +16,7 @@ as in the markup. The UI is Dutch by default with English available.
 
 ```bash
 dotnet build -c Release        # what CI builds — warnings are errors here (see below)
-dotnet test                    # 401 tests, xUnit v3, real SQLite
+dotnet test                    # 398 tests, xUnit v3, real SQLite
 cd src/FootballFormation.Web && dotnet run     # http://localhost:5228
 cd tests/ui && npm test        # 39 Playwright tests in a browser, ~1 min (npm install first)
 scripts/visual-check.sh        # screenshots every page, then measures every touch target
