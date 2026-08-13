@@ -21,7 +21,6 @@ public class MatchSubstitutionServiceTests : LiveMatchTestBase
 
         Assert.True(result.IsSuccess);
         Assert.Equal(720, result.Value!.AtSeconds);
-        Assert.Equal(13, result.Value.Minute);
         Assert.Equal(PlayerPosition.CM, result.Value.Position);
         Assert.Equal(5, result.Value.SlotIndex);
 

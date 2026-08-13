@@ -8,21 +8,12 @@ namespace FootballFormation.Core.Reporting;
 /// </summary>
 /// <param name="Seconds">The reading on the clock, capped at the end of the half being played.</param>
 /// <param name="AdditionalSeconds">How far past the end of the half play has gone, counted separately.</param>
-public record MatchClock(int Seconds, int AdditionalSeconds)
+/// <param name="Minute">The minute an event at this instant is written down against.</param>
+public record MatchClock(int Seconds, int AdditionalSeconds, MatchMinute Minute)
 {
-    public static readonly MatchClock BeforeKickOff = new(0, 0);
+    public static readonly MatchClock BeforeKickOff = new(0, 0, new MatchMinute(1, 0));
 
     public bool IsInAdditionalTime => AdditionalSeconds > 0;
-
-    /// <summary>
-    /// The clock running on past the cap — the number a goal is written down against. Football
-    /// counts a stoppage-time goal into the following minutes rather than pinning it to the cap,
-    /// and several goals in stoppage time must not all land on the same minute.
-    /// </summary>
-    public int TotalSeconds => Seconds + AdditionalSeconds;
-
-    /// <summary>The minute this instant falls in. The first minute of play is 1', as scorelines are written.</summary>
-    public int Minute => (TotalSeconds / 60) + 1;
 }
 
 /// <summary>
@@ -32,6 +23,8 @@ public record MatchClock(int Seconds, int AdditionalSeconds)
 /// of the half and the overrun is reported as additional time.</item>
 /// <item>The second half starts at half the match duration whatever the first half actually cost,
 /// so an over-running first half does not push the whole second half out of step.</item>
+/// <item>The minute an event is written down against follows that same reading, as a
+/// <see cref="MatchMinute"/> — 35+2 rather than a 37 that would sort after the restart.</item>
 /// </list>
 /// This is presentation only. What is stored stays the real elapsed time, so playing time,
 /// substitution timings and the season statistics are unaffected.
@@ -53,18 +46,47 @@ public static class MatchClockReport
         var plannedStart = half == PeriodType.FirstHalf ? 0 : halfSeconds;
 
         if (HalfKickedOffAt(game, half) is not { } actualStart)
-            return new MatchClock(plannedStart, 0);
+            return new MatchClock(plannedStart, 0, PlainMinute(plannedStart));
 
         var intoHalf = Math.Max(0, elapsedSeconds - actualStart);
 
         // A game with no duration on file has nothing to cap against; showing the time as it runs
         // beats reporting the whole half as additional time.
-        if (halfSeconds <= 0) return new MatchClock(intoHalf, 0);
+        if (halfSeconds <= 0) return new MatchClock(intoHalf, 0, PlainMinute(intoHalf));
 
-        return new MatchClock(
-            plannedStart + Math.Min(intoHalf, halfSeconds),
-            Math.Max(0, intoHalf - halfSeconds));
+        // Once the half is played out the clock stands still at the cap, so the minute stands still
+        // with it and the overrun is counted alongside as 35+1, 35+2 — the reading a scoreboard
+        // shows, and the only way several stoppage-time events keep their order.
+        if (intoHalf >= halfSeconds)
+        {
+            return new MatchClock(
+                plannedStart + halfSeconds,
+                intoHalf - halfSeconds,
+                new MatchMinute((plannedStart + halfSeconds) / 60, ((intoHalf - halfSeconds) / 60) + 1));
+        }
+
+        return new MatchClock(plannedStart + intoHalf, 0, PlainMinute(plannedStart + intoHalf));
     }
+
+    /// <summary>
+    /// The minute a substitution is written down against: the reading the clock showed when it was
+    /// made, which is the half's reading and not the raw elapsed time. Falls back to the raw minute
+    /// for a substitution whose period was not loaded — a wrong-looking minute beats claiming 1'.
+    /// </summary>
+    public static MatchMinute MinuteOf(Game game, GameSubstitution substitution) =>
+        game.Periods.FirstOrDefault(p => p.Id == substitution.GamePeriodId) is { } period
+            ? Build(game, period, substitution.AtSeconds).Minute
+            : PlainMinute(substitution.AtSeconds);
+
+    /// <summary>
+    /// The minute a goal was written down against, or null for one recorded without a minute —
+    /// which the result page allows and the timeline then has nothing to place.
+    /// </summary>
+    public static MatchMinute? MinuteOf(GameGoal goal) =>
+        goal.Minute is { } minute ? new MatchMinute(minute, goal.AdditionalMinute) : null;
+
+    /// <summary>The minute a plain clock reading falls in. The first minute of play is 1'.</summary>
+    private static MatchMinute PlainMinute(int seconds) => new((seconds / 60) + 1, 0);
 
     /// <summary>
     /// The real clock reading when this half kicked off — the earliest of its periods to start.

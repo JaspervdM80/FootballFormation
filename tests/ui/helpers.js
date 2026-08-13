@@ -169,7 +169,7 @@ export async function createMatch(page, { opponent, venue, matchType, split } = 
   if (venue) await chooseOption(page, panel, 'Venue', venue);
   if (matchType) await chooseOption(page, panel, 'Match Type', matchType);
   // "Quarters" is the split that gives a half two line-ups, and so the only one whose live screen
-  // ever offers "Next line-up".
+  // has changes to list partway through a half.
   if (split) await chooseOption(page, panel, 'Game Split', split);
   await submitDialog(page);
 

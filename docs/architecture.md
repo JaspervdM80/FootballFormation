@@ -12,7 +12,7 @@ Models/
   Game.cs                — Game entity (incl. SeasonId + live match clock/state), GameSplitType and MatchState enums
   GamePeriod.cs          — GamePeriod entity, PeriodType enum, PeriodTypeExtensions
   GamePlayerPosition.cs  — Links player to position in a period (IsSubstitute flag)
-  GameGoal.cs            — A goal: scorer (null for the opponent), assister, minute, own/opponent flags
+  GameGoal.cs            — A goal: scorer (null for the opponent), assister, minute (+ stoppage), own/opponent flags
   GameSubstitution.cs    — A timestamped change made during a live match
   MatchPreferences.cs    — Per-season game defaults (duration, split, formation, match day)
   GameComment.cs         — An admin's note on a game: body, public/private, author, edited marker
@@ -51,11 +51,10 @@ Reporting/
   SeasonStatsReport.cs    — Team totals + form for /stats (SeasonStats, GameResult)
   PlayerStatsReport.cs    — Per-player aggregates (PlayerStats, PositionStat, PlayerGameStat)
   PositionFitHelper.cs    — 5-tier position fit: Preferred, NaturalFit, Alternative, Compatible, OutOfPosition
-  MatchClockReport.cs     — Derives the live clock and period state from the stored anchor + banked total
+  MatchClockReport.cs     — Derives the live clock and period state from the stored anchor + banked
+                           total, and the MatchMinute an event is written down against
   PlannedChangesReport.cs — What the next period changes versus the one on the pitch, minus the
-                           swaps play has already overtaken (Build() for the card in
-                           UI/Components/PlannedChangesList, Swaps() for MatchClockService, which
-                           applies the overtaken half rather than deciding again)
+                           swaps play has already overtaken, for UI/Components/PlannedChangesList
   ScoreProgressionReport.cs — The score after each goal (MatchScore), for the live timeline —
                            counted forwards because that list runs newest first
   HealthReport.cs         — Whether a booted container is actually serving: the /health payload and

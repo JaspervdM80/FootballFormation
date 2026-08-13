@@ -35,10 +35,4 @@ public class GameSubstitution
     /// this breaks ties against goals in the same minute. See <see cref="GameGoal.RecordedAt"/>.
     /// </summary>
     public DateTime RecordedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>
-    /// The minute as a football timeline writes it: the first minute of play is 1', not 0'. Goals
-    /// are stamped the same way in <c>MatchGoalService.LogGoalAsync</c>, so the two line up.
-    /// </summary>
-    public int Minute => (AtSeconds / 60) + 1;
 }

@@ -13,7 +13,20 @@ public class GameGoal
     public int? AssisterId { get; set; }
     public Player? Assister { get; set; }
 
+    /// <summary>
+    /// The minute on the scoreboard clock, which never runs past the end of the half — the overrun
+    /// is <see cref="AdditionalMinute"/>. Null on a goal recorded with no minute at all, which the
+    /// result page allows.
+    /// </summary>
     public int? Minute { get; set; }
+
+    /// <summary>
+    /// Minutes into stoppage time, counted from 1, or zero for a goal in normal play. Stored beside
+    /// the minute rather than added into it because the two together are what orders the timeline:
+    /// a goal at 35+2 belongs before one at 36, and a single number that had counted on to 37 would
+    /// put it after. Always zero on a goal typed in by hand, which has no clock behind it.
+    /// </summary>
+    public int AdditionalMinute { get; set; }
 
     /// <summary>One of ours put it in our own net. Counts for the opponent.</summary>
     public bool IsOwnGoal { get; set; }

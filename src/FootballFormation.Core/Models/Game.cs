@@ -165,9 +165,27 @@ public class Game
     public GamePeriod? LivePeriod() =>
         LivePeriodId is null ? null : Periods.FirstOrDefault(p => p.Id == LivePeriodId);
 
-    /// <summary>The first period that has not been kicked off yet, in playing order.</summary>
-    public GamePeriod? NextPeriod() =>
-        Periods.OrderBy(p => p.PeriodType).FirstOrDefault(p => p.StartedAtSeconds is null);
+    /// <summary>
+    /// Where the clock goes next: the first period not yet kicked off, skipping any whose half has
+    /// already been played.
+    /// <para>
+    /// A quarters game is planned as two line-ups per half but played as two halves. The second
+    /// line-up of a half is a plan the coach carries out by hand, one substitution at a time — the
+    /// clock never stops for it — so once the first half has run, the next period the clock knows
+    /// about is the one that opens the second half, not the quarter left behind inside the first.
+    /// </para>
+    /// </summary>
+    public GamePeriod? NextPeriod()
+    {
+        var halvesPlayed = Periods
+            .Where(p => p.StartedAtSeconds is not null)
+            .Select(p => p.PeriodType.Half())
+            .ToHashSet();
+
+        return Periods
+            .OrderBy(p => p.PeriodType)
+            .FirstOrDefault(p => p.StartedAtSeconds is null && !halvesPlayed.Contains(p.PeriodType.Half()));
+    }
 
     /// <summary>
     /// The match clock in seconds at <paramref name="utcNow"/>. Callers that only need a settled

@@ -1,6 +1,5 @@
 using FootballFormation.Core.Data;
 using FootballFormation.Core.Models;
-using FootballFormation.Core.Reporting;
 using FootballFormation.Core.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -86,6 +85,10 @@ public class MatchClockService(
             return Result.Success(game);
         });
 
+    /// <summary>
+    /// Kicks off the half after the break. <see cref="Game.NextPeriod"/> decides which period that
+    /// is, and it skips the second line-up of a half already played — the clock runs in halves.
+    /// </summary>
     public Task<Result<Game>> StartNextPeriodAsync(int gameId, CancellationToken cancellationToken = default) =>
         LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "start the next period",
             cancellationToken, async () =>
@@ -115,109 +118,6 @@ public class MatchClockService(
                 next.Id, gameId, next.StartedAtSeconds);
             return Result.Success(game);
         });
-
-    /// <summary>
-    /// Rolls straight from the current period into the next one without stopping the clock, for the
-    /// quarter boundaries that are not a real break (see <see cref="PeriodTypeExtensions.IsFollowedByBreak"/>).
-    /// The lineup changes over, the running time does not — minus the swaps play has already
-    /// answered, which <see cref="KeepLiveArrivalsOn"/> drops.
-    /// </summary>
-    public Task<Result<Game>> AdvancePeriodAsync(int gameId, CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "start the next period",
-            cancellationToken, async () =>
-        {
-            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
-
-            var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
-            if (game is null) return NotFound(gameId);
-
-            var current = game.LivePeriod();
-            if (current is null) return Result.Failure<Game>("No period is currently being played");
-
-            var next = game.NextPeriod();
-            if (next is null)
-                return Result.Failure<Game>("Every period has been played — finish the match instead");
-
-            await db.Entry(current).Collection(p => p.PlayerPositions).LoadAsync(cancellationToken);
-            await db.Entry(next).Collection(p => p.PlayerPositions).LoadAsync(cancellationToken);
-            var liveChanges = await db.GameSubstitutions
-                .Where(s => s.GamePeriodId == current.Id)
-                .ToListAsync(cancellationToken);
-
-            KeepLiveArrivalsOn(current, next, liveChanges);
-
-            // Both ends read the same instant, so no seconds fall between the two periods. The
-            // clock anchor is deliberately left alone: it must keep running through the change.
-            var elapsed = game.ElapsedSecondsAt(UtcNow);
-            current.EndedAtSeconds = elapsed;
-            next.StartedAtSeconds = elapsed;
-            next.EndedAtSeconds = null;
-            game.LivePeriodId = next.Id;
-
-            // Nothing this app still does can stop a live period's clock, but a row stored by a
-            // build that had a pause button can be in exactly that state — and rolling on to the
-            // next line-up while the clock stayed frozen would bank no minutes for the rest of the
-            // half. Restarting the anchor from the banked total is what "the clock keeps running"
-            // means, and it is a no-op for every game that was not left paused.
-            game.ClockRunningSince ??= UtcNow;
-
-            await db.SaveChangesAsync(cancellationToken);
-            logger.LogInformation("Game {GameId} rolled from period {From} into {To} at {Seconds}s",
-                gameId, current.Id, next.Id, elapsed);
-            return Result.Success(game);
-        });
-
-    /// <summary>
-    /// Keeps the players brought on during the period that is ending on the pitch for the next one.
-    /// <para>
-    /// The line-up for <paramref name="next"/> was written before the match. Where play has already
-    /// answered one of its swaps — the player it takes off went off live, and somebody came on for
-    /// them — carrying it out would pull that substitute straight back off for an arrival nobody is
-    /// waiting for, and an injury replacement would last exactly one quarter. So the swap is
-    /// dropped: the player who came on takes the place the plan's arrival was to have, and that
-    /// arrival goes to the bench.
-    /// </para>
-    /// <para>
-    /// Which swaps those are is <see cref="PlannedChangesReport"/>'s answer, not a second opinion
-    /// formed here — the live screen lists exactly the ones it does not drop, directly above the
-    /// button that calls this, and a card promising one thing while the button does another is
-    /// worse than either behaviour on its own.
-    /// </para>
-    /// </summary>
-    private static void KeepLiveArrivalsOn(
-        GamePeriod current, GamePeriod next, List<GameSubstitution> liveChanges)
-    {
-        foreach (var swap in PlannedChangesReport.Swaps(current, next, liveChanges).Overtaken)
-        {
-            // Never null in this half of the split — see PlannedSwaps.
-            var stayingOn = swap.Off!;
-
-            // The slot the plan's arrival was taking, or the one the substitute already holds when
-            // the next line-up names nobody for it.
-            var slot = swap.On?.SlotIndex ?? stayingOn.SlotIndex;
-            var position = swap.On?.Position ?? stayingOn.Position;
-
-            foreach (var displaced in next.PlayerPositions
-                .Where(p => !p.IsSubstitute && p.SlotIndex == slot).ToList())
-            {
-                displaced.SlotIndex = null;
-                displaced.IsSubstitute = true;
-            }
-
-            var entry = next.PlayerPositions.FirstOrDefault(p => p.PlayerId == stayingOn.PlayerId);
-            if (entry is null)
-            {
-                // Someone who was not in the next line-up at all — a late arrival, or a bench that
-                // was only filled in for the first quarter.
-                entry = new GamePlayerPosition { GamePeriodId = next.Id, PlayerId = stayingOn.PlayerId };
-                next.PlayerPositions.Add(entry);
-            }
-
-            entry.SlotIndex = slot;
-            entry.Position = position;
-            entry.IsSubstitute = false;
-        }
-    }
 
     public Task<Result<Game>> FinishMatchAsync(int gameId, CancellationToken cancellationToken = default) =>
         LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "finish the match",

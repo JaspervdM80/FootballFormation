@@ -192,9 +192,7 @@
   <data name="Start match" xml:space="preserve"><value>Wedstrijd starten</value></data>
   <data name="Half time" xml:space="preserve"><value>Rust</value></data>
   <data name="Start {0}" xml:space="preserve"><value>{0} starten</value></data>
-  <data name="Next line-up" xml:space="preserve"><value>Volgende opstelling</value></data>
   <data name="Changes at half-way" xml:space="preserve"><value>Wissels halverwege</value></data>
-  <data name="Nobody changes — the next line-up is the one already on the pitch." xml:space="preserve"><value>Er verandert niemand — de volgende opstelling is die al in het veld staat.</value></data>
   <data name="Position changes" xml:space="preserve"><value>Positiewissels</value></data>
   <data name="Finish match" xml:space="preserve"><value>Wedstrijd afsluiten</value></data>
   <data name="Edit result" xml:space="preserve"><value>Uitslag aanpassen</value></data>

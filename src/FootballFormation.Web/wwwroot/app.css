@@ -775,13 +775,6 @@ html, body {
     }
 }
 
-/* Carrying out the changes listed above it, so it is spaced off the list rather than crowding it.
-   A MudButton's root element is a child component's, which scoped CSS cannot reach. */
-.live-advance-btn {
-    margin-top: 14px;
-    min-height: 48px;
-}
-
 /* On a phone what just happened matters more than where everyone stands, so the line-up card
    drops below the timeline, taking the minutes table with it. Every other child of .live-layout
    keeps the default order of 0 and so stays in source order above them. */

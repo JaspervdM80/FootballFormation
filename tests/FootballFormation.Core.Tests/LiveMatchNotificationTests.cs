@@ -34,13 +34,12 @@ public class LiveMatchNotificationTests : LiveMatchTestBase
 
         Assert.True((await Subs.SwapPositionsAsync(game.Id, players[0].Id, players[1].Id)).IsSuccess);
 
-        Assert.True((await MatchClock.AdvancePeriodAsync(game.Id)).IsSuccess);
         Assert.True((await MatchClock.EndPeriodAsync(game.Id)).IsSuccess);
         Assert.True((await MatchClock.StartNextPeriodAsync(game.Id)).IsSuccess);
         Assert.True((await MatchClock.FinishMatchAsync(game.Id)).IsSuccess);
 
-        // Ten writes, ten announcements, each naming this match.
-        Assert.Equal(10, _announced.Count);
+        // Nine writes, nine announcements, each naming this match.
+        Assert.Equal(9, _announced.Count);
         Assert.All(_announced, id => Assert.Equal(game.Id, id));
     }
 

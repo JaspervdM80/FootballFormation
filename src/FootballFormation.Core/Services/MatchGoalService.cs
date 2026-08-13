@@ -50,9 +50,10 @@ public class MatchGoalService(
                 ScorerId = scorerId,
                 AssisterId = assisterId,
                 // The minute the clock showed, so an over-running first half does not push every
-                // second-half goal out by the overrun. Stoppage time counts on past the cap rather
-                // than pinning several goals to the same minute.
-                Minute = clock.Minute,
+                // second-half goal out by the overrun. Stoppage time is kept in the second half of
+                // the pair — see GameGoal.AdditionalMinute for why it is not folded into the first.
+                Minute = clock.Minute.Minute,
+                AdditionalMinute = clock.Minute.Additional,
                 IsOwnGoal = isOwnGoal,
                 IsOpponentGoal = isOpponentGoal
             };

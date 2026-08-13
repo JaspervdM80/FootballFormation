@@ -12,21 +12,10 @@ public record PlannedSubstitution(Player? PlayerOff, Player? PlayerOn, PlayerPos
 public record PlannedMove(Player Player, PlayerPosition From, PlayerPosition To);
 
 /// <summary>
-/// The same swap in terms of the line-up rows rather than the players, which is what carrying one
-/// out needs: a slot and a position change hands, and neither is a property of a name.
+/// The same swap in terms of the line-up rows rather than the players: a slot and a position
+/// change hands, and neither is a property of a name.
 /// </summary>
-public record PlannedSwap(GamePlayerPosition? Off, GamePlayerPosition? On);
-
-/// <summary>
-/// The swaps the next line-up implies, split by whether play has already answered them.
-/// <para>
-/// <paramref name="Overtaken"/> is the ones it has: the player the plan takes off went off live and
-/// somebody came on for them, so the plan's arrival is no longer wanted and the slot's occupant is
-/// no longer the player the plan meant to withdraw. <paramref name="Off"/> is never null there — a
-/// swap with nobody named to come off has nothing for play to overtake.
-/// </para>
-/// </summary>
-public record PlannedSwaps(List<PlannedSwap> Viable, List<PlannedSwap> Overtaken);
+internal record PlannedSwap(GamePlayerPosition? Off, GamePlayerPosition? On);
 
 /// <summary>What the next line-up does: who is swapped, and who shifts position.</summary>
 public record PlannedChanges(List<PlannedSubstitution> Substitutions, List<PlannedMove> Moves)
@@ -49,8 +38,6 @@ public record PlannedChanges(List<PlannedSubstitution> Substitutions, List<Plann
 /// Only the swaps still open to the coach are reported. Play overtakes a plan: once the player it
 /// takes off has been taken off live, the difference between the two line-ups still names their
 /// slot, but it now proposes to withdraw whoever came on for them — a substitution nobody planned.
-/// <see cref="Swaps"/> is the same walk without the names, and <c>MatchClockService</c> applies
-/// what it calls overtaken rather than deciding again, so the card and the button cannot part ways.
 /// </para>
 /// </summary>
 public static class PlannedChangesReport
@@ -71,21 +58,9 @@ public static class PlannedChangesReport
         var after = StartersBySlot(next);
 
         return new PlannedChanges(
-            [.. PairUp(before, after, KickOffStarters(before.Values, liveChanges)).Viable
+            [.. PairUp(before, after, KickOffStarters(before.Values, liveChanges))
                 .Select(swap => Name(swap, findPlayer))],
             Moves(before, after, findPlayer));
-    }
-
-    /// <summary>
-    /// The same swaps as line-up rows, for the caller that has to carry them out rather than
-    /// print them. See <see cref="PlannedSwaps"/> for what the two halves mean.
-    /// </summary>
-    public static PlannedSwaps Swaps(
-        GamePeriod current, GamePeriod next, IEnumerable<GameSubstitution> liveChanges)
-    {
-        var before = StartersBySlot(current);
-
-        return PairUp(before, StartersBySlot(next), KickOffStarters(before.Values, liveChanges));
     }
 
     /// <summary>
@@ -133,7 +108,7 @@ public static class PlannedChangesReport
     /// are taking, which is the swap a coach would call out; when that player is staying on the
     /// pitch — a shuffle rather than a straight swap — the next unpaired departure is used instead.
     /// </summary>
-    private static PlannedSwaps PairUp(
+    private static List<PlannedSwap> PairUp(
         Dictionary<int, GamePlayerPosition> before,
         Dictionary<int, GamePlayerPosition> after,
         HashSet<int> kickOffStarters)
@@ -165,8 +140,7 @@ public static class PlannedChangesReport
         // Anyone left over comes off with nobody named to replace them.
         swaps.AddRange(unpaired.Select(off => new PlannedSwap(off, null)));
 
-        var byViability = swaps.ToLookup(swap => IsStillViable(swap, kickOffStarters));
-        return new PlannedSwaps([.. byViability[true]], [.. byViability[false]]);
+        return [.. swaps.Where(swap => IsStillViable(swap, kickOffStarters))];
     }
 
     private static List<PlannedMove> Moves(

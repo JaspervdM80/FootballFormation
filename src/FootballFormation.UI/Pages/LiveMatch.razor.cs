@@ -13,6 +13,8 @@ namespace FootballFormation.UI.Pages;
 
 /// <summary>
 /// One entry on the match timeline — a goal or a substitution — so both can be listed together.
+/// <paramref name="Minute"/> is the scoreboard reading rather than the raw elapsed time, which is
+/// what keeps a first-half stoppage entry above the restart instead of below it.
 /// <paramref name="RecordedAt"/> orders events that share a minute, which the minute alone cannot.
 /// <paramref name="Id"/> settles the rest: two entries of the same kind entered in one instant
 /// share a <paramref name="RecordedAt"/>, and rows older than that column all read
@@ -21,8 +23,8 @@ namespace FootballFormation.UI.Pages;
 /// <paramref name="Score"/> is the scoreline as it stood after a goal, and null for a substitution.
 /// </summary>
 public record MatchEvent(
-    int Minute, DateTime RecordedAt, int Id, bool IsGoal, GameGoal? Goal, GameSubstitution? Substitution,
-    MatchScore? Score = null);
+    MatchMinute Minute, DateTime RecordedAt, int Id, bool IsGoal, GameGoal? Goal,
+    GameSubstitution? Substitution, MatchScore? Score = null);
 
 /// <summary>
 /// The sideline screen. An admin runs the clock and records what happens; everyone else sees the
@@ -127,11 +129,11 @@ public partial class LiveMatch
     private string? NextHalfLabel => NextPeriod?.PeriodType.HalfDisplayName();
 
     /// <summary>
-    /// Whether the period being played ends in a real stoppage. Only half time does; a quarter
-    /// boundary rolls straight on, so the screen offers the line-up change rather than a whistle.
+    /// Whether whistling the period off leads to a break rather than to the end of the match. The
+    /// clock runs in halves, so before full time there is exactly one stoppage — and after it
+    /// <see cref="NextPeriod"/> is null and the only control left is the final whistle.
     /// </summary>
-    private bool BreakFollowsCurrentPeriod =>
-        DisplayPeriod is { } period && IsLivePeriod && period.PeriodType.IsFollowedByBreak();
+    private bool BreakFollowsCurrentPeriod => IsLivePeriod && NextPeriod is not null;
 
     /// <summary>
     /// The period whose line-up takes over partway through the half on screen, if there is one.
@@ -155,19 +157,14 @@ public partial class LiveMatch
 
     /// <summary>
     /// The swaps the planned line-ups imply for the middle of this half, measured against who is
-    /// on the pitch right now — so a live substitution already made drops out of the list.
+    /// on the pitch right now — so a live substitution already made drops out of the list. They are
+    /// carried out by hand, one tap on the pitch at a time; nothing here rolls them on at once.
     /// </summary>
     private PlannedChanges PlannedChanges =>
         GameData is { } game && DisplayPeriod is { } current && MidHalfSuccessor is { } next
             ? PlannedChangesReport.Build(current, next, FindPlayer,
                 game.Substitutions.Where(s => s.GamePeriodId == current.Id))
             : PlannedChanges.None;
-
-    /// <summary>
-    /// Whether the next line-up can be rolled on. Only during play: before kick-off the changes
-    /// are worth reading but there is no period running to advance out of.
-    /// </summary>
-    private bool CanAdvanceLineup => IsLivePeriod && MidHalfSuccessor is not null;
 
     /// <summary>What the match is doing right now, in one phrase under the clock.</summary>
     private string StatusLabel => GameData?.MatchState switch
@@ -264,10 +261,11 @@ public partial class LiveMatch
             // newest first, so a total accumulated while rendering it would count down.
             var progression = ScoreProgressionReport.Build(GameData.Goals);
 
-            var goals = GameData.Goals.Select(g =>
-                new MatchEvent(g.Minute ?? 0, g.RecordedAt, g.Id, true, g, null, progression[g.Id]));
+            var goals = GameData.Goals.Select(g => new MatchEvent(
+                MatchClockReport.MinuteOf(g) ?? default, g.RecordedAt, g.Id, true, g, null, progression[g.Id]));
             IEnumerable<MatchEvent> subs = ShowSubstitutions
-                ? GameData.Substitutions.Select(s => new MatchEvent(s.Minute, s.RecordedAt, s.Id, false, null, s))
+                ? GameData.Substitutions.Select(s => new MatchEvent(
+                    MatchClockReport.MinuteOf(GameData, s), s.RecordedAt, s.Id, false, null, s))
                 : [];
 
             // A goal and the sub that followed it commonly share a minute; the entry time keeps
@@ -347,13 +345,6 @@ public partial class LiveMatch
 
     private async Task StartNextPeriod() =>
         Snackbar.Report(L, await ClockService.StartNextPeriodAsync(GameId), L["Next period started"]);
-
-    /// <summary>
-    /// Rolls the next planned line-up onto the pitch. Asks nothing first: the button sits under
-    /// the list of exactly the changes it makes, which is what a confirmation would have said.
-    /// </summary>
-    private async Task AdvancePeriod() =>
-        Snackbar.Report(L, await ClockService.AdvancePeriodAsync(GameId), L["Next period started"]);
 
     private async Task FinishMatch()
     {

@@ -225,16 +225,30 @@ public class GameTests
         Assert.Equal(2, Game.CountTheirGoals(goals));
     }
 
-    [Theory]
-    [InlineData(PeriodType.FirstHalf, true)]
-    [InlineData(PeriodType.SecondQuarter, true)]
-    // A quarters game is still two halves — the teams roll straight from Q1 into Q2.
-    [InlineData(PeriodType.FirstQuarter, false)]
-    [InlineData(PeriodType.ThirdQuarter, false)]
-    [InlineData(PeriodType.SecondHalf, false)]
-    [InlineData(PeriodType.FourthQuarter, false)]
-    public void Only_half_time_is_a_real_break(PeriodType period, bool expected) =>
-        Assert.Equal(expected, period.IsFollowedByBreak());
+    [Fact]
+    public void The_clock_goes_from_one_half_to_the_next_rather_than_from_quarter_to_quarter()
+    {
+        var game = QuartersGame();
+
+        // Before kick-off the next period is simply the first one.
+        Assert.Equal(PeriodType.FirstQuarter, game.NextPeriod()!.PeriodType);
+
+        // The first half has been played, so the line-up planned for the rest of it is behind the
+        // clock — the whistle hands over to the half that follows.
+        game.Periods.Single(p => p.PeriodType == PeriodType.FirstQuarter).StartedAtSeconds = 0;
+        Assert.Equal(PeriodType.ThirdQuarter, game.NextPeriod()!.PeriodType);
+
+        game.Periods.Single(p => p.PeriodType == PeriodType.ThirdQuarter).StartedAtSeconds = 1800;
+        Assert.Null(game.NextPeriod());
+    }
+
+    private static Game QuartersGame() => new()
+    {
+        Opponent = "X",
+        SplitType = GameSplitType.Quarters,
+        Periods = [.. PeriodTypeExtensions.ForSplitType(GameSplitType.Quarters)
+            .Select(type => new GamePeriod { PeriodType = type })]
+    };
 
     [Fact]
     public void Split_period_count_is_derived_from_the_period_table_itself()

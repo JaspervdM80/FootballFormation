@@ -44,15 +44,6 @@ public static class PeriodTypeExtensions
     };
 
     /// <summary>
-    /// Whether play actually stops after this period. A quarters game is still two halves: the
-    /// teams roll straight from Q1 into Q2 and from Q3 into Q4 without leaving the pitch, and the
-    /// only real break is half time. This is what stops the live screen offering a whistle after
-    /// every quarter.
-    /// </summary>
-    public static bool IsFollowedByBreak(this PeriodType period) =>
-        period is PeriodType.FirstHalf or PeriodType.SecondQuarter;
-
-    /// <summary>
     /// The half this period is played in. Quarters are a planning device — a way to write two
     /// line-ups per half — but a match is only ever two halves, so anything shown to someone
     /// watching goes through here rather than naming the quarter.

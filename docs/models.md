@@ -201,7 +201,8 @@ bench, never both and never twice.
 | GameId | int | FK → Game (cascade delete) |
 | ScorerId | int? | FK → Player, **SetNull**. Null for an opponent goal — we don't track their players |
 | AssisterId | int? | FK → Player, SetNull |
-| Minute | int? | Free-typed on `/result`; stamped from the clock on `/live` |
+| Minute | int? | Free-typed on `/result`; stamped from the scoreboard clock on `/live`, and never past the end of the half |
+| AdditionalMinute | int | Minutes into stoppage time, from 1; 0 in normal play. Stored apart from `Minute` so 35+2 sorts before 36 — see `MatchMinute` |
 | IsOwnGoal | bool | One of ours into our own net. Counts for the opponent |
 | IsOpponentGoal | bool | The opponent scored. Counts for them, and has no scorer |
 | RecordedAt | DateTime | UTC entry time — orders events that share a minute |
@@ -216,8 +217,12 @@ bench, never both and never twice.
 | AtSeconds | int | Match-clock second of the change |
 | SlotIndex | int? | The pitch slot that changed hands |
 | Position | PlayerPosition | The position that changed hands |
-| Minute | int | Computed: `AtSeconds / 60 + 1` — a timeline's first minute is 1', not 0' |
 | RecordedAt | DateTime | UTC entry time — orders events that share a minute |
+
+A substitution has no stored minute: `MatchClockReport.MinuteOf` derives it from `AtSeconds` and
+the period the change belongs to, so it reads off the same scoreboard clock a goal was stamped from
+rather than the raw elapsed time. A goal cannot be derived that way — one typed in on `/result` has
+no clock behind it at all — which is why its minute is stored, both halves of it.
 
 `RecordedAt` exists on both `GameGoal` and `GameSubstitution` because the minute alone cannot order
 a timeline: a goal and the substitution that followed it routinely share one, and several events in

@@ -129,9 +129,12 @@ public class MatchClockReportTests
         Assert.Equal(0, atFullTime.AdditionalSeconds);
     }
 
-    /// <summary>Goals are written against the clock that ran on, not the one that stopped.</summary>
+    /// <summary>
+    /// A half that has been played out stops counting minutes and starts counting them alongside,
+    /// the way football writes 30+2 — so the minute never runs into the numbers the next half uses.
+    /// </summary>
     [Fact]
-    public void The_minute_counts_on_through_additional_time()
+    public void The_minute_stops_with_the_clock_and_additional_time_is_counted_beside_it()
     {
         var game = QuartersGame();
         Period(game, PeriodType.FirstQuarter).StartedAtSeconds = 0;
@@ -140,7 +143,27 @@ public class MatchClockReportTests
         var clock = MatchClockReport.Build(game, Period(game, PeriodType.SecondQuarter), 31 * 60 + 30);
 
         Assert.Equal(30 * 60, clock.Seconds);
-        Assert.Equal(32, clock.Minute);
+        Assert.Equal(new MatchMinute(30, 2), clock.Minute);
+        Assert.Equal("30+2", clock.Minute.ToString());
+    }
+
+    /// <summary>
+    /// The whole point of the pair: a goal in first-half stoppage time and one just after the
+    /// restart are a minute apart, and a single number would have written them 32 and 31.
+    /// </summary>
+    [Fact]
+    public void A_stoppage_time_minute_comes_before_the_first_minute_of_the_next_half()
+    {
+        var game = QuartersGame();
+        Period(game, PeriodType.FirstQuarter).StartedAtSeconds = 0;
+        Period(game, PeriodType.ThirdQuarter).StartedAtSeconds = 32 * 60;
+
+        var stoppage = MatchClockReport.Build(game, Period(game, PeriodType.FirstQuarter), 31 * 60);
+        var afterTheBreak = MatchClockReport.Build(game, Period(game, PeriodType.ThirdQuarter), 32 * 60);
+
+        Assert.Equal(new MatchMinute(30, 2), stoppage.Minute);
+        Assert.Equal(new MatchMinute(31, 0), afterTheBreak.Minute);
+        Assert.True(stoppage.Minute.CompareTo(afterTheBreak.Minute) < 0);
     }
 
     [Fact]
@@ -149,9 +172,39 @@ public class MatchClockReportTests
         var game = QuartersGame();
         Period(game, PeriodType.FirstQuarter).StartedAtSeconds = 0;
 
-        Assert.Equal(1, MatchClockReport.Build(game, Period(game, PeriodType.FirstQuarter), 0).Minute);
-        Assert.Equal(1, MatchClockReport.Build(game, Period(game, PeriodType.FirstQuarter), 59).Minute);
-        Assert.Equal(2, MatchClockReport.Build(game, Period(game, PeriodType.FirstQuarter), 60).Minute);
+        MatchMinute MinuteAt(int seconds) =>
+            MatchClockReport.Build(game, Period(game, PeriodType.FirstQuarter), seconds).Minute;
+
+        Assert.Equal(new MatchMinute(1, 0), MinuteAt(0));
+        Assert.Equal(new MatchMinute(1, 0), MinuteAt(59));
+        Assert.Equal(new MatchMinute(2, 0), MinuteAt(60));
+        Assert.Equal("2", MinuteAt(60).ToString());
+    }
+
+    [Fact]
+    public void A_substitution_is_written_against_the_clock_its_own_half_was_showing()
+    {
+        var game = QuartersGame();
+        Period(game, PeriodType.FirstQuarter).StartedAtSeconds = 0;
+        var secondHalf = Period(game, PeriodType.ThirdQuarter);
+        secondHalf.StartedAtSeconds = 32 * 60;
+        secondHalf.Id = 7;
+
+        // Two minutes into a second half that kicked off 32 real minutes in: 33', not 35'.
+        var sub = new GameSubstitution { GamePeriodId = 7, AtSeconds = 34 * 60 };
+        Assert.Equal(new MatchMinute(33, 0), MatchClockReport.MinuteOf(game, sub));
+
+        // A substitution whose period is not loaded still says something better than 1'.
+        var orphan = new GameSubstitution { GamePeriodId = 99, AtSeconds = 34 * 60 };
+        Assert.Equal(new MatchMinute(35, 0), MatchClockReport.MinuteOf(game, orphan));
+    }
+
+    [Fact]
+    public void A_goal_recorded_without_a_minute_has_none_to_show()
+    {
+        Assert.Null(MatchClockReport.MinuteOf(new GameGoal()));
+        Assert.Equal(new MatchMinute(35, 2),
+            MatchClockReport.MinuteOf(new GameGoal { Minute = 35, AdditionalMinute = 2 }));
     }
 
     [Fact]

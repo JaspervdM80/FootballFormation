@@ -59,8 +59,8 @@
             else if (GameData.MatchState == MatchState.InProgress)
             {
                 <div class="live-control-row">
-                    @* A quarter boundary is not a stoppage but a planned line-up change, so it is
-                       carried out from the card that lists what it changes rather than from here. *@
+                    @* The clock knows halves only. The line-up change partway through a half is
+                       made by hand from the pitch, so it has no control of its own here. *@
                     @if (BreakFollowsCurrentPeriod)
                     {
                         <MudButton Variant="Variant.Filled" Class="btn-gold"
@@ -144,38 +144,17 @@
     @* The quarters the line-up was planned in are never named on this screen, but the difference
        between them is exactly the set of changes due halfway through the half — which is the part
        worth knowing at the touchline. Measured against the pitch as it stands, and stripped of the
-       swaps play has already overtaken, so nothing here is a change the coach cannot still make.
-       The button that carries them out sits at the foot of the list rather than up with the clock
-       controls, so the tap is made while reading what it is about to do.
+       swaps play has already overtaken, so what is left is a list to work through by tapping the
+       players on the pitch above.
        Admin only, like the minutes table: this is what the coach is about to do, not what has
        happened, and a plan on a shared screen invites being asked about before it is carried out. *@
     <AuthorizeView Roles="@AppRoles.Admin">
         @{ var planned = PlannedChanges; }
-        @* An empty list is still worth a card while the change can be made — otherwise the only
-           way on to the next line-up would vanish exactly when nobody needs swapping. *@
-        @if (!planned.IsEmpty || CanAdvanceLineup)
+        @if (!planned.IsEmpty)
         {
             <MudPaper Class="pa-4" Elevation="2" Style="border-radius: 16px;">
                 <div class="card-label">@L["Changes at half-way"]</div>
-
-                @if (planned.IsEmpty)
-                {
-                    <MudText Typo="Typo.body2" Style="color: var(--ink-subtle);">
-                        @L["Nobody changes — the next line-up is the one already on the pitch."]
-                    </MudText>
-                }
-                else
-                {
-                    <PlannedChangesList Changes="planned" />
-                }
-
-                @if (CanAdvanceLineup)
-                {
-                    <MudButton Variant="Variant.Filled" Class="btn-gold live-advance-btn" FullWidth="true"
-                               StartIcon="@Icons.Material.Filled.SwapHoriz" OnClick="AdvancePeriod">
-                        @L["Next line-up"]
-                    </MudButton>
-                }
+                <PlannedChangesList Changes="planned" />
             </MudPaper>
         }
     </AuthorizeView>
