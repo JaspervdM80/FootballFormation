@@ -195,4 +195,43 @@ public class GameServiceTests : ServiceTestBase
         Assert.True(created.IsSuccess);
         Assert.Equal(season.Id, created.Value!.SeasonId);
     }
+
+    /// <summary>
+    /// Creating a game may save a season first, in its own context, so the two saves are two
+    /// transactions and something can stop between them. What it leaves behind is an empty season,
+    /// and this is why that is allowed to stand rather than being wrapped in machinery: a season is
+    /// a gapless window, so the next attempt resolves to the one already there. See docs/patterns.md.
+    /// </summary>
+    [Fact]
+    public async Task A_game_scheduled_into_an_empty_season_joins_it_rather_than_making_a_second_one()
+    {
+        var season = await SeedSeasonAsync();
+        var stranded = (await Seasons.GetOrCreateForDateAsync(season.EndDate.AddYears(1))).Value!;
+
+        var created = await Games.CreateAsync(
+            TestData.Game(id: 0, seasonId: 0, date: stranded.StartDate.AddDays(10)));
+
+        Assert.Equal(stranded.Id, created.Value!.SeasonId);
+        Assert.Equal(2, Read().Seasons.Count());
+    }
+
+    /// <summary>
+    /// The counterpart to the touchline recount in <c>MatchGoalServiceTests</c>. Here the score is
+    /// typed and the goal list is allowed to be shorter than it, so adding a scorer someone
+    /// remembered afterwards must not rewrite a 3-1 as 1-0.
+    /// </summary>
+    [Fact]
+    public async Task A_goal_added_after_the_match_leaves_a_hand_typed_scoreline_alone()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(1);
+        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
+        await Games.SaveScoreAsync(game.Id, 3, 1);
+
+        await Games.AddGoalAsync(new GameGoal { GameId = game.Id, ScorerId = players[0].Id, Minute = 12 });
+
+        var saved = Read().Games.Single();
+        Assert.Equal(3, saved.ScoreHome);
+        Assert.Equal(1, saved.ScoreAway);
+    }
 }

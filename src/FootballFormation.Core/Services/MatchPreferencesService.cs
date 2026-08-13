@@ -30,7 +30,13 @@ public class MatchPreferencesService(
 
             prefs = await SeedForAsync(db, seasonId, cancellationToken);
             db.MatchPreferences.Add(prefs);
-            await db.SaveChangesAsync(cancellationToken);
+
+            // The one read in the app that writes, and the one place the "reads take the page's
+            // token, writes do not" rule would otherwise be broken: both /settings and the game
+            // dialog hand this a token that trips when the visitor navigates away. Everything above
+            // is cancellable and gives up having written nothing; from here the row exists in
+            // memory and is worth the one insert it costs, so the save is not.
+            await db.SaveChangesAsync(CancellationToken.None);
 
             logger.LogInformation("Created match preferences for season {SeasonId} (ID: {Id})", seasonId, prefs.Id);
             return Result.Success(prefs);

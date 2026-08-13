@@ -168,7 +168,15 @@ public class GameService(
             return Result.Success();
         });
 
-    public Task<Result<GameGoal>> AddGoalAsync(GameGoal goal, CancellationToken cancellationToken = default) =>
+    /// <param name="recountScoreline">
+    /// True at the touchline, where the scoreline <em>is</em> the goals: the row and the recount
+    /// commit together, so no interruption can leave one written without the other. False on the
+    /// result page, where the score is typed by hand and the goal list is allowed to be shorter
+    /// than it — recounting there would turn a 3-1 into the two goals whose scorer someone
+    /// remembered.
+    /// </param>
+    public Task<Result<GameGoal>> AddGoalAsync(
+        GameGoal goal, bool recountScoreline = false, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAdminAsync(currentUser, logger, "add goal", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -180,8 +188,15 @@ public class GameService(
             // service; when a service saves one, the service's clock decides.
             goal.RecordedAt = UtcNow;
 
+            await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
+
             db.GameGoals.Add(goal);
             await db.SaveChangesAsync(cancellationToken);
+
+            if (recountScoreline)
+                await RecountScorelineAsync(db, goal.GameId, cancellationToken);
+
+            await tx.CommitAsync(cancellationToken);
 
             // Reload with navigation properties
             if (goal.ScorerId is not null)
@@ -194,7 +209,9 @@ public class GameService(
             return Result.Success(goal);
         });
 
-    public Task<Result> RemoveGoalAsync(int goalId, CancellationToken cancellationToken = default) =>
+    /// <inheritdoc cref="AddGoalAsync(GameGoal, bool, CancellationToken)" path="/param[@name='recountScoreline']"/>
+    public Task<Result> RemoveGoalAsync(
+        int goalId, bool recountScoreline = false, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAdminAsync(currentUser, logger, "remove goal", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -206,12 +223,45 @@ public class GameService(
                 return Result.Failure("Goal not found");
             }
 
+            await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
+
             db.GameGoals.Remove(goal);
             await db.SaveChangesAsync(cancellationToken);
+
+            if (recountScoreline)
+                await RecountScorelineAsync(db, goal.GameId, cancellationToken);
+
+            await tx.CommitAsync(cancellationToken);
 
             logger.LogInformation("Removed goal {GoalId}", goalId);
             return Result.Success();
         });
+
+    /// <summary>
+    /// Rewrites a game's scoreline from the goals on file, through the <em>same</em> context and
+    /// inside the <em>same</em> transaction as the write that prompted it — and after that write
+    /// has been saved, so the goal it added or removed is already reflected in what is counted.
+    /// <para>
+    /// Both halves of that matter. A transaction cannot span two <see cref="AppDbContext"/>
+    /// instances, so counting through a second context would leave a gap nothing can roll back;
+    /// and counting in memory <em>before</em> the save would make this a read-modify-write, which
+    /// two touchline devices logging a goal in the same moment would both get wrong. Counting
+    /// afterwards makes the second one wait for SQLite's write lock and then count both goals.
+    /// See docs/patterns.md.
+    /// </para>
+    /// </summary>
+    private static async Task RecountScorelineAsync(
+        AppDbContext db, int gameId, CancellationToken cancellationToken)
+    {
+        var game = await db.Games.FindAsync([gameId], cancellationToken);
+        if (game is null) return;
+
+        game.CountScoreFrom(await db.GameGoals
+            .Where(g => g.GameId == gameId)
+            .ToListAsync(cancellationToken));
+
+        await db.SaveChangesAsync(cancellationToken);
+    }
 
     /// <param name="includePrivate">
     /// True only for an admin. The filter lives in the query rather than in the page so a private

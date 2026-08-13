@@ -39,6 +39,24 @@ Avoid repeating these mistakes:
   of the moment the copy was taken; it is the schema state now, so a crash loop cannot write five
   snapshots of the broken database and prune the only good one. See [deployment.md](deployment.md).)
 - **The scaffolder ordered a destructive migration wrongly**: `AddSeasonSquads` had to copy `Players.IsGuest` into a new table *and* drop the column; EF emitted the `DropColumn` first, which would have wiped the source before the backfill ran. Always read and reorder the generated `Up()`.
+- **A transaction cannot span two `AppDbContext` instances, and nothing warns you**: each operation
+  opens its own context from the factory (deliberately — see [patterns.md](patterns.md)), and each
+  context has its own connection. Calling another *service's* write from inside your own therefore
+  gives you two transactions with a gap between them, even though the code reads like one operation
+  and every `Result` check passes. The gap is real: SQLite can time out on the lock, the second save
+  can throw, and a Fly.io deploy restarts the container mid-write. Logging a goal was shaped that
+  way — insert through `GameService`, recount the scoreline through `MatchGoalService`'s own
+  context — so an interruption between them left the goal on file behind a stale score. **When one
+  row is derived from another, write both through the same context and commit them once**;
+  `GameService.AddGoalAsync(goal, recountScoreline: true)` is what that looks like. The commits are
+  counted in `MatchGoalServiceTests`, because from the outside two commits and one look identical
+  right up until something interrupts them.
+- **Collapsing that into a single `SaveChanges` looks tidier and reintroduces a lost update**: it
+  means counting the goals in memory and adding the new one to the total, which is a
+  read-modify-write on a row with no concurrency token. Two admins on the same live match — the
+  thing `LiveMatchNotifier` exists for — each read *n* goals and each write a scoreline of *n+1*,
+  and the score ends up one behind the goal list until the next recount repairs it. **Recount after
+  the write, inside the transaction**, where SQLite's write lock has already serialised the two.
 
 ## Data / domain
 - **Deleting a player used to be destructive across every season**: `PlayerService.DeleteAsync` cascades their `GamePlayerPosition` rows and nulls their `GameGoal` scorer, so last season's top scorer disappeared from last season's stats — from a confirm that said nothing about it. Fixed by `ArchivePlayersInsteadOfDeleting`: delete now **refuses** for anyone with a lineup or goal row anywhere, and `Player.IsArchived` is the way to retire someone. Worth knowing when the refusal surprises you: the counts are deliberately **not** scoped to a season, unlike `SeasonSquadService.RemoveMemberAsync`'s, because the cascade is not either.
