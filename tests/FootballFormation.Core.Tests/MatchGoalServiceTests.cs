@@ -1,3 +1,11 @@
+using System.Data.Common;
+using FootballFormation.Core.Data;
+using FootballFormation.Core.Models;
+using FootballFormation.Core.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Logging.Abstractions;
+
 namespace FootballFormation.Core.Tests;
 
 /// <summary>
@@ -105,5 +113,113 @@ public class MatchGoalServiceTests : LiveMatchTestBase
 
         Assert.True(result.IsFailure);
         Assert.Equal(1, (await ReloadAsync(game.Id)).ScoreHome);
+    }
+
+    /// <summary>
+    /// The goal row and the scoreline it produces reach the database together. They used to be a
+    /// save each in a context each — and no transaction spans two contexts, so a lock timeout or a
+    /// deploy restarting the container between them left the goal on file with a stale score beside
+    /// it. One commit is the property that fixed it, and it is invisible from the outside until
+    /// something interrupts the two halves, so it is counted here instead.
+    /// </summary>
+    [Fact]
+    public async Task A_logged_goal_and_the_scoreline_it_makes_are_committed_together()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        var commits = new CommitCountingDbContextFactory(Db.Database.GetDbConnection());
+
+        var goal = await GoalsOver(commits).LogGoalAsync(game.Id, players[1].Id, null, false, false);
+
+        Assert.True(goal.IsSuccess);
+        Assert.Equal(1, (await ReloadAsync(game.Id)).ScoreHome);
+        Assert.Equal(1, commits.Count);
+    }
+
+    /// <inheritdoc cref="A_logged_goal_and_the_scoreline_it_makes_are_committed_together"/>
+    [Fact]
+    public async Task Removing_a_goal_and_the_scoreline_it_leaves_are_committed_together()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+        var goal = await Goals.LogGoalAsync(game.Id, players[1].Id, null, false, false);
+
+        var commits = new CommitCountingDbContextFactory(Db.Database.GetDbConnection());
+
+        var removed = await GoalsOver(commits).RemoveGoalAsync(game.Id, goal.Value!.Id);
+
+        Assert.True(removed.IsSuccess);
+        Assert.Equal(0, (await ReloadAsync(game.Id)).ScoreHome);
+        Assert.Equal(1, commits.Count);
+    }
+
+    /// <summary>
+    /// The scoreline counts the goal rows as the database has them, not as the caller last saw
+    /// them. Counting in memory ahead of the insert would read the same way here and be a
+    /// read-modify-write two touchline devices could both get wrong.
+    /// </summary>
+    [Fact]
+    public async Task The_scoreline_counts_a_goal_logged_behind_this_ones_back()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        // On file without the scoreline following it — a goal the next recount has to pick up.
+        Db.GameGoals.Add(new GameGoal { GameId = game.Id, ScorerId = players[1].Id, Minute = 3 });
+        await Db.SaveChangesAsync();
+
+        await Goals.LogGoalAsync(game.Id, players[1].Id, null, false, false);
+
+        Assert.Equal(2, (await ReloadAsync(game.Id)).ScoreHome);
+    }
+
+    /// <summary>The same service, wired to a factory that can be asked what it was made to write.</summary>
+    private MatchGoalService GoalsOver(IDbContextFactory<AppDbContext> factory) =>
+        new(factory,
+            new GameService(factory, Seasons, CurrentUser, Time, NullLogger<GameService>.Instance),
+            Notifier, Time, CurrentUser, NullLogger<MatchGoalService>.Instance);
+
+    /// <summary>
+    /// Hands out contexts over the test's one connection, like the base fixture does, and counts
+    /// what is committed through them — EF raises this for the transaction it opens around a lone
+    /// <c>SaveChanges</c> as well as for an explicit one, so two saves that commit once count once.
+    /// </summary>
+    private sealed class CommitCountingDbContextFactory(DbConnection connection)
+        : IDbContextFactory<AppDbContext>
+    {
+        private readonly CommitCounter _counter = new();
+
+        public int Count => _counter.Count;
+
+        public AppDbContext CreateDbContext() =>
+            new(new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite(connection)
+                .AddInterceptors(new DateInSqlInterceptor(), _counter)
+                .Options);
+
+        public Task<AppDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult(CreateDbContext());
+
+        private sealed class CommitCounter : IDbTransactionInterceptor
+        {
+            private int _count;
+
+            public int Count => _count;
+
+            public void TransactionCommitted(DbTransaction transaction, TransactionEndEventData eventData) =>
+                Interlocked.Increment(ref _count);
+
+            public Task TransactionCommittedAsync(
+                DbTransaction transaction, TransactionEndEventData eventData,
+                CancellationToken cancellationToken = default)
+            {
+                Interlocked.Increment(ref _count);
+                return Task.CompletedTask;
+            }
+        }
     }
 }

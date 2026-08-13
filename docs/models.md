@@ -134,6 +134,10 @@ and a page refresh or a second device picks it up exactly where it is.
 
 `Game.CountOurGoals(goals)` / `Game.CountTheirGoals(goals)` are the one place the scoreline rule
 lives: an own goal counts for the opponent, so it is excluded from ours and included in theirs.
+`CountScoreFrom(goals)` applies both to a game at once, and it is a **recount** rather than an
+increment on purpose — a score derived afresh from the goals repairs itself, which is what lets the
+final whistle and the next goal logged both settle a scoreline that drifted. See
+[patterns.md](patterns.md).
 
 **`Game.IsComplete` decides whether a game counts towards statistics at all**: the final whistle
 went on the live screen, or the game was never run live and has a final score on file. A match in

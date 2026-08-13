@@ -8,10 +8,11 @@ using Microsoft.Extensions.Logging;
 namespace FootballFormation.Core.Services;
 
 /// <summary>
-/// Goals as they are logged at the touchline. Storage itself is delegated to
-/// <see cref="GameService"/> so there is one implementation of it; what this adds is the two things
-/// only a match in progress knows — the minute the clock showed when the ball went in, and the
-/// scoreline that follows from the goals now on file.
+/// Goals as they are logged at the touchline. What this adds is the one thing only a match in
+/// progress knows: the minute the clock showed when the ball went in. Storing the goal — and, at
+/// the touchline, recounting the scoreline in the same save — is delegated to
+/// <see cref="GameService"/>, so there is one implementation of it and the two rows are written
+/// together rather than across two contexts.
 /// </summary>
 public class MatchGoalService(
     IDbContextFactory<AppDbContext> dbFactory,
@@ -58,11 +59,7 @@ public class MatchGoalService(
                 IsOpponentGoal = isOpponentGoal
             };
 
-            var added = await games.AddGoalAsync(goal, cancellationToken);
-            if (added.IsFailure) return added;
-
-            await SyncScoreAsync(db, gameId, cancellationToken);
-            return added;
+            return await games.AddGoalAsync(goal, recountScoreline: true, cancellationToken);
         });
 
     /// <summary>Removes a goal and pulls the scoreline back in step with what is left.</summary>
@@ -71,24 +68,9 @@ public class MatchGoalService(
         LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "remove the goal",
             cancellationToken, async () =>
         {
-            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
-
-            var removed = await games.RemoveGoalAsync(goalId, cancellationToken);
+            var removed = await games.RemoveGoalAsync(goalId, recountScoreline: true, cancellationToken);
             if (removed.IsFailure) return removed.To<int>();
 
-            await SyncScoreAsync(db, gameId, cancellationToken);
             return Result.Success(gameId);
         });
-
-    /// <summary>Rewrites the scoreline from the logged goals, so the live score is never guessed at.</summary>
-    private static async Task SyncScoreAsync(AppDbContext db, int gameId, CancellationToken cancellationToken)
-    {
-        var game = await db.Games.FindAsync([gameId], cancellationToken);
-        if (game is null) return;
-
-        var goals = await db.GameGoals.Where(g => g.GameId == gameId).ToListAsync(cancellationToken);
-        game.ScoreHome = Game.CountOurGoals(goals);
-        game.ScoreAway = Game.CountTheirGoals(goals);
-        await db.SaveChangesAsync(cancellationToken);
-    }
 }
