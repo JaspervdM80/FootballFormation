@@ -149,10 +149,12 @@ public class MatchClockReportTests
 
     /// <summary>
     /// The whole point of the pair: a goal in first-half stoppage time and one just after the
-    /// restart are a minute apart, and a single number would have written them 32 and 31.
+    /// restart are a minute apart, and a single counted-on number would have written them 32 and
+    /// 31. Which of them came first is the elapsed clock's answer, not the pair's — the pair only
+    /// has to say something a scoreboard would.
     /// </summary>
     [Fact]
-    public void A_stoppage_time_minute_comes_before_the_first_minute_of_the_next_half()
+    public void A_stoppage_time_minute_stays_inside_the_half_it_was_played_in()
     {
         var game = QuartersGame();
         Period(game, PeriodType.FirstQuarter).StartedAtSeconds = 0;
@@ -162,8 +164,8 @@ public class MatchClockReportTests
         var afterTheBreak = MatchClockReport.Build(game, Period(game, PeriodType.ThirdQuarter), 32 * 60);
 
         Assert.Equal(new MatchMinute(30, 2), stoppage.Minute);
+        Assert.Equal("30+2", stoppage.Minute.ToString());
         Assert.Equal(new MatchMinute(31, 0), afterTheBreak.Minute);
-        Assert.True(stoppage.Minute.CompareTo(afterTheBreak.Minute) < 0);
     }
 
     [Fact]
@@ -199,12 +201,137 @@ public class MatchClockReportTests
         Assert.Equal(new MatchMinute(35, 0), MatchClockReport.MinuteOf(game, orphan));
     }
 
+    /// <summary>
+    /// A goal is placed the same way a substitution is, off its own half's clock — which is the
+    /// point of storing the pair on the row rather than the minute they produce.
+    /// </summary>
     [Fact]
-    public void A_goal_recorded_without_a_minute_has_none_to_show()
+    public void A_goal_is_written_against_the_clock_its_own_half_was_showing()
     {
-        Assert.Null(MatchClockReport.MinuteOf(new GameGoal()));
-        Assert.Equal(new MatchMinute(35, 2),
-            MatchClockReport.MinuteOf(new GameGoal { Minute = 35, AdditionalMinute = 2 }));
+        var game = QuartersGame();
+        Period(game, PeriodType.FirstQuarter).StartedAtSeconds = 0;
+        var secondHalf = Period(game, PeriodType.ThirdQuarter);
+        secondHalf.StartedAtSeconds = 32 * 60;
+        secondHalf.Id = 7;
+
+        var goal = new GameGoal { GamePeriodId = 7, AtSeconds = 34 * 60 };
+        Assert.Equal(new MatchMinute(33, 0), MatchClockReport.MinuteOf(game, goal));
+
+        // Played out and still going: the reading a scoreboard would show, not a counted-on 32.
+        var stoppage = new GameGoal { GamePeriodId = 7, AtSeconds = 63 * 60 };
+        Assert.Equal(new MatchMinute(60, 2), MatchClockReport.MinuteOf(game, stoppage));
+    }
+
+    /// <summary>
+    /// Correcting a half's timings corrects the goals scored in it. That is what deriving the
+    /// minute buys over storing it, and it is the whole reason the column moved.
+    /// </summary>
+    [Fact]
+    public void Moving_a_halfs_kick_off_moves_the_goals_scored_in_it()
+    {
+        var game = QuartersGame();
+        Period(game, PeriodType.FirstQuarter).StartedAtSeconds = 0;
+        var secondHalf = Period(game, PeriodType.ThirdQuarter);
+        secondHalf.Id = 7;
+        secondHalf.StartedAtSeconds = 32 * 60;
+
+        // Eight minutes into a second half whose clock starts at 30: the 39th minute.
+        var goal = new GameGoal { GamePeriodId = 7, AtSeconds = 40 * 60 };
+        Assert.Equal(new MatchMinute(39, 0), MatchClockReport.MinuteOf(game, goal));
+
+        // The half really kicked off three minutes later than recorded, so the goal moves back
+        // with it. A stored minute would have stayed where it was and disagreed with the
+        // substitutions around it.
+        secondHalf.StartedAtSeconds = 35 * 60;
+        Assert.Equal(new MatchMinute(36, 0), MatchClockReport.MinuteOf(game, goal));
+    }
+
+    [Fact]
+    public void A_goal_with_no_clock_behind_it_falls_back_to_the_minute_on_the_row()
+    {
+        var game = QuartersGame();
+
+        // Typed in on the result page, and every goal logged before the clock reading was stored.
+        Assert.Equal(new MatchMinute(35, 0),
+            MatchClockReport.MinuteOf(game, new GameGoal { Minute = 35 }));
+
+        // Neither one nor the other: the result page allows a goal with no minute at all.
+        Assert.Null(MatchClockReport.MinuteOf(game, new GameGoal()));
+    }
+
+    /// <summary>
+    /// The timeline orders on elapsed seconds, so a minute typed in by hand has to be converted
+    /// onto that scale rather than read as though it already were one. The two only agree while
+    /// the halves run to length: this first half is three minutes long, and from the restart the
+    /// scoreboard trails the elapsed clock by exactly that.
+    /// </summary>
+    [Fact]
+    public void A_typed_in_minute_is_converted_onto_the_elapsed_clock_through_its_half()
+    {
+        var game = QuartersGame();
+        Period(game, PeriodType.FirstQuarter).StartedAtSeconds = 0;
+        Period(game, PeriodType.ThirdQuarter).StartedAtSeconds = 33 * 60;
+
+        int Elapsed(int minute) => MatchClockReport.ElapsedOf(game, new GameGoal { Minute = minute });
+
+        // First half: the scoreboard is the elapsed clock, because it kicked off at zero.
+        Assert.Equal(0, Elapsed(1));
+        Assert.Equal(20 * 60, Elapsed(21));
+
+        // Second half: 31' is the first minute after a scoreboard restart at 30, which really
+        // happened at 33:00. Read as elapsed seconds it would have landed at 30:00 — before a goal
+        // scored in first-half stoppage time, and on the wrong side of the half-time rule.
+        Assert.Equal(33 * 60, Elapsed(31));
+        Assert.Equal(35 * 60, Elapsed(33));
+        Assert.Equal(PeriodType.SecondHalf, MatchClockReport.HalfOf(game, null, Elapsed(31)));
+
+        // The clock on the row always wins — it is the reading, not a reconstruction of one.
+        Assert.Equal(1234, MatchClockReport.ElapsedOf(game, new GameGoal { AtSeconds = 1234, Minute = 5 }));
+
+        // Nothing at all: the top of the match, which is where a goal with no minute has always sat.
+        Assert.Equal(0, MatchClockReport.ElapsedOf(game, new GameGoal()));
+    }
+
+    /// <summary>
+    /// A match nobody ran from the touchline has no timings to convert through, so the typed
+    /// minutes keep the only order they have — and go on reading exactly as they did before goals
+    /// carried a clock at all.
+    /// </summary>
+    [Fact]
+    public void Typed_in_minutes_stand_on_their_own_when_no_half_was_ever_kicked_off()
+    {
+        var game = QuartersGame();
+
+        Assert.Equal(0, MatchClockReport.ElapsedOf(game, new GameGoal { Minute = 1 }));
+        Assert.Equal(30 * 60, MatchClockReport.ElapsedOf(game, new GameGoal { Minute = 31 }));
+        Assert.Equal(59 * 60, MatchClockReport.ElapsedOf(game, new GameGoal { Minute = 60 }));
+    }
+
+    /// <summary>
+    /// Where the timeline draws half time. An event knows its own half; a goal typed in by hand
+    /// knows only a clock reading, and the second half's kick-off is the line it falls one side of.
+    /// </summary>
+    [Fact]
+    public void An_event_belongs_to_the_half_its_line_up_played_or_to_the_side_of_the_restart_it_falls()
+    {
+        var game = QuartersGame();
+        Period(game, PeriodType.FirstQuarter).StartedAtSeconds = 0;
+        var secondHalf = Period(game, PeriodType.ThirdQuarter);
+        secondHalf.Id = 7;
+        secondHalf.StartedAtSeconds = 32 * 60;
+
+        // Q4 is planned for the middle of the second half, and is still the second half.
+        var fourth = Period(game, PeriodType.FourthQuarter);
+        fourth.Id = 9;
+
+        Assert.Equal(PeriodType.SecondHalf, MatchClockReport.HalfOf(game, 7, 34 * 60));
+        Assert.Equal(PeriodType.SecondHalf, MatchClockReport.HalfOf(game, 9, 34 * 60));
+        Assert.Equal(PeriodType.FirstHalf, MatchClockReport.HalfOf(game, null, 31 * 60));
+        Assert.Equal(PeriodType.SecondHalf, MatchClockReport.HalfOf(game, null, 32 * 60));
+
+        // Nothing kicked off after the break, so there is no line to be the far side of.
+        secondHalf.StartedAtSeconds = null;
+        Assert.Equal(PeriodType.FirstHalf, MatchClockReport.HalfOf(game, null, 55 * 60));
     }
 
     [Fact]

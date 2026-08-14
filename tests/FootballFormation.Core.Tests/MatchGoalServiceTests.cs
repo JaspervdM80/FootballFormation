@@ -1,6 +1,7 @@
 using System.Data.Common;
 using FootballFormation.Core.Data;
 using FootballFormation.Core.Models;
+using FootballFormation.Core.Reporting;
 using FootballFormation.Core.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -9,34 +10,40 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace FootballFormation.Core.Tests;
 
 /// <summary>
-/// What logging a goal at the touchline adds over storing one: the minute it is stamped with, and
-/// the scoreline that has to follow from the goals on file.
+/// What logging a goal at the touchline adds over storing one: where in the match it happened —
+/// the half being played and the reading on the clock — and the scoreline that has to follow from
+/// the goals on file. The minute anyone sees is derived from that pair; these tests are about the
+/// pair being written, and <see cref="MatchClockReportTests"/> about what it is read back as.
 /// </summary>
 public class MatchGoalServiceTests : LiveMatchTestBase
 {
     [Fact]
-    public async Task A_goal_is_stamped_with_the_minute_the_clock_showed_counting_from_one()
+    public async Task A_goal_is_stamped_with_the_half_being_played_and_the_clock_it_was_scored_on()
     {
         var game = await SeedGameAsync();
         await MatchClock.StartMatchAsync(game.Id);
         var players = await PlayersAsync();
-
-        // Minute 0 reads oddly on a timeline, so the first minute of play is 1'.
-        var opening = await Goals.LogGoalAsync(game.Id, players[1].Id, null, false, false);
-        Assert.Equal(1, opening.Value!.Minute);
+        var firstHalf = (await ReloadAsync(game.Id)).Periods.Single(p => p.PeriodType == PeriodType.FirstHalf);
 
         Time.Advance(TimeSpan.FromSeconds(1500));   // 25:00
-        var later = await Goals.LogGoalAsync(game.Id, players[1].Id, null, false, false);
-        Assert.Equal(26, later.Value!.Minute);
+
+        var goal = await Goals.LogGoalAsync(game.Id, players[1].Id, null, false, false);
+
+        Assert.Equal(firstHalf.Id, goal.Value!.GamePeriodId);
+        Assert.Equal(1500, goal.Value.AtSeconds);
+
+        // Nothing presentational on the row: the minute is the clock's to derive, and stays null
+        // so that a half whose timings are corrected later takes its goals with it.
+        Assert.Null(goal.Value.Minute);
     }
 
     /// <summary>
-    /// The second half's clock starts at half the match however long the first half really took,
-    /// and the goal minute follows the clock — otherwise every second-half goal is pushed out by
-    /// the first half's overrun.
+    /// The half is recorded, not inferred from the clock reading. The two disagree the moment a
+    /// first half over-runs — this one is three minutes long past its 30 — and inferring is what
+    /// let a change to the match duration silently reinterpret goals already on file.
     /// </summary>
     [Fact]
-    public async Task A_second_half_goal_is_stamped_off_the_scoreboard_clock_not_the_elapsed_time()
+    public async Task A_second_half_goal_is_stamped_with_the_second_half_however_long_the_first_ran()
     {
         var game = await SeedGameAsync();
         await MatchClock.StartMatchAsync(game.Id);
@@ -50,16 +57,21 @@ public class MatchGoalServiceTests : LiveMatchTestBase
 
         var goal = await Goals.LogGoalAsync(game.Id, players[1].Id, null, false, false);
 
-        // 35:xx on the clock, so the 36th minute — not the 39th the raw elapsed time would give.
-        Assert.Equal(36, goal.Value!.Minute);
+        var reloaded = await ReloadAsync(game.Id);
+        var secondHalf = reloaded.Periods.Single(p => p.PeriodType == PeriodType.SecondHalf);
+        Assert.Equal(secondHalf.Id, goal.Value!.GamePeriodId);
+        Assert.Equal(38 * 60, goal.Value.AtSeconds);
+
+        // 35:xx on the scoreboard, so the 36th minute — not the 39th the raw elapsed time reads.
+        Assert.Equal(new MatchMinute(36, 0), MatchClockReport.MinuteOf(reloaded, goal.Value));
     }
 
     /// <summary>
-    /// A goal after the half has been played out is written 30+2, not 32. The two halves of the
-    /// minute are stored apart because that is what keeps it above the restart on the timeline.
+    /// A goal after the half has been played out belongs to that half, and is shown 30+2 rather
+    /// than 32. The clock reading runs on past the cap; only the display stops at it.
     /// </summary>
     [Fact]
-    public async Task A_goal_in_stoppage_time_is_stamped_with_the_minute_it_is_added_to()
+    public async Task A_goal_in_stoppage_time_belongs_to_the_half_that_is_over_running()
     {
         var game = await SeedGameAsync();
         await MatchClock.StartMatchAsync(game.Id);
@@ -69,8 +81,11 @@ public class MatchGoalServiceTests : LiveMatchTestBase
 
         var goal = await Goals.LogGoalAsync(game.Id, players[1].Id, null, false, false);
 
-        Assert.Equal(30, goal.Value!.Minute);
-        Assert.Equal(2, goal.Value.AdditionalMinute);
+        var reloaded = await ReloadAsync(game.Id);
+        Assert.Equal(PeriodType.FirstHalf,
+            reloaded.Periods.Single(p => p.Id == goal.Value!.GamePeriodId).PeriodType);
+        Assert.Equal(31 * 60, goal.Value!.AtSeconds);
+        Assert.Equal(new MatchMinute(30, 2), MatchClockReport.MinuteOf(reloaded, goal.Value));
     }
 
     [Fact]

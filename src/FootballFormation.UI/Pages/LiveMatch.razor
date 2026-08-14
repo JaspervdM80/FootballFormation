@@ -197,11 +197,19 @@
             <div class="live-timeline">
                 @foreach (var entry in Timeline)
                 {
+                    @* The list runs newest first, so the break lands between the second half's
+                       events and the first's — the only thing on the timeline that is not
+                       something somebody did. *@
+                    @if (entry.HalfTimeAbove)
+                    {
+                        <div class="live-event-break">@L["Half time"]</div>
+                    }
+
                     var against = entry.Goal is { } g && (g.IsOwnGoal || g.IsOpponentGoal);
                     <div class="live-event @(against ? "live-event-against" : "")">
-                        <span class="live-event-min">@(entry.Minute)'</span>
+                        <span class="live-event-min">@(entry.Minute is { } at ? $"{at}'" : "—")</span>
                         <MudIcon Size="Size.Small"
-                                 Icon="@(entry.IsGoal ? Icons.Material.Filled.SportsSoccer : Icons.Material.Filled.SwapHoriz)" />
+                                 Icon="@(entry.Goal is not null ? Icons.Material.Filled.SportsSoccer : Icons.Material.Filled.SwapHoriz)" />
                         <div class="live-event-body">
                             @if (entry.Goal is { } goal)
                             {

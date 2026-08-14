@@ -33,6 +33,7 @@ Every test class, so a gap here is visible rather than assumed:
 | **Authorization** | `AuthorizationTests` | That every write refuses a non-admin *at the service*, not only in the markup — the guard the whole write path rests on |
 | Accounts | `UserServiceTests`, `SeededAdminTests` | Credentials, security stamps, the last-admin guard, and the seeded account being no working login |
 | Boot safety | `DatabaseSafetyTests`, `HealthReportTests` | The pre-migration snapshot and what `/health` is allowed to call healthy |
+| Migrations that rewrite rows | `GoalClockBackfillTests` | The only migration with a backfill in it. Migrates a seeded database across the boundary and asserts what the app then *shows* — a goal written `30+2` still reads `30+2` — rather than what landed in a column. Every other migration is covered implicitly, because `ServiceTestBase` builds the schema from the model |
 | Service lifetime | `ServiceLifetimeTests` | Concurrent reads, and detached entities round-tripping through update |
 | `Result` | `ResultTests` | Error keys, arguments, the guard on reading a failed value, and that a cancellation stays one when carried between types |
 | Cancellation | `CancellationTests` | That a caller going away is an ordinary outcome and not a logged error — including that an `OperationCanceledException` nobody asked for still is one |
