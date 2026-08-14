@@ -13,18 +13,23 @@ namespace FootballFormation.UI.Pages;
 
 /// <summary>
 /// One entry on the match timeline — a goal or a substitution — so both can be listed together.
-/// <paramref name="Minute"/> is the scoreboard reading rather than the raw elapsed time, which is
-/// what keeps a first-half stoppage entry above the restart instead of below it.
-/// <paramref name="RecordedAt"/> orders events that share a minute, which the minute alone cannot.
+/// <paramref name="AtSeconds"/> is the elapsed match clock, which is what orders the list: it runs
+/// on across the break, so a first-half stoppage entry stays above the restart without anyone
+/// comparing scoreboard readings. <paramref name="Minute"/> is that reading, for display only, and
+/// null for a goal recorded without one.
+/// <paramref name="RecordedAt"/> orders events that share a second, which the clock alone cannot.
 /// <paramref name="Id"/> settles the rest: two entries of the same kind entered in one instant
 /// share a <paramref name="RecordedAt"/>, and rows older than that column all read
 /// <c>0001-01-01</c>. Across the two kinds the ids come from different tables, so a tie there is
 /// arbitrary — but it is stable, which is what the list needs.
+/// <paramref name="Half"/> is where the break falls; <paramref name="HalfTimeAbove"/> marks the one
+/// entry the break is drawn above, which only a neighbour can decide.
 /// <paramref name="Score"/> is the scoreline as it stood after a goal, and null for a substitution.
 /// </summary>
 public record MatchEvent(
-    MatchMinute Minute, DateTime RecordedAt, int Id, bool IsGoal, GameGoal? Goal,
-    GameSubstitution? Substitution, MatchScore? Score = null);
+    int AtSeconds, MatchMinute? Minute, PeriodType Half, DateTime RecordedAt, int Id,
+    GameGoal? Goal, GameSubstitution? Substitution, MatchScore? Score = null,
+    bool HalfTimeAbove = false);
 
 /// <summary>
 /// The sideline screen. An admin runs the clock and records what happens; everyone else sees the
@@ -258,20 +263,34 @@ public partial class LiveMatch
             var progression = ScoreProgressionReport.Build(GameData.Goals);
 
             var goals = GameData.Goals.Select(g => new MatchEvent(
-                MatchClockReport.MinuteOf(g) ?? default, g.RecordedAt, g.Id, true, g, null, progression[g.Id]));
+                g.TimelineSeconds,
+                MatchClockReport.MinuteOf(GameData, g),
+                MatchClockReport.HalfOf(GameData, g.GamePeriodId, g.TimelineSeconds),
+                g.RecordedAt, g.Id, g, null, progression[g.Id]));
             IEnumerable<MatchEvent> subs = ShowSubstitutions
                 ? GameData.Substitutions.Select(s => new MatchEvent(
-                    MatchClockReport.MinuteOf(GameData, s), s.RecordedAt, s.Id, false, null, s))
+                    s.AtSeconds,
+                    MatchClockReport.MinuteOf(GameData, s),
+                    MatchClockReport.HalfOf(GameData, s.GamePeriodId, s.AtSeconds),
+                    s.RecordedAt, s.Id, null, s))
                 : [];
 
-            // A goal and the sub that followed it commonly share a minute; the entry time keeps
+            // A goal and the sub that followed it commonly share a second; the entry time keeps
             // them in the order they actually happened rather than the order they were queried.
             // The id then settles a double substitution, so the entry this list shows on top is
             // the one MatchSubstitutionService.RemoveSubstitutionAsync will let an admin undo.
-            return [.. goals.Concat(subs)
-                .OrderByDescending(e => e.Minute)
+            var ordered = goals.Concat(subs)
+                .OrderByDescending(e => e.AtSeconds)
                 .ThenByDescending(e => e.RecordedAt)
-                .ThenByDescending(e => e.Id)];
+                .ThenByDescending(e => e.Id)
+                .ToList();
+
+            // Where the second half's events give way to the first's, reading down a list that
+            // runs newest first. Marked here because the markup renders one entry at a time and
+            // cannot see the one above it — and because the filter above decides who the
+            // neighbours are.
+            return [.. ordered.Select((e, i) =>
+                i > 0 && ordered[i - 1].Half != e.Half ? e with { HalfTimeAbove = true } : e)];
         }
     }
 

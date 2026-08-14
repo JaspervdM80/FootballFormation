@@ -12,7 +12,8 @@ Models/
   Game.cs                — Game entity (incl. SeasonId + live match clock/state), GameSplitType and MatchState enums
   GamePeriod.cs          — GamePeriod entity, PeriodType enum, PeriodTypeExtensions
   GamePlayerPosition.cs  — Links player to position in a period (IsSubstitute flag)
-  GameGoal.cs            — A goal: scorer (null for the opponent), assister, minute (+ stoppage), own/opponent flags
+  GameGoal.cs            — A goal: scorer (null for the opponent), assister, the half + clock reading it was
+                           scored at, own/opponent flags
   GameSubstitution.cs    — A timestamped change made during a live match
   MatchPreferences.cs    — Per-season game defaults (duration, split, formation, match day)
   GameComment.cs         — An admin's note on a game: body, public/private, author, edited marker
@@ -52,7 +53,8 @@ Reporting/
   PlayerStatsReport.cs    — Per-player aggregates (PlayerStats, PositionStat, PlayerGameStat)
   PositionFitHelper.cs    — 5-tier position fit: Preferred, NaturalFit, Alternative, Compatible, OutOfPosition
   MatchClockReport.cs     — Derives the live clock and the half's reading from the stored anchor +
-                           banked total, and the MatchMinute an event is written down against
+                           banked total, the MatchMinute an event is written down against, and the
+                           half it belongs to
   PlannedChangesReport.cs — What the plan for the middle of a half changes versus the line-up on the
                            pitch, minus the swaps play has already overtaken, for
                            UI/Components/PlannedChangesList

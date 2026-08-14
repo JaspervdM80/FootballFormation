@@ -145,14 +145,23 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   scoreboard's order — home side first. It is counted forwards over the whole match and looked up
   by goal id, because the timeline itself runs newest first and a total accumulated while rendering
   would count down.
-- **Events are written and ordered as `MatchMinute`, a pair — 35, or 35+2 in stoppage time.** The
-  minute alone cannot order them: once a half is played out the scoreboard clock stops, so a goal
-  two minutes into first-half stoppage and one just after the restart both read in the thirties and
-  a single counted-on number puts them the wrong way round. A goal stores both halves of the pair
-  (`GameGoal.Minute` + `AdditionalMinute`); a substitution derives its own from `AtSeconds` and the
-  half it belongs to (`MatchClockReport.MinuteOf`), so a second-half swap is written off the
-  scoreboard clock rather than the raw elapsed time. The timeline, the result page's goal list and
-  `ScoreProgressionReport` all sort on the pair, then `RecordedAt`, then the id.
+- **Events are shown as a `MatchMinute` — 35, or 35+2 in stoppage time — and ordered on the elapsed
+  match clock.** The two are different scales and that is the point: the scoreboard reading stops at
+  the end of the half, so a goal two minutes into first-half stoppage and one just after the restart
+  both read in the thirties, while the elapsed clock runs on across the break and puts them in the
+  order they happened without anyone comparing pairs. Neither kind of event stores the minute it
+  displays: a goal carries `GamePeriodId` + `AtSeconds` exactly as a substitution does, and
+  `MatchClockReport.MinuteOf` derives the reading from the half's own timings. The timeline, the
+  result page's goal list and `ScoreProgressionReport` all sort on elapsed seconds
+  (`GameGoal.TimelineSeconds` falls back to `Minute` for a goal typed in on `/result`), then
+  `RecordedAt`, then the id.
+- **Half time is a dashed rule across the timeline** (`.live-event-break`), not an event. The list
+  runs newest first, so it lands where the second half's entries give way to the first's;
+  `MatchClockReport.HalfOf` decides which side an entry is on, from its own line-up's half or —
+  for a goal typed in by hand — from which side of the second half's kick-off its clock reading
+  falls. `LiveMatch.Timeline` marks the one entry it is drawn above, because the markup renders an
+  entry at a time and cannot see its neighbour, and because the substitutions filter decides who
+  the neighbours are.
 - A **"Show substitutions" checkbox** (`.live-timeline-toggle`) drops the substitutions from the
   timeline and leaves the goals: a rotated squad buries the goals among swaps nobody is scrolling
   back for. The state is per circuit and deliberately not stored.

@@ -14,19 +14,27 @@ public class GameGoal
     public Player? Assister { get; set; }
 
     /// <summary>
-    /// The minute on the scoreboard clock, which never runs past the end of the half — the overrun
-    /// is <see cref="AdditionalMinute"/>. Null on a goal recorded with no minute at all, which the
-    /// result page allows.
+    /// The half that was being played when the ball went in, as the line-up playing it — the same
+    /// fact <see cref="GameSubstitution.GamePeriodId"/> carries. Null for a goal typed in on the
+    /// result page, which has no half behind it.
     /// </summary>
-    public int? Minute { get; set; }
+    public int? GamePeriodId { get; set; }
+    public GamePeriod? GamePeriod { get; set; }
 
     /// <summary>
-    /// Minutes into stoppage time, counted from 1, or zero for a goal in normal play. Stored beside
-    /// the minute rather than added into it because the two together are what orders the timeline:
-    /// a goal at 35+2 belongs before one at 36, and a single number that had counted on to 37 would
-    /// put it after. Always zero on a goal typed in by hand, which has no clock behind it.
+    /// Match-clock second the ball went in, from the same clock a substitution is stamped from.
+    /// Null for a goal typed in by hand. With <see cref="GamePeriodId"/> it is everything the
+    /// displayed minute is derived from, so correcting a half's timings corrects its goals too.
     /// </summary>
-    public int AdditionalMinute { get; set; }
+    public int? AtSeconds { get; set; }
+
+    /// <summary>
+    /// The minute somebody typed in on the result page, where there is no clock to read. Also what
+    /// a goal logged before this row carried a clock still shows: those rows have no
+    /// <see cref="AtSeconds"/> and were never backfilled, because nothing left in one says whether
+    /// a 37 in a 35-minute half was stoppage time or a number typed in by hand.
+    /// </summary>
+    public int? Minute { get; set; }
 
     /// <summary>One of ours put it in our own net. Counts for the opponent.</summary>
     public bool IsOwnGoal { get; set; }
@@ -48,4 +56,14 @@ public class GameGoal
     /// <c>ScoreProgressionReport</c> walks them one at a time for the live timeline.
     /// </summary>
     public bool CountsForUs => !IsOwnGoal && !IsOpponentGoal;
+
+    /// <summary>
+    /// Where this goal sits on the match timeline, as elapsed seconds — the one scale goals and
+    /// substitutions can be ordered on together, and the reason the timeline no longer compares
+    /// scoreboard minutes in pairs. <see cref="AtSeconds"/> when there is one; otherwise the start
+    /// of the minute typed in, which is the best a row with no clock behind it offers. Zero for a
+    /// goal with neither, which puts it at the top of the match rather than nowhere.
+    /// </summary>
+    public int TimelineSeconds =>
+        AtSeconds ?? (Minute is { } minute ? Math.Max(0, (minute - 1) * 60) : 0);
 }

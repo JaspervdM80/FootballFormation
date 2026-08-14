@@ -74,14 +74,15 @@
         @if (GameData.Goals.Count > 0)
         {
             <div class="goal-timeline">
-                @* Both halves of the minute, so a goal in first-half stoppage time keeps its place
-                   above the restart rather than sorting past it — see MatchMinute. *@
-                @foreach (var goal in GameData.Goals.OrderBy(g => MatchClockReport.MinuteOf(g) ?? default))
+                @* Ordered on the elapsed match clock, which runs on across the break, so a goal in
+                   first-half stoppage time keeps its place above the restart rather than sorting
+                   past it — see GameGoal.TimelineSeconds. *@
+                @foreach (var goal in GameData.Goals.OrderBy(g => g.TimelineSeconds))
                 {
                     @* Own goals and opponent goals both count against us, so they share the styling. *@
                     <div class="goal-entry @(goal.IsOwnGoal || goal.IsOpponentGoal ? "own-goal" : "")">
                         <span class="goal-time">
-                            @(MatchClockReport.MinuteOf(goal) is { } at ? $"{at}'" : "—")
+                            @(MatchClockReport.MinuteOf(GameData, goal) is { } at ? $"{at}'" : "—")
                         </span>
                         <div class="goal-info">
                             <div class="goal-player">

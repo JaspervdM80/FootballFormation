@@ -239,6 +239,44 @@ test('the timeline can be narrowed to the goals', async ({ page }) => {
   await expect(page.locator('.live-bench')).toBeVisible();
 });
 
+test('the timeline draws half time between the two halves', async ({ page }) => {
+  const id = await matchWithId(page, 'FC Rust');
+  await fillLineup(page, 2);
+
+  await goto(page, `/games/${id}/live`);
+  await clickFor(
+    page.getByRole('button', { name: 'Start match' }),
+    () => expect(page.getByRole('button', { name: 'Finish match' })).toBeVisible(),
+  );
+
+  const events = page.locator('.live-event');
+  const halfTime = page.locator('.live-event-break');
+
+  // One goal in each half. Until the second one there is only one half on the list, and a break
+  // above the only thing on it would be a line drawn through nothing.
+  await clickFor(page.getByRole('button', { name: 'Goal against' }), () => expect(events).toHaveCount(1));
+  await expect(halfTime).toHaveCount(0);
+
+  const controls = page.locator('.live-controls');
+  await clickFor(
+    controls.getByRole('button', { name: 'Half time' }),
+    () => expect(controls.getByRole('button', { name: 'Start 2nd Half' })).toBeVisible(),
+  );
+  await clickFor(
+    controls.getByRole('button', { name: 'Start 2nd Half' }),
+    () => expect(controls.getByRole('button', { name: 'Half time' })).toHaveCount(0),
+  );
+
+  await clickFor(page.getByRole('button', { name: 'Goal against' }), () => expect(events).toHaveCount(2));
+
+  // Exactly one break, and it sits between the two — the list runs newest first, so the second
+  // half's goal is above it and the first half's below.
+  await expect(halfTime).toHaveCount(1);
+  await expect(halfTime).toHaveText('Half time');
+  await expect(page.locator('.live-timeline > *')).toHaveCount(3);
+  await expect(page.locator('.live-timeline > *').nth(1)).toHaveClass(/live-event-break/);
+});
+
 test('the playing-time table drops its estimate once the match has been run', async ({ page }) => {
   const id = await matchWithId(page, 'FC Speeltijd');
   await fillLineup(page, 2);

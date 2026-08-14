@@ -373,13 +373,16 @@ Avoid repeating these mistakes:
   it. Q2 and Q4 reach the touchline only as `Game.MidHalfPlan()`, behind the live screen's
   `Changes (n)` pop-up. Do not "fix" a Q2 with no timings, and do not read `PeriodCount` as a count
   of stages the clock stops for.
-- **A goal's minute is not one number.** `GameGoal.Minute` stops at the end of the half and
-  `AdditionalMinute` counts the overrun beside it, because the two together are what orders a
-  timeline: counted on into a single number, a goal at 35+2 reads 37 and sorts after a goal in the
-  36th minute of the second half, which happened a minute later. Rows written before the split have
-  `AdditionalMinute = 0` and keep whatever number they were given — the migration deliberately does
-  not backfill, because nothing left in the row says whether a 37 was stoppage time or typed in by
-  hand.
+- **A goal's minute is derived, not stored — and two goals in the same table are placed by
+  different columns.** A goal logged from `/live` carries `GamePeriodId` and `AtSeconds`, the same
+  pair a substitution carries, and the minute anyone sees comes out of `MatchClockReport.MinuteOf`.
+  A goal typed in on `/result` has neither and falls back to `Minute`. So do all the goals logged
+  before `StoreGoalPeriodAndClock`: that migration deliberately does not backfill, because nothing
+  left in an old row says which half a stored `37` belonged to or whether it was stoppage time. The
+  trap is reading `Minute` directly and finding it null on a live match, or assuming a row that has
+  one was typed in by hand. Sort with `GameGoal.TimelineSeconds`, which covers both, and never
+  reinstate the previous shape — a minute frozen on the row moved under stored data whenever
+  `GameDurationMinutes` changed, and could not be corrected when a half's timings were.
 
 ## Authentication
 - **`ExpireTimeSpan` does not keep anyone signed in — `IsPersistent` does.** `SignInAsync` without

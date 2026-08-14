@@ -10,13 +10,13 @@ namespace FootballFormation.Core.Tests;
 /// </summary>
 public class ScoreProgressionReportTests
 {
+    /// <summary>A goal off the touchline, placed by the elapsed match clock it was logged at.</summary>
     private static GameGoal Goal(
-        int id, int minute, int additional = 0, bool ownGoal = false, bool opponentGoal = false) =>
+        int id, int minute, bool ownGoal = false, bool opponentGoal = false) =>
         new()
         {
             Id = id,
-            Minute = minute,
-            AdditionalMinute = additional,
+            AtSeconds = (minute - 1) * 60,
             IsOwnGoal = ownGoal,
             IsOpponentGoal = opponentGoal,
             RecordedAt = new DateTime(2026, 8, 11, 14, 0, minute, DateTimeKind.Utc)
@@ -89,20 +89,38 @@ public class ScoreProgressionReportTests
 
     /// <summary>
     /// A goal in first-half stoppage time was scored before one just after the restart, and the
-    /// running total has to follow that — a minute counted straight on would have made 30+2 read
-    /// as 32 and put it after the 31st minute of the second half.
+    /// running total follows that without anyone comparing scoreboard readings — the elapsed clock
+    /// runs on across the break, where the scoreboard reads 30+2 and then 31 all over again.
     /// </summary>
     [Fact]
     public void A_stoppage_time_goal_is_counted_inside_the_half_it_was_scored_in()
     {
-        var stoppage = Goal(1, 30, additional: 2);
-        var afterTheBreak = Goal(2, 31, opponentGoal: true);
+        // Two minutes past a 30-minute half, then a minute into a second half that kicked off at 32.
+        var stoppage = Goal(1, 32);
+        var afterTheBreak = Goal(2, 33, opponentGoal: true);
         afterTheBreak.RecordedAt = stoppage.RecordedAt.AddMinutes(16);
 
         var progression = ScoreProgressionReport.Build([afterTheBreak, stoppage]);
 
         Assert.Equal(new MatchScore(1, 0), progression[1]);
         Assert.Equal(new MatchScore(1, 1), progression[2]);
+    }
+
+    /// <summary>
+    /// A goal typed in on the result page has no clock behind it, so the minute on the row is what
+    /// places it — which is the only thing keeping goals recorded before the clock was stored in
+    /// the order they have always had.
+    /// </summary>
+    [Fact]
+    public void A_goal_with_only_a_minute_is_counted_in_that_minute()
+    {
+        var typedIn = new GameGoal { Id = 1, Minute = 40 };
+        var logged = Goal(2, 10, opponentGoal: true);
+
+        var progression = ScoreProgressionReport.Build([typedIn, logged]);
+
+        Assert.Equal(new MatchScore(0, 1), progression[2]);
+        Assert.Equal(new MatchScore(1, 1), progression[1]);
     }
 
     [Fact]

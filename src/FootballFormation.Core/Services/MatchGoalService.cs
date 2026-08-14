@@ -1,6 +1,5 @@
 using FootballFormation.Core.Data;
 using FootballFormation.Core.Models;
-using FootballFormation.Core.Reporting;
 using FootballFormation.Core.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -9,7 +8,8 @@ namespace FootballFormation.Core.Services;
 
 /// <summary>
 /// Goals as they are logged at the touchline. What this adds is the one thing only a match in
-/// progress knows: the minute the clock showed when the ball went in. Storing the goal — and, at
+/// progress knows: where in the match the ball went in — the half being played and the reading on
+/// the clock, the same pair a substitution carries. Storing the goal — and, at
 /// the touchline, recounting the scoreline in the same save — is delegated to
 /// <see cref="GameService"/>, so there is one implementation of it and the two rows are written
 /// together rather than across two contexts.
@@ -34,27 +34,23 @@ public class MatchGoalService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            // Line-ups included: the minute follows the scoreboard clock, which is measured from
-            // the half being played rather than from kick-off.
+            // Line-ups included: the half being played is half of what places the goal.
             var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
             if (game is null) return LiveMatchQueries.GameNotFound<GameGoal>(gameId);
 
             if (scorerId is null && !isOpponentGoal)
                 return Result.Failure<GameGoal>("A goal for us needs a scorer");
 
-            var clock = MatchClockReport.Build(
-                game, game.CurrentOrLastHalf(), game.ElapsedSecondsAt(UtcNow));
-
             var goal = new GameGoal
             {
                 GameId = gameId,
                 ScorerId = scorerId,
                 AssisterId = assisterId,
-                // The minute the clock showed, so an over-running first half does not push every
-                // second-half goal out by the overrun. Stoppage time is kept in the second half of
-                // the pair — see GameGoal.AdditionalMinute for why it is not folded into the first.
-                Minute = clock.Minute.Minute,
-                AdditionalMinute = clock.Minute.Additional,
+                // Where it happened, not what a scoreboard made of it. The displayed minute is
+                // derived from these two, so a half whose timings are corrected later takes its
+                // goals with it — exactly as it already does its substitutions.
+                GamePeriodId = game.CurrentOrLastHalf()?.Id,
+                AtSeconds = game.ElapsedSecondsAt(UtcNow),
                 IsOwnGoal = isOwnGoal,
                 IsOpponentGoal = isOpponentGoal
             };

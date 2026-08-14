@@ -25,11 +25,12 @@ public static class ScoreProgressionReport
         var us = 0;
         var them = 0;
 
-        // The order the live screen shows events in, read forwards: the match minute first — both
-        // halves of it, so a stoppage-time goal stays inside the half it was scored in — then the
-        // moment it was entered, then the id. See LiveMatch.Timeline for why all three.
+        // The order the live screen shows events in, read forwards: the elapsed match clock first,
+        // which runs on across the break and so keeps a stoppage-time goal inside the half it was
+        // scored in, then the moment it was entered, then the id. See LiveMatch.Timeline for why
+        // all three.
         var chronological = goals
-            .OrderBy(g => MatchClockReport.MinuteOf(g) ?? default)
+            .OrderBy(g => g.TimelineSeconds)
             .ThenBy(g => g.RecordedAt)
             .ThenBy(g => g.Id);
 

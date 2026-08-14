@@ -213,8 +213,9 @@ bench, never both and never twice.
 | GameId | int | FK → Game (cascade delete) |
 | ScorerId | int? | FK → Player, **SetNull**. Null for an opponent goal — we don't track their players |
 | AssisterId | int? | FK → Player, SetNull |
-| Minute | int? | Free-typed on `/result`; stamped from the scoreboard clock on `/live`, and never past the end of the half |
-| AdditionalMinute | int | Minutes into stoppage time, from 1; 0 in normal play. Stored apart from `Minute` so 35+2 sorts before 36 — see `MatchMinute` |
+| GamePeriodId | int? | FK → GamePeriod (cascade delete). The half that was being played. Null for a goal typed in on `/result` |
+| AtSeconds | int? | Match-clock second the ball went in. Null for the same reason |
+| Minute | int? | Free-typed on `/result`, and the fallback for goals logged before `AtSeconds` existed. Not written by `/live` any more |
 | IsOwnGoal | bool | One of ours into our own net. Counts for the opponent |
 | IsOpponentGoal | bool | The opponent scored. Counts for them, and has no scorer |
 | RecordedAt | DateTime | UTC entry time — orders events that share a minute |
@@ -231,18 +232,21 @@ bench, never both and never twice.
 | Position | PlayerPosition | The position that changed hands |
 | RecordedAt | DateTime | UTC entry time — orders events that share a minute |
 
-A substitution has no stored minute: `MatchClockReport.MinuteOf` derives it from `AtSeconds` and
-the half the change belongs to, so it reads off the same scoreboard clock a goal was stamped from
-rather than the raw elapsed time. A goal cannot be derived that way — one typed in on `/result` has
-no clock behind it at all — which is why its minute is stored, both halves of it.
+**Neither kind of event stores the minute it is shown against.** Both store where they happened —
+the half, and the reading on the match clock — and `MatchClockReport.MinuteOf` derives the minute
+from that pair, so the two kinds read off one code path and correcting a half's `StartedAtSeconds`
+corrects the goals in it as well as the substitutions. A goal typed in on `/result` has no clock
+behind it and falls back to `Minute`; a goal with neither shows no minute at all, which the result
+page allows.
 
-`RecordedAt` exists on both `GameGoal` and `GameSubstitution` because the minute alone cannot order
-a timeline: a goal and the substitution that followed it routinely share one, and several events in
-the opening minute is the normal case, not the edge case. The live timeline sorts by minute, then by
-`RecordedAt`, then by `Id`, all descending. Rows written before the column existed default to
-`0001-01-01`, and two changes entered in one instant share it, so `RecordedAt` cannot settle a
-double substitution on its own — the id is the last word, and it is the same one
-`RemoveSubstitutionAsync` uses, so the entry the timeline puts on top is the entry whose Undo works.
+`RecordedAt` exists on both `GameGoal` and `GameSubstitution` because the clock alone cannot order
+a timeline: a goal and the substitution that followed it routinely share a second, and several
+events in the opening minute is the normal case, not the edge case. The live timeline sorts by
+elapsed seconds (`GameGoal.TimelineSeconds`, `GameSubstitution.AtSeconds`), then by `RecordedAt`,
+then by `Id`, all descending. Rows written before the column existed default to `0001-01-01`, and
+two changes entered in one instant share it, so `RecordedAt` cannot settle a double substitution on
+its own — the id is the last word, and it is the same one `RemoveSubstitutionAsync` uses, so the
+entry the timeline puts on top is the entry whose Undo works.
 Ids from the two tables are not comparable with each other, so a goal and a substitution that tie on
 both minute and `RecordedAt` keep an arbitrary (but stable) order.
 
@@ -374,6 +378,8 @@ runs on every startup and does nothing once any account exists, so a changed pas
 Season 1──* Game 1──* GamePeriod 1──* GamePlayerPosition *──1 Player
 Season 1──* SeasonSquadMember *──1 Player
 Game 1──* GameGoal *──1 Player (scorer, assister — both SetNull)
+GamePeriod 1──* GameGoal (the half it was scored in — nullable, cascade)
+GamePeriod 1──* GameSubstitution (the half it was made in — cascade)
 Game 1──* GameSubstitution *──1 Player (off, on — both Restrict)
 Game 1──* GameComment *──1 AppUser (author — SetNull)
 ```
