@@ -377,13 +377,19 @@ Avoid repeating these mistakes:
   different columns.** A goal logged from `/live` carries `GamePeriodId` and `AtSeconds`, the same
   pair a substitution carries, and the minute anyone sees comes out of `MatchClockReport.MinuteOf`.
   A goal typed in on `/result` has neither and falls back to `Minute`. So do all the goals logged
-  before `StoreGoalPeriodAndClock`: that migration deliberately does not backfill, because nothing
-  left in an old row says which half a stored `37` belonged to. The trap is reading `Minute`
-  directly and finding it null on a live match, or assuming a row that has one was typed in by
-  hand. Never reinstate the previous shape — a minute frozen on the row moved under stored data
-  whenever `GameDurationMinutes` changed, and could not be corrected when a half's timings were.
-  The same migration dropped `AdditionalMinute`, so a goal logged in stoppage time during the day
-  that column existed now shows the capped minute (`30'`, not `30+2`); it sorts where it always did.
+  before `StoreGoalPeriodAndClock` that were not scored in stoppage time: that migration backfills
+  only what an old row states outright, and a plain minute does not say which half it belonged to.
+  The trap is reading `Minute` directly and finding it null on a live match, or assuming a row that
+  has one was typed in by hand. Never reinstate the previous shape — a minute frozen on the row
+  moved under stored data whenever `GameDurationMinutes` changed, and could not be corrected when a
+  half's timings were.
+  The same migration dropped `AdditionalMinute`, but **backfilled the rows that carried one first**:
+  an overrun on a row says outright that it was stoppage time, so the half follows from the minute
+  and the clock reading from that half's kick-off, and those goals still read `30+2` afterwards.
+  `32` would be the 32nd minute — two minutes into a second half — which is a different moment.
+  Rows with `AdditionalMinute = 0` were left alone, because a stored `37` could equally be a minute
+  typed in by hand. `GoalClockBackfillTests` migrates a database across that boundary and asserts
+  what the app then shows.
 - **A stored `Minute` is a scoreboard reading, and the timeline is ordered on elapsed seconds — do
   not mix the two.** They agree only while the halves run to length. On a match whose first half
   was whistled off three minutes long, the scoreboard's 31' is 33 minutes of elapsed play, so

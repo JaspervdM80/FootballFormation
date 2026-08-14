@@ -34,9 +34,10 @@ public class GameGoal
 
     /// <summary>
     /// The minute somebody typed in on the result page, where there is no clock to read. Also what
-    /// a goal logged before this row carried a clock still shows: those rows have no
-    /// <see cref="AtSeconds"/> and were never backfilled, because nothing left in one says whether
-    /// a 37 in a 35-minute half was stoppage time or a number typed in by hand.
+    /// a goal logged before this row carried a clock still shows, unless it was scored in stoppage
+    /// time — those said so on the row and were moved onto the clock by <c>StoreGoalPeriodAndClock</c>.
+    /// The rest keep only this, because nothing left in one says whether a 37 in a 35-minute half
+    /// was stoppage time or a number typed in by hand.
     /// </summary>
     public int? Minute { get; set; }
 

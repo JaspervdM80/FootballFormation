@@ -215,7 +215,7 @@ bench, never both and never twice.
 | AssisterId | int? | FK → Player, SetNull |
 | GamePeriodId | int? | FK → GamePeriod (cascade delete). The half that was being played. Null for a goal typed in on `/result` |
 | AtSeconds | int? | Match-clock second the ball went in. Null for the same reason |
-| Minute | int? | Free-typed on `/result`, and the fallback for goals logged before `AtSeconds` existed. Not written by `/live` any more |
+| Minute | int? | Free-typed on `/result`, and the fallback for goals logged before `AtSeconds` existed. Not written by `/live` any more. A scoreboard reading, not elapsed time — convert with `MatchClockReport.ElapsedOf` before ordering on it |
 | IsOwnGoal | bool | One of ours into our own net. Counts for the opponent |
 | IsOpponentGoal | bool | The opponent scored. Counts for them, and has no scorer |
 | RecordedAt | DateTime | UTC entry time — orders events that share a minute |
