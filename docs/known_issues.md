@@ -407,6 +407,22 @@ Avoid repeating these mistakes:
 - **These three are browser decisions, so no C# test can see them.** All three are pinned in
   `tests/ui/specs/session.spec.js`, which reads the cookie's attributes after a real form sign-in
   and follows a link into the app from another site.
+- **`OnValidatePrincipal` is not what revokes a Blazor Server session.** It runs per HTTP request,
+  and a circuit makes almost none after its first page load — the rest of the session is SignalR.
+  The stock `ServerAuthenticationStateProvider` reads the principal once when the circuit is created
+  and never asks again, so deleting an account left the owner's open tab fully working. Measured,
+  not assumed: with revalidation off, an account deleted while its owner sat idle on `/users` still
+  rendered the Add User button. And this is not only a markup problem — `CircuitCurrentUser` reads
+  that same provider, so `RunAdminAsync` was consulting the stale principal too.
+  `RevalidatingUserAuthenticationStateProvider` closes it on a timer.
+- **A rejoin does not carry stale authority through, so the retained-circuit window does not widen
+  the gap.** Worth knowing before reasoning about `DisconnectedCircuitRetentionPeriod` as if it did.
+  With a revoked cookie, a dropped circuit does not come back: the reconnect fails and Blazor's
+  client falls back to a full page reload, which is an HTTP request, which is
+  `OnValidatePrincipal` — landing on `/login`. Probed both ways round, blocking `_blazor/negotiate`
+  to force the give-up path and leaving it open for a clean rejoin; both reloaded, while
+  `reconnect.spec.js` shows a *valid* cookie rejoining cleanly and staying live. So the stale window
+  is the revalidation interval on a connected idle circuit, and nothing more.
 
 ## General
 - **Port already in use**: Kill orphaned process with `taskkill //PID <pid> //F`.

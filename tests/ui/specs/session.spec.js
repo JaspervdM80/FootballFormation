@@ -1,14 +1,19 @@
-// Staying signed in — the part of authentication that only a real browser can answer for.
+// Staying signed in — the parts of authentication only a real browser can answer for.
 //
-// Everything here is about the cookie itself rather than what it unlocks: whether the browser is
-// told to keep it, and whether it agrees to send it back. Both were wrong in ways no C# test could
-// see, because both are decisions the *browser* makes from the attributes on the Set-Cookie header.
+// Two things live here. The cookie's own attributes, which decide whether the browser keeps it and
+// whether it agrees to send it back; and the circuit's revalidation loop, which is what takes
+// authority away from someone who is already looking at the app. No C# test can see either: the
+// first is the browser reading Set-Cookie, and the second only happens over a live SignalR circuit.
 import { test, expect } from '../fixtures.js';
 import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
 import { ADMIN_PASSWORD, ADMIN_USERNAME } from '../global-setup.js';
-import { goto } from '../helpers.js';
+import { clickFor, confirmDialog, fillField, goto, openDialog, submitDialog } from '../helpers.js';
 
 const AUTH_COOKIE = 'ff.auth';
+
+/** One account's row in the users table. */
+const userRow = (page, username) =>
+  page.locator('.users-table .mud-table-body .mud-table-row', { hasText: username }).first();
 
 /**
  * Signs in through the form a person actually uses — /dev/login mints the same principal, but only
@@ -21,10 +26,10 @@ const AUTH_COOKIE = 'ff.auth';
  * intermittently, because whether the re-render lands between the fill and the click depends on how
  * busy the machine is. Waiting for handlers puts the typing after that render instead.
  */
-async function signInThroughTheForm(page) {
+async function signInThroughTheForm(page, username = ADMIN_USERNAME, password = ADMIN_PASSWORD) {
   await goto(page, '/login');
-  await page.fill('input[name="username"]', ADMIN_USERNAME);
-  await page.fill('input[name="password"]', ADMIN_PASSWORD);
+  await page.fill('input[name="username"]', username);
+  await page.fill('input[name="password"]', password);
   await page.click('button[type="submit"]');
 
   // Asserted rather than waited on: a refused sign-in comes back to /login?error=true, which is
@@ -82,6 +87,60 @@ test.describe('an admin who is already signed in', () => {
     await expect(page).toHaveURL(/\/settings$/);
     await expect(page.getByRole('heading', { name: 'Match Preferences', exact: false }).first())
       .toBeVisible();
+  });
+});
+
+// The circuit half of revocation. A Blazor Server tab makes almost no HTTP requests after its first
+// page load, so `OnValidatePrincipal` — which runs per request — is not what takes authority away
+// from someone already looking at the app. That is the revalidation loop, and this is the only place
+// it is exercised: `Auth__RevalidationIntervalSeconds` is two seconds here against five minutes in
+// production (see playwright.config.js).
+test.describe('an account revoked while its owner is looking at the app', () => {
+  test('loses its authority without anyone reloading anything', async ({ page, browser }) => {
+    // Named per attempt, not per test: Playwright's CI retry re-runs this against the database the
+    // failed attempt left behind, and a username is unique — a fixed one would fail the retry on
+    // "already exists" rather than on whatever went wrong. See known_issues.md.
+    const username = `revoked-${Date.now()}`;
+    const password = 'revoked-admin-1';
+
+    await goto(page, '/users');
+    await clickFor(
+      page.getByRole('button', { name: 'Add User' }),
+      () => expect(page.locator('.mud-dialog')).toBeVisible());
+
+    const dialog = await openDialog(page);
+    await fillField(dialog, 'Name', 'Revoked Admin');
+    await fillField(dialog, 'Username', username);
+    await dialog.getByLabel('Password', { exact: false }).first().fill(password);
+    await dialog.getByLabel('Confirm password', { exact: false }).first().fill(password);
+    await submitDialog(page);
+    await expect(userRow(page, username)).toBeVisible();
+
+    // A second browser, signed in as that account and sitting on an admin page.
+    const theirContext = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
+    try {
+      const theirPage = await theirContext.newPage();
+      await signInThroughTheForm(theirPage, username, password);
+
+      await goto(theirPage, '/users');
+      await expect(theirPage.getByRole('heading', { name: 'Users', exact: false }).first()).toBeVisible();
+
+      // Delete the account from the first browser. Nothing in the second one makes a request
+      // through any of this — its circuit is open and idle, which is the whole scenario.
+      await goto(page, '/users');
+      const menu = userRow(page, username).locator('.mud-menu button').first();
+      const entry = page.locator('.mud-popover-open').getByText('Delete User', { exact: true });
+      await clickFor(menu, () => expect(entry).toBeVisible());
+      await entry.click();
+      await confirmDialog(page, 'Delete');
+      await expect(userRow(page, username)).toHaveCount(0);
+
+      // The circuit notices on its own and RedirectToLogin force-loads — which is also the request
+      // that finally clears the cookie, since a circuit has no response to clear it on.
+      await theirPage.waitForURL(/\/login/, { timeout: 30_000 });
+    } finally {
+      await theirContext.close();
+    }
   });
 });
 

@@ -11,8 +11,10 @@ using FootballFormation.UI.Navigation;
 using FootballFormation.UI.Security;
 using FootballFormation.UI.State;
 using FootballFormation.Web.Components;
+using FootballFormation.Web.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -155,23 +157,18 @@ try
                 : CookieSecurePolicy.Always;
 
             // A cookie is good for a fortnight, but the authority it carries is not: deleting an
-            // account or changing its role has to take effect now, not whenever the cookie lapses.
-            // The longer the cookie lives, the more this is the thing actually holding the line.
+            // account or resetting its password has to take effect now, not whenever the cookie
+            // lapses. The longer the cookie lives, the more this is the thing holding the line.
             // Every account carries a security stamp that changes when its authority does; the
             // cookie carries the stamp as it was at sign-in, and this compares the two.
+            //
+            // This runs per HTTP request, which a Blazor Server tab makes very few of — see
+            // RevalidatingUserAuthenticationStateProvider for the half that covers the circuit.
             options.Events.OnValidatePrincipal = async context =>
             {
-                var principal = context.Principal;
-                var stamp = principal?.FindFirst(AppClaims.SecurityStamp)?.Value;
-                var userId = principal?.FindFirst(AppClaims.UserId)?.Value;
-
-                // Cookies issued before this feature shipped carry neither claim. Reject them
-                // rather than trusting them — the only cost is one extra sign-in.
-                if (stamp is not null && int.TryParse(userId, out var id))
-                {
-                    var users = context.HttpContext.RequestServices.GetRequiredService<UserService>();
-                    if (await users.FindForSessionAsync(id, stamp, context.HttpContext.RequestAborted) is not null) return;
-                }
+                var users = context.HttpContext.RequestServices.GetRequiredService<UserService>();
+                if (await users.FindForSessionAsync(context.Principal, context.HttpContext.RequestAborted) is not null)
+                    return;
 
                 context.RejectPrincipal();
                 await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -179,6 +176,29 @@ try
         });
     builder.Services.AddAuthorization();
     builder.Services.AddCascadingAuthenticationState();
+
+    // Replaces the stock ServerAuthenticationStateProvider, which reads the principal once when the
+    // circuit is created and never asks again. Registered after AddInteractiveServerComponents so
+    // this wins; it derives from ServerAuthenticationStateProvider, which is what lets the circuit
+    // still hand it the initial state.
+    //
+    // Five minutes by default: one indexed read by primary key per signed-in circuit, and only for
+    // signed-in ones — the loop does not start for an anonymous visitor, which is most of this
+    // app's traffic. Configurable because the UI tests need it to fire inside a test's lifetime,
+    // and because "how stale may authority be" is an operational question, not a constant.
+    //
+    // Zero leaves the stock provider in place, which is the pre-revalidation behaviour. It exists
+    // so the UI test for this can be run against an app without it and actually go red — a test
+    // that cannot fail is not evidence. It is not a setting to reach for in production.
+    var revalidationInterval = TimeSpan.FromSeconds(
+        builder.Configuration.GetValue("Auth:RevalidationIntervalSeconds", 300));
+
+    if (revalidationInterval > TimeSpan.Zero)
+        builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
+            new RevalidatingUserAuthenticationStateProvider(
+                sp.GetRequiredService<ILoggerFactory>(),
+                sp.GetRequiredService<IServiceScopeFactory>(),
+                revalidationInterval));
 
     // Rate limit login attempts: 5 per minute per IP, then queue/reject
     builder.Services.AddRateLimiter(options =>

@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using FootballFormation.Core.Data;
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Security;
@@ -37,9 +38,28 @@ public class UserService(
     }
 
     /// <summary>
+    /// The account behind a signed-in principal, or null when the session it stands for is no longer
+    /// good. Two callers need exactly this question answered and must not drift on the answer:
+    /// <c>OnValidatePrincipal</c>, on every authenticated HTTP request, and the circuit's
+    /// revalidation loop, which is the only thing asking it between one page load and the next.
+    /// </summary>
+    public Task<AppUser?> FindForSessionAsync(
+        ClaimsPrincipal? principal, CancellationToken cancellationToken = default)
+    {
+        var stamp = principal?.FindFirst(AppClaims.SecurityStamp)?.Value;
+        var userId = principal?.FindFirst(AppClaims.UserId)?.Value;
+
+        // Cookies issued before the security stamp shipped carry neither claim. Rejected rather
+        // than trusted — the only cost is one extra sign-in.
+        return stamp is not null && int.TryParse(userId, out var id)
+            ? FindForSessionAsync(id, stamp, cancellationToken)
+            : Task.FromResult<AppUser?>(null);
+    }
+
+    /// <summary>
     /// The account behind a live cookie, or null when it has been deleted or its authority changed
-    /// since the cookie was issued. Called on every authenticated request — see OnValidatePrincipal
-    /// in Program.cs — so it reads no-tracking and touches one row by key.
+    /// since the cookie was issued. Called on every authenticated request, so it reads no-tracking
+    /// and touches one row by key.
     /// </summary>
     public async Task<AppUser?> FindForSessionAsync(
         int userId, string securityStamp, CancellationToken cancellationToken = default)

@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using FootballFormation.Core.Models;
+using FootballFormation.Core.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace FootballFormation.Core.Tests;
@@ -209,6 +211,64 @@ public class UserServiceTests : ServiceTestBase
 
         Assert.Equal(["Anna", "Mila", "Zoe"], all.Value!.Select(u => u.DisplayName));
     }
+
+    // ---------------------------------------------------------------- sessions read from a principal
+
+    // Two callers ask "is this session still good" from a ClaimsPrincipal rather than an id and a
+    // stamp: the cookie handler on every HTTP request, and the circuit's revalidation loop. They
+    // share this overload so they cannot answer it differently.
+
+    [Fact]
+    public async Task A_principal_carrying_a_live_accounts_claims_finds_that_account()
+    {
+        var created = await Users.CreateAsync("Jasper", "jasper", GoodPassword, UserRole.Admin);
+        var user = created.Value!;
+
+        var found = await Users.FindForSessionAsync(PrincipalFor(user.Id, user.SecurityStamp));
+
+        Assert.Equal(user.Id, found?.Id);
+    }
+
+    [Fact]
+    public async Task A_principal_whose_stamp_has_moved_on_finds_nothing()
+    {
+        var created = await Users.CreateAsync("Jasper", "jasper", GoodPassword, UserRole.Admin);
+        var user = created.Value!;
+        var principal = PrincipalFor(user.Id, user.SecurityStamp);
+
+        await Users.SetPasswordAsync(user.Id, "brand-new-one");
+
+        Assert.Null(await Users.FindForSessionAsync(principal));
+    }
+
+    [Fact]
+    public async Task A_principal_missing_its_claims_finds_nothing_rather_than_throwing()
+    {
+        // A cookie issued before the security stamp shipped carries neither claim, and an anonymous
+        // circuit's principal carries nothing at all. Both are rejected, not trusted.
+        Assert.Null(await Users.FindForSessionAsync(new ClaimsPrincipal(new ClaimsIdentity())));
+        Assert.Null(await Users.FindForSessionAsync((ClaimsPrincipal?)null));
+    }
+
+    [Fact]
+    public async Task A_principal_with_an_unreadable_user_id_finds_nothing()
+    {
+        var created = await Users.CreateAsync("Jasper", "jasper", GoodPassword, UserRole.Admin);
+
+        var principal = new ClaimsPrincipal(new ClaimsIdentity([
+            new Claim(AppClaims.UserId, "not-a-number"),
+            new Claim(AppClaims.SecurityStamp, created.Value!.SecurityStamp)
+        ]));
+
+        Assert.Null(await Users.FindForSessionAsync(principal));
+    }
+
+    /// <summary>The claims the sign-in routes put on a cookie, as far as a session check reads them.</summary>
+    private static ClaimsPrincipal PrincipalFor(int userId, string securityStamp) =>
+        new(new ClaimsIdentity([
+            new Claim(AppClaims.UserId, userId.ToString()),
+            new Claim(AppClaims.SecurityStamp, securityStamp)
+        ]));
 
     private const Core.Services.UserService.PasswordChangeResult PasswordChangeOk =
         Core.Services.UserService.PasswordChangeResult.Success;

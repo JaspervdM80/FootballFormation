@@ -342,8 +342,15 @@ until it lapsed. The stamp is copied into the cookie at sign-in and re-checked o
 request by `OnValidatePrincipal` (Program.cs) via `UserService.FindForSessionAsync`; a mismatch
 rejects the principal and signs the browser out. `UserService` regenerates it on password change and
 role change — but deliberately **not** on a rename, which changes nothing about what the account may
-do. Note that a live Blazor circuit is not re-validated per SignalR message: revocation lands on the
-next HTTP request.
+do.
+
+A live Blazor circuit is still not re-validated per SignalR message — that would be a database read
+per keystroke. It is re-validated **on a timer** instead, by
+`RevalidatingUserAuthenticationStateProvider` (Web/Security), which asks `FindForSessionAsync` the
+same question `OnValidatePrincipal` asks and signs the circuit out when the answer is no. Five
+minutes by default, `Auth:RevalidationIntervalSeconds` to change it. Without it a tab open since
+before the change kept its authority until someone reloaded — and because `CircuitCurrentUser` reads
+that same provider, so did the write guard on every service.
 
 `UserService.DeleteAsync` and `UpdateAsync` both refuse to remove or demote the **last** Admin —
 the one operation with no way back short of editing the database by hand. `EnsureAdminSeededAsync`
