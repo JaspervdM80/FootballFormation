@@ -191,6 +191,10 @@ Components/
   Pages/Login.razor       — The sign-in form (posts to /auth/login)
   Pages/Error.razor       — Unhandled-error page, localized
   Pages/NotFound.razor    — /not-found, localized
+Security/
+  RevalidatingUserAuthenticationStateProvider.cs
+                          — Re-checks a circuit's principal on a timer and signs it out when the
+                            account is gone; the circuit-side half of OnValidatePrincipal
 wwwroot/
   theme.css               — Semantic tokens, the muted-ink ramp and the gradients (see docs/theming.md)
   app.css                 — Global styles: MudBlazor overrides, badges, .action-btn, .stacked-table,

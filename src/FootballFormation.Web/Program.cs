@@ -11,8 +11,10 @@ using FootballFormation.UI.Navigation;
 using FootballFormation.UI.Security;
 using FootballFormation.UI.State;
 using FootballFormation.Web.Components;
+using FootballFormation.Web.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -74,8 +76,16 @@ try
 
     builder.Services.AddLocalization();
 
-    // Keys on disk so antiforgery/auth cookies survive container restarts
+    // Keys on disk so antiforgery/auth cookies survive container restarts — appDataFolder is the
+    // mounted volume when hosted, so a deploy reads back the key ring the last one wrote.
+    //
+    // The application name is pinned rather than left to default, because the default is the content
+    // root path: stable at /app only because the Dockerfile says WORKDIR /app, and silently
+    // different the moment that changes. Keys that are still on disk but derived for another
+    // purpose string are keys that cannot open a single cookie already issued, with nothing in the
+    // log to say why everyone was signed out at once.
     builder.Services.AddDataProtection()
+        .SetApplicationName("FootballFormation")
         .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(appDataFolder, "keys")));
 
     // Compress SignalR WebSocket traffic (render diffs, events)
@@ -125,32 +135,40 @@ try
         {
             options.LoginPath = "/login";
             options.LogoutPath = "/auth/logout";
-            options.ExpireTimeSpan = TimeSpan.FromHours(8);
+
+            // Long enough to span the gap between one match day and the next: signing in on
+            // Saturday morning should not mean typing a password again before Sunday's kickoff.
+            // Sliding, so regular use through a season never lapses while an abandoned session
+            // still does. This governs the ticket *inside* the cookie; how long the browser keeps
+            // the cookie at all is IsPersistent's job — see PersistentSession.
+            options.ExpireTimeSpan = TimeSpan.FromDays(14);
             options.SlidingExpiration = true;
             options.Cookie.Name = "ff.auth";
             options.Cookie.HttpOnly = true;
-            options.Cookie.SameSite = SameSiteMode.Strict;
+
+            // Lax rather than Strict. Strict withholds the cookie on *every* cross-site navigation
+            // including a plain link click, so arriving from WhatsApp, an email or a search result
+            // rendered the page signed out and only a reload — same-site by then — put it right.
+            // Lax still withholds it on the cross-site POST that CSRF needs, and no flow here is
+            // reached by one.
+            options.Cookie.SameSite = SameSiteMode.Lax;
             options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
                 ? CookieSecurePolicy.SameAsRequest
                 : CookieSecurePolicy.Always;
 
-            // A cookie is good for eight hours, but the authority it carries is not: deleting an
-            // account or changing its role has to take effect now, not whenever the cookie lapses.
+            // A cookie is good for a fortnight, but the authority it carries is not: deleting an
+            // account or resetting its password has to take effect now, not whenever the cookie
+            // lapses. The longer the cookie lives, the more this is the thing holding the line.
             // Every account carries a security stamp that changes when its authority does; the
             // cookie carries the stamp as it was at sign-in, and this compares the two.
+            //
+            // This runs per HTTP request, which a Blazor Server tab makes very few of — see
+            // RevalidatingUserAuthenticationStateProvider for the half that covers the circuit.
             options.Events.OnValidatePrincipal = async context =>
             {
-                var principal = context.Principal;
-                var stamp = principal?.FindFirst(AppClaims.SecurityStamp)?.Value;
-                var userId = principal?.FindFirst(AppClaims.UserId)?.Value;
-
-                // Cookies issued before this feature shipped carry neither claim. Reject them
-                // rather than trusting them — the only cost is one extra sign-in.
-                if (stamp is not null && int.TryParse(userId, out var id))
-                {
-                    var users = context.HttpContext.RequestServices.GetRequiredService<UserService>();
-                    if (await users.FindForSessionAsync(id, stamp, context.HttpContext.RequestAborted) is not null) return;
-                }
+                var users = context.HttpContext.RequestServices.GetRequiredService<UserService>();
+                if (await users.FindForSessionAsync(context.Principal, context.HttpContext.RequestAborted) is not null)
+                    return;
 
                 context.RejectPrincipal();
                 await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -158,6 +176,29 @@ try
         });
     builder.Services.AddAuthorization();
     builder.Services.AddCascadingAuthenticationState();
+
+    // Replaces the stock ServerAuthenticationStateProvider, which reads the principal once when the
+    // circuit is created and never asks again. Registered after AddInteractiveServerComponents so
+    // this wins; it derives from ServerAuthenticationStateProvider, which is what lets the circuit
+    // still hand it the initial state.
+    //
+    // Five minutes by default: one indexed read by primary key per signed-in circuit, and only for
+    // signed-in ones — the loop does not start for an anonymous visitor, which is most of this
+    // app's traffic. Configurable because the UI tests need it to fire inside a test's lifetime,
+    // and because "how stale may authority be" is an operational question, not a constant.
+    //
+    // Zero leaves the stock provider in place, which is the pre-revalidation behaviour. It exists
+    // so the UI test for this can be run against an app without it and actually go red — a test
+    // that cannot fail is not evidence. It is not a setting to reach for in production.
+    var revalidationInterval = TimeSpan.FromSeconds(
+        builder.Configuration.GetValue("Auth:RevalidationIntervalSeconds", 300));
+
+    if (revalidationInterval > TimeSpan.Zero)
+        builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
+            new RevalidatingUserAuthenticationStateProvider(
+                sp.GetRequiredService<ILoggerFactory>(),
+                sp.GetRequiredService<IServiceScopeFactory>(),
+                revalidationInterval));
 
     // Rate limit login attempts: 5 per minute per IP, then queue/reject
     builder.Services.AddRateLimiter(options =>
@@ -302,7 +343,8 @@ try
 
         await context.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
-            PrincipalFor(user));
+            PrincipalFor(user),
+            PersistentSession());
 
         return Results.Redirect(IsLocalUrl(returnUrl) ? returnUrl : "/");
     })
@@ -345,7 +387,8 @@ try
 
             await context.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
-                PrincipalFor(admin));
+                PrincipalFor(admin),
+                PersistentSession());
 
             return Results.Redirect("/");
         });
@@ -417,6 +460,24 @@ static ClaimsPrincipal PrincipalFor(AppUser user)
     return new ClaimsPrincipal(
         new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
 }
+
+/// <summary>
+/// What makes a sign-in outlive the browser session, and the other half of the pair with
+/// <see cref="PrincipalFor"/> — both sign-in routes use both, so neither can drift.
+/// <para>
+/// Without <c>IsPersistent</c> the cookie goes out with no <c>Expires</c> at all, and a browser is
+/// free to drop a session cookie whenever it decides the session ended. On a phone that is every
+/// time the OS reclaims a backgrounded tab, and on the installed PWA every relaunch after one —
+/// which is a coach putting their phone away at half time. No <c>ExpireTimeSpan</c> can rescue
+/// that: it bounds the ticket the cookie carries, not the browser's willingness to keep the cookie.
+/// </para>
+/// <para>
+/// A new instance per sign-in rather than one shared static: the cookie handler writes
+/// <c>IssuedUtc</c> and <c>ExpiresUtc</c> onto the object it is handed, so a shared one would pin
+/// every later sign-in to the expiry stamped on the first since boot.
+/// </para>
+/// </summary>
+static AuthenticationProperties PersistentSession() => new() { IsPersistent = true };
 
 static bool IsLocalUrl(string? url)
 {

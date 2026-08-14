@@ -336,14 +336,21 @@ is `SetNull`, so deleting a user leaves their comments in place, unattributed.
 enum member name — so renaming a `UserRole` member breaks the build rather than quietly
 unauthorizing everyone. Anonymous (not signed in) is not a role and needs no member.
 
-**SecurityStamp is what makes a change take effect now.** The cookie lasts eight hours and is
+**SecurityStamp is what makes a change take effect now.** The cookie lasts fourteen days and is
 sliding, so without it, deleting an account or changing its role would leave the old session working
 until it lapsed. The stamp is copied into the cookie at sign-in and re-checked on every authenticated
 request by `OnValidatePrincipal` (Program.cs) via `UserService.FindForSessionAsync`; a mismatch
 rejects the principal and signs the browser out. `UserService` regenerates it on password change and
 role change — but deliberately **not** on a rename, which changes nothing about what the account may
-do. Note that a live Blazor circuit is not re-validated per SignalR message: revocation lands on the
-next HTTP request.
+do.
+
+A live Blazor circuit is still not re-validated per SignalR message — that would be a database read
+per keystroke. It is re-validated **on a timer** instead, by
+`RevalidatingUserAuthenticationStateProvider` (Web/Security), which asks `FindForSessionAsync` the
+same question `OnValidatePrincipal` asks and signs the circuit out when the answer is no. Five
+minutes by default, `Auth:RevalidationIntervalSeconds` to change it. Without it a tab open since
+before the change kept its authority until someone reloaded — and because `CircuitCurrentUser` reads
+that same provider, so did the write guard on every service.
 
 `UserService.DeleteAsync` and `UpdateAsync` both refuse to remove or demote the **last** Admin —
 the one operation with no way back short of editing the database by hand. `EnsureAdminSeededAsync`

@@ -94,6 +94,10 @@ export default defineConfig({
       APP_DATA_DIR: DATA_DIR,
       DOTNET_NOLOGO: '1',
       DOTNET_CLI_TELEMETRY_OPTOUT: '1',
+      // The circuit re-checks its principal on this interval; five minutes in production, which no
+      // test can wait for. Two seconds, not milliseconds: it is a database read per signed-in
+      // circuit, and every test here runs signed in.
+      Auth__RevalidationIntervalSeconds: '2',
     },
     // A cold `dotnet build` on a first run is most of this. A published app skips that entirely and
     // is up in a couple of seconds, so the long timeout only ever applies to the local shape.

@@ -167,6 +167,7 @@ real SignalR circuit.
 | `localization.spec.js` | Dutch by default, the switcher moving the whole app to English, and the choice surviving a navigation |
 | `mobile.touchline.spec.js` | The phone layout — the drawer, the full-screen match sheet, the stacked squad — in the `mobile` project on a Pixel 7 |
 | `reconnect.spec.js` | Losing the circuit and getting it back: the retry schedule a suspended phone rejoins on, and the rejoined page still being interactive |
+| `session.spec.js` | Staying signed in: the auth cookie carrying a real expiry rather than being a session cookie, surviving a link followed in from another site, and a deleted account losing its authority on an open circuit without anyone reloading |
 | `selectors.spec.js` | A test for the tests — see below |
 
 ### The test that guards the tests

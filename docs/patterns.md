@@ -369,6 +369,49 @@ appears, it belongs in this paragraph.
 `CircuitCurrentUser` answers false for an account still on its seeded password, so the first-login
 gate is a real restriction rather than a redirect that could be navigated around.
 
+## The sign-in cookie has three settings that are easy to get wrong
+All three live in `Program.cs`, and each one failed in a way that looks like "it logged me out
+again" rather than like a bug with a cause.
+
+- **`IsPersistent`, on the sign-in, is what makes the cookie outlive the browser session.** Both
+  routes that sign anyone in — `/auth/login` and the dev-only `/dev/login` — pass
+  `PersistentSession()`, which is a *new* `AuthenticationProperties` each time because the cookie
+  handler writes `IssuedUtc`/`ExpiresUtc` onto the instance it is given. `ExpireTimeSpan` does not
+  substitute for it: that bounds the ticket the cookie carries, while `IsPersistent` is the only
+  thing that puts an `Expires` on the header at all. Without it the browser holds a session cookie
+  and drops it whenever it decides the session ended — on a phone, every time the OS reclaims the
+  backgrounded tab.
+- **`SameSite` is `Lax`, and must not go back to `Strict`.** Strict withholds the cookie on every
+  cross-site navigation including an ordinary link click, so arriving from WhatsApp, an email or a
+  search result renders the page signed out until a reload. Lax still withholds it on the cross-site
+  POST that CSRF needs.
+- **Data protection sets an application name.** Left unset the purpose string defaults to the
+  content root path — `/app` only because the Dockerfile says so — so pinning it is what stops a
+  change to where the app is unpacked from invalidating every issued cookie at once.
+
+`tests/ui/specs/session.spec.js` holds all three, by reading the cookie's own attributes and by
+following a link into the app from another site.
+
+## Revoking authority takes two halves, because a circuit barely makes requests
+`OnValidatePrincipal` re-checks the security stamp on every HTTP request — and a Blazor Server tab
+makes almost none after the page loads. `RevalidatingUserAuthenticationStateProvider`
+(Web/Security) is the other half: it re-asks `UserService.FindForSessionAsync` on a timer for the
+life of the circuit and signs the circuit out when the account is gone or its stamp has moved.
+Five minutes by default; `Auth:RevalidationIntervalSeconds` sets it, and `0` leaves the stock
+provider in place so the UI test can be run against the old behaviour.
+
+Both halves call the same `FindForSessionAsync(ClaimsPrincipal)` overload on purpose — two places
+deciding separately what a valid session looks like is how they drift.
+
+The provider takes an `IServiceScopeFactory` rather than a `UserService`, and **not** for the usual
+short-lived-context reason. It *is* the circuit's `AuthenticationStateProvider`; `UserService`
+depends on `ICurrentUser`, which depends on the `AuthenticationStateProvider`. Injecting it directly
+closes the loop and the container refuses to build.
+
+A failed check makes the circuit anonymous. It cannot clear the cookie — a circuit has no HTTP
+response to set a header on — so `[Authorize]` renders `NotAuthorized`, `RedirectToLogin`
+force-loads, and *that* request is where `OnValidatePrincipal` finally drops the cookie.
+
 ## Blazor Rendering
 - Entire app is Interactive Server (set on `<Routes>` and `<HeadOutlet>` in App.razor)
 - UI assembly discovered via `AddAdditionalAssemblies(typeof(FootballFormation.UI._Imports).Assembly)`
