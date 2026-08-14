@@ -242,7 +242,7 @@ page allows.
 `RecordedAt` exists on both `GameGoal` and `GameSubstitution` because the clock alone cannot order
 a timeline: a goal and the substitution that followed it routinely share a second, and several
 events in the opening minute is the normal case, not the edge case. The live timeline sorts by
-elapsed seconds (`GameGoal.TimelineSeconds`, `GameSubstitution.AtSeconds`), then by `RecordedAt`,
+elapsed seconds (`MatchClockReport.ElapsedOf`, `GameSubstitution.AtSeconds`), then by `RecordedAt`,
 then by `Id`, all descending. Rows written before the column existed default to `0001-01-01`, and
 two changes entered in one instant share it, so `RecordedAt` cannot settle a double substitution on
 its own — the id is the last word, and it is the same one `RemoveSubstitutionAsync` uses, so the

@@ -260,6 +260,54 @@ public class MatchClockReportTests
     }
 
     /// <summary>
+    /// The timeline orders on elapsed seconds, so a minute typed in by hand has to be converted
+    /// onto that scale rather than read as though it already were one. The two only agree while
+    /// the halves run to length: this first half is three minutes long, and from the restart the
+    /// scoreboard trails the elapsed clock by exactly that.
+    /// </summary>
+    [Fact]
+    public void A_typed_in_minute_is_converted_onto_the_elapsed_clock_through_its_half()
+    {
+        var game = QuartersGame();
+        Period(game, PeriodType.FirstQuarter).StartedAtSeconds = 0;
+        Period(game, PeriodType.ThirdQuarter).StartedAtSeconds = 33 * 60;
+
+        int Elapsed(int minute) => MatchClockReport.ElapsedOf(game, new GameGoal { Minute = minute });
+
+        // First half: the scoreboard is the elapsed clock, because it kicked off at zero.
+        Assert.Equal(0, Elapsed(1));
+        Assert.Equal(20 * 60, Elapsed(21));
+
+        // Second half: 31' is the first minute after a scoreboard restart at 30, which really
+        // happened at 33:00. Read as elapsed seconds it would have landed at 30:00 — before a goal
+        // scored in first-half stoppage time, and on the wrong side of the half-time rule.
+        Assert.Equal(33 * 60, Elapsed(31));
+        Assert.Equal(35 * 60, Elapsed(33));
+        Assert.Equal(PeriodType.SecondHalf, MatchClockReport.HalfOf(game, null, Elapsed(31)));
+
+        // The clock on the row always wins — it is the reading, not a reconstruction of one.
+        Assert.Equal(1234, MatchClockReport.ElapsedOf(game, new GameGoal { AtSeconds = 1234, Minute = 5 }));
+
+        // Nothing at all: the top of the match, which is where a goal with no minute has always sat.
+        Assert.Equal(0, MatchClockReport.ElapsedOf(game, new GameGoal()));
+    }
+
+    /// <summary>
+    /// A match nobody ran from the touchline has no timings to convert through, so the typed
+    /// minutes keep the only order they have — and go on reading exactly as they did before goals
+    /// carried a clock at all.
+    /// </summary>
+    [Fact]
+    public void Typed_in_minutes_stand_on_their_own_when_no_half_was_ever_kicked_off()
+    {
+        var game = QuartersGame();
+
+        Assert.Equal(0, MatchClockReport.ElapsedOf(game, new GameGoal { Minute = 1 }));
+        Assert.Equal(30 * 60, MatchClockReport.ElapsedOf(game, new GameGoal { Minute = 31 }));
+        Assert.Equal(59 * 60, MatchClockReport.ElapsedOf(game, new GameGoal { Minute = 60 }));
+    }
+
+    /// <summary>
     /// Where the timeline draws half time. An event knows its own half; a goal typed in by hand
     /// knows only a clock reading, and the second half's kick-off is the line it falls one side of.
     /// </summary>

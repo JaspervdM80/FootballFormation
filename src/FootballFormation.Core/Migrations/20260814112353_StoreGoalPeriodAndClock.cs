@@ -10,14 +10,28 @@ namespace FootballFormation.Core.Migrations
     /// correcting a half's timings corrects its goals with it.
     /// <para>
     /// Deliberately not backfilled, and <c>AdditionalMinute</c> is dropped rather than folded into
-    /// anything. Nothing left in an old row says which half a stored <c>37</c> belonged to or
-    /// whether it was stoppage time, so those goals keep <c>Minute</c> and go on reading and
-    /// sorting exactly as they do today; only goals logged from here on carry a clock.
+    /// anything. Nothing left in an old row says which half a stored <c>37</c> belonged to, so
+    /// those goals keep <c>Minute</c> and go on sorting where they always have; only goals logged
+    /// from here on carry a clock. Folding the overrun back in would have been worse than losing
+    /// it — a <c>30+2</c> counted on to <c>32</c> sorts past a goal in the 31st minute of the
+    /// second half, which is the bug the pair was introduced to fix.
     /// </para>
     /// <para>
-    /// The drop is last on purpose. Both operations rebuild the table on SQLite, and a rebuild is
-    /// not transactional — leaving it until the new columns and the foreign key are in place means
-    /// a half-applied run has lost nothing that the next attempt needs.
+    /// <strong>It does lose something.</strong> A goal logged in stoppage time between
+    /// <c>AddGoalAdditionalMinute</c> shipping and this migration has a real overrun on the row,
+    /// and afterwards reads as the capped minute — <c>30+2</c> becomes <c>30'</c>. Only the
+    /// display: the minute it sorts on is unchanged. That window is about a day, and the
+    /// alternative was a reconstruction dressed up as a reading.
+    /// </para>
+    /// <para>
+    /// The order below is not what SQLite runs. EF folds the <c>DropColumn</c> into the table
+    /// rebuild that <c>AddForeignKey</c> already forces — the temp table is simply created without
+    /// the column — so this is one rebuild whatever order the operations are written in. What that
+    /// leaves is a migration that <em>cannot be retried</em>: the two <c>ADD COLUMN</c>s commit in
+    /// their own transaction, and a run interrupted after that point has not recorded itself in
+    /// <c>__EFMigrationsHistory</c>, so the next boot starts again from the top and dies on
+    /// <c>duplicate column name: AtSeconds</c>. Recovery is the pre-migration snapshot
+    /// <c>Program.cs</c> takes, which is the only thing standing behind any of this.
     /// </para>
     /// </summary>
     public partial class StoreGoalPeriodAndClock : Migration

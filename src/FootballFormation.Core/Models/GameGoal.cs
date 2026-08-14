@@ -17,9 +17,13 @@ public class GameGoal
     /// The half that was being played when the ball went in, as the line-up playing it — the same
     /// fact <see cref="GameSubstitution.GamePeriodId"/> carries. Null for a goal typed in on the
     /// result page, which has no half behind it.
+    /// <para>
+    /// The id alone, with no navigation beside it: every reader resolves it against the half
+    /// already loaded on the game (<c>MatchClockReport</c>), so a navigation would only be an
+    /// invitation to <c>Include</c> the same row a second time.
+    /// </para>
     /// </summary>
     public int? GamePeriodId { get; set; }
-    public GamePeriod? GamePeriod { get; set; }
 
     /// <summary>
     /// Match-clock second the ball went in, from the same clock a substitution is stamped from.
@@ -56,14 +60,4 @@ public class GameGoal
     /// <c>ScoreProgressionReport</c> walks them one at a time for the live timeline.
     /// </summary>
     public bool CountsForUs => !IsOwnGoal && !IsOpponentGoal;
-
-    /// <summary>
-    /// Where this goal sits on the match timeline, as elapsed seconds — the one scale goals and
-    /// substitutions can be ordered on together, and the reason the timeline no longer compares
-    /// scoreboard minutes in pairs. <see cref="AtSeconds"/> when there is one; otherwise the start
-    /// of the minute typed in, which is the best a row with no clock behind it offers. Zero for a
-    /// goal with neither, which puts it at the top of the match rather than nowhere.
-    /// </summary>
-    public int TimelineSeconds =>
-        AtSeconds ?? (Minute is { } minute ? Math.Max(0, (minute - 1) * 60) : 0);
 }

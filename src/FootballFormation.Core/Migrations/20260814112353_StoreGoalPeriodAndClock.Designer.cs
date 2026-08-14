@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FootballFormation.Core.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260814102938_StoreGoalPeriodAndClock")]
+    [Migration("20260814112353_StoreGoalPeriodAndClock")]
     partial class StoreGoalPeriodAndClock
     {
         /// <inheritdoc />
@@ -464,7 +464,7 @@ namespace FootballFormation.Core.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("FootballFormation.Core.Models.GamePeriod", "GamePeriod")
+                    b.HasOne("FootballFormation.Core.Models.GamePeriod", null)
                         .WithMany()
                         .HasForeignKey("GamePeriodId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -477,8 +477,6 @@ namespace FootballFormation.Core.Migrations
                     b.Navigation("Assister");
 
                     b.Navigation("Game");
-
-                    b.Navigation("GamePeriod");
 
                     b.Navigation("Scorer");
                 });

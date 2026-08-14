@@ -89,9 +89,41 @@ public static class MatchClockReport
     };
 
     /// <summary>
+    /// Where a goal sits on the elapsed match clock — the scale the timeline is ordered on, and
+    /// the one a substitution is already stored in.
+    /// <para>
+    /// A goal logged from the touchline has that reading on the row. A goal typed in on the result
+    /// page has only the minute somebody wrote, which is a <em>scoreboard</em> reading, and the two
+    /// scales part company the moment a half over-runs: on a 60-minute match whose first half ran
+    /// to 33, the scoreboard's 32' is 34 minutes of elapsed play. Reading the typed minute as
+    /// though it were elapsed time filed it before the restart, under the half-time rule and ahead
+    /// of goals that were really scored first, so it is converted back through the half timings
+    /// here — the same arithmetic <see cref="Build"/> does, run the other way.
+    /// </para>
+    /// </summary>
+    public static int ElapsedOf(Game game, GameGoal goal)
+    {
+        if (goal.AtSeconds is { } at) return at;
+        if (goal.Minute is not { } minute) return 0;
+
+        // The start of the minute written down, on the scoreboard's scale.
+        var onScoreboard = Math.Max(0, (minute - 1) * 60);
+
+        var halfSeconds = GameSplitType.Halves.PeriodDurationSeconds(game.GameDurationMinutes);
+        if (halfSeconds <= 0) return onScoreboard;
+
+        // A match never run from the touchline has no timings to convert through, and the fallbacks
+        // are what Build assumes in the same position — so its goals keep the order the typed
+        // minutes put them in, which is the only order they have.
+        return onScoreboard < halfSeconds
+            ? (HalfKickedOffAt(game, PeriodType.FirstHalf) ?? 0) + onScoreboard
+            : (HalfKickedOffAt(game, PeriodType.SecondHalf) ?? halfSeconds) + (onScoreboard - halfSeconds);
+    }
+
+    /// <summary>
     /// The half an event belongs to, which is what puts the half-time break on the timeline. Its
     /// own line-up's half when it has one; otherwise whichever side of the second half's kick-off
-    /// its clock reading falls, which is all a goal typed in by hand leaves to go on. First half
+    /// its elapsed reading falls, which is all a goal typed in by hand leaves to go on. First half
     /// when nothing says otherwise — a match never run from the touchline has no kick-off to be
     /// past, and one unbroken list is the honest way to show it.
     /// </summary>

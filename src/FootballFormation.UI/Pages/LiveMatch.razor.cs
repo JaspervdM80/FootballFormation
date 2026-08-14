@@ -260,13 +260,17 @@ public partial class LiveMatch
 
             // Counted forwards over the whole match, then looked up per goal: this list runs
             // newest first, so a total accumulated while rendering it would count down.
-            var progression = ScoreProgressionReport.Build(GameData.Goals);
+            var progression = ScoreProgressionReport.Build(GameData);
 
-            var goals = GameData.Goals.Select(g => new MatchEvent(
-                g.TimelineSeconds,
-                MatchClockReport.MinuteOf(GameData, g),
-                MatchClockReport.HalfOf(GameData, g.GamePeriodId, g.TimelineSeconds),
-                g.RecordedAt, g.Id, g, null, progression[g.Id]));
+            var goals = GameData.Goals.Select(g =>
+            {
+                var at = MatchClockReport.ElapsedOf(GameData, g);
+                return new MatchEvent(
+                    at,
+                    MatchClockReport.MinuteOf(GameData, g),
+                    MatchClockReport.HalfOf(GameData, g.GamePeriodId, at),
+                    g.RecordedAt, g.Id, g, null, progression[g.Id]);
+            });
             IEnumerable<MatchEvent> subs = ShowSubstitutions
                 ? GameData.Substitutions.Select(s => new MatchEvent(
                     s.AtSeconds,

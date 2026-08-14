@@ -76,8 +76,9 @@
             <div class="goal-timeline">
                 @* Ordered on the elapsed match clock, which runs on across the break, so a goal in
                    first-half stoppage time keeps its place above the restart rather than sorting
-                   past it — see GameGoal.TimelineSeconds. *@
-                @foreach (var goal in GameData.Goals.OrderBy(g => g.TimelineSeconds))
+                   past it. A minute typed in on this page is a scoreboard reading and is converted
+                   onto that clock — see MatchClockReport.ElapsedOf. *@
+                @foreach (var goal in GameData.Goals.OrderBy(g => MatchClockReport.ElapsedOf(GameData, g)))
                 {
                     @* Own goals and opponent goals both count against us, so they share the styling. *@
                     <div class="goal-entry @(goal.IsOwnGoal || goal.IsOpponentGoal ? "own-goal" : "")">

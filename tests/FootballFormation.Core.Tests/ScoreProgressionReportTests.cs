@@ -10,6 +10,14 @@ namespace FootballFormation.Core.Tests;
 /// </summary>
 public class ScoreProgressionReportTests
 {
+    /// <summary>A 60-minute match — two 30-minute halves — carrying the goals it was scored in.</summary>
+    private static Game Match(params GameGoal[] goals)
+    {
+        var game = TestData.Game(durationMinutes: 60);
+        game.Goals.AddRange(goals);
+        return game;
+    }
+
     /// <summary>A goal off the touchline, placed by the elapsed match clock it was logged at.</summary>
     private static GameGoal Goal(
         int id, int minute, bool ownGoal = false, bool opponentGoal = false) =>
@@ -32,7 +40,7 @@ public class ScoreProgressionReportTests
             Goal(3, 30)
         };
 
-        var progression = ScoreProgressionReport.Build(goals);
+        var progression = ScoreProgressionReport.Build(Match([.. goals]));
 
         Assert.Equal(new MatchScore(1, 0), progression[1]);
         Assert.Equal(new MatchScore(1, 1), progression[2]);
@@ -44,7 +52,7 @@ public class ScoreProgressionReportTests
     {
         var goals = new List<GameGoal> { Goal(1, 20, ownGoal: true) };
 
-        var progression = ScoreProgressionReport.Build(goals);
+        var progression = ScoreProgressionReport.Build(Match([.. goals]));
 
         Assert.Equal(new MatchScore(0, 1), progression[1]);
     }
@@ -54,7 +62,7 @@ public class ScoreProgressionReportTests
     {
         var goals = new List<GameGoal> { Goal(2, 40), Goal(1, 10, opponentGoal: true) };
 
-        var progression = ScoreProgressionReport.Build(goals);
+        var progression = ScoreProgressionReport.Build(Match([.. goals]));
 
         Assert.Equal(new MatchScore(0, 1), progression[1]);
         Assert.Equal(new MatchScore(1, 1), progression[2]);
@@ -69,7 +77,7 @@ public class ScoreProgressionReportTests
         var second = Goal(4, 20);
         second.RecordedAt = first.RecordedAt.AddSeconds(20);
 
-        var progression = ScoreProgressionReport.Build([second, first]);
+        var progression = ScoreProgressionReport.Build(Match(second, first));
 
         Assert.Equal(new MatchScore(0, 1), progression[7]);
         Assert.Equal(new MatchScore(1, 1), progression[4]);
@@ -80,7 +88,7 @@ public class ScoreProgressionReportTests
     {
         var goals = new List<GameGoal> { Goal(1, 5), Goal(2, 25), Goal(3, 50, ownGoal: true) };
 
-        var progression = ScoreProgressionReport.Build(goals);
+        var progression = ScoreProgressionReport.Build(Match([.. goals]));
         var final = progression[3];
 
         Assert.Equal(Game.CountOurGoals(goals), final.Us);
@@ -100,7 +108,7 @@ public class ScoreProgressionReportTests
         var afterTheBreak = Goal(2, 33, opponentGoal: true);
         afterTheBreak.RecordedAt = stoppage.RecordedAt.AddMinutes(16);
 
-        var progression = ScoreProgressionReport.Build([afterTheBreak, stoppage]);
+        var progression = ScoreProgressionReport.Build(Match(afterTheBreak, stoppage));
 
         Assert.Equal(new MatchScore(1, 0), progression[1]);
         Assert.Equal(new MatchScore(1, 1), progression[2]);
@@ -117,15 +125,46 @@ public class ScoreProgressionReportTests
         var typedIn = new GameGoal { Id = 1, Minute = 40 };
         var logged = Goal(2, 10, opponentGoal: true);
 
-        var progression = ScoreProgressionReport.Build([typedIn, logged]);
+        var progression = ScoreProgressionReport.Build(Match(typedIn, logged));
 
         Assert.Equal(new MatchScore(0, 1), progression[2]);
         Assert.Equal(new MatchScore(1, 1), progression[1]);
     }
 
+    /// <summary>
+    /// A typed-in minute is a scoreboard reading, and on a match whose first half over-ran the
+    /// scoreboard and the elapsed clock disagree by the overrun. Counting the typed minute as
+    /// elapsed time filed a second-half goal ahead of one scored in first-half stoppage time, and
+    /// handed both the wrong running score.
+    /// </summary>
+    [Fact]
+    public void A_minute_typed_in_afterwards_is_placed_through_the_half_it_names()
+    {
+        // A first half whistled off three minutes long, so the second half kicks off at 33:00
+        // while its scoreboard still starts at 30'.
+        var game = Match();
+        game.AddPeriod(PeriodType.FirstHalf);
+        game.AddPeriod(PeriodType.SecondHalf);
+        game.Periods.Single(p => p.PeriodType == PeriodType.FirstHalf).StartedAtSeconds = 0;
+        game.Periods.Single(p => p.PeriodType == PeriodType.SecondHalf).StartedAtSeconds = 33 * 60;
+
+        // Logged live two minutes into first-half stoppage — the scoreboard read 30+2.
+        var stoppage = new GameGoal { Id = 1, AtSeconds = 32 * 60 };
+
+        // Typed in afterwards as the 32nd minute, which is two minutes into the second half.
+        var typedIn = new GameGoal { Id = 2, Minute = 32, IsOpponentGoal = true };
+
+        game.Goals.AddRange([typedIn, stoppage]);
+
+        var progression = ScoreProgressionReport.Build(game);
+
+        Assert.Equal(new MatchScore(1, 0), progression[1]);
+        Assert.Equal(new MatchScore(1, 1), progression[2]);
+    }
+
     [Fact]
     public void A_match_with_no_goals_has_nothing_to_report()
     {
-        Assert.Empty(ScoreProgressionReport.Build([]));
+        Assert.Empty(ScoreProgressionReport.Build(Match()));
     }
 }

@@ -24,7 +24,8 @@ internal sealed class GameGoalConfiguration : IEntityTypeConfiguration<GameGoal>
 
         // Cascade like GameSubstitution's: the half and the events recorded during it are one
         // record, and a goal pointing at a line-up that no longer exists has no minute to show.
-        entity.HasOne(g => g.GamePeriod)
+        // Declared without a navigation — see GameGoal.GamePeriodId.
+        entity.HasOne<GamePeriod>()
             .WithMany()
             .HasForeignKey(g => g.GamePeriodId)
             .OnDelete(DeleteBehavior.Cascade);

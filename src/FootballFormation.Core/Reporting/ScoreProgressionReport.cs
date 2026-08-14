@@ -18,8 +18,8 @@ public readonly record struct MatchScore(int Us, int Them);
 /// </summary>
 public static class ScoreProgressionReport
 {
-    /// <param name="goals">Every goal in the match, in any order.</param>
-    public static IReadOnlyDictionary<int, MatchScore> Build(IEnumerable<GameGoal> goals)
+    /// <param name="game">The match, for the half timings a typed-in minute is placed through.</param>
+    public static IReadOnlyDictionary<int, MatchScore> Build(Game game)
     {
         var progression = new Dictionary<int, MatchScore>();
         var us = 0;
@@ -29,8 +29,8 @@ public static class ScoreProgressionReport
         // which runs on across the break and so keeps a stoppage-time goal inside the half it was
         // scored in, then the moment it was entered, then the id. See LiveMatch.Timeline for why
         // all three.
-        var chronological = goals
-            .OrderBy(g => g.TimelineSeconds)
+        var chronological = game.Goals
+            .OrderBy(g => MatchClockReport.ElapsedOf(game, g))
             .ThenBy(g => g.RecordedAt)
             .ThenBy(g => g.Id);
 

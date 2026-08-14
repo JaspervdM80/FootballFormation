@@ -153,8 +153,10 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   displays: a goal carries `GamePeriodId` + `AtSeconds` exactly as a substitution does, and
   `MatchClockReport.MinuteOf` derives the reading from the half's own timings. The timeline, the
   result page's goal list and `ScoreProgressionReport` all sort on elapsed seconds
-  (`GameGoal.TimelineSeconds` falls back to `Minute` for a goal typed in on `/result`), then
-  `RecordedAt`, then the id.
+  (`MatchClockReport.ElapsedOf`), then `RecordedAt`, then the id. A goal typed in on `/result` has
+  only a scoreboard minute, and `ElapsedOf` converts it back through the half timings rather than
+  reading it as elapsed time — the two scales part company by however long a half over-ran, and
+  taking one for the other puts a second-half goal under the half-time rule.
 - **Half time is a dashed rule across the timeline** (`.live-event-break`), not an event. The list
   runs newest first, so it lands where the second half's entries give way to the first's;
   `MatchClockReport.HalfOf` decides which side an entry is on, from its own line-up's half or —

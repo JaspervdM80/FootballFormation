@@ -378,11 +378,20 @@ Avoid repeating these mistakes:
   pair a substitution carries, and the minute anyone sees comes out of `MatchClockReport.MinuteOf`.
   A goal typed in on `/result` has neither and falls back to `Minute`. So do all the goals logged
   before `StoreGoalPeriodAndClock`: that migration deliberately does not backfill, because nothing
-  left in an old row says which half a stored `37` belonged to or whether it was stoppage time. The
-  trap is reading `Minute` directly and finding it null on a live match, or assuming a row that has
-  one was typed in by hand. Sort with `GameGoal.TimelineSeconds`, which covers both, and never
-  reinstate the previous shape — a minute frozen on the row moved under stored data whenever
-  `GameDurationMinutes` changed, and could not be corrected when a half's timings were.
+  left in an old row says which half a stored `37` belonged to. The trap is reading `Minute`
+  directly and finding it null on a live match, or assuming a row that has one was typed in by
+  hand. Never reinstate the previous shape — a minute frozen on the row moved under stored data
+  whenever `GameDurationMinutes` changed, and could not be corrected when a half's timings were.
+  The same migration dropped `AdditionalMinute`, so a goal logged in stoppage time during the day
+  that column existed now shows the capped minute (`30'`, not `30+2`); it sorts where it always did.
+- **A stored `Minute` is a scoreboard reading, and the timeline is ordered on elapsed seconds — do
+  not mix the two.** They agree only while the halves run to length. On a match whose first half
+  was whistled off three minutes long, the scoreboard's 31' is 33 minutes of elapsed play, so
+  taking `(Minute - 1) * 60` as an ordering key files a second-half goal *before* one scored in
+  first-half stoppage time — wrong running score out of `ScoreProgressionReport`, and the goal
+  drawn on the wrong side of the half-time rule. `MatchClockReport.ElapsedOf` is the conversion,
+  and it is the only thing that should produce an ordering key for a goal. It cost a review round
+  on the change that introduced it.
 
 ## Authentication
 - **`ExpireTimeSpan` does not keep anyone signed in — `IsPersistent` does.** `SignInAsync` without
