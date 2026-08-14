@@ -369,6 +369,29 @@ appears, it belongs in this paragraph.
 `CircuitCurrentUser` answers false for an account still on its seeded password, so the first-login
 gate is a real restriction rather than a redirect that could be navigated around.
 
+## The sign-in cookie has three settings that are easy to get wrong
+All three live in `Program.cs`, and each one failed in a way that looks like "it logged me out
+again" rather than like a bug with a cause.
+
+- **`IsPersistent`, on the sign-in, is what makes the cookie outlive the browser session.** Both
+  routes that sign anyone in — `/auth/login` and the dev-only `/dev/login` — pass
+  `PersistentSession()`, which is a *new* `AuthenticationProperties` each time because the cookie
+  handler writes `IssuedUtc`/`ExpiresUtc` onto the instance it is given. `ExpireTimeSpan` does not
+  substitute for it: that bounds the ticket the cookie carries, while `IsPersistent` is the only
+  thing that puts an `Expires` on the header at all. Without it the browser holds a session cookie
+  and drops it whenever it decides the session ended — on a phone, every time the OS reclaims the
+  backgrounded tab.
+- **`SameSite` is `Lax`, and must not go back to `Strict`.** Strict withholds the cookie on every
+  cross-site navigation including an ordinary link click, so arriving from WhatsApp, an email or a
+  search result renders the page signed out until a reload. Lax still withholds it on the cross-site
+  POST that CSRF needs.
+- **Data protection sets an application name.** Left unset the purpose string defaults to the
+  content root path — `/app` only because the Dockerfile says so — so pinning it is what stops a
+  change to where the app is unpacked from invalidating every issued cookie at once.
+
+`tests/ui/specs/session.spec.js` holds all three, by reading the cookie's own attributes and by
+following a link into the app from another site.
+
 ## Blazor Rendering
 - Entire app is Interactive Server (set on `<Routes>` and `<HeadOutlet>` in App.razor)
 - UI assembly discovered via `AddAdditionalAssemblies(typeof(FootballFormation.UI._Imports).Assembly)`

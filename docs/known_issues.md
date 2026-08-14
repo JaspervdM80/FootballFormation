@@ -381,6 +381,33 @@ Avoid repeating these mistakes:
   not backfill, because nothing left in the row says whether a 37 was stoppage time or typed in by
   hand.
 
+## Authentication
+- **`ExpireTimeSpan` does not keep anyone signed in — `IsPersistent` does.** `SignInAsync` without
+  `AuthenticationProperties` sets a *session* cookie: no `Expires` on the header, so the browser is
+  free to drop it whenever it decides the session ended. An eight-hour `ExpireTimeSpan` sat right
+  above it and looked like the answer, but it bounds the ticket *inside* the cookie and has no say
+  in whether the browser keeps the container. The symptom is phone-shaped and so reads as flaky
+  rather than broken: a desktop tab holds the cookie for days, while iOS Safari and an installed PWA
+  drop it every time the OS reclaims the backgrounded tab — which is a coach putting their phone
+  away at half time. Both sign-in routes now pass `PersistentSession()`, and it returns a fresh
+  instance per call because the cookie handler writes `IssuedUtc`/`ExpiresUtc` onto the object it is
+  handed; one shared static would pin every later sign-in to the first one's expiry.
+- **`SameSite=Strict` makes an ordinary link look like a logged-out session.** Strict withholds the
+  cookie on *every* cross-site navigation, a plain top-level link click included — so opening the
+  site from WhatsApp, an email or a search result arrives anonymous and bounces to `/login`, and
+  then a reload puts it right because that navigation is same-site. Coming back on its own is what
+  makes it hard to report and easy to dismiss. `Lax` is the setting; it still withholds the cookie
+  on the cross-site POST that CSRF actually needs, and nothing here is reached by one.
+- **Persisting data-protection keys is only half of surviving a deploy.** The keys are on the
+  volume, but the purpose they are derived for defaults to the content root path — `/app` only
+  because the Dockerfile says `WORKDIR /app`. Keys present on disk and derived for a different
+  string open nothing, and the failure is silent: no exception, no log line, just every cookie
+  rejected at once after a deploy that changed nothing about authentication.
+  `SetApplicationName("FootballFormation")` is what stops it.
+- **These three are browser decisions, so no C# test can see them.** All three are pinned in
+  `tests/ui/specs/session.spec.js`, which reads the cookie's attributes after a real form sign-in
+  and follows a link into the app from another site.
+
 ## General
 - **Port already in use**: Kill orphaned process with `taskkill //PID <pid> //F`.
 - **File locked during build**: Stop the running app before rebuilding.

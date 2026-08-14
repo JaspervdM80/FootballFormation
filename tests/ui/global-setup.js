@@ -21,7 +21,12 @@ import { ADMIN_STATE, BASE_URL, CHROMIUM_PATH, VISITOR_STATE } from './playwrigh
 import { addPlayer, createMatch, goto, waitForHandlers } from './helpers.js';
 
 const SEED_PASSWORD = 'admin';
-const NEW_PASSWORD = 'uitest-admin-1';
+
+// Exported because session.spec.js signs in through the real form rather than /dev/login — the
+// cookie's own attributes are what that spec is about, and only /auth/login issues the real one.
+export const ADMIN_USERNAME = 'admin';
+export const ADMIN_PASSWORD = 'uitest-admin-1';
+const NEW_PASSWORD = ADMIN_PASSWORD;
 
 // Named so a failure screenshot says where they came from. Shirt numbers are high to stay clear of
 // anything a spec invents.

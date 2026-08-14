@@ -15,7 +15,11 @@ custom domains at the lowest price point (~$3–5/month, less with scale-to-zero
 | `Program.cs` | `APP_DATA_DIR` env var overrides the data folder (DB, logs, data-protection keys); maps `/health` |
 
 On Fly, `APP_DATA_DIR=/data` points at a 1 GB persistent volume, so the SQLite DB,
-Serilog logs, and data-protection keys all survive deploys and restarts.
+Serilog logs, and data-protection keys all survive deploys and restarts. Surviving on disk is only
+half of what a key ring needs, though: `AddDataProtection().SetApplicationName("FootballFormation")`
+pins the purpose the keys are derived for, which otherwise defaults to the content root path and
+would change with the Dockerfile's `WORKDIR`. Both halves have to hold or a deploy signs everyone
+out with nothing in the log to say why.
 `ASPNETCORE_FORWARDEDHEADERS_ENABLED=true` (set in the Dockerfile) makes the app trust
 Fly's `X-Forwarded-Proto` header — without it `UseHttpsRedirection` would loop, because
 Fly terminates TLS at the edge and forwards plain HTTP to port 8080.

@@ -336,7 +336,7 @@ is `SetNull`, so deleting a user leaves their comments in place, unattributed.
 enum member name — so renaming a `UserRole` member breaks the build rather than quietly
 unauthorizing everyone. Anonymous (not signed in) is not a role and needs no member.
 
-**SecurityStamp is what makes a change take effect now.** The cookie lasts eight hours and is
+**SecurityStamp is what makes a change take effect now.** The cookie lasts fourteen days and is
 sliding, so without it, deleting an account or changing its role would leave the old session working
 until it lapsed. The stamp is copied into the cookie at sign-in and re-checked on every authenticated
 request by `OnValidatePrincipal` (Program.cs) via `UserService.FindForSessionAsync`; a mismatch
