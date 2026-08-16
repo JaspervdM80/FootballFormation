@@ -16,7 +16,7 @@ as in the markup. The UI is Dutch by default with English available.
 
 ```bash
 dotnet build -c Release        # what CI builds — warnings are errors here (see below)
-dotnet test                    # 398 tests, xUnit v3, real SQLite
+dotnet test                    # 415 tests, xUnit v3, real SQLite
 cd src/FootballFormation.Web && dotnet run     # http://localhost:5228
 cd tests/ui && npm test        # 39 Playwright tests in a browser, ~1 min (npm install first)
 scripts/visual-check.sh        # screenshots every page, then measures every touch target
@@ -143,7 +143,13 @@ The app migrates itself unattended against the live volume on the next deploy, s
 a bad production database. `Program.cs` takes a pre-migration snapshot and refuses to migrate if
 that fails, but the snapshot is the last resort, not the plan.
 
-- **Read the generated `Up()` and reorder it.** The scaffolder put a `DropColumn` *before* the
+**There is one migration, `20260322100416_InitialCreate`**, holding the whole schema — the twenty
+that built it up were folded into it, and its id is deliberately the original one the live volume
+already has in `__EFMigrationsHistory`, so production boots with nothing pending. Names like
+`AddSeasons` in these docs are history, not files. See
+[docs/patterns.md](docs/patterns.md#migrations-are-one-file) before rescaffolding it.
+
+- **Read the generated `Up()` and reorder it.** The scaffolder once put a `DropColumn` *before* the
   backfill that had to read it (`AddSeasonSquads`), which would have destroyed the source data.
 - Order operations `AddColumn` (with `defaultValue`) → backfill SQL → `CreateIndex`/`AddForeignKey`.
   Backfills belong in the migration, not in startup code.

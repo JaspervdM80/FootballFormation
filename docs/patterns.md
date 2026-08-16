@@ -264,8 +264,8 @@ seasons, so each game resolves *its own* season's squad.
 - **Data backfills** belong in the migration's `Up()` via `migrationBuilder.Sql(...)`, not in
   startup code: `__EFMigrationsHistory` runs them exactly once, and it is the only place you can
   populate a new required FK column *before* the constraint is added. Order the operations
-  `AddColumn` (with `defaultValue`) → backfill SQL → `CreateIndex`/`AddForeignKey`. See
-  `AddSeasons` and `ConsolidatePlayerPositions`.
+  `AddColumn` (with `defaultValue`) → backfill SQL → `CreateIndex`/`AddForeignKey`. `AddSeasons`
+  and `ConsolidatePlayerPositions` were written that way.
   **Do not assume atomicity:** when EF rebuilds a SQLite table it emits `PRAGMA foreign_keys = 0`,
   which cannot run inside a transaction, so the migration is *not* all-or-nothing — and EF never
   re-runs `foreign_key_check`, so a partial backfill boots silently clean. Verify with
@@ -280,6 +280,32 @@ seasons, so each game resolves *its own* season's squad.
 - **Rehearse destructive migrations on a copy.** Copy the DB to a scratch folder, point
   `APP_DATA_DIR` at it, run `dotnet ef database update`, and check the data before touching the
   real file. Fly.io auto-migrates on boot, so production gets no second chance.
+
+### Migrations are one file
+
+`Migrations/` holds a single migration, `20260322100416_InitialCreate`, which creates the whole
+schema. The twenty that grew it between March and August 2026 were folded into it once every
+database that exists had them all applied; the names still quoted in these docs — `AddSeasons`,
+`AddSeasonSquads`, `StoreGoalPeriodAndClock` — are history rather than files you can open.
+
+**The id is the original `InitialCreate`'s, not the timestamp it was scaffolded at, and that is
+what makes the fold safe.** The live volume has `20260322100416_InitialCreate` in its
+`__EFMigrationsHistory` already, so it boots with nothing pending and never runs this file; a fresh
+id would have re-run `CREATE TABLE` over a season of data and failed the deploy. The nineteen rows
+below it in that table now name migrations the assembly no longer has, which EF ignores — pending
+work is what the assembly holds and the history does not.
+
+So if you ever rescaffold this migration rather than adding one after it, **put the id back by
+hand** — in both file names and in the `[Migration]` attribute in the designer file — and check
+that the schema still comes out the same:
+
+```bash
+APP_DATA_DIR=/tmp/schema-check dotnet ef database update --project src/FootballFormation.Core
+```
+
+Migrations from here on are ordinary ones added on top. There is no reason to fold again until the
+count is a nuisance, and doing it costs the migration bodies: `GoalClockBackfillTests` covered the
+one backfill that rewrote rows, and went with the file it tested.
 
 ## UI state services
 Two of these: `SeasonState` (`UI/State/SeasonState.cs`) holds the selected season, shared by

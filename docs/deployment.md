@@ -291,6 +291,15 @@ fly deploy
 
 Either way, migrations run automatically on startup, same as locally.
 
+**The live volume is a schema ahead of the repository's history.** `Migrations/` holds one file,
+`20260322100416_InitialCreate`, into which the twenty that built the schema were folded — and
+it keeps that original id precisely because `/data/footballformation.db` already lists it in
+`__EFMigrationsHistory`. Production therefore boots with nothing pending and never applies it,
+which is the whole point: a new id would have re-run `CREATE TABLE` against a live database. That
+volume's history still names the nineteen that followed; EF ignores rows it has no file for.
+Anything scaffolded from here is an ordinary migration on top — see
+[patterns.md](patterns.md#migrations-are-one-file) before rescaffolding the first one.
+
 ## The repository is public, and what a stranger can actually do
 
 `gjs-meiden` is a **public** repository with forking enabled, no forks, one collaborator
@@ -427,11 +436,11 @@ we only need to know at deploy time is the wrong trade here.
 **Deliberately not wired to an automatic rollback.** Reverting the *image* on a failed smoke check
 looks like the obvious next step, and for code alone it would be — `fly deploy --image` is cheap and
 lossless. It is unsafe here because by the time the smoke check runs, the release has already
-migrated the database, and several migrations are one-way in practice (`AddMatchTypeAndComments`
-drops a column). Rolling the image back would leave the previous code running against the new
-schema, which is a second, worse failure on top of the first, and an unattended one. A failed smoke
-check is a loud red deploy that a person then decides about — see *Rolling back is the image, not
-the database* below.
+migrated the database, and a migration is one-way in practice as soon as it drops a column or
+deletes rows — several of the ones this schema was built from did. Rolling the image back would
+leave the previous code running against the new schema, which is a second, worse failure on top of
+the first, and an unattended one. A failed smoke check is a loud red deploy that a person then
+decides about — see *Rolling back is the image, not the database* below.
 
 Manual deploys skip the smoke step, so check it by hand after one:
 
@@ -467,11 +476,11 @@ guard above is written to stop the boot loudly, and the exit code is the only pa
 the log can hear — followed now by the smoke check above, which fails the deploy from the outside
 even in the case where the process somehow stays up without serving.
 
-**A failed backup aborts the migration.** That is deliberate: several migrations are one-way in
-practice (`AddMatchTypeAndComments` drops a column, `AddMustChangePasswordAndLineupUniqueIndex`
-deletes rows), so once one has run without a snapshot there is no route back. A container that
-refuses to start is an afternoon's problem; a season of lineups quietly rewritten is permanent.
-If the app will not boot for this reason, the volume is full — that is the thing to fix.
+**A failed backup aborts the migration.** That is deliberate: a migration that drops a column or
+deletes rows is one-way in practice, and this schema was built from several that did, so once one
+has run without a snapshot there is no route back. A container that refuses to start is an
+afternoon's problem; a season of lineups quietly rewritten is permanent. If the app will not boot
+for this reason, the volume is full — that is the thing to fix.
 
 To recover from a bad migration: stop the machine, replace `/data/footballformation.db` with the
 newest `pre-migration-*.db`, and deploy the previous image.

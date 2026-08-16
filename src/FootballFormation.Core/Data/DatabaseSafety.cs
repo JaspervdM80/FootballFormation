@@ -9,10 +9,10 @@ namespace FootballFormation.Core.Data;
 /// club its season.
 /// <para>
 /// The app migrates itself the moment the container boots, unattended, against a single SQLite
-/// file on one volume. Migrations are not all reversible in practice — <c>AddMatchTypeAndComments</c>
-/// drops a column, <c>AddMustChangePasswordAndLineupUniqueIndex</c> deletes rows — so by the time
-/// anyone notices a bad one, the previous state is gone. A copy taken immediately before is the
-/// only thing that makes such a change undoable.
+/// file on one volume. Migrations are not all reversible in practice — of the twenty this schema
+/// was built from, one dropped a column and another deleted rows — so by the time anyone notices a
+/// bad one, the previous state is gone. A copy taken immediately before is the only thing that
+/// makes such a change undoable.
 /// </para>
 /// </summary>
 public static class DatabaseSafety
