@@ -159,12 +159,8 @@
     gap: 8px;
 }
 
-/* Timeline, and the checkbox that folds the substitutions out of it. The checkbox's own touch
-   target is sized in app.css — this rule reaches the wrapper, not the MudBlazor component in it. */
-.live-timeline-toggle {
-    margin-bottom: 2px;
-}
-
+/* The timeline's heading row and the checkbox in it are laid out in app.css: the checkbox is a
+   MudBlazor component, and scoped CSS never reaches a child component's root element. */
 .live-timeline {
     display: flex;
     flex-direction: column;

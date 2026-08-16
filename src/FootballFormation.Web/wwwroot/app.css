@@ -790,10 +790,11 @@ html, body {
     grid-column: 1 / -1;
 }
 
-/* The line-up card's heading row: the half on the left, the way into the plan for it on the right.
+/* A card's heading row: the label on the left, the one control that belongs to the card on the
+   right — the plan behind the line-up's half, the substitutions toggle on the timeline.
    .card-label carries its own bottom margin, so the row takes it over and the label gives it up —
-   otherwise the button sits 16px above the pitch and the label doesn't. */
-.live-lineup-head {
+   otherwise the control sits 16px above the card body and the label doesn't. */
+.live-card-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -801,7 +802,7 @@ html, body {
     margin-bottom: 16px;
 }
 
-.live-lineup-head .card-label {
+.live-card-head .card-label {
     margin-bottom: 0;
 }
 
@@ -812,9 +813,21 @@ html, body {
     white-space: nowrap;
 }
 
-/* The timeline's "Show substitutions" checkbox is dense, which is right on a desktop and under the
-   44px floor on the phone this screen is actually used on. Its label is the target, so the height
-   goes there. */
+/* The "Show substitutions" toggle rides the timeline's heading, so its label is sized down to sit
+   beside a card label rather than to head the list itself. The size goes on the label element:
+   MudBlazor renders it as its own .mud-typography-body1, which carries a font-size of its own and
+   inherits nothing from the wrapper. */
+.live-timeline-toggle {
+    flex: none;
+}
+
+.live-timeline-toggle .mud-checkbox .mud-typography {
+    font-size: 0.8rem;
+    color: var(--ink-muted);
+}
+
+/* The checkbox is dense, which is right on a desktop and under the 44px floor on the phone this
+   screen is actually used on. Its label is the target, so the height goes there. */
 @media (pointer: coarse) {
     .live-timeline-toggle .mud-checkbox {
         min-height: 44px;
