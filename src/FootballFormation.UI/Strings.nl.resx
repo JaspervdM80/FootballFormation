@@ -149,6 +149,7 @@
   <data name="Final Score" xml:space="preserve"><value>Eindstand</value></data>
   <data name="Us" xml:space="preserve"><value>Wij</value></data>
   <data name="Save Score" xml:space="preserve"><value>Uitslag opslaan</value></data>
+  <data name="This match hasn't been played yet." xml:space="preserve"><value>Deze wedstrijd is nog niet gespeeld.</value></data>
   <data name="Goals" xml:space="preserve"><value>Doelpunten</value></data>
   <data name="OG" xml:space="preserve"><value>ED</value></data>
   <data name="No goals recorded yet" xml:space="preserve"><value>Nog geen doelpunten ingevoerd</value></data>

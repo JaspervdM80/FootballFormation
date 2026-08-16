@@ -205,22 +205,36 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   intended — the only thing to do with one is delete it, and the stale row is the prompt. Because
   `HasFinalScore` tests `MatchState` too, a game being played now stays among the fixtures instead
   of crossing over on its first goal. Either block disappears when empty.
-- `/games` routes an `InProgress` game to `/live` for **everyone**, and shows a pulsing green
+- `/games` routes an `InProgress` game to `/live` for **everyone**, and shows a pulsing
   `.action-live` button on its card — whatever the calendar says, since a match kicked off before
-  midnight is still being played. For other games the Live action is admin-only **and match-day
-  only** (`Games.IsMatchDay`, i.e. `game.Date.Date == Today`): the live screen runs a real clock
-  and writes real substitution timings, so opening it on a fixture weeks out would bank minutes
-  against a match nobody is playing. It disappears entirely once `Games.HasFinalScore(game)` — a
-  settled game has nothing left to run, so the Result button beside it is the way in and a row
-  click opens `/result`.
-- **The action row is a card of its own below 600px.** A game card carries five `.action-btn`
-  icons, six on match day when Live joins them, and on a touch screen those are 44px each — 264px,
-  which no phone has to spare beside an opponent's name. So `Games.razor.css` wraps the row onto
-  its own full-width line under the match and lets the buttons split it evenly, flush against each
-  other: a gap between two touch targets has to be nothing or at least 8px, and there is nowhere to
-  find five 8px gaps. The card's horizontal padding drops to 12px there so the six still clear 44px
-  on a 320px phone. `scripts/touch-targets.mjs` measures all of it — see
-  [testing.md](testing.md#touch-targets).
+  midnight is still being played. It is **the crest red and the first button in the row**: red
+  belongs to that one state, and the row's leading position is the one a coach can hit without
+  reading. For other games the Live action is admin-only **and match-day only**
+  (`Games.IsMatchDay`, i.e. `game.Date.Date == Today`), and stays a plain `.action-btn` so red goes
+  on meaning *being played right now*: the live screen runs a real clock and writes real
+  substitution timings, so opening it on a fixture weeks out would bank minutes against a match
+  nobody is playing. It disappears entirely once `Games.HasFinalScore(game)` — a settled game has
+  nothing left to run, so the Result button is the way in and a row click opens `/result`.
+- **A fixture in the future carries no Result button** (`Games.IsFuture`, i.e.
+  `game.Date.Date > Today`). There is no result to read and none to enter, and a score typed onto a
+  match nobody has played turns a fixture into a result — `Sections()` splits on the scoreline. The
+  page is not the enforcement: `MatchResult` applies the same rule, so an admin who arrives at
+  `/games/{id}/result` by URL gets the score read-only, no **Save Score** and no add-goal form
+  (a goal is a scoreline by another route — `AddGoalAsync` recounts it), under a line saying the
+  match has not been played yet.
+- **The action row is a card of its own below 600px.** A game card carries four `.action-btn` icons
+  on a fixture and six on match day when Live joins them, and on a touch screen those are 44px each
+  — 264px, which no phone has to spare beside an opponent's name. So `Games.razor.css` wraps the
+  row onto its own full-width line under the match, at a fixed width and right-aligned, flush
+  against each other: a gap between two touch targets has to be nothing or at least 8px, and there
+  is nowhere to find five 8px gaps. Fixed rather than split evenly because the row's length varies
+  with both the game's state and who is looking — see [known_issues.md](known_issues.md). The
+  card's horizontal padding drops to 12px there so the six still clear 44px on a 320px phone.
+  `scripts/touch-targets.mjs` measures all of it — see [testing.md](testing.md#touch-targets).
+- **The venue is a word on a phone.** On a wide card the opponent carries a `vs `/`@ ` prefix
+  (`.opp-prefix`); below 600px that is hidden and `.game-venue` spells out *Thuis*/*Uit* after the
+  name instead. The card's coloured edge stripe says the same thing and had been saying it alone,
+  which is a convention nobody reads off a stripe.
 - The page reads "today" from the injected `TimeProvider`, not `DateTime.Today`, the same way the
   services do — that is also what `IsIncomplete` (the missing-lineup flag) compares against.
 - `HasFinalScore` checks `MatchState` **as well as** the score fields, and must: `MatchGoalService`
