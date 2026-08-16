@@ -2,7 +2,6 @@ using FootballFormation.Core.Models;
 
 namespace FootballFormation.Core.Reporting;
 
-/// <summary>How long one player has actually been on the pitch in a live match.</summary>
 public record LiveMinutesRow(Player Player, int Seconds, bool IsOnPitch)
 {
     public int Minutes => Seconds / 60;

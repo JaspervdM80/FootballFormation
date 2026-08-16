@@ -4,9 +4,8 @@ using FootballFormation.Core.Services;
 namespace FootballFormation.UI.State;
 
 /// <summary>
-/// The season the whole UI is filtered by. Scoped, so on Blazor Server this lives for the SignalR
-/// circuit: the choice survives navigation within a tab but resets on a browser refresh, where it
-/// falls back to the database's current season.
+/// The season the whole UI is filtered by. The choice resets on a browser refresh, falling back to
+/// the database's current season.
 /// <para>
 /// That reset is deliberate. The picker is a <em>view</em> choice and must never write
 /// <see cref="Season.IsCurrent"/>, which is shared, admin-owned state edited on /settings —
@@ -31,10 +30,9 @@ public class SeasonState(SeasonService seasons)
     /// own <c>OnInitializedAsync</c> and interleave at the first await, so the first caller runs
     /// the query and everyone else awaits that same task.
     /// <para>
-    /// This was once load-bearing: the services shared one scoped <c>AppDbContext</c>, and a second
-    /// concurrent query on it threw. They take a short-lived context per operation now (see
-    /// <c>AddDbContextFactory</c> in Program.cs), so concurrent callers are safe and this is purely
-    /// an optimisation — a page that forgets it costs a duplicate query, not a crash.
+    /// Memoizing is now purely an optimisation — a page that forgets it costs a duplicate query,
+    /// not a crash. It was load-bearing while the services shared one scoped context and a second
+    /// concurrent query threw.
     /// </para>
     /// </summary>
     public Task EnsureLoadedAsync() => _loading ??= LoadAsync();

@@ -288,7 +288,6 @@ public class SeasonSquadService(
             .Include(m => m.Player)
             .FirstOrDefaultAsync(m => m.SeasonId == seasonId && m.PlayerId == playerId, cancellationToken);
 
-    /// <summary>One message for someone who is not in the squad, so both writes say the same thing
-    /// — and, the message being the resource key, translate to the same thing too.</summary>
+    // One message, so both writes say — and translate to — the same thing.
     private static Result NotInSquad() => Result.Failure("Player is not in this squad");
 }

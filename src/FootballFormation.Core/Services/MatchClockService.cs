@@ -18,12 +18,6 @@ namespace FootballFormation.Core.Services;
 /// is not paused at the touchline, and a clock that could be stopped by a stray tap is a clock the
 /// season's minutes cannot be trusted from.
 /// </para>
-/// <para>
-/// This is where the arithmetic a season's statistics are built on lives — the banked seconds and
-/// the started/ended marks on each half are what <c>GameMinutesReport</c> later credits players
-/// with — so it is the piece of the live match kept on its own and driven to exact instants under
-/// test.
-/// </para>
 /// </summary>
 public class MatchClockService(
     IDbContextFactory<AppDbContext> dbFactory,

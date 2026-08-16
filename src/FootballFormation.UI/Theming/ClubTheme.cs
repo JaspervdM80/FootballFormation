@@ -26,10 +26,8 @@ public sealed record ClubTheme
     /// <summary>Emphasis red, for text on light surfaces.</summary>
     public required string PrimaryBright { get; init; }
 
-    /// <summary>Darker gradient partner.</summary>
     public required string PrimaryDeep { get; init; }
 
-    /// <summary>Text on primary-colored buttons.</summary>
     public required string OnPrimary { get; init; }
 
     /// <summary>Crest banner green.</summary>
@@ -52,12 +50,10 @@ public sealed record ClubTheme
     public required string SurfacePage { get; init; }
     public required string SurfaceCard { get; init; }
 
-    /// <summary>Deeper gradient partner for cards.</summary>
     public required string SurfaceCardAlt { get; init; }
 
     public required string SurfaceAppbar { get; init; }
 
-    /// <summary>Greener gradient partner for the app bar.</summary>
     public required string SurfaceAppbarAlt { get; init; }
 
     /// <summary>Near-black with a green cast. Every text and line shade derives from it.</summary>
@@ -92,7 +88,6 @@ public sealed record ClubTheme
         CornerRadius = "12px"
     };
 
-    /// <summary>The theme the app is currently wearing.</summary>
     public static ClubTheme Current { get; } = Gjs;
 
     /// <summary>

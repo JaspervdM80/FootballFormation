@@ -75,14 +75,12 @@ public sealed class SeasonSquads
             .GroupBy(m => m.SeasonId)
             .ToDictionary(g => g.Key, g => new SeasonSquad(g.Key, g));
 
-    /// <summary>Wraps a single season's squad, for callers that already have one.</summary>
     public static SeasonSquads Of(SeasonSquad squad) => new(squad.Members);
 
     /// <summary>The squad for a season, or an empty one when that season has none yet.</summary>
     public SeasonSquad For(int seasonId) =>
         _bySeasonId.TryGetValue(seasonId, out var squad) ? squad : SeasonSquad.Empty;
 
-    /// <summary>Every distinct player across all loaded seasons.</summary>
     public List<Player> AllPlayers =>
         [.. _bySeasonId.Values.SelectMany(s => s.Players).DistinctBy(p => p.Id)];
 

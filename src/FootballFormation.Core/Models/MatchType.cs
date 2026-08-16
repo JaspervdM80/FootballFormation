@@ -19,10 +19,7 @@ public enum MatchType
 
 public static class MatchTypeExtensions
 {
-    /// <summary>
-    /// The English name, which doubles as the resource key — callers render it as
-    /// <c>@L[game.MatchType.DisplayName()]</c>, the same convention as <c>PlayerPosition</c>.
-    /// </summary>
+    /// <summary>Rendered as <c>@L[game.MatchType.DisplayName()]</c>, like <c>PlayerPosition</c>.</summary>
     public static string DisplayName(this MatchType type) => type switch
     {
         MatchType.Competition => "Competition",

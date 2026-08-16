@@ -24,7 +24,6 @@ public class Season
 
     public List<Game> Games { get; set; } = [];
 
-    /// <summary>This season's squad — who can be picked, and who is only a guest.</summary>
     public List<SeasonSquadMember> SquadMembers { get; set; } = [];
 
     /// <summary>Whether <paramref name="date"/> falls inside this season's window. Date-only,
@@ -57,17 +56,15 @@ public class Season
 }
 
 /// <summary>
-/// Putting seasons in date order — the same rule as <see cref="GameOrdering"/> and for the same
-/// reason, <see cref="Season.StartDate"/> being a TEXT column too.
+/// Ordering seasons by date in memory — the same rule as <see cref="GameOrdering"/>.
 /// <para>
 /// The table holds one row a year, so <c>SeasonService</c> reads all of it and does its window
-/// arithmetic in memory: the same reasoning applied to the comparisons as well as the ordering,
-/// which also lets <see cref="Season.Contains"/> be the single definition of a window.
+/// arithmetic in memory too, which also lets <see cref="Season.Contains"/> be the single
+/// definition of a window.
 /// </para>
 /// </summary>
 public static class SeasonOrdering
 {
-    /// <summary>Newest first — what the picker and the current-season fallbacks want.</summary>
     public static List<Season> NewestFirst(this IEnumerable<Season> seasons) =>
         [.. seasons.OrderByDescending(s => s.StartDate).ThenBy(s => s.Id)];
 

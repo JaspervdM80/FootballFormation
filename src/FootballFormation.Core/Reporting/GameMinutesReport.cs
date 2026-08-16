@@ -2,7 +2,6 @@ using FootballFormation.Core.Models;
 
 namespace FootballFormation.Core.Reporting;
 
-/// <summary>Who was on the pitch, for how long, and in which position, over one game.</summary>
 public class GameMinutes
 {
     /// <summary>Player id → position → seconds spent on the pitch in that position.</summary>
@@ -33,12 +32,10 @@ public class GameMinutes
 /// Playing time for one game, per player and per position. The single place that decides whether
 /// a game's minutes come from what actually happened or from what was planned.
 /// <para>
-/// A game that was run live carries the truth: <see cref="GamePeriod.StartedAtSeconds"/> and
-/// <see cref="GamePeriod.EndedAtSeconds"/> say when each half ran, and the
-/// <see cref="GameSubstitution"/> rows say who swapped with whom, when, and into which position.
-/// The lineup alone cannot express any of that — <c>MatchSubstitutionService</c> rewrites it in
-/// place, so afterwards it only shows the <em>final</em> occupants. A game that was never run live
-/// has no timings at all, and there the planned lineup is the only answer available.
+/// A game that was run live carries the truth in its half timings and its
+/// <see cref="GameSubstitution"/> rows. The lineup alone cannot express it —
+/// <c>MatchSubstitutionService</c> rewrites it in place, so afterwards it shows only the
+/// <em>final</em> occupants.
 /// </para>
 /// <para>
 /// The choice is made per game, not per line-up, on <see cref="Game.HasActualTimings"/>: once a

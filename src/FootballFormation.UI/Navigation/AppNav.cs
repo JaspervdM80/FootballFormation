@@ -5,7 +5,7 @@ namespace FootballFormation.UI.Navigation;
 
 /// <summary>An entry in the main menu, rendered identically by the app bar and the drawer.</summary>
 /// <param name="Path">Where it goes — an <see cref="AppRoutes"/> constant.</param>
-/// <param name="LabelKey">Localization key; the English text is the key, see Strings.nl.resx.</param>
+/// <param name="LabelKey">Localization key.</param>
 /// <param name="Icon">Shown in the drawer only; the app bar hides it via .topbar-nav-link.</param>
 /// <param name="Match">How the active-page highlight matches the current URL.</param>
 /// <param name="AdminOnly">Wrapped in an AuthorizeView restricted to the Admin role when true.</param>

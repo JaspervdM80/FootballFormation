@@ -8,7 +8,6 @@ namespace FootballFormation.Core.Reporting;
 /// </summary>
 public record PlannedSubstitution(Player? PlayerOff, Player? PlayerOn, PlayerPosition Position);
 
-/// <summary>A player who stays on the pitch but in a different position.</summary>
 public record PlannedMove(Player Player, PlayerPosition From, PlayerPosition To);
 
 /// <summary>

@@ -5,7 +5,8 @@ Avoid repeating these mistakes:
 ## EF Core
 - **UNIQUE constraint on save**: When re-saving `GamePlayerPosition` entities, always create NEW entities with `Id = 0`. Never re-add tracked entities with existing IDs — EF tries INSERT with the old PK.
 - **List value converters need ValueComparer**: Without it, EF won't detect changes to `List<PlayerPosition>` or `List<int>` properties.
-- **DB path must be absolute**: Use `%LOCALAPPDATA%\FootballFormation\` not relative paths (relative resolves to working directory, which changes).
+- **DB path must be absolute** — a relative path resolves against the working directory, which
+  changes. `APP_DATA_DIR` is the supported override.
 - **`ORDER BY` on a date sorts its text, not the date**: SQLite has no date type, so all eight
   `DateTime` columns in this schema (`Game.Date`, `Game.ClockRunningSince`, `Season.StartDate`,
   `Season.EndDate`, `GameComment.CreatedAt`/`EditedAt`, `GameGoal.RecordedAt`,
@@ -48,23 +49,17 @@ Avoid repeating these mistakes:
   of results and fail. Restore the id by hand in both file names and the `[Migration]` attribute —
   see [patterns.md](patterns.md#migrations-are-one-file).
 - **A transaction cannot span two `AppDbContext` instances, and nothing warns you**: each operation
-  opens its own context from the factory (deliberately — see [patterns.md](patterns.md)), and each
-  context has its own connection. Calling another *service's* write from inside your own therefore
-  gives you two transactions with a gap between them, even though the code reads like one operation
-  and every `Result` check passes. The gap is real: SQLite can time out on the lock, the second save
-  can throw, and a Fly.io deploy restarts the container mid-write. Logging a goal was shaped that
-  way — insert through `GameService`, recount the scoreline through `MatchGoalService`'s own
-  context — so an interruption between them left the goal on file behind a stale score. **When one
-  row is derived from another, write both through the same context and commit them once**;
-  `GameService.AddGoalAsync(goal, recountScoreline: true)` is what that looks like. The commits are
-  counted in `MatchGoalServiceTests`, because from the outside two commits and one look identical
-  right up until something interrupts them.
-- **Collapsing that into a single `SaveChanges` looks tidier and reintroduces a lost update**: it
-  means counting the goals in memory and adding the new one to the total, which is a
-  read-modify-write on a row with no concurrency token. Two admins on the same live match — the
-  thing `LiveMatchNotifier` exists for — each read *n* goals and each write a scoreline of *n+1*,
-  and the score ends up one behind the goal list until the next recount repairs it. **Recount after
-  the write, inside the transaction**, where SQLite's write lock has already serialised the two.
+  opens its own context from the factory, so calling another *service's* write from inside your own
+  gives two transactions with a gap between them — even though the code reads like one operation and
+  every `Result` check passes. Logging a goal was shaped that way and an interruption left the goal
+  on file behind a stale score. **When one row is derived from another, write both through the same
+  context and commit them once.** The rule, the worked example and the two rejected alternatives are
+  in [patterns.md](patterns.md#when-two-rows-have-to-agree-one-context-writes-both).
+- **Collapsing that into a single `SaveChanges` looks tidier and reintroduces a lost update**:
+  counting the goals in memory and adding the new one is a read-modify-write on a row with no
+  concurrency token, so two admins on the same live match each write a scoreline of *n+1*.
+  **Recount after the write, inside the transaction**, where SQLite's write lock has already
+  serialised the two.
 
 ## Data / domain
 - **Deleting a player used to be destructive across every season**: `PlayerService.DeleteAsync` cascades their `GamePlayerPosition` rows and nulls their `GameGoal` scorer, so last season's top scorer disappeared from last season's stats — from a confirm that said nothing about it. Fixed by `ArchivePlayersInsteadOfDeleting`: delete now **refuses** for anyone with a lineup or goal row anywhere, and `Player.IsArchived` is the way to retire someone. Worth knowing when the refusal surprises you: the counts are deliberately **not** scoped to a season, unlike `SeasonSquadService.RemoveMemberAsync`'s, because the cascade is not either.
@@ -131,35 +126,20 @@ Avoid repeating these mistakes:
   day cell, so a shrink-to-fit popover collapses the month into a single column.
 - **Centring the calendar was only half of it — the day cells are 36px, and that is too small.**
   Reported twice: after the popover was centred, picking a day on a phone still misfired. MudBlazor's
-  `.mud-day` is `width/height: 36px; margin: 0 2px`, i.e. a 36px circle on a 40px column pitch with
-  rows flush — under Apple's 44px *and* Android's 48dp in both axes, and the 4px gutters between
-  columns are **dead**: a tap landing there hits `.mud-picker-calendar` and does nothing at all.
-  Worse, the popover was still pinned to 310px on a sheet that is now the full width of the phone,
-  so 40px of screen sat unused either side of the calendar and left live form controls exposed
-  there — with the picker open, `elementFromPoint` 14px outside the calendar returned the season
-  `MudSelect` underneath. `--dp-day` in app.css spends that width instead (41.7px at 320 wide up to
-  52px, sized by height as well so landscape doesn't blow past the viewport) and drops the side
-  margins so the column pitch *is* the target. See [ui_components.md](ui_components.md).
+  `.mud-day` is a 36px circle on a 40px column pitch, under Apple's 44px *and* Android's 48dp, and
+  the 4px gutters between columns are **dead** — a tap landing there hits `.mud-picker-calendar` and
+  does nothing. Worse, the popover stayed pinned to 310px on a sheet that is now the phone's full
+  width, leaving live form controls exposed either side: with the picker open, `elementFromPoint`
+  14px outside the calendar returned the season `MudSelect` underneath. `--dp-day` spends that width
+  instead and drops the side margins so the column pitch *is* the target. The resulting sizes per
+  viewport, and the elements that have to scale with them, are tabulated in
+  [ui_components.md](ui_components.md#date-pickers-below-600px-or-560px-tall).
 - **The month name between the arrows is a 23px button, and it was the worst target of the lot.**
-  Reported as "it's mostly the month selection". `.mud-picker-calendar-header-transition` is a real
-  `<button>` — the one that opens the month grid — but MudBlazor gives it `height: 23px` because it
-  doubles as the slide transition's viewport. It sits in the 56px row the two 44px arrows set, so
-  there is **17px of dead div above it and 16px below**, and a thumb aimed at "augustus 2026" mostly
-  lands in one of those and does nothing. 44px fits that row with no layout change at all. Its label
-  is taken out of flow by `.mud-picker-slide-transition > *` (`position: absolute`, top/left/right
-  pinned), so growing the button also needs `bottom: 0` and flex centring or the text sticks to the
-  top edge. The toolbar's year button — the only way into the year list — was 64x40 and got the same
-  44px floor.
-- **The picker's flow is year → month → day, so the toolbar's date line is not an escape route.**
-  Worth knowing before hiding it (which `app.css` does in landscape, to buy a 44px year button in a
-  56px toolbar): picking a year lands on the month grid, and picking a month lands on the days. The
-  date button only restates what is already in the field behind the popover. Verified end to end at
-  every size, landscape included.
-- **Sizing a MudBlazor calendar means sizing `.mud-picker-calendar-transition` too.**
-  `.mud-picker-slide-transition > *` is `position: absolute`, so the grid is out of flow and that
-  container's `min-height` (MudBlazor's 216px = six 36px rows) is the *only* thing reserving room
-  for it. Grow the day cells without growing it and the last weeks are drawn straight over whatever
-  follows. Always six rows — the calendar renders 42 cells whatever the month.
+  Reported as "it's mostly the month selection". It is a real `<button>` — the one that opens the
+  month grid — that MudBlazor clamps to `height: 23px` because it doubles as the slide transition's
+  viewport, sitting in the 56px row the two 44px arrows set. So there is **17px of dead div above it
+  and 16px below**, and a thumb aimed at "augustus 2026" mostly lands in one of those. 44px fits that
+  row with no layout change at all.
 - **Buttons need clear space above them, not just their own size.** The game dialog's action row
   sat 28px under the last field, and `MudSelect`'s hit box reaches ~10px past its own underline —
   leaving 18px of dead space between "Annuleren" and the unavailable-players dropdown. Mobile
@@ -215,7 +195,6 @@ Avoid repeating these mistakes:
   shim in `wwwroot/js/drag-drop-touch.js`, plus `touch-action: none` on `[draggable="true"]`
   (in app.css) so the browser doesn't claim the gesture for scrolling.
 
-## Touch / PWA (continued)
 - **White page after switching apps**: a suspended PWA loses its SignalR circuit. Two
   causes, both fixed: the page background came only from the MudBlazor theme (now also
   set statically on `html, body` in app.css via `var(--surface-page)`, plus
@@ -452,8 +431,6 @@ Avoid repeating these mistakes:
   is the revalidation interval on a connected idle circuit, and nothing more.
 
 ## General
-- **Port already in use**: Kill orphaned process with `taskkill //PID <pid> //F`.
-- **File locked during build**: Stop the running app before rebuilding.
 - **A published app started from the wrong directory serves every static file as 200 with an empty
   body.** The content root of a published app is the *working directory*, which is why the
   Dockerfile sets `WORKDIR /app` before its entry point. Run

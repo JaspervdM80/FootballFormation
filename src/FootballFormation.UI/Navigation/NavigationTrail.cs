@@ -8,9 +8,8 @@ namespace FootballFormation.UI.Navigation;
 /// whichever page someone hardcoded. Reaching a player from the season stats and reaching the same
 /// player from the squad used to end up in the same place; now each goes back where it came from.
 /// <para>
-/// Scoped, so on Blazor Server this lives for the SignalR circuit: the trail survives navigation
-/// within a tab and resets on a browser refresh. That reset is why the back arrow carries a
-/// fallback — a shared link opened cold has nothing behind it.
+/// The trail resets on a browser refresh, which is why the back arrow carries a fallback — a shared
+/// link opened cold has nothing behind it.
 /// </para>
 /// </summary>
 public sealed class NavigationTrail(NavigationManager navigation) : IDisposable

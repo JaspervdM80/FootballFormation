@@ -13,18 +13,19 @@ namespace FootballFormation.UI.Pages;
 
 /// <summary>
 /// One entry on the match timeline — a goal or a substitution — so both can be listed together.
-/// <paramref name="AtSeconds"/> is the elapsed match clock, which is what orders the list: it runs
-/// on across the break, so a first-half stoppage entry stays above the restart without anyone
-/// comparing scoreboard readings. <paramref name="Minute"/> is that reading, for display only, and
-/// null for a goal recorded without one.
-/// <paramref name="RecordedAt"/> orders events that share a second, which the clock alone cannot.
-/// <paramref name="Id"/> settles the rest: two entries of the same kind entered in one instant
-/// share a <paramref name="RecordedAt"/>, and rows older than that column all read
-/// <c>0001-01-01</c>. Across the two kinds the ids come from different tables, so a tie there is
-/// arbitrary — but it is stable, which is what the list needs.
-/// <paramref name="Half"/> is where the break falls; <paramref name="HalfTimeAbove"/> marks the one
-/// entry the break is drawn above, which only a neighbour can decide.
-/// <paramref name="Score"/> is the scoreline as it stood after a goal, and null for a substitution.
+/// <para>
+/// Sorted on <paramref name="AtSeconds"/>, then <paramref name="RecordedAt"/>, then
+/// <paramref name="Id"/>. The elapsed clock runs on across the break, so a first-half stoppage
+/// entry stays above the restart without anyone comparing scoreboard readings;
+/// <paramref name="Minute"/> is that scoreboard reading, display only. The last two settle ties:
+/// entries entered in one instant share a <paramref name="RecordedAt"/>, and rows older than that
+/// column all read <c>0001-01-01</c>. Across the two kinds the ids come from different tables, so
+/// a tie there is arbitrary — but stable, which is what the list needs.
+/// </para>
+/// <para>
+/// <paramref name="HalfTimeAbove"/> marks the one entry the break is drawn above, which only a
+/// neighbour can decide.
+/// </para>
 /// </summary>
 public record MatchEvent(
     int AtSeconds, MatchMinute? Minute, PeriodType Half, DateTime RecordedAt, int Id,
@@ -118,10 +119,8 @@ public partial class LiveMatch
     private FormationType DisplayFormation =>
         DisplayHalf?.FormationTypeOverride ?? GameData?.FormationType ?? FormationType.F442;
 
-    /// <summary>Whether the sub controls can do anything — needs an admin and a half in play.</summary>
     private bool CanSubstitute => _isAdmin && IsHalfInPlay;
 
-    /// <summary>The half not yet kicked off — where the clock goes next, if anywhere.</summary>
     private GamePeriod? NextHalf => GameData?.NextHalf();
 
     /// <summary>
@@ -132,7 +131,6 @@ public partial class LiveMatch
     /// </summary>
     private string? DisplayHalfLabel => DisplayHalf?.PeriodType.HalfDisplayName();
 
-    /// <summary>Half the buttons would kick off, or null once both have been played.</summary>
     private string? NextHalfLabel => NextHalf?.PeriodType.HalfDisplayName();
 
     /// <summary>
@@ -244,7 +242,6 @@ public partial class LiveMatch
     /// </summary>
     private bool MinutesAreActual => GameData?.HasActualTimings == true;
 
-    /// <summary>Whether anything at all has been recorded, filter or no filter.</summary>
     private bool HasEvents => GameData is { } game && (game.Goals.Count > 0 || game.Substitutions.Count > 0);
 
     /// <summary>

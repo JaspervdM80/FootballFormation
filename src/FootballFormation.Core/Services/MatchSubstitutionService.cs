@@ -24,7 +24,6 @@ public class MatchSubstitutionService(
     ICurrentUser currentUser,
     ILogger<MatchSubstitutionService> logger)
 {
-    /// <summary>The match clock — injected, for the reason <see cref="MatchClockService"/> gives.</summary>
     private DateTime UtcNow => time.GetUtcNow().UtcDateTime;
 
     /// <summary>
