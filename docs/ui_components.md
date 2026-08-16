@@ -89,6 +89,11 @@ there, so a lineup can never be laid out one way on one screen and another way o
 Phone-first single column (`max-width: 560px`), no `[Authorize]`: admin drives it, everyone else
 watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="@AppRoles.Admin">`.
 
+- **The heading is the opponent's name alone**, with no `vs`/`@` in front of it: the subtitle under
+  it already spells the venue out in words ("Thuis" / "Uit"), and the scoreboard right below puts
+  the two sides in the order the ground decides. The prefix said the same thing a third time, in
+  punctuation. The other screens that show a fixture (`Home`, `FormationBuilder`,
+  `FormationOverview`, `MatchResult`, `PlayerStats`) still carry it.
 - **It injects four services, one per thing it does**: `LiveMatchService` to read the match,
   `MatchClockService` for the clock buttons, `MatchGoalService` for the goal dialogs and
   `MatchSubstitutionService` for the pitch taps. That is the intended shape — see
@@ -166,11 +171,15 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   the neighbours are.
 - A **"Show substitutions" checkbox** (`.live-timeline-toggle`) drops the substitutions from the
   timeline and leaves the goals: a rotated squad buries the goals among swaps nobody is scrolling
-  back for. The state is per circuit and deliberately not stored.
+  back for. The state is per circuit and deliberately not stored. It rides the card's heading row
+  (`.live-card-head`) rather than sitting above the list, at the size of a caption — it is a setting
+  for the list, not the first entry in it. The label is sized in `app.css` on
+  `.mud-typography`: MudBlazor renders it as its own `body1` element, which inherits no font-size
+  from the wrapper.
 - Finishing asks for confirmation via `DialogPrompts.ConfirmAsync` (not `ConfirmDeleteAsync`,
   whose button says "Delete").
 - **The plan for the middle of a half is a pop-up, not part of the screen.** The line-up card's
-  heading carries a `Changes (n)` button (`.live-lineup-head`, `.live-plan-btn` in `app.css`) that
+  heading carries a `Changes (n)` button (`.live-card-head`, `.live-plan-btn` in `app.css`) that
   opens `PlannedChangesDialog`; the dialog renders what `PlannedChangesReport` makes of the
   difference between the two planned line-ups (`PlannedChangesList`, which owns the `.planned-*`
   styling). Each line is carried out by tapping that player on the pitch — the dialog writes
@@ -185,6 +194,12 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   been taken off is dropped: the difference between the line-ups still names their slot, but it now
   proposes withdrawing whoever came on for them, which nobody planned. An injury replacement
   therefore stays on for the rest of the half rather than being listed to come straight back off.
+- **No line-up means no line-up card and no minutes card.** Both are left out entirely rather than
+  headed over an empty pitch or an empty table — a match nobody has been picked for is sent to the
+  formation screens by the buttons on `/games`, and two cards repeating "build one first" only push
+  the scoreboard and the timeline down the phone screen the coach is actually reading. The heading
+  is the first thing either card can say, so there is nothing to keep on screen once the body is
+  empty.
 - **Minutes played is admin-only** (`LiveMinutesReport`), and shows exact time on the pitch rather
   than the `periodsPlaying × periodDuration` estimate the planning screens use. It is a computed
   property, so the running player's total climbs with the clock tick. Until the first kick-off

@@ -10,8 +10,10 @@
 }
 
 @* mb-2, not the usual mb-4: on a sideline phone every pixel above the scoreboard counts. *@
+@* The opponent's name stands on its own: the subtitle already says which ground it is on, so a
+   "vs"/"@" in front of it only repeats that in punctuation. *@
 <PageHeader BackFallback="@AppRoutes.Games" TitleTypo="Typo.h6" Class="mb-2"
-            Title="@($"{(GameData.IsHomeGame ? "vs" : "@")} {GameData.Opponent}")"
+            Title="@GameData.Opponent"
             Subtitle="@($"{GameData.Date:dd MMM yyyy} · {(GameData.IsHomeGame ? L["Home"] : L["Away"])}")" />
 
 <div class="live-layout">
@@ -93,33 +95,29 @@
         </MudPaper>
     </AuthorizeView>
 
-    @* .live-lineup drops this card below the timeline on a phone — see app.css. *@
-    <MudPaper Class="pa-4 live-lineup" Elevation="2" Style="border-radius: 16px;">
-        @* The half's name and, for the coach only, the way into what the plan still holds for it.
-           The button carries the count so the plan can be ignored at a glance when it is empty. *@
-        <div class="live-lineup-head">
-            <div class="card-label">
-                @(DisplayHalfLabel is { } half ? L[half] : L["Line-up"])
+    @* No line-up for this half means an empty pitch and an empty bench, which says nothing the
+       formation screens are not already there to fix — the card stays away until someone is on it.
+       .live-lineup drops it below the timeline on a phone — see app.css. *@
+    @if (DisplayLineup.Count > 0)
+    {
+        <MudPaper Class="pa-4 live-lineup" Elevation="2" Style="border-radius: 16px;">
+            @* The half's name and, for the coach only, the way into what the plan still holds for it.
+               The button carries the count so the plan can be ignored at a glance when it is empty. *@
+            <div class="live-card-head">
+                <div class="card-label">
+                    @(DisplayHalfLabel is { } half ? L[half] : L["Line-up"])
+                </div>
+                <AuthorizeView Roles="@AppRoles.Admin">
+                    @if (PlannedChangeCount > 0)
+                    {
+                        <MudButton Variant="Variant.Outlined" Class="btn-ghost live-plan-btn" Size="Size.Small"
+                                   StartIcon="@Icons.Material.Filled.SwapHoriz" OnClick="ShowPlannedChanges">
+                            @L["Changes ({0})", PlannedChangeCount]
+                        </MudButton>
+                    }
+                </AuthorizeView>
             </div>
-            <AuthorizeView Roles="@AppRoles.Admin">
-                @if (PlannedChangeCount > 0)
-                {
-                    <MudButton Variant="Variant.Outlined" Class="btn-ghost live-plan-btn" Size="Size.Small"
-                               StartIcon="@Icons.Material.Filled.SwapHoriz" OnClick="ShowPlannedChanges">
-                        @L["Changes ({0})", PlannedChangeCount]
-                    </MudButton>
-                }
-            </AuthorizeView>
-        </div>
 
-        @if (DisplayLineup.Count == 0)
-        {
-            <MudText Typo="Typo.body2" Style="color: var(--ink-subtle);">
-                @L["No line-up for this half yet — build one first."]
-            </MudText>
-        }
-        else
-        {
             @if (CanSubstitute)
             {
                 <MudText Typo="Typo.caption" Class="live-pitch-hint">
@@ -152,8 +150,8 @@
                     }
                 }
             </div>
-        }
-    </MudPaper>
+        </MudPaper>
+    }
 
     @* Nothing can be scored before kick-off, so the buttons stay out of the way entirely
        rather than sitting there greyed out above the start button. *@
@@ -174,14 +172,16 @@
     }
 
     <MudPaper Class="pa-4" Elevation="2" Style="border-radius: 16px;">
-        <div class="card-label">@L["Timeline"]</div>
-
         @* Rotation fills this list with swaps nobody is scrolling back for, so they fold away and
-           leave the goals on their own. *@
-        <div class="live-timeline-toggle">
-            <MudCheckBox T="bool" @bind-Value="ShowSubstitutions" Dense="true" Size="Size.Small" Color="Color.Primary">
-                @L["Show substitutions"]
-            </MudCheckBox>
+           leave the goals on their own. The toggle rides the heading rather than sitting under it:
+           it is a setting for the list, not the first thing in it. *@
+        <div class="live-card-head">
+            <div class="card-label">@L["Timeline"]</div>
+            <div class="live-timeline-toggle">
+                <MudCheckBox T="bool" @bind-Value="ShowSubstitutions" Dense="true" Size="Size.Small" Color="Color.Primary">
+                    @L["Show substitutions"]
+                </MudCheckBox>
+            </div>
         </div>
 
         @if (Timeline.Count == 0)
@@ -257,20 +257,16 @@
         }
     </MudPaper>
 
-    <AuthorizeView Roles="@AppRoles.Admin">
-        <MudPaper Class="pa-4 live-minutes-card" Elevation="2" Style="border-radius: 16px;">
-            @* Before kick-off these are the minutes the line-up plans for, not minutes anyone has
-               played — the heading says which, because the numbers themselves cannot. *@
-            <div class="card-label">@(MinutesAreActual ? L["Minutes played"] : L["Planned minutes"])</div>
+    @* Nobody selected anywhere in the match means every row would be a name-less zero, so the card
+       is left out entirely rather than headed over an empty table. *@
+    @if (MinutesPlayed.Count > 0)
+    {
+        <AuthorizeView Roles="@AppRoles.Admin">
+            <MudPaper Class="pa-4 live-minutes-card" Elevation="2" Style="border-radius: 16px;">
+                @* Before kick-off these are the minutes the line-up plans for, not minutes anyone has
+                   played — the heading says which, because the numbers themselves cannot. *@
+                <div class="card-label">@(MinutesAreActual ? L["Minutes played"] : L["Planned minutes"])</div>
 
-            @if (MinutesPlayed.Count == 0)
-            {
-                <MudText Typo="Typo.body2" Style="color: var(--ink-subtle);">
-                    @L["No line-up for this half yet — build one first."]
-                </MudText>
-            }
-            else
-            {
                 <div class="live-minutes">
                     @foreach (var row in MinutesPlayed)
                     {
@@ -288,7 +284,7 @@
                         </div>
                     }
                 </div>
-            }
-        </MudPaper>
-    </AuthorizeView>
+            </MudPaper>
+        </AuthorizeView>
+    }
 </div>
