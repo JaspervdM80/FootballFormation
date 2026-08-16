@@ -417,10 +417,19 @@ html, body {
    Global, not scoped, because two pages use them: the game cards on /games and the season rows
    on /settings. They lived in Games.razor.css and so compiled to .action-btn[b-<gamesHash>],
    which meant the /settings buttons matched nothing and rendered as native browser chrome.
-   Scoped CSS fails silently like that, so anything more than one page uses belongs here. */
+   Scoped CSS fails silently like that, so anything more than one page uses belongs here.
+
+   The squad rows on /players are the same row of actions and take the same size, but they cannot
+   take the same class: they are MudIconButtons, and one of them is a MudMenu activator, whose
+   Class lands on a wrapper div (9.7 has no ActivatorClass). So the size is the token below rather
+   than a number written out per page — change it here and every row of icon actions moves. */
+:root {
+    --action-btn-size: 32px;
+}
+
 .action-btn {
-    width: 32px;
-    height: 32px;
+    width: var(--action-btn-size);
+    height: var(--action-btn-size);
     border: none;
     background: none;
     color: var(--ink-muted);
@@ -494,9 +503,8 @@ html, body {
    they are arranged so six of them fit is Games.razor.css's problem, but none of them is under 44
    anywhere. */
 @media (pointer: coarse) {
-    .action-btn {
-        width: 44px;
-        height: 44px;
+    :root {
+        --action-btn-size: 44px;
     }
 }
 
@@ -1238,24 +1246,20 @@ html, body {
     align-items: center;
 }
 
-/* The same box as a game card's .action-btn — 32px for a pointer, 44px for a finger. MudBlazor
-   sizes a small icon button from its padding, which lands at 26px and made two rows of icons that
-   do the same job on two pages sit at two different widths. Its rule is a bare
-   .mud-icon-button-size-small, so this selector outspecifies it without !important. */
+/* The same box as a game card's action row, from the same token — see --action-btn-size above for
+   why this row cannot simply wear .action-btn. MudBlazor sizes a small icon button from its
+   padding, which lands at 26px and left two rows of icons that do the same job on two pages at two
+   different widths. Its rule is a bare .mud-icon-button-size-small, so this selector outspecifies
+   it without !important. */
 .players-table .row-actions .mud-icon-button {
-    width: 32px;
-    height: 32px;
+    width: var(--action-btn-size);
+    height: var(--action-btn-size);
     padding: 0;
 }
 
+/* Flush, for the same reason the game card's action row is: a 2px gap between two 44px targets is
+   a dead gutter, and a gap has to be nothing or at least 8px. */
 @media (pointer: coarse) {
-    .players-table .row-actions .mud-icon-button {
-        width: 44px;
-        height: 44px;
-    }
-
-    /* Flush, for the same reason the game card's action row is: a 2px gap between two 44px
-       targets is a dead gutter, and a gap has to be nothing or at least 8px. */
     .players-table .row-actions {
         gap: 0;
     }
