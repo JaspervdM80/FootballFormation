@@ -60,8 +60,8 @@ FootballFormation/
 │   └── FootballFormation.Web/     # Host project, Program.cs, wwwroot
 ├── tests/
 │   └── FootballFormation.Core.Tests/   # Service and domain tests (gate the merge)
-├── docs/                          # Architecture & project documentation
-│   ├── project_overview.md
+├── .claude/skills/                # The working rules, one skill per area
+├── docs/                          # Detailed reference and the incident record
 │   ├── architecture.md
 │   ├── models.md
 │   ├── patterns.md

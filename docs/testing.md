@@ -210,108 +210,63 @@ an afternoon to find:
 
 ### One pipeline, one compile
 
-Everything lives in `.github/workflows/ci.yml`, in four jobs on one chain:
+Everything lives in `.github/workflows/ci.yml`, in four jobs on one chain, all four required checks:
 
 ```
 Build and test ──┬── Coverage
                  ├── Playwright
                  └── Visual check
-
-        (all four are required checks)
 ```
 
-**`Build and test`** restores, builds Release, runs `dotnet test`, then publishes — and the publish
-is `--no-build`, so it hands on exactly what the unit tests just ran against rather than compiling
-the commit a second time. It prunes the published `runtimes/` to `linux-x64` and uploads the result
-as the `app` artifact. The test step carries `--collect:"XPlat Code Coverage" --settings
-coverage.runsettings`, so the report comes out of the run that is already the gate rather than out
-of a second run of the same tests, and it is uploaded as the `coverage` artifact.
+**`Build and test`** restores, builds Release, runs `dotnet test`, then publishes `--no-build`, so it
+hands on exactly what the unit tests ran against rather than compiling the commit a second time. The
+test step carries `--collect:"XPlat Code Coverage"`, so the report comes out of the run that is
+already the gate. This replaced a second workflow that compiled the commit twice more, plus a third
+time inside Playwright's `dotnet run`: four compiles of one commit became one.
 
-**`Coverage`** downloads that report and runs `scripts/coverage.mjs` over it — the same script and
-the same 80% floor as a local `scripts/coverage.sh`, with `COVERAGE_BASE` pointed at the pull
-request's base branch. It is the one job checked out with `fetch-depth: 0`, because judging a
-change means diffing against its merge base and a single-commit checkout has nothing to diff
-against. It compiles nothing and needs no browser, so it is Node and a git history and is over in
-seconds. The verdict, the whole-project line and branch numbers, and a per-file table with the
-uncovered line numbers are written to `$GITHUB_STEP_SUMMARY` — the run's own front page, so the
-result is read without opening a log or downloading the Cobertura report.
+**`Coverage`** runs `scripts/coverage.mjs` over that report — the same script and 80% floor as
+locally. It is the one job checked out with `fetch-depth: 0`, because judging a change means diffing
+against its merge base and a single-commit checkout has nothing to diff against. The verdict and a
+per-file table with the uncovered line numbers go to `$GITHUB_STEP_SUMMARY`.
 
-Blocking, like the browser jobs below: `main`'s ruleset names all four checks, so going under the
-floor keeps the merge button disabled. That is safe to require because the floor is on the lines a
-change *touched* — a pull request with no coverable line in it measures nothing and passes, rather
-than wedging on a division by zero.
-
-**`Playwright` and `Visual check`** download that artifact and start it. Neither calls a compiler;
-they install the .NET SDK only for the runtime to run `dotnet FootballFormation.Web.dll` with.
-`UI_TEST_APP_DLL` (Playwright's `webServer`) and `VISUAL_APP_DLL` (`visual-check.sh`) are what point
-each harness at the artifact. Both are unset locally, where building from the sources is the whole
-point, and each harness falls back to the `dotnet run` it always used.
-
-This replaced a `ui-checks.yml` that lived beside `ci.yml` and compiled the commit twice more, plus
-a third time inside Playwright's `dotnet run`. Four compiles of one commit became one.
+**`Playwright` and `Visual check`** download the published artifact and start it. Neither calls a
+compiler — they install the SDK only for the runtime. `UI_TEST_APP_DLL` and `VISUAL_APP_DLL` point
+each harness at the artifact; both are unset locally, where each falls back to `dotnet run`.
 
 Three details are deliberate:
 
-- **Publish, not build.** The output has to survive the trip to another runner. A published
-  directory is self-describing; a `bin/` tree needs the SDK and the sources it was built from.
-- **`-p:PublishReadyToRun=false`.** The Dockerfile leaves R2R on, and it forces a
-  runtime-identifier-specific publish that `--no-build` cannot satisfy. It also buys a faster first
-  render that nothing downstream measures.
+- **Publish, not build.** The output has to survive the trip to another runner. A published directory
+  is self-describing; a `bin/` tree needs the SDK and the sources it was built from.
+- **`-p:PublishReadyToRun=false`.** R2R forces a runtime-identifier-specific publish that
+  `--no-build` cannot satisfy.
 - **The `runtimes/` prune.** 84MB of the 104MB published is SQLitePCLRaw's native library for every
-  architecture it supports, riscv64 and mips64 included. Keeping only `linux-x64` takes the
-  artifact — uploaded once, downloaded twice — to 23MB.
+  architecture it supports. Keeping only `linux-x64` takes the artifact to 23MB.
 
-NuGet packages, the npm cache and the Playwright browser download are all cached between runs,
-keyed on the manifests that decide what they resolve to (`Directory.Packages.props` and the
-`.csproj` files; each `package.json`). `npx playwright install` still runs on a cache hit: it is a
-no-op when the revision is already there, and it is what fetches a new one when a patch release of
-Playwright moves the browser revision without moving `package.json`.
+`npx playwright install` still runs on a cache hit: it is a no-op when the revision is already there,
+and it is what fetches a new one when a patch release moves the browser revision without moving
+`package.json`.
 
 ### What triggers it
 
-**`pull_request`, and that is the whole of it.** The merge ref is the thing worth building:
-`actions/checkout` resolves a `pull_request` event to `refs/pull/N/merge`, the branch already merged
-into `main`, where a push event checks out the branch tip on its own. Merging is what deploys and
-nothing re-runs on `main` afterwards, so this event is the last word on the commit that reaches the
-volume — `strict_required_status_checks_policy` is on (see `deployment.md`) so the branch cannot
-have gone stale underneath it. It covers a fork's pull request too.
+**`pull_request`, and that is the whole of it**, plus `workflow_dispatch` as the escape hatch.
+`actions/checkout` resolves a `pull_request` event to `refs/pull/N/merge` — the branch already merged
+into `main` — where a dispatch checks out the branch tip. Merging is what deploys and nothing re-runs
+on `main`, so this event is the last word on the commit that reaches the volume.
 
-`ci.yml` used to carry a `push` trigger as well, and `ui-checks.yml` ran on push alone, so a pull
-request built four times over two files. The push trigger had a real reason once — GitHub starts no
-workflow run for an event it attributes to an app token, and a pull request opened by one sat with
-no **Build and test** while the merge button stayed disabled. That is no longer what happens: the
-run history shows `pull_request` runs appearing at open time on commits pushed hours earlier with no
-push in between, on pull requests opened exactly that way.
-
-The cost of dropping push is that a branch gets no CI until a pull request exists for it. If the
-app-token behaviour ever regresses, the symptom is a pull request whose checks never appear rather
-than a red one — `workflow_dispatch` is the escape hatch and runs the browsers too, and one more
-commit on the branch also does it.
-
-**`workflow_dispatch`** is the escape hatch, and the only other trigger. `ci.yml` used to expose a
-**`workflow_call`** as well, which is how `fly-deploy.yml` re-ran the build as its gate — the browser
-jobs opted out of that event so a flake could not hold up a release. Both are gone: the deploy has no
-gate job any more, the merge is the release, and every job here blocks the merge instead.
+The cost of carrying no `push` trigger is that a branch gets no CI until a pull request exists for
+it. The symptom of a regression here is a pull request whose checks never appear rather than a red
+one; one more commit, or the dispatch, recovers it.
 
 ### Is it stable enough for CI?
 
-Measured, not assumed. Eleven consecutive full runs at the time of writing, every one green:
-eight on an idle machine at about a minute each, and three pinned to two cores with three
-busy loops competing for them, which stretched a run to 2.2–2.5 minutes and changed nothing else.
-That is the retry-on-outcome design doing its job — `clickFor` absorbs a slow circuit instead of
-failing on it.
+Measured, not assumed: eleven consecutive full runs green, including three pinned to two cores with
+busy loops competing, which stretched a run to 2.2–2.5 minutes and changed nothing else. That is the
+retry-on-outcome design doing its job — `clickFor` absorbs a slow circuit instead of failing on it.
 
-It runs on every pull request as the `playwright` job in **`.github/workflows/ci.yml`**, and `main`'s
-ruleset names it, so a red run holds the merge. It was advisory until merging became the release;
-once nothing re-tests on `main`, a browser failure has to be dealt with on the pull request or not at
-all. The other side of that trade is that a flake blocks too — re-run the job from the run's page,
-because `.github/rulesets/main-every-check-green.json` grants no bypass to anyone.
-
-The job compiles nothing — it starts the app the `Build and test` job published, so a cold compile
-is never competing with the `webServer` start-up timeout. It installs only Chromium. On a failure it
-uploads the HTML report and the traces — `trace: 'retain-on-failure'` means a failing test can be
-replayed step by step with `npx playwright show-trace`. `CI=true` turns on one retry, so a test that
-only passes on the retry is reported as flaky rather than quietly green.
+A red run holds the merge, and so does a flake — re-run the job from the run's page, because the
+ruleset grants no bypass. `trace: 'retain-on-failure'` means a failing test can be replayed with
+`npx playwright show-trace`, and `CI=true` turns on one retry so a test that only passes on the retry
+is reported as flaky rather than quietly green.
 
 One test is calendar-dependent and skips rather than guesses: dating a match earlier in the current
 month has nothing to pick on the 1st, and stepping back a month could cross the season boundary the

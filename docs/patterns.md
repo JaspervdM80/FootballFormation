@@ -63,21 +63,13 @@ public Task<Result<List<Player>>> GetAllAsync(CancellationToken cancellationToke
 **A cancelled call is not a failed one.** This is a Blazor Server app: a visitor navigating away,
 closing the tab or losing their circuit is the most ordinary event there is, and on a phone at a
 touchline it happens constantly. So `RunAsync` catches `OperationCanceledException` *ahead of* the
-general handler and returns `Result.Cancelled()` — no `LogError`, no stack trace, and no
-`"Failed to load games"` message. Without that, threading the token would have turned every
-navigation-away into a logged error and a red snackbar on the page the visitor moved to.
+general handler and returns `Result.Cancelled()` — still an `IsFailure` so every existing "did that
+work?" check reads it as no, but carrying `IsCancelled` and a null `ErrorKey` so nothing is logged
+and nothing is shown.
 
-`Result.Cancelled()` is still an `IsFailure`, deliberately: every existing "did that work?" check
-reads it as no, which is the only safe answer. What sets it apart is `IsCancelled` and an
-`ErrorKey` of null. Three consequences worth knowing:
-
-- `UiFeedback.Report`/`ReportFailure` show nothing for one and return false. The snackbar belongs
-  to the circuit, not to the page that started the call.
-- `Result.To<T>()` carries the flag, so a cancellation stays a cancellation through however many
-  services hand it up (`GameService.CreateAsync` → `SeasonService.GetOrCreateForDateAsync`).
-- The catch filter is `when (cancellationToken.IsCancellationRequested)`. An
-  `OperationCanceledException` raised while the caller's token is untouched is *not* the caller
-  leaving — it is a bug — and still falls through to the error log.
+The three call-site consequences — `UiFeedback` staying quiet, `Result.To<T>()` having to carry the
+flag, and the load-bearing catch filter — are in
+[known_issues.md](known_issues.md#result), along with the redirect trap.
 
 **Which calls get a token, in the UI.** Reads do; writes do not. Pages take theirs from
 `CancellableComponent.Cancellation` (see ui_components.md), which trips on disposal. A write is
@@ -370,35 +362,28 @@ appears, it belongs in this paragraph.
 gate is a real restriction rather than a redirect that could be navigated around.
 
 ## The sign-in cookie has three settings that are easy to get wrong
-All three live in `Program.cs`, and each one failed in a way that looks like "it logged me out
-again" rather than like a bug with a cause.
+All three live in `Program.cs`, and each failed in a way that reads as "it logged me out again"
+rather than as a bug with a cause. The rules, with the evidence and the symptoms in
+[known_issues.md](known_issues.md#authentication):
 
-- **`IsPersistent`, on the sign-in, is what makes the cookie outlive the browser session.** Both
-  routes that sign anyone in — `/auth/login` and the dev-only `/dev/login` — pass
-  `PersistentSession()`, which is a *new* `AuthenticationProperties` each time because the cookie
-  handler writes `IssuedUtc`/`ExpiresUtc` onto the instance it is given. `ExpireTimeSpan` does not
-  substitute for it: that bounds the ticket the cookie carries, while `IsPersistent` is the only
-  thing that puts an `Expires` on the header at all. Without it the browser holds a session cookie
-  and drops it whenever it decides the session ended — on a phone, every time the OS reclaims the
-  backgrounded tab.
-- **`SameSite` is `Lax`, and must not go back to `Strict`.** Strict withholds the cookie on every
-  cross-site navigation including an ordinary link click, so arriving from WhatsApp, an email or a
-  search result renders the page signed out until a reload. Lax still withholds it on the cross-site
-  POST that CSRF needs.
-- **Data protection sets an application name.** Left unset the purpose string defaults to the
-  content root path — `/app` only because the Dockerfile says so — so pinning it is what stops a
-  change to where the app is unpacked from invalidating every issued cookie at once.
+- **`IsPersistent`, on the sign-in**, not `ExpireTimeSpan`, is what makes the cookie outlive the
+  browser session. Both sign-in routes pass `PersistentSession()`, which returns a *fresh*
+  `AuthenticationProperties` each call.
+- **`SameSite` is `Lax`, and must not go back to `Strict`.**
+- **Data protection pins an application name**, or the purpose string follows the content root path.
 
-`tests/ui/specs/session.spec.js` holds all three, by reading the cookie's own attributes and by
-following a link into the app from another site.
+`tests/ui/specs/session.spec.js` holds all three — they are browser decisions, so no C# test can see
+them.
 
 ## Revoking authority takes two halves, because a circuit barely makes requests
 `OnValidatePrincipal` re-checks the security stamp on every HTTP request — and a Blazor Server tab
-makes almost none after the page loads. `RevalidatingUserAuthenticationStateProvider`
-(Web/Security) is the other half: it re-asks `UserService.FindForSessionAsync` on a timer for the
-life of the circuit and signs the circuit out when the account is gone or its stamp has moved.
-Five minutes by default; `Auth:RevalidationIntervalSeconds` sets it, and `0` leaves the stock
-provider in place so the UI test can be run against the old behaviour.
+makes almost none after the page loads, so it is not what revokes a session here (see
+[known_issues.md](known_issues.md#authentication) for what that measured).
+`RevalidatingUserAuthenticationStateProvider` (Web/Security) is the other half: it re-asks
+`UserService.FindForSessionAsync` on a timer for the life of the circuit and signs it out when the
+account is gone or its stamp has moved. Five minutes by default;
+`Auth:RevalidationIntervalSeconds` sets it, and `0` leaves the stock provider in place so the UI test
+can be run against the old behaviour.
 
 Both halves call the same `FindForSessionAsync(ClaimsPrincipal)` overload on purpose — two places
 deciding separately what a valid session looks like is how they drift.
