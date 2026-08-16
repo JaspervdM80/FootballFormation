@@ -141,6 +141,16 @@ html, body {
     border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent) !important;
 }
 
+/* MudBlazor's switch is 38px tall — six short of the floor — and the whole label is the target, so
+   the height goes there, the same way .live-timeline-toggle handles its checkbox. Global because
+   every switch in the app is in something filled in on a phone: guest in Add to squad and Edit
+   player, own goal on the live screen, public on a match comment. */
+@media (pointer: coarse) {
+    label.mud-switch {
+        min-height: 44px;
+    }
+}
+
 /* --- Long form dialogs on a phone (.dialog-sheet) ---
    Opt in with `Class="dialog-sheet"` on the MudDialog — MudBlazor 9.7's DialogOptions has no
    CssClass, but MudDialog's own Class lands straight on .mud-dialog, which is what these rules
@@ -417,10 +427,19 @@ html, body {
    Global, not scoped, because two pages use them: the game cards on /games and the season rows
    on /settings. They lived in Games.razor.css and so compiled to .action-btn[b-<gamesHash>],
    which meant the /settings buttons matched nothing and rendered as native browser chrome.
-   Scoped CSS fails silently like that, so anything more than one page uses belongs here. */
+   Scoped CSS fails silently like that, so anything more than one page uses belongs here.
+
+   The squad rows on /players are the same row of actions and take the same size, but they cannot
+   take the same class: they are MudIconButtons, and one of them is a MudMenu activator, whose
+   Class lands on a wrapper div (9.7 has no ActivatorClass). So the size is the token below rather
+   than a number written out per page — change it here and every row of icon actions moves. */
+:root {
+    --action-btn-size: 32px;
+}
+
 .action-btn {
-    width: 32px;
-    height: 32px;
+    width: var(--action-btn-size);
+    height: var(--action-btn-size);
     border: none;
     background: none;
     color: var(--ink-muted);
@@ -494,9 +513,8 @@ html, body {
    they are arranged so six of them fit is Games.razor.css's problem, but none of them is under 44
    anywhere. */
 @media (pointer: coarse) {
-    .action-btn {
-        width: 44px;
-        height: 44px;
+    :root {
+        --action-btn-size: 44px;
     }
 }
 
@@ -1224,6 +1242,18 @@ html, body {
     margin-left: 6px;
 }
 
+/* Position abbreviations are two or three letters (GK, CB, CDM), and a badge that shrink-wraps
+   each one makes a column of ragged chips — the alternatives on the row below never line up with
+   the preferred position above them. Sized for the widest abbreviation instead, so every position
+   on the page is the same box. Only the squad table: elsewhere .badge-teal/.badge-gold carry
+   words, which a min-width would only pad. */
+.players-table .cell-pref .badge-teal,
+.players-table .cell-alt .badge-gold {
+    display: inline-block;
+    min-width: 3.25rem;
+    text-align: center;
+}
+
 /* Row actions: MudMenu wraps its trigger in a plain div, whose inline-block baseline sits
    lower than the inline-flex MudIconButtons beside it — the overflow ⋮ ended up a couple of
    pixels below the other icons. Making the row and the wrapper flex takes baselines out of
@@ -1237,6 +1267,25 @@ html, body {
 .players-table .row-actions .mud-menu {
     display: inline-flex;
     align-items: center;
+}
+
+/* The same box as a game card's action row, from the same token — see --action-btn-size above for
+   why this row cannot simply wear .action-btn. MudBlazor sizes a small icon button from its
+   padding, which lands at 26px and left two rows of icons that do the same job on two pages at two
+   different widths. Its rule is a bare .mud-icon-button-size-small, so this selector outspecifies
+   it without !important. */
+.players-table .row-actions .mud-icon-button {
+    width: var(--action-btn-size);
+    height: var(--action-btn-size);
+    padding: 0;
+}
+
+/* Flush, for the same reason the game card's action row is: a 2px gap between two 44px targets is
+   a dead gutter, and a gap has to be nothing or at least 8px. */
+@media (pointer: coarse) {
+    .players-table .row-actions {
+        gap: 0;
+    }
 }
 
 /* Rows navigate to the player's stats. The chevron sits right after the name rather than at
@@ -1282,6 +1331,16 @@ html, body {
         column-gap: 8px;
         row-gap: 6px;
         padding: 10px 14px;
+    }
+
+    /* Below its breakpoint MudBlazor replaces the sortable headers with a select above the rows.
+       This table sets no SortLabel, so it arrives unlabelled: a blank dropdown across the top of
+       the squad that says nothing about what it does — and it only turns up once something has
+       re-rendered the table, which is why it reads as a glitch rather than a control. The list
+       is already ordered — guests last, then shirt number, then name — so sorting it stays a
+       desktop affordance. */
+    .players-table .mud-table-smalldevices-sortselect {
+        display: none;
     }
 
     /* A whole card row just for the number is wasteful: drop the # cell and print

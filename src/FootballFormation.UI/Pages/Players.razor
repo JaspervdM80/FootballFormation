@@ -152,15 +152,9 @@
             <MudTd Class="cell-right cell-actions">
                 @* stopPropagation so the action buttons don't trigger the row's navigation *@
                 <span class="row-actions" @onclick:stopPropagation="true">
-                    @* A filled star reads as "favourite", which a guest is not. HowToReg (person
-                       with a tick) says "on the roster"; the plain outline says "not one of ours".
-                       The guest colour is the same purple as the GUEST badge, which is what carries
-                       the status on mobile where the badge itself is hidden. *@
-                    <MudIconButton Icon="@(context.IsGuest ? Icons.Material.Filled.PersonOutline : Icons.Material.Filled.HowToReg)"
-                                   Size="Size.Small"
-                                   Style="@(context.IsGuest ? "color: var(--color-guest-bright);" : "color: var(--club-primary-bright);")"
-                                   aria-label="@(context.IsGuest ? L["Mark as squad player"] : L["Mark as guest"])"
-                                   OnClick="() => ToggleGuest(context)" />
+                    @* Guest status is a switch in Edit Player, not an icon here: the GUEST badge
+                       already says which players are guests, and a toggle beside a badge saying the
+                       same thing is one control too many on a row that has three. *@
                     <MudIconButton Icon="@Icons.Material.Filled.PersonRemove" Size="Size.Small"
                                    Style="color: var(--ink-subtle);"
                                    aria-label="@L["Remove from squad"]"
@@ -171,7 +165,7 @@
                     <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true"
                              AriaLabel="@L["More"]"
                              Style="color: var(--ink-subtle);">
-                        <MudMenuItem OnClick="() => OpenEditDialog(context.Player!)">@L["Edit Player"]</MudMenuItem>
+                        <MudMenuItem OnClick="() => OpenEditDialog(context)">@L["Edit Player"]</MudMenuItem>
                         <MudMenuItem OnClick="() => ToggleArchived(context.Player!)">
                             @(context.Player!.IsArchived ? L["Restore player"] : L["Archive player"])
                         </MudMenuItem>

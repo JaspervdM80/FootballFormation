@@ -105,7 +105,7 @@ Result.cs                — Result and Result<T>: success/failure with a transl
 ## UI (`src/FootballFormation.UI/`) — Razor Class Library
 ```
 Pages/
-  Players.razor(.cs)          — /players — Season-scoped squad management (add/remove, guest toggle, copy forward)
+  Players.razor(.cs)          — /players — Season-scoped squad management (add/remove, edit, copy forward)
   PlayerDialog.razor(.cs)     — Dialog: first name, surname, shirt #, positions (no guest switch — that's per season)
   SquadMemberDialog.razor(.cs)— Dialog: add someone already on file to this season's squad
   Games.razor(.cs)            — /games — Game list with formation builder link

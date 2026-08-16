@@ -76,14 +76,14 @@ public partial class Players
     {
         if (SeasonId is not { } seasonId) return;
 
-        var player = await ShowPlayerDialogAsync(L["Add Player"]);
-        if (player is null) return;
+        var edited = await ShowPlayerDialogAsync(L["Add Player"]);
+        if (edited is null) return;
 
-        var created = await PlayerService.CreateAsync(player);
+        var created = await PlayerService.CreateAsync(edited.Player);
         if (!Snackbar.ReportFailure(L, created)) return;
 
-        var added = await SquadService.AddMemberAsync(seasonId, created.Value!.Id);
-        Snackbar.Report(L, added, L["{0} added to the squad", player.DisplayName]);
+        var added = await SquadService.AddMemberAsync(seasonId, created.Value!.Id, edited.IsGuest);
+        Snackbar.Report(L, added, L["{0} added to the squad", edited.Player.DisplayName]);
         await LoadAsync();
     }
 
@@ -112,18 +112,6 @@ public partial class Players
         await LoadAsync();
     }
 
-    private async Task ToggleGuest(SeasonSquadMember member)
-    {
-        if (SeasonId is not { } seasonId) return;
-
-        var name = member.Player!.DisplayName;
-        var result = await SquadService.SetGuestAsync(seasonId, member.PlayerId, !member.IsGuest);
-        Snackbar.Report(L, result, member.IsGuest
-            ? L["{0} is now a squad player", name]
-            : L["{0} is now a guest", name]);
-        await LoadAsync();
-    }
-
     /// <summary>Removing from a squad is the everyday action; the service refuses once the player
     /// has minutes or goals that season, so history is never silently rewritten.</summary>
     private async Task RemoveMember(SeasonSquadMember member)
@@ -141,13 +129,37 @@ public partial class Players
         await LoadAsync();
     }
 
-    private async Task OpenEditDialog(Player player)
+    /// <summary>
+    /// Edits the person and their place in this season's squad in one dialog. They are two writes
+    /// because they are two things — a player is edited once and is a guest in one season and not
+    /// in another — and the guest one is only made when the switch actually moved, so an ordinary
+    /// name change does not touch the squad.
+    /// </summary>
+    private async Task OpenEditDialog(SeasonSquadMember member)
     {
-        var updated = await ShowPlayerDialogAsync(L["Edit Player"], player);
-        if (updated is null) return;
+        if (SeasonId is not { } seasonId) return;
 
-        var result = await PlayerService.UpdateAsync(updated);
-        Snackbar.Report(L, result, L["Player {0} updated", updated.DisplayName]);
+        var edited = await ShowPlayerDialogAsync(L["Edit Player"], member.Player!, member.IsGuest);
+        if (edited is null) return;
+
+        var updated = await PlayerService.UpdateAsync(edited.Player);
+        if (!Snackbar.ReportFailure(L, updated)) return;
+
+        var name = edited.Player.DisplayName;
+        if (edited.IsGuest == member.IsGuest)
+        {
+            Snackbar.Add(L["Player {0} updated", name], Severity.Success);
+        }
+        else
+        {
+            // The guest line replaces the generic one rather than joining it: two snackbars for one
+            // Save reads as two things having happened.
+            var guest = await SquadService.SetGuestAsync(seasonId, member.PlayerId, edited.IsGuest);
+            Snackbar.Report(L, guest, edited.IsGuest
+                ? L["{0} is now a guest", name]
+                : L["{0} is now a squad player", name]);
+        }
+
         await LoadAsync();
     }
 
@@ -189,12 +201,15 @@ public partial class Players
         await LoadAsync();
     }
 
-    /// <summary>Returns the edited player, or null when the dialog was cancelled.</summary>
-    private async Task<Player?> ShowPlayerDialogAsync(string title, Player? player = null)
+    /// <summary>Returns the edited player and guest flag, or null when the dialog was cancelled.</summary>
+    private async Task<PlayerEdit?> ShowPlayerDialogAsync(
+        string title, Player? player = null, bool isGuest = false)
     {
-        return await DialogService.PromptAsync<PlayerDialog, Player>(title, p =>
+        return await DialogService.PromptAsync<PlayerDialog, PlayerEdit>(title, p =>
         {
             if (player is not null) p.Add(x => x.Player, player);
+            p.Add(x => x.IsGuest, isGuest);
+            p.Add(x => x.SeasonName, SeasonName);
         });
     }
 

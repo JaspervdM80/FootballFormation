@@ -112,6 +112,14 @@ Avoid repeating these mistakes:
   loaded CI runner only. Wait for the header text to *change* after each click before reading it
   again, and choose the direction from that settled value so an overshoot walks back instead of
   spiralling. Anything that steps a MudBlazor picker has this shape.
+- **A table's small-devices sort select only appears on the second render, so a phone gets an empty
+  dropdown out of nowhere.** `MudTable` renders `.mud-table-smalldevices-sortselect` from the sort
+  labels its header registered, and they register *during* the first render — so the select is
+  absent on load and present after anything re-renders the table (on `/players`, marking a player a
+  guest is enough). It arrives unlabelled, because nothing on this table sets `SortLabel`, which is
+  what made it look like a stray control rather than a sort box. Two consequences: `app.css` hides
+  it on `/players`, and **a first-load screenshot is not evidence that it is gone** — re-render the
+  table before you look, or read `getComputedStyle` on the element rather than trusting the picture.
 - **`MudMenu`'s `Class` lands on the root wrapper, not the activator button**: `Class="btn-gold"` painted an invisible `div` while the button kept MudBlazor's default filled colours. There is no `ActivatorClass` parameter in 9.7 — style `.<your-class>.mud-menu .mud-button-root` instead (see `.btn-gold.mud-menu` in app.css, and `SeasonPicker`'s `.season-picker .mud-button-root`).
 
 ## Touch / PWA
@@ -242,6 +250,13 @@ Avoid repeating these mistakes:
   likely as anyone's. It stays at the stock 100. Little occupies it in practice — a tab closed
   properly sends a disconnect beacon and gives its circuit up immediately, so only unclean
   disconnects park at all.
+- **Chromium's emulated `(pointer: coarse)` is easy to lose, and then a "phone" capture is the
+  pointer layout at phone width.** Two ways it goes, both measured while screenshotting `/players`:
+  opening the mobile context in a browser that already holds a desktop one, and taking a `fullPage`
+  screenshot — after which `matchMedia('(pointer: coarse)')` reads false and every touch-sized rule
+  is off, so 44px targets measure 32. Give the phone pass its own `chromium.launch`, and give it a
+  viewport tall enough that the capture needs no `fullPage`. `scripts/touch-targets.mjs` is safe on
+  both counts (its own contexts, no screenshots), which is why this only shows up in ad-hoc scripts.
 
 ## Localization
 - **Resource keys are English text, so watch for homographs**: "Home" was already the
