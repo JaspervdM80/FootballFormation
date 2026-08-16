@@ -59,8 +59,10 @@ branches on it), `MatchState`, `GameSplitType`, `PeriodType`, `UserRole`.
 **Duplicate positions in a formation are the design.** `F442.DefaultPositions()` returns two CBs and
 two STs; which slot a player occupies comes from `SlotIndex` (ordered by `FormationSlots.OrdinalOf`).
 The side-specific members that used to exist — LCB, RCB, LWB, RWB, LCDM, RCDM, LCM, RCM, LCAM, RCAM,
-LF, RF, CF, LST, RST — were deleted by the `ConsolidatePlayerPositions` and
-`ConsolidatePositionsRound2` migrations. **Do not reintroduce them.**
+LF, RF, CF, LST, RST — were consolidated away by two migrations that have since been folded into
+`InitialCreate`, so there is no file left to read the reasoning from. **Do not reintroduce them:**
+`SlotIndex` is what disambiguates two players in the same role, and adding a side-specific member
+back would give the pitch two ways to say the same thing.
 
 ## Cascades
 

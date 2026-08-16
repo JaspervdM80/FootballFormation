@@ -1,6 +1,6 @@
 ---
 name: migrations
-description: Adding or reviewing an EF Core migration. The app auto-migrates against the live SQLite volume on deploy, so a bad Up() is a bad production database. Use whenever a migration is scaffolded, a column is dropped, or a backfill is written.
+description: Adding or reviewing an EF Core migration. There is one migration on file whose id is load-bearing, and the app auto-migrates against the live SQLite volume on deploy, so a bad Up() is a bad production database. Use whenever a migration is scaffolded, rescaffolded, a column is dropped, or a backfill is written.
 ---
 
 # Migrations
@@ -16,6 +16,35 @@ dotnet ef database update    --project src/FootballFormation.Core
 a pre-migration snapshot and refuses to migrate if that fails, but the snapshot is the last resort,
 not the plan.
 
+## There is one migration, and its id is load-bearing
+
+`Migrations/` holds a single file, **`20260322100416_InitialCreate`**, with the whole schema. The
+twenty that grew it were folded into it once every database that exists had them all applied.
+
+**That id is the original `InitialCreate`'s, not the timestamp of the scaffold that wrote the file,
+and that is what makes the fold safe.** The live volume already lists it in `__EFMigrationsHistory`,
+so production boots with nothing pending and never applies the file. A fresh id would make the entire
+schema pending against a database that already has it — the boot would `CREATE TABLE` over a season
+of results and fail the deploy. The nineteen rows below it in that history name migrations the
+assembly no longer has, which EF ignores: pending work is what the assembly holds and the history
+does not.
+
+So **if you ever rescaffold this migration rather than adding one after it, put the id back by
+hand** — in both file names and in the `[Migration]` attribute in the designer file — and check the
+schema still comes out the same:
+
+```bash
+APP_DATA_DIR=/tmp/schema-check dotnet ef database update --project src/FootballFormation.Core
+```
+
+Migrations from here are ordinary ones added on top, and there is no reason to fold again until the
+count is a nuisance. Folding costs the migration bodies, so anything a `Up()` did that is worth
+remembering has to be written down before it goes.
+
+**Names like `AddSeasons`, `AddSeasonSquads` and `StoreGoalPeriodAndClock` are history, not files.**
+They are still quoted below and in `docs/` because the lessons are real; do not go looking for them
+on disk.
+
 ## Read the generated `Up()` and reorder it
 
 The scaffolder does not know what your backfill needs to read. `AddSeasonSquads` needed
@@ -28,8 +57,8 @@ Reads happen before drops.
 ## Backfills belong in the migration, not in startup code
 
 `migrationBuilder.Sql(...)` in `Up()`. `__EFMigrationsHistory` runs it exactly once, and it is the only
-place a new required FK column can be populated *before* the constraint is added. See `AddSeasons` and
-`ConsolidatePlayerPositions`.
+place a new required FK column can be populated *before* the constraint is added. `AddSeasons` and
+`ConsolidatePlayerPositions` were written that way.
 
 ## A SQLite migration is not atomic
 
@@ -61,5 +90,6 @@ migrations are pending, keeping the newest 5, then migrates, then runs `PRAGMA i
 `PRAGMA foreign_key_check`. The snapshot is named for the *schema state*, not the attempt, so a crash
 loop cannot prune the only good copy. A failed backup aborts the migration on purpose.
 
-Detail: [docs/deployment.md](../../../docs/deployment.md) ·
-[docs/patterns.md](../../../docs/patterns.md)
+Detail: [docs/patterns.md](../../../docs/patterns.md#migrations-are-one-file) ·
+[docs/deployment.md](../../../docs/deployment.md) ·
+[docs/known_issues.md](../../../docs/known_issues.md)
