@@ -20,6 +20,20 @@
                     <MudSelectItem Value="pos">@pos.ToString() - @pos.DisplayName()</MudSelectItem>
                 }
             </MudSelect>
+            @* Everything above is the person; this one is their place in a single season's squad,
+               which is what the divider and the season line say. Same switch and caption as
+               SquadMemberDialog, because it sets the same flag. *@
+            <MudDivider Class="my-3" />
+            <MudSwitch @bind-Value="Guest" Color="Color.Warning" Class="mb-1">@L["Guest player"]</MudSwitch>
+            <MudText Typo="Typo.caption" Class="d-block" Style="color: var(--ink-muted);">
+                @L["Guests are left out of every game unless you add them to it explicitly."]
+            </MudText>
+            @if (!string.IsNullOrEmpty(SeasonName))
+            {
+                <MudText Typo="Typo.caption" Class="d-block" Style="color: var(--ink-subtle);">
+                    @L["Applies to the {0} squad only.", SeasonName]
+                </MudText>
+            }
         </MudForm>
     </DialogContent>
     <DialogActions>

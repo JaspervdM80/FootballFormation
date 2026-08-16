@@ -383,11 +383,17 @@ the game screens, and for `/games/{id}/overview` the editor for an admin, `/game
 ## Squad page (`/players`)
 Season-scoped: it follows the season picker and shows that season's squad, not everyone on file.
 
-- Row actions (admin only): **guest toggle**, **remove from squad** (person-remove), and an
-  overflow `MudMenu` holding "Edit player", "Archive player" / "Restore player", and "Delete player
-  permanently". Removing from a squad is the everyday action; the two that act on the *person* are
-  demoted out of the icon row, with archive listed above delete because it is what is almost always
-  meant.
+- Row actions (admin only): **remove from squad** (person-remove) and an overflow `MudMenu` holding
+  "Edit player", "Archive player" / "Restore player", and "Delete player permanently". Removing from
+  a squad is the everyday action; the two that act on the *person* are demoted out of the icon row,
+  with archive listed above delete because it is what is almost always meant.
+- **Guest status is a switch in the Edit Player dialog, not an icon on the row.** The `GUEST` badge
+  already states it, and a toggle next to a badge saying the same thing is two controls for one
+  fact. `PlayerDialog` therefore returns a `PlayerEdit(Player, IsGuest)` record rather than a
+  `Player`: the person and the membership are two writes, and the page only makes the second one
+  when the switch moved, so renaming someone never touches the squad. The switch is seeded from the
+  row's flag, is separated from the person's fields by a divider, and names the season under it —
+  the flag belongs to one season's squad, not to the person.
 - **Archive vs delete.** Archiving retires someone who has left the club: nothing they are in
   changes, they simply stop being offered for seasons still to come (see
   [models.md](models.md#archiving-and-why-deleting-is-guarded)). Its confirm says so; the delete
@@ -416,10 +422,6 @@ Season-scoped: it follows the season picker and shows that season's squad, not e
 - The `GUEST` badge is driven by the **member's** flag, so the existing `.badge-guest` CSS is
   untouched. It stays visible at every width here — the `display: none` hide is in
   `Games.razor.css`, scoped to the game cards, and does not reach this table.
-- The guest toggle shows **`HowToReg`** in club red (`--club-primary-bright`) for a squad player and
-  **`PersonOutline`** in `--color-guest-bright` for a guest. Not a star — that reads as "favourite",
-  and outline-vs-filled star is nearly indistinguishable at 20px. The colour ties the toggle to the
-  `GUEST` badge beside it.
 - Row actions sit in `.row-actions`, which is `display: inline-flex`. `MudMenu` wraps its trigger in
   a plain `div`, and that wrapper's inline-block baseline put the ⋮ about 6px above the icon buttons
   beside it; flex removes baselines from the equation.

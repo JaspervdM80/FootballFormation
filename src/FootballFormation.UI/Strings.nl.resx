@@ -70,6 +70,7 @@
   <data name="Shirt Number" xml:space="preserve"><value>Rugnummer</value></data>
   <data name="Guest player" xml:space="preserve"><value>Gastspeler</value></data>
   <data name="Guests are left out of every game unless you add them to it explicitly." xml:space="preserve"><value>Gasten doen alleen mee aan een wedstrijd als je ze er zelf aan toevoegt.</value></data>
+  <data name="Applies to the {0} squad only." xml:space="preserve"><value>Geldt alleen voor de selectie van {0}.</value></data>
   <data name="Cancel" xml:space="preserve"><value>Annuleren</value></data>
   <data name="Save" xml:space="preserve"><value>Opslaan</value></data>
   <data name="Copy" xml:space="preserve"><value>Kopieer</value></data>
@@ -285,8 +286,6 @@
   <data name="Remove from squad" xml:space="preserve"><value>Uit selectie verwijderen</value></data>
   <data name="Remove {0} from the {1} squad? Their history stays intact." xml:space="preserve"><value>{0} uit de selectie van {1} verwijderen? De geschiedenis blijft bewaard.</value></data>
   <data name="{0} removed from the squad" xml:space="preserve"><value>{0} is uit de selectie verwijderd</value></data>
-  <data name="Mark as guest" xml:space="preserve"><value>Als gast markeren</value></data>
-  <data name="Mark as squad player" xml:space="preserve"><value>Als selectiespeler markeren</value></data>
   <data name="{0} is now a guest" xml:space="preserve"><value>{0} is nu een gast</value></data>
   <data name="{0} is now a squad player" xml:space="preserve"><value>{0} is nu een selectiespeler</value></data>
   <data name="Copy squad from {0}" xml:space="preserve"><value>Selectie kopiëren uit {0}</value></data>

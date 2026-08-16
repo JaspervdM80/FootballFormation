@@ -141,6 +141,16 @@ html, body {
     border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent) !important;
 }
 
+/* MudBlazor's switch is 38px tall — six short of the floor — and the whole label is the target, so
+   the height goes there, the same way .live-timeline-toggle handles its checkbox. Global because
+   every switch in the app is in something filled in on a phone: guest in Add to squad and Edit
+   player, own goal on the live screen, public on a match comment. */
+@media (pointer: coarse) {
+    label.mud-switch {
+        min-height: 44px;
+    }
+}
+
 /* --- Long form dialogs on a phone (.dialog-sheet) ---
    Opt in with `Class="dialog-sheet"` on the MudDialog — MudBlazor 9.7's DialogOptions has no
    CssClass, but MudDialog's own Class lands straight on .mud-dialog, which is what these rules
