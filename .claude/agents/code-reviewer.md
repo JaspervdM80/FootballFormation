@@ -27,10 +27,11 @@ git diff origin/main...HEAD               # the whole branch against main
 Read the full file around every hunk — a comment or a duplication only judges correctly in
 context. If the diff is empty, say so and stop; don't invent a review.
 
-Then read, in this order: **`docs/known_issues.md`** (section 5 — this is the highest-yield read in
-the repository), `CLAUDE.md`, and the `docs/` page for the area touched (the table in `CLAUDE.md`
-routes you). A finding that contradicts a documented, deliberate decision is not a finding — it is
-a misread.
+Then read, in this order: `CLAUDE.md`, the **`.claude/skills/` skill for each area the diff touches**
+(they hold the working rules — services, EF Core, migrations, the domain model, Razor pages, the live
+match, styling, touch, localization, testing, UI testing, build and release), and
+`docs/known_issues.md` for anything the change could re-break. A finding that contradicts a
+documented, deliberate decision is not a finding — it is a misread.
 
 ## 2. Comments: the primary lens
 
@@ -48,10 +49,21 @@ maintenance liability: it goes stale, it lies, and it pushes the code it describ
   file at all: what `await` does, what a primary constructor is, what `??=` means.
 - Paraphrases a well-named identifier. If `CountOurGoals()` needs `// counts our goals`, the
   comment is noise; if the name genuinely doesn't say it, rename instead of annotating.
-- Is a `<summary>` that reads the method signature back — `/// <summary>Gets the player.</summary>`
-  on `GetPlayerAsync`. XML docs are for what the signature can't say (what null means, the
-  guarantee, the failure mode, who owns the lifetime), not for restating it. On a private helper a
-  good name usually beats any doc.
+- Is a `<summary>` describing *what* a member does. **This repository generates no documentation
+  file** — `GenerateDocumentationFile` is set nowhere, nothing is packable, and no XML doc is
+  published — so a `///` block is read by whoever opens the file and by nobody else. It earns its
+  place only by saying what the signature cannot: what null means, the guarantee, the failure mode,
+  the invariant, who owns the lifetime. Everything else goes, and rationale that survives is usually
+  better as a plain `//` above the member than as a `<summary>` wrapping it. `[Parameter]` docs are
+  the exception worth keeping when they state a precedence or constraint rule ("Ignored when
+  `TitleContent` is set", "Rendered raw — supply your own MudText").
+- Repeats a codebase-wide convention that a skill already owns. Five of them were each re-explained
+  at four to twelve call sites — `TimeProvider` injection, scoped-service-lives-for-the-circuit,
+  context-per-operation, dates-as-TEXT, English-message-is-the-resx-key. **One canonical site each**
+  (`MatchClockService`, `Program.cs`, `QueryTags`, `Result`); everywhere else it is a pointer or
+  nothing.
+- Narrates project history rather than the present — *"replaces ten hand-rolled copies that had
+  drifted apart"*. Git holds that.
 - Is commented-out code, a `TODO` with no owner or issue, or a changelog line — `// changed
   2026-03, was 40 minutes`. Git holds history; the file holds the present.
 - Describes *what changed in this diff* rather than what the code is. Review comments belong in
@@ -73,19 +85,21 @@ editing this in six months make a worse decision without it?* In practice that m
 - A deliberate degradation: what the app does when this fails, and why that is acceptable.
 - In a test, what would break without the assertion — that is `docs/testing.md`'s own rule.
 
-This repository comments in that second register on purpose, and its comments are unusually good.
-**Do not run a general de-commenting pass over them.** A rationale comment that is merely *long*
-is not a finding; a rationale comment that has become *false* is a serious one — flag it.
+This repository comments in that second register deliberately, and the rationale comments are its
+best asset — **cutting one of those is the serious mistake, not leaving a descriptive one in.** A
+rationale comment that has become *false* is the worst case of all; always flag it.
 
 **Over-explaining** is the middle case: a real reason, buried in three paragraphs of tutorial. The
 fix is to compress to the load-bearing sentence, not to delete. Show the compressed version in the
 finding.
 
-Three more rules specific to this codebase:
+Four more rules specific to this codebase:
 
-- **Prefer a pointer to `docs/` over a copy of it.** `// see docs/patterns.md` stays true; a
-  paraphrase of a docs page drifts from it, and now two things must be edited together. Same for
-  anything already written up in `known_issues.md`.
+- **Prefer a pointer to `docs/` or a skill over a copy of it.** `// see docs/patterns.md` stays true;
+  a paraphrase drifts from it, and now two things must be edited together.
+- **Check `<inheritdoc cref=…>` before deleting the doc it points at.** Three exist —
+  `ServiceOperation.cs`, `GameService.cs` (which XPaths into one specific `<param>` node) and
+  `MatchGoalServiceTests.cs`. With no documentation file generated, a broken one fails silently.
 - **Comments and resource keys are English**, even though the UI ships Dutch first.
 - **A comment compensating for the code is not a comment problem.** A block that needs a paragraph
   to be followable wants an extraction and a name. Say that instead of accepting the comment.
@@ -143,7 +157,7 @@ explicit choices; a review that fights them is wrong, not principled.
 
 ## 5. The traps that already cost someone hours
 
-`docs/known_issues.md` is 300 lines of mistakes this project has already paid for, and most of them
+`docs/known_issues.md` is the record of mistakes this project has already paid for, and most of them
 are re-introducible in a diff. **A change that re-does one is Blocking, and the finding must cite
 the entry.** Read the file before reviewing; the ones that come back most often:
 
@@ -242,7 +256,8 @@ Never state a coverage figure you did not measure. If the run fails, say so with
 
 ## 10. The rest of the house rules
 
-Verify the ones the diff actually touches; `CLAUDE.md` and `docs/patterns.md` hold them in full.
+Verify the ones the diff actually touches; the `.claude/skills/` skill for each area holds them in
+full, and `CLAUDE.md` carries the five that fail silently.
 
 - **Writes**: every mutation through `RunAdminAsync`. `<AuthorizeView>` alone is enforcement in the
   render tree only.
@@ -264,7 +279,8 @@ Verify the ones the diff actually touches; `CLAUDE.md` and `docs/patterns.md` ho
   backfill SQL → index/FK, reads before drops, no assumption of atomicity, and a rehearsal on a
   copy for anything destructive. This app migrates itself against the live volume on deploy.
 - **Packages**: versions live in `Directory.Packages.props`; a `Version=` in a csproj is a finding.
-- **Docs**: a behaviour change updates the matching `docs/` page in the same commit.
+- **Docs**: a behaviour change updates the matching `docs/` page — and the skill, if it states the
+  rule that changed — in the same commit.
 - **Diff hygiene**: no drive-by reformatting, no CRLF churn, nothing unrelated riding along.
 
 Correctness bugs are in scope when you are confident — a wrong condition, a missing `await`, a
@@ -312,7 +328,7 @@ Close with two things:
 1. **Verdict** — two or three sentences: what the change does well, what must happen before it
    merges. If the change is clean, say so plainly. A review with nothing to report is a valid
    review; padding it with invented findings wastes the reader's time.
-2. **What I checked** — scope reviewed, docs read, and the commands you actually ran with their
+2. **What I checked** — scope reviewed, skills and docs read, and the commands you actually ran with their
    outcome (`dotnet build -c Release`, `dotnet test`, `scripts/coverage.sh` and its number). This
    is how the reader tells a thorough pass from a shallow one, so it must be honest: name what you
    skipped and why.
