@@ -68,12 +68,9 @@ position-fit tiers, and the gradients composed from the club tokens via `var()`.
 
 ## Re-theming for another club
 
-1. Edit `ClubTheme.Gjs` — colors, logo, corner radius. That is the whole palette, both systems.
-2. Replace `wwwroot/icons/icon-*.png` (or point `LogoUrl` elsewhere) and set `LogoBackground`.
-3. Update the white PWA chrome if the page color changes: `theme-color` meta in
-   `App.razor` and `theme_color`/`background_color` in `manifest.webmanifest`.
-4. `screenshot.js` reads `--surface-appbar-alt` for the export background — no change
-   needed, it follows the theme.
+`ClubTheme.Gjs` is the whole palette for both systems. The coupling worth knowing: if the page color
+changes, the `theme-color` meta in `App.razor` and `theme_color`/`background_color` in
+`manifest.webmanifest` must change with it, or the PWA chrome keeps the old brand.
 
 ## Breakpoints
 
@@ -92,7 +89,7 @@ Always `599.98`, never `599` or `600`. `600` fires *at* the boundary MudBlazor i
 `599` leaves a fractional gap reachable by browser zoom where half the page has restacked and half
 has not — both have been real bugs here.
 
-## Re-theming checklist for the responsive bits
+## Touch states come in pairs
 
 The three `pointer: coarse` blocks (`.action-btn` in app.css, `.goal-remove` and `.comment-btn` in
 `MatchResult.razor.css`) grow tap targets to 40px on a touch screen, and `@media (hover: hover)`
@@ -102,5 +99,4 @@ interactive control — every plain `<button>` in this app has needed them.
 ## Naming debt
 
 `.badge-gold` / `.btn-gold` are historical names from the old amber theme — they are now
-club-primary (red), not gold. Left un-renamed to keep diffs small. (`.gold-separator` was in this
-list too; it was unused and has been deleted.)
+club-primary (red), not gold. Left un-renamed to keep diffs small.

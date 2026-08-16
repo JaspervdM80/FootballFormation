@@ -5,7 +5,8 @@ Avoid repeating these mistakes:
 ## EF Core
 - **UNIQUE constraint on save**: When re-saving `GamePlayerPosition` entities, always create NEW entities with `Id = 0`. Never re-add tracked entities with existing IDs — EF tries INSERT with the old PK.
 - **List value converters need ValueComparer**: Without it, EF won't detect changes to `List<PlayerPosition>` or `List<int>` properties.
-- **DB path must be absolute**: Use `%LOCALAPPDATA%\FootballFormation\` not relative paths (relative resolves to working directory, which changes).
+- **DB path must be absolute** — a relative path resolves against the working directory, which
+  changes. `APP_DATA_DIR` is the supported override.
 - **`ORDER BY` on a date sorts its text, not the date**: SQLite has no date type, so all eight
   `DateTime` columns in this schema (`Game.Date`, `Game.ClockRunningSince`, `Season.StartDate`,
   `Season.EndDate`, `GameComment.CreatedAt`/`EditedAt`, `GameGoal.RecordedAt`,
@@ -443,8 +444,6 @@ Avoid repeating these mistakes:
   is the revalidation interval on a connected idle circuit, and nothing more.
 
 ## General
-- **Port already in use**: Kill orphaned process with `taskkill //PID <pid> //F`.
-- **File locked during build**: Stop the running app before rebuilding.
 - **A published app started from the wrong directory serves every static file as 200 with an empty
   body.** The content root of a published app is the *working directory*, which is why the
   Dockerfile sets `WORKDIR /app` before its entry point. Run

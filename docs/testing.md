@@ -84,8 +84,7 @@ what a service wrote without tracking interference.
 
 No component tests — no bUnit. A Razor component is never rendered in isolation; the UI is checked
 by driving the real app in a real browser, which is what `tests/ui` (behaviour) and
-`scripts/visual-check.sh` (rendering and touch geometry) do. The `verify-ui` skill still describes
-the manual desktop/mobile × anonymous/admin matrix for anything neither of those covers.
+`scripts/visual-check.sh` (rendering and touch geometry) do.
 
 ## Coverage
 
