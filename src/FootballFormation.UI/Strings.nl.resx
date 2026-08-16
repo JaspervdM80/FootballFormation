@@ -196,7 +196,6 @@
   <data name="Finish match" xml:space="preserve"><value>Wedstrijd afsluiten</value></data>
   <data name="Edit result" xml:space="preserve"><value>Uitslag aanpassen</value></data>
   <data name="Line-up" xml:space="preserve"><value>Opstelling</value></data>
-  <data name="No line-up for this half yet — build one first." xml:space="preserve"><value>Nog geen opstelling voor deze helft — maak er eerst een.</value></data>
   <data name="Tap a player to substitute them or change their position." xml:space="preserve"><value>Tik op een speler om te wisselen of van positie te veranderen.</value></data>
   <data name="Goal against" xml:space="preserve"><value>Tegen doelpunt</value></data>
   <data name="Timeline" xml:space="preserve"><value>Tijdlijn</value></data>
