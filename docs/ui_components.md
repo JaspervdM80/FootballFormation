@@ -205,16 +205,19 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   intended — the only thing to do with one is delete it, and the stale row is the prompt. Because
   `HasFinalScore` tests `MatchState` too, a game being played now stays among the fixtures instead
   of crossing over on its first goal. Either block disappears when empty.
-- `/games` routes an `InProgress` game to `/live` for **everyone**, and shows a pulsing
-  `.action-live` button on its card — whatever the calendar says, since a match kicked off before
-  midnight is still being played. It is **the crest red and the first button in the row**: red
-  belongs to that one state, and the row's leading position is the one a coach can hit without
-  reading. For other games the Live action is admin-only **and match-day only**
-  (`Games.IsMatchDay`, i.e. `game.Date.Date == Today`), and stays a plain `.action-btn` so red goes
-  on meaning *being played right now*: the live screen runs a real clock and writes real
-  substitution timings, so opening it on a fixture weeks out would bank minutes against a match
-  nobody is playing. It disappears entirely once `Games.HasFinalScore(game)` — a settled game has
-  nothing left to run, so the Result button is the way in and a row click opens `/result`.
+- **The Live button leads the action row and is always the crest red** (`.action-live`), which no
+  other action on a card wears — the leading position and the one colour are what a coach hits
+  without reading. `.action-live-now` adds the pulse, and only a match actually under way carries
+  it: **paint and state are separate classes**, because the first version put the red on the
+  in-progress class alone and the button everyone actually sees — on the day, before kick-off —
+  rendered grey.
+- `/games` routes an `InProgress` game to `/live` for **everyone**, whatever the calendar says,
+  since a match kicked off before midnight is still being played. For other games the Live action is
+  admin-only **and match-day only** (`Games.IsMatchDay`, i.e. `game.Date.Date == Today`): the live
+  screen runs a real clock and writes real substitution timings, so opening it on a fixture weeks
+  out would bank minutes against a match nobody is playing. It disappears entirely once
+  `Games.HasFinalScore(game)` — a settled game has nothing left to run, so the Result button is the
+  way in and a row click opens `/result`.
 - **A fixture in the future carries no Result button** (`Games.IsFuture`, i.e.
   `game.Date.Date > Today`). There is no result to read and none to enter, and a score typed onto a
   match nobody has played turns a fixture into a result — `Sections()` splits on the scoreline. The

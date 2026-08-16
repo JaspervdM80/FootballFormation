@@ -25,55 +25,36 @@
     <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">
         <div class="card-label">@L["Final Score"]</div>
         @{
-            // The number as text: what a visitor sees, and what an admin sees on a match that has
-            // not been played yet. Named once each so neither branch below repeats it.
-            RenderFragment ourScoreText =
-                @<span class="score-big-input" style="pointer-events: none;">@(ScoreHome?.ToString() ?? "–")</span>;
-            RenderFragment opponentScoreText =
-                @<span class="score-big-input score-away" style="pointer-events: none;">@(ScoreAway?.ToString() ?? "–")</span>;
-
             // ScoreHome/ScoreAway always mean "us"/"them"; only the display order follows the venue.
+            // A box to type in or a number to read, decided once by CanEditScore — a visitor never
+            // gets one, and neither does anyone on a match still to be played.
             RenderFragment ourSide =
                 @<div class="score-side">
                     <span class="score-name">@L["Us"]</span>
-                    <AuthorizeView Roles="@AppRoles.Admin" Context="auth">
-                        <Authorized>
-                            @if (IsFuture)
-                            {
-                                @ourScoreText
-                            }
-                            else
-                            {
-                                <input type="number" class="score-big-input" min="0" max="99"
-                                       value="@ScoreHome"
-                                       @onchange="e => ScoreHome = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)" />
-                            }
-                        </Authorized>
-                        <NotAuthorized>
-                            @ourScoreText
-                        </NotAuthorized>
-                    </AuthorizeView>
+                    @if (CanEditScore)
+                    {
+                        <input type="number" class="score-big-input" min="0" max="99"
+                               value="@ScoreHome"
+                               @onchange="e => ScoreHome = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)" />
+                    }
+                    else
+                    {
+                        <span class="score-big-input" style="pointer-events: none;">@(ScoreHome?.ToString() ?? "–")</span>
+                    }
                 </div>;
             RenderFragment opponentSide =
                 @<div class="score-side">
                     <span class="score-name">@GameData.Opponent</span>
-                    <AuthorizeView Roles="@AppRoles.Admin" Context="auth">
-                        <Authorized>
-                            @if (IsFuture)
-                            {
-                                @opponentScoreText
-                            }
-                            else
-                            {
-                                <input type="number" class="score-big-input score-away" min="0" max="99"
-                                       value="@ScoreAway"
-                                       @onchange="e => ScoreAway = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)" />
-                            }
-                        </Authorized>
-                        <NotAuthorized>
-                            @opponentScoreText
-                        </NotAuthorized>
-                    </AuthorizeView>
+                    @if (CanEditScore)
+                    {
+                        <input type="number" class="score-big-input score-away" min="0" max="99"
+                               value="@ScoreAway"
+                               @onchange="e => ScoreAway = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)" />
+                    }
+                    else
+                    {
+                        <span class="score-big-input score-away" style="pointer-events: none;">@(ScoreAway?.ToString() ?? "–")</span>
+                    }
                 </div>;
         }
         <div class="score-visual">
@@ -89,14 +70,12 @@
                 @L["This match hasn't been played yet."]
             </MudText>
         }
-        else
+        else if (IsAdmin)
         {
-            <AuthorizeView Roles="@AppRoles.Admin">
-                <MudButton Variant="Variant.Filled" Class="btn-gold mt-4" FullWidth="true"
-                           OnClick="SaveScore">
-                    @L["Save Score"]
-                </MudButton>
-            </AuthorizeView>
+            <MudButton Variant="Variant.Filled" Class="btn-gold mt-4" FullWidth="true"
+                       OnClick="SaveScore">
+                @L["Save Score"]
+            </MudButton>
         }
     </MudPaper>
 
@@ -144,11 +123,10 @@
             </MudText>
         }
 
-        <AuthorizeView Roles="@AppRoles.Admin">
-            @* A goal is a scoreline by another route — AddGoalAsync recounts it — so a match still
-               to be played takes neither. *@
-            @if (!IsFuture && !AllScorersLogged)
-            {
+        @* A goal is a scoreline by another route — AddGoalAsync recounts it — so whoever may not
+           type the score may not log one either. *@
+        @if (CanEditScore && !AllScorersLogged)
+        {
             <div class="add-section">
                 <div class="add-row">
                     <div class="field" style="width: 60px;">
@@ -192,8 +170,7 @@
                     </button>
                 </div>
             </div>
-            }
-        </AuthorizeView>
+        }
     </MudPaper>
 
     @* An empty comments card on the public site is just clutter, so a visitor with nothing to read

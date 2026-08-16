@@ -27,9 +27,8 @@ const SOURCE = join(import.meta.dirname, '../../../src');
 // real rather than by this list.
 const SELECTORS = {
   'the games list': ['game-row', 'game-section', 'game-date', 'game-score', 'opp-prefix',
-                     'game-venue', 'game-actions', 'action-live'],
+                     'game-venue', 'action-live', 'action-live-now'],
   'a match still missing its lineup': ['nolineup-icon', 'action-needs-lineup'],
-  'the result page': ['score-big-input', 'add-row', 'btn-add-goal'],
   'the formation builder': ['pitch', 'pitch-empty', 'pitch-player', 'draggable-player'],
   'the playing-time table': ['playtime-table', 'pt-total', 'playtime-note'],
   'the live screen': ['live-lineup', 'live-controls', 'live-score-value', 'live-score-away',

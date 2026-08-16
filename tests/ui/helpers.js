@@ -186,40 +186,9 @@ export async function createMatch(page, { opponent, venue, matchType, split } = 
  * the list the test is about to look at.
  */
 export async function pickEarlierThisMonth(page, scope) {
+  const popover = page.locator('.mud-picker-popover.mud-popover-open');
   const field = scope.getByLabel('Date', { exact: false }).first();
   const before = await field.inputValue();
-
-  const today = new Date().getDate();
-  const day = await pickDayThisMonth(page, scope, today > 1 ? today - 1 : 1);
-
-  // Prove the pick landed in the field before anything is submitted — a picker that silently kept
-  // its old value would otherwise surface as a confusing failure two assertions later. The check is
-  // "it changed" rather than "it reads 8", because the field's format follows the culture and a
-  // day number is indistinguishable from a month number in most of them.
-  await expect(field).not.toHaveValue(before);
-
-  return day;
-}
-
-/**
- * The same, forwards: a day later in the current month, i.e. a match still to be played.
- *
- * No "the field changed" check here, because the dialog may well be showing that date already — it
- * opens on the next match day, which is tomorrow whenever the match day is. The caller checks the
- * date on the card instead, which is the stronger check anyway.
- *
- * On the last day of the month there is no later day to pick, and the caller has to skip: leaving
- * the month is what the doc comment above rules out.
- */
-export async function pickLaterThisMonth(page, scope) {
-  const now = new Date();
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  return pickDayThisMonth(page, scope, Math.min(now.getDate() + 1, lastDay));
-}
-
-/** Opens the dialog's date picker, walks it to the current month and clicks `day` there. */
-async function pickDayThisMonth(page, scope, day) {
-  const popover = page.locator('.mud-picker-popover.mud-popover-open');
   await clickFor(scope.locator('.mud-input-adornment button').first(), () => expect(popover).toBeVisible());
 
   // The picker opens on the match's current date, which is the *next* match day and can be in a
@@ -243,10 +212,18 @@ async function pickDayThisMonth(page, scope, day) {
   }
   await expect(header).toHaveText(thisMonth, { ignoreCase: true });
 
+  const today = new Date().getDate();
+  const day = today > 1 ? today - 1 : 1;
   // Days spilling in from the neighbouring months carry .mud-hidden and are not clickable.
   await popover.locator('.mud-picker-calendar .mud-day:not(.mud-hidden)')
     .filter({ hasText: new RegExp(`^${day}$`) }).first().click();
   await expect(popover).toBeHidden();
+
+  // Prove the pick landed in the field before anything is submitted — a picker that silently kept
+  // its old value would otherwise surface as a confusing failure two assertions later. The check is
+  // "it changed" rather than "it reads 8", because the field's format follows the culture and a
+  // day number is indistinguishable from a month number in most of them.
+  await expect(field).not.toHaveValue(before);
 
   return day;
 }

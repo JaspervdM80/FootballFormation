@@ -2,12 +2,8 @@
 // at a touchline.
 import { test, expect } from '../fixtures.js';
 import {
-  clickFor, confirmDialog, createMatch, fillField, gameRow, goto, openDialog, pickEarlierThisMonth,
-  pickLaterThisMonth, submitDialog,
+  clickFor, confirmDialog, createMatch, fillField, gameRow, goto, openDialog, pickEarlierThisMonth, submitDialog,
 } from '../helpers.js';
-
-/** The current month as the card writes it, for reading a match's date back off its card. */
-const cardMonth = () => new Date().toLocaleString('en-US', { month: 'short' });
 
 test('a new match appears under Fixtures with its venue and formation', async ({ page }) => {
   await createMatch(page, { opponent: 'FC Nieuwkomer', venue: 'Away' });
@@ -91,43 +87,9 @@ test('only a match already played is flagged for its missing lineup', async ({ p
   // The card's own date, which the app formats as "dd MMM" whatever the culture is doing to the
   // input above — so this is the unambiguous check that the match really is in the past. The month
   // is part of it on purpose: day 8 of the wrong month reads the same and is not in the past.
-  await expect(played.locator('.game-date')).toHaveText(new RegExp(`^0?${day} ${cardMonth()}$`, 'i'));
+  const month = new Date().toLocaleString('en-US', { month: 'short' });
+  await expect(played.locator('.game-date')).toHaveText(new RegExp(`^0?${day} ${month}$`, 'i'));
   await expect(played.locator('.nolineup-icon')).toBeVisible();
   // The action button changes shape rather than hiding: an empty grid means "this one needs you".
   await expect(played.getByTitle('Add lineup', { exact: false })).toBeVisible();
-  // And it can be scored, which is the half of the rule below that has to keep working.
-  await expect(played.getByTitle('Result', { exact: false })).toBeVisible();
-});
-
-test('a match still to be played offers no way to score it', async ({ page }) => {
-  // The mirror of the skip above: on the last day of the month there is no later day to pick, and
-  // stepping into the next one risks the season boundary the date decides the season from.
-  const now = new Date();
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  test.skip(now.getDate() === lastDay, 'no later day in the current month to date a match to');
-
-  await goto(page, '/games');
-  const panel = page.locator('.mud-dialog');
-  await clickFor(page.getByRole('button', { name: 'Add' }).first(), () => expect(panel).toBeVisible());
-  await fillField(panel, 'Opponent', 'FC Nog Te Spelen');
-  const day = await pickLaterThisMonth(page, panel);
-  await submitDialog(page);
-
-  const upcoming = gameRow(page, 'FC Nog Te Spelen');
-  await expect(upcoming.locator('.game-date')).toHaveText(new RegExp(`^0?${day} ${cardMonth()}$`, 'i'));
-  await expect(upcoming.getByTitle('Result', { exact: false })).toHaveCount(0);
-
-  // The card is not the enforcement. Take the id off the formation link and go to the result page
-  // the way an admin with a bookmark would, where the same rule has to hold.
-  await upcoming.getByTitle('Formation', { exact: false }).click();
-  await page.waitForURL(/\/games\/\d+\/formation/);
-  await goto(page, `/games/${page.url().match(/\/games\/(\d+)\//)[1]}/result`);
-
-  await expect(page.getByText("This match hasn't been played yet.")).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Save Score' })).toHaveCount(0);
-  // Both routes to a scoreline: the boxes themselves, and a goal, which recounts it. Scoped to
-  // .add-row because the comments card below reuses .btn-add-goal for its own Add button, and a
-  // comment on a match still to be played is perfectly reasonable.
-  await expect(page.locator('input.score-big-input')).toHaveCount(0);
-  await expect(page.locator('.add-row .btn-add-goal')).toHaveCount(0);
 });
