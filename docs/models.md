@@ -277,7 +277,7 @@ says which of them came second. `GameMinutesReport` walks them in that same orde
 | EditedAt | DateTime? | Null until the body changes. Publishing alone is not an edit |
 
 Replaced the old `Game.Notes` string, which was written in the game dialog and displayed nowhere.
-The `AddMatchTypeAndComments` migration carries every non-empty `Notes` value over as one
+The `AddMatchTypeAndComments` migration carried every non-empty `Notes` value over as one
 admin-only comment dated to the match.
 
 **Visibility is enforced in the query, not in the markup.** `GameService.GetCommentsAsync(gameId,

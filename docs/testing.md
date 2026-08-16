@@ -33,7 +33,6 @@ Every test class, so a gap here is visible rather than assumed:
 | **Authorization** | `AuthorizationTests` | That every write refuses a non-admin *at the service*, not only in the markup — the guard the whole write path rests on |
 | Accounts | `UserServiceTests`, `SeededAdminTests` | Credentials, security stamps, the last-admin guard, and the seeded account being no working login |
 | Boot safety | `DatabaseSafetyTests`, `HealthReportTests` | The pre-migration snapshot and what `/health` is allowed to call healthy |
-| Migrations that rewrite rows | `GoalClockBackfillTests` | The only migration with a backfill in it. Migrates a seeded database across the boundary and asserts what the app then *shows* — a goal written `30+2` still reads `30+2` — rather than what landed in a column. Every other migration is covered implicitly, because `ServiceTestBase` builds the schema from the model |
 | Service lifetime | `ServiceLifetimeTests` | Concurrent reads, and detached entities round-tripping through update |
 | `Result` | `ResultTests` | Error keys, arguments, the guard on reading a failed value, and that a cancellation stays one when carried between types |
 | Cancellation | `CancellationTests` | That a caller going away is an ordinary outcome and not a logged error — including that an `OperationCanceledException` nobody asked for still is one |
@@ -122,7 +121,8 @@ below is out of the report entirely — not merely out of the judgement:
 - **Migrations and the model snapshot.** A `Down()` is never executed by the suite and never will
   be, and counting scaffolded code makes the gate a lottery on how much of it a change touched.
   Excluding them took `Core` from a comfortable 96.4% over 9,960 lines to an honest 93.3% over
-  2,509.
+  2,509 — measured while twenty migrations were on file. Folding them into one shrank the
+  scaffolded half but not the reason for the rule: the next migration adds it straight back.
 - **`DesignTimeDbContextFactory`**, which exists for `dotnet ef` and runs in no test.
 - **Generated and deliberately-marked code**, by attribute — `GeneratedCode`, `ExcludeFromCodeCoverage`,
   `Obsolete`. `CompilerGeneratedAttribute` is deliberately *not* one of them: it is not just

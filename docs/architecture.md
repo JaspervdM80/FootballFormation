@@ -223,8 +223,8 @@ docs/deployment.md — Full setup, DNS for gjs-meiden.nl, redeploy & backup comm
 - Auto-migrates on startup
 - `List<PlayerPosition>` stored as comma-separated ints
 - `List<int>` (UnavailablePlayerIds) stored as comma-separated values
-- `Games.SeasonId` is a required FK with `ON DELETE RESTRICT`; the `AddSeasons` migration backfills
+- `Games.SeasonId` is a required FK with `ON DELETE RESTRICT`; the `AddSeasons` migration backfilled
   existing rows (see the EF Core conventions in [patterns.md](patterns.md))
 - `SeasonSquadMembers` holds per-season squad membership, unique on `(SeasonId, PlayerId)`, cascading
-  from both parents. The `AddSeasonSquads` migration backfills it from the old `Players.IsGuest`
-  column and then drops that column — a parent-table rebuild, so verify with `PRAGMA foreign_key_check`
+  from both parents. The `AddSeasonSquads` migration backfilled it from the old `Players.IsGuest`
+  column and then dropped that column — a parent-table rebuild, so verify with `PRAGMA foreign_key_check`

@@ -101,6 +101,15 @@ and a read-only token; the blast radius is a throwaway container.
 Manual `fly deploy` from the repo root still works and deliberately skips everything above — the
 checks, the merge and the smoke check. Migrations run on startup either way.
 
+**The live volume is a schema ahead of the repository's history.** `Migrations/` holds one file,
+`20260322100416_InitialCreate`, into which the twenty that built the schema were folded — and it
+keeps that original id precisely because `/data/footballformation.db` already lists it in
+`__EFMigrationsHistory`. Production therefore boots with nothing pending and never applies it, which
+is the whole point: a new id would have re-run `CREATE TABLE` against a live database. That volume's
+history still names the nineteen that followed; EF ignores rows it has no file for. Anything
+scaffolded from here is an ordinary migration on top — see
+[patterns.md](patterns.md#migrations-are-one-file) before rescaffolding the first one.
+
 ## A deploy has to prove it serves
 
 `flyctl deploy` reporting success only means the machine started. After it, the workflow requests
@@ -140,10 +149,10 @@ health checks count towards the concurrency its autostop decision reads, so a ch
 seconds holds the machine awake and quietly undoes scale-to-zero.
 
 **Deliberately not wired to an automatic rollback.** By the time the smoke check runs, the release has
-already migrated the database, and several migrations are one-way in practice
-(`AddMatchTypeAndComments` drops a column). Rolling the image back would leave the previous code
-running against the new schema — a second, worse, unattended failure. A failed smoke check is a loud
-red deploy that a person then decides about.
+already migrated the database, and a migration is one-way in practice as soon as it drops a column or
+deletes rows — several of the ones this schema was built from did. Rolling the image back would leave
+the previous code running against the new schema — a second, worse, unattended failure. A failed
+smoke check is a loud red deploy that a person then decides about.
 
 ## The database is snapshotted before every migration
 
@@ -170,8 +179,9 @@ destroyed the only good copy in about as many minutes.
 Without it the process ended successfully and the refusal never left the container: Fly saw a clean
 exit and the deploy reported success while the site was down.
 
-**A failed backup aborts the migration.** Several migrations are one-way in practice, so once one has
-run without a snapshot there is no route back. A container that refuses to start is an afternoon's
+**A failed backup aborts the migration.** A migration that drops a column or deletes rows is one-way
+in practice, and this schema was built from several that did, so once one has run without a snapshot
+there is no route back. A container that refuses to start is an afternoon's
 problem; a season of lineups quietly rewritten is permanent. If the app will not boot for this
 reason, the volume is full.
 
