@@ -18,7 +18,6 @@ public class Game
     public GameSplitType SplitType { get; set; } = GameSplitType.Halves;
     public int GameDurationMinutes { get; set; } = 60;
 
-    /// <summary>True when we play at home, false for an away fixture.</summary>
     public bool IsHomeGame { get; set; } = true;
 
     /// <summary>Our score. Not tied to venue — see <see cref="IsHomeGame"/>.</summary>
@@ -44,7 +43,6 @@ public class Game
     /// </summary>
     public List<GameComment> Comments { get; set; } = [];
 
-    /// <summary>How far the live match screen has got with this game.</summary>
     public MatchState MatchState { get; set; } = MatchState.NotStarted;
 
     /// <summary>
@@ -64,16 +62,13 @@ public class Game
     /// </summary>
     public int? LivePeriodId { get; set; }
 
-    /// <summary>Squad players opted out of this game.</summary>
     public List<int> UnavailablePlayerIds { get; set; } = [];
 
     /// <summary>Guests of this game's season, explicitly opted in to this game.</summary>
     public List<int> GuestPlayerIds { get; set; } = [];
 
-    /// <summary>How many periods this game is split into.</summary>
     public int PeriodCount => SplitType.PeriodCount();
 
-    /// <summary>Seconds each period lasts on an even split of the game duration.</summary>
     public int PeriodDurationSeconds => SplitType.PeriodDurationSeconds(GameDurationMinutes);
 
     /// <summary>
@@ -143,7 +138,6 @@ public class Game
     /// </summary>
     public bool IsInRoster(Player player, SeasonSquads squads) => IsInRoster(player, squads.For(SeasonId));
 
-    /// <summary>Everyone taking part in this game, from the full player pool.</summary>
     public List<Player> SelectRoster(IEnumerable<Player> allPlayers, SeasonSquad squad) =>
         [.. allPlayers.Where(p => IsInRoster(p, squad))];
 
@@ -238,27 +232,16 @@ public class Game
 }
 
 /// <summary>
-/// Putting a set of games in date order.
-/// <para>
-/// SQLite has no date type — <see cref="Game.Date"/> lives in a TEXT column — so an
-/// <c>ORDER BY</c> in the database compares the <em>text</em> a date was written as rather than
-/// the date itself. The two only agree while every row was written in exactly the same format;
-/// one stored with a different separator or precision (a restored backup, a value written by
-/// anything but this app) lands in the wrong place and nothing on screen looks wrong. Sorting
-/// once the rows are materialised compares the parsed <see cref="DateTime"/>, which cannot drift.
-/// </para>
-/// <para>
-/// Both spell the tie-break out, so two fixtures on the same day keep the order they were
-/// entered in rather than whatever order the database handed them over in.
-/// </para>
+/// Ordering games by date in memory, because an <c>ORDER BY</c> in SQL would sort the text a date
+/// was written as — see <c>QueryTags.ComparesDatesInSql</c>. Both spell the tie-break out, so two
+/// fixtures on the same day keep the order they were entered in rather than whatever order the
+/// database handed them over in.
 /// </summary>
 public static class GameOrdering
 {
-    /// <summary>Newest first — how the games list and the season reports read.</summary>
     public static List<Game> NewestFirst(this IEnumerable<Game> games) =>
         [.. games.OrderByDescending(g => g.Date).ThenBy(g => g.Id)];
 
-    /// <summary>Oldest first.</summary>
     public static List<Game> OldestFirst(this IEnumerable<Game> games) =>
         [.. games.OrderBy(g => g.Date).ThenBy(g => g.Id)];
 }

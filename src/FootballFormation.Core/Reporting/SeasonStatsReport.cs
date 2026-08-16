@@ -2,7 +2,6 @@ using FootballFormation.Core.Models;
 
 namespace FootballFormation.Core.Reporting;
 
-/// <summary>Outcome of one finished game, from our perspective.</summary>
 public enum GameResult
 {
     Win,
@@ -10,7 +9,6 @@ public enum GameResult
     Loss
 }
 
-/// <summary>Team- and squad-wide figures for the season.</summary>
 public class SeasonStats
 {
     public int Played { get; init; }

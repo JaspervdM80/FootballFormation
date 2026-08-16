@@ -22,7 +22,6 @@ public class MatchGoalService(
     ICurrentUser currentUser,
     ILogger<MatchGoalService> logger)
 {
-    /// <summary>The match clock — injected, for the reason <see cref="MatchClockService"/> gives.</summary>
     private DateTime UtcNow => time.GetUtcNow().UtcDateTime;
 
     /// <param name="scorerId">Null for an opponent goal — we do not track their players.</param>

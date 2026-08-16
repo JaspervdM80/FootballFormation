@@ -38,8 +38,6 @@ public partial class Games
         _games = Snackbar.ReportFailure(L, result) ? result.Value : [];
     }
 
-    /// <summary>Read through <see cref="TimeProvider"/> for the same reason the services do it:
-    /// a date nobody can control is a date nobody can test.</summary>
     private DateTime Today => Time.GetLocalNow().Date;
 
     /// <summary>A game that has already been played but has no lineup entered — its playing

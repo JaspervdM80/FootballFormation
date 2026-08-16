@@ -58,7 +58,6 @@ public static class FormationSlots
         return assignments;
     }
 
-    /// <summary>Convenience overload for callers that only have the formation.</summary>
     public static GamePlayerPosition?[] Assign(
         FormationType formation, IEnumerable<GamePlayerPosition> lineup) =>
         Assign(For(formation), lineup);

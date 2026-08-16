@@ -9,7 +9,6 @@ public enum PeriodPlayStatus
     Substitute
 }
 
-/// <summary>What one player did in one period.</summary>
 public class PeriodDetail
 {
     public PeriodPlayStatus Status { get; set; }
@@ -17,7 +16,6 @@ public class PeriodDetail
     public PositionFit? Fit { get; set; }
 }
 
-/// <summary>One player's involvement across every period of a game.</summary>
 public class PlayingTimeRow
 {
     public required Player Player { get; init; }

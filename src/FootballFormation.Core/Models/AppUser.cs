@@ -8,7 +8,6 @@ public class AppUser
 {
     public int Id { get; set; }
 
-    /// <summary>The person, as shown in the app bar and the user list.</summary>
     public string DisplayName { get; set; } = string.Empty;
 
     /// <summary>What they type to sign in. Unique, case-sensitively — see AppUserConfiguration.</summary>

@@ -102,12 +102,8 @@ try
         options.UseSqlite($"Data Source={dbPath}",
             x => x.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
-    // The match clock. Injected rather than read from DateTime.UtcNow so the live-match timing
-    // logic is deterministic under test — see MatchClockService.
     builder.Services.AddSingleton(TimeProvider.System);
 
-    // Who the services think is calling. Scoped, so it answers for the circuit that made the call.
-    // Registered before them because every write path depends on it — see ICurrentUser.
     builder.Services.AddScoped<ICurrentUser, CircuitCurrentUser>();
 
     builder.Services.AddScoped<PlayerService>();
@@ -121,13 +117,11 @@ try
     builder.Services.AddScoped<MatchPreferencesService>();
     builder.Services.AddScoped<UserService>();
 
-    // Singleton: the live match screen fans changes out to every open circuit — see LiveMatchNotifier
+    // Singleton, not scoped: a substitution on the sideline has to reach every circuit watching,
+    // not just the one that made it.
     builder.Services.AddSingleton<LiveMatchNotifier>();
 
-    // Scoped, so the selected season lives for the SignalR circuit — see SeasonState
     builder.Services.AddScoped<SeasonState>();
-
-    // Scoped for the same reason: the back button follows the trail of this tab — see NavigationTrail
     builder.Services.AddScoped<NavigationTrail>();
 
     builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

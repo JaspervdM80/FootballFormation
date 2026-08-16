@@ -17,7 +17,6 @@ namespace FootballFormation.Core.Data;
 /// </summary>
 public static class DatabaseSafety
 {
-    /// <summary>How many pre-migration snapshots to keep before the oldest is pruned.</summary>
     public const int KeepBackups = 5;
 
     /// <summary>

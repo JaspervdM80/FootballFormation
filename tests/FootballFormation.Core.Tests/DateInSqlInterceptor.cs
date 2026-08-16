@@ -7,23 +7,13 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 namespace FootballFormation.Core.Tests;
 
 /// <summary>
-/// Fails any query that orders or compares a <see cref="DateTime"/> in SQL.
+/// Fails any query that orders or compares a <see cref="DateTime"/> in SQL — the rule, and why it
+/// matters, are on <see cref="QueryTags.ComparesDatesInSql"/>.
 /// <para>
-/// SQLite has no date type, so every date column in this schema is TEXT and a comparison made in
-/// SQL compares the string the value was written as. That matches date order only while every row
-/// carries byte-identical formatting — one written with an ISO <c>T</c> separator instead of EF's
-/// space sorts as if the <c>T</c> were part of the time, because <c>'T'</c> &gt; <c>' '</c>. The
-/// rule is to materialise first and let the parsed <see cref="DateTime"/> be what gets compared.
-/// </para>
-/// <para>
-/// The rule used to live only in prose, which is the problem this solves: the failure is silent and
-/// produces plausible output — a slightly wrong order nobody notices until a backup is restored.
 /// Registered on the context factory in <see cref="ServiceTestBase"/>, so it watches every query
-/// the whole suite makes rather than the handful a dedicated test would remember to call.
-/// </para>
-/// <para>
-/// A query may opt out with <see cref="QueryTags.ComparesDatesInSql"/>, which is deliberately
-/// awkward: the exception has to be argued for in the code that takes it.
+/// the whole suite makes rather than the handful a dedicated test would remember to call. The
+/// failure it catches is silent and produces plausible output — a slightly wrong order nobody
+/// notices until a backup is restored — which is why prose alone was not enough.
 /// </para>
 /// </summary>
 public sealed class DateInSqlInterceptor : DbCommandInterceptor

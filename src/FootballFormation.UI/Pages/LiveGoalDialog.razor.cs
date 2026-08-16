@@ -4,7 +4,6 @@ using MudBlazor;
 
 namespace FootballFormation.UI.Pages;
 
-/// <summary>Who scored, who set it up, and whether it went in at the wrong end.</summary>
 public record LiveGoalChoice(int ScorerId, int? AssisterId, bool IsOwnGoal);
 
 /// <summary>

@@ -11,7 +11,6 @@ public class GameSubstitution
     public int GameId { get; set; }
     public Game Game { get; set; } = null!;
 
-    /// <summary>The period that was on the pitch when the change was made.</summary>
     public int GamePeriodId { get; set; }
     public GamePeriod GamePeriod { get; set; } = null!;
 

@@ -2,7 +2,6 @@ using FootballFormation.Core.Models;
 
 namespace FootballFormation.Core.Reporting;
 
-/// <summary>Minutes and share a player spent in one position, over the games passed in.</summary>
 public class PositionStat
 {
     public required PlayerPosition Position { get; init; }
@@ -12,7 +11,6 @@ public class PositionStat
     public double Percentage { get; init; }
 }
 
-/// <summary>What one player did in one game.</summary>
 public class PlayerGameStat
 {
     public required Game Game { get; init; }
@@ -38,7 +36,6 @@ public class PlayerStats
     public int GamesPlayed { get; init; }
     public int TotalMinutes { get; init; }
 
-    /// <summary>Minutes spent in goal (position GK).</summary>
     public int GoalkeeperMinutes { get; init; }
 
     /// <summary>Minutes the player was available to play — the played duration of every game
