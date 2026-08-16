@@ -435,7 +435,7 @@
   <data name="Drag players here to add as subs" xml:space="preserve"><value>Sleep spelers hierheen om ze als wissel toe te voegen</value></data>
 
   <!-- Install banner -->
-  <data name="Install Formation Planner" xml:space="preserve"><value>Installeer Formation Planner</value></data>
+  <data name="Install GJS meiden app" xml:space="preserve"><value>Installeer GJS meiden app</value></data>
   <data name="Install" xml:space="preserve"><value>Installeren</value></data>
   <data name="Add the app to your home screen." xml:space="preserve"><value>Zet de app op je beginscherm.</value></data>
   <data name="Tap Share, then &quot;Add to Home Screen&quot;." xml:space="preserve"><value>Tik op 'Deel' en dan op 'Zet op beginscherm'.</value></data>
