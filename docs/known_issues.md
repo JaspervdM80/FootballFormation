@@ -39,6 +39,14 @@ Avoid repeating these mistakes:
   of the moment the copy was taken; it is the schema state now, so a crash loop cannot write five
   snapshots of the broken database and prune the only good one. See [deployment.md](deployment.md).)
 - **The scaffolder ordered a destructive migration wrongly**: `AddSeasonSquads` had to copy `Players.IsGuest` into a new table *and* drop the column; EF emitted the `DropColumn` first, which would have wiped the source before the backfill ran. Always read and reorder the generated `Up()`.
+- **The one migration on file carries an id older than the file**: `Migrations/` holds a single
+  `20260322100416_InitialCreate` that the twenty real migrations were folded into, and it keeps
+  the original `InitialCreate`'s id rather than the timestamp of the scaffold that wrote it. That is
+  load-bearing, not untidiness. The live volume already has that row in `__EFMigrationsHistory`, so
+  it boots with nothing pending; a rescaffold that let EF assign a fresh id would make the whole
+  schema pending against a database that has it all, and the boot would `CREATE TABLE` over a season
+  of results and fail. Restore the id by hand in both file names and the `[Migration]` attribute —
+  see [patterns.md](patterns.md#migrations-are-one-file).
 - **A transaction cannot span two `AppDbContext` instances, and nothing warns you**: each operation
   opens its own context from the factory (deliberately — see [patterns.md](patterns.md)), and each
   context has its own connection. Calling another *service's* write from inside your own therefore
@@ -377,7 +385,7 @@ Avoid repeating these mistakes:
   different columns.** A goal logged from `/live` carries `GamePeriodId` and `AtSeconds`, the same
   pair a substitution carries, and the minute anyone sees comes out of `MatchClockReport.MinuteOf`.
   A goal typed in on `/result` has neither and falls back to `Minute`. So do all the goals logged
-  before `StoreGoalPeriodAndClock` that were not scored in stoppage time: that migration backfills
+  before `StoreGoalPeriodAndClock` that were not scored in stoppage time: that migration backfilled
   only what an old row states outright, and a plain minute does not say which half it belonged to.
   The trap is reading `Minute` directly and finding it null on a live match, or assuming a row that
   has one was typed in by hand. Never reinstate the previous shape — a minute frozen on the row
@@ -388,8 +396,9 @@ Avoid repeating these mistakes:
   and the clock reading from that half's kick-off, and those goals still read `30+2` afterwards.
   `32` would be the 32nd minute — two minutes into a second half — which is a different moment.
   Rows with `AdditionalMinute = 0` were left alone, because a stored `37` could equally be a minute
-  typed in by hand. `GoalClockBackfillTests` migrates a database across that boundary and asserts
-  what the app then shows.
+  typed in by hand. That backfill has run everywhere it was ever going to, and the migration was
+  folded into `InitialCreate` along with the test that drove it across the boundary — so what is
+  written here is now the only record of why an old row looks the way it does.
 - **A stored `Minute` is a scoreboard reading, and the timeline is ordered on elapsed seconds — do
   not mix the two.** They agree only while the halves run to length. On a match whose first half
   was whistled off three minutes long, the scoreboard's 31' is 33 minutes of elapsed play, so
