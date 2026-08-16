@@ -271,8 +271,15 @@ page without a refresh.
   mobile name font-size is set on the inner `.player-name-cell` wrapper, not the cell.
 - A row with no alternatives collapses its line via `.cell-alt:not(:has(.badge-gold))`
   (alternatives render as `.badge-gold`, preferred as `.badge-teal`).
+- Both position badges are sized for the widest abbreviation (`min-width: 3.25rem`, centred),
+  so `GK` and `CDM` are the same box and the alternatives line up under the preferred one.
+  Scoped to `.players-table`: elsewhere those two badge classes carry words.
+- The row actions are the same box as a game card's `.action-btn` — 32px for a pointer, 44px
+  and flush for a finger. MudBlazor sizes a small icon button from its padding, which lands
+  at 26px, well under the touch floor.
 - Sorting is unavailable on mobile — MudBlazor collapses the header to zero height in card
-  mode. Pre-existing, not caused by the grid override.
+  mode, and its small-devices sort select is hidden (see `known_issues.md`, "the sort select
+  that appears on the second render"). Sorting stays a desktop affordance.
 
 ## A page stops reading when the visitor leaves (`Components/CancellableComponent.cs`)
 Blazor Server gives a component no request lifetime of its own. A page that starts a query in

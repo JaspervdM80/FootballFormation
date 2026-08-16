@@ -1211,6 +1211,18 @@ html, body {
     margin-left: 6px;
 }
 
+/* Position abbreviations are two or three letters (GK, CB, CDM), and a badge that shrink-wraps
+   each one makes a column of ragged chips — the alternatives on the row below never line up with
+   the preferred position above them. Sized for the widest abbreviation instead, so every position
+   on the page is the same box. Only the squad table: elsewhere .badge-teal/.badge-gold carry
+   words, which a min-width would only pad. */
+.players-table .cell-pref .badge-teal,
+.players-table .cell-alt .badge-gold {
+    display: inline-block;
+    min-width: 3.25rem;
+    text-align: center;
+}
+
 /* Row actions: MudMenu wraps its trigger in a plain div, whose inline-block baseline sits
    lower than the inline-flex MudIconButtons beside it — the overflow ⋮ ended up a couple of
    pixels below the other icons. Making the row and the wrapper flex takes baselines out of
@@ -1224,6 +1236,29 @@ html, body {
 .players-table .row-actions .mud-menu {
     display: inline-flex;
     align-items: center;
+}
+
+/* The same box as a game card's .action-btn — 32px for a pointer, 44px for a finger. MudBlazor
+   sizes a small icon button from its padding, which lands at 26px and made two rows of icons that
+   do the same job on two pages sit at two different widths. Its rule is a bare
+   .mud-icon-button-size-small, so this selector outspecifies it without !important. */
+.players-table .row-actions .mud-icon-button {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+}
+
+@media (pointer: coarse) {
+    .players-table .row-actions .mud-icon-button {
+        width: 44px;
+        height: 44px;
+    }
+
+    /* Flush, for the same reason the game card's action row is: a 2px gap between two 44px
+       targets is a dead gutter, and a gap has to be nothing or at least 8px. */
+    .players-table .row-actions {
+        gap: 0;
+    }
 }
 
 /* Rows navigate to the player's stats. The chevron sits right after the name rather than at
@@ -1269,6 +1304,16 @@ html, body {
         column-gap: 8px;
         row-gap: 6px;
         padding: 10px 14px;
+    }
+
+    /* Below its breakpoint MudBlazor replaces the sortable headers with a select above the rows.
+       This table sets no SortLabel, so it arrives unlabelled: a blank dropdown across the top of
+       the squad that says nothing about what it does — and it only turns up once something has
+       re-rendered the table, which is why it reads as a glitch rather than a control. The list
+       is already ordered — guests last, then shirt number, then name — so sorting it stays a
+       desktop affordance. */
+    .players-table .mud-table-smalldevices-sortselect {
+        display: none;
     }
 
     /* A whole card row just for the number is wasteful: drop the # cell and print
