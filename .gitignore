@@ -79,10 +79,13 @@ tests/ui/test-results/
 tests/ui/playwright-report/
 
 # Claude Code. The session-start hook and the settings that register it are shared, because a web
-# session with no .NET SDK cannot build or test this app at all. The agents are shared for the same
-# reason the docs are: they carry this repo's conventions. Personal overrides stay local.
+# session with no .NET SDK cannot build or test this app at all. The agents and skills are shared for
+# the same reason the docs are: they carry this repo's conventions, and CLAUDE.md points at the
+# skills for every rule it no longer states itself — a web container clones fresh, so leaving them
+# untracked would strand that pointer. Personal overrides stay local.
 .claude/*
 !.claude/hooks/
 !.claude/agents/
+!.claude/skills/
 !.claude/settings.json
 .claude/settings.local.json
