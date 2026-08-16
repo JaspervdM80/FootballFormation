@@ -96,20 +96,21 @@ else
                             <span class="game-score @scoreClass">@left – @right</span>
                         }
                         <div class="game-actions" @onclick:stopPropagation="true">
-                            @* Live leads the row. A match in progress is what everyone wants first, so it is
-                               not admin-gated, and it stays reachable whatever the calendar says. Otherwise
-                               the live screen is a match-day tool. Once the score is final there is nothing
-                               left to run, so the icon goes and the Result button is the way in. *@
+                            @* Live leads the row and wears the red wherever it appears; the extra class
+                               only adds the pulse. A match in progress is what everyone wants first, so it
+                               is not admin-gated, and it stays reachable whatever the calendar says.
+                               Otherwise the live screen is a match-day tool. Once the score is final there
+                               is nothing left to run, so the icon goes and Result is the way in. *@
                             @if (game.MatchState == MatchState.InProgress)
                             {
-                                <button class="action-btn action-live" title="@L["Live"]" @onclick="() => OpenLive(game.Id)">
+                                <button class="action-btn action-live action-live-now" title="@L["Live"]" @onclick="() => OpenLive(game.Id)">
                                     <MudIcon Icon="@Icons.Material.Filled.Sensors" Size="Size.Small" />
                                 </button>
                             }
                             else if (IsMatchDay(game) && !HasFinalScore(game))
                             {
                                 <AuthorizeView Roles="@AppRoles.Admin">
-                                    <button class="action-btn" title="@L["Live"]" @onclick="() => OpenLive(game.Id)">
+                                    <button class="action-btn action-live" title="@L["Live"]" @onclick="() => OpenLive(game.Id)">
                                         <MudIcon Icon="@Icons.Material.Filled.Sensors" Size="Size.Small" />
                                     </button>
                                 </AuthorizeView>

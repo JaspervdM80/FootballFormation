@@ -57,13 +57,14 @@ public partial class MatchResult
     private string? NewCommentBody { get; set; }
     private bool NewCommentIsPublic { get; set; }
 
-    /// <summary>
-    /// A match still to be played. Nothing about its result may be entered — not the scoreline and
-    /// not a goal, which is a scoreline by another route, since <c>AddGoalAsync</c> recounts it.
-    /// <c>/games</c> leaves the link to this page off such a card; this is the same rule for
-    /// whoever arrives by URL anyway.
-    /// </summary>
+    /// <summary>A match still to be played. <c>/games</c> leaves the link to this page off such a
+    /// card; this is the same rule for whoever arrives by URL anyway.</summary>
     private bool IsFuture => GameData is { } game && game.Date.Date > Time.GetLocalNow().Date;
+
+    /// <summary>Who may type a scoreline, and so who may log a goal — <c>AddGoalAsync</c> recounts
+    /// the score, so it is the same permission. Built on <see cref="IsAdmin"/> rather than an
+    /// <c>AuthorizeView</c> for the reason given there.</summary>
+    private bool CanEditScore => IsAdmin && !IsFuture;
 
     /// <summary>
     /// True when both scores are set AND every goal our team scored has a named scorer.

@@ -128,7 +128,8 @@ test('a match being played leads its card, in a colour nothing else there uses',
 
   await goto(page, '/games');
   const row = gameRow(page, 'FC Bezig');
-  await expect(row.locator('.action-btn').first()).toHaveClass(/action-live/);
+  // Leading the row, and pulsing — .action-live is the red, .action-live-now is the match under way.
+  await expect(row.locator('.action-btn').first()).toHaveClass(/action-live-now/);
 
   // The crest red, read back through the theme rather than as a hex: ClubTheme is the one place a
   // colour is chosen, and a test naming #e11d24 would be the second.
