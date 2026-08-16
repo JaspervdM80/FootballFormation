@@ -25,18 +25,32 @@
     <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">
         <div class="card-label">@L["Final Score"]</div>
         @{
+            // The number as text: what a visitor sees, and what an admin sees on a match that has
+            // not been played yet. Named once each so neither branch below repeats it.
+            RenderFragment ourScoreText =
+                @<span class="score-big-input" style="pointer-events: none;">@(ScoreHome?.ToString() ?? "–")</span>;
+            RenderFragment opponentScoreText =
+                @<span class="score-big-input score-away" style="pointer-events: none;">@(ScoreAway?.ToString() ?? "–")</span>;
+
             // ScoreHome/ScoreAway always mean "us"/"them"; only the display order follows the venue.
             RenderFragment ourSide =
                 @<div class="score-side">
                     <span class="score-name">@L["Us"]</span>
                     <AuthorizeView Roles="@AppRoles.Admin" Context="auth">
                         <Authorized>
-                            <input type="number" class="score-big-input" min="0" max="99"
-                                   value="@ScoreHome"
-                                   @onchange="e => ScoreHome = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)" />
+                            @if (IsFuture)
+                            {
+                                @ourScoreText
+                            }
+                            else
+                            {
+                                <input type="number" class="score-big-input" min="0" max="99"
+                                       value="@ScoreHome"
+                                       @onchange="e => ScoreHome = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)" />
+                            }
                         </Authorized>
                         <NotAuthorized>
-                            <span class="score-big-input" style="pointer-events: none;">@(ScoreHome?.ToString() ?? "–")</span>
+                            @ourScoreText
                         </NotAuthorized>
                     </AuthorizeView>
                 </div>;
@@ -45,12 +59,19 @@
                     <span class="score-name">@GameData.Opponent</span>
                     <AuthorizeView Roles="@AppRoles.Admin" Context="auth">
                         <Authorized>
-                            <input type="number" class="score-big-input score-away" min="0" max="99"
-                                   value="@ScoreAway"
-                                   @onchange="e => ScoreAway = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)" />
+                            @if (IsFuture)
+                            {
+                                @opponentScoreText
+                            }
+                            else
+                            {
+                                <input type="number" class="score-big-input score-away" min="0" max="99"
+                                       value="@ScoreAway"
+                                       @onchange="e => ScoreAway = string.IsNullOrEmpty(e.Value?.ToString()) ? null : int.Parse(e.Value.ToString()!)" />
+                            }
                         </Authorized>
                         <NotAuthorized>
-                            <span class="score-big-input score-away" style="pointer-events: none;">@(ScoreAway?.ToString() ?? "–")</span>
+                            @opponentScoreText
                         </NotAuthorized>
                     </AuthorizeView>
                 </div>;
@@ -60,12 +81,23 @@
             <span class="score-vs">–</span>
             @(GameData.IsHomeGame ? opponentSide : ourSide)
         </div>
-        <AuthorizeView Roles="@AppRoles.Admin">
-            <MudButton Variant="Variant.Filled" Class="btn-gold mt-4" FullWidth="true"
-                       OnClick="SaveScore">
-                @L["Save Score"]
-            </MudButton>
-        </AuthorizeView>
+        @* Said to everyone, not only to the admin who would otherwise be looking for the button:
+           a visitor arriving on a fixture is owed the same explanation of the two dashes. *@
+        @if (IsFuture)
+        {
+            <MudText Typo="Typo.body2" Class="mt-4" Style="color: var(--ink-subtle);">
+                @L["This match hasn't been played yet."]
+            </MudText>
+        }
+        else
+        {
+            <AuthorizeView Roles="@AppRoles.Admin">
+                <MudButton Variant="Variant.Filled" Class="btn-gold mt-4" FullWidth="true"
+                           OnClick="SaveScore">
+                    @L["Save Score"]
+                </MudButton>
+            </AuthorizeView>
+        }
     </MudPaper>
 
     <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">
@@ -113,7 +145,9 @@
         }
 
         <AuthorizeView Roles="@AppRoles.Admin">
-            @if (!AllScorersLogged)
+            @* A goal is a scoreline by another route — AddGoalAsync recounts it — so a match still
+               to be played takes neither. *@
+            @if (!IsFuture && !AllScorersLogged)
             {
             <div class="add-section">
                 <div class="add-row">

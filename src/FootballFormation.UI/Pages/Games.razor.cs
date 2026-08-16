@@ -79,6 +79,11 @@ public partial class Games
     /// button that leads there only appears on the day itself.</summary>
     private bool IsMatchDay(Game game) => game.Date.Date == Today;
 
+    /// <summary>A match still to be played. There is no result to read and none to enter yet, so
+    /// the card leaves the result page out — see <c>MatchResult</c>, which says the same thing to
+    /// anyone who arrives there by URL.</summary>
+    private bool IsFuture(Game game) => game.Date.Date > Today;
+
     /// <summary>
     /// Whether the scoreline is settled. A live match writes `ScoreHome`/`ScoreAway` as the goals
     /// go in, so a score on its own only means the game has *started* — the state has to be

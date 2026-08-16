@@ -116,6 +116,37 @@ test('a match is run from the live screen and its score reaches the result', asy
   await expect(gameRow(page, 'FC Uitslag').locator('.game-score')).toHaveText(/1\s*.\s*1/);
 });
 
+test('a match being played leads its card, in a colour nothing else there uses', async ({ page }) => {
+  const id = await matchWithId(page, 'FC Bezig');
+  await fillLineup(page, 2);
+
+  await goto(page, `/games/${id}/live`);
+  await clickFor(
+    page.getByRole('button', { name: 'Start match' }),
+    () => expect(page.getByRole('button', { name: 'Finish match' })).toBeVisible(),
+  );
+
+  await goto(page, '/games');
+  const row = gameRow(page, 'FC Bezig');
+  await expect(row.locator('.action-btn').first()).toHaveClass(/action-live/);
+
+  // The crest red, read back through the theme rather than as a hex: ClubTheme is the one place a
+  // colour is chosen, and a test naming #e11d24 would be the second.
+  const colours = await row.evaluate(el => {
+    const probe = document.createElement('span');
+    probe.style.backgroundColor =
+      getComputedStyle(document.documentElement).getPropertyValue('--club-primary').trim();
+    document.body.append(probe);
+    const clubPrimary = getComputedStyle(probe).backgroundColor;
+    probe.remove();
+    return {
+      live: getComputedStyle(el.querySelector('.action-live')).backgroundColor,
+      clubPrimary,
+    };
+  });
+  expect(colours.live, 'the live button should be painted the club primary').toBe(colours.clubPrimary);
+});
+
 test('tapping a player on the pitch offers a substitution and a position swap', async ({ page }) => {
   const id = await matchWithId(page, 'FC Wisselen');
   await fillLineup(page, 2);

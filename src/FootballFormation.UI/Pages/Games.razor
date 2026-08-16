@@ -68,7 +68,9 @@ else
                                              Title="@L["This game has no lineup — playing time can't be recorded"]" />
                                 }
                             </div>
-                            <span class="game-opponent"><span class="opp-prefix">@(game.IsHomeGame ? "vs " : "@ ")</span>@game.Opponent</span>
+                            @* The venue reads as a word on a phone, where .opp-prefix is hidden and the
+                               edge stripe is the only other thing saying it. *@
+                            <span class="game-opponent"><span class="opp-prefix">@(game.IsHomeGame ? "vs " : "@ ")</span>@game.Opponent<span class="game-venue">(@(game.IsHomeGame ? L["Home"] : L["Away"]))</span></span>
                         </div>
                         @* No badge for a competition match — that is the norm, and one on every card is
                            noise. A cup tie or a practice game changes what the row means, so it says so. *@
@@ -94,19 +96,10 @@ else
                             <span class="game-score @scoreClass">@left – @right</span>
                         }
                         <div class="game-actions" @onclick:stopPropagation="true">
-                            <AuthorizeView Roles="@AppRoles.Admin">
-                                @* Empty grid variant + amber tint when the lineup is missing, so a coach
-                                   spots which cards need a lineup at a glance from the action row. *@
-                                <button class="action-btn @(IsIncomplete(game) ? "action-needs-lineup" : "")"
-                                        title="@(IsIncomplete(game) ? L["Add lineup"] : L["Formation"])"
-                                        @onclick="() => OpenFormation(game.Id)">
-                                    <MudIcon Icon="@(IsIncomplete(game) ? Icons.Material.Outlined.GridView : Icons.Material.Filled.ViewModule)" Size="Size.Small" />
-                                </button>
-                            </AuthorizeView>
-                            @* A match in progress is what everyone wants first, so it is not admin-gated,
-                               and it stays reachable whatever the calendar says. Otherwise the live screen
-                               is a match-day tool. Once the score is final there is nothing left to run, so
-                               the icon goes and the Result button beside it is the way in. *@
+                            @* Live leads the row. A match in progress is what everyone wants first, so it is
+                               not admin-gated, and it stays reachable whatever the calendar says. Otherwise
+                               the live screen is a match-day tool. Once the score is final there is nothing
+                               left to run, so the icon goes and the Result button is the way in. *@
                             @if (game.MatchState == MatchState.InProgress)
                             {
                                 <button class="action-btn action-live" title="@L["Live"]" @onclick="() => OpenLive(game.Id)">
@@ -121,12 +114,25 @@ else
                                     </button>
                                 </AuthorizeView>
                             }
+                            <AuthorizeView Roles="@AppRoles.Admin">
+                                @* Empty grid variant + amber tint when the lineup is missing, so a coach
+                                   spots which cards need a lineup at a glance from the action row. *@
+                                <button class="action-btn @(IsIncomplete(game) ? "action-needs-lineup" : "")"
+                                        title="@(IsIncomplete(game) ? L["Add lineup"] : L["Formation"])"
+                                        @onclick="() => OpenFormation(game.Id)">
+                                    <MudIcon Icon="@(IsIncomplete(game) ? Icons.Material.Outlined.GridView : Icons.Material.Filled.ViewModule)" Size="Size.Small" />
+                                </button>
+                            </AuthorizeView>
                             <button class="action-btn" title="@L["Overview"]" @onclick="() => OpenOverview(game.Id)">
                                 <MudIcon Icon="@Icons.Material.Filled.Share" Size="Size.Small" />
                             </button>
-                            <button class="action-btn" title="@L["Result"]" @onclick="() => OpenResult(game.Id)">
-                                <MudIcon Icon="@Icons.Material.Filled.Scoreboard" Size="Size.Small" />
-                            </button>
+                            @* A match still to be played has no result to look at and none to enter. *@
+                            @if (!IsFuture(game))
+                            {
+                                <button class="action-btn" title="@L["Result"]" @onclick="() => OpenResult(game.Id)">
+                                    <MudIcon Icon="@Icons.Material.Filled.Scoreboard" Size="Size.Small" />
+                                </button>
+                            }
                             <AuthorizeView Roles="@AppRoles.Admin">
                                 <button class="action-btn" title="@L["Edit"]" @onclick="() => OpenEditDialog(game)">
                                     <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />

@@ -5,7 +5,7 @@
 // app-bar sections become a drawer, the squad table becomes a list of cards, and the match form
 // becomes a full-screen sheet.
 import { test, expect } from '../fixtures.js';
-import { clickFor, fillField, gameRow, goto, submitDialog } from '../helpers.js';
+import { clickFor, createMatch, fillField, gameRow, goto, submitDialog } from '../helpers.js';
 
 test('the sections are behind the drawer, not the app bar', async ({ page }) => {
   await goto(page, '/');
@@ -54,4 +54,38 @@ test('the squad reads as cards rather than a table squeezed sideways', async ({ 
   const overflow = await page.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow, 'the page should not scroll horizontally on a phone').toBeLessThanOrEqual(1);
+});
+
+test('a match card says its venue in words, since the "vs" prefix has no room', async ({ page }) => {
+  await createMatch(page, { opponent: 'FC Thuisploeg', venue: 'Home' });
+
+  const row = gameRow(page, 'FC Thuisploeg');
+  await expect(row.locator('.opp-prefix')).toBeHidden();
+  await expect(row.locator('.game-venue')).toHaveText('(Home)');
+});
+
+test("the action buttons keep one width and end on the card's right edge", async ({ page }) => {
+  await goto(page, '/games');
+
+  // Read from a real card rather than a contrived one: what matters is that the buttons do not
+  // change size with the row's length, and the list has rows of different lengths in it.
+  const row = page.locator('.game-cards .game-row').first();
+  const geometry = await row.evaluate(el => {
+    const actions = el.querySelector('.game-actions');
+    return {
+      buttons: [...actions.querySelectorAll('.action-btn')]
+        .map(b => ({ width: b.getBoundingClientRect().width, right: b.getBoundingClientRect().right })),
+      right: actions.getBoundingClientRect().right,
+    };
+  });
+
+  expect(geometry.buttons.length, 'a card should carry action buttons to measure').toBeGreaterThan(1);
+  // 44 is the touch floor, and it is the *same* 44 whether the card carries four buttons or six —
+  // splitting the row evenly made a button's width a function of how many there were.
+  const widths = [...new Set(geometry.buttons.map(b => Math.round(b.width)))];
+  expect(widths, 'every action button should be the same fixed width').toEqual([44]);
+
+  const last = geometry.buttons.at(-1);
+  expect(Math.abs(last.right - geometry.right),
+    'the last button should end where the row does, not short of it').toBeLessThanOrEqual(1);
 });
