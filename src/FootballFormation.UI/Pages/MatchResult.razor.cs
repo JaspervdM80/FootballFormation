@@ -17,6 +17,7 @@ public partial class MatchResult
     [Inject] private NavigationTrail Trail { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
+    [Inject] private TimeProvider Time { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
     [CascadingParameter]
@@ -55,6 +56,14 @@ public partial class MatchResult
     // New comment form
     private string? NewCommentBody { get; set; }
     private bool NewCommentIsPublic { get; set; }
+
+    /// <summary>
+    /// A match still to be played. Nothing about its result may be entered — not the scoreline and
+    /// not a goal, which is a scoreline by another route, since <c>AddGoalAsync</c> recounts it.
+    /// <c>/games</c> leaves the link to this page off such a card; this is the same rule for
+    /// whoever arrives by URL anyway.
+    /// </summary>
+    private bool IsFuture => GameData is { } game && game.Date.Date > Time.GetLocalNow().Date;
 
     /// <summary>
     /// True when both scores are set AND every goal our team scored has a named scorer.

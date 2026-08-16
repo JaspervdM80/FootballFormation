@@ -26,8 +26,10 @@ const SOURCE = join(import.meta.dirname, '../../../src');
 // not ours to rename, and a MudBlazor upgrade that drops one is caught by the specs going red for
 // real rather than by this list.
 const SELECTORS = {
-  'the games list': ['game-row', 'game-section', 'game-date', 'game-score', 'opp-prefix'],
+  'the games list': ['game-row', 'game-section', 'game-date', 'game-score', 'opp-prefix',
+                     'game-venue', 'game-actions', 'action-live'],
   'a match still missing its lineup': ['nolineup-icon', 'action-needs-lineup'],
+  'the result page': ['score-big-input', 'add-row', 'btn-add-goal'],
   'the formation builder': ['pitch', 'pitch-empty', 'pitch-player', 'draggable-player'],
   'the playing-time table': ['playtime-table', 'pt-total', 'playtime-note'],
   'the live screen': ['live-lineup', 'live-controls', 'live-score-value', 'live-score-away',

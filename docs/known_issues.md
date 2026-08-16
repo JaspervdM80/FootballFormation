@@ -169,9 +169,16 @@ Avoid repeating these mistakes:
   which wrapped underneath them and was drawn straight through them. And five is not the count —
   the Live button joins on the day of the match, and six 44px buttons are 264px, more than any
   phone can put beside anything at all. So below 600px the card is two lines: the match, then the
-  actions across the full width, flush and split evenly between however many there are
-  (`Games.razor.css`). That clears 44px by 0.7px on a 320px phone, which is why the card's
-  horizontal padding drops from 16px to 12px there — 16px leaves 260px and six buttons need 264.
+  actions on a line of their own, flush, at a fixed width and pushed to the card's right-hand edge
+  (`Games.razor.css`). 44px each, which is why the card's horizontal padding drops from 16px to 12px
+  there — 16px leaves 260px and six buttons need 264, while 12px leaves 268px.
+- **Splitting that row evenly made a button's width a function of the row's length.** It was
+  `flex: 1` at first, so nothing was narrower than it had to be. But the row is four buttons on a
+  fixture, five on a played match, six on match day and *one* on a card an anonymous visitor is
+  looking at — so the same action sat somewhere different on every card in the list, and the
+  visitor's lone Overview button rendered as a 312px bar that reads as a call to action rather than
+  an icon. Fixed width and right-aligned instead: Delete is under the same thumb position on every
+  card, and every other button counts in from the same edge.
   **The audit only ever sees six because `visual-check.mjs` seeds its game dated *today*.** Move
   that date and the widest row the app has quietly stops being measured, with nothing failing to
   say so.

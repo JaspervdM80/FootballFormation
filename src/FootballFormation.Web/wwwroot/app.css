@@ -446,8 +446,8 @@ html, body {
     }
 
     .action-btn.action-live:hover {
-        color: #fff;
-        background: var(--color-success-bright);
+        color: var(--club-on-primary);
+        background: var(--club-primary-bright);
     }
 
     .action-btn.action-needs-lineup:hover {
@@ -456,11 +456,14 @@ html, body {
     }
 }
 
-/* A match that is actually being played right now — green so it reads as "on air", and
-   it pulses so it is the first thing the eye lands on in the list. */
+/* A match that is actually being played right now — the crest red, which nothing else in the action
+   row uses, and it pulses so it is the first thing the eye lands on in the list. It leads the row on
+   the card as well. Green was one of several greens on a card that already has a green edge stripe;
+   red belongs to this state alone, so a match-day card that has not kicked off yet keeps a plain
+   button and red goes on meaning "being played now". */
 .action-btn.action-live {
-    color: #fff;
-    background: var(--color-success-bright);
+    color: var(--club-on-primary);
+    background: var(--club-primary);
     animation: action-live-pulse 2s ease-in-out infinite;
 }
 

@@ -78,6 +78,12 @@
     flex: 1;
 }
 
+/* The venue in words, for the phone layout that hides .opp-prefix. Off by default so the two never
+   say the same thing twice on one card — see the phone block at the bottom of this file. */
+.game-venue {
+    display: none;
+}
+
 .game-score {
     font-weight: 700;
     font-size: 0.9rem;
@@ -135,15 +141,23 @@
         gap: 2px;
     }
 
-    /* The whole width, and split evenly between however many buttons the card carries — five on a
-       fixture, six on match day. Even rather than fixed so nothing is smaller than it has to be,
-       and flush so the row is one continuous surface with no gutter to lose a tap in. */
+    /* A line of its own, with the buttons at their own width and pushed to the right-hand edge.
+       They used to be split evenly across it, which made a button's width a function of how many
+       the card happened to carry — four on a fixture, six on match day, one on a card a visitor is
+       looking at — so no action kept a position down the list and a visitor's lone Overview button
+       read as a full-width bar. Fixed and right-aligned, Delete is under the same thumb on every
+       card and every other button counts in from the same edge. Flush, so the row is one continuous
+       surface with no gutter to lose a tap in. */
     .game-actions {
         flex-basis: 100%;
+        justify-content: flex-end;
     }
 
+    /* Their own width is app.css's — 32px for a pointer, 44px for a finger. Six of the 44s are
+       264px against the 268px this card leaves inside its padding on a 320px phone, which is the
+       whole reason that padding is 12px rather than 16px. */
     .game-actions .action-btn {
-        flex: 1;
+        flex: 0 0 auto;
     }
 
     /* Formation, absentees and guests are secondary detail — hide them on mobile */
@@ -153,9 +167,18 @@
         display: none;
     }
 
-    /* Opponent shown without the "vs"/"@" prefix (venue is the left-edge stripe now) */
+    /* Opponent shown without the "vs"/"@" prefix — the venue is spelled out after the name instead,
+       which the edge stripe alone never managed to say. */
     .opp-prefix {
         display: none;
+    }
+
+    .game-venue {
+        display: inline;
+        margin-left: 6px;
+        font-weight: 400;
+        font-size: 0.75rem;
+        color: var(--ink-muted);
     }
 
     /* Amber panel + amber formation button already flag a missing lineup; the icon
