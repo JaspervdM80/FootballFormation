@@ -11,7 +11,9 @@
 }
 
 <PageHeader BackFallback="@AppRoutes.SeasonStats" TitleTypo="Typo.h5" Title="@L["Position Development"]"
-            Subtitle="@L["Who has played where this season, at a glance."]" />
+            Subtitle="@(SeasonState.SelectedSeason is { } season
+                ? L["Who has played where in {0}, at a glance.", season.Name]
+                : L["Who has played where across all seasons, at a glance."])" />
 
 @if (_report is null || _report.Rows.Count == 0)
 {
@@ -25,7 +27,7 @@
 }
 
 <MudTable Items="_report.Rows" Hover="true" Dense="true" Elevation="2" T="PositionDevelopmentRow"
-          OnRowClick="OnRowClicked" RowStyle="cursor: pointer;"
+          OnRowClick="OnRowClicked" RowStyle="cursor: pointer;" HorizontalScrollbar="true"
           Class="position-dev-table stacked-table" Style="border-radius: 16px;">
     <HeaderContent>
         <MudTh>#</MudTh>
@@ -42,10 +44,9 @@
         <MudTd DataLabel="@L["Player"]" Class="pd-name">
             <span class="pd-name-cell">
                 <span style="font-weight: 600; color: var(--ink);">@context.Player.DisplayName</span>
-                @* The whole point of this grid: a player whose every minute came in one position. *@
                 @if (context.IsSinglePosition)
                 {
-                    <span class="badge-warning" title="@L["Played only one position all season."]">
+                    <span class="badge-warning" title="@L["Every minute played came in one position."]">
                         @L["Single position"]
                     </span>
                 }

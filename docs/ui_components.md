@@ -380,10 +380,10 @@ The global season filter, backed by the scoped `SeasonState` (see
   places — isolation would force a duplicate stylesheet, the problem `.stat-tiles` already has
   between `SeasonStats.razor.css` and `PlayerStats.razor.css`.
 - **Route allowlist**, now `AppNav.IsSeasonAware` rather than a copy of the route list living here:
-  `/games`, `/stats`, `/players` (the squad is per season), `/players/{id}/stats`, and `/` — the
-  start page filters nothing, but it is where a visit begins, so the season can be set before
-  navigating. Hidden on `/settings`, where it would be misleading while the season list itself is
-  edited, and on the single-game routes, where it is inert. The component subscribes to
+  `/games`, `/stats`, `/stats/positions`, `/players` (the squad is per season), `/players/{id}/stats`,
+  and `/` — the start page filters nothing, but it is where a visit begins, so the season can be set
+  before navigating. Hidden on `/settings`, where it would be misleading while the season list itself
+  is edited, and on the single-game routes, where it is inert. The component subscribes to
   `NavigationManager.LocationChanged` so visibility follows navigation.
 - Selecting a season **never** writes `Season.IsCurrent` — the picker is reachable by anonymous
   visitors, and `IsCurrent` is shared state owned by the admin on `/settings`. It goes in a cookie
@@ -478,9 +478,10 @@ Season-scoped: it follows the season picker and shows that season's squad, not e
   a plain `div`, and that wrapper's inline-block baseline put the ⋮ about 6px above the icon buttons
   beside it; flex removes baselines from the equation.
 
-## Statistics screens (`/stats`, `/players/{id}/stats`)
-Both are public reads, and both hold minute figures back from a visitor — the rule and its one
-exception are in [patterns.md](patterns.md#authorization-is-at-the-service-boundary-not-only-in-the-markup).
+## Statistics screens (`/stats`, `/players/{id}/stats`, `/stats/positions`)
+`/stats` and `/players/{id}/stats` are public reads that hold minute figures back from a visitor —
+the rule and its one exception are in
+[patterns.md](patterns.md#authorization-is-at-the-service-boundary-not-only-in-the-markup).
 How each page implements it differs, and the difference is the point:
 
 - **`SeasonStats` uses `<AuthorizeView Roles="@AppRoles.Admin">`** around the whole Playing-time
@@ -517,6 +518,16 @@ about each one, not a sentence about a single match — a badge reads down it, a
 `.g-opp-name` is a flex row so the pill keeps its width and `.g-opp-text` gives way to the ellipsis;
 the rule holding that needs **`::deep`**, because the pill is a child component's root element and
 those carry no scope attribute.
+
+**`/stats/positions` is admin-only outright** (`@attribute [Authorize(Roles = AppRoles.Admin)]`,
+same as `/settings` and `/users`), not redacted like the two pages above — who has been played where
+is a selection tool, not a figure worth sharing with a visitor. `PositionDevelopmentReport` pivots
+the `PlayerStats.Positions` the other two pages already compute — no new query, no new minutes
+aggregation — into a players × positions grid, reached from a `<PageHeader>` `<Actions>` button on
+`/stats` gated the same way. The table follows `FormationBuilder`'s `playtime-table`: a `MudTable`
+with one `MudTh`/`MudTd` per position rather than a fixed column set, `.stacked-table` for the phone
+card layout, and `HorizontalScrollbar="true"` because the column count is the size of the squad's
+position spread, not capped like the four-period playing-time table.
 
 ## Dialogs on a phone (`.dialog-sheet`)
 Every dialog goes through `DialogPrompts` with `UiFeedback.LockedDialog` (no backdrop-click close).

@@ -24,8 +24,7 @@ public partial class PositionDevelopment
     {
         _loaded = false;
 
-        // Same source as /stats: the squad is the authoritative roster and per-player figures
-        // reuse the same season-scoped game fetch and report builder.
+        // Same source as /stats — the squad is the authoritative roster, not everyone on file.
         var squadsResult = await SquadService.GetSquadsAsync(SeasonId, Cancellation);
         var squads = Snackbar.ReportFailure(L, squadsResult) ? squadsResult.Value! : SeasonSquads.Empty;
 

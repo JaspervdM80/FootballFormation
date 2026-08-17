@@ -24,12 +24,12 @@ public class PositionDevelopmentReportTests
         return game;
     }
 
-    private static PositionDevelopment BuildReport()
+    private static PositionDevelopment BuildReport(params Player[] order)
     {
         var squads = SeasonSquads.Of(TestData.Squad(1, [PlayerA, PlayerB, PlayerC]));
         var game = Game();
 
-        var playerStats = new[] { PlayerA, PlayerB, PlayerC }
+        var playerStats = (order.Length > 0 ? order : [PlayerA, PlayerB, PlayerC])
             .Select(p => PlayerStatsReport.Build(p, [game], squads));
 
         return PositionDevelopmentReport.Build(playerStats);
@@ -75,5 +75,14 @@ public class PositionDevelopmentReportTests
         Assert.Equal(30, rowB.Positions[PlayerPosition.ST].Minutes);
         Assert.Equal(50, rowB.Positions[PlayerPosition.GK].Percentage);
         Assert.Equal(50, rowB.Positions[PlayerPosition.ST].Percentage);
+    }
+
+    [Fact]
+    public void Rows_come_out_in_shirt_number_order_regardless_of_input_order()
+    {
+        // B (shirt 2) passed in ahead of A (shirt 1) — the # column still reads 1, then 2.
+        var report = BuildReport(PlayerB, PlayerA);
+
+        Assert.Equal([PlayerA.Id, PlayerB.Id], report.Rows.Select(r => r.Player.Id));
     }
 }

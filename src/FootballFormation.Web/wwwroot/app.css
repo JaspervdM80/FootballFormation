@@ -781,7 +781,7 @@ html, body {
     border: 1px solid color-mix(in srgb, var(--color-danger) 15%, transparent);
 }
 
-/* Amber, not red: a player stuck in one position all season is worth a look, not an alarm. */
+/* Amber, not red: worth a look, not an alarm. */
 .badge-warning {
     font-size: 0.65rem;
     font-weight: 600;

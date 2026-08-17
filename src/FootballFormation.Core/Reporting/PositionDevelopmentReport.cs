@@ -9,8 +9,8 @@ public class PositionDevelopmentRow
     public required Player Player { get; init; }
     public required IReadOnlyDictionary<PlayerPosition, PositionStat> Positions { get; init; }
 
-    /// <summary>True when every minute this player has played this season came in one position —
-    /// the squad-wide grid's whole reason to exist: who has never been asked to play anywhere else.</summary>
+    /// <summary>True when every minute this player played came in one position — the squad-wide
+    /// grid's whole reason to exist: who has never been asked to play anywhere else.</summary>
     public bool IsSinglePosition => Positions.Count == 1;
 }
 
@@ -22,6 +22,7 @@ public class PositionDevelopment
     /// declared order (goalkeeper, then defenders, midfielders, forwards) — the grid's columns.</summary>
     public required List<PlayerPosition> Positions { get; init; }
 
+    /// <summary>Shirt number order, guests included — same order the row's own # column shows.</summary>
     public required List<PositionDevelopmentRow> Rows { get; init; }
 }
 
@@ -44,6 +45,7 @@ public static class PositionDevelopmentReport
                 Player = ps.Player,
                 Positions = ps.Positions.ToDictionary(p => p.Position, p => p)
             })
+            .OrderBy(r => r.Player.ShirtNumber ?? int.MaxValue)
             .ToList();
 
         var positions = rows
