@@ -116,6 +116,17 @@ public class PositionDevelopmentReportTests
     }
 
     [Fact]
+    public void The_summary_counts_players_positions_and_who_never_moved()
+    {
+        // A played CM only; B split GK and ST; C never took the pitch.
+        var report = BuildReport();
+
+        Assert.Equal(2, report.PlayersUsed);
+        Assert.Equal(3, report.PositionsUsed);
+        Assert.Equal(1, report.SinglePositionPlayers);
+    }
+
+    [Fact]
     public void A_player_whose_only_minutes_round_away_is_left_out_entirely()
     {
         var report = PositionDevelopmentReport.Build([StatsWith(PlayerA, Position(PlayerPosition.CM, 0))]);

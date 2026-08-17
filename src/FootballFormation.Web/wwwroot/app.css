@@ -1353,7 +1353,8 @@ html, body {
     color: var(--ink-faint);
 }
 
-.players-table .mud-table-row:hover .player-name-chevron {
+.players-table .mud-table-row:hover .player-name-chevron,
+.position-dev-table .mud-table-row:hover .player-name-chevron {
     color: var(--club-primary-bright);
 }
 

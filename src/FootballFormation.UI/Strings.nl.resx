@@ -283,6 +283,9 @@
   <data name="Who has played where across all seasons, at a glance." xml:space="preserve"><value>In één oogopslag wie waar heeft gespeeld over alle seizoenen.</value></data>
   <data name="Single position" xml:space="preserve"><value>Eén positie</value></data>
   <data name="Every minute played came in one position." xml:space="preserve"><value>Elke gespeelde minuut was op één positie.</value></data>
+  <data name="Players used" xml:space="preserve"><value>Speelsters ingezet</value></data>
+  <data name="Positions used" xml:space="preserve"><value>Posities bespeeld</value></data>
+  <data name="of {0} players" xml:space="preserve"><value>van {0} speelsters</value></data>
 
   <!-- Season squad (per-season membership and guest status) -->
   <data name="New player" xml:space="preserve"><value>Nieuwe speler</value></data>

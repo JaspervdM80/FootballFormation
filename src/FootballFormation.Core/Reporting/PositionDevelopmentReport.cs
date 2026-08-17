@@ -25,6 +25,16 @@ public class PositionDevelopment
     /// <summary>Shirt number order — the same order the row's own # column shows. Who is in the
     /// list at all is the caller's choice; the page passes the season's full members only.</summary>
     public required List<PositionDevelopmentRow> Rows { get; init; }
+
+    /// <summary>How many players the grid has anything to say about — everyone who took the pitch.</summary>
+    public int PlayersUsed => Rows.Count;
+
+    /// <summary>How many distinct positions the squad covered between them.</summary>
+    public int PositionsUsed => Positions.Count;
+
+    /// <summary>The figure the page exists to surface: players who have only ever played one
+    /// position.</summary>
+    public int SinglePositionPlayers => Rows.Count(r => r.IsSinglePosition);
 }
 
 /// <summary>

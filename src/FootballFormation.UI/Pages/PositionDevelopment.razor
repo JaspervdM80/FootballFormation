@@ -10,10 +10,23 @@
     return;
 }
 
-<PageHeader BackFallback="@AppRoutes.SeasonStats" TitleTypo="Typo.h5" Title="@L["Position Development"]"
-            Subtitle="@(SeasonState.SelectedSeason is { } season
+@* The hint spells out what the row chevron only hints at, the way the squad table does. *@
+<PageHeader BackFallback="@AppRoutes.SeasonStats" TitleTypo="Typo.h5" Title="@L["Position Development"]">
+    <SubtitleContent>
+        <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
+            @(SeasonState.SelectedSeason is { } season
                 ? L["Who has played where in {0}, at a glance.", season.Name]
-                : L["Who has played where across all seasons, at a glance."])" />
+                : L["Who has played where across all seasons, at a glance."])
+        </MudText>
+        @if (_report is { Rows.Count: > 0 })
+        {
+            <MudText Typo="Typo.caption" Class="squad-hint">
+                <MudIcon Icon="@Icons.Material.Filled.TouchApp" Size="Size.Small" />
+                @L["Tap a player to see their statistics."]
+            </MudText>
+        }
+    </SubtitleContent>
+</PageHeader>
 
 @if (_report is null || _report.Rows.Count == 0)
 {
@@ -26,15 +39,33 @@
     return;
 }
 
+<div class="stat-tiles stat-tiles-3 mb-4">
+    <div class="stat-tile">
+        <div class="stat-value">@_report.PlayersUsed</div>
+        <div class="stat-label">@L["Players used"]</div>
+    </div>
+    <div class="stat-tile">
+        <div class="stat-value">@_report.PositionsUsed</div>
+        <div class="stat-label">@L["Positions used"]</div>
+    </div>
+    <div class="stat-tile">
+        <div class="stat-value">@_report.SinglePositionPlayers</div>
+        <div class="stat-label">@L["Single position"]</div>
+        <div class="stat-sub">@L["of {0} players", _report.PlayersUsed]</div>
+    </div>
+</div>
+
 <MudTable Items="_report.Rows" Hover="true" Dense="true" Elevation="2" T="PositionDevelopmentRow"
           OnRowClick="OnRowClicked" RowStyle="cursor: pointer;" HorizontalScrollbar="true"
           Class="position-dev-table stacked-table" Style="border-radius: 16px;">
     <HeaderContent>
         <MudTh>#</MudTh>
         <MudTh>@L["Player"]</MudTh>
+        @* Abbreviated, like the squad badges and the pitch chips — a column per position spelled
+           out in full runs the grid off the side of a laptop. The full name is the tooltip. *@
         @foreach (var position in _report.Positions)
         {
-            <MudTh Style="text-align:center">@L[position.DisplayName()]</MudTh>
+            <MudTh Style="text-align:center" title="@L[position.DisplayName()]">@position.ToString()</MudTh>
         }
     </HeaderContent>
     <RowTemplate>
@@ -50,6 +81,7 @@
                         @L["Single position"]
                     </span>
                 }
+                <span class="player-name-chevron" aria-hidden="true">›</span>
             </span>
         </MudTd>
         @foreach (var position in _report.Positions)
