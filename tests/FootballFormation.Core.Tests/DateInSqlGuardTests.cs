@@ -86,4 +86,37 @@ public class DateInSqlGuardTests : ServiceTestBase
             SELECT "p"."Id" FROM "Players" AS "p" WHERE "p"."ShirtNumber" > @__n_0 ORDER BY "p"."Surname"
             """"));
     }
+
+    [Fact]
+    public void Picking_MAX_of_a_date_column_in_SQL_is_refused()
+    {
+        var violations = DateInSqlInterceptor.Violations(
+            """"
+            SELECT MAX("g"."Date") FROM "Games" AS "g"
+            """");
+
+        Assert.Contains("MIN/MAX of \"Date\"", violations);
+    }
+
+    [Fact]
+    public void Picking_MIN_of_a_date_column_in_SQL_is_refused()
+    {
+        var violations = DateInSqlInterceptor.Violations(
+            """"
+            SELECT MIN("Date") FROM "Games" AS "g"
+            """");
+
+        Assert.Contains("MIN/MAX of \"Date\"", violations);
+    }
+
+    [Fact]
+    public void A_BETWEEN_window_on_a_date_column_in_SQL_is_refused()
+    {
+        var violations = DateInSqlInterceptor.Violations(
+            """"
+            SELECT "g"."Id" FROM "Games" AS "g" WHERE "g"."Date" BETWEEN @__today_0 AND @__tomorrow_1
+            """");
+
+        Assert.Contains("BETWEEN on \"Date\"", violations);
+    }
 }

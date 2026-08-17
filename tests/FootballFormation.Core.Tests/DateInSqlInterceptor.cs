@@ -44,6 +44,20 @@ public sealed class DateInSqlInterceptor : DbCommandInterceptor
         """,
         RegexOptions.Compiled);
 
+    // MAX("g"."Date") / MIN("Date") — picks by string order and emits no operator at all.
+    private static readonly Regex MinMaxOfColumn = new(
+        """
+        (?:MAX|MIN)\s*\(\s*(?:"[^"]+"\.)?"(?<col>[^"]+)"\s*\)
+        """,
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    // "g"."Date" BETWEEN @__today_0 AND @__tomorrow_1 — compares two dates with no operator either.
+    private static readonly Regex BetweenColumn = new(
+        """
+        "(?<col>[^"]+)"\s+BETWEEN\s
+        """,
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     public override InterceptionResult<DbDataReader> ReaderExecuting(
         DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result)
     {
@@ -113,6 +127,18 @@ public sealed class DateInSqlInterceptor : DbCommandInterceptor
                 var column = match.Groups["col"].Value;
                 if (DateColumns.Contains(column)) found.Add($"comparison on \"{column}\"");
             }
+        }
+
+        foreach (Match match in MinMaxOfColumn.Matches(sql))
+        {
+            var column = match.Groups["col"].Value;
+            if (DateColumns.Contains(column)) found.Add($"MIN/MAX of \"{column}\"");
+        }
+
+        foreach (Match match in BetweenColumn.Matches(sql))
+        {
+            var column = match.Groups["col"].Value;
+            if (DateColumns.Contains(column)) found.Add($"BETWEEN on \"{column}\"");
         }
 
         return [.. found.Distinct()];
