@@ -344,11 +344,15 @@ because the wording, the casing and the colour have to agree across all four and
 drifted once.
 
 - **The colours are the match overview's own**: `--club-accent` for home, `--color-away` for away,
-  tinted the way every other badge in `app.css` is (12% fill, 20% border, the `-bright` variant for
-  the text). Those are the two colours a match card already stripes its edges with, so the stripe
-  and the word are one convention instead of two. `--color-away-bright` exists for the same reason
-  the other semantic colours have one: plain `--color-away` on `--surface-card` is 4.7:1, which
-  clears AA for small text by too little to spend on a 0.6rem badge.
+  tinted the way every other badge in `app.css` is — 12% fill, 20% border. Those are the two
+  colours a match card already stripes its edges with, so the stripe and the word are one
+  convention instead of two.
+- **The text takes the deep end of each ramp**, `--club-accent-deep` and `--color-away-bright`, and
+  this is the part that is easy to get wrong: contrast is against the badge's own 12% fill, not the
+  card underneath, and that fill lightens the background more than it looks. The colours the larger
+  badges use measure **4.31:1** (home) and **4.02:1** (away) over it on `--surface-card`, and worse
+  on `--surface-card-alt` — both under AA for text this small. The deep pair clears it on every
+  surface the badge lands on: 5.27 / 4.88 home, 5.22 / 4.82 away.
 - `.badge-venue` is **shape only** — the colour lives in `.badge-venue-home` / `.badge-venue-away`,
   and the component always emits one of them. Nothing renders the base class alone.
 - **`Inline="true"`** where the badge trails a name (the games list, the player statistics) rather

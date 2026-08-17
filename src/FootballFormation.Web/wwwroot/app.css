@@ -743,10 +743,16 @@ html, body {
 
 /* Green for home and blue for away: the pair the match overview already stripes a card's edges
    with. The stripe and the word then say the same thing in the same colour, instead of being two
-   conventions to learn — and the badge carries that colour onto the screens with no stripe. */
+   conventions to learn — and the badge carries that colour onto the screens with no stripe.
+
+   The text takes the *deep* end of each ramp, not the -bright one the larger badges use. Contrast
+   here is against the badge's own 12% fill, not the bare card, and that fill lightens the
+   background by more than it looks: --club-accent-bright measures 4.31:1 over it on --surface-card
+   and 3.99:1 on --surface-card-alt, both under AA for text this small. The deep pair clears it on
+   every surface the badge lands on (5.27 / 4.88 home, 5.22 / 4.82 away). */
 .badge-venue-home {
     background: color-mix(in srgb, var(--club-accent) 12%, transparent);
-    color: var(--club-accent-bright);
+    color: var(--club-accent-deep);
     border-color: color-mix(in srgb, var(--club-accent) 20%, transparent);
 }
 

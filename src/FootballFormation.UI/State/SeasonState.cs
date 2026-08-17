@@ -15,6 +15,7 @@ namespace FootballFormation.UI.State;
 public class SeasonState(SeasonService seasons, SeasonPreference preference)
 {
     private Task? _loading;
+    private StoredSeason? _restored;
 
     public List<Season> Seasons { get; private set; } = [];
 
@@ -24,6 +25,18 @@ public class SeasonState(SeasonService seasons, SeasonPreference preference)
     public Season? SelectedSeason => Seasons.FirstOrDefault(s => s.Id == SelectedSeasonId);
 
     public event Action? OnChanged;
+
+    /// <summary>
+    /// Hands over the season cookie from the request that is rendering the page. <c>Routes</c>
+    /// calls this, which is what makes it work in both passes: the prerender reads the cookie off
+    /// <c>HttpContext</c>, and the value travels to the circuit as a root-component parameter, so
+    /// both passes resolve the same season and neither has to ask the browser.
+    /// <para>
+    /// Must land before <see cref="EnsureLoadedAsync"/>, and does: <c>Routes.OnInitialized</c> runs
+    /// before the router renders the page that calls it.
+    /// </para>
+    /// </summary>
+    public void Restore(string? cookieValue) => _restored = SeasonPreference.Parse(cookieValue);
 
     /// <summary>
     /// Loads the season list once per circuit. MainLayout and the page both need it during their
@@ -50,9 +63,8 @@ public class SeasonState(SeasonService seasons, SeasonPreference preference)
         // The remembered choice only wins while it still names a season that exists — a season
         // deleted since would otherwise filter every page down to nothing, with a picker that
         // cannot say which season it is showing.
-        var stored = await preference.LoadAsync();
-        SelectedSeasonId = stored is not null && IsSelectable(stored.SeasonId)
-            ? stored.SeasonId
+        SelectedSeasonId = _restored is not null && IsSelectable(_restored.SeasonId)
+            ? _restored.SeasonId
             : Seasons.FirstOrDefault(s => s.IsCurrent)?.Id ?? Seasons.FirstOrDefault()?.Id;
     }
 
@@ -64,6 +76,10 @@ public class SeasonState(SeasonService seasons, SeasonPreference preference)
         if (SelectedSeasonId == seasonId) return;
 
         SelectedSeasonId = seasonId;
+
+        // The choice this circuit is restored from, so a RefreshAsync after /settings edits the
+        // season list falls back to what the viewer picked rather than to what they arrived with.
+        _restored = new StoredSeason(seasonId);
 
         // Notify before persisting: the subscribers only queue a render, and nothing about the
         // page should wait on a round trip to the browser to store a cookie.

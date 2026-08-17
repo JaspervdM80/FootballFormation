@@ -1,19 +1,15 @@
-// The season picker's choice, read and written as a cookie.
+// Writes the season picker's choice to a cookie. Write-only on purpose: the server reads the
+// cookie off the request that renders the page (App.razor), and only setting it needs the browser,
+// because a circuit that is already up has no response left to put a Set-Cookie on.
 //
-// A cookie rather than localStorage because the choice is meant to lapse: a cookie carries its own
-// expiry, so a squad that looked at last season one evening is back on the current one tomorrow
-// without anything having to remember to clear it.
+// A cookie rather than localStorage for both halves of that: it carries its own expiry, so the
+// choice lapses on its own, and it is sent with the request, so the page can be rendered right the
+// first time instead of corrected after the circuit connects.
 window.seasonCookie = {
-    get() {
-        const prefix = 'ff.season=';
-        const hit = document.cookie.split('; ').find(c => c.startsWith(prefix));
-        return hit ? decodeURIComponent(hit.substring(prefix.length)) : null;
-    },
-
     set(value, maxAgeSeconds) {
-        // Lax, because this is read by script on a page the user navigated to; there is no
-        // cross-site request that needs it. Secure is left off so it still works over the plain
-        // http:// of a local `dotnet run` — the value is a season id, not a credential.
+        // Lax, because nothing cross-site needs to send this. Secure is left off so it still works
+        // over the plain http:// of a local `dotnet run` — the value is a season id, not a
+        // credential.
         document.cookie =
             `ff.season=${encodeURIComponent(value)}; path=/; max-age=${maxAgeSeconds}; SameSite=Lax`;
     }

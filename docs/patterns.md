@@ -307,23 +307,38 @@ the visitor has been. The pattern, taking `SeasonState` as the worked example:
 - Registered `Scoped`, so on Blazor Server it lives for the SignalR circuit — the choice survives
   navigation within a tab, and a refresh restores it from the cookie described below.
 - **The choice is kept in a cookie for eight hours**, through `SeasonPreference`
-  (`UI/State/SeasonPreference.cs`) over `js/season.js`. A circuit does not survive a deploy, and a
-  merge to `main` *is* a deploy onto the one Fly machine, so before this everyone watching a match
-  came back to whichever season the database calls current. Eight hours is a match day rather than
-  a subscription — a cookie carries its own expiry, which is why it is a cookie and not
-  `localStorage`. Three things to know about it:
+  (`UI/State/SeasonPreference.cs`). A circuit does not survive a deploy, and a merge to `main` *is*
+  a deploy onto the one Fly machine, so before this everyone watching a match came back to
+  whichever season the database calls current. Eight hours is a match day rather than a
+  subscription — a cookie carries its own expiry, which is why it is a cookie and not
+  `localStorage`.
+- **The write goes through the browser and the read does not**, and the asymmetry is the whole
+  design. Only `js/season.js` can set the cookie, because a circuit that is already up has no
+  response left to put a `Set-Cookie` on. Reading is the opposite: the cookie arrives on the
+  request that renders the page, so `App.razor` reads it off `HttpContext` and passes it to
+  `Routes` as a **root-component parameter**, which Blazor serialises into the component marker and
+  hands back when the circuit connects. `Routes.OnInitialized` calls `SeasonState.Restore` in both
+  passes, before the router renders anything.
+  - **This is what the prerender/circuit scope split costs if you get it wrong.** They are
+    different DI scopes, so a value the prerender reads is gone by the time the page is
+    interactive, and `IHttpContextAccessor.HttpContext` is null in a circuit. Asking the browser
+    for the cookie instead — the obvious first cut — puts a round trip in front of the first
+    interactive render *and* leaves the prerender painting a season the cookie had already
+    overruled, so the page visibly changes season after connecting.
   - **A stored season that no longer exists is ignored**, falling back to the current one.
     Restoring it would filter every page down to nothing behind a picker that cannot name what it
     is showing.
   - **"All seasons" is stored as the literal `all`**, because that choice is `null` in C# and
     `null` is also how "nothing stored" has to read.
-  - **JS interop is unavailable during the prerender pass**, so `SeasonPreference` swallows the
-    `InvalidOperationException` (and a `JSDisconnectedException` from a circuit on its way out).
-    The prerender therefore paints the default season and the interactive pass that follows
-    replaces it — the same pass that renders the page's real data.
+  - `SaveAsync` **swallows the lifecycle failures and logs the deployment one**: no circuit yet or
+    a circuit going away is normal and silent, but a `JSException` means the browser refused the
+    call — `season.js` missing, renamed, or stale in a service worker. Nothing about that is
+    visible from the UI, since the picker keeps working and only *remembering* is broken.
 - `Select` is therefore `SelectAsync`, and notifies `OnChanged` **before** awaiting the cookie
   write: the subscribers only queue a render, and no page should wait on a round trip to the
   browser.
+- `tests/ui/specs/season.spec.js` covers all of it, including a fetch of the prerendered HTML —
+  the flash and the round trip are invisible to an assertion made on the settled page.
 - Loading is a **memoized task** (`EnsureLoadedAsync() => _loading ??= LoadAsync()`). A scoped
   service can't load in its constructor, and the layout and the page both need the data during
   their own `OnInitializedAsync`, where they interleave at the first `await`. This was once
