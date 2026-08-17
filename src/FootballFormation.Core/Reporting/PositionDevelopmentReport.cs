@@ -22,7 +22,8 @@ public class PositionDevelopment
     /// declared order (goalkeeper, then defenders, midfielders, forwards) — the grid's columns.</summary>
     public required List<PlayerPosition> Positions { get; init; }
 
-    /// <summary>Shirt number order, guests included — same order the row's own # column shows.</summary>
+    /// <summary>Shirt number order — the same order the row's own # column shows. Who is in the
+    /// list at all is the caller's choice; the page passes the season's full members only.</summary>
     public required List<PositionDevelopmentRow> Rows { get; init; }
 }
 
@@ -34,17 +35,21 @@ public class PositionDevelopment
 /// </summary>
 public static class PositionDevelopmentReport
 {
-    /// <summary>Players with no minutes at all are left out — nothing to plot for them, and an
+    /// <summary>Players with no countable minutes are left out — nothing to plot for them, and an
     /// empty row would just be noise in a grid meant to surface who has been narrowly used.</summary>
     public static PositionDevelopment Build(IEnumerable<PlayerStats> playerStats)
     {
         var rows = playerStats
-            .Where(ps => ps.Positions.Count > 0)
             .Select(ps => new PositionDevelopmentRow
             {
                 Player = ps.Player,
-                Positions = ps.Positions.ToDictionary(p => p.Position, p => p)
+                // Filtered on the rounded minutes the grid actually prints, not on the raw seconds
+                // behind them: GameMinutesReport credits any stretch over a second, so a twenty-second
+                // cameo in a second position would otherwise give the whole grid a "0' 0%" column and
+                // clear a single-position flag that is still true at the resolution anyone can see.
+                Positions = ps.Positions.Where(p => p.Minutes > 0).ToDictionary(p => p.Position, p => p)
             })
+            .Where(r => r.Positions.Count > 0)
             .OrderBy(r => r.Player.ShirtNumber ?? int.MaxValue)
             .ToList();
 

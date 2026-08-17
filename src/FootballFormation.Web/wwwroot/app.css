@@ -1600,6 +1600,12 @@ html, body {
     color: var(--ink-faint);
 }
 
+/* The column header names the position on the desktop grid, so the chip's own label would only
+   repeat it. It comes back in the stacked block below, where there is no header to read. */
+.position-dev-table .pd-pos-label {
+    display: none;
+}
+
 /* Same 599.98px xs breakpoint MudBlazor stacks tables at, and the same card recipe as
    .playtime-table above: name on its own line, then one compact chip per column. The difference
    is which columns show up — a position this player never played drops off their card instead of
@@ -1614,9 +1620,8 @@ html, body {
         padding: 10px 14px;
     }
 
+    /* No border/padding reset here: .stacked-table is on this table too and already clears both. */
     .position-dev-table .mud-table-body .mud-table-cell {
-        border: none !important;
-        padding: 0 !important;
         display: flex;
         align-items: center;
         width: auto;
@@ -1642,6 +1647,24 @@ html, body {
 
     .position-dev-table .pd-pos-empty {
         display: none !important;
+    }
+
+    /* Which position this chip is. Without it the card is a row of bare "30' 50%" figures with
+       nothing naming them — the header is gone and .stacked-table drops the DataLabel. */
+    .position-dev-table .pd-pos-label {
+        display: block;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        color: var(--club-primary-bright);
+    }
+
+    /* Label above, figure below — the chip stays narrow enough that several fit on a line. */
+    .position-dev-table .pd-pos-value {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        line-height: 1.3;
     }
 }
 

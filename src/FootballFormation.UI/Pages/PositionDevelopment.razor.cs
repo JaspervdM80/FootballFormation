@@ -40,7 +40,9 @@ public partial class PositionDevelopment
         _loaded = true;
     }
 
-    private void OnRowClicked(TableRowClickEventArgs<PositionDevelopmentRow> args) => OpenPlayer(args.Item!.Player.Id);
-
-    private void OpenPlayer(int playerId) => Navigation.NavigateTo(AppRoutes.PlayerStats(playerId));
+    private void OnRowClicked(TableRowClickEventArgs<PositionDevelopmentRow> args)
+    {
+        if (args.Item is not null)
+            Navigation.NavigateTo(AppRoutes.PlayerStats(args.Item.Player.Id));
+    }
 }

@@ -85,4 +85,42 @@ public class PositionDevelopmentReportTests
 
         Assert.Equal([PlayerA.Id, PlayerB.Id], report.Rows.Select(r => r.Player.Id));
     }
+
+    /// <summary>A player's stats built by hand, to put a stint too short to round up to a minute
+    /// beside a real one — the shape <see cref="GameMinutesReport"/> produces for a substitution
+    /// seconds before the whistle.</summary>
+    private static PlayerStats StatsWith(Player player, params PositionStat[] positions) =>
+        new() { Player = player, Positions = [.. positions], Games = [] };
+
+    private static PositionStat Position(PlayerPosition position, int minutes) =>
+        new() { Position = position, Minutes = minutes, Percentage = 0 };
+
+    [Fact]
+    public void A_stint_too_short_to_count_a_minute_gets_no_column_of_its_own()
+    {
+        var report = PositionDevelopmentReport.Build(
+            [StatsWith(PlayerA, Position(PlayerPosition.CM, 60), Position(PlayerPosition.RB, 0))]);
+
+        // The cameo would otherwise put a "0'" column across every row in the grid.
+        Assert.Equal([PlayerPosition.CM], report.Positions);
+    }
+
+    [Fact]
+    public void A_cameo_in_a_second_position_does_not_clear_the_single_position_flag()
+    {
+        var report = PositionDevelopmentReport.Build(
+            [StatsWith(PlayerA, Position(PlayerPosition.CM, 60), Position(PlayerPosition.RB, 0))]);
+
+        // Twenty seconds at right back is not being rotated, and the grid cannot show it either.
+        Assert.True(report.Rows.Single().IsSinglePosition);
+    }
+
+    [Fact]
+    public void A_player_whose_only_minutes_round_away_is_left_out_entirely()
+    {
+        var report = PositionDevelopmentReport.Build([StatsWith(PlayerA, Position(PlayerPosition.CM, 0))]);
+
+        Assert.Empty(report.Rows);
+        Assert.Empty(report.Positions);
+    }
 }
