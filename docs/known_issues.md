@@ -35,7 +35,8 @@ Avoid repeating these mistakes:
   Two things it does not catch: SQL no test ever executes (nothing watches a path the suite does
   not walk), and equality on a date. `=` compares text just as fragilely, but an `UPDATE ... SET
   "Date" = @p0` is an assignment wearing the same syntax, so flagging the operator would fail every
-  write. Inequality and `ORDER BY` are unambiguous, which is why the guard stops there.
+  write. `ORDER BY`, inequality, `MIN`/`MAX` and `BETWEEN` are unambiguous; equality is not, which
+  is where the guard stops.
 - **Sorting backup filenames as text is a different case, and it is fine**: `DatabaseSafety` names
   backups `pre-migration-<last applied migration>.db` and prunes by `OrderByDescending(f => f.Name)`.
   A migration id begins with the fixed-width timestamp it was scaffolded at, so lexicographic *is*

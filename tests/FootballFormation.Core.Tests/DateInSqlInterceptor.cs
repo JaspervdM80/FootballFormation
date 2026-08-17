@@ -52,11 +52,25 @@ public sealed class DateInSqlInterceptor : DbCommandInterceptor
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     // "g"."Date" BETWEEN @__today_0 AND @__tomorrow_1 — compares two dates with no operator either.
-    private static readonly Regex BetweenColumn = new(
+    private static readonly Regex BetweenColumnBefore = new(
         """
         "(?<col>[^"]+)"\s+BETWEEN\s
         """,
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    // @__today_0 BETWEEN "s"."StartDate" AND @__x — the column immediately after BETWEEN.
+    private static readonly Regex BetweenColumnFirstOperand = new(
+        """
+        \bBETWEEN\b\s*(?:"[^"]+"\.)?"(?<col>[^"]+)"
+        """,
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    // @__today_0 BETWEEN "s"."StartDate" AND "s"."EndDate" — the column after the AND.
+    private static readonly Regex BetweenColumnSecondOperand = new(
+        """
+        \bBETWEEN\b.{0,80}?\bAND\b\s*(?:"[^"]+"\.)?"(?<col>[^"]+)"
+        """,
+        RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
 
     public override InterceptionResult<DbDataReader> ReaderExecuting(
         DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result)
@@ -135,10 +149,13 @@ public sealed class DateInSqlInterceptor : DbCommandInterceptor
             if (DateColumns.Contains(column)) found.Add($"MIN/MAX of \"{column}\"");
         }
 
-        foreach (Match match in BetweenColumn.Matches(sql))
+        foreach (var regex in new[] { BetweenColumnBefore, BetweenColumnFirstOperand, BetweenColumnSecondOperand })
         {
-            var column = match.Groups["col"].Value;
-            if (DateColumns.Contains(column)) found.Add($"BETWEEN on \"{column}\"");
+            foreach (Match match in regex.Matches(sql))
+            {
+                var column = match.Groups["col"].Value;
+                if (DateColumns.Contains(column)) found.Add($"BETWEEN on \"{column}\"");
+            }
         }
 
         return [.. found.Distinct()];

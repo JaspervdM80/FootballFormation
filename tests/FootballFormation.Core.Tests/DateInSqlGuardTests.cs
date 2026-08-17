@@ -119,4 +119,31 @@ public class DateInSqlGuardTests : ServiceTestBase
 
         Assert.Contains("BETWEEN on \"Date\"", violations);
     }
+
+    [Fact]
+    public void A_date_column_as_either_operand_of_BETWEEN_is_refused()
+    {
+        var firstOperand = DateInSqlInterceptor.Violations(
+            """"
+            SELECT "s"."Id" FROM "Seasons" AS "s" WHERE @__day_0 BETWEEN "s"."StartDate" AND @__x_1
+            """");
+        Assert.Contains("BETWEEN on \"StartDate\"", firstOperand);
+
+        var secondOperand = DateInSqlInterceptor.Violations(
+            """"
+            SELECT "s"."Id" FROM "Seasons" AS "s" WHERE @__day_0 BETWEEN "s"."StartDate" AND "s"."EndDate"
+            """");
+        Assert.Contains("BETWEEN on \"StartDate\"", secondOperand);
+        Assert.Contains("BETWEEN on \"EndDate\"", secondOperand);
+    }
+
+    [Fact]
+    public void A_query_with_no_date_column_survives_MIN_MAX_and_BETWEEN_too()
+    {
+        Assert.Empty(DateInSqlInterceptor.Violations(
+            """"
+            SELECT MAX("p"."ShirtNumber") FROM "Players" AS "p"
+            WHERE "p"."Id" BETWEEN @__a_0 AND @__b_1
+            """"));
+    }
 }
