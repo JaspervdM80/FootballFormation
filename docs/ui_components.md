@@ -450,6 +450,45 @@ Season-scoped: it follows the season picker and shows that season's squad, not e
   a plain `div`, and that wrapper's inline-block baseline put the ⋮ about 6px above the icon buttons
   beside it; flex removes baselines from the equation.
 
+## Statistics screens (`/stats`, `/players/{id}/stats`)
+Both are public reads, and both hold minute figures back from a visitor — the rule and its one
+exception are in [patterns.md](patterns.md#authorization-is-at-the-service-boundary-not-only-in-the-markup).
+How each page implements it differs, and the difference is the point:
+
+- **`SeasonStats` uses `<AuthorizeView Roles="@AppRoles.Admin">`** around the whole Playing-time
+  card. One gate, markup only, nothing else on the page depends on who is looking — so the default
+  mechanism is the right one and the code-behind stays unaware.
+- **`PlayerStats` uses an `_isAdmin` flag** read in `OnInitializedCoreAsync` (**not**
+  `OnInitializedAsync` — `SeasonAwarePage` owns that). It has to: the per-game table is a CSS grid,
+  and hiding its minutes cell means dropping a *track* as well, which is a class on the container
+  that no `AuthorizeView` inside the rows could set. Hence `.game-list-no-minutes` and, for the same
+  reason one tile up, `.stat-tiles-3` — `.stat-tiles` is a fixed `repeat(4, 1fr)`, so three tiles
+  would otherwise leave a dead fourth column. Both variants live in `app.css` beside the base rule,
+  and `.stat-tiles-3` is repeated inside the `max-width: 760px` block because a two-class selector
+  outranks the one-class phone rule that would otherwise narrow it.
+
+The two mechanisms are not quite equivalent, and the difference shows up exactly once: an
+`AuthorizeView` re-renders on `AuthenticationStateChanged`, while `_isAdmin` is read once in
+`OnInitializedCoreAsync`. An admin whose account is revoked mid-session loses the `/stats` card
+immediately and keeps the player page's minutes until they navigate. That is the same trade
+`Games` and `MatchResult` already make, and the circuit's own revalidation ends the session shortly
+after regardless — but it is why the flag is not the default choice.
+
+**The Playing-time bar is filled to the player's own available minutes** (`PlayerStats.Utilization`
+— on-pitch minutes over the played duration of every match they were in the roster for), and the
+list is ordered by that share. It used to be filled relative to the busiest player, which made the
+top of the table 100% by definition and read as a ranking of who plays most rather than of who is
+being rotated fairly. `AvailableMinutes` already excludes matches a player was unavailable for, so
+someone who missed half the season is not punished for it. The inline `width:` needs
+`InvariantCulture`, like every other percentage in this app — a Dutch decimal comma kills the bar
+silently.
+
+**The per-game rows carry the `.badge-venue` pill**, the same THUIS/UIT pill the formation builder's
+header uses, rather than the `vs` / `@` prefix the rest of the app still uses in running text. The
+row is a list of fixtures where the venue is a fact about each one, not a sentence about a single
+match — a badge column reads down it, a prefix does not. `.g-opp-name` is a flex row so the pill
+keeps its width and `.g-opp-text` gives way to the ellipsis.
+
 ## Dialogs on a phone (`.dialog-sheet`)
 Every dialog goes through `DialogPrompts` with `UiFeedback.LockedDialog` (no backdrop-click close).
 A **long form** additionally carries `Class="dialog-sheet"` on its `MudDialog` — currently only

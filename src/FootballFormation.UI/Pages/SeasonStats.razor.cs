@@ -24,7 +24,6 @@ public partial class SeasonStats
     private List<Core.Reporting.PlayerStats> _scorers = [];
     private List<Core.Reporting.PlayerStats> _keepers = [];
     private List<Core.Reporting.PlayerStats> _playingTime = [];
-    private int _maxMinutes;
 
     protected override async Task LoadAsync()
     {
@@ -59,18 +58,18 @@ public partial class SeasonStats
 
         // Fairness table is about squad rotation, so guests are left out — per season. On "All
         // seasons" a player counts if they were a regular in at least one of the seasons shown.
+        // Ordered by share rather than by volume: someone who missed half the season and played
+        // every minute of the rest was not rotated out, and sorting on the total says they were.
+        // Utilization is whole percent, so ties are common and minutes break them.
         _playingTime = _stats.Players
             .Where(p => squads.IsFullMemberAnywhere(p.Player.Id))
-            .OrderByDescending(p => p.TotalMinutes)
+            .OrderByDescending(p => p.Utilization)
+            .ThenByDescending(p => p.TotalMinutes)
             .ThenBy(p => p.Player.ShirtNumber ?? int.MaxValue)
             .ToList();
 
-        _maxMinutes = _playingTime.Count > 0 ? _playingTime.Max(p => p.TotalMinutes) : 0;
-
         _loaded = true;
     }
-
-    private double BarWidth(int minutes) => _maxMinutes > 0 ? (double)minutes / _maxMinutes * 100 : 0;
 
     private void OpenPlayer(int playerId) => Navigation.NavigateTo(AppRoutes.PlayerStats(playerId));
 

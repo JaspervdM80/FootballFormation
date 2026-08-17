@@ -35,6 +35,11 @@ const SELECTORS = {
                       'live-event', 'live-event-score', 'live-event-break', 'live-bench',
                       'live-timeline-toggle', 'live-timeline',
                       'live-minutes-card', 'card-label', 'planned-row'],
+  // The minutes checks are counts of zero against a signed-out visitor, so a rename here is exactly
+  // the case this spec exists for: the assertions would keep passing with nothing left to hide.
+  'the statistics screens': ['stat-label', 'stat-tiles', 'stat-tiles-3', 'game-head', 'g-num',
+                             'game-list', 'game-list-no-minutes', 'game-note', 'g-opp-name',
+                             'position-meta', 'pt-row', 'badge-venue'],
   'the phone layout': ['dialog-sheet', 'stacked-table', 'topbar-nav'],
   'the squad': ['badge-archived'],
 };

@@ -1110,6 +1110,12 @@ html, body {
     gap: 12px;
 }
 
+/* A visitor's player page has no minutes tile. The track count is explicit rather than auto-fit
+   because auto-fit needs a definite minimum, and a px minimum would wrap the row on a phone. */
+.stat-tiles.stat-tiles-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
 .stat-tile {
     background: var(--surface-card);
     border: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
@@ -1184,7 +1190,10 @@ html, body {
 }
 
 @media (max-width: 760px) {
-    .stat-tiles {
+    /* Both selectors, or the two-class .stat-tiles-3 rule outranks this one and stays three-across
+       on a phone. */
+    .stat-tiles,
+    .stat-tiles.stat-tiles-3 {
         grid-template-columns: repeat(2, 1fr);
     }
 
