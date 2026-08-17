@@ -33,6 +33,20 @@ test.describe('an anonymous visitor', () => {
     await expect(page.getByTitle('Delete', { exact: false })).toHaveCount(0);
   });
 
+  test('is not shown the playing-time table on the season statistics', async ({ page }) => {
+    await goto(page, '/stats');
+
+    // The card next to it, so the absence below is a rule rather than a page that failed to render.
+    await expect(page.getByText('Top scorers', { exact: false })).toBeVisible();
+    await expect(page.getByText('Playing time', { exact: false })).toHaveCount(0);
+
+    // Goalkeeper minutes are the one deliberate exception — who kept goal, and for how long, is
+    // what the squad asks about. If that ever changes, this line is the one to delete.
+    // The card's own heading, not the text: its empty state says "No goalkeeper minutes yet" and
+    // matches a loose search too.
+    await expect(page.locator('.card-label', { hasText: 'Goalkeeper minutes' })).toBeVisible();
+  });
+
   test('is sent to the login page by an admin-only route', async ({ page }) => {
     for (const path of ['/settings', '/users']) {
       await page.goto(path, { waitUntil: 'domcontentloaded' });
@@ -64,6 +78,12 @@ test.describe('an admin', () => {
 
     await goto(page, '/games');
     await expect(page.getByRole('button', { name: 'Add', exact: true }).first()).toBeVisible();
+  });
+
+  test('is shown the playing-time table a visitor is not', async ({ page }) => {
+    await goto(page, '/stats');
+    await expect(page.getByText('Top scorers', { exact: false })).toBeVisible();
+    await expect(page.getByText('Playing time', { exact: false })).toBeVisible();
   });
 
   test('reaches the admin-only routes directly', async ({ page }) => {

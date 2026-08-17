@@ -156,11 +156,16 @@ export async function playerMenuItem(page, name, item) {
 }
 
 /**
- * Creates a match through GameDialog and returns nothing — find it by opponent, which is what the
- * list is keyed on visually. Only the opponent is required; the rest of the form is already filled
- * in from the season's preferences, which is the point of those defaults.
+ * Creates a match through GameDialog and returns the day-of-month it was filed under. Find it by
+ * opponent, which is what the list is keyed on visually. Only the opponent is required; the rest of
+ * the form is already filled in from the season's preferences, which is the point of those defaults.
+ *
+ * `past: true` moves the date back through the picker, which is what a match with a result needs —
+ * the dialog defaults to the *next* match day, and the result page refuses a score on a fixture
+ * still to be played. Callers using it need `test.skip(new Date().getDate() === 1, …)`; see
+ * pickEarlierThisMonth.
  */
-export async function createMatch(page, { opponent, venue, matchType, split } = {}) {
+export async function createMatch(page, { opponent, venue, matchType, split, past } = {}) {
   await goto(page, '/games');
   const panel = page.locator('.mud-dialog');
   await clickFor(page.getByRole('button', { name: 'Add' }).first(), () => expect(panel).toBeVisible());
@@ -171,9 +176,11 @@ export async function createMatch(page, { opponent, venue, matchType, split } = 
   // "Quarters" is the split that gives a half two line-ups, and so the only one whose live screen
   // has changes to list partway through a half.
   if (split) await chooseOption(page, panel, 'Game Split', split);
+  const day = past ? await pickEarlierThisMonth(page, panel) : null;
   await submitDialog(page);
 
   await expect(gameRow(page, opponent)).toBeVisible();
+  return day;
 }
 
 /**

@@ -44,6 +44,11 @@
     border-bottom: 1px solid color-mix(in srgb, var(--ink) 4%, transparent);
 }
 
+/* Minutes are admin-only, so a visitor's rows are one column short. */
+.game-list-no-minutes .game-row {
+    grid-template-columns: 1fr 32px 32px;
+}
+
 .game-row:last-child {
     border-bottom: none;
 }
@@ -62,7 +67,20 @@
     min-width: 0;
 }
 
+/* The venue badge keeps its width and the opponent's name gives way, so a long name truncates
+   rather than squeezing the badge into an unreadable sliver. */
 .g-opp-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.g-opp-name .badge-venue {
+    flex-shrink: 0;
+}
+
+.g-opp-text {
     font-size: 0.82rem;
     font-weight: 600;
     color: var(--ink);

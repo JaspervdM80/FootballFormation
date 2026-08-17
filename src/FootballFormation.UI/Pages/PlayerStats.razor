@@ -39,17 +39,22 @@
     return;
 }
 
-<div class="stat-tiles mb-4">
+@* Three tiles instead of four when the minutes tile is gone, or the row keeps a dead fourth column. *@
+<div class="stat-tiles @(_isAdmin ? "" : "stat-tiles-3") mb-4">
     <div class="stat-tile">
         <div class="stat-value">@_stats.GamesPlayed</div>
         <div class="stat-label">@L["Games"]</div>
     </div>
-    <div class="stat-tile">
-        <div class="stat-value">@_stats.TotalMinutes<span class="stat-unit">'</span></div>
-        <div class="stat-label">@L["Minutes"]</div>
-        <div class="stat-sub">@L["{0} / game", _stats.AverageMinutes.ToString("0")]</div>
-        <div class="stat-sub">@L["{0}% of {1}'", _stats.Utilization.ToString("0"), _stats.AvailableMinutes]</div>
-    </div>
+    @* Every figure here is minutes, so the tile goes whole rather than hollowed out. *@
+    @if (_isAdmin)
+    {
+        <div class="stat-tile">
+            <div class="stat-value">@_stats.TotalMinutes<span class="stat-unit">'</span></div>
+            <div class="stat-label">@L["Minutes"]</div>
+            <div class="stat-sub">@L["{0} / game", _stats.AverageMinutes.ToString("0")]</div>
+            <div class="stat-sub">@L["{0}% of {1}'", _stats.Utilization.ToString("0"), _stats.AvailableMinutes]</div>
+        </div>
+    }
     <div class="stat-tile">
         <div class="stat-value">@_stats.Goals</div>
         <div class="stat-label">@L["Goals"]</div>
@@ -73,7 +78,8 @@
                     <div class="position-row">
                         <div class="position-head">
                             <span class="position-name">@L[pos.Position.DisplayName()]</span>
-                            <span class="position-meta">@pos.Minutes' · @pos.Percentage.ToString("0")%</span>
+                            @* The share is the point of the bar and stays public; the minutes behind it do not. *@
+                            <span class="position-meta">@(_isAdmin ? $"{pos.Minutes}' · " : "")@pos.Percentage.ToString("0")%</span>
                         </div>
                         <div class="position-track">
                             <div class="position-fill" style="width: @(pos.Percentage.ToString(System.Globalization.CultureInfo.InvariantCulture))%;"></div>
@@ -92,10 +98,15 @@
 
     <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">
         <div class="card-label">@L["Per game"] (@_stats.Games.Count)</div>
-        <div class="game-list">
+        @* The minutes column is admin-only, and dropping a cell from a grid means dropping its
+           track too — hence the class rather than an empty span. *@
+        <div class="game-list @(_isAdmin ? "" : "game-list-no-minutes")">
             <div class="game-row game-head">
                 <span class="g-opp">@L["Opponent"]</span>
-                <span class="g-num">@L["Min"]</span>
+                @if (_isAdmin)
+                {
+                    <span class="g-num">@L["Min"]</span>
+                }
                 <span class="g-num">@L["G"]</span>
                 <span class="g-num">@L["Ast"]</span>
             </div>
@@ -103,19 +114,26 @@
             {
                 <div class="game-row">
                     <span class="g-opp">
-                        <span class="g-opp-name">@(g.Game.IsHomeGame ? "vs" : "@") @g.Game.Opponent</span>
+                        <span class="g-opp-name">
+                            <span class="badge-venue">@((g.Game.IsHomeGame ? L["Home"] : L["Away"]).ToString().ToUpper())</span>
+                            <span class="g-opp-text">@g.Game.Opponent</span>
+                        </span>
                         <span class="g-date">@g.Game.Date.ToString("dd MMM yyyy")</span>
                     </span>
-                    <span class="g-num @(g.IsActual ? "" : "g-est")"
-                          title="@(g.IsActual ? null : L["Estimated from the planned line-up — this match was not tracked live."].Value)">
-                        @(g.Played ? (g.IsActual ? $"{g.Minutes}'" : $"~{g.Minutes}'") : "—")
-                    </span>
+                    @if (_isAdmin)
+                    {
+                        <span class="g-num @(g.IsActual ? "" : "g-est")"
+                              title="@(g.IsActual ? null : L["Estimated from the planned line-up — this match was not tracked live."].Value)">
+                            @(g.Played ? (g.IsActual ? $"{g.Minutes}'" : $"~{g.Minutes}'") : "—")
+                        </span>
+                    }
                     <span class="g-num @(g.Goals > 0 ? "g-hit" : "")">@g.Goals</span>
                     <span class="g-num @(g.Assists > 0 ? "g-hit" : "")">@g.Assists</span>
                 </div>
             }
         </div>
-        @if (_stats.Games.Any(g => !g.IsActual))
+        @* The note explains the ~ on an estimated minute count, so it goes wherever those go. *@
+        @if (_isAdmin && _stats.Games.Any(g => !g.IsActual))
         {
             <div class="game-note">
                 @L["~ estimated from the planned line-up; matches tracked live use the real clock and substitutions."]

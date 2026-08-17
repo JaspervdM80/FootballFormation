@@ -375,6 +375,31 @@ Every mutating service method goes through `ServiceOperation.RunAdminAsync`, whi
 that is enforcement in the render tree only, and it stops holding the moment a service is reached
 some other way. Reads stay open: the squad, fixtures and statistics are public.
 
+**Minute figures are the exception inside those public reads.** How long someone has played is the
+raw material of a rotation argument, so it belongs to whoever has to make one: a visitor gets the
+*split* — which positions a player spent their time in, as a share of that time — and an admin gets
+the minutes, the totals and the share of *available* time behind them. On `/players/{id}/stats` that
+hides the Minutes tile whole (total, per-game average and utilisation alike), the minutes half of
+each position label, the per-game `Min` column and the footnote explaining its `~`; on `/stats` it
+hides the Playing-time card outright, because that card is minutes from top to bottom and a redacted
+version of it would say nothing. Note what this costs: **utilisation — minutes played over minutes
+available — is admin-only in full**, so a visitor cannot see how much of their own time a player
+got, only how they divided it. That is the intended reading of the rule, not an oversight; a public
+utilisation figure is the rotation argument with the units filed off. Games, goals, assists and the
+scoreline are counts, not minutes, and are unaffected.
+
+**Goalkeeper minutes on `/stats` stay public, deliberately** — who has kept goal and for how long is
+what the squad actually asks about, and it is one figure per keeper rather than a table ranking
+everybody. It is the only card that shows minutes to a signed-out visitor, and
+`authorization.spec.js` asserts it is still there, so removing it has to be a decision someone takes
+rather than a line that rots away.
+
+Nothing in `Core` knows about any of this — the reports return the same numbers either way and the
+render is what chooses — so the rule is pinned in `tests/ui/specs/` instead. `match-day.spec.js`
+completes a match and then reads the player page twice, once as an admin and once in a visitor
+context, because proving an absence is only worth anything next to the presence it is measured
+against.
+
 **One read is not open, and it is the exception worth knowing.**
 `GameService.GetCommentsAsync(gameId, includePrivate)` takes a flag saying whether to include
 admin-only comments — and then confirms it against `ICurrentUser` rather than believing it, so a

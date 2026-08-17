@@ -5,6 +5,7 @@
 // against each other — a goal logged on the live screen has to reach the result page, and a lineup
 // built in the formation builder has to be the lineup the live screen substitutes from.
 import { test, expect } from '../fixtures.js';
+import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
 import { chooseOption, clickFor, createMatch, gameRow, goto, openDialog, submitDialog } from '../helpers.js';
 
 /** Creates a match and returns its id, read from the URL its own formation button navigates to. */
@@ -352,4 +353,72 @@ test('minutes played show up in the statistics once a match is complete', async 
   // that the report renders against real games rather than throwing on an empty one.
   await expect(page.getByRole('heading', { name: 'Statistics', exact: false }).first()).toBeVisible();
   await expect(page.getByText('Fixture', { exact: false }).first()).toBeVisible();
+});
+
+/** The grid's actual track count, which is the half of a hidden column that markup cannot show. */
+const trackCount = locator =>
+  locator.evaluate(el => getComputedStyle(el).gridTemplateColumns.split(/\s+/).length);
+
+test('the statistics give an admin the minutes and a visitor only the split', async ({ page, browser }) => {
+  test.skip(new Date().getDate() === 1, 'no earlier day in the current month to date a match to');
+
+  // Played on paper rather than from the touchline: a match with a line-up and a final score that
+  // nobody ran live is complete, so the report counts it, and its minutes are the line-up's
+  // estimate. That is the case carrying the "~" and its footnote, which go with the numbers — a
+  // match run live here is whistled off within seconds and rounds to nought minutes, which would
+  // leave the player page on its empty state with nothing to hide.
+  const id = await matchWithId(page, 'FC Schatting', { past: true });
+  await fillLineup(page, 2);
+
+  // Identified, not counted: the fairness table holds every player every spec in this file has left
+  // behind, and "whoever is top" is not a player this test knows anything about. The shirt number
+  // is what the pitch chip and the table row have in common — the chip abbreviates the name.
+  const shirt = (await page.locator('.pitch .pitch-player .pitch-number').first().innerText()).trim();
+
+  await goto(page, `/games/${id}/result`);
+  await page.locator('.score-big-input').first().fill('2');
+  await page.locator('.score-big-input.score-away').fill('1');
+  await clickFor(
+    page.getByRole('button', { name: 'Save Score' }),
+    () => expect(page.getByText('saved', { exact: false }).first()).toBeVisible(),
+  );
+
+  await goto(page, '/stats');
+  const row = page.locator('.pt-row', {
+    has: page.locator('.r-shirt', { hasText: new RegExp(`^${shirt}$`) }),
+  }).first();
+  await expect(row).toBeVisible();
+  await row.click();
+  await page.waitForURL(/\/players\/\d+\/stats/);
+  const playerPath = new URL(page.url()).pathname;
+
+  await expect(page.locator('.stat-label', { hasText: /^Minutes$/ })).toBeVisible();
+  await expect(page.locator('.game-head .g-num').first()).toHaveText('Min');
+  await expect(page.locator('.game-note')).toBeVisible();
+  expect(await trackCount(page.locator('.game-list .game-row').first())).toBe(4);
+  // The venue reads as a badge now, on everyone's copy of the page.
+  await expect(page.locator('.g-opp-name .badge-venue').first()).toHaveText(/HOME|AWAY/);
+
+  const visitor = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
+  try {
+    const anon = await visitor.newPage();
+    await goto(anon, playerPath);
+
+    // Same page, same player — the positions card proves it rendered before anything is asserted
+    // to be missing, and it still says how they divided the time they got.
+    await expect(anon.getByText('Positions', { exact: false })).toBeVisible();
+    await expect(anon.locator('.position-meta').first()).toHaveText(/^\d+%$/);
+
+    await expect(anon.locator('.stat-label', { hasText: /^Minutes$/ })).toHaveCount(0);
+    await expect(anon.locator('.game-head .g-num').first()).toHaveText('G');
+    await expect(anon.locator('.game-note')).toHaveCount(0);
+    await expect(anon.locator('.g-opp-name .badge-venue').first()).toHaveText(/HOME|AWAY/);
+
+    // The cell is gone, and so is its track — a four-track grid with three cells slides goals and
+    // assists out from under their headers, and every assertion above would still pass.
+    expect(await trackCount(anon.locator('.game-list .game-row').first())).toBe(3);
+    expect(await trackCount(anon.locator('.stat-tiles'))).toBe(3);
+  } finally {
+    await visitor.close();
+  }
 });
