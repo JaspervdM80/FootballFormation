@@ -242,9 +242,12 @@ Avoid repeating these mistakes:
   returns false for a circuit the server has already evicted, and with no persisted circuit state
   configured the client goes straight to the rejected state, i.e. a fresh page. The window is
   `CircuitOptions.DisconnectedCircuitRetentionPeriod`, three minutes by default and ten here, which
-  is the difference between rejoining a running match screen and reloading it. Two things fall
-  outside it whatever the setting, and both always cost a reload: a machine Fly has scaled to zero
-  (a restarted process has no circuits), and a deploy. Retention is bounded by
+  is the difference between rejoining a running match screen and reloading it. What falls outside it
+  whatever the setting is a restarted process, which has no circuits at all: a deploy, or a crash.
+  **Going idle is no longer one of them.** `fly.toml` sets `auto_stop_machines = "suspend"`, and a
+  suspended machine resumes from its saved memory with its retained circuits intact — where the
+  `"stop"` this used to be threw them away and made every return from a backgrounded phone a
+  rejected reconnect and a forced reload. Retention is bounded by
   `DisconnectedCircuitMaxRetained` as well as by time, and **lowering that to buy back the memory a
   longer window costs is a trap**: a slot given up is a circuit evicted early, and the coach's is as
   likely as anyone's. It stays at the stock 100. Little occupies it in practice — a tab closed

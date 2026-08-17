@@ -13,7 +13,7 @@ create` / `fly volumes create` / `fly certs add`, and A/AAAA/CNAME records at th
 |------|---------|
 | `Dockerfile` | Multi-stage build (SDK → aspnet runtime), listens on 8080 |
 | `global.json` | Pins the SDK for CI and web containers. `.dockerignore` keeps it out of the image, which builds on `sdk:10.0` — see [known_issues.md](known_issues.md) |
-| `fly.toml` | App `gjs-meiden`, volume `data` mounted at `/data` with 30-day snapshot retention, scale-to-zero enabled |
+| `fly.toml` | App `gjs-meiden`, volume `data` mounted at `/data` with 30-day snapshot retention, suspend-when-idle enabled |
 | `Program.cs` | `APP_DATA_DIR` env var overrides the data folder (DB, logs, data-protection keys); maps `/health` |
 
 `APP_DATA_DIR=/data` points at a 1 GB persistent volume, so the SQLite DB, Serilog logs and
@@ -218,7 +218,7 @@ undo a schema change, the Fly snapshot the only thing that survives losing the v
 
 ```powershell
 fly logs                 # live server logs (Serilog console output)
-fly status               # machine state (stopped = scaled to zero, normal)
+fly status               # machine state (suspended = idle, normal)
 fly ssh console          # shell inside the container
 fly ssh sftp get /data/footballformation.db backup.db   # DB backup
 curl https://gjs-meiden.nl/health                       # does it serve? ("healthy")
@@ -226,12 +226,21 @@ curl https://gjs-meiden.nl/health                       # does it serve? ("healt
 
 ## Cost control
 
-- `auto_stop_machines = "stop"` + `min_machines_running = 0`: the VM stops when no one is connected
-  and auto-starts on the next request (~2–5 s cold start).
+- `auto_stop_machines = "suspend"` + `min_machines_running = 0`: the VM goes idle when no one is
+  connected and comes back on the next request. **Suspend, not stop** — it saves the machine's
+  memory to disk and resumes from it rather than cold-booting, which matters twice here. Boot is
+  expensive (a pre-migration backup, the migration, an integrity check), and circuits retained for
+  `DisconnectedCircuitRetentionPeriod` exist only in memory, so a resumed machine can still hand a
+  returning phone its circuit back where a stopped one never could.
+- The idle period before that fires is about five minutes and Fly does not expose it, so it cannot
+  be lengthened. Suspend requires RAM ≤ 2 GB (this VM is 512 MB) and leaves the mounted volume
+  alone.
 - **Do not** scale to more than one machine: SQLite lives on one volume; a second machine would get
   its own empty volume and a split-brain database.
-- Where scale-to-zero shows up in the app, so nobody hunts it as a bug: a stopped machine has no
-  circuits, so a phone returning to a live match after the machine went down cannot rejoin. It
-  reloads, and pays the cold start plus the page's own load. Nothing is lost — the match clock is
-  anchored in the database, not in the circuit — and `DisconnectedCircuitRetentionPeriod` (see
-  `Program.cs`) covers the ordinary case, a machine that is still up.
+- Where going idle still shows up in the app, so nobody hunts it as a bug: a *stopped* machine — a
+  deploy, a crash, or any restart — has no circuits, so a phone returning to a live match cannot
+  rejoin. It reloads and pays the cold start plus the page's own load. Nothing is lost, because the
+  match clock is anchored in the database rather than in the circuit.
+- Fly documents possible temporary clock skew just after a resume. Every clock read in this app goes
+  through the injected `TimeProvider` and the match clock is derived from stored timestamps, so a
+  brief skew shifts what a live screen displays and not what is recorded.

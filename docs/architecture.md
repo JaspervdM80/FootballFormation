@@ -214,7 +214,7 @@ wwwroot/
 ## Deployment (repo root)
 ```
 Dockerfile     — Multi-stage image build; sets APP_DATA_DIR=/data, listens on 8080
-fly.toml       — Fly.io app "gjs-meiden" (ams), volume at /data, scale-to-zero
+fly.toml       — Fly.io app "gjs-meiden" (ams), volume at /data, suspend when idle
 docs/deployment.md — Full setup, DNS for gjs-meiden.nl, redeploy & backup commands
 ```
 
