@@ -121,6 +121,7 @@ try
     // not just the one that made it.
     builder.Services.AddSingleton<LiveMatchNotifier>();
 
+    builder.Services.AddScoped<SeasonPreference>();
     builder.Services.AddScoped<SeasonState>();
     builder.Services.AddScoped<NavigationTrail>();
 

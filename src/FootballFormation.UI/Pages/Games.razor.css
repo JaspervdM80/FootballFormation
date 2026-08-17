@@ -78,12 +78,6 @@
     flex: 1;
 }
 
-/* The venue in words, for the phone layout that hides .opp-prefix. Off by default so the two never
-   say the same thing twice on one card — see the phone block at the bottom of this file. */
-.game-venue {
-    display: none;
-}
-
 .game-score {
     font-weight: 700;
     font-size: 0.9rem;
@@ -165,20 +159,6 @@
     .badge-unavailable,
     .badge-guest {
         display: none;
-    }
-
-    /* Opponent shown without the "vs"/"@" prefix — the venue is spelled out after the name instead,
-       which the edge stripe alone never managed to say. */
-    .opp-prefix {
-        display: none;
-    }
-
-    .game-venue {
-        display: inline;
-        margin-left: 6px;
-        font-weight: 400;
-        font-size: 0.75rem;
-        color: var(--ink-muted);
     }
 
     /* Amber panel + amber formation button already flag a missing lineup; the icon

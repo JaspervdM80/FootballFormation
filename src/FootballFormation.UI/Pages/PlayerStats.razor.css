@@ -68,15 +68,17 @@
 }
 
 /* The venue badge keeps its width and the opponent's name gives way, so a long name truncates
-   rather than squeezing the badge into an unreadable sliver. */
+   rather than squeezing the badge into an unreadable sliver. No gap — the badge brings its own
+   8px in .badge-venue-inline, and a gap here would be added to it. */
 .g-opp-name {
     display: flex;
     align-items: center;
-    gap: 6px;
     min-width: 0;
 }
 
-.g-opp-name .badge-venue {
+/* ::deep is required: the badge is VenueBadge's root element, and a child component's root carries
+   no scope attribute — without it this compiles to a selector that matches nothing. */
+.g-opp-name ::deep .badge-venue {
     flex-shrink: 0;
 }
 

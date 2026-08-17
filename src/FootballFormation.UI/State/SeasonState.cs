@@ -4,17 +4,18 @@ using FootballFormation.Core.Services;
 namespace FootballFormation.UI.State;
 
 /// <summary>
-/// The season the whole UI is filtered by. The choice resets on a browser refresh, falling back to
-/// the database's current season.
+/// The season the whole UI is filtered by. The choice is remembered in a cookie for eight hours
+/// (see <see cref="SeasonPreference"/>) and otherwise falls back to the database's current season.
 /// <para>
-/// That reset is deliberate. The picker is a <em>view</em> choice and must never write
-/// <see cref="Season.IsCurrent"/>, which is shared, admin-owned state edited on /settings —
-/// anonymous visitors can reach the picker.
+/// A cookie and not <see cref="Season.IsCurrent"/>. The picker is a <em>view</em> choice and must
+/// never write that flag, which is shared, admin-owned state edited on /settings — anonymous
+/// visitors can reach the picker. Per-browser is exactly the scope this belongs at.
 /// </para>
 /// </summary>
-public class SeasonState(SeasonService seasons)
+public class SeasonState(SeasonService seasons, SeasonPreference preference)
 {
     private Task? _loading;
+    private StoredSeason? _restored;
 
     public List<Season> Seasons { get; private set; } = [];
 
@@ -24,6 +25,18 @@ public class SeasonState(SeasonService seasons)
     public Season? SelectedSeason => Seasons.FirstOrDefault(s => s.Id == SelectedSeasonId);
 
     public event Action? OnChanged;
+
+    /// <summary>
+    /// Hands over the season cookie from the request that is rendering the page. <c>Routes</c>
+    /// calls this, which is what makes it work in both passes: the prerender reads the cookie off
+    /// <c>HttpContext</c>, and the value travels to the circuit as a root-component parameter, so
+    /// both passes resolve the same season and neither has to ask the browser.
+    /// <para>
+    /// Must land before <see cref="EnsureLoadedAsync"/>, and does: <c>Routes.OnInitialized</c> runs
+    /// before the router renders the page that calls it.
+    /// </para>
+    /// </summary>
+    public void Restore(string? cookieValue) => _restored = SeasonPreference.Parse(cookieValue);
 
     /// <summary>
     /// Loads the season list once per circuit. MainLayout and the page both need it during their
@@ -46,16 +59,32 @@ public class SeasonState(SeasonService seasons)
         if (result.IsFailure) return;
 
         Seasons = result.Value!;
-        SelectedSeasonId = Seasons.FirstOrDefault(s => s.IsCurrent)?.Id
-            ?? Seasons.FirstOrDefault()?.Id;
+
+        // The remembered choice only wins while it still names a season that exists — a season
+        // deleted since would otherwise filter every page down to nothing, with a picker that
+        // cannot say which season it is showing.
+        SelectedSeasonId = _restored is not null && IsSelectable(_restored.SeasonId)
+            ? _restored.SeasonId
+            : Seasons.FirstOrDefault(s => s.IsCurrent)?.Id ?? Seasons.FirstOrDefault()?.Id;
     }
 
-    public void Select(int? seasonId)
+    private bool IsSelectable(int? seasonId) =>
+        seasonId is null || Seasons.Any(s => s.Id == seasonId);
+
+    public async Task SelectAsync(int? seasonId)
     {
         if (SelectedSeasonId == seasonId) return;
 
         SelectedSeasonId = seasonId;
+
+        // The choice this circuit is restored from, so a RefreshAsync after /settings edits the
+        // season list falls back to what the viewer picked rather than to what they arrived with.
+        _restored = new StoredSeason(seasonId);
+
+        // Notify before persisting: the subscribers only queue a render, and nothing about the
+        // page should wait on a round trip to the browser to store a cookie.
         OnChanged?.Invoke();
+        await preference.SaveAsync(seasonId);
     }
 
     /// <summary>Re-reads the list after /settings adds, edits or removes a season, so the picker

@@ -140,6 +140,7 @@ Components/
   PlayerList.razor(.cs)(.css)       — Draggable player cards (HTML5 drag API)
   SubstituteBench.razor(.cs)(.css)  — Substitute drop zone with remove buttons
   SeasonPicker.razor(.cs)           — Global season filter; rendered in both the app bar and the drawer
+  VenueBadge.razor                  — THUIS/UIT, in the colours the games list stripes its cards with
   NavItems.razor(.cs)               — The main menu, from AppNav.Menu; rendered in both, ShowIcons for the drawer
   PageHeader.razor(.cs)             — Every page's title block: heading, subtitle, back arrow, actions
   BackButton.razor(.cs)             — The back arrow; follows the trail, names its destination
@@ -152,6 +153,8 @@ Navigation/
   NavigationTrail.cs          — Scoped: where the visitor has been, so back returns there
 State/
   SeasonState.cs              — Scoped: the selected season, shared by the layout and the pages
+  SeasonPreference.cs         — That choice in a cookie for 8h, so a deploy's dropped circuit
+                                does not reset it. Writes it; App.razor/Routes read it
 Helpers/
   PitchPositionHelper.cs      — Maps PlayerPosition → (left%, top%) coordinates
   UiFeedback.cs               — Snackbar.Report()/ReportFailure() over Result (translates the error,
@@ -209,6 +212,7 @@ wwwroot/
   icons/                  — GJS club logo as app icons: 180 (apple-touch) / 192 / 512 / 512-maskable
   js/pwa.js               — Service worker registration, and the reload once a rejoin has failed
   js/drag-drop-touch.js   — Touch → HTML5 drag event shim for the formation builder on phones
+  js/season.js            — Writes the season picker's cookie; the server reads it off the request
 ```
 
 ## Deployment (repo root)

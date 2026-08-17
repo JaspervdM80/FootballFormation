@@ -1,4 +1,6 @@
 @using FootballFormation.UI.Layout
+@using FootballFormation.UI.State
+@inject SeasonState SeasonState
 
 <Router AppAssembly="typeof(Program).Assembly"
         AdditionalAssemblies="[typeof(FootballFormation.UI._Imports).Assembly]"
@@ -12,3 +14,17 @@
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
 </Router>
+
+@code {
+    /// <summary>
+    /// The season cookie, read off the request by <c>App.razor</c>. A root-component parameter is
+    /// how it reaches the circuit: the prerender scope and the circuit scope are different scopes,
+    /// so a value the prerender read would otherwise be gone by the time the page is interactive.
+    /// Blazor serialises this one into the component marker and hands it back on connect, which
+    /// leaves both passes resolving the same season with no round trip to the browser.
+    /// </summary>
+    [Parameter] public string? StoredSeason { get; set; }
+
+    // Before the router renders anything, so the page's own OnInitializedAsync already has it.
+    protected override void OnInitialized() => SeasonState.Restore(StoredSeason);
+}

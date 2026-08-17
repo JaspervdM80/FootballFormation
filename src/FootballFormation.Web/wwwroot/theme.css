@@ -38,7 +38,11 @@
     --color-success-bright: #15803d;
     --color-warning: #f59e0b;
     --color-warning-bright: #b45309;
-    --color-away: #2563eb;          /* away-game accent (home uses the club green) */
+    /* Away-game accent; home uses the club green. The -bright pair is the readable one, like every
+       other semantic colour here: the plain blue reads against a 12% tint of itself on the venue
+       badge, where it measures 4.02:1 — under AA, and the tint is what does it, not the card. */
+    --color-away: #2563eb;
+    --color-away-bright: #1d4ed8;
 
     /* Position fit — the five tiers, used by the pitch chips, the builder's legend and the
        playing-time dots. Deliberately not club colors: green-to-red reads as good-to-bad

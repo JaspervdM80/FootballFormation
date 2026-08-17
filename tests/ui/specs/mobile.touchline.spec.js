@@ -56,10 +56,11 @@ test('the squad reads as cards rather than a table squeezed sideways', async ({ 
   expect(overflow, 'the page should not scroll horizontally on a phone').toBeLessThanOrEqual(1);
 });
 
-test('a match card says its venue in words, since the "vs" prefix has no room', async ({ page }) => {
+test('a match card says its venue in words, which the edge stripe alone never did', async ({ page }) => {
   await createMatch(page, { opponent: 'FC Thuisploeg', venue: 'Home' });
 
   const row = gameRow(page, 'FC Thuisploeg');
-  await expect(row.locator('.opp-prefix')).toBeHidden();
-  await expect(row.locator('.game-venue')).toHaveText('(Home)');
+  const badge = row.locator('.badge-venue');
+  await expect(badge).toHaveText('HOME');
+  await expect(badge).toHaveClass(/badge-venue-home/);
 });

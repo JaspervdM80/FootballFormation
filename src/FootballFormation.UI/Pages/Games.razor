@@ -68,9 +68,9 @@ else
                                              Title="@L["This game has no lineup — playing time can't be recorded"]" />
                                 }
                             </div>
-                            @* The venue reads as a word on a phone, where .opp-prefix is hidden and the
-                               edge stripe is the only other thing saying it. *@
-                            <span class="game-opponent"><span class="opp-prefix">@(game.IsHomeGame ? "vs " : "@ ")</span>@game.Opponent<span class="game-venue">(@(game.IsHomeGame ? L["Home"] : L["Away"]))</span></span>
+                            @* Same venue badge the player statistics use, for the same reason: the
+                               edge stripe is a colour and colour alone never said which venue. *@
+                            <span class="game-opponent">@game.Opponent<VenueBadge IsHome="game.IsHomeGame" Inline="true" /></span>
                         </div>
                         @* No badge for a competition match — that is the norm, and one on every card is
                            noise. A cup tie or a practice game changes what the row means, so it says so. *@

@@ -22,7 +22,7 @@
     <PageHeader BackFallback="@AppRoutes.Games" TitleTypo="Typo.h6" Class="mb-2"
                 Title="@($"{(GameData.IsHomeGame ? "vs" : "@")} {GameData.Opponent}")">
         <Meta>
-            <span class="badge-venue">@((GameData.IsHomeGame ? L["Home"] : L["Away"]).ToString().ToUpper())</span>
+            <VenueBadge IsHome="GameData.IsHomeGame" />
             <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">@GameData.Date.ToString("dd MMM yyyy")</MudText>
             <span class="badge-gold">@GameData.FormationType.DisplayName()</span>
         </Meta>
@@ -49,7 +49,7 @@
                 TitleClass="builder-opponent" Title="@GameData.Opponent">
         <Meta>
             <span class="builder-date">@GameData.Date.ToString("dd MMM yyyy")</span>
-            <span class="badge-venue">@((GameData.IsHomeGame ? L["Home"] : L["Away"]).ToString().ToUpper())</span>
+            <VenueBadge IsHome="GameData.IsHomeGame" />
         </Meta>
     </PageHeader>
     <div class="d-flex align-center gap-2 mb-2">

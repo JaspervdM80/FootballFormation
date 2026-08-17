@@ -15,7 +15,7 @@
              Class="season-picker">
         @foreach (var season in SeasonState.Seasons)
         {
-            <MudMenuItem OnClick="@(() => SeasonState.Select(season.Id))">
+            <MudMenuItem OnClick="@(() => SeasonState.SelectAsync(season.Id))">
                 <span class="season-menu-item">
                     <span>@season.Name</span>
                     @if (season.IsCurrent)
@@ -26,6 +26,6 @@
             </MudMenuItem>
         }
         <MudDivider />
-        <MudMenuItem OnClick="@(() => SeasonState.Select(null))">@L["All seasons"]</MudMenuItem>
+        <MudMenuItem OnClick="@(() => SeasonState.SelectAsync(null))">@L["All seasons"]</MudMenuItem>
     </MudMenu>
 }

@@ -1,4 +1,5 @@
 @using Microsoft.Extensions.Localization
+@using FootballFormation.UI.State
 @inject IStringLocalizer<FootballFormation.UI.Strings> L
 <!DOCTYPE html>
 <html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
@@ -30,7 +31,10 @@
 </head>
 
 <body>
-    <Routes @rendermode="InteractiveServer" />
+    @* The season cookie is read here, off the request that is already carrying it, rather than
+       asked of the browser once the circuit is up — see SeasonPreference. *@
+    <Routes @rendermode="InteractiveServer"
+            StoredSeason="@HttpContext.Request.Cookies[SeasonPreference.CookieName]" />
     @* Blazor toggles the classes on this element; styled dark in app.css and
        auto-reloaded by pwa.js so resuming a suspended phone app just works. *@
     <div id="components-reconnect-modal">@L["Reconnecting..."]</div>
@@ -45,6 +49,7 @@
     <script src="js/screenshot.js"></script>
     <script src="js/drag-drop-touch.js"></script>
     <script src="js/pwa.js"></script>
+    <script src="js/season.js"></script>
     @* Blazor is started by hand here, because the reconnect retry schedule below cannot be set any
        other way. Inline rather than a file under js/ on purpose: with autostart="false" nothing
        starts the circuit if that script fails to arrive, and the page would render, look right and
@@ -83,3 +88,7 @@
 </body>
 
 </html>
+
+@code {
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+}
