@@ -50,8 +50,8 @@ public partial class Games
 
     /// <summary>
     /// The page reads as two lists, because a fixture and a result are two different things to
-    /// look at: what is still to play, soonest first, and then what has been played, in the order
-    /// it was played. A single list has to put one of them at the wrong end.
+    /// look at: what is still to play, soonest first, and then what has been played, most recent
+    /// result first. A single list has to put one of them at the wrong end.
     /// <para>
     /// The scoreline decides which, not the calendar: a game keeps its place in the fixture list
     /// until a result is on file. So a match that was never played stays there after its date has
@@ -70,7 +70,7 @@ public partial class Games
         var fixtures = _games.Where(game => !HasFinalScore(game)).OldestFirst();
         if (fixtures.Count > 0) yield return new GameSection(L["Fixtures"], fixtures);
 
-        var results = _games.Where(HasFinalScore).OldestFirst();
+        var results = _games.Where(HasFinalScore).NewestFirst();
         if (results.Count > 0) yield return new GameSection(L["Results"], results);
     }
 
