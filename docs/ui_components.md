@@ -258,10 +258,10 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   with both the game's state and who is looking — see [known_issues.md](known_issues.md). The
   card's horizontal padding drops to 12px there so the six still clear 44px on a 320px phone.
   `scripts/touch-targets.mjs` measures all of it — see [testing.md](testing.md#touch-targets).
-- **The venue is a word, at every width.** A `.badge-venue.badge-venue-inline` badge trails the
-  opponent's name and spells out *THUIS*/*UIT* — the same badge the player statistics use, so the
-  two screens say it the same way. The card's coloured edge stripe says the same thing and had been
-  saying it alone, which is a convention nobody reads off a stripe.
+- **The venue is a word, at every width.** A `<VenueBadge Inline="true" />` trails the opponent's
+  name and spells out *THUIS*/*UIT*, in the same green and blue the card's edge stripe uses. The
+  stripe had been saying it alone, which is a convention nobody reads off a stripe; now the colour
+  and the word are one signal. See [the badge](#venue-badge-componentsvenuebadgerazor) below.
 - The page reads "today" from the injected `TimeProvider`, not `DateTime.Today`, the same way the
   services do — that is also what `IsIncomplete` (the missing-lineup flag) compares against.
 - `HasFinalScore` checks `MatchState` **as well as** the score fields, and must: `MatchGoalService`
@@ -336,6 +336,27 @@ _games = Snackbar.ReportFailure(L, result) ? result.Value : [];
   one of those loads bounces the visitor off whichever page they had just navigated to.
 - **Overriding `Dispose` means calling `base.Dispose()`** — `Home` and `LiveMatch` both do, to
   unsubscribe from `LiveMatchNotifier` (and to stop the clock timer) before the base cancels.
+
+## Venue badge (`Components/VenueBadge.razor`)
+THUIS/UIT, shown on the games list, the player statistics and both of the formation builder's
+headers. A component rather than four copies of `(IsHomeGame ? L["Home"] : L["Away"]).ToUpper()`,
+because the wording, the casing and the colour have to agree across all four and they had already
+drifted once.
+
+- **The colours are the match overview's own**: `--club-accent` for home, `--color-away` for away,
+  tinted the way every other badge in `app.css` is (12% fill, 20% border, the `-bright` variant for
+  the text). Those are the two colours a match card already stripes its edges with, so the stripe
+  and the word are one convention instead of two. `--color-away-bright` exists for the same reason
+  the other semantic colours have one: plain `--color-away` on `--surface-card` is 4.7:1, which
+  clears AA for small text by too little to spend on a 0.6rem badge.
+- `.badge-venue` is **shape only** — the colour lives in `.badge-venue-home` / `.badge-venue-away`,
+  and the component always emits one of them. Nothing renders the base class alone.
+- **`Inline="true"`** where the badge trails a name (the games list, the player statistics) rather
+  than standing in a page header: `.badge-venue-inline` drops it to 0.6rem and adds the 8px lead.
+  At header size the box is taller than the 0.82rem name it annotates and reads as the louder of
+  the two.
+- The class string is built in `@code`, not in the attribute: a double-quoted string inside an
+  `@()` inside a double-quoted attribute value is a Razor parse error, not a style preference.
 
 ## Season picker (`Components/SeasonPicker.razor`)
 The global season filter, backed by the scoped `SeasonState` (see
@@ -485,14 +506,12 @@ someone who missed half the season is not punished for it. The inline `width:` n
 `InvariantCulture`, like every other percentage in this app — a Dutch decimal comma kills the bar
 silently.
 
-**The per-game rows carry the `.badge-venue` pill**, the same THUIS/UIT pill the formation builder's
-header and the games list use, rather than the `vs` / `@` prefix the rest of the app still uses in
-running text. The row is a list of fixtures where the venue is a fact about each one, not a sentence
-about a single match — a badge reads down it, a prefix does not. It **trails** the opponent, because
-the name is what someone scans the column for and a leading badge makes every row start with the
-same two words. `.badge-venue-inline` adds the 8px lead and takes the pill under the name's own
-height — at header size the box is taller than the text it annotates. `.g-opp-name` is a flex row
-so the pill keeps its width and `.g-opp-text` gives way to the ellipsis.
+**The per-game rows carry `<VenueBadge Inline="true" />`**, rather than the `vs` / `@` prefix the
+rest of the app still uses in running text. The row is a list of fixtures where the venue is a fact
+about each one, not a sentence about a single match — a badge reads down it, a prefix does not.
+`.g-opp-name` is a flex row so the pill keeps its width and `.g-opp-text` gives way to the ellipsis;
+the rule holding that needs **`::deep`**, because the pill is a child component's root element and
+those carry no scope attribute.
 
 ## Dialogs on a phone (`.dialog-sheet`)
 Every dialog goes through `DialogPrompts` with `UiFeedback.LockedDialog` (no backdrop-click close).

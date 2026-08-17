@@ -70,7 +70,7 @@ else
                             </div>
                             @* Same venue badge the player statistics use, for the same reason: the
                                edge stripe is a colour and colour alone never said which venue. *@
-                            <span class="game-opponent">@game.Opponent<span class="badge-venue badge-venue-inline">@((game.IsHomeGame ? L["Home"] : L["Away"]).ToString().ToUpper())</span></span>
+                            <span class="game-opponent">@game.Opponent<VenueBadge IsHome="game.IsHomeGame" Inline="true" /></span>
                         </div>
                         @* No badge for a competition match — that is the norm, and one on every card is
                            noise. A cup tie or a practice game changes what the row means, so it says so. *@

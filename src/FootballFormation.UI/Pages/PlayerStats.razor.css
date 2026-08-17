@@ -76,7 +76,9 @@
     min-width: 0;
 }
 
-.g-opp-name .badge-venue {
+/* ::deep is required: the badge is VenueBadge's root element, and a child component's root carries
+   no scope attribute — without it this compiles to a selector that matches nothing. */
+.g-opp-name ::deep .badge-venue {
     flex-shrink: 0;
 }
 

@@ -1,0 +1,21 @@
+@inject IStringLocalizer<Strings> L
+
+@* THUIS/UIT as a badge, in the green and blue the match overview stripes its cards with. Four
+   screens show it, and the wording, the casing and the colour all have to agree across them —
+   they did not while each one spelled the ternary out for itself. *@
+<span class="@CssClass">@Text</span>
+
+@code {
+    [Parameter, EditorRequired] public bool IsHome { get; set; }
+
+    /// <summary>Trailing an opponent's name rather than standing in a page header: smaller, with
+    /// the 8px lead that keeps it off the name.</summary>
+    [Parameter] public bool Inline { get; set; }
+
+    // Built here rather than in the attribute: a double-quoted string inside an @() inside a
+    // double-quoted attribute value is what Razor cannot parse.
+    private string CssClass =>
+        $"badge-venue badge-venue-{(IsHome ? "home" : "away")}{(Inline ? " badge-venue-inline" : "")}";
+
+    private string Text => (IsHome ? L["Home"] : L["Away"]).ToString().ToUpper();
+}

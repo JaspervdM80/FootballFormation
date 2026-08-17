@@ -731,14 +731,29 @@ html, body {
     border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
 }
 
+/* The venue badge's shape only. Its colour is in the two rules below, one of which the VenueBadge
+   component always adds — nothing renders this class on its own. */
 .badge-venue {
     font-size: 0.65rem;
     font-weight: 600;
     padding: 3px 8px;
     border-radius: 4px;
-    background: color-mix(in srgb, var(--ink) 6%, transparent);
-    color: var(--ink-muted);
-    border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+    border: 1px solid;
+}
+
+/* Green for home and blue for away: the pair the match overview already stripes a card's edges
+   with. The stripe and the word then say the same thing in the same colour, instead of being two
+   conventions to learn — and the badge carries that colour onto the screens with no stripe. */
+.badge-venue-home {
+    background: color-mix(in srgb, var(--club-accent) 12%, transparent);
+    color: var(--club-accent-bright);
+    border-color: color-mix(in srgb, var(--club-accent) 20%, transparent);
+}
+
+.badge-venue-away {
+    background: color-mix(in srgb, var(--color-away) 12%, transparent);
+    color: var(--color-away-bright);
+    border-color: color-mix(in srgb, var(--color-away) 20%, transparent);
 }
 
 /* The same badge trailing an opponent's name rather than standing alone in a page header. It

@@ -10,8 +10,12 @@ test('a new match appears under Fixtures with its venue and formation', async ({
 
   const row = gameRow(page, 'FC Nieuwkomer');
   await expect(row).toBeVisible();
-  // The venue is a badge trailing the opponent's name, at every width.
-  await expect(row.locator('.badge-venue')).toHaveText('AWAY');
+  // The venue is a badge trailing the opponent's name, at every width, and it carries the venue in
+  // its class as well as its text — the colour is half of what it says, and a badge that read
+  // "AWAY" in the home green would be worse than no badge.
+  const badge = row.locator('.badge-venue');
+  await expect(badge).toHaveText('AWAY');
+  await expect(badge).toHaveClass(/badge-venue-away/);
 
   // A match with no score yet belongs to Fixtures, not Results.
   const fixtures = page.locator('.game-section', { hasText: 'Fixtures' });

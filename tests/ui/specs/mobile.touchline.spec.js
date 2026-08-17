@@ -60,5 +60,7 @@ test('a match card says its venue in words, which the edge stripe alone never di
   await createMatch(page, { opponent: 'FC Thuisploeg', venue: 'Home' });
 
   const row = gameRow(page, 'FC Thuisploeg');
-  await expect(row.locator('.badge-venue')).toHaveText('HOME');
+  const badge = row.locator('.badge-venue');
+  await expect(badge).toHaveText('HOME');
+  await expect(badge).toHaveClass(/badge-venue-home/);
 });
