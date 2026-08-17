@@ -12,6 +12,7 @@ const PAGES = [
   { path: '/stats', heading: 'Statistics' },
   { path: '/users', heading: 'Users' },
   { path: '/settings', heading: 'Match Preferences' },
+  { path: '/stats/positions', heading: 'Position Development' },
 ];
 
 for (const { path, heading } of PAGES) {

@@ -1,0 +1,72 @@
+@page "/stats/positions"
+@attribute [Authorize(Roles = AppRoles.Admin)]
+@inherits SeasonAwarePage
+
+<PageTitle>@L["Position Development"]</PageTitle>
+
+@if (!_loaded)
+{
+    <MudProgressCircular Indeterminate="true" />
+    return;
+}
+
+<PageHeader BackFallback="@AppRoutes.SeasonStats" TitleTypo="Typo.h5" Title="@L["Position Development"]"
+            Subtitle="@L["Who has played where this season, at a glance."]" />
+
+@if (_report is null || _report.Rows.Count == 0)
+{
+    <MudPaper Class="pa-6" Elevation="2" Style="border-radius: 16px; text-align: center;">
+        <MudIcon Icon="@Icons.Material.Filled.GridView" Size="Size.Large" Style="color: var(--ink-faint);" />
+        <MudText Typo="Typo.body1" Class="mt-3" Style="color: var(--ink-muted);">
+            @L["No minutes on the pitch yet."]
+        </MudText>
+    </MudPaper>
+    return;
+}
+
+<MudTable Items="_report.Rows" Hover="true" Dense="true" Elevation="2" T="PositionDevelopmentRow"
+          OnRowClick="OnRowClicked" RowStyle="cursor: pointer;"
+          Class="position-dev-table stacked-table" Style="border-radius: 16px;">
+    <HeaderContent>
+        <MudTh>#</MudTh>
+        <MudTh>@L["Player"]</MudTh>
+        @foreach (var position in _report.Positions)
+        {
+            <MudTh Style="text-align:center">@L[position.DisplayName()]</MudTh>
+        }
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="#" Class="pd-num">
+            <span style="font-weight: 700; color: var(--club-primary-bright);">@(context.Player.ShirtNumber?.ToString() ?? "-")</span>
+        </MudTd>
+        <MudTd DataLabel="@L["Player"]" Class="pd-name">
+            <span class="pd-name-cell">
+                <span style="font-weight: 600; color: var(--ink);">@context.Player.DisplayName</span>
+                @* The whole point of this grid: a player whose every minute came in one position. *@
+                @if (context.IsSinglePosition)
+                {
+                    <span class="badge-warning" title="@L["Played only one position all season."]">
+                        @L["Single position"]
+                    </span>
+                }
+            </span>
+        </MudTd>
+        @foreach (var position in _report.Positions)
+        {
+            var stat = context.Positions.GetValueOrDefault(position);
+            <MudTd DataLabel="@L[position.DisplayName()]" Class="@("pd-pos" + (stat is null ? " pd-pos-empty" : ""))">
+                @if (stat is not null)
+                {
+                    <span class="pd-pos-value">
+                        @stat.Minutes'
+                        <span class="pd-pos-pct">@stat.Percentage.ToString("0")%</span>
+                    </span>
+                }
+                else
+                {
+                    <span class="pd-pos-dash">–</span>
+                }
+            </MudTd>
+        }
+    </RowTemplate>
+</MudTable>

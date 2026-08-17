@@ -55,6 +55,7 @@ public static class AppNav
         ["games", _, "live"] => "Live Match",
         ["games", _, "result"] => "Match Result",
         ["stats"] => "Season",
+        ["stats", "positions"] => "Position Development",
         ["settings"] => "Preferences",
         ["users"] => "Users",
         _ => null,
@@ -70,7 +71,7 @@ public static class AppNav
     public static bool IsSeasonAware(string path) => Segments(path) switch
     {
         [] or ["players"] or ["games"] or ["stats"] => true,
-        ["players", _, "stats"] => true,
+        ["players", _, "stats"] or ["stats", "positions"] => true,
         _ => false,
     };
 

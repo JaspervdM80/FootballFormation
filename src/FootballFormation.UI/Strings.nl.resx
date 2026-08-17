@@ -277,6 +277,12 @@
   <data name="No goals recorded yet." xml:space="preserve"><value>Nog geen doelpunten geregistreerd.</value></data>
   <data name="No players yet." xml:space="preserve"><value>Nog geen speelsters.</value></data>
 
+  <!-- Position development (squad-wide positions grid) -->
+  <data name="Position Development" xml:space="preserve"><value>Positieontwikkeling</value></data>
+  <data name="Who has played where this season, at a glance." xml:space="preserve"><value>In één oogopslag wie waar heeft gespeeld dit seizoen.</value></data>
+  <data name="Single position" xml:space="preserve"><value>Eén positie</value></data>
+  <data name="Played only one position all season." xml:space="preserve"><value>Speelde dit hele seizoen maar op één positie.</value></data>
+
   <!-- Season squad (per-season membership and guest status) -->
   <data name="New player" xml:space="preserve"><value>Nieuwe speler</value></data>
   <data name="Existing player" xml:space="preserve"><value>Bestaande speler</value></data>
