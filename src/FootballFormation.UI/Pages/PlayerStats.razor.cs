@@ -4,6 +4,7 @@ using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
 using FootballFormation.UI.Navigation;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Localization;
 using MudBlazor;
 
@@ -18,10 +19,24 @@ public partial class PlayerStats
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; } = null!;
+
     [Parameter] public int PlayerId { get; set; }
 
     private Core.Reporting.PlayerStats? _stats;
     private bool _loaded;
+
+    // A flag rather than an AuthorizeView per gated spot: two of them set a class on a container
+    // (.stat-tiles-3, .game-list-no-minutes) so the grid loses a track along with its cell, and
+    // nothing inside the rows can reach that far up.
+    private bool _isAdmin;
+
+    protected override async Task OnInitializedCoreAsync()
+    {
+        var authState = await AuthStateTask;
+        _isAdmin = authState.User.IsAdmin();
+    }
 
     protected override async Task LoadAsync()
     {

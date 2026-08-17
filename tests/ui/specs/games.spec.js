@@ -2,7 +2,7 @@
 // at a touchline.
 import { test, expect } from '../fixtures.js';
 import {
-  clickFor, confirmDialog, createMatch, fillField, gameRow, goto, openDialog, pickEarlierThisMonth, submitDialog,
+  clickFor, confirmDialog, createMatch, fillField, gameRow, goto, openDialog, submitDialog,
 } from '../helpers.js';
 
 test('a new match appears under Fixtures with its venue and formation', async ({ page }) => {
@@ -76,12 +76,7 @@ test('only a match already played is flagged for its missing lineup', async ({ p
   await expect(upcoming.locator('.action-needs-lineup')).toHaveCount(0);
   await expect(upcoming.locator('.nolineup-icon')).toHaveCount(0);
 
-  await goto(page, '/games');
-  const panel = page.locator('.mud-dialog');
-  await clickFor(page.getByRole('button', { name: 'Add' }).first(), () => expect(panel).toBeVisible());
-  await fillField(panel, 'Opponent', 'FC Gespeeld');
-  const day = await pickEarlierThisMonth(page, panel);
-  await submitDialog(page);
+  const day = await createMatch(page, { opponent: 'FC Gespeeld', past: true });
 
   const played = gameRow(page, 'FC Gespeeld');
   // The card's own date, which the app formats as "dd MMM" whatever the culture is doing to the

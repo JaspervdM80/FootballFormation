@@ -84,6 +84,8 @@
         }
     </MudPaper>
 
+    @* Minute figures are admin-only everywhere else on this page, and this card is the deliberate
+       exception: who has kept goal, and for how long, is what the squad asks about. *@
     <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">
         <div class="card-label">@L["Goalkeeper minutes"]</div>
         @if (_keepers.Count > 0)
@@ -111,33 +113,39 @@
     </MudPaper>
 </div>
 
-<MudPaper Class="pa-5 mt-4" Elevation="2" Style="border-radius: 16px;">
-    <div class="card-label">@L["Playing time"]</div>
-    @if (_playingTime.Count > 0)
-    {
-        <div class="pt-list">
-            @foreach (var p in _playingTime)
-            {
-                <div class="pt-row" @onclick="() => OpenPlayer(p.Player.Id)">
-                    <div class="pt-head">
-                        <span class="pt-name">
-                            @if (p.Player.ShirtNumber is not null)
-                            {
-                                <span class="r-shirt">@p.Player.ShirtNumber</span>
-                            }
-                            @p.Player.DisplayName
-                        </span>
-                        <span class="pt-meta">@p.TotalMinutes' / @p.AvailableMinutes' · @(p.Utilization.ToString("0"))%</span>
+@* The card is minutes from top to bottom, so it is admin-only in full rather than redacted. *@
+<AuthorizeView Roles="@AppRoles.Admin">
+    <MudPaper Class="pa-5 mt-4" Elevation="2" Style="border-radius: 16px;">
+        <div class="card-label">@L["Playing time"]</div>
+        @if (_playingTime.Count > 0)
+        {
+            <div class="pt-list">
+                @foreach (var p in _playingTime)
+                {
+                    <div class="pt-row" @onclick="() => OpenPlayer(p.Player.Id)">
+                        <div class="pt-head">
+                            <span class="pt-name">
+                                @if (p.Player.ShirtNumber is not null)
+                                {
+                                    <span class="r-shirt">@p.Player.ShirtNumber</span>
+                                }
+                                @p.Player.DisplayName
+                            </span>
+                            <span class="pt-meta">@p.TotalMinutes' / @p.AvailableMinutes' · @(p.Utilization.ToString("0"))%</span>
+                        </div>
+                        @* Filled to the player's own available minutes, not to the busiest player's
+                           total: this table is about how much of their time each of them got, and
+                           against a squad maximum the top player is 100% by definition. *@
+                        <div class="position-track">
+                            <div class="position-fill" style="width: @(p.Utilization.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
+                        </div>
                     </div>
-                    <div class="position-track">
-                        <div class="position-fill" style="width: @(BarWidth(p.TotalMinutes).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
-                    </div>
-                </div>
-            }
-        </div>
-    }
-    else
-    {
-        <MudText Typo="Typo.body2" Class="mt-2 empty-note">@L["No players yet."]</MudText>
-    }
-</MudPaper>
+                }
+            </div>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Class="mt-2 empty-note">@L["No players yet."]</MudText>
+        }
+    </MudPaper>
+</AuthorizeView>

@@ -10,7 +10,9 @@ container on **https://gjs-meiden.nl** with SQLite on one persistent volume, and
 on boot** — that fact drives most of the caution elsewhere.
 
 Reading is public; every change requires an admin sign-in, enforced at the service boundary as well
-as in the markup. The UI is Dutch by default with English available.
+as in the markup. One thing a public read holds back: **playing-minute figures are admin-only** — a
+visitor sees the counts and the position split, not the minutes or the utilisation behind them. The
+UI is Dutch by default with English available.
 
 ## Commands
 
