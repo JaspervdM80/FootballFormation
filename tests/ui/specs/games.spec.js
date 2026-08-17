@@ -5,6 +5,25 @@ import {
   clickFor, confirmDialog, createMatch, fillField, gameRow, goto, openDialog, submitDialog,
 } from '../helpers.js';
 
+/** Creates a match and returns its id, read from the URL its own formation button navigates to. */
+async function matchWithId(page, opponent, options = {}) {
+  await createMatch(page, { opponent, ...options });
+  await gameRow(page, opponent).getByTitle(/Formation|Add lineup/).click();
+  await page.waitForURL(/\/games\/\d+\/formation/);
+  return Number(page.url().match(/\/games\/(\d+)\//)[1]);
+}
+
+/** Files a score for a match already dated in the past, turning it from a fixture into a result. */
+async function fileScore(page, id, home, away) {
+  await goto(page, `/games/${id}/result`);
+  await page.locator('.score-big-input').first().fill(String(home));
+  await page.locator('.score-big-input.score-away').fill(String(away));
+  await clickFor(
+    page.getByRole('button', { name: 'Save Score' }),
+    () => expect(page.getByText('saved', { exact: false }).first()).toBeVisible(),
+  );
+}
+
 test('a new match appears under Fixtures with its venue and formation', async ({ page }) => {
   await createMatch(page, { opponent: 'FC Nieuwkomer', venue: 'Away' });
 
@@ -91,4 +110,21 @@ test('only a match already played is flagged for its missing lineup', async ({ p
   await expect(played.locator('.nolineup-icon')).toBeVisible();
   // The action button changes shape rather than hiding: an empty grid means "this one needs you".
   await expect(played.getByTitle('Add lineup', { exact: false })).toBeVisible();
+});
+
+test('the Results section leads with the most recent match, not the oldest', async ({ page }) => {
+  // Two distinct past dates, not just two rows: the tie-break on equal dates sorts by id, which
+  // would pass a test that only checked insertion order and hide a regression to oldest-first.
+  test.skip(new Date().getDate() <= 2, 'not enough earlier days in the current month for two dates');
+
+  const olderId = await matchWithId(page, 'FC Eerder', { past: 2 });
+  await fileScore(page, olderId, 1, 0);
+
+  const newerId = await matchWithId(page, 'FC Later', { past: 1 });
+  await fileScore(page, newerId, 2, 0);
+
+  await goto(page, '/games');
+  const results = page.locator('.game-section', { hasText: 'Results' }).locator('.game-row');
+  await expect(results.first()).toContainText('FC Later');
+  await expect(results.nth(1)).toContainText('FC Eerder');
 });

@@ -222,8 +222,9 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
 - Goal and assist selects bind `int?`, not `int`: an `int` binds to 0, which is nobody's id but
   still renders as a chosen value, so the scorer field looked pre-filled.
 - **`/games` is two lists, not one** (`Games.Sections()`): fixtures still to play, soonest first,
-  then results in the order they were played — both ascending. A single list has to put one of
-  them at the wrong end, and newest-first put the *most distant* fixture at the top. The split is
+  then results newest first — each list leads with the match you came to look at. A single list has
+  to put one of them at the wrong end, and newest-first throughout put the *most distant* fixture at
+  the top. The split is
   on `HasFinalScore`, not on the date: a game stays a fixture until a result is on file. A match
   that was never played therefore sits in the fixture list after its date has passed, which is
   intended — the only thing to do with one is delete it, and the stale row is the prompt. Because

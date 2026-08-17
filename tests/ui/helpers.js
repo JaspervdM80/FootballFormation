@@ -163,7 +163,8 @@ export async function playerMenuItem(page, name, item) {
  * `past: true` moves the date back through the picker, which is what a match with a result needs —
  * the dialog defaults to the *next* match day, and the result page refuses a score on a fixture
  * still to be played. Callers using it need `test.skip(new Date().getDate() === 1, …)`; see
- * pickEarlierThisMonth.
+ * pickEarlierThisMonth. `past` also takes a day count (e.g. `2`) for a caller that needs two past
+ * matches on two distinct dates, ordered against each other.
  */
 export async function createMatch(page, { opponent, venue, matchType, split, past } = {}) {
   await goto(page, '/games');
@@ -176,7 +177,7 @@ export async function createMatch(page, { opponent, venue, matchType, split, pas
   // "Quarters" is the split that gives a half two line-ups, and so the only one whose live screen
   // has changes to list partway through a half.
   if (split) await chooseOption(page, panel, 'Game Split', split);
-  const day = past ? await pickEarlierThisMonth(page, panel) : null;
+  const day = past ? await pickEarlierThisMonth(page, panel, past === true ? 1 : past) : null;
   await submitDialog(page);
 
   await expect(gameRow(page, opponent)).toBeVisible();
@@ -192,7 +193,7 @@ export async function createMatch(page, { opponent, venue, matchType, split, pas
  * date)"), so a jump to a previous month could file the match under last season and take it out of
  * the list the test is about to look at.
  */
-export async function pickEarlierThisMonth(page, scope) {
+export async function pickEarlierThisMonth(page, scope, daysAgo = 1) {
   const popover = page.locator('.mud-picker-popover.mud-popover-open');
   const field = scope.getByLabel('Date', { exact: false }).first();
   const before = await field.inputValue();
@@ -220,7 +221,7 @@ export async function pickEarlierThisMonth(page, scope) {
   await expect(header).toHaveText(thisMonth, { ignoreCase: true });
 
   const today = new Date().getDate();
-  const day = today > 1 ? today - 1 : 1;
+  const day = today > daysAgo ? today - daysAgo : 1;
   // Days spilling in from the neighbouring months carry .mud-hidden and are not clickable.
   await popover.locator('.mud-picker-calendar .mud-day:not(.mud-hidden)')
     .filter({ hasText: new RegExp(`^${day}$`) }).first().click();
