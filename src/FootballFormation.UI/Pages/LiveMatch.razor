@@ -49,51 +49,20 @@
         <div class="@StatusCssClass">@StatusLabel</div>
     </MudPaper>
 
-    <AuthorizeView Roles="@AppRoles.Admin">
-        <MudPaper Class="pa-3 live-controls" Elevation="2">
-            @if (GameData.MatchState == MatchState.NotStarted)
-            {
+    @* Kick-off is the only thing there is to do before a match, so it stays under the scoreboard.
+       Everything the clock does afterwards is pressed once a half at most and lives at the foot of
+       the page instead — see .live-controls below. *@
+    @if (GameData.MatchState == MatchState.NotStarted)
+    {
+        <AuthorizeView Roles="@AppRoles.Admin">
+            <MudPaper Class="pa-3 live-controls" Elevation="2">
                 <MudButton Variant="Variant.Filled" Class="btn-gold" FullWidth="true" Size="Size.Large"
                            StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="StartMatch">
                     @L["Start match"]
                 </MudButton>
-            }
-            else if (GameData.MatchState == MatchState.InProgress)
-            {
-                <div class="live-control-row">
-                    @* The clock knows halves only. The line-up change partway through a half is
-                       made by hand from the pitch, so it has no control of its own here — it is a
-                       reference, behind the button on the line-up card below. *@
-                    @if (HalfTimeFollows)
-                    {
-                        <MudButton Variant="Variant.Filled" Class="btn-gold"
-                                   StartIcon="@Icons.Material.Filled.SportsScore" OnClick="EndHalf">
-                            @L["Half time"]
-                        </MudButton>
-                    }
-                    else if (!IsHalfInPlay && NextHalfLabel is { } startingNext)
-                    {
-                        <MudButton Variant="Variant.Filled" Class="btn-gold"
-                                   StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="StartNextHalf">
-                            @L["Start {0}", L[startingNext]]
-                        </MudButton>
-                    }
-
-                    <MudButton Variant="Variant.Outlined" Class="btn-ghost"
-                               StartIcon="@Icons.Material.Filled.Flag" OnClick="FinishMatch">
-                        @L["Finish match"]
-                    </MudButton>
-                </div>
-            }
-            else
-            {
-                <MudButton Variant="Variant.Filled" Class="btn-gold" FullWidth="true"
-                           StartIcon="@Icons.Material.Filled.EditNote" OnClick="NavigateToResult">
-                    @L["Edit result"]
-                </MudButton>
-            }
-        </MudPaper>
-    </AuthorizeView>
+            </MudPaper>
+        </AuthorizeView>
+    }
 
     @* No line-up for this half means an empty pitch and an empty bench, which says nothing the
        formation screens are not already there to fix — the card stays away until someone is on it.
@@ -153,9 +122,10 @@
         </MudPaper>
     }
 
-    @* Nothing can be scored before kick-off, so the buttons stay out of the way entirely
-       rather than sitting there greyed out above the start button. *@
-    @if (GameData.MatchState != MatchState.NotStarted)
+    @* Nothing is scored before kick-off or after the final whistle, so the buttons stay out of the
+       way entirely rather than sitting there greyed out. A goal missed at the time is added back on
+       /result, which is where a finished match is corrected. *@
+    @if (GameData.MatchState == MatchState.InProgress)
     {
         <AuthorizeView Roles="@AppRoles.Admin">
             <div class="live-actions">
@@ -284,6 +254,51 @@
                         </div>
                     }
                 </div>
+            </MudPaper>
+        </AuthorizeView>
+    }
+
+    @* The end of a half, of the match, and the way on to the result screen. Each is pressed once
+       and nothing above it can be reached past it, so they sit at the foot of the page rather than
+       between the scoreboard and the buttons that are pressed all match. *@
+    @if (GameData.MatchState != MatchState.NotStarted)
+    {
+        <AuthorizeView Roles="@AppRoles.Admin">
+            <MudPaper Class="pa-3 live-controls live-controls-foot" Elevation="2">
+                @if (GameData.MatchState == MatchState.InProgress)
+                {
+                    <div class="live-control-row">
+                        @* The clock knows halves only. The line-up change partway through a half is
+                           made by hand from the pitch, so it has no control of its own here — it is a
+                           reference, behind the button on the line-up card. *@
+                        @if (HalfTimeFollows)
+                        {
+                            <MudButton Variant="Variant.Filled" Class="btn-gold"
+                                       StartIcon="@Icons.Material.Filled.SportsScore" OnClick="EndHalf">
+                                @L["Half time"]
+                            </MudButton>
+                        }
+                        else if (!IsHalfInPlay && NextHalfLabel is { } startingNext)
+                        {
+                            <MudButton Variant="Variant.Filled" Class="btn-gold"
+                                       StartIcon="@Icons.Material.Filled.PlayArrow" OnClick="StartNextHalf">
+                                @L["Start {0}", L[startingNext]]
+                            </MudButton>
+                        }
+
+                        <MudButton Variant="Variant.Outlined" Class="btn-ghost"
+                                   StartIcon="@Icons.Material.Filled.Flag" OnClick="FinishMatch">
+                            @L["Finish match"]
+                        </MudButton>
+                    </div>
+                }
+                else
+                {
+                    <MudButton Variant="Variant.Filled" Class="btn-gold" FullWidth="true"
+                               StartIcon="@Icons.Material.Filled.EditNote" OnClick="NavigateToResult">
+                        @L["Edit result"]
+                    </MudButton>
+                }
             </MudPaper>
         </AuthorizeView>
     }

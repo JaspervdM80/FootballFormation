@@ -131,6 +131,15 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   and `:last-child:nth-child(odd)` spans the odd one out across the row. It has to be `app.css`:
   the children are `MudButton`s, and the old scoped `.live-control-row > *` rule never matched
   them — the classic CSS-isolation miss, and why they used not to fill the panel.
+- **The clock controls sit at the foot of the page, the scoring buttons near the top.** "Half time",
+  "Start 2nd half", "Finish match" and "Edit result" are pressed once each; "Goal" and "Goal against"
+  are pressed all match, so the order follows how often a thumb reaches for them rather than the
+  order the match runs in. Kick-off is the exception and keeps its place under the scoreboard: before
+  it there is nothing else on the page to do. On a phone `.live-controls-foot` needs `order: 3` to
+  stay last, because `.live-lineup` and `.live-minutes-card` are already reordered past source order.
+- **The scoring buttons show only while the match is in progress.** Nothing is scored before kick-off
+  or after the final whistle; a goal missed at the time is added back on `/result`, which is where a
+  finished match is corrected and where the "Edit result" button leads.
 - The pitch shows the half being played; at half time and after full time the last one played, and
   before kick-off the half the match opens with — so it is never blank when a lineup exists. The
   bench strip under it is always drawn.

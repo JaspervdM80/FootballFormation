@@ -845,6 +845,11 @@ html, body {
     .live-minutes-card {
         order: 2;
     }
+
+    /* Last in source order is not last once anything above it has been reordered. */
+    .live-controls-foot {
+        order: 3;
+    }
 }
 
 /* Home tiles. The whole card is the link, so it needs the affordances a button had:
