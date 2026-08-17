@@ -51,6 +51,8 @@ Reporting/
   LiveMinutesReport.cs    — Exact minutes on the pitch during a live match
   SeasonStatsReport.cs    — Team totals + form for /stats (SeasonStats, GameResult)
   PlayerStatsReport.cs    — Per-player aggregates (PlayerStats, PositionStat, PlayerGameStat)
+  PositionDevelopmentReport.cs — Pivots PlayerStats.Positions into a players × positions grid for
+                           /stats/positions (PositionDevelopment, PositionDevelopmentRow), no new query
   PositionFitHelper.cs    — 5-tier position fit: Preferred, NaturalFit, Alternative, Compatible, OutOfPosition
   MatchClockReport.cs     — Derives the live clock and the half's reading from the stored anchor +
                            banked total, the MatchMinute an event is written down against, and the
@@ -113,6 +115,7 @@ Pages/
   FormationBuilder.razor(.cs) — /games/{id}/formation — Pitch + player list + subs + playing time overview
   SeasonStats.razor(.cs)(.css)— /stats — Season dashboard: record, goals, form, scorers, playing time
   PlayerStats.razor(.cs)(.css)— /players/{id}/stats — Per-player figures for the selected season
+  PositionDevelopment.razor(.cs) — /stats/positions — Admin-only: squad-wide players × positions grid
   MatchResult.razor(.cs)(.css)— /games/{id}/result — Score and goal entry
   LiveMatch.razor(.cs)(.css)  — /games/{id}/live — Sideline screen: clock, subs, goals; admin drives, others watch
   LiveGoalDialog.razor(.cs)   — Dialog: scorer, assister, own-goal toggle

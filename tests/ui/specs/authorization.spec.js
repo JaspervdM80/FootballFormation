@@ -48,7 +48,7 @@ test.describe('an anonymous visitor', () => {
   });
 
   test('is sent to the login page by an admin-only route', async ({ page }) => {
-    for (const path of ['/settings', '/users']) {
+    for (const path of ['/settings', '/users', '/stats/positions']) {
       await page.goto(path, { waitUntil: 'domcontentloaded' });
       await page.waitForURL(/\/login/, { timeout: 15_000 });
 
@@ -87,10 +87,18 @@ test.describe('an admin', () => {
   });
 
   test('reaches the admin-only routes directly', async ({ page }) => {
-    for (const [path, heading] of [['/settings', 'Match Preferences'], ['/users', 'Users']]) {
+    for (const [path, heading] of [
+      ['/settings', 'Match Preferences'], ['/users', 'Users'], ['/stats/positions', 'Position Development'],
+    ]) {
       await goto(page, path);
       await expect(page).toHaveURL(new RegExp(`${path}$`));
       await expect(page.getByRole('heading', { name: heading, exact: false }).first()).toBeVisible();
     }
+  });
+
+  test('is offered the position development grid from the season statistics', async ({ page }) => {
+    await goto(page, '/stats');
+    await page.getByRole('link', { name: 'Position Development' }).click();
+    await expect(page).toHaveURL(/\/stats\/positions$/);
   });
 });

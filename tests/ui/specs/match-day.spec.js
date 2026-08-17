@@ -399,6 +399,17 @@ test('the statistics give an admin the minutes and a visitor only the split', as
   // The venue reads as a badge now, on everyone's copy of the page.
   await expect(page.locator('.g-opp-name .badge-venue').first()).toHaveText(/HOME|AWAY/);
 
+  // The position development grid pivots the same per-player figures — this player's whole match
+  // was one line-up in one position, so their row carries the "single position" flag. Finding the
+  // row at all is most of the assertion: the grid falls back to an empty-state card with no table
+  // whenever it has nothing to pivot, so a broken pivot fails here before the badge check does.
+  await goto(page, '/stats/positions');
+  const gridRow = page.locator('.mud-table-body .mud-table-row', {
+    has: page.locator('.pd-num', { hasText: new RegExp(`^${shirt}$`) }),
+  }).first();
+  await expect(gridRow).toBeVisible();
+  await expect(gridRow.locator('.badge-warning')).toHaveText('Single position');
+
   const visitor = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
   try {
     const anon = await visitor.newPage();
