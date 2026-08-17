@@ -115,8 +115,8 @@
                 <div class="game-row">
                     <span class="g-opp">
                         <span class="g-opp-name">
-                            <span class="badge-venue">@((g.Game.IsHomeGame ? L["Home"] : L["Away"]).ToString().ToUpper())</span>
                             <span class="g-opp-text">@g.Game.Opponent</span>
+                            <span class="badge-venue badge-venue-inline">@((g.Game.IsHomeGame ? L["Home"] : L["Away"]).ToString().ToUpper())</span>
                         </span>
                         <span class="g-date">@g.Game.Date.ToString("dd MMM yyyy")</span>
                     </span>

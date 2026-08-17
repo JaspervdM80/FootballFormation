@@ -305,7 +305,25 @@ Two of these: `SeasonState` (`UI/State/SeasonState.cs`) holds the selected seaso
 the visitor has been. The pattern, taking `SeasonState` as the worked example:
 
 - Registered `Scoped`, so on Blazor Server it lives for the SignalR circuit — the choice survives
-  navigation within a tab but resets on a browser refresh.
+  navigation within a tab, and a refresh restores it from the cookie described below.
+- **The choice is kept in a cookie for eight hours**, through `SeasonPreference`
+  (`UI/State/SeasonPreference.cs`) over `js/season.js`. A circuit does not survive a deploy, and a
+  merge to `main` *is* a deploy onto the one Fly machine, so before this everyone watching a match
+  came back to whichever season the database calls current. Eight hours is a match day rather than
+  a subscription — a cookie carries its own expiry, which is why it is a cookie and not
+  `localStorage`. Three things to know about it:
+  - **A stored season that no longer exists is ignored**, falling back to the current one.
+    Restoring it would filter every page down to nothing behind a picker that cannot name what it
+    is showing.
+  - **"All seasons" is stored as the literal `all`**, because that choice is `null` in C# and
+    `null` is also how "nothing stored" has to read.
+  - **JS interop is unavailable during the prerender pass**, so `SeasonPreference` swallows the
+    `InvalidOperationException` (and a `JSDisconnectedException` from a circuit on its way out).
+    The prerender therefore paints the default season and the interactive pass that follows
+    replaces it — the same pass that renders the page's real data.
+- `Select` is therefore `SelectAsync`, and notifies `OnChanged` **before** awaiting the cookie
+  write: the subscribers only queue a render, and no page should wait on a round trip to the
+  browser.
 - Loading is a **memoized task** (`EnsureLoadedAsync() => _loading ??= LoadAsync()`). A scoped
   service can't load in its constructor, and the layout and the page both need the data during
   their own `OnInitializedAsync`, where they interleave at the first `await`. This was once
@@ -354,6 +372,7 @@ builder.Services.AddScoped<MatchGoalService>();          // on the touchline: th
 builder.Services.AddScoped<MatchSubstitutionService>();  // the substitutions
 builder.Services.AddScoped<MatchPreferencesService>();
 builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<SeasonPreference>();  // the season cookie SeasonState restores from
 builder.Services.AddScoped<SeasonState>();       // UI state, see "UI state services"
 builder.Services.AddScoped<NavigationTrail>();   // where this tab has been, for the back arrow
 ```

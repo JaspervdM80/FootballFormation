@@ -10,8 +10,8 @@ test('a new match appears under Fixtures with its venue and formation', async ({
 
   const row = gameRow(page, 'FC Nieuwkomer');
   await expect(row).toBeVisible();
-  // An away match reads "@ opponent"; a home one reads "vs".
-  await expect(row.locator('.opp-prefix')).toHaveText('@ ');
+  // The venue is a badge trailing the opponent's name, at every width.
+  await expect(row.locator('.badge-venue')).toHaveText('AWAY');
 
   // A match with no score yet belongs to Fixtures, not Results.
   const fixtures = page.locator('.game-section', { hasText: 'Fixtures' });

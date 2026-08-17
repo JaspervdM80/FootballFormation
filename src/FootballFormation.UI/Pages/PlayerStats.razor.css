@@ -68,11 +68,11 @@
 }
 
 /* The venue badge keeps its width and the opponent's name gives way, so a long name truncates
-   rather than squeezing the badge into an unreadable sliver. */
+   rather than squeezing the badge into an unreadable sliver. No gap — the badge brings its own
+   8px in .badge-venue-inline, and a gap here would be added to it. */
 .g-opp-name {
     display: flex;
     align-items: center;
-    gap: 6px;
     min-width: 0;
 }
 

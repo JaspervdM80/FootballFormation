@@ -152,6 +152,8 @@ Navigation/
   NavigationTrail.cs          — Scoped: where the visitor has been, so back returns there
 State/
   SeasonState.cs              — Scoped: the selected season, shared by the layout and the pages
+  SeasonPreference.cs         — That choice in a cookie for 8h, so a deploy's dropped circuit
+                                does not reset it
 Helpers/
   PitchPositionHelper.cs      — Maps PlayerPosition → (left%, top%) coordinates
   UiFeedback.cs               — Snackbar.Report()/ReportFailure() over Result (translates the error,
@@ -209,6 +211,7 @@ wwwroot/
   icons/                  — GJS club logo as app icons: 180 (apple-touch) / 192 / 512 / 512-maskable
   js/pwa.js               — Service worker registration, and the reload once a rejoin has failed
   js/drag-drop-touch.js   — Touch → HTML5 drag event shim for the formation builder on phones
+  js/season.js            — Reads and writes the season picker's cookie (SeasonPreference)
 ```
 
 ## Deployment (repo root)

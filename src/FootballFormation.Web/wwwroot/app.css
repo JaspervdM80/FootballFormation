@@ -741,6 +741,15 @@ html, body {
     border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
 }
 
+/* The same badge trailing an opponent's name rather than standing alone in a page header. It
+   annotates that name, so it has to stay shorter than it — at the header size the box is taller
+   than the 0.82rem text it follows and reads as the louder of the two. */
+.badge-venue-inline {
+    font-size: 0.6rem;
+    padding: 1px 6px;
+    margin-left: 8px;
+}
+
 .badge-unavailable {
     font-size: 0.65rem;
     font-weight: 600;

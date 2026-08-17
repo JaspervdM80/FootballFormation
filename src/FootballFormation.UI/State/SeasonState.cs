@@ -4,15 +4,15 @@ using FootballFormation.Core.Services;
 namespace FootballFormation.UI.State;
 
 /// <summary>
-/// The season the whole UI is filtered by. The choice resets on a browser refresh, falling back to
-/// the database's current season.
+/// The season the whole UI is filtered by. The choice is remembered in a cookie for eight hours
+/// (see <see cref="SeasonPreference"/>) and otherwise falls back to the database's current season.
 /// <para>
-/// That reset is deliberate. The picker is a <em>view</em> choice and must never write
-/// <see cref="Season.IsCurrent"/>, which is shared, admin-owned state edited on /settings —
-/// anonymous visitors can reach the picker.
+/// A cookie and not <see cref="Season.IsCurrent"/>. The picker is a <em>view</em> choice and must
+/// never write that flag, which is shared, admin-owned state edited on /settings — anonymous
+/// visitors can reach the picker. Per-browser is exactly the scope this belongs at.
 /// </para>
 /// </summary>
-public class SeasonState(SeasonService seasons)
+public class SeasonState(SeasonService seasons, SeasonPreference preference)
 {
     private Task? _loading;
 
@@ -46,16 +46,29 @@ public class SeasonState(SeasonService seasons)
         if (result.IsFailure) return;
 
         Seasons = result.Value!;
-        SelectedSeasonId = Seasons.FirstOrDefault(s => s.IsCurrent)?.Id
-            ?? Seasons.FirstOrDefault()?.Id;
+
+        // The remembered choice only wins while it still names a season that exists — a season
+        // deleted since would otherwise filter every page down to nothing, with a picker that
+        // cannot say which season it is showing.
+        var stored = await preference.LoadAsync();
+        SelectedSeasonId = stored is not null && IsSelectable(stored.SeasonId)
+            ? stored.SeasonId
+            : Seasons.FirstOrDefault(s => s.IsCurrent)?.Id ?? Seasons.FirstOrDefault()?.Id;
     }
 
-    public void Select(int? seasonId)
+    private bool IsSelectable(int? seasonId) =>
+        seasonId is null || Seasons.Any(s => s.Id == seasonId);
+
+    public async Task SelectAsync(int? seasonId)
     {
         if (SelectedSeasonId == seasonId) return;
 
         SelectedSeasonId = seasonId;
+
+        // Notify before persisting: the subscribers only queue a render, and nothing about the
+        // page should wait on a round trip to the browser to store a cookie.
         OnChanged?.Invoke();
+        await preference.SaveAsync(seasonId);
     }
 
     /// <summary>Re-reads the list after /settings adds, edits or removes a season, so the picker

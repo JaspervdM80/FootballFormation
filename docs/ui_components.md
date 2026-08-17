@@ -258,10 +258,10 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   with both the game's state and who is looking — see [known_issues.md](known_issues.md). The
   card's horizontal padding drops to 12px there so the six still clear 44px on a 320px phone.
   `scripts/touch-targets.mjs` measures all of it — see [testing.md](testing.md#touch-targets).
-- **The venue is a word on a phone.** On a wide card the opponent carries a `vs `/`@ ` prefix
-  (`.opp-prefix`); below 600px that is hidden and `.game-venue` spells out *Thuis*/*Uit* after the
-  name instead. The card's coloured edge stripe says the same thing and had been saying it alone,
-  which is a convention nobody reads off a stripe.
+- **The venue is a word, at every width.** A `.badge-venue.badge-venue-inline` badge trails the
+  opponent's name and spells out *THUIS*/*UIT* — the same badge the player statistics use, so the
+  two screens say it the same way. The card's coloured edge stripe says the same thing and had been
+  saying it alone, which is a convention nobody reads off a stripe.
 - The page reads "today" from the injected `TimeProvider`, not `DateTime.Today`, the same way the
   services do — that is also what `IsIncomplete` (the missing-lineup flag) compares against.
 - `HasFinalScore` checks `MatchState` **as well as** the score fields, and must: `MatchGoalService`
@@ -360,7 +360,9 @@ The global season filter, backed by the scoped `SeasonState` (see
   edited, and on the single-game routes, where it is inert. The component subscribes to
   `NavigationManager.LocationChanged` so visibility follows navigation.
 - Selecting a season **never** writes `Season.IsCurrent` — the picker is reachable by anonymous
-  visitors, and `IsCurrent` is shared state owned by the admin on `/settings`.
+  visitors, and `IsCurrent` is shared state owned by the admin on `/settings`. It goes in a cookie
+  for eight hours instead, which is per-browser, which is the scope a view choice belongs at — see
+  [patterns.md](patterns.md#ui-state-services).
 
 ## Navigation: routes, menu, page headers
 Everything that knows a URL lives in `UI/Navigation/`. Three rules, and the whole thing holds:
@@ -484,10 +486,13 @@ someone who missed half the season is not punished for it. The inline `width:` n
 silently.
 
 **The per-game rows carry the `.badge-venue` pill**, the same THUIS/UIT pill the formation builder's
-header uses, rather than the `vs` / `@` prefix the rest of the app still uses in running text. The
-row is a list of fixtures where the venue is a fact about each one, not a sentence about a single
-match — a badge column reads down it, a prefix does not. `.g-opp-name` is a flex row so the pill
-keeps its width and `.g-opp-text` gives way to the ellipsis.
+header and the games list use, rather than the `vs` / `@` prefix the rest of the app still uses in
+running text. The row is a list of fixtures where the venue is a fact about each one, not a sentence
+about a single match — a badge reads down it, a prefix does not. It **trails** the opponent, because
+the name is what someone scans the column for and a leading badge makes every row start with the
+same two words. `.badge-venue-inline` adds the 8px lead and takes the pill under the name's own
+height — at header size the box is taller than the text it annotates. `.g-opp-name` is a flex row
+so the pill keeps its width and `.g-opp-text` gives way to the ellipsis.
 
 ## Dialogs on a phone (`.dialog-sheet`)
 Every dialog goes through `DialogPrompts` with `UiFeedback.LockedDialog` (no backdrop-click close).
