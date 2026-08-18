@@ -21,6 +21,10 @@
   <data name="Games" xml:space="preserve"><value>Wedstrijden</value></data>
   <data name="Preferences" xml:space="preserve"><value>Voorkeuren</value></data>
   <data name="Logout" xml:space="preserve"><value>Uitloggen</value></data>
+  <!-- The drawer checkbox and the language disclosure: their labels are what a screen reader
+       announces, since both are icon-only. -->
+  <data name="Menu" xml:space="preserve"><value>Menu</value></data>
+  <data name="Language" xml:space="preserve"><value>Taal</value></data>
 
   <!-- Error and not-found pages -->
   <data name="Page Not Found" xml:space="preserve"><value>Pagina niet gevonden</value></data>

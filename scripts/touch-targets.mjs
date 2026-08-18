@@ -30,7 +30,7 @@
 // catches the button, and the report below prints the measured gap above every target so the
 // numbers those doc entries argue from stay in front of whoever reads the artifact next.
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { clickFor, goto, waitForStableBox, waitUntil } from './blazor.mjs';
+import { clickFor, goto, gotoRendered, waitForStableBox, waitUntil } from './blazor.mjs';
 
 export const MIN_TARGET = 44;
 
@@ -328,7 +328,7 @@ export async function auditTouchTargets({ browser, base, out, onError = () => {}
     page.on('console', m => { if (m.type() === 'error') onError(`[console ${viewport.name}] ${m.text()}`); });
     page.on('pageerror', e => onError(`[pageerror ${viewport.name}] ${e.message}`));
 
-    await goto(page, `${base}/dev/login`);
+    await gotoRendered(page, `${base}/dev/login`);
     await goto(page, `${base}/games`);
 
     const audit = async (scene, root) => {

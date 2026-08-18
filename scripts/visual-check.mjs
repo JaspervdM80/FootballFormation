@@ -14,7 +14,7 @@
 import { chromium } from 'playwright';
 import { existsSync, mkdirSync } from 'node:fs';
 import { auditTouchTargets } from './touch-targets.mjs';
-import { clickFor, goto } from './blazor.mjs';
+import { clickFor, goto, gotoRendered } from './blazor.mjs';
 
 const BASE = process.env.VISUAL_BASE_URL ?? 'http://127.0.0.1:5228';
 const OUT = process.env.VISUAL_OUT_DIR ?? 'artifacts/visual';
@@ -39,12 +39,14 @@ const SEED_PLAYERS = [
 
 const SEED_OPPONENT = 'SV Zwaluwen';
 
+// The third entry marks a page with no handler bound to an HTML element, so there is nothing for
+// goto to wait on — see gotoRendered in blazor.mjs.
 const PAGES = [
-  ['home', '/'],
+  ['home', '/', true],
   ['players', '/players'],
   ['games', '/games'],
   ['stats', '/stats'],
-  ['position-development', '/stats/positions'],
+  ['position-development', '/stats/positions', true],
   ['users', '/users'],
   ['settings', '/settings'],
 ];
@@ -65,8 +67,10 @@ const errors = [];
 page.on('console', m => { if (m.type() === 'error') errors.push(`[console] ${m.text()}`); });
 page.on('pageerror', e => errors.push(`[pageerror] ${e.message}`));
 
-// Development-only, loopback-only route that mints the same principal /auth/login does.
-const signIn = () => goto(page, `${BASE}/dev/login`);
+// Development-only, loopback-only route that mints the same principal /auth/login does. It lands
+// on the start page, which binds no handler to wait for — see gotoRendered. The next goto does the
+// waiting that matters.
+const signIn = () => gotoRendered(page, `${BASE}/dev/login`);
 
 await signIn();
 
@@ -148,12 +152,12 @@ if (!(await page.getByText(SEED_OPPONENT).count())) {
   console.log(`seeded a game vs ${SEED_OPPONENT}, today`);
 }
 
-for (const [name, path] of PAGES) {
+for (const [name, path, bare] of PAGES) {
   // A Blazor Server page renders twice: static prerender, then again once the circuit connects.
   // Screenshotting between the two catches a half-built page, so goto waits for the second — see
   // blazor.mjs. A page that is still loading its data says so with a spinner, which is a finding
   // rather than something to sleep through.
-  await goto(page, BASE + path);
+  await (bare ? gotoRendered : goto)(page, BASE + path);
   await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true });
   const heading = await page.locator('h1, h4, .mud-typography-h4').first().textContent().catch(() => '');
   console.log(`${name.padEnd(9)} ${path.padEnd(10)} ${(heading ?? '').trim().slice(0, 40)}`);

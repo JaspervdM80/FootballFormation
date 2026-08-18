@@ -2,30 +2,27 @@
 
 @if (Visible && SeasonState.Seasons.Count > 0)
 {
-    @* MudMenu's own activator button rather than ActivatorContent: in MudBlazor 9 a custom
-       activator has to wire context.ToggleAsync itself and leaves the wrapper focusable but
-       inert, whereas the built-in button arrives keyboard-accessible and correctly labelled. *@
-    <MudMenu Label="@Label"
-             StartIcon="@Icons.Material.Filled.CalendarMonth"
-             EndIcon="@Icons.Material.Filled.ExpandMore"
-             Variant="Variant.Text"
-             Size="Size.Small"
-             Dense="true"
-             AriaLabel="@L["Select season"]"
-             Class="season-picker">
-        @foreach (var season in SeasonState.Seasons)
-        {
-            <MudMenuItem OnClick="@(() => SeasonState.SelectAsync(season.Id))">
-                <span class="season-menu-item">
+    @* A <details> disclosure rather than MudMenu: this renders in the layout, which is static on
+       every page, so there is no circuit to open a popover from — and the browser gives keyboard
+       and screen-reader behaviour here for free. *@
+    <details class="season-picker">
+        <summary aria-label="@L["Select season"]">
+            <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Size="Size.Small" />
+            <span class="season-picker-label">@Label</span>
+            <MudIcon Icon="@Icons.Material.Filled.ExpandMore" Size="Size.Small" />
+        </summary>
+        <div class="season-picker-menu">
+            @foreach (var season in SeasonState.Seasons)
+            {
+                <a href="@SetUrl(season.Id)" class="season-menu-item">
                     <span>@season.Name</span>
                     @if (season.IsCurrent)
                     {
                         <span class="badge-teal">@L["Current"]</span>
                     }
-                </span>
-            </MudMenuItem>
-        }
-        <MudDivider />
-        <MudMenuItem OnClick="@(() => SeasonState.SelectAsync(null))">@L["All seasons"]</MudMenuItem>
-    </MudMenu>
+                </a>
+            }
+            <a href="@SetUrl(null)" class="season-menu-item season-menu-all">@L["All seasons"]</a>
+        </div>
+    </details>
 }

@@ -1,27 +1,26 @@
 @namespace FootballFormation.UI.Components
+@inject IStringLocalizer<Strings> L
 
-@if (Visible)
-{
-    <MudPaper Elevation="8" Class="pa-3"
-              Style="position: fixed; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); left: 12px; right: 12px; z-index: 1390; border-radius: 12px; max-width: 480px; margin: 0 auto;">
-        @* 44px hit area around a small cross: it reads as a corner dismiss, but a thumb still finds it. *@
-        <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" OnClick="DismissAsync"
-                       aria-label="@L["Close"]"
-                       Style="position: absolute; top: 2px; right: 2px; width: 44px; height: 44px;" />
-        <div class="d-flex align-center gap-3" style="padding-right: 44px;">
-            <MudIcon Icon="@Icons.Material.Filled.InstallMobile" Color="Color.Primary" />
-            <div style="min-width: 0;">
-                <MudText Typo="Typo.subtitle2">@L["Install GJS meiden app"]</MudText>
-                <MudText Typo="Typo.caption" Style="opacity: 0.8;">@L[Instruction]</MudText>
-            </div>
+@* Rendered hidden and handed to js/pwa.js, which unhides it and wires the buttons. Everything the
+   decision needs — display-mode, the user agent, a dismissal in localStorage, and whether Chrome
+   ever offered a native prompt — is known only to the browser, and this markup renders on pages
+   with no circuit to ask it over. The strings are still localized here, because the resx is the
+   server's. *@
+<div id="install-banner" class="install-banner" hidden
+     data-instruction-ios="@L["Tap Share, then \"Add to Home Screen\"."]"
+     data-instruction-android="@L["In the browser menu (⋮), tap \"Add to Home screen\"."]">
+    @* 44px hit area around a small cross: it reads as a corner dismiss, but a thumb still finds it. *@
+    <button type="button" class="install-banner-close" data-install-dismiss aria-label="@L["Close"]">
+        <MudIcon Icon="@Icons.Material.Filled.Close" Size="Size.Small" />
+    </button>
+    <div class="install-banner-body">
+        <MudIcon Icon="@Icons.Material.Filled.InstallMobile" Color="Color.Primary" />
+        <div style="min-width: 0;">
+            <MudText Typo="Typo.subtitle2">@L["Install GJS meiden app"]</MudText>
+            <MudText Typo="Typo.caption" data-install-instruction>@L["Add the app to your home screen."]</MudText>
         </div>
-        @if (ShowInstallButton)
-        {
-            <div class="d-flex justify-end mt-3">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
-                           Style="min-height: 31px; height: 31px; padding-top: 0; padding-bottom: 0;"
-                           OnClick="InstallAsync">@L["Install"]</MudButton>
-            </div>
-        }
-    </MudPaper>
-}
+    </div>
+    <div class="install-banner-actions" hidden>
+        <button type="button" class="install-banner-install" data-install-prompt>@L["Install"]</button>
+    </div>
+</div>

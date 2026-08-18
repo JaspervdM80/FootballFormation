@@ -55,11 +55,11 @@ public partial class Players
             Navigation.NavigateTo(AppRoutes.PlayerStats(args.Item.PlayerId));
     }
 
-    private async Task ShowCurrentSeason()
-    {
-        var current = SeasonState.Seasons.FirstOrDefault(s => s.IsCurrent) ?? SeasonState.Seasons.FirstOrDefault();
-        if (current is not null) await SeasonState.SelectAsync(current.Id);
-    }
+    /// <summary>Only read where the markup has already established the list is not empty.</summary>
+    private Season CurrentSeason =>
+        SeasonState.Seasons.FirstOrDefault(s => s.IsCurrent) ?? SeasonState.Seasons[0];
+
+    private string ShowCurrentSeasonUrl => AppRoutes.SetSeason(CurrentSeason.Id, AppRoutes.Players);
 
     private async Task CopyPreviousSquad()
     {

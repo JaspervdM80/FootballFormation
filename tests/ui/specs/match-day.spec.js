@@ -6,7 +6,7 @@
 // built in the formation builder has to be the lineup the live screen substitutes from.
 import { test, expect } from '../fixtures.js';
 import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
-import { chooseOption, clickFor, createMatch, gameRow, goto, openDialog, submitDialog } from '../helpers.js';
+import { chooseOption, clickFor, createMatch, gameRow, goto, gotoRendered, openDialog, submitDialog } from '../helpers.js';
 
 /** Creates a match and returns its id, read from the URL its own formation button navigates to. */
 async function matchWithId(page, opponent, options = {}) {
@@ -403,7 +403,7 @@ test('the statistics give an admin the minutes and a visitor only the split', as
   // was one line-up in one position, so their row carries the "single position" flag. Finding the
   // row at all is most of the assertion: the grid falls back to an empty-state card with no table
   // whenever it has nothing to pivot, so a broken pivot fails here before the badge check does.
-  await goto(page, '/stats/positions');
+  await gotoRendered(page, '/stats/positions');
   const gridRow = page.locator('.mud-table-body .mud-table-row', {
     has: page.locator('.pd-num', { hasText: new RegExp(`^${shirt}$`) }),
   }).first();

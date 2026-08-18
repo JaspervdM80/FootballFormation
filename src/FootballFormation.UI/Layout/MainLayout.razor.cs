@@ -1,4 +1,4 @@
-using FootballFormation.UI.Helpers;
+﻿using FootballFormation.UI.Helpers;
 using FootballFormation.UI.Navigation;
 using FootballFormation.UI.Theming;
 using Microsoft.AspNetCore.Components;
@@ -15,10 +15,7 @@ public partial class MainLayout : IDisposable
 
     [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
 
-    private bool _drawerOpen;
     private bool _mustChangePassword;
-
-    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
 
     protected override async Task OnInitializedAsync()
     {
@@ -33,16 +30,10 @@ public partial class MainLayout : IDisposable
         EnforcePasswordChange();
     }
 
-    // The drawer's nav links are plain anchors; close the drawer when one navigates
-    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
-    {
+    // The layout outlives a navigation for as long as the router is interactive, so its
+    // OnInitialized is not enough on its own to catch every one.
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) =>
         EnforcePasswordChange();
-
-        if (!_drawerOpen) return;
-
-        _drawerOpen = false;
-        _ = InvokeAsync(StateHasChanged);
-    }
 
     /// <summary>
     /// Holds an account still on the seeded password on /settings until it picks its own. This is
@@ -63,15 +54,10 @@ public partial class MainLayout : IDisposable
 
     public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
 
-    // Full reload on purpose: the circuit's culture is fixed at startup, so the
-    // cookie set by /culture/set only takes effect on a fresh page load.
-    private void SwitchCulture(string culture)
-    {
-        var returnUrl = "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
-        Navigation.NavigateTo(
-            $"/culture/set?culture={culture}&redirectUri={Uri.EscapeDataString(returnUrl)}",
-            forceLoad: true);
-    }
+    // Full reload on purpose: the circuit's culture is fixed at startup, so the cookie set by
+    // /culture/set only takes effect on a fresh page load. A link gets that for free.
+    private string CultureUrl(string culture) =>
+        AppRoutes.SetCulture(culture, "/" + Navigation.ToBaseRelativePath(Navigation.Uri));
 
     // Built from the same ClubTheme record that emits the CSS custom properties, so MudBlazor's
     // components and the hand-written styles can no longer drift apart.

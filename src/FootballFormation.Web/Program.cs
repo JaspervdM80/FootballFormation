@@ -121,7 +121,6 @@ try
     // not just the one that made it.
     builder.Services.AddSingleton<LiveMatchNotifier>();
 
-    builder.Services.AddScoped<SeasonPreference>();
     builder.Services.AddScoped<SeasonState>();
     builder.Services.AddScoped<NavigationTrail>();
 
@@ -411,6 +410,34 @@ try
                 CookieRequestCultureProvider.DefaultCookieName,
                 CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture)),
                 new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1), IsEssential = true });
+        }
+
+        return Results.LocalRedirect($"~/{redirectUri.TrimStart('/')}");
+    });
+
+    // Season picker target, the same shape as the language switcher above. A season change is a
+    // navigation rather than an event because the picker lives in the layout, which renders
+    // statically for every page — there is no circuit there to handle a click, and this endpoint
+    // has the one thing a circuit never has: a response to put a Set-Cookie on.
+    app.MapGet("/season/set", (string season, string redirectUri, HttpContext context) =>
+    {
+        // Anything unparseable is simply not stored. Parse already treats an absent cookie and a
+        // hand-edited one the same way, so a bad query string lands the visitor back where they
+        // were, on the season they already had.
+        if (season == SeasonPreference.AllSeasons || int.TryParse(season, out _))
+        {
+            context.Response.Cookies.Append(
+                SeasonPreference.CookieName,
+                season,
+                new CookieOptions
+                {
+                    // Secure is left off so this still works over the plain http:// of a local
+                    // `dotnet run` — the value is a season id, not a credential. Lax because
+                    // nothing cross-site needs to send it.
+                    MaxAge = SeasonPreference.Lifetime,
+                    SameSite = SameSiteMode.Lax,
+                    IsEssential = true,
+                });
         }
 
         return Results.LocalRedirect($"~/{redirectUri.TrimStart('/')}");

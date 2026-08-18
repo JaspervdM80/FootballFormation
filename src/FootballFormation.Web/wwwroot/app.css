@@ -547,36 +547,101 @@ html, body {
     display: none;
 }
 
-/* --- Season picker ---
-   Not scoped CSS: the component renders from both the app bar and the mobile drawer, and
-   isolation would force a duplicate stylesheet for the second placement. */
-/* Tone MudMenu's activator button down to a quiet chip that suits the dense app bar */
-.season-picker .mud-button-root {
-    padding: 4px 10px !important;
-    min-width: 0 !important;
-    border-radius: 6px !important;
-    font-size: 0.8rem !important;
-    font-weight: 500 !important;
-    text-transform: none !important;
-    white-space: nowrap;
-    color: var(--ink-muted) !important;
+/* --- Season and language pickers ---
+   Not scoped CSS: the season picker renders from both the app bar and the mobile drawer, and
+   isolation would force a duplicate stylesheet for the second placement.
+
+   Both are <details> disclosures rather than MudMenu. They render in the layout, which is
+   statically rendered on every page, so there is no circuit to open a popover from — and the
+   browser gives keyboard and screen-reader behaviour for a disclosure for free. */
+.season-picker,
+.language-picker {
+    position: relative;
 }
 
-.season-picker .mud-button-root:hover {
-    color: color-mix(in srgb, var(--ink) 80%, transparent) !important;
-    background: color-mix(in srgb, var(--ink) 4%, transparent) !important;
+.season-picker > summary,
+.language-picker > summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    /* 44px so a thumb finds it; the visual chip is smaller than the hit area. */
+    min-height: 44px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    white-space: nowrap;
+    color: var(--ink-muted);
+    cursor: pointer;
+    list-style: none;
+}
+
+/* Safari draws its own triangle through a pseudo-element the standard property does not reach. */
+.season-picker > summary::-webkit-details-marker,
+.language-picker > summary::-webkit-details-marker {
+    display: none;
+}
+
+.season-picker > summary:hover,
+.language-picker > summary:hover {
+    color: color-mix(in srgb, var(--ink) 80%, transparent);
+    background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+.season-picker-menu,
+.language-picker-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 1400;
+    min-width: 180px;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 8px;
+    background: var(--surface-card);
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--ink) 18%, transparent);
 }
 
 /* Menu rows pair the season name with its "current" pill */
-.season-menu-item {
-    display: inline-flex;
+.season-menu-item,
+.language-picker-menu > a {
+    display: flex;
     align-items: center;
     gap: 8px;
+    /* Same 44px floor as every other row a thumb has to hit. */
+    min-height: 44px;
+    padding: 0 12px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: var(--ink);
+    text-decoration: none;
+}
+
+.season-menu-item:hover,
+.language-picker-menu > a:hover {
+    background: var(--surface-card-alt);
+}
+
+/* The list and "All seasons" are different kinds of choice, so a rule separates them — this is
+   what MudDivider used to draw. */
+.season-menu-all {
+    margin-top: 4px;
+    border-top: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+    border-radius: 0 0 6px 6px;
 }
 
 /* In the drawer the picker is a block row under the title, not an app-bar chip */
 .drawer-season-picker {
     padding: 0 8px 8px;
+}
+
+/* In the drawer there is no room to the right, so the menu opens under the summary in flow. */
+.drawer-season-picker .season-picker-menu {
+    position: static;
+    box-shadow: none;
+    background: none;
+    min-width: 0;
 }
 
 /* --- Season list (settings) --- */
@@ -1068,9 +1133,92 @@ html, body {
 
 /* --- Mobile navigation & PWA safe areas --- */
 
+/* --- The drawer, which is a checkbox ---
+   No JS and no circuit: the layout is statically rendered on every page, so the open state is an
+   :checked sibling rather than a bool on a component. A drawer that depended on a script would
+   fail the way known_issues.md records for blazor.web.js — silently, and completely. */
+
+/* Visually hidden but still focusable: this is the control a keyboard or screen reader gets, and
+   display:none or visibility:hidden would take it out of the tab order with it. */
+.nav-drawer-toggle {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
 /* Hamburger only on small screens; inline nav links only on larger ones */
 .nav-hamburger {
-    display: none !important;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin-inline-start: -8px;
+    border-radius: 50%;
+    color: color-mix(in srgb, var(--ink) 80%, transparent);
+    cursor: pointer;
+}
+
+.nav-drawer-toggle:focus-visible ~ .mud-appbar .nav-hamburger {
+    outline: 2px solid var(--club-primary-bright);
+    outline-offset: 2px;
+}
+
+.app-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1300;
+    width: 260px;
+    max-width: 80vw;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    background: var(--surface-card);
+    box-shadow: 2px 0 12px color-mix(in srgb, var(--ink) 20%, transparent);
+    transform: translateX(-100%);
+    transition: transform 200ms ease;
+}
+
+.drawer-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 1299;
+    background: color-mix(in srgb, var(--ink) 40%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+}
+
+.nav-drawer-toggle:checked ~ .app-drawer {
+    transform: translateX(0);
+}
+
+.nav-drawer-toggle:checked ~ .drawer-scrim {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* The drawer is only reachable behind the hamburger, so above that breakpoint it must not be able
+   to open at all — a checkbox left checked on a resize would otherwise slide it back in. */
+@media (min-width: 701px) {
+    .app-drawer,
+    .drawer-scrim {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .app-drawer,
+    .drawer-scrim {
+        transition: none;
+    }
 }
 
 /* 700px is content-driven, not a layout tier: it is the width at which the five nav links, the
@@ -1082,7 +1230,7 @@ html, body {
     }
 
     .nav-hamburger {
-        display: inline-flex !important;
+        display: inline-flex;
     }
 
     /* The title link. Was selected as .ml-2.mr-8 — by the MudBlazor spacing utilities it happens
@@ -1690,4 +1838,88 @@ html, body {
     font-size: 0.95rem;
     text-align: center;
     padding: 24px;
+}
+
+/* --- Back arrow ---
+   An anchor rather than a MudIconButton, because it renders on pages with no circuit to dispatch a
+   click to. These rules are what gives it the icon button's look; the element MudIcon renders is
+   out of reach of a page's scoped stylesheet, which is why this lives here. */
+.back-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    color: var(--ink-subtle);
+    text-decoration: none;
+}
+
+.back-button:hover {
+    background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+/* --- Install banner ---
+   Rendered hidden by the server and unhidden by js/pwa.js, which owns every input to the decision.
+   Not MudPaper: this is in the layout, which renders statically. */
+.install-banner {
+    position: fixed;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    left: 12px;
+    right: 12px;
+    z-index: 1390;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 12px;
+    border-radius: 12px;
+    background: var(--surface-card);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--ink) 24%, transparent);
+}
+
+.install-banner[hidden],
+.install-banner-actions[hidden] {
+    display: none;
+}
+
+/* 44px hit area around a small cross: it reads as a corner dismiss, but a thumb still finds it. */
+.install-banner-close {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--ink-subtle);
+    cursor: pointer;
+}
+
+.install-banner-body {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-right: 44px;
+}
+
+.install-banner-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+.install-banner-install {
+    min-height: 44px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 6px;
+    background: var(--gradient-primary);
+    color: var(--club-on-primary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
 }

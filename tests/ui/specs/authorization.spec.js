@@ -6,7 +6,7 @@
 // that should not be there is a bug even when pressing it would be refused.
 import { test, expect } from '../fixtures.js';
 import { VISITOR_STATE } from '../playwright.config.js';
-import { goto } from '../helpers.js';
+import { goto, gotoRendered } from '../helpers.js';
 import { FIXTURE_MATCH } from '../global-setup.js';
 
 test.describe('an anonymous visitor', () => {
@@ -87,10 +87,14 @@ test.describe('an admin', () => {
   });
 
   test('reaches the admin-only routes directly', async ({ page }) => {
-    for (const [path, heading] of [
-      ['/settings', 'Match Preferences'], ['/users', 'Users'], ['/stats/positions', 'Position Development'],
+    // /stats/positions carries its only handler on a MudTable, which binds no `_bl_` — see
+    // gotoRendered. It is still an admin-only route, which is what this test is about.
+    for (const [path, heading, open] of [
+      ['/settings', 'Match Preferences', goto],
+      ['/users', 'Users', goto],
+      ['/stats/positions', 'Position Development', gotoRendered],
     ]) {
-      await goto(page, path);
+      await open(page, path);
       await expect(page).toHaveURL(new RegExp(`${path}$`));
       await expect(page.getByRole('heading', { name: heading, exact: false }).first()).toBeVisible();
     }

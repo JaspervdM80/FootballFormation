@@ -13,7 +13,6 @@ namespace FootballFormation.UI.Components;
 public partial class BackButton
 {
     [Inject] private NavigationTrail Trail { get; set; } = null!;
-    [Inject] private NavigationManager Navigation { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
     /// <summary>
@@ -30,6 +29,4 @@ public partial class BackButton
         Trail.Previous is { } previous && AppNav.PageNameKey(previous) is not null ? previous : Fallback;
 
     private string Label => L["Back to {0}", L[AppNav.PageNameKey(Target) ?? "Start"]];
-
-    private void GoBack() => Navigation.NavigateTo(Target);
 }

@@ -3,7 +3,7 @@
 // This is the one spec that does not run in the pinned English of the rest of the suite: it starts
 // from no culture cookie at all, which is what a parent following a shared link actually gets.
 import { test, expect } from '../fixtures.js';
-import { clickFor, goto } from '../helpers.js';
+import { goto } from '../helpers.js';
 
 // No storage state at all — not even the language cookie the other specs carry.
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -20,10 +20,11 @@ test('a first visit is in Dutch', async ({ page }) => {
 test('the language switcher moves the whole app to English and it sticks', async ({ page }) => {
   await goto(page, '/players');
 
-  const english = page.locator('.mud-popover-open').getByText('English', { exact: true });
-  // MudMenu puts AriaLabel straight on the activator button, so this is the button — no descendant
-  // to reach for, unlike the row menus on /players where the label does not survive.
-  await clickFor(page.getByLabel('Language'), () => expect(english).toBeVisible());
+  // A <details> disclosure of plain links: opening it is a local toggle the browser does itself,
+  // and choosing a language is a navigation to /culture/set rather than a click to retry.
+  const english = page.locator('.language-picker-menu').getByText('English', { exact: true });
+  await page.locator('.language-picker > summary').click();
+  await expect(english).toBeVisible();
   await english.click();
 
   // Switching reloads the page: the circuit's culture is fixed when it starts, so the cookie only

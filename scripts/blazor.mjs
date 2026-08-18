@@ -18,14 +18,25 @@
 // shared: they are separate npm packages with different dependencies, and a dozen lines duplicated
 // beats a cross-package import. Change one, look at the other.
 
-/** True once Blazor has bound handlers on this page — see the note above. */
-const HANDLERS_BOUND = () => [...document.querySelectorAll('button,a,input')]
+/** True once Blazor has bound handlers on this page — see the note above. Every element, not just
+    button/a/input: several pages carry their only handler on a div or a table row. */
+const HANDLERS_BOUND = () => [...document.querySelectorAll('*')]
   .some(el => el.getAttributeNames().some(name => name.startsWith('_bl_')));
 
 /** Navigates and waits for the page to be interactive rather than merely painted. */
 export async function goto(page, url) {
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(HANDLERS_BOUND, null, { timeout: 30_000 });
+}
+
+/**
+ * Navigates and waits for the markup only, for a page with no handler to wait for: one rendered
+ * without a circuit, or one whose only handlers are splatted onto MudBlazor components. Blazor
+ * stamps `_bl_` on handlers declared on an HTML element and nowhere else, so `goto` would wait
+ * thirty seconds on those pages for a signal that never arrives.
+ */
+export async function gotoRendered(page, url) {
+  await page.goto(url, { waitUntil: 'domcontentloaded' });
 }
 
 /**

@@ -7,9 +7,17 @@
 <MudSnackbarProvider />
 
 <MudLayout>
+    @* The drawer's open state is this checkbox, not component state: the layout renders statically
+       on every page, so there is no circuit here to hold a bool or to handle a click. It is first
+       because app.css reaches the drawer and the scrim from it with a sibling combinator, and it
+       stays focusable — visually hidden, but the control a keyboard or screen reader gets. The two
+       labels are the visual affordances and carry no semantics of their own. *@
+    <input type="checkbox" id="nav-drawer" class="nav-drawer-toggle" aria-label="@L["Menu"]" />
+
     <MudAppBar Elevation="0" Fixed="true" Dense="true" Style="background: var(--gradient-appbar); border-bottom: 1px solid color-mix(in srgb, var(--ink) 5%, transparent); padding-top: env(safe-area-inset-top, 0px);">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Class="nav-hamburger" Edge="Edge.Start"
-                       Style="color: color-mix(in srgb, var(--ink) 80%, transparent);" OnClick="ToggleDrawer" aria-label="Menu" />
+        <label for="nav-drawer" class="nav-hamburger" aria-hidden="true">
+            <MudIcon Icon="@Icons.Material.Filled.Menu" />
+        </label>
         @* The title is the home link — which is why the menu has no Start item, in either rendering *@
         <a href="@AppRoutes.Home" class="app-title-link ml-2 mr-8" aria-label="@L["Start"]">
             <span class="app-title-logo" aria-hidden="true"></span>
@@ -20,11 +28,17 @@
         </div>
         <MudSpacer />
         <SeasonPicker Compact="true" />
-        <MudMenu Icon="@Icons.Material.Filled.Language" Size="Size.Small" Dense="true"
-                 AriaLabel="Language" Style="color: var(--ink-muted);">
-            <MudMenuItem OnClick="@(() => SwitchCulture("nl"))">Nederlands</MudMenuItem>
-            <MudMenuItem OnClick="@(() => SwitchCulture("en"))">English</MudMenuItem>
-        </MudMenu>
+        @* Same reasoning as the season picker: a disclosure of plain links, because MudMenu needs a
+           popover provider and a circuit, and this layout has neither. *@
+        <details class="language-picker">
+            <summary aria-label="@L["Language"]">
+                <MudIcon Icon="@Icons.Material.Filled.Language" Size="Size.Small" />
+            </summary>
+            <div class="language-picker-menu">
+                <a href="@CultureUrl("nl")">Nederlands</a>
+                <a href="@CultureUrl("en")">English</a>
+            </div>
+        </details>
         <AuthorizeView Roles="@AppRoles.Admin">
             <Authorized>
                 <div class="d-flex align-center gap-2">
@@ -48,8 +62,10 @@
         </AuthorizeView>
     </MudAppBar>
 
-    <MudDrawer @bind-Open="_drawerOpen" Variant="@DrawerVariant.Temporary" Elevation="2"
-               Style="padding-top: env(safe-area-inset-top, 0px);">
+    @* Dismisses the drawer by tapping outside it — the label is the checkbox's second control. *@
+    <label for="nav-drawer" class="drawer-scrim" aria-hidden="true"></label>
+
+    <aside class="app-drawer" style="padding-top: env(safe-area-inset-top, 0px);">
         <a href="@AppRoutes.Home" class="app-title-link pa-4" aria-label="@L["Start"]">
             <span class="app-title-logo" aria-hidden="true"></span>
             <span class="app-title-text">GJS Meiden</span>
@@ -60,7 +76,7 @@
         <MudNavMenu>
             <NavItems ShowIcons="true" />
         </MudNavMenu>
-    </MudDrawer>
+    </aside>
 
     @* Horizontal padding is a clamp rather than a flat 24px: a 320px phone kept only 272px of
        content. The left/right safe-area insets matter too — viewport-fit=cover means landscape on

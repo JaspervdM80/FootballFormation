@@ -67,8 +67,8 @@
         </MudText>
         @if (SeasonState.Seasons.Count > 0)
         {
-            <MudButton Variant="Variant.Filled" Class="btn-gold mt-4" OnClick="ShowCurrentSeason">
-                @L["Show {0}", (SeasonState.Seasons.FirstOrDefault(s => s.IsCurrent) ?? SeasonState.Seasons[0]).Name]
+            <MudButton Variant="Variant.Filled" Class="btn-gold mt-4" Href="@ShowCurrentSeasonUrl" Target="_self">
+                @L["Show {0}", CurrentSeason.Name]
             </MudButton>
         }
     </MudPaper>

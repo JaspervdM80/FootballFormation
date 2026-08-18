@@ -42,12 +42,20 @@
   chips have `touch-action: none` (app.css), so a scroll gesture cannot start on a chip.
 
 ## InstallBanner (PWA install prompt)
-- `Components/InstallBanner.razor(.cs)`, rendered once in `MainLayout`
-- Shows a fixed bottom banner on mobile browsers when the app is not installed
-  (standalone) and not previously dismissed (localStorage `pwa-install-dismissed`)
-- Android: button triggers the native install prompt via `window.pwaInstall` (js/pwa.js,
-  which captures `beforeinstallprompt`); falls back to ⋮-menu instructions if unavailable
+- `Components/InstallBanner.razor`, rendered once in `MainLayout`. **Markup only** — the server
+  renders it `hidden`, with the localized strings for every branch already in it, and `js/pwa.js`
+  decides whether to show it and wires the two buttons.
+- That split is not a preference: every input to the decision (`display-mode`, the user agent, a
+  dismissal in `localStorage`, whether Chrome ever fired `beforeinstallprompt`) is known only to the
+  browser, and the banner renders in the layout, which is statically rendered on every page and so
+  has no circuit to ask over. There is no `.razor.cs` and no JS interop left.
+- Shows on mobile browsers when the app is not installed (standalone) and not previously dismissed
+  (localStorage `pwa-install-dismissed`)
+- Android: the button triggers the native install prompt from the captured `beforeinstallprompt`
+  event; falls back to ⋮-menu instructions if there is none
 - iOS: no install API exists — shows "Tap Share, then Add to Home Screen" text instead
+- The strings for the branches the server cannot pick between ride along as `data-instruction-*`
+  attributes, so the resx stays the one place a translation lives.
 
 ## Position Fit Colors (5 tiers)
 | Tier | CSS class | Color | Example |
@@ -363,6 +371,24 @@ drifted once.
 - The class string is built in `@code`, not in the attribute: a double-quoted string inside an
   `@()` inside a double-quoted attribute value is a Razor parse error, not a style preference.
 
+## The drawer is a checkbox (`Layout/MainLayout.razor`)
+Below 700px the app-bar sections move into a drawer, and its open state is an
+`<input type="checkbox" id="nav-drawer">` at the top of `MudLayout`, not a bool on a component.
+
+- **No circuit and no script.** The layout is statically rendered on every page, so there is nothing
+  to hold a `bool` or handle an `OnClick`; and a drawer that depended on a script would fail exactly
+  the way `known_issues.md` records for an empty `blazor.web.js` — silently, and completely. `.app-drawer`
+  and `.drawer-scrim` slide in from `.nav-drawer-toggle:checked ~ …` rules in app.css.
+- The checkbox is **visually hidden but still focusable** (`clip-path`, not `display: none`): it is
+  the control a keyboard or screen reader gets, and it carries the "Menu" label. The hamburger and
+  the scrim are `<label for="nav-drawer">` — affordances with no semantics of their own.
+- Above the breakpoint the drawer and scrim are `display: none`, so a checkbox left checked before a
+  resize cannot slide it back in.
+- **The one thing JS still does**: enhanced navigation patches the DOM rather than replacing it, so
+  the checkbox survives a navigation with `checked` still set and the drawer would stay open over
+  the new page. `js/pwa.js` unchecks it on Blazor's `enhancedload`. If that never runs the only cost
+  is a drawer that stays open across a navigation.
+
 ## Season picker (`Components/SeasonPicker.razor`)
 The global season filter, backed by the scoped `SeasonState` (see
 [patterns.md](patterns.md#ui-state-services)).
@@ -373,6 +399,11 @@ The global season filter, backed by the scoped `SeasonState` (see
 - **Below 700px only the drawer copy shows** — `.mud-appbar .season-picker` is hidden, because the
   app bar is already carrying the hamburger, title, language menu and login on a phone. The rule
   targets `.mud-appbar` specifically; the drawer instance lives in `.drawer-season-picker`.
+- **A `<details>` disclosure of plain links, not a `MudMenu`.** It renders in the layout, which is
+  statically rendered on every page, so there is no circuit to open a popover from and no handler to
+  dispatch a click to — and a disclosure arrives keyboard- and screen-reader-correct for free.
+  Choosing a season is a navigation to `/season/set` (`AppRoutes.SetSeason`), which stores the
+  cookie and redirects back; the language switcher next to it works the same way.
 - It loads the season list itself (`SeasonState.EnsureLoadedAsync()` in `OnInitializedAsync`) —
   otherwise it would render nothing on the start page, where no page loads seasons. The call is
   memoized, so on the season-aware pages it shares the page's own query rather than adding one.
@@ -383,8 +414,8 @@ The global season filter, backed by the scoped `SeasonState` (see
   `/games`, `/stats`, `/stats/positions`, `/players` (the squad is per season), `/players/{id}/stats`,
   and `/` — the start page filters nothing, but it is where a visit begins, so the season can be set
   before navigating. Hidden on `/settings`, where it would be misleading while the season list itself
-  is edited, and on the single-game routes, where it is inert. The component subscribes to
-  `NavigationManager.LocationChanged` so visibility follows navigation.
+  is edited, and on the single-game routes, where it is inert. Visibility is recomputed on every
+  render, and every navigation is a render, so nothing has to watch for one.
 - Selecting a season **never** writes `Season.IsCurrent` — the picker is reachable by anonymous
   visitors, and `IsCurrent` is shared state owned by the admin on `/settings`. It goes in a cookie
   for eight hours instead, which is per-browser, which is the scope a view choice belongs at — see
@@ -427,6 +458,10 @@ Rendered by `PageHeader` when you pass `BackFallback`. It returns to the page th
 from** — `NavigationTrail`, see [patterns.md](patterns.md#ui-state-services) — and names that
 destination in `aria-label` + `title` ("Terug naar Seizoen"). Icon-only by design; the tooltip is
 the whole affordance, which is why the label and the destination are resolved from one expression.
+
+**A plain `<a href>` styled by `.back-button` in app.css**, not a `MudIconButton` with an `OnClick`:
+it renders on pages that have no circuit to dispatch a click to. The rule lives in app.css because
+the element `MudIcon` renders is out of reach of a page's scoped stylesheet.
 
 `BackFallback` is only used when there is nothing behind: a shared link, a bookmark, a refresh.
 Pick the page someone landing cold most likely wants — `/players` for player stats, `/games` for
