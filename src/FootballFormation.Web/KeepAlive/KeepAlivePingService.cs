@@ -9,18 +9,15 @@ namespace FootballFormation.Web.KeepAlive;
 /// The ping has to reach the public hostname, not <c>localhost</c> or the <c>.internal</c> address:
 /// only traffic that passes through Fly's edge counts as load for its autostop decision. It reuses
 /// the existing <c>/health</c> endpoint rather than a dedicated one — already anonymous, already
-/// cheap, already the thing the deploy workflow itself polls.
-/// </para>
-/// <para>
-/// The ping's own request must never count as "activity" — <c>Program.cs</c> excludes the
-/// <c>/health</c> path from <see cref="KeepAliveTracker.Touch"/> for exactly this reason. Without
-/// that exclusion this loop would perpetually renew its own 30-minute window and the machine would
-/// never suspend.
+/// cheap. The ping's own request must not count as activity, or this loop would renew its own
+/// window forever — <c>Program.cs</c> excludes <c>/health</c> from <see cref="KeepAliveTracker.Touch"/>
+/// for that reason.
 /// </para>
 /// </summary>
 public sealed class KeepAlivePingService(
     IHttpClientFactory httpClientFactory,
     KeepAliveTracker tracker,
+    TimeProvider time,
     ILogger<KeepAlivePingService> logger) : BackgroundService
 {
     private static readonly TimeSpan Window = TimeSpan.FromMinutes(30);
@@ -33,7 +30,7 @@ public sealed class KeepAlivePingService(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        using var timer = new PeriodicTimer(PollInterval);
+        using var timer = new PeriodicTimer(PollInterval, time);
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
             if (!tracker.RecentlyActive(Window))

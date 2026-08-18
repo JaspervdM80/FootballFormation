@@ -28,8 +28,9 @@ swap_size_mb = 512
   # no reconnect at all". A resumed machine still has them, so the rejoin can actually happen.
   #
   # The idle period before this fires is roughly five minutes and Fly does not expose it, so it
-  # cannot be lengthened. Suspend needs RAM <= 2G — this VM is 512mb — and leaves the mounted
-  # volume untouched.
+  # cannot be lengthened directly — see KeepAlivePingService (src/FootballFormation.Web/KeepAlive/)
+  # for how the app instead keeps itself pinged for up to 30 minutes after the last real visitor.
+  # Suspend needs RAM <= 2G — this VM is 512mb — and leaves the mounted volume untouched.
   auto_stop_machines = "suspend"
   auto_start_machines = true
   min_machines_running = 0

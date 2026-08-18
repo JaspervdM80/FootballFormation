@@ -7,7 +7,11 @@ namespace FootballFormation.Web.KeepAlive;
 /// </summary>
 public sealed class KeepAliveTracker(TimeProvider time)
 {
-    private long _lastActivityTicks = time.GetUtcNow().UtcTicks;
+    // Not seeded from "now": a fresh boot has no visitor yet, only the request that triggered
+    // Fly's auto_start — and that request touches this the same way any other one does. Starting
+    // the window open here would keep every deploy or scheduled resume awake for 30 minutes with
+    // nobody there to see it.
+    private long _lastActivityTicks = DateTimeOffset.MinValue.UtcTicks;
 
     public void Touch() => Interlocked.Exchange(ref _lastActivityTicks, time.GetUtcNow().UtcTicks);
 

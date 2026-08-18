@@ -210,10 +210,13 @@ try
 
     builder.Services.AddSingleton<KeepAliveTracker>();
 
-    // Only outside Development: a local `dotnet run` must never ping the real production site just
-    // because someone is developing on their own machine. See KeepAlivePingService for why this
-    // exists and why it has to reach the public hostname rather than staying in-process.
-    if (!builder.Environment.IsDevelopment())
+    // Gated on actually running on Fly, not on !IsDevelopment(): a published build run from a
+    // laptop (`dotnet publish` + the DLL, exactly what CI's browser jobs and a manual smoke test
+    // do) is ASPNETCORE_ENVIRONMENT=Production too, and must not start pinging the live site every
+    // two minutes with no way to notice or turn it off. FLY_APP_NAME is set by the platform itself
+    // on every machine, never locally — same idea as the WEBSITE_INSTANCE_ID check in
+    // DatabasePathHelper. See KeepAlivePingService for why this exists.
+    if (Environment.GetEnvironmentVariable("FLY_APP_NAME") is { Length: > 0 })
     {
         builder.Services.AddHttpClient("KeepAlive", client => client.Timeout = TimeSpan.FromSeconds(15));
         builder.Services.AddHostedService<KeepAlivePingService>();
@@ -319,10 +322,13 @@ try
     // It reports the commit it was built from as well, because a 200 alone cannot tell the deploy
     // whether the container answering is the one it just built — see HealthReport.
     //
-    // Polled once, by the deploy workflow's smoke step. There is deliberately no
-    // `[[http_service.checks]]` block in fly.toml — Fly's proxy checks count towards the
-    // concurrency its autostop decision reads, so a check every few seconds holds the machine
-    // awake and quietly undoes scale-to-zero (see docs/deployment.md).
+    // Polled once by the deploy workflow's smoke step, and every two minutes by
+    // KeepAlivePingService for as long as a real visitor was seen recently — see the middleware
+    // above and docs/deployment.md. There is still deliberately no `[[http_service.checks]]` block
+    // in fly.toml: a proxy-level check runs unconditionally and counts towards the concurrency
+    // Fly's autostop reads, so it would hold the machine awake around the clock. The keep-alive
+    // ping only runs behind KeepAliveTracker's window, and this file excludes /health from what
+    // opens that window, so the ping cannot renew itself and undo scale-to-zero the same way.
     app.MapGet("/health", async (IDbContextFactory<AppDbContext> dbFactory, CancellationToken ct) =>
     {
         HealthStatus status;
