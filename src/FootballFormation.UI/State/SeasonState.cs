@@ -1,4 +1,4 @@
-﻿using FootballFormation.Core.Models;
+using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
 
 namespace FootballFormation.UI.State;

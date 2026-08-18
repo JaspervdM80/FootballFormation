@@ -1,4 +1,4 @@
-﻿using FootballFormation.Core.Models;
+using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Navigation;
 using Microsoft.AspNetCore.Components;

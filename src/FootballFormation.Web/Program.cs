@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Security.Claims;
 using System.Threading.RateLimiting;
 using FootballFormation.Core.Data;
@@ -403,6 +403,16 @@ try
         Log.Warning("Dev login endpoint mapped at /dev/login (Development + loopback only)");
     }
 
+    // Where the two settings endpoints below send the visitor afterwards: back to the page they were
+    // on. Validated rather than trusted — the query string is public, and LocalRedirect answers a
+    // protocol-relative or backslash-prefixed target with a 500 rather than a refusal, so
+    // `?redirectUri=%5Cevil.example` took the endpoint down instead of being ignored.
+    // Stripping every leading slash and backslash is what makes the rest safe: whatever is left
+    // cannot begin a scheme-relative "//host" or the "/\host" browsers treat the same way, so the
+    // result is always a path on this site.
+    static IResult ReturnTo(string? redirectUri) =>
+        Results.LocalRedirect("~/" + (redirectUri ?? "").TrimStart('/', '\\'));
+
     // Language switcher target: persists the choice in the culture cookie, then
     // reloads so the whole circuit restarts in the new culture.
     app.MapGet("/culture/set", (string culture, string redirectUri, HttpContext context) =>
@@ -415,7 +425,7 @@ try
                 new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1), IsEssential = true });
         }
 
-        return Results.LocalRedirect($"~/{redirectUri.TrimStart('/')}");
+        return ReturnTo(redirectUri);
     });
 
     // Season picker target, the same shape as the language switcher above. A season change is a
@@ -443,7 +453,7 @@ try
                 });
         }
 
-        return Results.LocalRedirect($"~/{redirectUri.TrimStart('/')}");
+        return ReturnTo(redirectUri);
     });
 
     app.MapStaticAssets();

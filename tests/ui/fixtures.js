@@ -12,7 +12,19 @@ const IGNORED = [
   /manifest\.webmanifest/i,
   /Failed to load resource.*favicon/i,
   /service ?worker/i,
+  /No Popover Container found/i,
 ];
+
+// MudBlazor's popover helper observes the first `.mud-popover-provider` in the document and logs
+// when there is none. Its observer outlives an enhanced navigation, so moving from an interactive
+// page to a statically rendered one — which has no provider, and needs none — makes it complain a
+// few seconds later. Nothing is broken: the pages it fires on open no popovers at all.
+//
+// Not fixed by putting a placeholder container in the layout: the helper takes the *first* match in
+// document order, so on an interactive page it could then observe the empty placeholder instead of
+// the real provider, and popovers would be quietly misplaced. A log line is the better trade.
+// **If this ever fires on a page that does open a popover, it is a real failure — narrow the
+// pattern rather than widening it.**
 
 export const test = base.extend({
   page: async ({ page }, use, testInfo) => {

@@ -130,6 +130,15 @@ Avoid repeating these mistakes:
   static one leaves it a no-op. Moving focus to the `h1` after a navigation is a real accessibility
   affordance and this change lost it — worth restoring with something that works under enhanced
   navigation, but markup that looks like it moves focus and does not is worse than none.
+- **"No Popover Container found with class mud-popover-provider" on a statically rendered page.**
+  MudBlazor's popover helper observes the first `.mud-popover-provider` in the document, and its
+  observer outlives an enhanced navigation — so moving from an interactive page to a static one
+  makes it log a few seconds later. Benign: those pages open no popovers. Filtered in
+  `tests/ui/fixtures.js` and `scripts/visual-check.mjs`, because the console-error guard would
+  otherwise fail intermittently, depending on how long a test lingers. **A placeholder container in
+  the layout is not the fix** — the helper takes the *first* match in document order, so an
+  interactive page could end up observing the empty placeholder instead of its real provider and
+  misplacing every popover. If this ever fires on a page that *does* open one, it is a real failure.
 - **Dialogs not showing**: `MudDialogProvider` must be inside an interactive render mode, and so
   must `MudPopoverProvider` and `MudSnackbarProvider`. They used to sit in `MainLayout`, which
   worked while `<Routes>` carried `@rendermode="InteractiveServer"` and every page was

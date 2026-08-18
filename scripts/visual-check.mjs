@@ -64,7 +64,21 @@ const context = await browser.newContext({
 const page = await context.newPage();
 
 const errors = [];
-page.on('console', m => { if (m.type() === 'error') errors.push(`[console] ${m.text()}`); });
+// MudBlazor's popover helper observes the first `.mud-popover-provider` in the document and logs
+// when there is none. Its observer outlives an enhanced navigation, so moving from an interactive
+// page to a statically rendered one — which has no provider, and needs none — makes it complain a
+// few seconds later. Nothing is broken: the pages it fires on open no popovers at all.
+//
+// Not fixed by putting a placeholder container in the layout: the helper takes the *first* match in
+// document order, so on an interactive page it could then observe the empty placeholder instead of
+// the real provider, and popovers would be quietly misplaced. A log line is the better trade.
+// **If this ever fires on a page that does open a popover, it is a real failure — narrow the
+// pattern rather than widening it.**
+const IGNORED = [/No Popover Container found/i];
+
+page.on('console', m => {
+  if (m.type() === 'error' && !IGNORED.some(p => p.test(m.text()))) errors.push(`[console] ${m.text()}`);
+});
 page.on('pageerror', e => errors.push(`[pageerror] ${e.message}`));
 
 // Development-only, loopback-only route that mints the same principal /auth/login does. It lands

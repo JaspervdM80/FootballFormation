@@ -45,13 +45,13 @@ public sealed class NavigationTrail(NavigationManager navigation, RequestContext
     }
 
     /// <summary>
-    /// Navigate away from a page that failed to load, replacing it rather than stacking on top of
-    /// it. Without this the redirect target's back button would point at the page that just failed
-    /// and bounce the visitor straight into it — and so would the browser's own back button, which
-    /// is why the history entry is replaced too.
+    /// Navigate away from a page that failed to load, replacing the history entry rather than
+    /// stacking on it, so the browser's own back button does not bounce the visitor straight into
+    /// the page that just failed.
     /// <para>
-    /// During a static render <c>replace</c> is moot: <c>NavigateTo</c> becomes a real redirect,
-    /// which adds no history entry of its own.
+    /// Moot during a static render, where <c>NavigateTo</c> becomes a real redirect and adds no
+    /// history entry of its own — which is most of the time now. It stays because the pages that
+    /// call it are reached in both modes.
     /// </para>
     /// </summary>
     public void Redirect(string path) => navigation.NavigateTo(path, replace: true);

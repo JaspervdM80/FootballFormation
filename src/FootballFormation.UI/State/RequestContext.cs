@@ -1,4 +1,4 @@
-﻿namespace FootballFormation.UI.State;
+namespace FootballFormation.UI.State;
 
 /// <summary>
 /// What the HTTP request knew, captured once per DI scope so the components rendered in that scope

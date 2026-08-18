@@ -1,4 +1,4 @@
-﻿using FootballFormation.Core.Models;
+using FootballFormation.Core.Models;
 using FootballFormation.Core.Reporting;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;

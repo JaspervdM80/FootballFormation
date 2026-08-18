@@ -44,10 +44,9 @@ export async function goto(page, path) {
  *
  * Two kinds of page qualify, and neither is broken:
  *   - a page rendered without a circuit at all;
- *   - a page that *is* interactive but whose only handlers are splatted onto MudBlazor components
- *     (`@onclick` on a MudPaper, `OnRowClick` on a MudTable). Those work — the click navigates —
- *     but Blazor stamps `_bl_` only on handlers declared on an HTML element, so `goto` would wait
- *     thirty seconds for a signal that is never coming.
+ *   - a page that *is* interactive but renders no MudBlazor control for this visitor — its own
+ *     `<button @onclick>` and `<div @onclick>` work perfectly and are stamped with nothing, so
+ *     `goto` would wait thirty seconds for a signal that is never coming. See HANDLERS_BOUND.
  *
  * Do not reach for this to make a flaky click pass: on a page that does bind handlers, waiting for
  * them is the whole point, and skipping the wait puts the click back in the prerender window.

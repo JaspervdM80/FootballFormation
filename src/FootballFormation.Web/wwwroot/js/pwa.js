@@ -45,6 +45,16 @@
         const instruction = banner.querySelector('[data-install-instruction]');
         const actions = banner.querySelector('.install-banner-actions');
 
+        // Enhanced navigation patches the DOM rather than replacing it, so this runs again over the
+        // same two buttons. Wiring them a second time means every handler fires on one click, and
+        // the extra calls hit a deferredPrompt the first one has already spent — which Chrome
+        // rejects, breaking the native install flow for anyone who browsed before deciding.
+        if (banner.dataset.wired) {
+            banner.hidden = false;
+            return;
+        }
+        banner.dataset.wired = '1';
+
         // iOS has no install API at all, so it gets the Share → Add to Home Screen wording and no
         // button. Everywhere else the button is worth showing even before beforeinstallprompt has
         // fired, because it can still fall back to instructions when pressed.

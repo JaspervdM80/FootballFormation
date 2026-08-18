@@ -32,9 +32,9 @@ export async function goto(page, url) {
 
 /**
  * Navigates and waits for the markup only, for a page with no handler to wait for: one rendered
- * without a circuit, or one whose only handlers are splatted onto MudBlazor components. Blazor
- * stamps `_bl_` on handlers declared on an HTML element and nowhere else, so `goto` would wait
- * thirty seconds on those pages for a signal that never arrives.
+ * without a circuit, or one that renders no MudBlazor control for this visitor. Blazor stamps
+ * `_bl_` on MudBlazor's own controls and not on a plain `<button @onclick>` of ours, so `goto`
+ * would wait thirty seconds on those pages for a signal that never arrives.
  */
 export async function gotoRendered(page, url) {
   await page.goto(url, { waitUntil: 'domcontentloaded' });

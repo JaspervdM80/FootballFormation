@@ -1,4 +1,4 @@
-﻿using FootballFormation.Core.Models;
+using FootballFormation.Core.Models;
 using FootballFormation.Core.Reporting;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
@@ -6,6 +6,7 @@ using FootballFormation.UI.Navigation;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging;
 
 namespace FootballFormation.UI.Pages;
 
@@ -15,6 +16,7 @@ public partial class PlayerStats
     [Inject] private SeasonSquadService SquadService { get; set; } = null!;
     [Inject] private GameService GameService { get; set; } = null!;
     [Inject] private NavigationTrail Trail { get; set; } = null!;
+    [Inject] private ILogger<PlayerStats> Logger { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
     private readonly PageNotice _notice = new();
@@ -47,8 +49,11 @@ public partial class PlayerStats
         // Not a missing player — the visitor left. Redirecting would move them again.
         if (playerResult.IsCancelled) return;
 
-        if (!_notice.ReportFailure(L, playerResult))
+        if (playerResult.IsFailure)
         {
+            // A notice here would render on a page that is about to redirect away, so the log is
+            // the only place this can be said — same as the match report's missing game.
+            Logger.LogWarning("Player {PlayerId} not found for statistics", PlayerId);
             Trail.Redirect(AppRoutes.Players);
             return;
         }

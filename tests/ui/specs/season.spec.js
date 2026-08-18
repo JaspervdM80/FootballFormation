@@ -71,3 +71,20 @@ test('the server renders the stored season, without waiting to be told by the br
   expect(await prerendered(), 'the rendered HTML should already carry the stored choice')
     .toContain(LABEL);
 });
+
+// /players offers its own way into a season when "All seasons" is chosen, and it is the one link to
+// /season/set that is not in the picker. It went dead once already: enhanced navigation kept the
+// page's circuit on the old season while the app bar showed the new one, so the button visibly did
+// nothing. Target="_self" is not an opt-out — only data-enhance-nav="false" is.
+test('the squad page offers a way out of "All seasons", and taking it works', async ({ page, context }) => {
+  await context.addCookies([{ name: COOKIE, value: 'all', url: BASE_URL }]);
+  await goto(page, '/players');
+  await expect(page.getByText('Select a season to manage its squad.')).toBeVisible();
+
+  await page.getByRole('link', { name: /Show/ }).click();
+  await page.waitForURL(url => !url.pathname.startsWith('/season/set'));
+
+  // The squad itself, not just the picker's label: the label is rendered by the static chrome and
+  // would have flipped either way, which is exactly how this hid.
+  await expect(page.locator('.players-table')).toBeVisible();
+});
