@@ -12,10 +12,17 @@ namespace FootballFormation.UI.State;
 /// visitors can reach the picker. Per-browser is exactly the scope this belongs at.
 /// </para>
 /// </summary>
-public class SeasonState(SeasonService seasons, SeasonPreference preference)
+public class SeasonState(SeasonService seasons, SeasonPreference preference, RequestContext request)
 {
     private Task? _loading;
-    private StoredSeason? _restored;
+
+    /// <summary>
+    /// The remembered choice, off the request that created this scope. Both scopes a page is
+    /// rendered in have one — the static render has the page request, and a circuit is created
+    /// during the <c>/_blazor</c> request, which carries the same cookies — so neither pass has to
+    /// ask the browser and the two cannot disagree.
+    /// </summary>
+    private StoredSeason? _restored = SeasonPreference.Parse(request.SeasonCookie);
 
     public List<Season> Seasons { get; private set; } = [];
 
@@ -25,18 +32,6 @@ public class SeasonState(SeasonService seasons, SeasonPreference preference)
     public Season? SelectedSeason => Seasons.FirstOrDefault(s => s.Id == SelectedSeasonId);
 
     public event Action? OnChanged;
-
-    /// <summary>
-    /// Hands over the season cookie from the request that is rendering the page. <c>Routes</c>
-    /// calls this, which is what makes it work in both passes: the prerender reads the cookie off
-    /// <c>HttpContext</c>, and the value travels to the circuit as a root-component parameter, so
-    /// both passes resolve the same season and neither has to ask the browser.
-    /// <para>
-    /// Must land before <see cref="EnsureLoadedAsync"/>, and does: <c>Routes.OnInitialized</c> runs
-    /// before the router renders the page that calls it.
-    /// </para>
-    /// </summary>
-    public void Restore(string? cookieValue) => _restored = SeasonPreference.Parse(cookieValue);
 
     /// <summary>
     /// Loads the season list once per circuit. MainLayout and the page both need it during their

@@ -1,5 +1,4 @@
-@using Microsoft.Extensions.Localization
-@using FootballFormation.UI.State
+﻿@using Microsoft.Extensions.Localization
 @inject IStringLocalizer<FootballFormation.UI.Strings> L
 <!DOCTYPE html>
 <html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
@@ -31,10 +30,7 @@
 </head>
 
 <body>
-    @* The season cookie is read here, off the request that is already carrying it, rather than
-       asked of the browser once the circuit is up — see SeasonPreference. *@
-    <Routes @rendermode="InteractiveServer"
-            StoredSeason="@HttpContext.Request.Cookies[SeasonPreference.CookieName]" />
+    <Routes @rendermode="InteractiveServer" />
     @* Blazor toggles the classes on this element; styled dark in app.css and
        auto-reloaded by pwa.js so resuming a suspended phone app just works. *@
     <div id="components-reconnect-modal">@L["Reconnecting..."]</div>
@@ -88,7 +84,3 @@
 </body>
 
 </html>
-
-@code {
-    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
-}

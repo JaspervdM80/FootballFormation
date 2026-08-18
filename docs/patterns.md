@@ -314,16 +314,17 @@ the visitor has been. The pattern, taking `SeasonState` as the worked example:
   `localStorage`.
 - **The write goes through the browser and the read does not**, and the asymmetry is the whole
   design. Only `js/season.js` can set the cookie, because a circuit that is already up has no
-  response left to put a `Set-Cookie` on. Reading is the opposite: the cookie arrives on the
-  request that renders the page, so `App.razor` reads it off `HttpContext` and passes it to
-  `Routes` as a **root-component parameter**, which Blazor serialises into the component marker and
-  hands back when the circuit connects. `Routes.OnInitialized` calls `SeasonState.Restore` in both
-  passes, before the router renders anything.
-  - **This is what the prerender/circuit scope split costs if you get it wrong.** They are
-    different DI scopes, so a value the prerender reads is gone by the time the page is
-    interactive, and `IHttpContextAccessor.HttpContext` is null in a circuit. Asking the browser
-    for the cookie instead — the obvious first cut — puts a round trip in front of the first
-    interactive render *and* leaves the prerender painting a season the cookie had already
+  response left to put a `Set-Cookie` on. Reading is the opposite: **every scope a page renders in
+  was created by a request that is already carrying the cookie**, so `RequestContext`
+  (`UI/State/RequestContext.cs`, filled in by `Program.cs` from `IHttpContextAccessor`) hands it to
+  `SeasonState`'s constructor and nobody asks the browser for anything.
+  - **A static render and a circuit are different DI scopes, and that is fine here** — the static
+    render has the page request, and a circuit is created *during* the `/_blazor` request, which
+    carries the same cookies. Both scopes therefore resolve the same season independently. This
+    replaced a root-component parameter on `Routes` that serialised the value into the component
+    marker; that worked, but only while `Routes` was itself an interactive root.
+  - **Do not reach for the browser instead.** It puts a round trip in front of the first
+    interactive render *and* leaves the static pass painting a season the cookie had already
     overruled, so the page visibly changes season after connecting.
   - **A stored season that no longer exists is ignored**, falling back to the current one.
     Restoring it would filter every page down to nothing behind a picker that cannot name what it

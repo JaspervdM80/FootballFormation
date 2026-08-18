@@ -17,10 +17,10 @@ namespace FootballFormation.UI.State;
 /// </para>
 /// <para>
 /// Writing needs the browser, because an established circuit has no response to set a cookie on.
-/// <b>Reading does not</b>: the cookie arrives on the request that renders the page, so the host
-/// reads it there and hands it down as a parameter (see <c>App.razor</c> and <c>Routes.razor</c>).
-/// Asking the browser for it instead would put a round trip in front of the first interactive
-/// render, and would leave the prerender painting a season the cookie had already overruled.
+/// <b>Reading does not</b>: every scope a page renders in was created by a request already carrying
+/// the cookie, so it arrives through <see cref="RequestContext"/>. Asking the browser for it
+/// instead would put a round trip in front of the first interactive render, and would leave the
+/// static pass painting a season the cookie had already overruled.
 /// </para>
 /// </summary>
 public class SeasonPreference(IJSRuntime js, ILogger<SeasonPreference> log)
