@@ -26,11 +26,14 @@
     <link rel="preload" href="fonts/dm-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
     <ImportMap />
     <link rel="icon" type="image/png" href="favicon.png" />
-    <HeadOutlet @rendermode="InteractiveServer" />
+    <HeadOutlet />
 </head>
 
 <body>
-    <Routes @rendermode="InteractiveServer" />
+    @* No render mode here. Each page declares its own, and the ones that do not — the statistics
+       pages, the match report, login and the error pages — are served as plain HTML with no circuit
+       to lose when a phone suspends the app. See docs/known_issues.md. *@
+    <Routes />
     @* Blazor toggles the classes on this element; styled dark in app.css and
        auto-reloaded by pwa.js so resuming a suspended phone app just works. *@
     <div id="components-reconnect-modal">@L["Reconnecting..."]</div>

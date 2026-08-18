@@ -1,9 +1,10 @@
 ﻿@page "/games/{GameId:int}/result"
 @inherits CancellableComponent
+@rendermode InteractiveServer
 
-@* Dialogs, popovers and snackbars need a provider inside an interactive render mode; the
-   layout is static. See MudProviders. *@
-<MudProviders />
+@* See InteractiveShell: the providers and the session gate this page no longer inherits, because
+   the layout renders statically. *@
+<InteractiveShell />
 
 <PageTitle>@L["Match Result"]</PageTitle>
 

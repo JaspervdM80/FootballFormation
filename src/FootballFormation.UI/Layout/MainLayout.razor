@@ -33,7 +33,11 @@
             <summary aria-label="@L["Language"]">
                 <MudIcon Icon="@Icons.Material.Filled.Language" Size="Size.Small" />
             </summary>
-            <div class="language-picker-menu">
+            @* data-enhance-nav="false" for the same reason the logout form opts out: enhanced
+               navigation patches the DOM without making a new circuit, and a circuit's culture is
+               fixed when it starts. Left enhanced, the static chrome comes back in the new language
+               over an island still rendering in the old one. *@
+            <div class="language-picker-menu" data-enhance-nav="false">
                 <a href="@CultureUrl("nl")">Nederlands</a>
                 <a href="@CultureUrl("en")">English</a>
             </div>

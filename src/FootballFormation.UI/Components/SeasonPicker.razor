@@ -1,4 +1,4 @@
-@inject IStringLocalizer<Strings> L
+﻿@inject IStringLocalizer<Strings> L
 
 @if (Visible && SeasonState.Seasons.Count > 0)
 {
@@ -11,7 +11,10 @@
             <span class="season-picker-label">@Label</span>
             <MudIcon Icon="@Icons.Material.Filled.ExpandMore" Size="Size.Small" />
         </summary>
-        <div class="season-picker-menu">
+        @* A real page load, not enhanced navigation. The season is read off the request that
+           creates a scope, so an island whose circuit is already up would keep the old one while
+           the chrome around it showed the new — see RequestContext. *@
+        <div class="season-picker-menu" data-enhance-nav="false">
             @foreach (var season in SeasonState.Seasons)
             {
                 <a href="@SetUrl(season.Id)" class="season-menu-item">

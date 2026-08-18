@@ -5,13 +5,13 @@
 import { test, expect } from '../fixtures.js';
 import { goto, gotoRendered } from '../helpers.js';
 
-// `bare` marks a page with no handler bound to an HTML element, so there is nothing for `goto` to
-// wait on — see gotoRendered. It says nothing about whether the page has a circuit.
+// `bare` marks a page that renders no MudBlazor control, so there is nothing for `goto` to wait on
+// — see gotoRendered. It says nothing about whether the page has a circuit: / does, /stats does not.
 const PAGES = [
   { path: '/', heading: 'GJS Meiden', bare: true },
   { path: '/players', heading: 'Squad' },
   { path: '/games', heading: 'Games' },
-  { path: '/stats', heading: 'Statistics' },
+  { path: '/stats', heading: 'Statistics', bare: true },
   { path: '/users', heading: 'Users' },
   { path: '/settings', heading: 'Match Preferences' },
   { path: '/stats/positions', heading: 'Position Development', bare: true },

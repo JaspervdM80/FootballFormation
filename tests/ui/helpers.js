@@ -23,9 +23,14 @@ import { expect } from '@playwright/test';
 // seeded-password step filled three inputs the server never heard about and then submitted the
 // form it was prerendered with.
 //
-// Every element, not just button/a/input: the chrome used to guarantee a handler on a button on
-// every page, and since it stopped, several pages carry theirs on a div or a table row instead.
-const HANDLERS_BOUND = () => [...document.querySelectorAll('*')]
+// **What it does not see.** Blazor writes that attribute for handlers it has to register on the
+// element itself, which in practice means MudBlazor's own controls — a plain `<button @onclick>`
+// or a `<div @onclick>` of ours never gets one, measured on /games. So this is really "MudBlazor
+// has rendered an interactive control", and a page that renders none for the current visitor
+// satisfies it never. That used to be impossible, because the chrome carried a MudIconButton on
+// every page; the chrome renders statically now, so it is the page's own controls or nothing —
+// and for an anonymous visitor several pages have none. Those call sites use gotoRendered.
+const HANDLERS_BOUND = () => [...document.querySelectorAll('button,a,input')]
   .some(el => el.getAttributeNames().some(name => name.startsWith('_bl_')));
 
 /** Navigates, and waits for the page to be *interactive* rather than merely painted. */

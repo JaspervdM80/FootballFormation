@@ -127,11 +127,14 @@ try
     // What the request knew, for the components rendered in its scope. A static render and a
     // circuit are two different scopes and each gets its own — which is the point: a circuit is
     // created *during* a request too (the /_blazor one), and that request carries the same cookies,
-    // so both scopes resolve the same season without anyone asking the browser.
+    // so both scopes resolve the same season without anyone asking the browser. The referrer is the
+    // one thing /_blazor does not carry; see NavigationTrail for what that costs.
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped(sp =>
         sp.GetRequiredService<IHttpContextAccessor>().HttpContext is { } http
-            ? new RequestContext(http.Request.Cookies[SeasonPreference.CookieName])
+            ? new RequestContext(
+                http.Request.Cookies[SeasonPreference.CookieName],
+                http.Request.Headers.Referer.ToString())
             : RequestContext.None);
 
     builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

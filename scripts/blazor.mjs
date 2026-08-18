@@ -18,9 +18,10 @@
 // shared: they are separate npm packages with different dependencies, and a dozen lines duplicated
 // beats a cross-package import. Change one, look at the other.
 
-/** True once Blazor has bound handlers on this page — see the note above. Every element, not just
-    button/a/input: several pages carry their only handler on a div or a table row. */
-const HANDLERS_BOUND = () => [...document.querySelectorAll('*')]
+/** True once Blazor has bound handlers on this page — see the note above. It only ever sees
+    MudBlazor's own controls: Blazor writes the attribute for handlers it registers on the element,
+    and a plain `<button @onclick>` of ours never gets one. */
+const HANDLERS_BOUND = () => [...document.querySelectorAll('button,a,input')]
   .some(el => el.getAttributeNames().some(name => name.startsWith('_bl_')));
 
 /** Navigates and waits for the page to be interactive rather than merely painted. */

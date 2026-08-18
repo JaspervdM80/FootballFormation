@@ -1,4 +1,4 @@
-namespace FootballFormation.UI.State;
+﻿namespace FootballFormation.UI.State;
 
 /// <summary>
 /// What the HTTP request knew, captured once per DI scope so the components rendered in that scope
@@ -11,8 +11,12 @@ namespace FootballFormation.UI.State;
 /// </para>
 /// </summary>
 /// <param name="SeasonCookie">The raw <c>ff.season</c> value, for <see cref="SeasonState"/>.</param>
-public sealed record RequestContext(string? SeasonCookie)
+/// <param name="Referer">
+/// The referring URL, for <c>NavigationTrail</c>. Empty in a circuit's scope: that scope is created
+/// during the <c>/_blazor</c> request, which carries cookies but no referrer.
+/// </param>
+public sealed record RequestContext(string? SeasonCookie, string? Referer)
 {
     /// <summary>A scope with no request behind it, which therefore knows nothing.</summary>
-    public static readonly RequestContext None = new((string?)null);
+    public static readonly RequestContext None = new(null, null);
 }

@@ -1,60 +1,46 @@
+using FootballFormation.UI.State;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Routing;
 
 namespace FootballFormation.UI.Navigation;
 
 /// <summary>
-/// Where the visitor has been in this circuit, so a back button can return them there instead of to
-/// whichever page someone hardcoded. Reaching a player from the season stats and reaching the same
-/// player from the squad used to end up in the same place; now each goes back where it came from.
+/// Where the visitor came from, so a back button can return them there instead of to whichever page
+/// someone hardcoded. Reaching a player from the season statistics and reaching the same player from
+/// the squad used to end up in the same place; now each goes back where it came from.
 /// <para>
-/// The trail resets on a browser refresh, which is why the back arrow carries a fallback — a shared
-/// link opened cold has nothing behind it.
+/// This reads the <c>Referer</c> header off the request rather than keeping a list of navigations,
+/// and the reason is the render-mode split. The list only ever existed inside a circuit, and
+/// <c>MainLayout</c> — its only entry point — is statically rendered on every page now. The browser
+/// already knows the answer and sends it on the request, so the trail was reconstructing something
+/// it was being told. It survives a refresh as a side effect, which the list never did.
+/// </para>
+/// <para>
+/// A circuit's own scope is the exception, and deliberately so: it is created during the
+/// <c>/_blazor</c> request, which carries no referrer. A back button inside an interactive island
+/// therefore falls through to its <c>Fallback</c> — and each of those pages (the builder, the live
+/// screen, the match result) is reached from /games, which is what its fallback already says.
 /// </para>
 /// </summary>
-public sealed class NavigationTrail(NavigationManager navigation) : IDisposable
+public sealed class NavigationTrail(NavigationManager navigation, RequestContext request)
 {
-    // A visitor twenty pages deep does not need the twenty-first remembered, and an unbounded list
-    // on a circuit that can stay open for hours is a slow leak.
-    private const int MaxDepth = 20;
-
-    private readonly List<string> _trail = [];
-    private bool _started;
-    private bool _replacingCurrent;
-
     /// <summary>
-    /// Starts recording. Called once by MainLayout, which is on screen before any page renders.
-    /// <para>
-    /// Doing this here rather than in the constructor is the whole trick: a scoped service is not
-    /// built until something injects it, and the first injector would otherwise be a detail page's
-    /// back button — by which time the navigation that led there has already happened unobserved,
-    /// which is the exact bug this class exists to fix. LocationChanged also never fires for the
-    /// page a circuit starts on, so that first entry is seeded by hand.
-    /// </para>
-    /// </summary>
-    public void Start()
-    {
-        if (_started) return;
-
-        _started = true;
-        Record(ToPath(navigation.Uri));
-        navigation.LocationChanged += OnLocationChanged;
-    }
-
-    /// <summary>
-    /// The page before the current one, or null when this is where the visit began.
-    /// <para>
-    /// Records the current URL before answering. The Router subscribed to LocationChanged before we
-    /// did and re-renders the page inside its own handler, so a component can read this before our
-    /// handler has run. <see cref="Record"/> is idempotent, so doing it from both ends is safe.
-    /// </para>
+    /// The page before the current one, or null when there is nothing usable behind: a shared link
+    /// opened cold, a bookmark, or a referrer from somewhere else entirely.
     /// </summary>
     public string? Previous
     {
         get
         {
-            Record(ToPath(navigation.Uri));
-            return _trail.Count >= 2 ? _trail[^2] : null;
+            if (request.Referer is not { Length: > 0 } referer) return null;
+
+            // Same origin only, and only a path this app can name — the back arrow does not offer
+            // to return to a page it cannot label, and must never offer to leave the site.
+            if (!Uri.TryCreate(referer, UriKind.Absolute, out var uri)) return null;
+            if (!navigation.BaseUri.StartsWith($"{uri.Scheme}://{uri.Authority}/", StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            var path = uri.PathAndQuery;
+            return path == "/" + navigation.ToBaseRelativePath(navigation.Uri) ? null : path;
         }
     }
 
@@ -63,45 +49,10 @@ public sealed class NavigationTrail(NavigationManager navigation) : IDisposable
     /// it. Without this the redirect target's back button would point at the page that just failed
     /// and bounce the visitor straight into it — and so would the browser's own back button, which
     /// is why the history entry is replaced too.
+    /// <para>
+    /// During a static render <c>replace</c> is moot: <c>NavigateTo</c> becomes a real redirect,
+    /// which adds no history entry of its own.
+    /// </para>
     /// </summary>
-    public void Redirect(string path)
-    {
-        _replacingCurrent = true;
-        navigation.NavigateTo(path, replace: true);
-    }
-
-    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) =>
-        Record(ToPath(e.Location));
-
-    private void Record(string path)
-    {
-        var replacing = _replacingCurrent;
-        _replacingCurrent = false;
-
-        if (_trail.Count > 0 && _trail[^1] == path) return;
-
-        // Already behind us — the browser's own back/forward buttons, or our own back arrow. Unwind
-        // to it rather than pushing a second copy, or the two ping-pong forever. The cost is that a
-        // genuine forward link to a page already visited collapses the trail between the two; no
-        // path through this app's links does that.
-        var seen = _trail.LastIndexOf(path);
-        if (seen >= 0)
-        {
-            _trail.RemoveRange(seen + 1, _trail.Count - seen - 1);
-            return;
-        }
-
-        if (replacing && _trail.Count > 0) _trail.RemoveAt(_trail.Count - 1);
-
-        _trail.Add(path);
-        if (_trail.Count > MaxDepth) _trail.RemoveAt(0);
-    }
-
-    // Stored with a leading slash so entries compare equal to the AppRoutes constants and can be
-    // handed straight back to NavigateTo. Query strings are kept on purpose: returning to a
-    // filtered list should return to the filter too.
-    private string ToPath(string uri) => "/" + navigation.ToBaseRelativePath(uri);
-
-    // Unsubscribing an unsubscribed handler is a no-op, so this is safe even if Start never ran.
-    public void Dispose() => navigation.LocationChanged -= OnLocationChanged;
+    public void Redirect(string path) => navigation.NavigateTo(path, replace: true);
 }

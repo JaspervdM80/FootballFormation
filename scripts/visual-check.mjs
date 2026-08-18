@@ -39,13 +39,13 @@ const SEED_PLAYERS = [
 
 const SEED_OPPONENT = 'SV Zwaluwen';
 
-// The third entry marks a page with no handler bound to an HTML element, so there is nothing for
-// goto to wait on — see gotoRendered in blazor.mjs.
+// The third entry marks a page that renders no MudBlazor control, so there is nothing for goto to
+// wait on — see gotoRendered in blazor.mjs. It says nothing about whether the page has a circuit.
 const PAGES = [
   ['home', '/', true],
   ['players', '/players'],
   ['games', '/games'],
-  ['stats', '/stats'],
+  ['stats', '/stats', true],
   ['position-development', '/stats/positions', true],
   ['users', '/users'],
   ['settings', '/settings'],
