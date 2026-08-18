@@ -11,6 +11,7 @@ using FootballFormation.UI.Navigation;
 using FootballFormation.UI.Security;
 using FootballFormation.UI.State;
 using FootballFormation.Web.Components;
+using FootballFormation.Web.KeepAlive;
 using FootballFormation.Web.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -207,6 +208,17 @@ try
                 sp.GetRequiredService<IServiceScopeFactory>(),
                 revalidationInterval));
 
+    builder.Services.AddSingleton<KeepAliveTracker>();
+
+    // Only outside Development: a local `dotnet run` must never ping the real production site just
+    // because someone is developing on their own machine. See KeepAlivePingService for why this
+    // exists and why it has to reach the public hostname rather than staying in-process.
+    if (!builder.Environment.IsDevelopment())
+    {
+        builder.Services.AddHttpClient("KeepAlive", client => client.Timeout = TimeSpan.FromSeconds(15));
+        builder.Services.AddHostedService<KeepAlivePingService>();
+    }
+
     // Rate limit login attempts: 5 per minute per IP, then queue/reject
     builder.Services.AddRateLimiter(options =>
     {
@@ -260,6 +272,18 @@ try
         // every date inside it belonging to no season at all
         await seasonService.CloseSeasonGapsAsync();
     }
+
+    // Stamps every request as "real" activity except /health itself — a self-ping that reset its
+    // own clock would keep the machine awake forever, and this endpoint's only other caller (the
+    // deploy workflow's smoke check) isn't visitor activity either. See KeepAlivePingService.
+    var keepAliveTracker = app.Services.GetRequiredService<KeepAliveTracker>();
+    app.Use(async (context, next) =>
+    {
+        if (context.Request.Path != "/health")
+            keepAliveTracker.Touch();
+
+        await next();
+    });
 
     if (!app.Environment.IsDevelopment())
     {

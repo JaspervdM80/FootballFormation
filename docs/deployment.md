@@ -233,8 +233,16 @@ curl https://gjs-meiden.nl/health                       # does it serve? ("healt
   `DisconnectedCircuitRetentionPeriod` exist only in memory, so a resumed machine can still hand a
   returning phone its circuit back where a stopped one never could.
 - The idle period before that fires is about five minutes and Fly does not expose it, so it cannot
-  be lengthened. Suspend requires RAM ≤ 2 GB (this VM is 512 MB) and leaves the mounted volume
-  alone.
+  be lengthened directly. Suspend requires RAM ≤ 2 GB (this VM is 512 MB) and leaves the mounted
+  volume alone.
+- **`KeepAlivePingService`** (`src/FootballFormation.Web/KeepAlive/`) works around the unconfigurable
+  five minutes instead of fighting it: for up to 30 minutes after the last real request, it polls
+  the public `/health` endpoint every two minutes so Fly's proxy keeps seeing edge traffic and never
+  starts its idle sweep. It has to call the public hostname — `.internal`/`localhost` traffic
+  doesn't count towards the proxy's load — and it deliberately excludes `/health` itself from what
+  counts as "real" activity in `Program.cs`, or the ping would perpetually renew its own window and
+  the machine would never suspend at all. Registered only outside `Development`, so a local
+  `dotnet run` never calls out to the live site.
 - **Do not** scale to more than one machine: SQLite lives on one volume; a second machine would get
   its own empty volume and a split-brain database.
 - Where going idle still shows up in the app, so nobody hunts it as a bug: a *stopped* machine — a
