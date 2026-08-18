@@ -48,7 +48,7 @@ in `manifest.webmanifest` must change with it, or the PWA chrome keeps the old b
   painted an invisible `div` while the button kept MudBlazor's defaults. There is no `ActivatorClass`
   in 9.7 — style `.<your-class>.mud-menu .mud-button-root` instead.
 - **The popover, dialog and snackbar providers must be inside an interactive render mode.** They are
-  in `<MudProviders />`, rendered by each page that needs one — not in `MainLayout`, which renders
+  in `<InteractiveShell />`, rendered by each interactive page — not in `MainLayout`, which renders
   statically on every page. `MudThemeProvider` is the exception and stays in the layout.
 - `MudForm.Validate()` is obsolete — use `ValidateAsync()`.
 - Multi-select binding takes `IReadOnlyCollection<T>`, not `IEnumerable<T>`.

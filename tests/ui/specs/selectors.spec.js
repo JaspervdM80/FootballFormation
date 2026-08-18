@@ -46,6 +46,9 @@ const SELECTORS = {
   // <details> disclosures, so these names are the only handle the tests have on them.
   'the chrome': ['app-drawer', 'nav-hamburger', 'season-picker', 'season-menu-all',
                  'season-picker-label', 'language-picker', 'language-picker-menu'],
+  // The markup that replaced a handler with a link, or a snackbar with a line on the page.
+  'the pages without a circuit': ['inline-notice', 'home-tile-link', 'overview-capture',
+                                  'pd-name-cell', 'rank-row', 'action-btn'],
   'the squad': ['badge-archived'],
 };
 

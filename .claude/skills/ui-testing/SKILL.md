@@ -36,6 +36,18 @@ Measured on `/settings`, two obvious readiness signals are both wrong:
 Blazor writes `_bl_<guid>` onto every element it wires an event to, so **that** is the signal. `goto()`
 waits for it; `waitForHandlers()` waits for one specific element.
 
+**But it only ever sees MudBlazor's own controls.** Blazor writes that attribute for handlers it has
+to register on the element itself — a plain `<button @onclick>` or a `<div @onclick>` of ours never
+gets one, measured on `/games`. So a page that renders no MudBlazor control satisfies `goto` never,
+and two kinds now do that: a page with no circuit at all (`/stats`), and an interactive page whose
+controls are all behind `AuthorizeView` and the visitor is signed out (`/players`, `/games`).
+**Those call sites use `gotoRendered`**, which waits for the page to stop fetching instead. Do not
+reach for it to make a flaky click pass: on a page that does bind handlers, waiting for them is the
+whole point.
+
+`rendermode.spec.js` is where "this page has no circuit" is asserted, and it proves its own probe by
+checking that `/games` still opens one.
+
 **There is not a single fixed sleep in `tests/ui` or `scripts/`. Do not introduce one** — it is how the
 suite starts failing on a slow machine.
 

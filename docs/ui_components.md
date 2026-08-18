@@ -463,9 +463,11 @@ the whole affordance, which is why the label and the destination are resolved fr
 it renders on pages that have no circuit to dispatch a click to. The rule lives in app.css because
 the element `MudIcon` renders is out of reach of a page's scoped stylesheet.
 
-`BackFallback` is only used when there is nothing behind: a shared link, a bookmark, a refresh.
-Pick the page someone landing cold most likely wants — `/players` for player stats, `/games` for
-the game screens, and for `/games/{id}/overview` the editor for an admin, `/games` for a visitor.
+`BackFallback` is used when there is nothing behind — a shared link, a bookmark, a refresh — **and
+on every interactive page**, because a circuit's scope has no `Referer` to read (see
+[patterns.md](patterns.md#ui-state-services)). Pick the page someone landing cold most likely
+wants: `/players` for player stats, `/games` for the game screens, and for `/games/{id}/overview`
+the editor for an admin, `/games` for a visitor.
 
 ## Squad page (`/players`)
 Season-scoped: it follows the season picker and shows that season's squad, not everyone on file.
@@ -667,8 +669,9 @@ not just what this page says.
   `MenuContext` and *you* must call `context.ToggleAsync` — MudBlazor attaches no click handler to
   the `.mud-menu-activator` wrapper, though it does give it `role="button"` and `tabindex="0"`,
   leaving it focusable but inert. Prefer `Label` + `StartIcon`/`EndIcon` and style the generated
-  button (as `SeasonPicker` does via `.season-picker .mud-button-root`), which arrives
-  keyboard-accessible for free.
+  button (as the squad page's "Add Player" menu does), which arrives keyboard-accessible for free.
+  Note that `MudMenu` is not an option in the chrome at all: it needs `MudPopoverProvider` and a
+  circuit, and the layout has neither — the season and language pickers are `<details>` disclosures.
 - **`MudMenu.Class` styles the root wrapper, not the activator.** There is no `ActivatorClass`
   parameter, so a button style has to be pushed down a level — `.btn-gold.mud-menu .mud-button-root`
   in app.css does that for the squad page's "Add Player" menu.

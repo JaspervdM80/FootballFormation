@@ -190,11 +190,29 @@ testable. They are pure static functions taking their scope as parameters — th
 the builders never touch the database. The squads parameter is not optional: guest status is per
 season, and a report may walk games spanning several of them.
 
+## Render modes: most pages have no circuit
+`@rendermode InteractiveServer` is declared **per page**, never on `<Routes>` or `<HeadOutlet>`.
+Eight pages carry it — the start page, the games list and the squad, the four game screens, and
+settings and users. Everything else is plain server HTML: `/stats`, `/stats/positions`,
+`/players/{id}/stats`, `/games/{id}/overview`, `/login`, `/Error` and `/not-found`.
+
+The reason is a phone. Backgrounding an installed PWA suspends the tab and kills the circuit's
+WebSocket; coming back puts up a blocking overlay and, past the retention window, forces a reload
+over whatever signal there is. A page with no circuit has none of that to lose, and the pages a
+parent actually opens are exactly the read-only ones. `tests/ui/specs/rendermode.spec.js` asserts it.
+
+**The layout is static for every page, interactive ones included.** `RouteView` applies it outside
+the page's island, and a render mode cannot be put on a layout at all — `@Body` is a
+`RenderFragment` and Blazor cannot serialise one as a root component parameter. That is why the
+chrome is written to work without a circuit (a checkbox drawer, `<details>` pickers, links to
+`/culture/set` and `/season/set`) and why `<InteractiveShell />` carries the MudBlazor providers and
+the revocation gate down into each interactive page. See `docs/known_issues.md`.
+
 ## Web (`src/FootballFormation.Web/`)
 ```
 Program.cs                — Entry point: Serilog, EF Core, service registration, auto-migration
 Components/
-  App.razor               — Root component (InteractiveServer on Routes + HeadOutlet), PWA meta tags
+  App.razor               — Root component: no render mode, PWA meta tags, the Blazor.start schedule
   Routes.razor            — Router discovering pages from both Web and UI assemblies
   Pages/Login.razor       — The sign-in form (posts to /auth/login)
   Pages/Error.razor       — Unhandled-error page, localized

@@ -94,13 +94,49 @@ Avoid repeating these mistakes:
 - **Archiving is a filter on the future, not on the past**: only the "add existing player" picker and copy-forward look at `IsArchived`. `PlayerService.GetAllAsync` deliberately still returns archived players — it is the id → name lookup the match report and live screen resolve against, so filtering it would blank a scorer out of a game they scored in, which is the very thing archiving exists to prevent. Same reasoning for `Game.IsInRoster`: a past game has to be judged the way it was played. If a picker ever *should* hide them, filter at that call site, not in the lookup.
 
 ## Blazor / MudBlazor 9.x
+- **The render mode is per page, and the layout is static for all of them.** `<Routes>` and
+  `<HeadOutlet>` carry none; eight pages declare `@rendermode InteractiveServer` and the rest are
+  plain server HTML (see architecture.md). What surprises people is the layout: `RouteView` applies
+  it **outside** the page's interactive island, and a render mode cannot be put on a layout at all —
+  `@Body` is a `RenderFragment`, and Blazor refuses to serialise one as a root component parameter
+  (*"Cannot pass the parameter 'ChildContent' to component with rendermode
+  'InteractiveServerRenderMode' … arbitrary code and cannot be serialized"*). So `MainLayout`
+  renders statically even on `/games/{id}/live`. Everything the chrome does is written for that: a
+  checkbox drawer, `<details>` pickers, and links to `/culture/set` and `/season/set` instead of
+  handlers. **Anything a page needs that the layout used to supply has to come down into
+  `<InteractiveShell />`** — today the MudBlazor providers and the revocation gate below.
+- **A statically rendered page has no snackbar.** `ISnackbar` needs `MudSnackbarProvider`, which
+  needs an interactive render mode, so a `Snackbar.ReportFailure` on one of those pages reports into
+  nothing at all — silently. Use `PageNotice` + `<InlineNotice>`, which put the message on the page.
+  A message still cannot survive a redirect there, the way a circuit's snackbar could: the
+  "game not found" line on `/games/{id}/overview` was dropped rather than reinvented, and the log
+  keeps the id.
+- **`[Authorize]` on a route stops being re-checked once the page is up.** `AuthorizeRouteView` is
+  in the static router, so it is evaluated per request and hears nothing afterwards — where
+  `RevalidatingUserAuthenticationStateProvider` goes on checking for as long as the circuit lives.
+  Before the split, revoking an account booted the tab within the revalidation interval; after it,
+  nothing did. `<InteractiveShell AdminOnly="true" />` puts the same `NotAuthorized` branch inside
+  the island on the admin-only pages, which is what `session.spec.js` pins. The public pages need no
+  gate — losing the role there re-renders their `AuthorizeView` blocks into the visitor view, which
+  is right, and redirecting a visitor who was never signed in would be plainly wrong.
+- **Enhanced navigation does not make a new circuit, so anything fixed at scope creation goes
+  stale.** It fetches the new page and patches the DOM; an island that is already up keeps its
+  circuit, and with it the culture it started in and the season it read off `/_blazor`. Left
+  enhanced, the language switcher repainted the static chrome in English over a page still rendering
+  in Dutch. Both the culture links and the season links carry `data-enhance-nav="false"`, which is
+  the same opt-out the logout form has always used. **Any new link that changes per-request state
+  needs it too.**
+- **`FocusOnNavigate` is gone**, not moved: it only ever worked inside an interactive router, and a
+  static one leaves it a no-op. Moving focus to the `h1` after a navigation is a real accessibility
+  affordance and this change lost it — worth restoring with something that works under enhanced
+  navigation, but markup that looks like it moves focus and does not is worse than none.
 - **Dialogs not showing**: `MudDialogProvider` must be inside an interactive render mode, and so
   must `MudPopoverProvider` and `MudSnackbarProvider`. They used to sit in `MainLayout`, which
   worked while `<Routes>` carried `@rendermode="InteractiveServer"` and every page was
   interactive. **A layout cannot carry a render mode** — `@Body` is a `RenderFragment` and Blazor
   cannot serialise one as a root component parameter — and it is applied by `RouteView` *outside*
   a page's interactive island, so once the render mode came off `<Routes>` the layout became
-  static for every page, interactive ones included. The three live in `<MudProviders />` now,
+  static for every page, interactive ones included. The three live in `<InteractiveShell />` now,
   rendered by each page that opens a dialog, a popover or a snackbar. `MudThemeProvider` stays in
   the layout: MudBlazor separated theming from the popover provider precisely so it can.
 - **`Position` enum ambiguity**: Renamed to `PlayerPosition` because `MudBlazor.Position` exists.
