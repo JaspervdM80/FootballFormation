@@ -1,5 +1,9 @@
-@page "/players"
+﻿@page "/players"
 @inherits SeasonAwarePage
+
+@* Dialogs, popovers and snackbars need a provider inside an interactive render mode; the
+   layout is static. See MudProviders. *@
+<MudProviders />
 
 <PageTitle>@L["Players"]</PageTitle>
 

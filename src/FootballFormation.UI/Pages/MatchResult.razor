@@ -1,5 +1,9 @@
-@page "/games/{GameId:int}/result"
+﻿@page "/games/{GameId:int}/result"
 @inherits CancellableComponent
+
+@* Dialogs, popovers and snackbars need a provider inside an interactive render mode; the
+   layout is static. See MudProviders. *@
+<MudProviders />
 
 <PageTitle>@L["Match Result"]</PageTitle>
 

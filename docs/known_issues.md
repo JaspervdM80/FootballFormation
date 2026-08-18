@@ -94,7 +94,15 @@ Avoid repeating these mistakes:
 - **Archiving is a filter on the future, not on the past**: only the "add existing player" picker and copy-forward look at `IsArchived`. `PlayerService.GetAllAsync` deliberately still returns archived players — it is the id → name lookup the match report and live screen resolve against, so filtering it would blank a scorer out of a game they scored in, which is the very thing archiving exists to prevent. Same reasoning for `Game.IsInRoster`: a past game has to be judged the way it was played. If a picker ever *should* hide them, filter at that call site, not in the lookup.
 
 ## Blazor / MudBlazor 9.x
-- **Dialogs not showing**: `MudDialogProvider` must be inside an interactive render mode. Fixed by setting `@rendermode="InteractiveServer"` on both `<Routes>` and `<HeadOutlet>` in App.razor.
+- **Dialogs not showing**: `MudDialogProvider` must be inside an interactive render mode, and so
+  must `MudPopoverProvider` and `MudSnackbarProvider`. They used to sit in `MainLayout`, which
+  worked while `<Routes>` carried `@rendermode="InteractiveServer"` and every page was
+  interactive. **A layout cannot carry a render mode** — `@Body` is a `RenderFragment` and Blazor
+  cannot serialise one as a root component parameter — and it is applied by `RouteView` *outside*
+  a page's interactive island, so once the render mode came off `<Routes>` the layout became
+  static for every page, interactive ones included. The three live in `<MudProviders />` now,
+  rendered by each page that opens a dialog, a popover or a snackbar. `MudThemeProvider` stays in
+  the layout: MudBlazor separated theming from the popover provider precisely so it can.
 - **`Position` enum ambiguity**: Renamed to `PlayerPosition` because `MudBlazor.Position` exists.
 - **`MudForm.Validate()` is obsolete**: Use `ValidateAsync()`.
 - **`ShowMessageBox` removed**: Use custom `ConfirmDialog` component instead.

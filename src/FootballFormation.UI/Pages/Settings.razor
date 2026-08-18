@@ -1,6 +1,10 @@
-@page "/settings"
+﻿@page "/settings"
 @attribute [Authorize(Roles = AppRoles.Admin)]
 @inherits CancellableComponent
+
+@* Dialogs, popovers and snackbars need a provider inside an interactive render mode; the
+   layout is static. See MudProviders. *@
+<MudProviders />
 
 <PageTitle>@L["Match Preferences"]</PageTitle>
 

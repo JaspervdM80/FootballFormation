@@ -1,10 +1,9 @@
-@inherits LayoutComponentBase
+﻿@inherits LayoutComponentBase
 @inject IStringLocalizer<Strings> L
 
+@* Only the theme provider. The other three moved into the pages that need them — see
+   MudProviders — because this layout renders statically on every page and they do not work there. *@
 <MudThemeProvider Theme="Theme" IsDarkMode="false" />
-<MudPopoverProvider />
-<MudDialogProvider />
-<MudSnackbarProvider />
 
 <MudLayout>
     @* The drawer's open state is this checkbox, not component state: the layout renders statically

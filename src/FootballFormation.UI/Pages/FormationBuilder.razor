@@ -1,6 +1,10 @@
-@page "/games/{GameId:int}/formation"
+﻿@page "/games/{GameId:int}/formation"
 @attribute [Authorize(Roles = AppRoles.Admin)]
 @inherits CancellableComponent
+
+@* Dialogs, popovers and snackbars need a provider inside an interactive render mode; the
+   layout is static. See MudProviders. *@
+<MudProviders />
 
 <PageTitle>@L["Formation Builder"]</PageTitle>
 

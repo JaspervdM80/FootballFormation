@@ -1,0 +1,16 @@
+@namespace FootballFormation.UI.Components
+
+@* The three MudBlazor providers that only work inside an interactive render mode, rendered by each
+   page that opens a dialog, a popover or a snackbar rather than once by the layout.
+
+   The layout is applied by RouteView outside a page's interactive island, so it renders statically
+   for every page — including the pages that declare a render mode themselves — and a render mode
+   cannot be put on a layout at all: @Body is a RenderFragment and Blazor cannot serialise one as a
+   root component parameter. Left in the layout these would be static, and known_issues.md records
+   what that looks like: dialogs that simply never appear.
+
+   MudThemeProvider stays in the layout on purpose. MudBlazor separated theming from the popover
+   provider precisely so it can live in a static one, and the theme has to reach the whole page. *@
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
