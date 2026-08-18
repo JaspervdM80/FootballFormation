@@ -221,6 +221,11 @@ Security/
   RevalidatingUserAuthenticationStateProvider.cs
                           — Re-checks a circuit's principal on a timer and signs it out when the
                             account is gone; the circuit-side half of OnValidatePrincipal
+KeepAlive/
+  KeepAliveTracker.cs     — Thread-safe timestamp of the last real request
+  KeepAlivePingService.cs — Pings the public /health endpoint for 30 minutes after the last visitor,
+                            so Fly's unconfigurable ~5-minute idle sweep starts later (see
+                            docs/deployment.md, "Cost control")
 wwwroot/
   theme.css               — Semantic tokens, the muted-ink ramp and the gradients (see docs/theming.md)
   app.css                 — Global styles: MudBlazor overrides, badges, .action-btn, .stacked-table,
