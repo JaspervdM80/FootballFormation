@@ -18,7 +18,9 @@
 // shared: they are separate npm packages with different dependencies, and a dozen lines duplicated
 // beats a cross-package import. Change one, look at the other.
 
-/** True once Blazor has bound handlers on this page — see the note above. */
+/** True once Blazor has bound handlers on this page — see the note above. It only ever sees
+    MudBlazor's own controls: Blazor writes the attribute for handlers it registers on the element,
+    and a plain `<button @onclick>` of ours never gets one. */
 const HANDLERS_BOUND = () => [...document.querySelectorAll('button,a,input')]
   .some(el => el.getAttributeNames().some(name => name.startsWith('_bl_')));
 
@@ -26,6 +28,21 @@ const HANDLERS_BOUND = () => [...document.querySelectorAll('button,a,input')]
 export async function goto(page, url) {
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(HANDLERS_BOUND, null, { timeout: 30_000 });
+}
+
+/**
+ * Navigates and waits for the markup only, for a page with no handler to wait for: one rendered
+ * without a circuit, or one whose only handlers are splatted onto MudBlazor components. Blazor
+ * stamps `_bl_` on handlers declared on an HTML element and nowhere else, so `goto` would wait
+ * thirty seconds on those pages for a signal that never arrives.
+ */
+export async function gotoRendered(page, url) {
+  await page.goto(url, { waitUntil: 'domcontentloaded' });
+  // Until the page stops fetching, not merely until it paints. A page that does open a circuit
+  // starts negotiating during this window, and navigating away mid-handshake aborts it — which
+  // surfaces as a "Failed to complete negotiation" console error and fails the run. WebSockets do
+  // not count towards networkidle, so an established circuit does not hold this open.
+  await page.waitForLoadState('networkidle');
 }
 
 /**

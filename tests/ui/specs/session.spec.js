@@ -7,7 +7,7 @@
 import { test, expect } from '../fixtures.js';
 import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
 import { ADMIN_PASSWORD, ADMIN_USERNAME } from '../global-setup.js';
-import { clickFor, confirmDialog, fillField, goto, openDialog, submitDialog } from '../helpers.js';
+import { clickFor, confirmDialog, fillField, goto, gotoRendered, openDialog, submitDialog } from '../helpers.js';
 
 const AUTH_COOKIE = 'ff.auth';
 
@@ -27,7 +27,7 @@ const userRow = (page, username) =>
  * busy the machine is. Waiting for handlers puts the typing after that render instead.
  */
 async function signInThroughTheForm(page, username = ADMIN_USERNAME, password = ADMIN_PASSWORD) {
-  await goto(page, '/login');
+  await gotoRendered(page, '/login');
   await page.fill('input[name="username"]', username);
   await page.fill('input[name="password"]', password);
   await page.click('button[type="submit"]');
@@ -148,7 +148,8 @@ test.describe('an anonymous visitor', () => {
   test.use({ storageState: VISITOR_STATE });
 
   test('carries no auth cookie at all', async ({ page, context }) => {
-    await goto(page, '/players');
+    // A visitor is offered no control on /players, so there is no handler to wait on.
+    await gotoRendered(page, '/players');
 
     const cookie = (await context.cookies(BASE_URL)).find(c => c.name === AUTH_COOKIE);
     expect(cookie, 'reading is public and should mint nothing').toBeUndefined();

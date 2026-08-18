@@ -1,4 +1,4 @@
-using FootballFormation.Core.Models;
+﻿using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
 
 namespace FootballFormation.UI.State;
@@ -11,11 +11,24 @@ namespace FootballFormation.UI.State;
 /// never write that flag, which is shared, admin-owned state edited on /settings — anonymous
 /// visitors can reach the picker. Per-browser is exactly the scope this belongs at.
 /// </para>
+/// <para>
+/// Read-only from the app's side: choosing a season is a navigation to <c>/season/set</c>, not a
+/// call on this class. The layout renders statically for every page, so the picker has no circuit
+/// to raise an event in — and with the choice arriving on the next request, there is nothing left
+/// for a change notification to tell anybody.
+/// </para>
 /// </summary>
-public class SeasonState(SeasonService seasons, SeasonPreference preference)
+public class SeasonState(SeasonService seasons, RequestContext request)
 {
     private Task? _loading;
-    private StoredSeason? _restored;
+
+    /// <summary>
+    /// The remembered choice, off the request that created this scope. Both scopes a page is
+    /// rendered in have one — the static render has the page request, and a circuit is created
+    /// during the <c>/_blazor</c> request, which carries the same cookies — so neither pass has to
+    /// ask the browser and the two cannot disagree.
+    /// </summary>
+    private readonly StoredSeason? _restored = SeasonPreference.Parse(request.SeasonCookie);
 
     public List<Season> Seasons { get; private set; } = [];
 
@@ -24,22 +37,8 @@ public class SeasonState(SeasonService seasons, SeasonPreference preference)
 
     public Season? SelectedSeason => Seasons.FirstOrDefault(s => s.Id == SelectedSeasonId);
 
-    public event Action? OnChanged;
-
     /// <summary>
-    /// Hands over the season cookie from the request that is rendering the page. <c>Routes</c>
-    /// calls this, which is what makes it work in both passes: the prerender reads the cookie off
-    /// <c>HttpContext</c>, and the value travels to the circuit as a root-component parameter, so
-    /// both passes resolve the same season and neither has to ask the browser.
-    /// <para>
-    /// Must land before <see cref="EnsureLoadedAsync"/>, and does: <c>Routes.OnInitialized</c> runs
-    /// before the router renders the page that calls it.
-    /// </para>
-    /// </summary>
-    public void Restore(string? cookieValue) => _restored = SeasonPreference.Parse(cookieValue);
-
-    /// <summary>
-    /// Loads the season list once per circuit. MainLayout and the page both need it during their
+    /// Loads the season list once per scope. MainLayout and the page both need it during their
     /// own <c>OnInitializedAsync</c> and interleave at the first await, so the first caller runs
     /// the query and everyone else awaits that same task.
     /// <para>
@@ -71,24 +70,8 @@ public class SeasonState(SeasonService seasons, SeasonPreference preference)
     private bool IsSelectable(int? seasonId) =>
         seasonId is null || Seasons.Any(s => s.Id == seasonId);
 
-    public async Task SelectAsync(int? seasonId)
-    {
-        if (SelectedSeasonId == seasonId) return;
-
-        SelectedSeasonId = seasonId;
-
-        // The choice this circuit is restored from, so a RefreshAsync after /settings edits the
-        // season list falls back to what the viewer picked rather than to what they arrived with.
-        _restored = new StoredSeason(seasonId);
-
-        // Notify before persisting: the subscribers only queue a render, and nothing about the
-        // page should wait on a round trip to the browser to store a cookie.
-        OnChanged?.Invoke();
-        await preference.SaveAsync(seasonId);
-    }
-
-    /// <summary>Re-reads the list after /settings adds, edits or removes a season, so the picker
-    /// updates without a page reload.</summary>
+    /// <summary>Re-reads the list after /settings adds, edits or removes a season, so the page
+    /// showing that list sees its own edit.</summary>
     public async Task RefreshAsync()
     {
         var previous = SelectedSeasonId;
@@ -99,7 +82,5 @@ public class SeasonState(SeasonService seasons, SeasonPreference preference)
         // Keep the viewer where they were, unless that season is gone.
         if (previous is not null && Seasons.Any(s => s.Id == previous))
             SelectedSeasonId = previous;
-
-        OnChanged?.Invoke();
     }
 }

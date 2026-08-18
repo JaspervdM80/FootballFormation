@@ -1,6 +1,11 @@
-@page "/users"
+﻿@page "/users"
 @attribute [Authorize(Roles = AppRoles.Admin)]
 @inherits CancellableComponent
+@rendermode InteractiveServer
+
+@* See InteractiveShell: the providers and the session gate this page no longer inherits, because
+   the layout renders statically. *@
+<InteractiveShell AdminOnly="true" />
 
 <PageTitle>@L["Users"]</PageTitle>
 

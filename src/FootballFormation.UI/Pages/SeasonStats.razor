@@ -1,4 +1,4 @@
-@page "/stats"
+﻿@page "/stats"
 @inherits SeasonAwarePage
 
 <PageTitle>@L["Season statistics"]</PageTitle>
@@ -13,6 +13,8 @@
 {
     return;
 }
+
+<InlineNotice Notice="_notice" />
 
 <PageHeader TitleTypo="Typo.h5" Title="@L["Season statistics"]"
             Subtitle="@(SeasonState.SelectedSeason is { } season
@@ -75,7 +77,7 @@
                 </div>
                 @foreach (var p in _scorers)
                 {
-                    <div class="rank-row" @onclick="() => OpenPlayer(p.Player.Id)">
+                    <a class="rank-row" href="@AppRoutes.PlayerStats(p.Player.Id)">
                         <span class="r-name">
                             @if (p.Player.ShirtNumber is not null)
                             {
@@ -85,7 +87,7 @@
                         </span>
                         <span class="g-num g-hit">@p.Goals</span>
                         <span class="g-num @(p.Assists > 0 ? "g-hit" : "")">@p.Assists</span>
-                    </div>
+                    </a>
                 }
             </div>
         }
@@ -104,7 +106,7 @@
             <div class="rank-list">
                 @foreach (var p in _keepers)
                 {
-                    <div class="rank-row rank-row-2col" @onclick="() => OpenPlayer(p.Player.Id)">
+                    <a class="rank-row rank-row-2col" href="@AppRoutes.PlayerStats(p.Player.Id)">
                         <span class="r-name">
                             @if (p.Player.ShirtNumber is not null)
                             {
@@ -113,7 +115,7 @@
                             @p.Player.DisplayName
                         </span>
                         <span class="g-num g-hit">@p.GoalkeeperMinutes'</span>
-                    </div>
+                    </a>
                 }
             </div>
         }
@@ -133,7 +135,7 @@
             <div class="pt-list">
                 @foreach (var p in _playingTime)
                 {
-                    <div class="pt-row" @onclick="() => OpenPlayer(p.Player.Id)">
+                    <a class="pt-row" href="@AppRoutes.PlayerStats(p.Player.Id)">
                         <div class="pt-head">
                             <span class="pt-name">
                                 @if (p.Player.ShirtNumber is not null)
@@ -150,7 +152,7 @@
                         <div class="position-track">
                             <div class="position-fill" style="width: @(p.Utilization.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
                         </div>
-                    </div>
+                    </a>
                 }
             </div>
         }

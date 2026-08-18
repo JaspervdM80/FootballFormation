@@ -1,3 +1,5 @@
+using FootballFormation.UI.State;
+
 namespace FootballFormation.UI.Navigation;
 
 /// <summary>
@@ -29,4 +31,18 @@ public static class AppRoutes
     public static string Live(int gameId) => $"/games/{gameId}/live";
 
     public static string Result(int gameId) => $"/games/{gameId}/result";
+
+    /// <summary>
+    /// The two chrome controls that are links to an endpoint rather than pages of their own. Both
+    /// write a cookie and send the visitor back where they were, because both settings are fixed
+    /// for the lifetime of a render: the circuit's culture is set at startup, and the season is
+    /// read off the request.
+    /// </summary>
+    /// <param name="returnUrl">Where to land afterwards — a path, not an absolute URL.</param>
+    public static string SetCulture(string culture, string returnUrl) =>
+        $"/culture/set?culture={culture}&redirectUri={Uri.EscapeDataString(returnUrl)}";
+
+    /// <inheritdoc cref="SetCulture"/>
+    public static string SetSeason(int? seasonId, string returnUrl) =>
+        $"/season/set?season={SeasonPreference.Format(seasonId)}&redirectUri={Uri.EscapeDataString(returnUrl)}";
 }

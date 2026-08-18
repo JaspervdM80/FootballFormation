@@ -1,13 +1,17 @@
-@page "/"
+﻿@page "/"
 @inherits CancellableComponent
+@rendermode InteractiveServer
+
+@* See InteractiveShell: the providers and the session gate this page no longer inherits, because
+   the layout renders statically. *@
+<InteractiveShell />
 
 <PageTitle>GJS Meiden</PageTitle>
 
 @* One banner for the whole of match day: waiting for kick-off, being played, and done. *@
 @if (TodaysGame is not null)
 {
-    <div class="home-live-banner @BannerCssClass" role="button" tabindex="0"
-         @onclick="OpenTodaysMatch" @onkeydown="OpenTodaysMatchOnKey">
+    <a class="home-live-banner @BannerCssClass" href="@TodaysMatchUrl">
         @if (IsLive)
         {
             <span class="home-live-dot"></span>
@@ -29,7 +33,7 @@
             <div class="home-live-score">@LiveScore</div>
         }
         <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
-    </div>
+    </a>
 }
 
 <PageHeader Class="mb-6" Title="GJS Meiden"
@@ -39,56 +43,60 @@
    repeating it, and the larger hit area is what a thumb wants on a phone. *@
 <MudGrid Spacing="4">
     <MudItem xs="12" sm="6" md="4">
-        <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;" role="button" tabindex="0"
-                  @onclick="@(() => Open(AppRoutes.Players))" @onkeydown="@(e => OpenOnKey(e, AppRoutes.Players))">
-            <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Style="color: var(--club-primary-bright);" />
-            <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Selection"]</MudText>
-            <AuthorizeView Roles="@AppRoles.Admin">
-                <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
-                    @L["Add players with their positions and shirt numbers."]
-                </MudText>
-            </AuthorizeView>
-        </MudPaper>
+        <a class="home-tile-link" href="@AppRoutes.Players">
+            <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;">
+                <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Style="color: var(--club-primary-bright);" />
+                <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Selection"]</MudText>
+                <AuthorizeView Roles="@AppRoles.Admin">
+                    <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
+                        @L["Add players with their positions and shirt numbers."]
+                    </MudText>
+                </AuthorizeView>
+            </MudPaper>
+        </a>
     </MudItem>
 
     <MudItem xs="12" sm="6" md="4">
-        <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;" role="button" tabindex="0"
-                  @onclick="@(() => Open(AppRoutes.Games))" @onkeydown="@(e => OpenOnKey(e, AppRoutes.Games))">
-            <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Size="Size.Large" Style="color: var(--club-primary-bright);" />
-            <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Games & Formations"]</MudText>
-            <AuthorizeView Roles="@AppRoles.Admin">
-                <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
-                    @L["Create games, build formations, and track results."]
-                </MudText>
-            </AuthorizeView>
-        </MudPaper>
+        <a class="home-tile-link" href="@AppRoutes.Games">
+            <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;">
+                <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Size="Size.Large" Style="color: var(--club-primary-bright);" />
+                <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Games & Formations"]</MudText>
+                <AuthorizeView Roles="@AppRoles.Admin">
+                    <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
+                        @L["Create games, build formations, and track results."]
+                    </MudText>
+                </AuthorizeView>
+            </MudPaper>
+        </a>
     </MudItem>
 
     <MudItem xs="12" sm="6" md="4">
-        <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;" role="button" tabindex="0"
-                  @onclick="@(() => Open(AppRoutes.SeasonStats))" @onkeydown="@(e => OpenOnKey(e, AppRoutes.SeasonStats))">
-            <MudIcon Icon="@Icons.Material.Filled.BarChart" Size="Size.Large" Style="color: var(--club-primary-bright);" />
-            <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Season stats"]</MudText>
-            <AuthorizeView Roles="@AppRoles.Admin">
-                <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
-                    @L["See the team record, top scorers, and playing time."]
-                </MudText>
-            </AuthorizeView>
-        </MudPaper>
+        <a class="home-tile-link" href="@AppRoutes.SeasonStats">
+            <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;">
+                <MudIcon Icon="@Icons.Material.Filled.BarChart" Size="Size.Large" Style="color: var(--club-primary-bright);" />
+                <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Season stats"]</MudText>
+                <AuthorizeView Roles="@AppRoles.Admin">
+                    <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
+                        @L["See the team record, top scorers, and playing time."]
+                    </MudText>
+                </AuthorizeView>
+            </MudPaper>
+        </a>
     </MudItem>
 
     @* /settings is [Authorize], so a visitor tapping this tile only ever reached the login
        screen. Hide the whole tile rather than offer a door that is locked. *@
     <AuthorizeView Roles="@AppRoles.Admin">
         <MudItem xs="12" sm="6" md="4">
-            <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;" role="button" tabindex="0"
-                      @onclick="@(() => Open(AppRoutes.Settings))" @onkeydown="@(e => OpenOnKey(e, AppRoutes.Settings))">
-                <MudIcon Icon="@Icons.Material.Filled.Settings" Size="Size.Large" Style="color: var(--club-primary-bright);" />
-                <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Preferences"]</MudText>
-                <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
-                    @L["Configure match duration, split type, and defaults."]
-                </MudText>
-            </MudPaper>
+            <a class="home-tile-link" href="@AppRoutes.Settings">
+                <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Settings" Size="Size.Large" Style="color: var(--club-primary-bright);" />
+                    <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Preferences"]</MudText>
+                    <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
+                        @L["Configure match duration, split type, and defaults."]
+                    </MudText>
+                </MudPaper>
+            </a>
         </MudItem>
     </AuthorizeView>
 </MudGrid>

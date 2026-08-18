@@ -42,6 +42,13 @@ const SELECTORS = {
                              'game-list', 'game-list-no-minutes', 'game-note', 'g-opp-name',
                              'position-meta', 'pt-row', 'badge-venue'],
   'the phone layout': ['dialog-sheet', 'stacked-table', 'topbar-nav'],
+  // The chrome the specs drive without a circuit: the drawer is a checkbox and the two pickers are
+  // <details> disclosures, so these names are the only handle the tests have on them.
+  'the chrome': ['app-drawer', 'nav-hamburger', 'season-picker', 'season-menu-all',
+                 'season-picker-label', 'language-picker', 'language-picker-menu'],
+  // The markup that replaced a handler with a link, or a snackbar with a line on the page.
+  'the pages without a circuit': ['inline-notice', 'home-tile-link', 'overview-capture',
+                                  'pd-name-cell', 'rank-row', 'action-btn'],
   'the squad': ['badge-archived'],
 };
 

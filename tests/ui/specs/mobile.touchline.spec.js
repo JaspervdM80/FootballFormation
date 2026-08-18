@@ -5,20 +5,23 @@
 // app-bar sections become a drawer, the squad table becomes a list of cards, and the match form
 // becomes a full-screen sheet.
 import { test, expect } from '../fixtures.js';
-import { clickFor, createMatch, fillField, gameRow, goto, submitDialog } from '../helpers.js';
+import { clickFor, createMatch, fillField, gameRow, goto, gotoRendered, submitDialog } from '../helpers.js';
 
 test('the sections are behind the drawer, not the app bar', async ({ page }) => {
-  await goto(page, '/');
+  // The drawer needs no circuit, and neither does anything else this test touches.
+  await gotoRendered(page, '/');
 
   // The horizontal nav is hidden at this width; the hamburger is the way through.
   await expect(page.locator('.topbar-nav')).toBeHidden();
 
-  // A closed MudDrawer is not hidden — it is parked off the side of the screen, with a bounding box
+  // A closed drawer is not hidden — it is parked off the side of the screen, with a bounding box
   // and everything — so "closed" means out of the viewport, not out of the DOM.
-  const gamesLink = page.locator('.mud-drawer').getByText('Games', { exact: false }).first();
+  const gamesLink = page.locator('.app-drawer').getByText('Games', { exact: false }).first();
   await expect(gamesLink).not.toBeInViewport();
 
-  await clickFor(page.getByLabel('Menu'), () => expect(gamesLink).toBeInViewport());
+  // The hamburger is a <label> for a visually-hidden checkbox — that checkbox is the drawer's open
+  // state, so no circuit and no script are involved and the label is what a thumb hits.
+  await clickFor(page.locator('label.nav-hamburger'), () => expect(gamesLink).toBeInViewport());
   await gamesLink.click();
 
   await expect(page).toHaveURL(/\/games$/);

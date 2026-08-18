@@ -292,6 +292,24 @@ the signal. `goto()` waits for it, and `waitForHandlers()` waits for one specifi
 why there is not a single fixed sleep in the directory, and adding one is how the suite starts
 failing on a slow machine.
 
+**What it does not see, and the second helper that exists because of it.** Blazor writes that
+attribute for handlers it registers on the element itself, which in practice means MudBlazor's own
+controls — a plain `<button @onclick>` or a `<div @onclick>` of ours never gets one, measured on
+`/games`. So the signal really means *MudBlazor has rendered an interactive control*, and a page
+that renders none for the current visitor satisfies it never. That used to be impossible, because
+the chrome carried a `MudIconButton` on every page; the chrome renders statically since the
+render-mode split, so it is the page's own controls or nothing. Two kinds of page now have none: one
+with no circuit at all (`/stats`, `/players/{id}/stats`, `/games/{id}/overview`), and an interactive
+one whose every control sits behind `AuthorizeView` with the visitor signed out (`/players`,
+`/games`). Those call sites use **`gotoRendered`**, which waits for the page to stop fetching rather
+than for a handler — past the point where a circuit would have negotiated, which is also what keeps
+it from aborting a handshake on the way out. It is not a way to make a flaky click pass: on a page
+that does bind handlers, waiting for them is the whole point.
+
+`rendermode.spec.js` is where the render-mode split is pinned — that `/stats`, the player pages and
+the match report open no WebSocket at all, and that `/games` still does, so the probe cannot rot
+into passing on a listener that stopped working.
+
 The same rule now holds in `scripts/`, where `blazor.mjs` carries `goto`, `clickFor`,
 `waitForStableBox` and `waitUntil` for the visual harness. That harness was written before any of
 this was understood and was built on fourteen fixed sleeps; replacing them with waits on the thing

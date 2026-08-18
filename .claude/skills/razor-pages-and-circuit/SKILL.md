@@ -5,6 +5,32 @@ description: Building or changing a Razor page, dialog or component in FootballF
 
 # Razor pages and the circuit
 
+## Decide the render mode before anything else
+
+**Most pages have no circuit.** `@rendermode InteractiveServer` is declared per page and never on
+`<Routes>` or `<HeadOutlet>`. A new page gets one **only if it needs a server-side event handler** —
+a dialog, a snackbar, `@bind`, JS interop, a timer, a `LiveMatchNotifier` subscription. Navigation
+is not a reason: an anchor does that with no circuit at all.
+
+Today's split: `/`, `/games`, `/players`, `/games/{id}/formation`, `/games/{id}/live`,
+`/games/{id}/result`, `/settings` and `/users` are interactive. `/stats`, `/stats/positions`,
+`/players/{id}/stats`, `/games/{id}/overview`, `/login`, `/Error` and `/not-found` are not, and
+`rendermode.spec.js` asserts they open no WebSocket. That is the whole point: a page with no circuit
+cannot show "Reconnecting…", cannot force a reload, and survives a phone suspending the app.
+
+**A page that declares a render mode opens with `<InteractiveShell />`** (or
+`<InteractiveShell AdminOnly="true" />` where it also has `[Authorize(Roles = AppRoles.Admin)]`).
+That carries the MudBlazor providers and the revocation gate, which the layout can no longer supply:
+`MainLayout` renders **statically for every page**, because `RouteView` applies it outside the
+island and a layout cannot carry a render mode at all.
+
+**On a static page:**
+- `ISnackbar` reports into nothing. Use `PageNotice` + `<InlineNotice Notice="_notice" />`.
+- `IJSRuntime` and `OnAfterRenderAsync` never run. Give the work to a plain `onclick` and a script
+  that owns its own failure message — `js/screenshot.js` is the worked example.
+- `CancellableComponent` and `SeasonAwarePage` still compile and are largely inert. Harmless.
+- A `<div @onclick>` standing in for a link is just a link. Write the anchor.
+
 ## File shape
 
 Pages use `.razor` + `.razor.cs` code-behind partial classes.
@@ -72,27 +98,32 @@ A circuit outlives a request and a singleton outlives the circuit.
 
 - **Every `+=` needs its `-=` in `Dispose`**, and the component must actually implement `IDisposable`.
   `LiveMatchNotifier` is a **singleton** — a handler never removed keeps a dead circuit's component
-  alive and re-entered for every future match. Copy `SeasonPicker`, `MainLayout`, `SeasonAwarePage`.
-- **A callback arriving from outside the circuit** (`LiveMatchNotifier`, `SeasonState.OnChanged`) must
-  re-enter through `InvokeAsync` before touching component state or calling `StateHasChanged`.
+  alive and re-entered for every future match. Copy `Home` and `LiveMatch`, the two that subscribe.
+- **A callback arriving from outside the circuit** (`LiveMatchNotifier`) must re-enter through
+  `InvokeAsync` before touching component state or calling `StateHasChanged`.
+- The chrome no longer subscribes to anything, which is most of this hazard gone: it renders
+  statically, so there is no circuit for it to leak into.
 
 ## UI state services
 
-`SeasonState` holds the selected season; `NavigationTrail` holds where the visitor has been. Both are
-`Scoped`, so on Blazor Server they live for the circuit — a choice survives navigation within a tab
-but resets on refresh.
+`SeasonState` holds the selected season; `NavigationTrail` answers where the visitor came from. Both
+are `Scoped`, and since the render-mode split **a page has two scopes**: the static render of the
+chrome, and the circuit behind an interactive page's island.
 
+- Both read `RequestContext`, which the host fills in from the request that created the scope. That
+  works in either scope because a circuit is created *during* the `/_blazor` request, which carries
+  the same cookies. **It does not carry a `Referer`** — so a back arrow inside an island always
+  takes its `Fallback`.
 - Loading is a **memoized task** (`EnsureLoadedAsync() => _loading ??= LoadAsync()`), because a scoped
   service cannot load in its constructor and the layout and page both need the data during their own
   `OnInitializedAsync`.
-- Season-aware pages **do not wire up `OnChanged` themselves** — they inherit `SeasonAwarePage`, which
-  awaits the load, subscribes, re-runs `LoadAsync()` inside `InvokeAsync` on change, and unsubscribes
-  on dispose. Override `LoadAsync()`; use `OnInitializedCoreAsync()` for one-time setup.
+- **Choosing a season is a navigation, not an event** — a link to `/season/set`, which stores the
+  cookie and redirects back. There is no `OnChanged` to subscribe to; `SeasonAwarePage` exists only
+  to await the load before the page's first query.
+- Any link that changes per-request state needs `data-enhance-nav="false"`, or an island that is
+  already up keeps the old value while the chrome around it shows the new one.
 - The state holds a **view** choice and never writes shared data — the picker is reachable by
   anonymous visitors, so it must not touch `Season.IsCurrent`.
-- `NavigationTrail.Start()` is called by `MainLayout.OnInitialized`, before any page renders: a scoped
-  service is not constructed until something injects it, and if the first injector were a detail
-  page's back button the navigation that led there would already have been missed.
 
 ## A generic dialog result cannot tell `default` from "cancelled"
 

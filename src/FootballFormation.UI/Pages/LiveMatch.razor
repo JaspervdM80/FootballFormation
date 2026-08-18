@@ -1,5 +1,10 @@
-@page "/games/{GameId:int}/live"
+﻿@page "/games/{GameId:int}/live"
 @inherits CancellableComponent
+@rendermode InteractiveServer
+
+@* See InteractiveShell: the providers and the session gate this page no longer inherits, because
+   the layout renders statically. *@
+<InteractiveShell />
 
 <PageTitle>@L["Live Match"]</PageTitle>
 

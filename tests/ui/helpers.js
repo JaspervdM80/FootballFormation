@@ -22,6 +22,14 @@ import { expect } from '@playwright/test';
 // So `window.Blazor` says the script loaded, not that anything works. Waiting on it is why the
 // seeded-password step filled three inputs the server never heard about and then submitted the
 // form it was prerendered with.
+//
+// **What it does not see.** Blazor writes that attribute for handlers it has to register on the
+// element itself, which in practice means MudBlazor's own controls — a plain `<button @onclick>`
+// or a `<div @onclick>` of ours never gets one, measured on /games. So this is really "MudBlazor
+// has rendered an interactive control", and a page that renders none for the current visitor
+// satisfies it never. That used to be impossible, because the chrome carried a MudIconButton on
+// every page; the chrome renders statically now, so it is the page's own controls or nothing —
+// and for an anonymous visitor several pages have none. Those call sites use gotoRendered.
 const HANDLERS_BOUND = () => [...document.querySelectorAll('button,a,input')]
   .some(el => el.getAttributeNames().some(name => name.startsWith('_bl_')));
 
@@ -29,6 +37,28 @@ const HANDLERS_BOUND = () => [...document.querySelectorAll('button,a,input')]
 export async function goto(page, path) {
   await page.goto(path, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(HANDLERS_BOUND, null, { timeout: 30_000 });
+}
+
+/**
+ * Navigates and waits for the markup only, for a page with no handler to wait for.
+ *
+ * Two kinds of page qualify, and neither is broken:
+ *   - a page rendered without a circuit at all;
+ *   - a page that *is* interactive but whose only handlers are splatted onto MudBlazor components
+ *     (`@onclick` on a MudPaper, `OnRowClick` on a MudTable). Those work — the click navigates —
+ *     but Blazor stamps `_bl_` only on handlers declared on an HTML element, so `goto` would wait
+ *     thirty seconds for a signal that is never coming.
+ *
+ * Do not reach for this to make a flaky click pass: on a page that does bind handlers, waiting for
+ * them is the whole point, and skipping the wait puts the click back in the prerender window.
+ */
+export async function gotoRendered(page, path) {
+  await page.goto(path, { waitUntil: 'domcontentloaded' });
+  // Until the page stops fetching, not merely until it paints. A page that does open a circuit
+  // starts negotiating during this window, and navigating away mid-handshake aborts it — which
+  // surfaces as a "Failed to complete negotiation" console error and fails the run. WebSockets do
+  // not count towards networkidle, so an established circuit does not hold this open.
+  await page.waitForLoadState('networkidle');
 }
 
 /**

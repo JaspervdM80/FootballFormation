@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Security.Claims;
 using System.Threading.RateLimiting;
 using FootballFormation.Core.Data;
@@ -121,9 +121,21 @@ try
     // not just the one that made it.
     builder.Services.AddSingleton<LiveMatchNotifier>();
 
-    builder.Services.AddScoped<SeasonPreference>();
     builder.Services.AddScoped<SeasonState>();
     builder.Services.AddScoped<NavigationTrail>();
+
+    // What the request knew, for the components rendered in its scope. A static render and a
+    // circuit are two different scopes and each gets its own — which is the point: a circuit is
+    // created *during* a request too (the /_blazor one), and that request carries the same cookies,
+    // so both scopes resolve the same season without anyone asking the browser. The referrer is the
+    // one thing /_blazor does not carry; see NavigationTrail for what that costs.
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddScoped(sp =>
+        sp.GetRequiredService<IHttpContextAccessor>().HttpContext is { } http
+            ? new RequestContext(
+                http.Request.Cookies[SeasonPreference.CookieName],
+                http.Request.Headers.Referer.ToString())
+            : RequestContext.None);
 
     builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
         .AddCookie(options =>
@@ -401,6 +413,34 @@ try
                 CookieRequestCultureProvider.DefaultCookieName,
                 CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture)),
                 new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1), IsEssential = true });
+        }
+
+        return Results.LocalRedirect($"~/{redirectUri.TrimStart('/')}");
+    });
+
+    // Season picker target, the same shape as the language switcher above. A season change is a
+    // navigation rather than an event because the picker lives in the layout, which renders
+    // statically for every page — there is no circuit there to handle a click, and this endpoint
+    // has the one thing a circuit never has: a response to put a Set-Cookie on.
+    app.MapGet("/season/set", (string season, string redirectUri, HttpContext context) =>
+    {
+        // Anything unparseable is simply not stored. Parse already treats an absent cookie and a
+        // hand-edited one the same way, so a bad query string lands the visitor back where they
+        // were, on the season they already had.
+        if (season == SeasonPreference.AllSeasons || int.TryParse(season, out _))
+        {
+            context.Response.Cookies.Append(
+                SeasonPreference.CookieName,
+                season,
+                new CookieOptions
+                {
+                    // Secure is left off so this still works over the plain http:// of a local
+                    // `dotnet run` — the value is a season id, not a credential. Lax because
+                    // nothing cross-site needs to send it.
+                    MaxAge = SeasonPreference.Lifetime,
+                    SameSite = SameSiteMode.Lax,
+                    IsEssential = true,
+                });
         }
 
         return Results.LocalRedirect($"~/{redirectUri.TrimStart('/')}");

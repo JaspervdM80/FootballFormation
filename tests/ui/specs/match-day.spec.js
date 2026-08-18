@@ -6,7 +6,7 @@
 // built in the formation builder has to be the lineup the live screen substitutes from.
 import { test, expect } from '../fixtures.js';
 import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
-import { chooseOption, clickFor, createMatch, gameRow, goto, openDialog, submitDialog } from '../helpers.js';
+import { chooseOption, clickFor, createMatch, gameRow, goto, gotoRendered, openDialog, submitDialog } from '../helpers.js';
 
 /** Creates a match and returns its id, read from the URL its own formation button navigates to. */
 async function matchWithId(page, opponent, options = {}) {
@@ -347,7 +347,7 @@ test('the playing-time table drops its estimate once the match has been run', as
 });
 
 test('minutes played show up in the statistics once a match is complete', async ({ page }) => {
-  await goto(page, '/stats');
+  await gotoRendered(page, '/stats');
 
   // The seeded squad is on the page whether or not anyone has played yet; the point of the check is
   // that the report renders against real games rather than throwing on an empty one.
@@ -383,7 +383,7 @@ test('the statistics give an admin the minutes and a visitor only the split', as
     () => expect(page.getByText('saved', { exact: false }).first()).toBeVisible(),
   );
 
-  await goto(page, '/stats');
+  await gotoRendered(page, '/stats');
   const row = page.locator('.pt-row', {
     has: page.locator('.r-shirt', { hasText: new RegExp(`^${shirt}$`) }),
   }).first();
@@ -403,7 +403,7 @@ test('the statistics give an admin the minutes and a visitor only the split', as
   // was one line-up in one position, so their row carries the "single position" flag. Finding the
   // row at all is most of the assertion: the grid falls back to an empty-state card with no table
   // whenever it has nothing to pivot, so a broken pivot fails here before the badge check does.
-  await goto(page, '/stats/positions');
+  await gotoRendered(page, '/stats/positions');
   const gridRow = page.locator('.mud-table-body .mud-table-row', {
     has: page.locator('.pd-num', { hasText: new RegExp(`^${shirt}$`) }),
   }).first();
@@ -413,7 +413,7 @@ test('the statistics give an admin the minutes and a visitor only the split', as
   const visitor = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
   try {
     const anon = await visitor.newPage();
-    await goto(anon, playerPath);
+    await gotoRendered(anon, playerPath);
 
     // Same page, same player — the positions card proves it rendered before anything is asserted
     // to be missing, and it still says how they divided the time they got.

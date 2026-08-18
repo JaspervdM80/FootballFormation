@@ -1,4 +1,4 @@
-@page "/login"
+﻿@page "/login"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.WebUtilities
 @using Microsoft.Extensions.Localization
@@ -18,7 +18,7 @@
 
         @if (_showError)
         {
-            <div style="background: color-mix(in srgb, var(--color-danger) 12%, transparent); border: 1px solid color-mix(in srgb, var(--color-danger) 30%, transparent); border-radius: 8px; padding: 12px; margin-bottom: 20px; color: var(--color-danger-bright); font-size: 0.875rem; text-align: center;">
+            <div class="inline-notice inline-notice-error" style="text-align: center;" role="alert">
                 @L["Invalid username or password"]
             </div>
         }

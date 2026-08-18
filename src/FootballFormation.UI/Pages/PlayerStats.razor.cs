@@ -1,4 +1,4 @@
-using FootballFormation.Core.Models;
+﻿using FootballFormation.Core.Models;
 using FootballFormation.Core.Reporting;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
@@ -6,7 +6,6 @@ using FootballFormation.UI.Navigation;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Localization;
-using MudBlazor;
 
 namespace FootballFormation.UI.Pages;
 
@@ -16,8 +15,9 @@ public partial class PlayerStats
     [Inject] private SeasonSquadService SquadService { get; set; } = null!;
     [Inject] private GameService GameService { get; set; } = null!;
     [Inject] private NavigationTrail Trail { get; set; } = null!;
-    [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
+
+    private readonly PageNotice _notice = new();
 
     [CascadingParameter]
     private Task<AuthenticationState> AuthStateTask { get; set; } = null!;
@@ -47,7 +47,7 @@ public partial class PlayerStats
         // Not a missing player — the visitor left. Redirecting would move them again.
         if (playerResult.IsCancelled) return;
 
-        if (!Snackbar.ReportFailure(L, playerResult))
+        if (!_notice.ReportFailure(L, playerResult))
         {
             Trail.Redirect(AppRoutes.Players);
             return;
@@ -57,10 +57,10 @@ public partial class PlayerStats
         // player's available minutes. GetByIdAsync stays: the page is reachable for anyone on file,
         // including someone who is in no current squad.
         var squadsResult = await SquadService.GetSquadsAsync(SeasonId, Cancellation);
-        var squads = Snackbar.ReportFailure(L, squadsResult) ? squadsResult.Value! : SeasonSquads.Empty;
+        var squads = _notice.ReportFailure(L, squadsResult) ? squadsResult.Value! : SeasonSquads.Empty;
 
         var gamesResult = await GameService.GetAllWithDetailsAsync(SeasonId, Cancellation);
-        var games = Snackbar.ReportFailure(L, gamesResult) ? gamesResult.Value! : [];
+        var games = _notice.ReportFailure(L, gamesResult) ? gamesResult.Value! : [];
 
         _stats = PlayerStatsReport.Build(playerResult.Value!, games, squads);
         _loaded = true;

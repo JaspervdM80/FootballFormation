@@ -3,18 +3,20 @@
 // it needs tests: break the cookie and the app still works, it just quietly forgets again.
 import { test, expect } from '../fixtures.js';
 import { BASE_URL } from '../playwright.config.js';
-import { goto, clickFor } from '../helpers.js';
+import { goto } from '../helpers.js';
 
 const COOKIE = 'ff.season';
 const EIGHT_HOURS = 8 * 60 * 60;
 
-/** The app-bar picker's button — the MudMenu wrapper it sits in has no size of its own. */
-const picker = page => page.locator('.season-picker button').first();
+/** The app-bar picker's summary — the <details> it sits in wraps the open menu too. */
+const picker = page => page.locator('.season-picker > summary').first();
 
+// The entries are links to /season/set, so choosing one is a navigation and not a click to retry:
+// clickFor would press a second time while the first was still in flight.
 async function chooseAllSeasons(page) {
-  const menu = page.locator('.mud-popover-open');
-  await clickFor(picker(page), () => expect(menu).toBeVisible());
-  await clickFor(menu.getByText('All seasons'), () => expect(menu).toBeHidden());
+  await picker(page).click();
+  await page.locator('.season-picker .season-menu-all').first().click();
+  await page.waitForURL(url => !url.pathname.startsWith('/season/set'));
   await expect(picker(page)).toContainText('All seasons');
 }
 
@@ -56,14 +58,16 @@ test('the server renders the stored season, without waiting to be told by the br
 
   await goto(page, '/games');
 
-  // Taken before as well as after, so this cannot quietly stop testing anything: the picker's menu
-  // items are not in the prerendered markup today, but if MudBlazor ever renders them eagerly the
-  // phrase would be in both responses and only the "before" assertion would notice.
-  expect(await prerendered(), 'nothing should say "All seasons" before it is chosen')
-    .not.toContain('All seasons');
+  // The picker's own label, not the phrase anywhere on the page: every entry is a plain link now,
+  // so "All seasons" is in the markup whether or not it is the choice. Taken before as well as
+  // after, so this cannot quietly stop testing anything.
+  const LABEL = '<span class="season-picker-label">All seasons</span>';
+
+  expect(await prerendered(), 'the picker should not read "All seasons" before it is chosen')
+    .not.toContain(LABEL);
 
   await chooseAllSeasons(page);
 
-  expect(await prerendered(), 'the prerendered HTML should already carry the stored choice')
-    .toContain('All seasons');
+  expect(await prerendered(), 'the rendered HTML should already carry the stored choice')
+    .toContain(LABEL);
 });

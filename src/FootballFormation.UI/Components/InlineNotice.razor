@@ -1,0 +1,15 @@
+@namespace FootballFormation.UI.Components
+@using FootballFormation.UI.Helpers
+
+@* The snackbar of a page that has no circuit — see PageNotice. Rendered in the page rather than
+   floated over it, because there is nothing to dismiss it and nothing to time it out. *@
+@if (Notice?.Message is { Length: > 0 } message)
+{
+    <div class="inline-notice inline-notice-@Notice.Severity.ToString().ToLowerInvariant()" role="alert">
+        @message
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public PageNotice? Notice { get; set; }
+}
