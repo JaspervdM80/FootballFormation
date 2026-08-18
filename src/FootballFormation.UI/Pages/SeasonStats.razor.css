@@ -54,9 +54,14 @@
 
 .rank-row:last-child { border-bottom: none; }
 
-.rank-row:not(.rank-head) { cursor: pointer; }
+/* Every row but the header is an anchor to that player's statistics — the display:grid above has to
+   survive the element change, and an anchor arrives with a colour and an underline of its own. */
+a.rank-row {
+    color: inherit;
+    text-decoration: none;
+}
 
-.rank-row:not(.rank-head):hover { background: var(--surface-card-alt); }
+a.rank-row:hover { background: var(--surface-card-alt); }
 
 .rank-head {
     font-size: 0.6rem;
@@ -102,9 +107,13 @@
     gap: 12px;
 }
 
-.pt-row { cursor: pointer; }
+a.pt-row {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+}
 
-.pt-row:hover .pt-name { color: var(--club-primary-bright); }
+a.pt-row:hover .pt-name { color: var(--club-primary-bright); }
 
 .pt-head {
     display: flex;

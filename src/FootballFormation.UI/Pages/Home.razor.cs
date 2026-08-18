@@ -1,4 +1,4 @@
-using FootballFormation.Core.Models;
+﻿using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Navigation;
 using Microsoft.AspNetCore.Components;
@@ -15,7 +15,6 @@ public partial class Home
 {
     [Inject] private LiveMatchService Live { get; set; } = null!;
     [Inject] private LiveMatchNotifier Notifier { get; set; } = null!;
-    [Inject] private NavigationManager Navigation { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
     private Game? TodaysGame { get; set; }
@@ -74,28 +73,11 @@ public partial class Home
     /// Where the banner goes: the live screen while there is still a match to follow — before
     /// kick-off too, and for spectators as much as the coach — and the result once it is over.
     /// </summary>
-    private void OpenTodaysMatch()
-    {
-        if (TodaysGame is null) return;
-
-        Navigation.NavigateTo(TodaysGame.MatchState == MatchState.Finished
+    private string TodaysMatchUrl => TodaysGame is null
+        ? AppRoutes.Home
+        : TodaysGame.MatchState == MatchState.Finished
             ? AppRoutes.Result(TodaysGame.Id)
-            : AppRoutes.Live(TodaysGame.Id));
-    }
-
-    /// <summary>The banner is a div, so it needs the keyboard activation a button would give it.</summary>
-    private void OpenTodaysMatchOnKey(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
-    {
-        if (e.Key is "Enter" or " ") OpenTodaysMatch();
-    }
-
-    private void Open(string url) => Navigation.NavigateTo(url);
-
-    /// <summary>Same reason as the banner: the tiles are divs standing in for links.</summary>
-    private void OpenOnKey(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e, string url)
-    {
-        if (e.Key is "Enter" or " ") Open(url);
-    }
+            : AppRoutes.Live(TodaysGame.Id);
 
     public override void Dispose()
     {

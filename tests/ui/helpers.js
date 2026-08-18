@@ -49,6 +49,11 @@ export async function goto(page, path) {
  */
 export async function gotoRendered(page, path) {
   await page.goto(path, { waitUntil: 'domcontentloaded' });
+  // Until the page stops fetching, not merely until it paints. A page that does open a circuit
+  // starts negotiating during this window, and navigating away mid-handshake aborts it — which
+  // surfaces as a "Failed to complete negotiation" console error and fails the run. WebSockets do
+  // not count towards networkidle, so an established circuit does not hold this open.
+  await page.waitForLoadState('networkidle');
 }
 
 /**

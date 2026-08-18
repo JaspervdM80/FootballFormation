@@ -1,4 +1,4 @@
-@page "/stats/positions"
+﻿@page "/stats/positions"
 @attribute [Authorize(Roles = AppRoles.Admin)]
 @inherits SeasonAwarePage
 
@@ -9,6 +9,8 @@
     <MudProgressCircular Indeterminate="true" />
     return;
 }
+
+<InlineNotice Notice="_notice" />
 
 @* The hint spells out what the row chevron only hints at, the way the squad table does. *@
 <PageHeader BackFallback="@AppRoutes.SeasonStats" TitleTypo="Typo.h5" Title="@L["Position Development"]">
@@ -22,7 +24,7 @@
         {
             <MudText Typo="Typo.caption" Class="squad-hint">
                 <MudIcon Icon="@Icons.Material.Filled.TouchApp" Size="Size.Small" />
-                @L["Tap a player to see their statistics."]
+                @L["Tap a player's name to see their statistics."]
             </MudText>
         }
     </SubtitleContent>
@@ -56,7 +58,7 @@
 </div>
 
 <MudTable Items="_report.Rows" Hover="true" Dense="true" Elevation="2" T="PositionDevelopmentRow"
-          OnRowClick="OnRowClicked" RowStyle="cursor: pointer;" HorizontalScrollbar="true"
+          HorizontalScrollbar="true"
           Class="position-dev-table stacked-table" Style="border-radius: 16px;">
     <HeaderContent>
         <MudTh>#</MudTh>
@@ -73,7 +75,9 @@
             <span style="font-weight: 700; color: var(--club-primary-bright);">@(context.Player.ShirtNumber?.ToString() ?? "-")</span>
         </MudTd>
         <MudTd DataLabel="@L["Player"]" Class="pd-name">
-            <span class="pd-name-cell">
+            @* The name is the link, rather than a handler on the row: a row click cannot be an
+               anchor, and this page renders without a circuit to dispatch one to. *@
+            <a class="pd-name-cell" href="@AppRoutes.PlayerStats(context.Player.Id)">
                 <span style="font-weight: 600; color: var(--ink);">@context.Player.DisplayName</span>
                 @if (context.IsSinglePosition)
                 {
@@ -82,7 +86,7 @@
                     </span>
                 }
                 <span class="player-name-chevron" aria-hidden="true">›</span>
-            </span>
+            </a>
         </MudTd>
         @foreach (var position in _report.Positions)
         {

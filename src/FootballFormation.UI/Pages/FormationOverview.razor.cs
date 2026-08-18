@@ -1,12 +1,10 @@
-using FootballFormation.Core.Models;
+﻿using FootballFormation.Core.Models;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
 using FootballFormation.UI.Navigation;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Logging;
-using Microsoft.JSInterop;
-using MudBlazor;
 
 namespace FootballFormation.UI.Pages;
 
@@ -14,8 +12,6 @@ public partial class FormationOverview
 {
     [Inject] private GameService GameService { get; set; } = null!;
     [Inject] private NavigationTrail Trail { get; set; } = null!;
-    [Inject] private ISnackbar Snackbar { get; set; } = null!;
-    [Inject] private IJSRuntime JS { get; set; } = null!;
     [Inject] private ILogger<FormationOverview> Logger { get; set; } = null!;
 
     [CascadingParameter]
@@ -40,8 +36,10 @@ public partial class FormationOverview
 
         if (result.IsFailure || result.Value is null)
         {
+            // No message travels with the redirect: this page renders without a circuit, so there
+            // is no snackbar that outlives the navigation to raise one on. The games list is where
+            // a broken link should land anyway, and the log has the id.
             Logger.LogWarning("Game {GameId} not found for overview", GameId);
-            Snackbar.Add(L["Game with ID {0} not found", GameId], Severity.Error);
             Trail.Redirect(AppRoutes.Games);
             return;
         }
@@ -57,17 +55,4 @@ public partial class FormationOverview
     /// <summary>Only reached on a deep link — a shared overview usually is one. An admin who lands
     /// here cold is most likely on their way to edit it; a visitor has no editor to go to.</summary>
     private string BackFallback => IsAnonymous ? AppRoutes.Games : AppRoutes.Formation(GameId);
-
-    private async Task CaptureScreenshot()
-    {
-        try
-        {
-            await JS.InvokeVoidAsync("captureFormationOverview", "formation-overview");
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to capture screenshot");
-            Snackbar.Add(L["Screenshot failed — try using your device's screenshot instead"], Severity.Warning);
-        }
-    }
 }

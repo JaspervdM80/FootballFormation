@@ -1,4 +1,4 @@
-@page "/players/{PlayerId:int}/stats"
+﻿@page "/players/{PlayerId:int}/stats"
 @inherits SeasonAwarePage
 
 <PageTitle>@(_stats is not null ? _stats.Player.DisplayName : L["Player Stats"])</PageTitle>
@@ -13,6 +13,8 @@
 {
     return;
 }
+
+<InlineNotice Notice="_notice" />
 
 @* The squad is only the fallback: this page is reached from the season statistics just as often,
    and the back arrow follows whichever way the visitor actually came. *@

@@ -1,4 +1,4 @@
-@page "/games/{GameId:int}/overview"
+﻿@page "/games/{GameId:int}/overview"
 @inherits CancellableComponent
 @inject IStringLocalizer<Strings> L
 
@@ -71,10 +71,17 @@
     </div>
 </div>
 
+@* A plain onclick into js/screenshot.js, not a Blazor handler: the script already takes only an
+   element id and does the download itself, and this page renders without a circuit to dispatch a
+   handler to. It also owns telling the visitor when it failed, which is what the notice is for. *@
 <div class="overview-actions">
-    <MudButton Variant="Variant.Filled" Size="Size.Small" Class="btn-gold"
-               StartIcon="@Icons.Material.Filled.CameraAlt"
-               OnClick="CaptureScreenshot">
+    <button type="button" class="btn-gold overview-capture"
+            onclick="captureFormationOverview('formation-overview', 'screenshot-error')">
+        <MudIcon Icon="@Icons.Material.Filled.CameraAlt" Size="Size.Small" />
         @L["Save as image"]
-    </MudButton>
+    </button>
+</div>
+
+<div id="screenshot-error" class="inline-notice inline-notice-warning" role="alert" hidden>
+    @L["Screenshot failed — try using your device's screenshot instead"]
 </div>

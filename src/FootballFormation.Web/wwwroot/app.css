@@ -958,8 +958,21 @@ html, body {
     }
 }
 
-/* Home tiles. The whole card is the link, so it needs the affordances a button had:
-   a pointer, a lift on hover and a visible focus ring for keyboard users. */
+/* Home tiles. The whole card is a link — an anchor wrapping the MudPaper rather than a div with an
+   @onclick, so it works with no circuit and the browser gives it keyboard activation for free. */
+.home-tile-link {
+    display: block;
+    height: 100%;
+    color: inherit;
+    text-decoration: none;
+    border-radius: 16px;
+}
+
+.home-tile-link:focus-visible {
+    outline: 2px solid var(--club-primary-bright);
+    outline-offset: 2px;
+}
+
 .home-tile {
     height: 100%;
     display: flex;
@@ -968,18 +981,15 @@ html, body {
     transition: transform 120ms ease, box-shadow 120ms ease;
 }
 
+.home-tile-link:hover .home-tile,
 .home-tile:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px color-mix(in srgb, var(--club-primary) 22%, transparent);
 }
 
+.home-tile-link:active .home-tile,
 .home-tile:active {
     transform: translateY(0);
-}
-
-.home-tile:focus-visible {
-    outline: 2px solid var(--club-primary-bright);
-    outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -987,6 +997,7 @@ html, body {
         transition: none;
     }
 
+    .home-tile-link:hover .home-tile,
     .home-tile:hover {
         transform: none;
     }
@@ -1726,11 +1737,16 @@ html, body {
     text-align: center;
 }
 
+/* An anchor to that player's statistics, so it brings a colour and an underline to override. The
+   44px floor is what makes it a target a thumb can hit rather than a word-sized one. */
 .position-dev-table .pd-name-cell {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
+    min-height: 44px;
+    color: inherit;
+    text-decoration: none;
 }
 
 .position-dev-table .pd-pos-value {
@@ -1921,5 +1937,44 @@ html, body {
     color: var(--club-on-primary);
     font-size: 0.875rem;
     font-weight: 500;
+    cursor: pointer;
+}
+
+/* --- Inline notice ---
+   The error line of a page that has no circuit, so no MudSnackbarProvider to raise one on. The
+   colours are the login form's, which is where this look started. */
+.inline-notice {
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 20px;
+    font-size: 0.875rem;
+}
+
+.inline-notice-error {
+    background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-danger) 30%, transparent);
+    color: var(--color-danger-bright);
+}
+
+.inline-notice-warning {
+    background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-warning) 30%, transparent);
+    color: var(--color-warning-bright);
+}
+
+.inline-notice[hidden] {
+    display: none;
+}
+
+/* The screenshot button on /games/{id}/overview is a plain <button> with an inline onclick, so it
+   has none of MudButton's own layout to inherit — .btn-gold only supplies the paint. */
+.overview-capture {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: 6px;
+    font-size: 0.875rem;
     cursor: pointer;
 }

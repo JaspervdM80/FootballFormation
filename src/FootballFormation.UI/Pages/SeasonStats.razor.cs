@@ -1,11 +1,10 @@
-using FootballFormation.Core.Models;
+﻿using FootballFormation.Core.Models;
 using FootballFormation.Core.Reporting;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
 using FootballFormation.UI.Navigation;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
-using MudBlazor;
 
 namespace FootballFormation.UI.Pages;
 
@@ -13,9 +12,9 @@ public partial class SeasonStats
 {
     [Inject] private SeasonSquadService SquadService { get; set; } = null!;
     [Inject] private GameService GameService { get; set; } = null!;
-    [Inject] private NavigationManager Navigation { get; set; } = null!;
-    [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
+
+    private readonly PageNotice _notice = new();
 
     private Core.Reporting.SeasonStats? _stats;
     private bool _loaded;
@@ -33,11 +32,11 @@ public partial class SeasonStats
         // The squad is the authoritative roster, so the player list comes from it rather than from
         // every person on file. That is what stops a past season showing today's squad.
         var squadsResult = await SquadService.GetSquadsAsync(SeasonId, Cancellation);
-        var squads = Snackbar.ReportFailure(L, squadsResult) ? squadsResult.Value! : SeasonSquads.Empty;
+        var squads = _notice.ReportFailure(L, squadsResult) ? squadsResult.Value! : SeasonSquads.Empty;
         var players = squads.AllPlayers;
 
         var gamesResult = await GameService.GetAllWithDetailsAsync(SeasonId, Cancellation);
-        var games = Snackbar.ReportFailure(L, gamesResult) ? gamesResult.Value! : [];
+        var games = _notice.ReportFailure(L, gamesResult) ? gamesResult.Value! : [];
 
         // Build takes the games and squads as parameters, so filtering at the call site is all a
         // season-scoped report needs — the report builders stay pure.
@@ -70,8 +69,6 @@ public partial class SeasonStats
 
         _loaded = true;
     }
-
-    private void OpenPlayer(int playerId) => Navigation.NavigateTo(AppRoutes.PlayerStats(playerId));
 
     /// <summary>Single-letter form pill, localized (W/D/L in English, W/G/V in Dutch).</summary>
     private string ResultLetter(GameResult r) => L[r.ToString()].ToString()[..1];

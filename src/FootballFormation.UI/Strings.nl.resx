@@ -94,7 +94,7 @@
   <data name="+{0} guest" xml:space="preserve"><value>+{0} gast</value></data>
   <data name="Formation" xml:space="preserve"><value>Opstelling</value></data>
   <data name="Overview" xml:space="preserve"><value>Overzicht</value></data>
-  <data name="Tap a player to see their statistics." xml:space="preserve"><value>Tik op een speler voor haar statistieken.</value></data>
+  <data name="Tap a player's name to see their statistics." xml:space="preserve"><value>Tik op de naam van een speler voor haar statistieken.</value></data>
   <data name="Result" xml:space="preserve"><value>Uitslag</value></data>
   <data name="Edit" xml:space="preserve"><value>Bewerken</value></data>
   <data name="Game vs {0} created" xml:space="preserve"><value>Wedstrijd tegen {0} aangemaakt</value></data>
