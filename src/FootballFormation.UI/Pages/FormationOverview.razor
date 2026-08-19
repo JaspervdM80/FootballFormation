@@ -19,11 +19,11 @@
 <div class="overview-capture" id="formation-overview">
     <div class="overview-header">
         <div class="overview-header-left">
-            <span class="overview-title">@(GameData.IsHomeGame ? "vs" : "@") @GameData.Opponent</span>
+            <span class="overview-title">@GameData.Opponent<VenueBadge IsHome="GameData.IsHomeGame" Inline="true" /></span>
             @* This image gets shared, so a cup tie or a practice game has to be legible in it.
                A competition match is the norm and stays unlabelled. *@
             <span class="overview-date">
-                @GameData.DateLine("dd MMM yyyy") · @(GameData.IsHomeGame ? L["Home"] : L["Away"])@if (GameData.MatchType != MatchType.Competition)
+                @GameData.DateLine("dd MMM yyyy")@if (GameData.MatchType != MatchType.Competition)
                 {
                     <text> · </text>@L[GameData.MatchType.DisplayName()]
                 }
@@ -32,42 +32,49 @@
         </div>
     </div>
 
-    <div class="overview-periods">
-        @foreach (var period in GameData.Periods.OrderBy(p => p.PeriodType))
-        {
-            var formation = period.FormationTypeOverride ?? GameData.FormationType;
-            var lineup = PeriodLineups.GetValueOrDefault(period.Id, []);
-            var starters = lineup.Where(p => !p.IsSubstitute).ToList();
-            var subs = lineup.Where(p => p.IsSubstitute).ToList();
+    @if (GameData.HasLineup)
+    {
+        <div class="overview-periods">
+            @foreach (var period in GameData.Periods.OrderBy(p => p.PeriodType))
+            {
+                var formation = period.FormationTypeOverride ?? GameData.FormationType;
+                var lineup = PeriodLineups.GetValueOrDefault(period.Id, []);
+                var starters = lineup.Where(p => !p.IsSubstitute).ToList();
+                var subs = lineup.Where(p => p.IsSubstitute).ToList();
 
-            <div class="overview-period-card">
-                <div class="period-label">@L[period.PeriodType.DisplayName()]</div>
-                <Pitch Formation="formation" Positions="starters" HidePositionFit="IsAnonymous" />
-                @if (subs.Count > 0)
-                {
-                    <div class="subs-row">
-                        <span class="subs-label">@L["Subs"]:</span>
-                        @foreach (var sub in subs)
-                        {
-                            <span class="sub-badge">
-                                @if (sub.Player?.ShirtNumber is not null)
-                                {
-                                    <span class="sub-number">#@sub.Player.ShirtNumber</span>
-                                }
-                                @(sub.Player?.ShortName ?? L["Player {0}", sub.PlayerId].Value)
-                            </span>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <div class="subs-row">
-                        <span class="subs-label subs-none">@L["No subs"]</span>
-                    </div>
-                }
-            </div>
-        }
-    </div>
+                <div class="overview-period-card">
+                    <div class="period-label">@L[period.PeriodType.DisplayName()]</div>
+                    <Pitch Formation="formation" Positions="starters" HidePositionFit="IsAnonymous" />
+                    @if (subs.Count > 0)
+                    {
+                        <div class="subs-row">
+                            <span class="subs-label">@L["Subs"]:</span>
+                            @foreach (var sub in subs)
+                            {
+                                <span class="sub-badge">
+                                    @if (sub.Player?.ShirtNumber is not null)
+                                    {
+                                        <span class="sub-number">#@sub.Player.ShirtNumber</span>
+                                    }
+                                    @(sub.Player?.ShortName ?? L["Player {0}", sub.PlayerId].Value)
+                                </span>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="subs-row">
+                            <span class="subs-label subs-none">@L["No subs"]</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <MudText Typo="Typo.body2" Style="color: var(--ink-subtle);">@L["No formation yet"]</MudText>
+    }
 </div>
 
 @* A plain onclick into js/screenshot.js, not a Blazor handler: the script already takes only an

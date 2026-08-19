@@ -24,7 +24,7 @@
     </Meta>
     <SubtitleContent>
         <MudText Typo="Typo.body2" Class="result-subtitle">
-            @GameData.DateLine("dd MMMM yyyy") · @(GameData.IsHomeGame ? L["Home"] : L["Away"]) · @L[GameData.MatchType.DisplayName()] · @GameData.FormationType.DisplayName()
+            @GameData.DateLine("dd MMMM yyyy") · @L[GameData.MatchType.DisplayName()] · @GameData.FormationType.DisplayName()
         </MudText>
     </SubtitleContent>
 </PageHeader>
