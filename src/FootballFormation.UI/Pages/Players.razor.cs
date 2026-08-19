@@ -18,7 +18,6 @@ public partial class Players
     [Inject] private SeasonSquadService SquadService { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
-    [Inject] private NavigationManager Navigation { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
     private SeasonSquad? _squad;
@@ -47,12 +46,6 @@ public partial class Players
         if (previousResult.IsSuccess) _previousSeason = previousResult.Value;
 
         _loaded = true;
-    }
-
-    private void OnRowClicked(TableRowClickEventArgs<SeasonSquadMember> args)
-    {
-        if (args.Item is not null)
-            Navigation.NavigateTo(AppRoutes.PlayerStats(args.Item.PlayerId));
     }
 
     /// <summary>Only read where the markup has already established the list is not empty.</summary>

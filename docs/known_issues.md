@@ -168,6 +168,20 @@ Avoid repeating these mistakes:
   what made it look like a stray control rather than a sort box. Two consequences: `app.css` hides
   it on `/players`, and **a first-load screenshot is not evidence that it is gone** — re-render the
   table before you look, or read `getComputedStyle` on the element rather than trusting the picture.
+  `Breakpoint="Breakpoint.None"` does not stop it either: MudBlazor renders the select at every
+  breakpoint and shows it with CSS, so the only way to be rid of it is to have no sort labels.
+- **A row click that navigates to a page with no circuit races its own re-render, and MudBlazor
+  logs.** `/players` used to navigate from `OnRowClick`, and dispatching that click did two things
+  at once: it started an enhanced navigation to `/players/{id}/stats`, and it re-rendered the table
+  — which is exactly when the small-devices sort select above appears, popover and all. The
+  popover's `mudPopover.connect` then travels down the circuit and looks for `.mud-popover-provider`
+  in a document enhanced navigation may already have swapped for the static page, which has no
+  `<InteractiveShell />` and so no provider: *"No Popover Container found with class
+  mud-popover-provider"*, on the console, from JS that is not ours to fix. It reproduces about one
+  run in six under `--repeat-each`, which is what made it read as ordinary CI noise (issue #115).
+  **A navigation to a circuit-less page belongs in an `<a href>`, not a handler** — `/players`,
+  `/stats/positions` and `/stats` all link the player's name now. A handler that only navigates is
+  a round trip that leaves a render behind it.
 - **`MudMenu`'s `Class` lands on the root wrapper, not the activator button**: `Class="btn-gold"` painted an invisible `div` while the button kept MudBlazor's default filled colours. There is no `ActivatorClass` parameter in 9.7 — style `.<your-class>.mud-menu .mud-button-root` instead (see `.btn-gold.mud-menu` in app.css, and `SeasonPicker`'s `.season-picker .mud-button-root`).
 
 ## Touch / PWA

@@ -44,7 +44,10 @@ test('a player page opens no circuit either', async ({ page }) => {
   const sockets = watchSockets(page);
 
   await gotoRendered(page, '/players');
-  await page.locator('.mud-table-body .mud-table-row').first().click();
+  // The name, because that is the anchor — the row itself carries no handler. A row click used to,
+  // and dispatching it re-rendered the table on the way out, which is what conjured MudTable's
+  // small-devices sort select and left its popover reaching for a provider this page has not got.
+  await page.locator('.players-table .player-name-cell').first().click();
   await expect(page).toHaveURL(/\/players\/\d+\/stats/);
   const playerPath = new URL(page.url()).pathname;
 

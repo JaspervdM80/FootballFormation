@@ -493,6 +493,14 @@ the editor for an admin, `/games` for a visitor.
 ## Squad page (`/players`)
 Season-scoped: it follows the season picker and shows that season's squad, not everyone on file.
 
+- **The player's name is an `<a>` to `/players/{id}/stats`, not a handler on the row** — the same
+  shape `/stats/positions` and `/stats` use, and for the same reason plus one more. The destination
+  has no circuit, so a row click would be a round trip to reach a page that needs none; and
+  dispatching it also re-rendered the table on the way out, which is what made MudBlazor's
+  small-devices sort select appear and left its popover looking for a provider the destination has
+  not got (`known_issues.md`, "a row click that navigates to a page with no circuit"). The chevron
+  and the "Tap a player's name…" hint say the name is the target; `.player-name-cell` carries the
+  44px floor that makes it one.
 - Row actions (admin only): **remove from squad** (person-remove) and an overflow `MudMenu` holding
   "Edit player", "Archive player" / "Restore player", and "Delete player permanently". Removing from
   a squad is the everyday action; the two that act on the *person* are demoted out of the icon row,
