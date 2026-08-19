@@ -177,7 +177,6 @@
   <data name="Copy match result" xml:space="preserve"><value>Uitslag kopiëren</value></data>
   <data name="Copied to clipboard" xml:space="preserve"><value>Gekopieerd naar klembord</value></data>
   <data name="Couldn't copy — try again" xml:space="preserve"><value>Kopiëren mislukt — probeer opnieuw</value></data>
-  <data name="Half-time" xml:space="preserve"><value>Rust</value></data>
 
   <!-- Match comments. Private unless published, so the wording has to leave no doubt which is which. -->
   <data name="Comments" xml:space="preserve"><value>Opmerkingen</value></data>

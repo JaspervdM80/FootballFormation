@@ -132,6 +132,23 @@ public class MatchSummaryReportTests
     }
 
     [Fact]
+    public void A_match_still_in_its_first_half_has_no_half_time_score_yet()
+    {
+        var game = Match(scoreHome: 1, scoreAway: 0);
+        var first = game.AddPeriod(PeriodType.FirstHalf);
+        game.AddPeriod(PeriodType.SecondHalf);
+        first.StartedAtSeconds = 0;
+        game.Goals.Add(new GameGoal
+        {
+            GamePeriodId = first.Id, AtSeconds = 600, ScorerId = 1, Scorer = TestData.Player(1)
+        });
+
+        var summary = MatchSummaryReport.Build(game, []);
+
+        Assert.Null(summary.HalfTimeScore);
+    }
+
+    [Fact]
     public void The_half_time_score_only_counts_first_half_goals()
     {
         var game = Match(scoreHome: 2, scoreAway: 1);

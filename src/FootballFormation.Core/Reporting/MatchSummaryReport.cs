@@ -55,12 +55,15 @@ public static class MatchSummaryReport
                 MatchClockReport.MinuteOf(game, g)))];
 
     /// <summary>
-    /// The score at the break, or null when the match was never run live — a result typed in by
-    /// hand has no half to report one for, and showing 0-0 would claim one it does not have.
+    /// The score at the break, or null when there has been no break yet to report — a result typed
+    /// in by hand has no half at all, and a match still in its first half has not reached one yet;
+    /// either way showing a score would claim a break that has not happened.
     /// </summary>
     private static (int Home, int Away)? HalfTimeScore(Game game)
     {
-        if (!game.HasActualTimings) return null;
+        var secondHalfKickedOff = game.Periods
+            .Any(p => p.PeriodType.Half() == PeriodType.SecondHalf && p.StartedAtSeconds is not null);
+        if (!secondHalfKickedOff) return null;
 
         var firstHalf = game.Goals
             .Where(g => MatchClockReport.HalfOf(game, g.GamePeriodId, MatchClockReport.ElapsedOf(game, g))

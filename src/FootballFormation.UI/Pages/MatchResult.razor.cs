@@ -6,7 +6,6 @@ using FootballFormation.UI.Navigation;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Localization;
-using Microsoft.JSInterop;
 using MudBlazor;
 
 namespace FootballFormation.UI.Pages;
@@ -21,7 +20,6 @@ public partial class MatchResult
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private TimeProvider Time { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
-    [Inject] private IJSRuntime JS { get; set; } = null!;
 
     [CascadingParameter]
     private Task<AuthenticationState> AuthStateTask { get; set; } = null!;
@@ -59,6 +57,17 @@ public partial class MatchResult
     // New comment form
     private string? NewCommentBody { get; set; }
     private bool NewCommentIsPublic { get; set; }
+
+    /// <summary>
+    /// The copyable match summary, rendered into a hidden element for <c>clipboard.js</c> to read —
+    /// a plain onclick reading text already composed server-side, the same shape
+    /// <c>FormationOverview</c> uses, rather than a round trip through JS interop:
+    /// <c>navigator.clipboard.writeText</c> only runs inside the task the user's own click gesture
+    /// produced, and by the time a click has gone circuit-and-back that gesture is gone — iOS
+    /// Safari and Firefox refuse the call outright at that point. Null until there is a final score
+    /// to report.
+    /// </summary>
+    private string? SummaryText { get; set; }
 
     /// <summary>A match still to be played. <c>/games</c> leaves the link to this page off such a
     /// card; this is the same rule for whoever arrives by URL anyway.</summary>
@@ -139,10 +148,35 @@ public partial class MatchResult
         await ReloadComments();
     }
 
+    /// <summary>Only public comments make the summary regardless of what <see cref="Comments"/>
+    /// itself holds — <c>MatchSummaryReport</c> filters again on its own, so an admin's private
+    /// notes can never end up on someone's clipboard whatever this page loaded them for.</summary>
+    private void RefreshSummaryText()
+    {
+        if (GameData is null || !GameData.HasFinalScore)
+        {
+            SummaryText = null;
+            return;
+        }
+
+        var summary = MatchSummaryReport.Build(GameData, Comments);
+        SummaryText = MatchSummaryTextBuilder.Build(GameData, summary, L);
+    }
+
     private async Task SaveScore()
     {
         var result = await GameService.SaveScoreAsync(GameId, ScoreHome, ScoreAway);
-        Snackbar.Report(L, result, L["Score saved!"]);
+        if (!Snackbar.Report(L, result, L["Score saved!"])) return;
+
+        // SaveScoreAsync writes straight to the database rather than handing back the row, so
+        // GameData is brought in line by hand — the copy button reads it, not the form fields, and
+        // would otherwise still see the score from before this save.
+        if (GameData is not null)
+        {
+            GameData.ScoreHome = ScoreHome;
+            GameData.ScoreAway = ScoreAway;
+        }
+        RefreshSummaryText();
     }
 
     private async Task AddGoal()
@@ -213,24 +247,6 @@ public partial class MatchResult
         await ReloadComments();
     }
 
-    /// <summary>
-    /// Builds the copyable summary from whatever is already loaded — <see cref="Comments"/> is
-    /// filtered by admin-ness on load, but <c>MatchSummaryReport</c> filters to public ones again
-    /// regardless, so an admin's private notes can never end up on someone's clipboard.
-    /// </summary>
-    private async Task CopyMatchSummary()
-    {
-        if (GameData is null) return;
-
-        var summary = MatchSummaryReport.Build(GameData, Comments);
-        var text = MatchSummaryTextBuilder.Build(GameData, summary, L);
-
-        var copied = await JS.InvokeAsync<bool>("copyText", text);
-        Snackbar.Add(
-            copied ? L["Copied to clipboard"].Value : L["Couldn't copy — try again"].Value,
-            copied ? Severity.Success : Severity.Warning);
-    }
-
     private async Task RemoveComment(GameComment comment)
     {
         if (!await DialogService.ConfirmDeleteAsync(
@@ -250,12 +266,14 @@ public partial class MatchResult
     {
         var result = await GameService.GetCommentsAsync(GameId, includePrivate: IsAdmin, Cancellation);
         Comments = result.IsSuccess ? result.Value! : [];
+        RefreshSummaryText();
     }
 
     private async Task ReloadGame()
     {
         var gameResult = await GameService.GetByIdAsync(GameId, Cancellation);
         if (gameResult.IsSuccess) GameData = gameResult.Value;
+        RefreshSummaryText();
     }
 
     private void ResetGoalForm()

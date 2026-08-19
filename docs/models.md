@@ -108,7 +108,7 @@ always had, and keeps games referencing a since-departed player rendering sensib
 |---|---|---|
 | Id | int | PK |
 | Opponent | string | Required, max 100 |
-| Date | DateTime | |
+| Date | DateTime | Optional kick-off time in the time component — `HasStartTime` is the test, `GameDialog`'s "Kick-off Time" field is how it's set |
 | SeasonId | int | FK → Season, **required**. Auto-derived from `Date` on creation, reassignable. Delete is **Restrict** |
 | MatchType | MatchType | Competition / Cup / Practice. Descriptive only — every type counts towards statistics |
 | FormationType | FormationType | |
@@ -156,6 +156,10 @@ would shift while it is still being played. More computed members support the re
 | `LiveHalf()` | The half on the pitch, or null before kick-off, at half time and after full time. What a substitution may touch |
 | `NextHalf()` | The half the clock goes to next, as the line-up opening it. Skips a line-up planned for the middle of a half already played, so a quarters second half opens at Q3 |
 | `MidHalfPlan(half)` | The line-up planned to take over partway through that half, or null. Only a quarters game has one, and the clock never stops for it — the live screen offers it as a reference |
+| `HasStartTime` | Was a kick-off time set, or is `Date`'s time component just midnight? |
+| `DateLine(format)` | `Date` formatted, plus the kick-off time when there is one — the one place the result page, the overview and the copyable summary share this |
+| `HasFinalScore` | Is the scoreline settled — not `InProgress`, and both scores on file? Splits `/games` into fixtures and results, and gates the copyable summary's existence |
+| `InVenueOrder(us, them)` / `ScoreboardOrder()` | Flips a (us, them) pair — or the game's own `ScoreHome`/`ScoreAway` — into home-first order. The one flip between what is stored and what a scoreboard shows, used by the home banner and the copyable summary |
 
 A game's season is resolved in `GameService.CreateAsync`: `SeasonId == 0` means "auto by date"
 (the game dialog's default) and is looked up via `SeasonService.GetOrCreateForDateAsync`, creating

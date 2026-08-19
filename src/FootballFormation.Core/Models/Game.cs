@@ -34,6 +34,25 @@ public class Game
     public bool HasStartTime => Date.TimeOfDay != TimeSpan.Zero;
 
     /// <summary>
+    /// <paramref name="format"/> plus the kick-off time when one was set, comma-separated — the one
+    /// place this is spelled out, since the result page, the shareable overview and the copyable
+    /// summary all show the same date line.
+    /// </summary>
+    public string DateLine(string format) =>
+        HasStartTime ? $"{Date.ToString(format)}, {Date:HH:mm}" : Date.ToString(format);
+
+    /// <summary>
+    /// Whether the scoreline is settled. A live match writes <see cref="ScoreHome"/>/
+    /// <see cref="ScoreAway"/> as the goals go in, so a score on its own only means the game has
+    /// <em>started</em> — the state has to be checked too. Once it is settled there is nothing left
+    /// to run live, and the result page (and anything built from it, like the copyable summary) is
+    /// where the game's information lives. The same rule <c>Games.Sections</c> splits fixtures from
+    /// results on.
+    /// </summary>
+    public bool HasFinalScore =>
+        MatchState != MatchState.InProgress && ScoreHome.HasValue && ScoreAway.HasValue;
+
+    /// <summary>
     /// The line-ups this game is planned in. A match is played in two halves whatever the split
     /// says; a period row is a <em>planned line-up</em> for a stretch of one, and a quarters game
     /// simply plans two per half. The row that opens a half is the one the live match plays it

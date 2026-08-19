@@ -62,10 +62,10 @@ public partial class FormationOverview
             PeriodLineups[period.Id] = period.PlayerPositions.ToList();
         }
 
-        if (GameData.ScoreHome is not null && GameData.ScoreAway is not null)
+        if (GameData.HasFinalScore)
         {
-            // No visitor here can see a private comment either way, so includePrivate is always
-            // false — this page has no admin-ness of its own to gate it on.
+            // includePrivate is always false: the summary is for sharing, so it is never built
+            // from private notes, whoever happens to be looking at this page.
             var commentsResult = await GameService.GetCommentsAsync(GameId, includePrivate: false, Cancellation);
             if (commentsResult.IsCancelled) return;
 

@@ -6,6 +6,22 @@
     align-items: start;
 }
 
+/* A plain <button> with an inline onclick rather than a MudButton — see SummaryText — so it has
+   none of MudButton's own layout to inherit; .btn-gold only supplies the paint. Same shape as
+   .overview-capture on the formation overview, which the copy button on that page reuses. */
+.result-copy {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
 /* Score visual */
 .score-visual {
     display: flex;

@@ -21,7 +21,7 @@
             Title="@($"{(GameData.IsHomeGame ? "vs" : "@")} {GameData.Opponent}")">
     <SubtitleContent>
         <MudText Typo="Typo.body2" Class="result-subtitle">
-            @GameData.Date.ToString("dd MMMM yyyy")@(GameData.HasStartTime ? $", {GameData.Date:HH:mm}" : "") · @(GameData.IsHomeGame ? L["Home"] : L["Away"]) · @L[GameData.MatchType.DisplayName()] · @GameData.FormationType.DisplayName()
+            @GameData.DateLine("dd MMMM yyyy") · @(GameData.IsHomeGame ? L["Home"] : L["Away"]) · @L[GameData.MatchType.DisplayName()] · @GameData.FormationType.DisplayName()
         </MudText>
     </SubtitleContent>
 </PageHeader>
@@ -83,13 +83,25 @@
             </MudButton>
         }
         @* Not IsAdmin-gated: sharing the result is the whole point for a visitor who just watched
-           the match, not only for whoever is allowed to edit it. *@
-        @if (!IsFuture)
+           the match, not only for whoever is allowed to edit it. A plain onclick into
+           js/clipboard.js rather than a Blazor handler — see SummaryText — because
+           navigator.clipboard.writeText has to run inside the task the click itself produced, and
+           a round trip through server interop loses that on iOS Safari and Firefox. Only offered
+           once there is a result to share; "– –" is not one. *@
+        @if (SummaryText is not null)
         {
-            <MudButton Variant="Variant.Outlined" Class="mt-3" FullWidth="true"
-                       StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="CopyMatchSummary">
+            <button type="button" class="btn-gold mt-3 result-copy"
+                    onclick="copyElementText('match-summary-text', 'copy-success', 'copy-error')">
+                <MudIcon Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small" />
                 @L["Copy match result"]
-            </MudButton>
+            </button>
+            <pre id="match-summary-text" hidden>@SummaryText</pre>
+            <div id="copy-success" class="inline-notice inline-notice-success mt-3" role="status" hidden>
+                @L["Copied to clipboard"]
+            </div>
+            <div id="copy-error" class="inline-notice inline-notice-warning mt-3" role="alert" hidden>
+                @L["Couldn't copy — try again"]
+            </div>
         }
     </MudPaper>
 

@@ -233,7 +233,7 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   then results newest first — each list leads with the match you came to look at. A single list has
   to put one of them at the wrong end, and newest-first throughout put the *most distant* fixture at
   the top. The split is
-  on `HasFinalScore`, not on the date: a game stays a fixture until a result is on file. A match
+  on `Game.HasFinalScore`, not on the date: a game stays a fixture until a result is on file. A match
   that was never played therefore sits in the fixture list after its date has passed, which is
   intended — the only thing to do with one is delete it, and the stale row is the prompt. Because
   `HasFinalScore` tests `MatchState` too, a game being played now stays among the fixtures instead
@@ -249,7 +249,7 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   admin-only **and match-day only** (`Games.IsMatchDay`, i.e. `game.Date.Date == Today`): the live
   screen runs a real clock and writes real substitution timings, so opening it on a fixture weeks
   out would bank minutes against a match nobody is playing. It disappears entirely once
-  `Games.HasFinalScore(game)` — a settled game has nothing left to run, so the Result button is the
+  `game.HasFinalScore` — a settled game has nothing left to run, so the Result button is the
   way in and a row click opens `/result`.
 - **A fixture in the future carries no Result button** (`Games.IsFuture`, i.e.
   `game.Date.Date > Today`). There is no result to read and none to enter, and a score typed onto a
@@ -273,9 +273,27 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   and the word are one signal. See [the badge](#venue-badge-componentsvenuebadgerazor) below.
 - The page reads "today" from the injected `TimeProvider`, not `DateTime.Today`, the same way the
   services do — that is also what `IsIncomplete` (the missing-lineup flag) compares against.
-- `HasFinalScore` checks `MatchState` **as well as** the score fields, and must: `MatchGoalService`
-  writes `ScoreHome`/`ScoreAway` on every goal, so a score alone only means the game has started.
-  Testing the score by itself would hide the Live button on the very match being played.
+- `Game.HasFinalScore` checks `MatchState` **as well as** the score fields, and must:
+  `MatchGoalService` writes `ScoreHome`/`ScoreAway` on every goal, so a score alone only means the
+  game has started. Testing the score by itself would hide the Live button on the very match being
+  played. It lives on `Game` rather than as a page-local helper because `MatchResult` and
+  `FormationOverview` need the same test to decide whether there is a result worth copying.
+- **The copyable match summary** (`MatchSummaryReport` in `Core/Reporting`, composed into text by
+  `MatchSummaryTextBuilder` in `UI/Helpers`) is offered on both `/result` and `/overview` once
+  `game.HasFinalScore` — the scoreline, in venue order, the half-time score once the second half has
+  kicked off, our own goals with their assist on one line, and any **public** comment. Never gated on
+  admin-ness: sharing the result is the point for whoever just watched the match, and the anonymous
+  overview page already shows the same public comments as text — `includePrivate: false` is passed
+  unconditionally there, same as everywhere else a visitor reads a comment. Both pages render the
+  composed text into a hidden `<pre>` and copy it from a plain `onclick` into `js/clipboard.js`
+  rather than a Blazor click handler, even on `/result` which has a circuit:
+  `navigator.clipboard.writeText` only runs inside the task the user's click gesture produced, and a
+  round trip through server interop loses that gesture on iOS Safari and Firefox.
+- **A kick-off time is optional and lives in `Date`'s time component**, not a separate column —
+  `Game.HasStartTime` is the test, `GameDialog`'s "Kick-off Time" field (a `MudTextField` with
+  `InputType.Time`, not a picker — see the responsive-and-touch skill on `MudDatePicker`'s popover
+  traps) is how it is set, and `Game.DateLine(format)` is the one place the result page, the
+  overview and the copyable summary compose the date-plus-time line.
 
 ## Live banner on the home page
 `Home.razor` calls `LiveMatchService.GetTodaysMatchAsync`, which returns a match in progress if

@@ -56,9 +56,9 @@ public partial class Games
     /// The scoreline decides which, not the calendar: a game keeps its place in the fixture list
     /// until a result is on file. So a match that was never played stays there after its date has
     /// gone by — deliberately, since the only thing to do with one is delete it, and a stale row
-    /// in the fixture list is what prompts that. <see cref="HasFinalScore"/> tests the match state
-    /// as well, so a game being played now stays among the fixtures rather than moving across on
-    /// its first goal.
+    /// in the fixture list is what prompts that. <see cref="Game.HasFinalScore"/> tests the match
+    /// state as well, so a game being played now stays among the fixtures rather than moving
+    /// across on its first goal.
     /// </para>
     /// <para>Either block is dropped when it is empty — a season yet to start is all fixtures, and
     /// one that is over is all results.</para>
@@ -67,10 +67,10 @@ public partial class Games
     {
         if (_games is null) yield break;
 
-        var fixtures = _games.Where(game => !HasFinalScore(game)).OldestFirst();
+        var fixtures = _games.Where(game => !game.HasFinalScore).OldestFirst();
         if (fixtures.Count > 0) yield return new GameSection(L["Fixtures"], fixtures);
 
-        var results = _games.Where(HasFinalScore).NewestFirst();
+        var results = _games.Where(game => game.HasFinalScore).NewestFirst();
         if (results.Count > 0) yield return new GameSection(L["Results"], results);
     }
 
@@ -83,17 +83,6 @@ public partial class Games
     /// the card leaves the result page out — see <c>MatchResult</c>, which says the same thing to
     /// anyone who arrives there by URL.</summary>
     private bool IsFuture(Game game) => game.Date.Date > Today;
-
-    /// <summary>
-    /// Whether the scoreline is settled. A live match writes `ScoreHome`/`ScoreAway` as the goals
-    /// go in, so a score on its own only means the game has *started* — the state has to be
-    /// checked too. Once it is settled there is nothing left to run live, and the result page is
-    /// where the game's information lives.
-    /// </summary>
-    private static bool HasFinalScore(Game game) =>
-        game.MatchState != MatchState.InProgress
-        && game.ScoreHome.HasValue
-        && game.ScoreAway.HasValue;
 
     private async Task OpenAddDialog()
     {
@@ -121,7 +110,7 @@ public partial class Games
     {
         if (game.MatchState == MatchState.InProgress)
             OpenLive(game.Id);
-        else if (HasFinalScore(game))
+        else if (game.HasFinalScore)
             OpenResult(game.Id);
         else if (_isAdmin)
             OpenFormation(game.Id);

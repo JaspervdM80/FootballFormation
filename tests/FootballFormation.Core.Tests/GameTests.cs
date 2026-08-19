@@ -312,4 +312,36 @@ public class GameTests
 
         Assert.Equal(expected, game.HasStartTime);
     }
+
+    [Fact]
+    public void DateLine_drops_the_kick_off_time_when_none_was_set()
+    {
+        var game = TestData.Game(date: new DateTime(2026, 3, 14));
+
+        Assert.Equal("14 March 2026", game.DateLine("d MMMM yyyy"));
+    }
+
+    [Fact]
+    public void DateLine_appends_the_kick_off_time_when_one_was_set()
+    {
+        var game = TestData.Game(date: new DateTime(2026, 3, 14, 19, 30, 0));
+
+        Assert.Equal("14 March 2026, 19:30", game.DateLine("d MMMM yyyy"));
+    }
+
+    [Theory]
+    [InlineData(MatchState.Finished, 2, 1, true)]
+    [InlineData(MatchState.NotStarted, 2, 1, true)]
+    [InlineData(MatchState.NotStarted, null, null, false)]
+    [InlineData(MatchState.InProgress, 2, 1, false)]  // a score written mid-match is not settled yet
+    public void HasFinalScore_checks_the_match_state_as_well_as_the_scores(
+        MatchState state, int? home, int? away, bool expected)
+    {
+        var game = TestData.Game();
+        game.MatchState = state;
+        game.ScoreHome = home;
+        game.ScoreAway = away;
+
+        Assert.Equal(expected, game.HasFinalScore);
+    }
 }

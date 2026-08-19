@@ -23,8 +23,10 @@ public static class MatchSummaryTextBuilder
             Subtitle(game, L)
         };
 
+        // Reuses the live screen's own key rather than a second one for the same word — see
+        // Strings.nl.resx and the localization skill on duplicate resx keys.
         if (summary.HalfTimeScore is { } ht)
-            lines.Add($"{L["Half-time"]}: {ht.Home} – {ht.Away}");
+            lines.Add($"{L["Half time"]}: {ht.Home} – {ht.Away}");
 
         if (summary.Goals.Count > 0)
         {
@@ -41,12 +43,8 @@ public static class MatchSummaryTextBuilder
         return string.Join('\n', lines);
     }
 
-    private static string Subtitle(Game game, IStringLocalizer<Strings> L)
-    {
-        var date = game.Date.ToString("dd MMMM yyyy");
-        var time = game.HasStartTime ? $", {game.Date:HH:mm}" : "";
-        return $"{L[game.MatchType.DisplayName()]} · {date}{time}";
-    }
+    private static string Subtitle(Game game, IStringLocalizer<Strings> L) =>
+        $"{L[game.MatchType.DisplayName()]} · {game.DateLine("dd MMMM yyyy")}";
 
     /// <summary>⚽ and 🅰️ carry the meaning a WhatsApp paste needs, without spending a line on
     /// each — see the issue: emoji survive a paste where any formatting would not.</summary>

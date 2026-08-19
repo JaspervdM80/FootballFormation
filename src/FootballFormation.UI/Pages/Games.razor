@@ -112,7 +112,7 @@ else
                                     <MudIcon Icon="@Icons.Material.Filled.Sensors" Size="Size.Small" />
                                 </button>
                             }
-                            else if (IsMatchDay(game) && !HasFinalScore(game))
+                            else if (IsMatchDay(game) && !game.HasFinalScore)
                             {
                                 <AuthorizeView Roles="@AppRoles.Admin">
                                     <button class="action-btn action-live" title="@L["Live"]" @onclick="() => OpenLive(game.Id)">
