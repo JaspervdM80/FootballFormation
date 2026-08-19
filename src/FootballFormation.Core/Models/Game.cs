@@ -153,6 +153,15 @@ public class Game
     /// squad is treated as a guest — three membership states collapse to the same two branches the
     /// rule always had.
     /// </para>
+    /// <para>
+    /// Deliberately blind to <see cref="SeasonSquad.IsInjured"/>, the same way it is blind to
+    /// <see cref="Player.IsArchived"/> — this judges a game the way it was played, and a status set
+    /// after the fact must not rewrite it. A completed game's <c>AvailableMinutes</c>
+    /// (<c>PlayerStatsReport</c>) reads this, so injuring someone today would otherwise zero out
+    /// every game they already played this season. Callers building a <em>future</em> line-up
+    /// (<c>FormationBuilder</c>, <c>GameDialog</c>, <c>LiveMatch</c>) filter injured players out
+    /// themselves, on top of this.
+    /// </para>
     /// </summary>
     public bool IsInRoster(Player player, SeasonSquad squad) => squad.IsFullMember(player.Id)
         ? !UnavailablePlayerIds.Contains(player.Id)

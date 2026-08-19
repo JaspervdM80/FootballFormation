@@ -69,6 +69,12 @@
                     </MudSelectItem>
                 }
             </MudSelect>
+            @if (Squad.Injured.Count > 0)
+            {
+                <MudText Typo="Typo.caption" Class="d-block mb-3" Style="color: var(--ink-muted);">
+                    @L["{0} injured player(s) not listed — they're left out of every game already.", Squad.Injured.Count]
+                </MudText>
+            }
             @if (GuestPlayers.Count > 0)
             {
                 <MudSelect T="int" Label="@L["Guest Players"]" MultiSelection="true"

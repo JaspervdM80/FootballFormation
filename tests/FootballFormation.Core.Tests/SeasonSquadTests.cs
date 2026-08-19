@@ -23,7 +23,7 @@ public class SeasonSquadTests
     public void Guests_sort_last_then_by_shirt_number_with_unnumbered_players_after()
     {
         var noShirt = TestData.Player(3, "Anna");
-        var squad = TestData.Squad(1, [Guest, noShirt, Regular], guestIds: 2);
+        var squad = TestData.Squad(1, [Guest, noShirt, Regular], guestIds: [2]);
 
         // Regular (#7) → Anna (no number, sorts as int.MaxValue) → Guest (#3, but a guest).
         Assert.Equal([1, 3, 2], squad.Members.Select(m => m.PlayerId));
@@ -37,6 +37,25 @@ public class SeasonSquadTests
         Assert.True(SeasonSquad.Empty.IsGuest(1));
         Assert.False(SeasonSquad.Empty.IsFullMember(1));
         Assert.Empty(SeasonSquad.Empty.Members);
+    }
+
+    [Fact]
+    public void A_player_outside_the_squad_is_never_injured()
+    {
+        var squad = TestData.Squad(1, [Regular]);
+
+        Assert.False(squad.IsInjured(999));
+        Assert.False(SeasonSquad.Empty.IsInjured(1));
+    }
+
+    [Fact]
+    public void Injured_members_are_reported_by_IsInjured_and_the_Injured_list()
+    {
+        var squad = TestData.Squad(1, [Regular, Guest], injuredIds: [Regular.Id]);
+
+        Assert.True(squad.IsInjured(Regular.Id));
+        Assert.False(squad.IsInjured(Guest.Id));
+        Assert.Equal([Regular.Id], squad.Injured.Select(p => p.Id));
     }
 
     [Fact]

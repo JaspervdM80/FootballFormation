@@ -125,6 +125,47 @@ public class SeasonSquadServiceTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task Marking_a_non_member_injured_is_refused_like_the_other_membership_writes()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(1);
+
+        var removed = await Squads.RemoveMemberAsync(season.Id, players[0].Id);
+        var markedInjured = await Squads.SetInjuredAsync(season.Id, players[0].Id, true);
+
+        Assert.True(markedInjured.IsFailure);
+        Assert.Equal(removed.ErrorKey, markedInjured.ErrorKey);
+    }
+
+    [Fact]
+    public async Task Injury_status_can_be_switched_both_ways()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(1);
+        await Squads.AddMemberAsync(season.Id, players[0].Id, isInjured: true);
+
+        Assert.True(Read().SeasonSquadMembers.Single().IsInjured);
+
+        await Squads.SetInjuredAsync(season.Id, players[0].Id, false);
+        Assert.False(Read().SeasonSquadMembers.Single().IsInjured);
+    }
+
+    [Fact]
+    public async Task Copying_a_squad_forward_does_not_carry_injury_status()
+    {
+        var last = await SeedSeasonAsync(covering: Now.AddYears(-1), isCurrent: false);
+        var next = await SeedSeasonAsync(covering: Now);
+        var players = await SeedPlayersAsync(1);
+        await Squads.AddMemberAsync(last.Id, players[0].Id, isInjured: true);
+
+        await Squads.CopyFromAsync(last.Id, next.Id);
+
+        // Injuries are expected to have healed by the time next season's squad is set up, unlike
+        // guest status, which copying forward does preserve.
+        Assert.False(Read().SeasonSquadMembers.Single(m => m.SeasonId == next.Id).IsInjured);
+    }
+
+    [Fact]
     public async Task Copying_a_squad_forward_preserves_guest_status_and_skips_duplicates()
     {
         var last = await SeedSeasonAsync(covering: Now.AddYears(-1), isCurrent: false);

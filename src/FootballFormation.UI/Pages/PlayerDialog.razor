@@ -28,6 +28,10 @@
             <MudText Typo="Typo.caption" Class="d-block" Style="color: var(--ink-muted);">
                 @L["Guests are left out of every game unless you add them to it explicitly."]
             </MudText>
+            <MudSwitch @bind-Value="Injured" Color="Color.Error" Class="mb-1 mt-2">@L["Injured player"]</MudSwitch>
+            <MudText Typo="Typo.caption" Class="d-block" Style="color: var(--ink-muted);">
+                @L["An injured player is left out of every game's line-up until cleared."]
+            </MudText>
             @if (!string.IsNullOrEmpty(SeasonName))
             {
                 <MudText Typo="Typo.caption" Class="d-block" Style="color: var(--ink-subtle);">

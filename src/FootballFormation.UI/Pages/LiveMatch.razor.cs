@@ -212,7 +212,9 @@ public partial class LiveMatch
 
     /// <summary>
     /// Who can come on: the bench for this half, plus anyone in the roster with no lineup entry
-    /// at all — a late arrival should not be locked out of a match already under way.
+    /// at all — a late arrival should not be locked out of a match already under way. A player
+    /// generally injured is never offered, on top of <see cref="Game.SelectRoster"/> — the same
+    /// exclusion <c>FormationBuilder</c> applies when building the line-up in the first place.
     /// </summary>
     private List<Player> SubCandidates
     {
@@ -222,7 +224,8 @@ public partial class LiveMatch
 
             var inLineup = DisplayLineup.Select(p => p.PlayerId).ToHashSet();
             var bench = OnBench.Select(p => FindPlayer(p.PlayerId)).OfType<Player>();
-            var unlisted = GameData.SelectRoster(AllPlayers, Squad).Where(p => !inLineup.Contains(p.Id));
+            var unlisted = GameData.SelectRoster(AllPlayers, Squad)
+                .Where(p => !inLineup.Contains(p.Id) && !Squad.IsInjured(p.Id));
 
             return [.. bench.Concat(unlisted)];
         }

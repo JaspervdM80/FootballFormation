@@ -78,7 +78,8 @@ public class SeasonSquadService(
         });
 
     public Task<Result<SeasonSquadMember>> AddMemberAsync(
-        int seasonId, int playerId, bool isGuest = false, CancellationToken cancellationToken = default) =>
+        int seasonId, int playerId, bool isGuest = false, bool isInjured = false,
+        CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAdminAsync(currentUser, logger, "add the player to the squad", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -109,12 +110,15 @@ public class SeasonSquadService(
                 return Result.Failure<SeasonSquadMember>("{0} is already in the {1} squad", player.DisplayName, season.Name);
             }
 
-            var member = new SeasonSquadMember { SeasonId = seasonId, PlayerId = playerId, IsGuest = isGuest };
+            var member = new SeasonSquadMember
+            {
+                SeasonId = seasonId, PlayerId = playerId, IsGuest = isGuest, IsInjured = isInjured
+            };
             db.SeasonSquadMembers.Add(member);
             await db.SaveChangesAsync(cancellationToken);
 
-            logger.LogInformation("Added {PlayerName} to the {SeasonName} squad (guest: {IsGuest})",
-                player.DisplayName, season.Name, isGuest);
+            logger.LogInformation("Added {PlayerName} to the {SeasonName} squad (guest: {IsGuest}, injured: {IsInjured})",
+                player.DisplayName, season.Name, isGuest, isInjured);
             return Result.Success(member);
         });
 
@@ -184,6 +188,28 @@ public class SeasonSquadService(
             return Result.Success();
         });
 
+    public Task<Result> SetInjuredAsync(
+        int seasonId, int playerId, bool isInjured, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "change the squad status", cancellationToken, async () =>
+        {
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            var member = await FindMemberAsync(db, seasonId, playerId, cancellationToken);
+            if (member is null)
+            {
+                logger.LogWarning("Cannot change status of player {PlayerId} in season {SeasonId}: not in the squad",
+                    playerId, seasonId);
+                return NotInSquad();
+            }
+
+            member.IsInjured = isInjured;
+            await db.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation("{PlayerName} is {Status} in season {SeasonId}",
+                member.Player?.DisplayName, isInjured ? "now injured" : "no longer injured", seasonId);
+            return Result.Success();
+        });
+
     /// <summary>
     /// Populates a season's squad from another one, preserving guest status. Idempotent — players
     /// already in the target are skipped, so running it twice adds nothing.
@@ -191,6 +217,11 @@ public class SeasonSquadService(
     /// Archived players are skipped too. Copying forward is the one action that turns last year's
     /// squad into next year's, so carrying someone who has left across the summer would undo their
     /// archiving every time a season is set up.
+    /// </para>
+    /// <para>
+    /// Injury status is deliberately <b>not</b> preserved — every copied row starts fit. An injury
+    /// is expected to have healed by the time next season's squad is set up, unlike guest status,
+    /// which is a standing arrangement rather than a temporary condition.
     /// </para>
     /// </summary>
     /// <returns>How many members were added.</returns>
@@ -278,7 +309,7 @@ public class SeasonSquadService(
         });
 
     /// <summary>
-    /// The load both membership writes start from: the row with its player, tracked so it can be
+    /// The load every membership write starts from: the row with its player, tracked so it can be
     /// changed or removed. The player is there for the log lines and the failure messages, which
     /// name a person rather than an id.
     /// </summary>
@@ -288,6 +319,6 @@ public class SeasonSquadService(
             .Include(m => m.Player)
             .FirstOrDefaultAsync(m => m.SeasonId == seasonId && m.PlayerId == playerId, cancellationToken);
 
-    // One message, so both writes say — and translate to — the same thing.
+    // One message, so every write says — and translates to — the same thing.
     private static Result NotInSquad() => Result.Failure("Player is not in this squad");
 }

@@ -21,4 +21,17 @@ public class SeasonSquadMember
     /// <summary>Guests are left out of every game in this season unless explicitly listed in
     /// <see cref="Game.GuestPlayerIds"/>. Full members are in unless marked unavailable.</summary>
     public bool IsGuest { get; set; }
+
+    /// <summary>
+    /// Generally injured, as opposed to <see cref="Game.UnavailablePlayerIds"/>, which opts someone
+    /// out of a single fixture. An injured player is excluded from every game's roster in this
+    /// season until cleared — see <see cref="Game.IsInRoster(Player, SeasonSquad)"/>.
+    /// <para>
+    /// Lives here rather than on <see cref="Player"/> for the same reason as <see cref="IsGuest"/>:
+    /// it is this season's medical status, not the person's. It is also why
+    /// <c>SeasonSquadService.CopyFromAsync</c> does not carry it forward — an injury from last
+    /// season has usually healed by the time next season's squad is copied.
+    /// </para>
+    /// </summary>
+    public bool IsInjured { get; set; }
 }

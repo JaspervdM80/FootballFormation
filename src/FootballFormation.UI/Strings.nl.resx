@@ -54,6 +54,7 @@
   <data name="{0} players" xml:space="preserve"><value>{0} spelers</value></data>
   <data name="{0} guest" xml:space="preserve"><value>{0} gast</value></data>
   <data name="{0} guests" xml:space="preserve"><value>{0} gasten</value></data>
+  <data name="{0} injured" xml:space="preserve"><value>{0} geblesseerd</value></data>
   <data name="Add Player" xml:space="preserve"><value>Speler toevoegen</value></data>
   <data name="Edit Player" xml:space="preserve"><value>Speler bewerken</value></data>
   <data name="No players yet. Add your first player!" xml:space="preserve"><value>Nog geen spelers. Voeg je eerste speler toe!</value></data>
@@ -61,6 +62,7 @@
   <data name="Preferred Position" xml:space="preserve"><value>Voorkeurspositie</value></data>
   <data name="Alternative Positions" xml:space="preserve"><value>Alternatieve posities</value></data>
   <data name="GUEST" xml:space="preserve"><value>GAST</value></data>
+  <data name="INJURED" xml:space="preserve"><value>GEBLESSEERD</value></data>
   <data name="ARCHIVED" xml:space="preserve"><value>GEARCHIVEERD</value></data>
   <data name="Player {0} updated" xml:space="preserve"><value>Speler {0} bijgewerkt</value></data>
   <data name="Player {0} deleted" xml:space="preserve"><value>Speler {0} verwijderd</value></data>
@@ -74,6 +76,8 @@
   <data name="Shirt Number" xml:space="preserve"><value>Rugnummer</value></data>
   <data name="Guest player" xml:space="preserve"><value>Gastspeler</value></data>
   <data name="Guests are left out of every game unless you add them to it explicitly." xml:space="preserve"><value>Gasten doen alleen mee aan een wedstrijd als je ze er zelf aan toevoegt.</value></data>
+  <data name="Injured player" xml:space="preserve"><value>Geblesseerde speler</value></data>
+  <data name="An injured player is left out of every game's line-up until cleared." xml:space="preserve"><value>Een geblesseerde speler doet niet mee aan de opstelling van een wedstrijd, totdat de blessure is opgeheven.</value></data>
   <data name="Applies to the {0} squad only." xml:space="preserve"><value>Geldt alleen voor de selectie van {0}.</value></data>
   <data name="Cancel" xml:space="preserve"><value>Annuleren</value></data>
   <data name="Save" xml:space="preserve"><value>Opslaan</value></data>
@@ -123,6 +127,7 @@
   <data name="quarter" xml:space="preserve"><value>kwart</value></data>
   <data name="Unavailable Players" xml:space="preserve"><value>Afwezige spelers</value></data>
   <data name="{0} player(s) unavailable" xml:space="preserve"><value>{0} speler(s) afwezig</value></data>
+  <data name="{0} injured player(s) not listed — they're left out of every game already." xml:space="preserve"><value>{0} geblesseerde speler(s) niet in de lijst — die doen sowieso al niet mee.</value></data>
   <data name="Guest Players" xml:space="preserve"><value>Gastspelers</value></data>
   <data name="{0} guest(s) added" xml:space="preserve"><value>{0} gast(en) toegevoegd</value></data>
 
@@ -137,6 +142,7 @@
   <data name="1st Half" xml:space="preserve"><value>1e helft</value></data>
   <data name="2nd Half" xml:space="preserve"><value>2e helft</value></data>
   <data name="Unavailable" xml:space="preserve"><value>Afwezig</value></data>
+  <data name="Injured players" xml:space="preserve"><value>Geblesseerde spelers</value></data>
   <data name="Exact" xml:space="preserve"><value>Exact</value></data>
   <data name="Natural fit" xml:space="preserve"><value>Natuurlijke positie</value></data>
   <data name="Alternative" xml:space="preserve"><value>Alternatief</value></data>
@@ -311,6 +317,8 @@
   <data name="{0} removed from the squad" xml:space="preserve"><value>{0} is uit de selectie verwijderd</value></data>
   <data name="{0} is now a guest" xml:space="preserve"><value>{0} is nu een gast</value></data>
   <data name="{0} is now a squad player" xml:space="preserve"><value>{0} is nu een selectiespeler</value></data>
+  <data name="{0} is now injured" xml:space="preserve"><value>{0} is nu geblesseerd</value></data>
+  <data name="{0} is no longer injured" xml:space="preserve"><value>{0} is niet meer geblesseerd</value></data>
   <data name="Copy squad from {0}" xml:space="preserve"><value>Selectie kopiëren uit {0}</value></data>
   <data name="{0} players copied from {1}" xml:space="preserve"><value>{0} spelers gekopieerd uit {1}</value></data>
   <data name="No squad for {0} yet." xml:space="preserve"><value>Nog geen selectie voor {0}.</value></data>

@@ -497,13 +497,14 @@ Season-scoped: it follows the season picker and shows that season's squad, not e
   "Edit player", "Archive player" / "Restore player", and "Delete player permanently". Removing from
   a squad is the everyday action; the two that act on the *person* are demoted out of the icon row,
   with archive listed above delete because it is what is almost always meant.
-- **Guest status is a switch in the Edit Player dialog, not an icon on the row.** The `GUEST` badge
-  already states it, and a toggle next to a badge saying the same thing is two controls for one
-  fact. `PlayerDialog` therefore returns a `PlayerEdit(Player, IsGuest)` record rather than a
-  `Player`: the person and the membership are two writes, and the page only makes the second one
-  when the switch moved, so renaming someone never touches the squad. The switch is seeded from the
-  row's flag, is separated from the person's fields by a divider, and names the season under it —
-  the flag belongs to one season's squad, not to the person.
+- **Guest and injured status are switches in the Edit Player dialog, not icons on the row.** The
+  `GUEST` and `INJURED` badges already state them, and a toggle next to a badge saying the same
+  thing is two controls for one fact. `PlayerDialog` therefore returns a
+  `PlayerEdit(Player, IsGuest, IsInjured)` record rather than a `Player`: the person and the two
+  membership flags are separate writes, and the page only makes each one when its own switch moved,
+  so renaming someone never touches the squad. Both switches are seeded from the row's flags, are
+  separated from the person's fields by a divider, and name the season under them — the flags
+  belong to one season's squad, not to the person.
 - **Archive vs delete.** Archiving retires someone who has left the club: nothing they are in
   changes, they simply stop being offered for seasons still to come (see
   [models.md](models.md#archiving-and-why-deleting-is-guarded)). Its confirm says so; the delete

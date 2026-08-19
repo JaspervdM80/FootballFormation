@@ -170,12 +170,37 @@ public class GameTests
     public void Guests_are_out_of_the_roster_unless_explicitly_added()
     {
         var guest = TestData.Player(2);
-        var squad = TestData.Squad(1, [guest], guestIds: 2);
+        var squad = TestData.Squad(1, [guest], guestIds: [2]);
         var game = TestData.Game();
 
         Assert.False(game.IsInRoster(guest, squad));
 
         game.GuestPlayerIds.Add(guest.Id);
+        Assert.True(game.IsInRoster(guest, squad));
+    }
+
+    [Fact]
+    public void IsInRoster_is_blind_to_injury_the_same_way_it_is_blind_to_archiving()
+    {
+        // A game is judged the way it was played. Injury is set after the fact, on the squad the
+        // roster rule reads live, so IsInRoster must not let it rewrite a past game's roster —
+        // that is what would zero out AvailableMinutes for every game already played this season.
+        // Callers building a *future* line-up filter injured players out themselves.
+        var player = TestData.Player(1);
+        var squad = TestData.Squad(1, [player], injuredIds: [1]);
+        var game = TestData.Game();
+
+        Assert.True(game.IsInRoster(player, squad));
+    }
+
+    [Fact]
+    public void An_injured_guest_is_still_judged_by_whether_they_were_explicitly_added()
+    {
+        var guest = TestData.Player(2);
+        var squad = TestData.Squad(1, [guest], guestIds: [2], injuredIds: [2]);
+        var game = TestData.Game();
+        game.GuestPlayerIds.Add(guest.Id);
+
         Assert.True(game.IsInRoster(guest, squad));
     }
 
@@ -202,7 +227,7 @@ public class GameTests
         var a = TestData.Player(1, "A");
         var b = TestData.Player(2, "B");
         var guest = TestData.Player(3, "G");
-        var squad = TestData.Squad(1, [a, b, guest], guestIds: 3);
+        var squad = TestData.Squad(1, [a, b, guest], guestIds: [3]);
 
         var game = TestData.Game();
         game.UnavailablePlayerIds.Add(b.Id);

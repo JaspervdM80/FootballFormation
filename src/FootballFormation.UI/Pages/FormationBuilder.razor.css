@@ -94,19 +94,31 @@
     border: 2px solid var(--fit-out-of-position-edge);
 }
 
-.unavailable-player {
+.unavailable-player,
+.injured-player {
     display: flex;
     align-items: center;
     gap: 6px;
     padding: 2px 4px;
     font-size: 0.75rem;
+}
+
+/* Struck through and dimmed for Unavailable — a name crossed off one fixture. Not for Injured,
+   which is a standing status rather than a one-game absence, so the row needs to read that way at
+   a glance. */
+.unavailable-player {
     text-decoration: line-through;
     color: var(--ink-muted);
 }
 
+.injured-player {
+    color: var(--ink);
+}
+
 /* The name beside the shirt. PlayerList.razor.css has an identical rule, but that one is scoped
    to PlayerList and never reaches this page — the class here was inert. */
-.unavailable-player .player-name-text {
+.unavailable-player .player-name-text,
+.injured-player .player-name-text {
     font-size: 0.75rem;
     font-weight: 500;
     white-space: nowrap;
@@ -114,20 +126,30 @@
     text-overflow: ellipsis;
 }
 
-.player-shirt.unavailable {
+.player-shirt.unavailable,
+.player-shirt.injured {
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    /* Was a hardcoded rgba(239,68,68,…) — the same red as --color-danger, but invisible to a
-       re-theme. See docs/theming.md: only text on a coloured fill stays a literal. */
-    background: color-mix(in srgb, var(--color-danger) 15%, transparent);
-    color: var(--ink-muted);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 0.65rem;
-    font-weight: 600;
     flex-shrink: 0;
+}
+
+.player-shirt.unavailable {
+    /* Was a hardcoded rgba(239,68,68,…) — the same red as --color-danger, but invisible to a
+       re-theme. See docs/theming.md: only text on a coloured fill stays a literal. */
+    background: color-mix(in srgb, var(--color-danger) 15%, transparent);
+    color: var(--ink-muted);
+    font-weight: 600;
+}
+
+.player-shirt.injured {
+    background: color-mix(in srgb, var(--color-danger) 22%, transparent);
+    color: var(--color-danger-bright);
+    font-weight: 700;
 }
 
 /* Playing time overview dots */
