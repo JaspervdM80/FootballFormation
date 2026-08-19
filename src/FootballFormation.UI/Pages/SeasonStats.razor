@@ -19,18 +19,16 @@
 <PageHeader TitleTypo="Typo.h5" Title="@L["Season statistics"]"
             Subtitle="@(SeasonState.SelectedSeason is { } season
                 ? L["Team and squad totals for {0}", season.Name]
-                : L["Team and squad totals across all seasons"])">
-    <Actions>
-        @* Admin-only, same as the report itself: who has played where is a selection tool, not a
-           public figure. *@
-        <AuthorizeView Roles="@AppRoles.Admin" Context="authActions">
-            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.GridView"
-                       Href="@AppRoutes.PositionDevelopment">
-                @L["Position Development"]
-            </MudButton>
-        </AuthorizeView>
-    </Actions>
-</PageHeader>
+                : L["Team and squad totals across all seasons"])" />
+
+@* Admin-only, same as the report itself: who has played where is a selection tool, not a
+   public figure. Below the header rather than in its Actions slot, which cramped the title row. *@
+<AuthorizeView Roles="@AppRoles.Admin" Context="authActions">
+    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.GridView"
+               Href="@AppRoutes.PositionDevelopment" Class="mb-4">
+        @L["Position Development"]
+    </MudButton>
+</AuthorizeView>
 
 <div class="stat-tiles mb-4">
     <div class="stat-tile">

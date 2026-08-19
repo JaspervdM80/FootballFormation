@@ -12,23 +12,10 @@
 
 <InlineNotice Notice="_notice" />
 
-@* The hint spells out what the row chevron only hints at, the way the squad table does. *@
-<PageHeader BackFallback="@AppRoutes.SeasonStats" TitleTypo="Typo.h5" Title="@L["Position Development"]">
-    <SubtitleContent>
-        <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
-            @(SeasonState.SelectedSeason is { } season
+<PageHeader BackFallback="@AppRoutes.SeasonStats" TitleTypo="Typo.h5" Title="@L["Position Development"]"
+            Subtitle="@(SeasonState.SelectedSeason is { } season
                 ? L["Who has played where in {0}, at a glance.", season.Name]
-                : L["Who has played where across all seasons, at a glance."])
-        </MudText>
-        @if (_report is { Rows.Count: > 0 })
-        {
-            <MudText Typo="Typo.caption" Class="squad-hint">
-                <MudIcon Icon="@Icons.Material.Filled.TouchApp" Size="Size.Small" />
-                @L["Tap a player's name to see their statistics."]
-            </MudText>
-        }
-    </SubtitleContent>
-</PageHeader>
+                : L["Who has played where across all seasons, at a glance."])" />
 
 @if (_report is null || _report.Rows.Count == 0)
 {
@@ -56,6 +43,15 @@
         <div class="stat-sub">@L["of {0} players", _report.PlayersUsed]</div>
     </div>
 </div>
+
+@* The hint spells out what the row chevron only hints at, the way the squad table does. *@
+@if (_report is { Rows.Count: > 0 })
+{
+    <MudText Typo="Typo.caption" Class="squad-hint mb-2">
+        <MudIcon Icon="@Icons.Material.Filled.TouchApp" Size="Size.Small" />
+        @L["Tap a player's name to see their statistics."]
+    </MudText>
+}
 
 <MudTable Items="_report.Rows" Hover="true" Dense="true" Elevation="2" T="PositionDevelopmentRow"
           HorizontalScrollbar="true"
