@@ -12,6 +12,11 @@ namespace FootballFormation.UI.Helpers;
 /// </summary>
 public static class MatchSummaryTextBuilder
 {
+    /// <summary>The same dashed break the live timeline draws between halves — see
+    /// <c>LiveMatch.razor.css</c> — spelled out in plain characters since a paste target has no CSS
+    /// to draw a rule with.</summary>
+    private const string HalfBreak = "———————————";
+
     public static string Build(Game game, MatchSummary summary, IStringLocalizer<Strings> L)
     {
         var homeName = game.IsHomeGame ? L["Us"].Value : game.Opponent;
@@ -19,19 +24,15 @@ public static class MatchSummaryTextBuilder
 
         var lines = new List<string>
         {
-            $"{homeName} {summary.Score} {awayName}",
-            Subtitle(game, L)
+            $"📆{game.DateLine("dd MMMM yyyy")}",
+            "",
+            $"{homeName} {summary.Score} {awayName}"
         };
-
-        // Reuses the live screen's own key rather than a second one for the same word — see
-        // Strings.nl.resx and the localization skill on duplicate resx keys.
-        if (summary.HalfTimeScore is { } ht)
-            lines.Add($"{L["Half time"]}: {ht}");
 
         if (summary.Goals.Count > 0)
         {
             lines.Add("");
-            lines.AddRange(summary.Goals.Select(g => GoalLine(g, L)));
+            lines.AddRange(GoalLines(summary.Goals));
         }
 
         if (summary.PublicComments.Count > 0)
@@ -43,12 +44,23 @@ public static class MatchSummaryTextBuilder
         return string.Join('\n', lines);
     }
 
-    private static string Subtitle(Game game, IStringLocalizer<Strings> L) =>
-        $"{L[game.MatchType.DisplayName()]} · {game.DateLine("dd MMMM yyyy")}";
+    /// <summary>One line per goal, with the half break inserted wherever two consecutive goals
+    /// cross it — the same transition <c>LiveMatch.razor.cs</c>'s <c>HalfTimeAbove</c> tests for,
+    /// so a break with no goal on one side of it stays silent here too.</summary>
+    private static IEnumerable<string> GoalLines(IReadOnlyList<MatchSummaryGoal> goals)
+    {
+        for (var i = 0; i < goals.Count; i++)
+        {
+            if (i > 0 && goals[i - 1].Half != goals[i].Half)
+                yield return HalfBreak;
+
+            yield return GoalLine(goals[i]);
+        }
+    }
 
     /// <summary>⚽ and 🅰️ carry the meaning a WhatsApp paste needs, without spending a line on
     /// each — see the issue: emoji survive a paste where any formatting would not.</summary>
-    private static string GoalLine(MatchSummaryGoal goal, IStringLocalizer<Strings> L)
+    private static string GoalLine(MatchSummaryGoal goal)
     {
         var minutePart = goal.Minute is { } minute ? $" ({minute}')" : "";
         var assistPart = goal.AssistName is { } assist ? $" 🅰️ {assist}" : "";
