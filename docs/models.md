@@ -76,26 +76,31 @@ Helpers on the model: `Contains(date)` (date-only), `ShortName` ("25/26", for th
 | SeasonId | int | FK → Season, **Cascade** delete |
 | PlayerId | int | FK → Player, **Cascade** delete |
 | IsGuest | bool | Guest **for this season only** |
+| IsInjured | bool | Generally injured **for this season only** |
 
 Unique index on `(SeasonId, PlayerId)` — one row per player per season.
 
 The squad is **authoritative**: it decides who can be picked for that season's games and who appears
-in its stats. This is what stops a past season showing today's squad. Guest status lives here rather
-than on `Player` so that someone can be a guest in 2025/26 and a full squad member in 2026/27.
+in its stats. This is what stops a past season showing today's squad. Guest and injury status both
+live here rather than on `Player`, and for the same reason: someone can be a guest in 2025/26 and a
+full squad member in 2026/27, or injured this season and not the next.
 
 Cascade on both sides is the exception to the Restrict rule below: a membership row carries no
 history, so it must never block deleting a person or an (already game-free) season.
 
 New seasons start with an **empty** squad; they are populated by `SeasonSquadService.CopyFromAsync`
 ("copy squad from {previous season}" on `/players`), which preserves guest flags and is idempotent.
-`RemoveMemberAsync` refuses once the player has minutes or goals that season.
+Injury status is deliberately **not** carried forward — every copied row starts fit, since an injury
+is expected to have healed by the time next season's squad is set up, unlike guest status, which is
+a standing arrangement. `RemoveMemberAsync` refuses once the player has minutes or goals that season.
 
 ### SeasonSquad / SeasonSquads
 Two immutable value objects in `Models/SeasonSquad.cs`, not entities:
 
 - **`SeasonSquad`** — one season's members as a lookup: `Contains(id)`, `IsGuest(id)`,
-  `IsFullMember(id)`, `Players` / `FullMembers` / `Guests`, plus `SeasonSquad.Empty`. Its
-  constructor owns the guests-last ordering that `PlayerService.GetAllAsync` used to provide.
+  `IsFullMember(id)`, `IsInjured(id)`, `Players` / `FullMembers` / `Guests` / `Injured`, plus
+  `SeasonSquad.Empty`. Its constructor owns the guests-last ordering that `PlayerService.GetAllAsync`
+  used to provide.
 - **`SeasonSquads`** — several seasons keyed by id, for reports spanning them: `For(seasonId)`,
   `AllPlayers`, `IsFullMemberAnywhere(playerId)`, `Of(squad)`, `SeasonSquads.Empty`.
 
@@ -169,6 +174,12 @@ changing a game's date later never silently moves it between seasons.
 `Game.IsInRoster(player, squad)` / `Game.SelectRoster(players, squad)` centralize the rule: squad
 players are in unless marked unavailable, guests are out unless explicitly added. Use these rather
 than filtering on the id lists directly.
+
+**Deliberately blind to `SeasonSquad.IsInjured`**, the same way it is blind to `Player.IsArchived`
+(see above): this judges a game the way it was played, and `PlayerStatsReport.AvailableMinutes` reads
+it for games already complete, so a status set after the fact must never rewrite one. A caller
+building a *future* line-up — `FormationBuilder.RosterPlayers`, `GameDialog.SquadPlayers`,
+`LiveMatch.SubCandidates` — filters injured players out itself, on top of this.
 
 The season's squad is passed **in** rather than eager-loaded through `Game.Season`. That is
 deliberate: `Game.Season` is nullable, so any query forgetting the `.Include` chain would silently

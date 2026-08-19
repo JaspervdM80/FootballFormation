@@ -8,9 +8,13 @@ import {
 
 /** Toggles the Injured switch in the open Edit Player dialog and saves. */
 async function setInjured(panel, injured) {
-  const switchLabel = panel.getByText('Injured player', { exact: true });
-  const input = panel.locator('.mud-switch input[type="checkbox"]').last();
-  if ((await input.isChecked()) !== injured) await switchLabel.click();
+  // Scoped to the switch that carries the "Injured player" label, not by position — Guest player
+  // sits above it, and this must keep pointing at Injured however many switches join them later.
+  // MudSwitch puts the "mud-switch" class on both the root <label> and the inner text <span>, so
+  // this has to say <label> explicitly or it matches both and Playwright refuses the ambiguity.
+  const injuredSwitch = panel.locator('label.mud-switch', { hasText: 'Injured player' });
+  const input = injuredSwitch.locator('input[type="checkbox"]');
+  if ((await input.isChecked()) !== injured) await injuredSwitch.click();
   await submitDialog(panel.page());
 }
 

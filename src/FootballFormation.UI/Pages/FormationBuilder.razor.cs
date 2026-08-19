@@ -66,9 +66,14 @@ public partial class FormationBuilder
 
     // --- Roster ---
 
-    /// <summary>Squad players who are available, plus guests explicitly added to this game.</summary>
+    /// <summary>Squad players who are available, plus guests explicitly added to this game. Injured
+    /// players are filtered out here rather than in <see cref="Game.IsInRoster"/> — this builds a
+    /// line-up still to be played, and that rule also judges games already played, where an injury
+    /// set after the fact must not rewrite what happened.</summary>
     private List<Player> RosterPlayers =>
-        AllPlayers is null || GameData is null ? [] : GameData.SelectRoster(AllPlayers, Squad);
+        AllPlayers is null || GameData is null
+            ? []
+            : GameData.SelectRoster(AllPlayers, Squad).Where(p => !Squad.IsInjured(p.Id)).ToList();
 
     /// <summary>Squad players who opted out of this game. Guests are simply not added, not
     /// unavailable. Injured players are listed separately by <see cref="InjuredPlayers"/> even when
@@ -87,7 +92,8 @@ public partial class FormationBuilder
     }
 
     /// <summary>Squad players — full members or guests — who are generally injured, as opposed to
-    /// unavailable for this one fixture. Never selectable, per <see cref="Game.IsInRoster"/>.</summary>
+    /// unavailable for this one fixture. Excluded from <see cref="RosterPlayers"/> above, so never
+    /// offered as a drag target for a new line-up.</summary>
     private List<Player> InjuredPlayers =>
         AllPlayers is null ? [] : AllPlayers.Where(p => Squad.IsInjured(p.Id)).ToList();
 

@@ -309,7 +309,7 @@ public class SeasonSquadService(
         });
 
     /// <summary>
-    /// The load both membership writes start from: the row with its player, tracked so it can be
+    /// The load every membership write starts from: the row with its player, tracked so it can be
     /// changed or removed. The player is there for the log lines and the failure messages, which
     /// name a person rather than an id.
     /// </summary>
@@ -319,6 +319,6 @@ public class SeasonSquadService(
             .Include(m => m.Player)
             .FirstOrDefaultAsync(m => m.SeasonId == seasonId && m.PlayerId == playerId, cancellationToken);
 
-    // One message, so both writes say — and translate to — the same thing.
+    // One message, so every write says — and translates to — the same thing.
     private static Result NotInSquad() => Result.Failure("Player is not in this squad");
 }

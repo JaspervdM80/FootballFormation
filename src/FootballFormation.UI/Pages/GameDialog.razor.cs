@@ -143,9 +143,10 @@ public partial class GameDialog
 
         // Drop selections that aren't valid for this season, so switching can't smuggle a stale id
         // through to Submit. (Post-backfill nobody is outside a squad, but a later removal could.)
-        // Injured is dropped too — SquadPlayers no longer offers it, so a stale selection from
-        // before the player was marked injured must not survive a reload either.
-        UnavailablePlayerIds = [.. UnavailablePlayerIds.Where(id => Squad.IsFullMember(id) && !Squad.IsInjured(id))];
+        // Deliberately not filtered on injury: an existing game's stored UnavailablePlayerIds is
+        // history — a player marked injured after the fact must not silently erase that this game
+        // already recorded them as absent. SquadPlayers below is what stops a *new* selection.
+        UnavailablePlayerIds = [.. UnavailablePlayerIds.Where(Squad.IsFullMember)];
         GuestPlayerIds = [.. GuestPlayerIds.Where(id => Squad.Contains(id) && Squad.IsGuest(id))];
 
         StateHasChanged();

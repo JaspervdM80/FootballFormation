@@ -147,19 +147,25 @@ public class Game
         : GameDurationMinutes;
 
     /// <summary>
-    /// Squad players are in unless marked unavailable; guests are out unless explicitly added. An
-    /// injured player is never in the roster, full member or guest — injury is a general status, not
-    /// a per-game opt-out, so there is nothing here that could add them back in.
+    /// Squad players are in unless marked unavailable; guests are out unless explicitly added.
     /// <para>
     /// Guest status is per season, so the season's squad has to be passed in. Anyone outside the
     /// squad is treated as a guest — three membership states collapse to the same two branches the
     /// rule always had.
     /// </para>
+    /// <para>
+    /// Deliberately blind to <see cref="SeasonSquad.IsInjured"/>, the same way it is blind to
+    /// <see cref="Player.IsArchived"/> — this judges a game the way it was played, and a status set
+    /// after the fact must not rewrite it. A completed game's <c>AvailableMinutes</c>
+    /// (<c>PlayerStatsReport</c>) reads this, so injuring someone today would otherwise zero out
+    /// every game they already played this season. Callers building a <em>future</em> line-up
+    /// (<c>FormationBuilder</c>, <c>GameDialog</c>, <c>LiveMatch</c>) filter injured players out
+    /// themselves, on top of this.
+    /// </para>
     /// </summary>
-    public bool IsInRoster(Player player, SeasonSquad squad) => !squad.IsInjured(player.Id) &&
-        (squad.IsFullMember(player.Id)
-            ? !UnavailablePlayerIds.Contains(player.Id)
-            : GuestPlayerIds.Contains(player.Id));
+    public bool IsInRoster(Player player, SeasonSquad squad) => squad.IsFullMember(player.Id)
+        ? !UnavailablePlayerIds.Contains(player.Id)
+        : GuestPlayerIds.Contains(player.Id);
 
     /// <summary>
     /// Overload for reports that walk games across several seasons: the game picks its own season's

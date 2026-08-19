@@ -100,6 +100,22 @@ public class PlayerStatsReportTests
     }
 
     [Fact]
+    public void A_player_marked_injured_after_playing_keeps_the_available_minutes_of_games_already_played()
+    {
+        var game = FinishedGame();
+
+        // Injured *now*, on the live squad the report reads — must not rewrite what already
+        // happened. IsInRoster is deliberately blind to it for exactly this reason.
+        var squad = TestData.Squad(1, [Subject], injuredIds: [Subject.Id]);
+
+        var stats = PlayerStatsReport.Build(Subject, [game], SeasonSquads.Of(squad));
+
+        Assert.Equal(60, stats.AvailableMinutes);
+        Assert.Equal(60, stats.TotalMinutes);
+        Assert.Equal(100, stats.Utilization);
+    }
+
+    [Fact]
     public void Sitting_the_whole_bench_still_counts_as_available()
     {
         var game = FinishedGame();
