@@ -28,7 +28,7 @@
                 Title="@($"{(GameData.IsHomeGame ? "vs" : "@")} {GameData.Opponent}")">
         <Meta>
             <VenueBadge IsHome="GameData.IsHomeGame" />
-            <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">@GameData.Date.ToString("dd MMM yyyy")</MudText>
+            <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">@GameData.DateLine("dd MMM yyyy")</MudText>
             <span class="badge-gold">@GameData.FormationType.DisplayName()</span>
         </Meta>
         <Actions>
@@ -53,7 +53,7 @@
     <PageHeader BackFallback="@AppRoutes.Games" TitleTypo="Typo.h6" Class="mb-3"
                 TitleClass="builder-opponent" Title="@GameData.Opponent">
         <Meta>
-            <span class="builder-date">@GameData.Date.ToString("dd MMM yyyy")</span>
+            <span class="builder-date">@GameData.DateLine("dd MMM yyyy")</span>
             <VenueBadge IsHome="GameData.IsHomeGame" />
         </Meta>
     </PageHeader>

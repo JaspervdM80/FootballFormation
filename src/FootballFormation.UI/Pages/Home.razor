@@ -23,7 +23,7 @@
         <div class="home-live-body">
             <div class="home-live-label">@BannerLabel</div>
             <div class="home-live-match">
-                @(TodaysGame.IsHomeGame ? "vs" : "@") @TodaysGame.Opponent
+                @TodaysGame.Opponent<VenueBadge IsHome="TodaysGame.IsHomeGame" Inline="true" />
             </div>
         </div>
         @* Score reads in venue order, matching the live screen. Before kick-off there is no

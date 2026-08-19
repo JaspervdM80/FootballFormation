@@ -19,7 +19,7 @@
    "vs"/"@" in front of it only repeats that in punctuation. *@
 <PageHeader BackFallback="@AppRoutes.Games" TitleTypo="Typo.h6" Class="mb-2"
             Title="@GameData.Opponent"
-            Subtitle="@($"{GameData.Date:dd MMM yyyy} · {(GameData.IsHomeGame ? L["Home"] : L["Away"])}")" />
+            Subtitle="@($"{GameData.DateLine("dd MMM yyyy")} · {(GameData.IsHomeGame ? L["Home"] : L["Away"])}")" />
 
 <div class="live-layout">
     <MudPaper Class="pa-4 live-scoreboard" Elevation="2">
