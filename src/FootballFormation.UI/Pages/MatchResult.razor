@@ -19,6 +19,9 @@
 <PageHeader BackFallback="@AppRoutes.Games" TitleTypo="Typo.h5"
             Class="mb-2 result-header" TitleClass="result-opponent"
             Title="@($"{(GameData.IsHomeGame ? "vs" : "@")} {GameData.Opponent}")">
+    <Meta>
+        <VenueBadge IsHome="GameData.IsHomeGame" />
+    </Meta>
     <SubtitleContent>
         <MudText Typo="Typo.body2" Class="result-subtitle">
             @GameData.DateLine("dd MMMM yyyy") · @(GameData.IsHomeGame ? L["Home"] : L["Away"]) · @L[GameData.MatchType.DisplayName()] · @GameData.FormationType.DisplayName()

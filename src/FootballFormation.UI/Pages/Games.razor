@@ -66,7 +66,7 @@ else
                     <div class="game-row @rowClass" @onclick="() => OpenGame(game)">
                         <div class="game-primary">
                             <div class="game-meta">
-                                <span class="game-date">@game.Date.ToString("dd MMM")</span>
+                                <span class="game-date">@game.DateLine("dd MMM")</span>
                                 @if (IsIncomplete(game))
                                 {
                                     <MudIcon Icon="@Icons.Material.Filled.WarningAmber" Size="Size.Small" Class="nolineup-icon"
