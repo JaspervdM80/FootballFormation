@@ -27,6 +27,13 @@ public class Game
     public int? ScoreAway { get; set; }
 
     /// <summary>
+    /// True once a kick-off time has been set, rather than left at midnight — <see cref="Date"/>
+    /// carries both, and every page that shows the date drops the time when this is false rather
+    /// than printing a kick-off nobody entered.
+    /// </summary>
+    public bool HasStartTime => Date.TimeOfDay != TimeSpan.Zero;
+
+    /// <summary>
     /// The line-ups this game is planned in. A match is played in two halves whatever the split
     /// says; a period row is a <em>planned line-up</em> for a stretch of one, and a quarters game
     /// simply plans two per half. The row that opens a half is the one the live match plays it
@@ -229,6 +236,18 @@ public class Game
         ScoreHome = CountOurGoals(goals);
         ScoreAway = CountTheirGoals(goals);
     }
+
+    /// <summary>
+    /// Flips a (us, them) pair into the order a scoreboard reads: the home side first. The one
+    /// flip between what is stored — always us/them, see <see cref="ScoreHome"/> — and how a
+    /// scoreline is shown, spelled out once here rather than respelled at every place that shows
+    /// one (the home banner, the copyable match summary).
+    /// </summary>
+    public (int Home, int Away) InVenueOrder(int us, int them) => IsHomeGame ? (us, them) : (them, us);
+
+    /// <summary>The final score in venue order. A null score reads as 0-0, the same fallback the
+    /// home banner already used before this was pulled out.</summary>
+    public (int Home, int Away) ScoreboardOrder() => InVenueOrder(ScoreHome ?? 0, ScoreAway ?? 0);
 }
 
 /// <summary>

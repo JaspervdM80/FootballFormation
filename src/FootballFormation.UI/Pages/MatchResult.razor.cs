@@ -1,10 +1,12 @@
 using FootballFormation.Core.Models;
+using FootballFormation.Core.Reporting;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
 using FootballFormation.UI.Navigation;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Localization;
+using Microsoft.JSInterop;
 using MudBlazor;
 
 namespace FootballFormation.UI.Pages;
@@ -19,6 +21,7 @@ public partial class MatchResult
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private TimeProvider Time { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
+    [Inject] private IJSRuntime JS { get; set; } = null!;
 
     [CascadingParameter]
     private Task<AuthenticationState> AuthStateTask { get; set; } = null!;
@@ -208,6 +211,24 @@ public partial class MatchResult
         if (!Snackbar.Report(L, result, makePublic ? L["Comment published"] : L["Comment is now admin only"])) return;
 
         await ReloadComments();
+    }
+
+    /// <summary>
+    /// Builds the copyable summary from whatever is already loaded — <see cref="Comments"/> is
+    /// filtered by admin-ness on load, but <c>MatchSummaryReport</c> filters to public ones again
+    /// regardless, so an admin's private notes can never end up on someone's clipboard.
+    /// </summary>
+    private async Task CopyMatchSummary()
+    {
+        if (GameData is null) return;
+
+        var summary = MatchSummaryReport.Build(GameData, Comments);
+        var text = MatchSummaryTextBuilder.Build(GameData, summary, L);
+
+        var copied = await JS.InvokeAsync<bool>("copyText", text);
+        Snackbar.Add(
+            copied ? L["Copied to clipboard"].Value : L["Couldn't copy — try again"].Value,
+            copied ? Severity.Success : Severity.Warning);
     }
 
     private async Task RemoveComment(GameComment comment)

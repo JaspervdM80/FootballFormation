@@ -42,9 +42,8 @@ public partial class Home
         get
         {
             if (TodaysGame is null) return "";
-            var ours = TodaysGame.ScoreHome ?? 0;
-            var theirs = TodaysGame.ScoreAway ?? 0;
-            return TodaysGame.IsHomeGame ? $"{ours} – {theirs}" : $"{theirs} – {ours}";
+            var (home, away) = TodaysGame.ScoreboardOrder();
+            return $"{home} – {away}";
         }
     }
 

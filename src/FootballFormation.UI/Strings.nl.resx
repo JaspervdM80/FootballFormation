@@ -109,6 +109,8 @@
   <data name="Opponent" xml:space="preserve"><value>Tegenstander</value></data>
   <data name="Opponent is required" xml:space="preserve"><value>Tegenstander is verplicht</value></data>
   <data name="Date" xml:space="preserve"><value>Datum</value></data>
+  <!-- Optional — left blank the game shows no kick-off time anywhere, see Game.HasStartTime -->
+  <data name="Kick-off Time" xml:space="preserve"><value>Aftraptijd</value></data>
   <data name="Venue" xml:space="preserve"><value>Locatie</value></data>
   <data name="Home" xml:space="preserve"><value>Thuis</value></data>
   <data name="Away" xml:space="preserve"><value>Uit</value></data>
@@ -169,6 +171,13 @@
   <data name="Score saved!" xml:space="preserve"><value>Uitslag opgeslagen!</value></data>
   <data name="Goal added!" xml:space="preserve"><value>Doelpunt toegevoegd!</value></data>
   <data name="Goal removed" xml:space="preserve"><value>Doelpunt verwijderd</value></data>
+
+  <!-- The copyable match summary — MatchSummaryTextBuilder — shared by the result page and the
+       formation overview's share button. -->
+  <data name="Copy match result" xml:space="preserve"><value>Uitslag kopiëren</value></data>
+  <data name="Copied to clipboard" xml:space="preserve"><value>Gekopieerd naar klembord</value></data>
+  <data name="Couldn't copy — try again" xml:space="preserve"><value>Kopiëren mislukt — probeer opnieuw</value></data>
+  <data name="Half-time" xml:space="preserve"><value>Rust</value></data>
 
   <!-- Match comments. Private unless published, so the wording has to leave no doubt which is which. -->
   <data name="Comments" xml:space="preserve"><value>Opmerkingen</value></data>

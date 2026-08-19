@@ -1962,6 +1962,14 @@ html, body {
     color: var(--color-warning-bright);
 }
 
+/* Only a -bright variant exists for success — unlike danger/warning there is no plain tone beside
+   it, so the mix below is struck from the same color the text uses. */
+.inline-notice-success {
+    background: color-mix(in srgb, var(--color-success-bright) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-success-bright) 30%, transparent);
+    color: var(--color-success-bright);
+}
+
 .inline-notice[hidden] {
     display: none;
 }

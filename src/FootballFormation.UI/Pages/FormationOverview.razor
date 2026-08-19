@@ -1,6 +1,5 @@
 ﻿@page "/games/{GameId:int}/overview"
 @inherits CancellableComponent
-@inject IStringLocalizer<Strings> L
 
 <PageTitle>@L["Formation Overview"]</PageTitle>
 
@@ -24,7 +23,7 @@
             @* This image gets shared, so a cup tie or a practice game has to be legible in it.
                A competition match is the norm and stays unlabelled. *@
             <span class="overview-date">
-                @GameData.Date.ToString("dd MMM yyyy") · @(GameData.IsHomeGame ? L["Home"] : L["Away"])@if (GameData.MatchType != MatchType.Competition)
+                @GameData.Date.ToString("dd MMM yyyy")@(GameData.HasStartTime ? $", {GameData.Date:HH:mm}" : "") · @(GameData.IsHomeGame ? L["Home"] : L["Away"])@if (GameData.MatchType != MatchType.Competition)
                 {
                     <text> · </text>@L[GameData.MatchType.DisplayName()]
                 }
@@ -80,8 +79,30 @@
         <MudIcon Icon="@Icons.Material.Filled.CameraAlt" Size="Size.Small" />
         @L["Save as image"]
     </button>
+    @* Same shape as the screenshot button — js/clipboard.js reads the text already composed
+       server-side below rather than being handed the wording itself. Only shown once there is a
+       result to share; a fixture still to be played has nothing worth pasting into a chat. *@
+    @if (SummaryText is not null)
+    {
+        <button type="button" class="btn-gold overview-capture"
+                onclick="copyElementText('match-summary-text', 'copy-success', 'copy-error')">
+            <MudIcon Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small" />
+            @L["Copy match result"]
+        </button>
+    }
 </div>
 
 <div id="screenshot-error" class="inline-notice inline-notice-warning" role="alert" hidden>
     @L["Screenshot failed — try using your device's screenshot instead"]
 </div>
+
+@if (SummaryText is not null)
+{
+    <pre id="match-summary-text" hidden>@SummaryText</pre>
+    <div id="copy-success" class="inline-notice inline-notice-success" role="status" hidden>
+        @L["Copied to clipboard"]
+    </div>
+    <div id="copy-error" class="inline-notice inline-notice-warning" role="alert" hidden>
+        @L["Couldn't copy — try again"]
+    </div>
+}
