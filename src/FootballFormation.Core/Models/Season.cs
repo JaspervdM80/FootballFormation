@@ -27,7 +27,9 @@ public class Season
     public List<SeasonSquadMember> SquadMembers { get; set; } = [];
 
     /// <summary>Whether <paramref name="date"/> falls inside this season's window. Date-only,
-    /// since game dates come from a date picker and carry a midnight time component.</summary>
+    /// because the window itself is a pair of calendar days — a game's own date can carry a
+    /// kick-off time (<see cref="Game.HasStartTime"/>), which is exactly why comparing the two
+    /// on anything finer than the day would be comparing different things.</summary>
     public bool Contains(DateTime date) => date.Date >= StartDate.Date && date.Date <= EndDate.Date;
 
     /// <summary>Short label for the crowded app bar and narrow screens: "25/26".</summary>

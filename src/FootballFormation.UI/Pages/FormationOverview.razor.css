@@ -104,9 +104,11 @@
     color: var(--club-primary-bright);
 }
 
-/* Action buttons below the capture area */
+/* Action buttons below the capture area. Wraps because it now holds two buttons — screenshot and
+   copy — whose Dutch labels plus icons run wider than a narrow phone at 44px min-height each. */
 .overview-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 12px;
     margin-top: 16px;
     max-width: 900px;

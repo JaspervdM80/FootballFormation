@@ -27,6 +27,32 @@ public class Game
     public int? ScoreAway { get; set; }
 
     /// <summary>
+    /// True once a kick-off time has been set, rather than left at midnight — <see cref="Date"/>
+    /// carries both, and every page that shows the date drops the time when this is false rather
+    /// than printing a kick-off nobody entered.
+    /// </summary>
+    public bool HasStartTime => Date.TimeOfDay != TimeSpan.Zero;
+
+    /// <summary>
+    /// <paramref name="format"/> plus the kick-off time when one was set, comma-separated — the one
+    /// place this is spelled out, since the result page, the shareable overview and the copyable
+    /// summary all show the same date line.
+    /// </summary>
+    public string DateLine(string format) =>
+        HasStartTime ? $"{Date.ToString(format)}, {Date:HH:mm}" : Date.ToString(format);
+
+    /// <summary>
+    /// Whether the scoreline is settled. A live match writes <see cref="ScoreHome"/>/
+    /// <see cref="ScoreAway"/> as the goals go in, so a score on its own only means the game has
+    /// <em>started</em> — the state has to be checked too. Once it is settled there is nothing left
+    /// to run live, and the result page (and anything built from it, like the copyable summary) is
+    /// where the game's information lives. The same rule <c>Games.Sections</c> splits fixtures from
+    /// results on.
+    /// </summary>
+    public bool HasFinalScore =>
+        MatchState != MatchState.InProgress && ScoreHome.HasValue && ScoreAway.HasValue;
+
+    /// <summary>
     /// The line-ups this game is planned in. A match is played in two halves whatever the split
     /// says; a period row is a <em>planned line-up</em> for a stretch of one, and a quarters game
     /// simply plans two per half. The row that opens a half is the one the live match plays it
@@ -229,6 +255,18 @@ public class Game
         ScoreHome = CountOurGoals(goals);
         ScoreAway = CountTheirGoals(goals);
     }
+
+    /// <summary>
+    /// Flips a (us, them) pair into the order a scoreboard reads: the home side first. The one
+    /// flip between what is stored — always us/them, see <see cref="ScoreHome"/> — and how a
+    /// scoreline is shown, spelled out once here rather than respelled at every place that shows
+    /// one (the games list, the home banner, the copyable match summary).
+    /// </summary>
+    public VenueScore InVenueOrder(int us, int them) => IsHomeGame ? new VenueScore(us, them) : new VenueScore(them, us);
+
+    /// <summary>The final score in venue order. A null score reads as 0-0, the same fallback the
+    /// home banner already used before this was pulled out.</summary>
+    public VenueScore ScoreboardOrder() => InVenueOrder(ScoreHome ?? 0, ScoreAway ?? 0);
 }
 
 /// <summary>

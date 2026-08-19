@@ -72,8 +72,9 @@ public class LiveMatchService(
 
             if (game is not null) return Result.Success<Game?>(game);
 
-            // Games carry a date but no kick-off time, so "today" is the whole calendar day.
-            // A double-header shows the one still to be played before the one already done.
+            // "Today" is the whole calendar day, kick-off time or not — a fixture is signposted
+            // from midnight whatever time it actually starts. A double-header shows the one still
+            // to be played before the one already done.
             var today = time.GetLocalNow().Date;
             var tomorrow = today.AddDays(1);
 

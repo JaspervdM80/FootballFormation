@@ -95,10 +95,7 @@ else
                         @if (game.ScoreHome.HasValue && game.ScoreAway.HasValue)
                         {
                             var scoreClass = game.ScoreHome > game.ScoreAway ? "win" : game.ScoreHome < game.ScoreAway ? "loss" : "draw";
-                            @* Scoreboard reads in venue order: the home side is listed first. *@
-                            var left = game.IsHomeGame ? game.ScoreHome : game.ScoreAway;
-                            var right = game.IsHomeGame ? game.ScoreAway : game.ScoreHome;
-                            <span class="game-score @scoreClass">@left – @right</span>
+                            <span class="game-score @scoreClass">@game.ScoreboardOrder()</span>
                         }
                         <div class="game-actions" @onclick:stopPropagation="true">
                             @* Live leads the row and wears the red wherever it appears; the extra class
@@ -112,7 +109,7 @@ else
                                     <MudIcon Icon="@Icons.Material.Filled.Sensors" Size="Size.Small" />
                                 </button>
                             }
-                            else if (IsMatchDay(game) && !HasFinalScore(game))
+                            else if (IsMatchDay(game) && !game.HasFinalScore)
                             {
                                 <AuthorizeView Roles="@AppRoles.Admin">
                                     <button class="action-btn action-live" title="@L["Live"]" @onclick="() => OpenLive(game.Id)">

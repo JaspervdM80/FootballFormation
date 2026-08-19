@@ -1,4 +1,5 @@
 using FootballFormation.Core.Models;
+using FootballFormation.Core.Reporting;
 using FootballFormation.Core.Services;
 using FootballFormation.UI.Helpers;
 using FootballFormation.UI.Navigation;
@@ -56,6 +57,11 @@ public partial class MatchResult
     // New comment form
     private string? NewCommentBody { get; set; }
     private bool NewCommentIsPublic { get; set; }
+
+    /// <summary>The copyable match summary, rendered into a hidden element for <c>clipboard.js</c>
+    /// to read — see the copy button's markup for why even this circuit-carrying page uses a plain
+    /// onclick rather than a Blazor handler. Null until there is a final score to report.</summary>
+    private string? SummaryText { get; set; }
 
     /// <summary>A match still to be played. <c>/games</c> leaves the link to this page off such a
     /// card; this is the same rule for whoever arrives by URL anyway.</summary>
@@ -136,10 +142,35 @@ public partial class MatchResult
         await ReloadComments();
     }
 
+    /// <summary>Only public comments make the summary regardless of what <see cref="Comments"/>
+    /// itself holds — <c>MatchSummaryReport</c> filters again on its own, so an admin's private
+    /// notes can never end up on someone's clipboard whatever this page loaded them for.</summary>
+    private void RefreshSummaryText()
+    {
+        if (GameData is null || !GameData.HasFinalScore)
+        {
+            SummaryText = null;
+            return;
+        }
+
+        var summary = MatchSummaryReport.Build(GameData, Comments);
+        SummaryText = MatchSummaryTextBuilder.Build(GameData, summary, L);
+    }
+
     private async Task SaveScore()
     {
         var result = await GameService.SaveScoreAsync(GameId, ScoreHome, ScoreAway);
-        Snackbar.Report(L, result, L["Score saved!"]);
+        if (!Snackbar.Report(L, result, L["Score saved!"])) return;
+
+        // SaveScoreAsync writes straight to the database rather than handing back the row, so
+        // GameData is brought in line by hand — the copy button reads it, not the form fields, and
+        // would otherwise still see the score from before this save.
+        if (GameData is not null)
+        {
+            GameData.ScoreHome = ScoreHome;
+            GameData.ScoreAway = ScoreAway;
+        }
+        RefreshSummaryText();
     }
 
     private async Task AddGoal()
@@ -229,12 +260,14 @@ public partial class MatchResult
     {
         var result = await GameService.GetCommentsAsync(GameId, includePrivate: IsAdmin, Cancellation);
         Comments = result.IsSuccess ? result.Value! : [];
+        RefreshSummaryText();
     }
 
     private async Task ReloadGame()
     {
         var gameResult = await GameService.GetByIdAsync(GameId, Cancellation);
         if (gameResult.IsSuccess) GameData = gameResult.Value;
+        RefreshSummaryText();
     }
 
     private void ResetGoalForm()

@@ -282,4 +282,72 @@ public class GameTests
         foreach (var split in Enum.GetValues<GameSplitType>())
             Assert.Equal(PeriodTypeExtensions.ForSplitType(split).Length, split.PeriodCount());
     }
+
+    [Theory]
+    [InlineData(true, 3, 1, 3, 1)]
+    [InlineData(false, 3, 1, 1, 3)]
+    public void ScoreboardOrder_puts_the_home_side_first(
+        bool isHomeGame, int ours, int theirs, int expectedHome, int expectedAway)
+    {
+        var game = TestData.Game();
+        game.IsHomeGame = isHomeGame;
+        game.ScoreHome = ours;
+        game.ScoreAway = theirs;
+
+        Assert.Equal(new VenueScore(expectedHome, expectedAway), game.ScoreboardOrder());
+    }
+
+    [Fact]
+    public void ScoreboardOrder_reads_a_score_not_yet_typed_in_as_nil_all()
+    {
+        Assert.Equal(new VenueScore(0, 0), TestData.Game().ScoreboardOrder());
+    }
+
+    [Fact]
+    public void A_venue_score_reads_home_side_first_with_an_en_dash()
+    {
+        Assert.Equal("3 – 1", new VenueScore(3, 1).ToString());
+    }
+
+    [Theory]
+    [InlineData(0, 0, 0, false)]
+    [InlineData(14, 30, 0, true)]
+    public void HasStartTime_is_false_until_a_kick_off_time_is_set(int hour, int minute, int second, bool expected)
+    {
+        var game = TestData.Game(date: new DateTime(2026, 3, 14, hour, minute, second));
+
+        Assert.Equal(expected, game.HasStartTime);
+    }
+
+    [Fact]
+    public void DateLine_drops_the_kick_off_time_when_none_was_set()
+    {
+        var game = TestData.Game(date: new DateTime(2026, 3, 14));
+
+        Assert.Equal("14 March 2026", game.DateLine("d MMMM yyyy"));
+    }
+
+    [Fact]
+    public void DateLine_appends_the_kick_off_time_when_one_was_set()
+    {
+        var game = TestData.Game(date: new DateTime(2026, 3, 14, 19, 30, 0));
+
+        Assert.Equal("14 March 2026, 19:30", game.DateLine("d MMMM yyyy"));
+    }
+
+    [Theory]
+    [InlineData(MatchState.Finished, 2, 1, true)]
+    [InlineData(MatchState.NotStarted, 2, 1, true)]
+    [InlineData(MatchState.NotStarted, null, null, false)]
+    [InlineData(MatchState.InProgress, 2, 1, false)]  // a score written mid-match is not settled yet
+    public void HasFinalScore_checks_the_match_state_as_well_as_the_scores(
+        MatchState state, int? home, int? away, bool expected)
+    {
+        var game = TestData.Game();
+        game.MatchState = state;
+        game.ScoreHome = home;
+        game.ScoreAway = away;
+
+        Assert.Equal(expected, game.HasFinalScore);
+    }
 }

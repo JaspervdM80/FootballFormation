@@ -22,6 +22,11 @@ public partial class GameDialog
     private MudForm Form { get; set; } = null!;
     private string Opponent { get; set; } = string.Empty;
     private DateTime? Date { get; set; } = DateTime.Today;
+
+    /// <summary>The kick-off time as the native time input reads and writes it ("HH:mm"), kept
+    /// apart from <see cref="Date"/> so a blank field round-trips as no time at all rather than
+    /// midnight — see <c>Game.HasStartTime</c>.</summary>
+    private string? StartTimeText { get; set; }
     private FormationType SelectedFormationType { get; set; } = FormationType.F442;
     private GameSplitType SplitType { get; set; } = GameSplitType.Halves;
     private MatchType SelectedMatchType { get; set; } = MatchType.Competition;
@@ -162,6 +167,7 @@ public partial class GameDialog
         {
             Opponent = Game.Opponent;
             Date = Game.Date;
+            StartTimeText = Game.HasStartTime ? Game.Date.ToString("HH:mm") : null;
             SelectedFormationType = Game.FormationType;
             SplitType = Game.SplitType;
             SelectedMatchType = Game.MatchType;
@@ -180,7 +186,8 @@ public partial class GameDialog
 
         var game = Game ?? new Game { Opponent = Opponent };
         game.Opponent = Opponent;
-        game.Date = Date ?? DateTime.Today;
+        var startTime = TimeSpan.TryParse(StartTimeText, out var parsed) ? parsed : TimeSpan.Zero;
+        game.Date = (Date ?? DateTime.Today).Date + startTime;
         game.FormationType = SelectedFormationType;
         game.SplitType = SplitType;
         game.MatchType = SelectedMatchType;
