@@ -70,7 +70,9 @@ public partial class FormationBuilder
     private List<Player> RosterPlayers =>
         AllPlayers is null || GameData is null ? [] : GameData.SelectRoster(AllPlayers, Squad);
 
-    /// <summary>Squad players who opted out of this game. Guests are simply not added, not unavailable.</summary>
+    /// <summary>Squad players who opted out of this game. Guests are simply not added, not
+    /// unavailable. Injured players are listed separately by <see cref="InjuredPlayers"/> even when
+    /// also marked unavailable for this fixture, so nobody appears in both panels.</summary>
     private List<Player> UnavailablePlayers
     {
         get
@@ -78,9 +80,16 @@ public partial class FormationBuilder
             if (AllPlayers is null || GameData is null) return [];
 
             var unavailable = GameData.UnavailablePlayerIds.ToHashSet();
-            return AllPlayers.Where(p => Squad.IsFullMember(p.Id) && unavailable.Contains(p.Id)).ToList();
+            return AllPlayers
+                .Where(p => Squad.IsFullMember(p.Id) && unavailable.Contains(p.Id) && !Squad.IsInjured(p.Id))
+                .ToList();
         }
     }
+
+    /// <summary>Squad players — full members or guests — who are generally injured, as opposed to
+    /// unavailable for this one fixture. Never selectable, per <see cref="Game.IsInRoster"/>.</summary>
+    private List<Player> InjuredPlayers =>
+        AllPlayers is null ? [] : AllPlayers.Where(p => Squad.IsInjured(p.Id)).ToList();
 
     private List<Player> GetAvailablePlayers(int periodId)
     {

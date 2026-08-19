@@ -15,8 +15,10 @@
             {
                 var squadCount = _squad.FullMembers.Count;
                 var guestCount = _squad.Guests.Count;
+                var injuredCount = _squad.Injured.Count;
                 @(squadCount == 1 ? L["{0} player", squadCount] : L["{0} players", squadCount])
                 @(guestCount > 0 ? " · " + (guestCount == 1 ? L["{0} guest", guestCount] : L["{0} guests", guestCount]) : "")
+                @(injuredCount > 0 ? " · " + L["{0} injured", injuredCount] : "")
                 <span> · @SeasonName</span>
             }
         </MudText>
@@ -130,6 +132,13 @@
                 @if (context.IsGuest)
                 {
                     <span class="badge-guest">@L["GUEST"]</span>
+                }
+                @if (context.IsInjured)
+                {
+                    <span class="badge-injured">
+                        <MudIcon Icon="@Icons.Material.Filled.MedicalServices" Size="Size.Small" />
+                        @L["INJURED"]
+                    </span>
                 }
                 @* An archived player still belongs to the seasons they played, so they stay in this
                    list — the badge is what says they are no longer being picked for new ones. *@

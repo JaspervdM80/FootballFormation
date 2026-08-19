@@ -4,10 +4,10 @@ using MudBlazor;
 
 namespace FootballFormation.UI.Pages;
 
-/// <summary>What the dialog edited: the person, and whether they are a guest in the season being
-/// edited. Two things, because guest status belongs to a season's squad and not to the person —
-/// the page makes them two writes.</summary>
-public record PlayerEdit(Player Player, bool IsGuest);
+/// <summary>What the dialog edited: the person, and their guest and injury status in the season
+/// being edited. Three things, because guest and injury status belong to a season's squad and not
+/// to the person — the page makes them separate writes.</summary>
+public record PlayerEdit(Player Player, bool IsGuest, bool IsInjured);
 
 public partial class PlayerDialog
 {
@@ -20,6 +20,10 @@ public partial class PlayerDialog
     /// <summary>The member's guest flag in the season being edited, seeded from the squad row.</summary>
     [Parameter]
     public bool IsGuest { get; set; }
+
+    /// <summary>The member's injury flag in the season being edited, seeded from the squad row.</summary>
+    [Parameter]
+    public bool IsInjured { get; set; }
 
     /// <summary>Named in the caption under the switch, so it is clear the flag is per season.</summary>
     [Parameter]
@@ -36,9 +40,13 @@ public partial class PlayerDialog
     /// seeded from <see cref="Player"/>, rather than binding the parameter itself.</summary>
     private bool Guest { get; set; }
 
+    /// <summary>Same reasoning as <see cref="Guest"/>, seeded from <see cref="IsInjured"/>.</summary>
+    private bool Injured { get; set; }
+
     protected override void OnParametersSet()
     {
         Guest = IsGuest;
+        Injured = IsInjured;
 
         if (Player is not null)
         {
@@ -62,7 +70,7 @@ public partial class PlayerDialog
         player.PreferredPosition = PreferredPosition;
         player.AlternativePositions = AlternativePositions.ToList();
 
-        MudDialog.Close(DialogResult.Ok(new PlayerEdit(player, Guest)));
+        MudDialog.Close(DialogResult.Ok(new PlayerEdit(player, Guest, Injured)));
     }
 
     private void Cancel() => MudDialog.Cancel();

@@ -89,13 +89,16 @@ internal static class TestData
             IsOpponentGoal = opponentGoal
         };
 
-    /// <summary>A squad of full members, unless the player id appears in <paramref name="guestIds"/>.</summary>
-    public static SeasonSquad Squad(int seasonId, IEnumerable<Player> players, params int[] guestIds) =>
+    /// <summary>A squad of full members, unless the player id appears in <paramref name="guestIds"/>
+    /// or <paramref name="injuredIds"/>.</summary>
+    public static SeasonSquad Squad(
+        int seasonId, IEnumerable<Player> players, int[]? guestIds = null, int[]? injuredIds = null) =>
         new(seasonId, players.Select(p => new SeasonSquadMember
         {
             SeasonId = seasonId,
             PlayerId = p.Id,
             Player = p,
-            IsGuest = guestIds.Contains(p.Id)
+            IsGuest = (guestIds ?? []).Contains(p.Id),
+            IsInjured = (injuredIds ?? []).Contains(p.Id)
         }));
 }

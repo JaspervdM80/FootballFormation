@@ -49,6 +49,11 @@ public sealed class SeasonSquad
     public bool IsFullMember(int playerId) =>
         _byPlayerId.TryGetValue(playerId, out var member) && !member.IsGuest;
 
+    /// <summary>False for anyone outside the squad — an injury is a status a membership row carries,
+    /// so someone who was never a member was never marked injured either.</summary>
+    public bool IsInjured(int playerId) =>
+        _byPlayerId.TryGetValue(playerId, out var member) && member.IsInjured;
+
     /// <summary>Everyone in the squad, guests last. Members must have been loaded with their Player.</summary>
     public List<Player> Players => [.. Members.Where(m => m.Player is not null).Select(m => m.Player!)];
 
@@ -57,6 +62,9 @@ public sealed class SeasonSquad
 
     public List<Player> Guests =>
         [.. Members.Where(m => m.IsGuest && m.Player is not null).Select(m => m.Player!)];
+
+    public List<Player> Injured =>
+        [.. Members.Where(m => m.IsInjured && m.Player is not null).Select(m => m.Player!)];
 }
 
 /// <summary>

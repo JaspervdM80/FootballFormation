@@ -114,6 +114,39 @@
     text-overflow: ellipsis;
 }
 
+/* Not dimmed and not struck through, unlike .unavailable-player above — an injured player is a
+   standing status, not a name crossed off for one fixture, and the row needs to read that way at a
+   glance. */
+.injured-player {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 4px;
+    font-size: 0.75rem;
+    color: var(--ink);
+}
+
+.injured-player .player-name-text {
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.player-shirt.injured {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--color-danger) 22%, transparent);
+    color: var(--color-danger-bright);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+}
+
 .player-shirt.unavailable {
     width: 22px;
     height: 22px;

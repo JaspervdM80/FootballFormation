@@ -97,6 +97,24 @@
                 }
             </MudPaper>
         }
+        @* Its own panel, not folded into Unavailable above: injury is a general status rather than a
+           per-game opt-out, and the issue that asked for it wants the two kept visually distinct. *@
+        @if (InjuredPlayers.Count > 0)
+        {
+            <MudPaper Class="pa-2 mt-2" Elevation="1" Style="border-radius: 10px;">
+                <MudText Typo="Typo.subtitle2" Class="mb-1" Style="color: var(--color-danger-bright);">
+                    <MudIcon Icon="@Icons.Material.Filled.MedicalServices" Size="Size.Small" Class="mr-1" />
+                    @L["Injured players"] (@InjuredPlayers.Count)
+                </MudText>
+                @foreach (var player in InjuredPlayers)
+                {
+                    <div class="injured-player">
+                        <span class="player-shirt injured">@(player.ShirtNumber?.ToString() ?? "-")</span>
+                        <span class="player-name-text">@player.DisplayName</span>
+                    </div>
+                }
+            </MudPaper>
+        }
     </div>
     <div class="pitch-panel">
         <Pitch Formation="periodFormation"

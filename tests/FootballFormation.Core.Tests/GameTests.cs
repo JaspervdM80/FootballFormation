@@ -170,13 +170,36 @@ public class GameTests
     public void Guests_are_out_of_the_roster_unless_explicitly_added()
     {
         var guest = TestData.Player(2);
-        var squad = TestData.Squad(1, [guest], guestIds: 2);
+        var squad = TestData.Squad(1, [guest], guestIds: [2]);
         var game = TestData.Game();
 
         Assert.False(game.IsInRoster(guest, squad));
 
         game.GuestPlayerIds.Add(guest.Id);
         Assert.True(game.IsInRoster(guest, squad));
+    }
+
+    [Fact]
+    public void An_injured_full_member_is_never_in_the_roster()
+    {
+        var player = TestData.Player(1);
+        var squad = TestData.Squad(1, [player], injuredIds: [1]);
+        var game = TestData.Game();
+
+        // Not even marking them available for this fixture overrides it — injury is a general
+        // status, not a per-game opt-in.
+        Assert.False(game.IsInRoster(player, squad));
+    }
+
+    [Fact]
+    public void An_injured_guest_is_never_in_the_roster_even_when_explicitly_added()
+    {
+        var guest = TestData.Player(2);
+        var squad = TestData.Squad(1, [guest], guestIds: [2], injuredIds: [2]);
+        var game = TestData.Game();
+        game.GuestPlayerIds.Add(guest.Id);
+
+        Assert.False(game.IsInRoster(guest, squad));
     }
 
     [Fact]
@@ -202,7 +225,7 @@ public class GameTests
         var a = TestData.Player(1, "A");
         var b = TestData.Player(2, "B");
         var guest = TestData.Player(3, "G");
-        var squad = TestData.Squad(1, [a, b, guest], guestIds: 3);
+        var squad = TestData.Squad(1, [a, b, guest], guestIds: [3]);
 
         var game = TestData.Game();
         game.UnavailablePlayerIds.Add(b.Id);

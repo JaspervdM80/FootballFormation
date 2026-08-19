@@ -82,7 +82,7 @@ public partial class Players
         var created = await PlayerService.CreateAsync(edited.Player);
         if (!Snackbar.ReportFailure(L, created)) return;
 
-        var added = await SquadService.AddMemberAsync(seasonId, created.Value!.Id, edited.IsGuest);
+        var added = await SquadService.AddMemberAsync(seasonId, created.Value!.Id, edited.IsGuest, edited.IsInjured);
         Snackbar.Report(L, added, L["{0} added to the squad", edited.Player.DisplayName]);
         await LoadAsync();
     }
@@ -106,7 +106,7 @@ public partial class Players
         var picked = await ShowSquadMemberDialogAsync(candidates);
         if (picked is not { } choice) return;
 
-        var result = await SquadService.AddMemberAsync(seasonId, choice.PlayerId, choice.IsGuest);
+        var result = await SquadService.AddMemberAsync(seasonId, choice.PlayerId, choice.IsGuest, choice.IsInjured);
         Snackbar.Report(L, result, L["{0} added to the squad",
             candidates.First(p => p.Id == choice.PlayerId).DisplayName]);
         await LoadAsync();
@@ -130,34 +130,45 @@ public partial class Players
     }
 
     /// <summary>
-    /// Edits the person and their place in this season's squad in one dialog. They are two writes
-    /// because they are two things — a player is edited once and is a guest in one season and not
-    /// in another — and the guest one is only made when the switch actually moved, so an ordinary
-    /// name change does not touch the squad.
+    /// Edits the person and their place in this season's squad in one dialog. Guest and injury
+    /// status are separate writes from the player edit — a player is edited once and is a guest, or
+    /// injured, in one season and not in another — and each is only made when its switch actually
+    /// moved, so an ordinary name change does not touch the squad.
     /// </summary>
     private async Task OpenEditDialog(SeasonSquadMember member)
     {
         if (SeasonId is not { } seasonId) return;
 
-        var edited = await ShowPlayerDialogAsync(L["Edit Player"], member.Player!, member.IsGuest);
+        var edited = await ShowPlayerDialogAsync(L["Edit Player"], member.Player!, member.IsGuest, member.IsInjured);
         if (edited is null) return;
 
         var updated = await PlayerService.UpdateAsync(edited.Player);
         if (!Snackbar.ReportFailure(L, updated)) return;
 
         var name = edited.Player.DisplayName;
-        if (edited.IsGuest == member.IsGuest)
+        if (edited.IsGuest == member.IsGuest && edited.IsInjured == member.IsInjured)
         {
             Snackbar.Add(L["Player {0} updated", name], Severity.Success);
         }
         else
         {
-            // The guest line replaces the generic one rather than joining it: two snackbars for one
-            // Save reads as two things having happened.
-            var guest = await SquadService.SetGuestAsync(seasonId, member.PlayerId, edited.IsGuest);
-            Snackbar.Report(L, guest, edited.IsGuest
-                ? L["{0} is now a guest", name]
-                : L["{0} is now a squad player", name]);
+            // The guest/injury line replaces the generic one rather than joining it: two snackbars
+            // for one Save reads as two things having happened.
+            if (edited.IsGuest != member.IsGuest)
+            {
+                var guest = await SquadService.SetGuestAsync(seasonId, member.PlayerId, edited.IsGuest);
+                Snackbar.Report(L, guest, edited.IsGuest
+                    ? L["{0} is now a guest", name]
+                    : L["{0} is now a squad player", name]);
+            }
+
+            if (edited.IsInjured != member.IsInjured)
+            {
+                var injured = await SquadService.SetInjuredAsync(seasonId, member.PlayerId, edited.IsInjured);
+                Snackbar.Report(L, injured, edited.IsInjured
+                    ? L["{0} is now injured", name]
+                    : L["{0} is no longer injured", name]);
+            }
         }
 
         await LoadAsync();
@@ -201,14 +212,16 @@ public partial class Players
         await LoadAsync();
     }
 
-    /// <summary>Returns the edited player and guest flag, or null when the dialog was cancelled.</summary>
+    /// <summary>Returns the edited player and guest/injury flags, or null when the dialog was
+    /// cancelled.</summary>
     private async Task<PlayerEdit?> ShowPlayerDialogAsync(
-        string title, Player? player = null, bool isGuest = false)
+        string title, Player? player = null, bool isGuest = false, bool isInjured = false)
     {
         return await DialogService.PromptAsync<PlayerDialog, PlayerEdit>(title, p =>
         {
             if (player is not null) p.Add(x => x.Player, player);
             p.Add(x => x.IsGuest, isGuest);
+            p.Add(x => x.IsInjured, isInjured);
             p.Add(x => x.SeasonName, SeasonName);
         });
     }

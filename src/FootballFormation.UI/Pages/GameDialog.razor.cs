@@ -53,7 +53,10 @@ public partial class GameDialog
     /// when the game actually moves to a different season.</summary>
     private int _defaultsFromSeasonId;
 
-    private List<Player> SquadPlayers => Squad.FullMembers;
+    /// <summary>Full members offered in the "Unavailable Players" picker. Injured players are left
+    /// out — they are already out of the roster for every game, so offering them here would only be
+    /// a second, redundant way to say the same thing.</summary>
+    private List<Player> SquadPlayers => [.. Squad.FullMembers.Where(p => !Squad.IsInjured(p.Id))];
     private List<Player> GuestPlayers => Squad.Guests;
 
     protected override async Task OnInitializedAsync()
@@ -140,7 +143,9 @@ public partial class GameDialog
 
         // Drop selections that aren't valid for this season, so switching can't smuggle a stale id
         // through to Submit. (Post-backfill nobody is outside a squad, but a later removal could.)
-        UnavailablePlayerIds = [.. UnavailablePlayerIds.Where(Squad.IsFullMember)];
+        // Injured is dropped too — SquadPlayers no longer offers it, so a stale selection from
+        // before the player was marked injured must not survive a reload either.
+        UnavailablePlayerIds = [.. UnavailablePlayerIds.Where(id => Squad.IsFullMember(id) && !Squad.IsInjured(id))];
         GuestPlayerIds = [.. GuestPlayerIds.Where(id => Squad.Contains(id) && Squad.IsGuest(id))];
 
         StateHasChanged();
