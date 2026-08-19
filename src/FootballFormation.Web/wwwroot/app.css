@@ -1477,6 +1477,18 @@ html, body {
     flex-wrap: wrap;
 }
 
+/* An anchor to that player's statistics, so it brings a colour and an underline to override — the
+   same shape as .pd-name-cell on /stats/positions. The 44px floor is what makes it a target a thumb
+   can hit rather than a word-sized one, and it is why the row does not need a height of its own. */
+.players-table .player-name-cell {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    min-height: 44px;
+    color: inherit;
+    text-decoration: none;
+}
+
 .player-name-cell .badge-guest,
 .player-name-cell .badge-archived,
 .player-name-cell .badge-injured {
@@ -1529,9 +1541,9 @@ html, body {
     }
 }
 
-/* Rows navigate to the player's stats. The chevron sits right after the name rather than at
-   the far edge of the row: on a phone the row is a two-column grid, and a right-aligned
-   chevron would land between the name and the position badge instead of at the end. */
+/* The name links to that player's stats. The chevron sits right after it rather than at the far
+   edge of the row: on a phone the row is a two-column grid, and a right-aligned chevron would land
+   between the name and the position badge instead of at the end. */
 .player-name-chevron {
     margin-left: 6px;
     font-weight: 700;

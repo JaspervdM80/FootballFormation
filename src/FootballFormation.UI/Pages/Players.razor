@@ -26,7 +26,7 @@
         {
             <MudText Typo="Typo.caption" Class="squad-hint">
                 <MudIcon Icon="@Icons.Material.Filled.TouchApp" Size="Size.Small" />
-                @L["Tap a player to see their statistics."]
+                @L["Tap a player's name to see their statistics."]
             </MudText>
         }
     </SubtitleContent>
@@ -104,7 +104,6 @@
 }
 
 <MudTable Items="_squad.Members" Hover="true" Dense="true" Elevation="2" T="SeasonSquadMember"
-          OnRowClick="OnRowClicked" RowStyle="cursor: pointer;"
           Class="players-table stacked-table" Style="border-radius: 16px;">
     <HeaderContent>
         <MudTh><MudTableSortLabel SortBy="new Func<SeasonSquadMember, object>(m => m.Player!.ShirtNumber ?? 999)">#</MudTableSortLabel></MudTh>
@@ -120,9 +119,14 @@
             <span style="font-weight: 700; color: var(--club-primary-bright);">@context.Player!.ShirtNumber</span>
         </MudTd>
         <MudTd DataLabel="@L["Name"]" Class="cell-name">
-            @* One wrapper so the mobile card's flex row treats number + name as a
+            @* An anchor, the same as /stats/positions: the destination has no circuit, and this
+               used to be an OnRowClick, which navigated *and* re-rendered the table on the way out
+               — the render that conjures MudTable's small-devices sort select, whose popover then
+               went looking for a provider the destination has not got. See docs/known_issues.md.
+
+               Also the one wrapper that makes the mobile card's flex row treat number + name as a
                single item; otherwise space-between pushes them to opposite ends. *@
-            <span class="player-name-cell">
+            <a class="player-name-cell" href="@AppRoutes.PlayerStats(context.PlayerId)">
                 @* Mobile only: the # column is hidden there, so the number rides along here *@
                 @if (context.Player!.ShirtNumber is not null)
                 {
@@ -146,11 +150,11 @@
                 {
                     <span class="badge-archived">@L["ARCHIVED"]</span>
                 }
-                @* The whole row navigates to the player's stats, which nothing on it said out
-                   loud. The chevron rides with the name so it works in both the desktop table
-                   and the stacked mobile card, where the row is a two-column grid. *@
+                @* Says the name leads somewhere, which nothing else on the row does. It rides with
+                   the name so it works in both the desktop table and the stacked mobile card,
+                   where the row is a two-column grid. *@
                 <span class="player-name-chevron" aria-hidden="true">›</span>
-            </span>
+            </a>
         </MudTd>
         <MudTd DataLabel="@L["Preferred Position"]" Class="cell-pref">
             <span class="badge-teal">@context.Player!.PreferredPosition.ToString()</span>
