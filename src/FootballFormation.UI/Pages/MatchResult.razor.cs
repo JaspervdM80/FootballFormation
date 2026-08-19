@@ -58,15 +58,9 @@ public partial class MatchResult
     private string? NewCommentBody { get; set; }
     private bool NewCommentIsPublic { get; set; }
 
-    /// <summary>
-    /// The copyable match summary, rendered into a hidden element for <c>clipboard.js</c> to read —
-    /// a plain onclick reading text already composed server-side, the same shape
-    /// <c>FormationOverview</c> uses, rather than a round trip through JS interop:
-    /// <c>navigator.clipboard.writeText</c> only runs inside the task the user's own click gesture
-    /// produced, and by the time a click has gone circuit-and-back that gesture is gone — iOS
-    /// Safari and Firefox refuse the call outright at that point. Null until there is a final score
-    /// to report.
-    /// </summary>
+    /// <summary>The copyable match summary, rendered into a hidden element for <c>clipboard.js</c>
+    /// to read — see the copy button's markup for why even this circuit-carrying page uses a plain
+    /// onclick rather than a Blazor handler. Null until there is a final score to report.</summary>
     private string? SummaryText { get; set; }
 
     /// <summary>A match still to be played. <c>/games</c> leaves the link to this page off such a

@@ -79,9 +79,7 @@
         <MudIcon Icon="@Icons.Material.Filled.CameraAlt" Size="Size.Small" />
         @L["Save as image"]
     </button>
-    @* Same shape as the screenshot button — js/clipboard.js reads the text already composed
-       server-side below rather than being handed the wording itself. Only shown once there is a
-       result to share; a fixture still to be played has nothing worth pasting into a chat. *@
+    @* Same shape as the screenshot button above. *@
     @if (SummaryText is not null)
     {
         <button type="button" class="btn-gold overview-capture"

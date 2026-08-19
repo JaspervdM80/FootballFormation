@@ -82,12 +82,10 @@
                 @L["Save Score"]
             </MudButton>
         }
-        @* Not IsAdmin-gated: sharing the result is the whole point for a visitor who just watched
-           the match, not only for whoever is allowed to edit it. A plain onclick into
-           js/clipboard.js rather than a Blazor handler — see SummaryText — because
-           navigator.clipboard.writeText has to run inside the task the click itself produced, and
-           a round trip through server interop loses that on iOS Safari and Firefox. Only offered
-           once there is a result to share; "– –" is not one. *@
+        @* Not IsAdmin-gated: sharing the result is the point for anyone who watched the match. A
+           plain onclick into js/clipboard.js rather than a Blazor handler:
+           navigator.clipboard.writeText must run inside the click's own task, and a round trip
+           through server interop loses that gesture on iOS Safari and Firefox. *@
         @if (SummaryText is not null)
         {
             <button type="button" class="btn-gold mt-3 result-copy"
