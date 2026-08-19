@@ -110,7 +110,7 @@
   <data name="Opponent is required" xml:space="preserve"><value>Tegenstander is verplicht</value></data>
   <data name="Date" xml:space="preserve"><value>Datum</value></data>
   <!-- Optional — left blank the game shows no kick-off time anywhere, see Game.HasStartTime -->
-  <data name="Kick-off Time" xml:space="preserve"><value>Aftraptijd</value></data>
+  <data name="Kick-off Time" xml:space="preserve"><value>Aanvangstijd</value></data>
   <data name="Venue" xml:space="preserve"><value>Locatie</value></data>
   <data name="Home" xml:space="preserve"><value>Thuis</value></data>
   <data name="Away" xml:space="preserve"><value>Uit</value></data>

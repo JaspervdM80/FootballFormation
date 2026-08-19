@@ -120,7 +120,7 @@
                             <span class="g-opp-text">@g.Game.Opponent</span>
                             <VenueBadge IsHome="g.Game.IsHomeGame" Inline="true" />
                         </span>
-                        <span class="g-date">@g.Game.Date.ToString("dd MMM yyyy")</span>
+                        <span class="g-date">@g.Game.DateLine("dd MMM yyyy")</span>
                     </span>
                     @if (_isAdmin)
                     {
