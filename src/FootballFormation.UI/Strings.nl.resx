@@ -385,6 +385,7 @@
   <data name="Subs" xml:space="preserve"><value>Wissels</value></data>
   <data name="Player {0}" xml:space="preserve"><value>Speler {0}</value></data>
   <data name="No subs" xml:space="preserve"><value>Geen wissels</value></data>
+  <data name="No formation yet" xml:space="preserve"><value>Nog geen opstelling</value></data>
   <data name="Save as image" xml:space="preserve"><value>Opslaan als afbeelding</value></data>
 
   <!-- Settings -->

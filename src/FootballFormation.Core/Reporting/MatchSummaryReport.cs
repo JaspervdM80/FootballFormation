@@ -9,7 +9,9 @@ namespace FootballFormation.Core.Reporting;
 /// </summary>
 /// <param name="Minute">Null for a goal typed in with none — the summary omits the bracket rather
 /// than printing (0').</param>
-public record MatchSummaryGoal(string ScorerName, string? AssistName, MatchMinute? Minute);
+/// <param name="Half">Which half the goal was scored in — the summary breaks its list where two
+/// consecutive goals cross it.</param>
+public record MatchSummaryGoal(string ScorerName, string? AssistName, MatchMinute? Minute, PeriodType Half);
 
 /// <summary>
 /// Everything the copyable match summary needs, built once so <c>MatchResult</c> and
@@ -19,7 +21,6 @@ public record MatchSummaryGoal(string ScorerName, string? AssistName, MatchMinut
 /// </summary>
 public record MatchSummary(
     VenueScore Score,
-    VenueScore? HalfTimeScore,
     IReadOnlyList<MatchSummaryGoal> Goals,
     IReadOnlyList<string> PublicComments);
 
@@ -37,7 +38,6 @@ public static class MatchSummaryReport
     public static MatchSummary Build(Game game, IReadOnlyList<GameComment> comments) =>
         new(
             game.ScoreboardOrder(),
-            HalfTimeScore(game),
             OurGoals(game),
             [.. comments.Where(c => c.IsPublic).OrderBy(c => c.CreatedAt).ThenBy(c => c.Id).Select(c => c.Body)]);
 
@@ -52,24 +52,6 @@ public static class MatchSummaryReport
             .Select(g => new MatchSummaryGoal(
                 g.Scorer?.DisplayName ?? "?",
                 g.Assister?.DisplayName,
-                MatchClockReport.MinuteOf(game, g)))];
-
-    /// <summary>
-    /// The score at the break, or null when there has been no break yet to report — a result typed
-    /// in by hand has no half at all, and a match still in its first half has not reached one yet;
-    /// either way showing a score would claim a break that has not happened.
-    /// </summary>
-    private static VenueScore? HalfTimeScore(Game game)
-    {
-        var secondHalfKickedOff = game.Periods
-            .Any(p => p.PeriodType.Half() == PeriodType.SecondHalf && p.StartedAtSeconds is not null);
-        if (!secondHalfKickedOff) return null;
-
-        var firstHalf = game.Goals
-            .Where(g => MatchClockReport.HalfOf(game, g.GamePeriodId, MatchClockReport.ElapsedOf(game, g))
-                == PeriodType.FirstHalf)
-            .ToList();
-
-        return game.InVenueOrder(Game.CountOurGoals(firstHalf), Game.CountTheirGoals(firstHalf));
-    }
+                MatchClockReport.MinuteOf(game, g),
+                MatchClockReport.HalfOf(game, g.GamePeriodId, MatchClockReport.ElapsedOf(game, g))))];
 }

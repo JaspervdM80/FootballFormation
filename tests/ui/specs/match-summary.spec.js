@@ -5,7 +5,8 @@
 import { test, expect } from '../fixtures.js';
 import { BASE_URL } from '../playwright.config.js';
 import {
-  clickFor, createMatch, fillField, gameAction, goto, gotoRendered, openDialog, submitDialog,
+  chooseOption, clickFor, createMatch, fillField, gameAction, gameRow, goto, gotoRendered,
+  openDialog, submitDialog,
 } from '../helpers.js';
 
 /**
@@ -68,6 +69,8 @@ test('the result page copies a scoreline, a goal and a public comment to the cli
   expect(clipboard).toContain('Fixture Defender');
   expect(clipboard).toContain("(12')");
   expect(clipboard).toContain('Great team performance');
+  // A goal typed in by hand has no half to cross, so no half-time break belongs in the text.
+  expect(clipboard).not.toContain('———');
 
   // The shareable overview composes the same text server-side and offers it through a plain
   // onclick, since that page renders with no circuit to hand a string to a script through.
@@ -80,6 +83,82 @@ test('the result page copies a scoreline, a goal and a public comment to the cli
     page.getByRole('button', { name: 'Copy match result' }),
     () => expect(page.locator('#copy-success')).toBeVisible(),
   );
+});
+
+test('a goal in each half puts a dashed break between them in the copied text', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE_URL });
+
+  await createMatch(page, { opponent: 'FC Rust Samenvatting' });
+  await gameRow(page, 'FC Rust Samenvatting').getByTitle(/Formation|Add lineup/).click();
+  await page.waitForURL(/\/games\/\d+\/formation/);
+  const id = Number(page.url().match(/\/games\/(\d+)\//)[1]);
+
+  await page.locator('.draggable-player').first().dragTo(page.locator('.pitch .pitch-empty').first());
+  await clickFor(
+    page.getByRole('button', { name: /^Save( All Lineups)?$/ }).first(),
+    () => expect(page.getByText('All lineups saved', { exact: false })).toBeVisible(),
+    { settle: 10_000 },
+  );
+
+  await goto(page, `/games/${id}/live`);
+  await clickFor(
+    page.getByRole('button', { name: 'Start match' }),
+    () => expect(page.getByRole('button', { name: 'Finish match' })).toBeVisible(),
+  );
+
+  const ourScore = page.locator('.live-score-value:not(.live-score-away)');
+  await clickFor(
+    page.getByRole('button', { name: 'Goal', exact: true }),
+    () => expect(page.locator('.mud-dialog')).toBeVisible(),
+  );
+  let goalDialog = await openDialog(page);
+  await chooseOption(page, goalDialog, 'Scorer', 'Fixture');
+  await submitDialog(page, 'Add goal');
+  await expect(ourScore).toHaveText('1');
+
+  const controls = page.locator('.live-controls');
+  await clickFor(
+    controls.getByRole('button', { name: 'Half time' }),
+    () => expect(controls.getByRole('button', { name: 'Start 2nd Half' })).toBeVisible(),
+  );
+  await clickFor(
+    controls.getByRole('button', { name: 'Start 2nd Half' }),
+    () => expect(controls.getByRole('button', { name: 'Half time' })).toHaveCount(0),
+  );
+
+  await clickFor(
+    page.getByRole('button', { name: 'Goal', exact: true }),
+    () => expect(page.locator('.mud-dialog')).toBeVisible(),
+  );
+  goalDialog = await openDialog(page);
+  await chooseOption(page, goalDialog, 'Scorer', 'Fixture');
+  await submitDialog(page, 'Add goal');
+  await expect(ourScore).toHaveText('2');
+
+  await clickFor(
+    controls.getByRole('button', { name: 'Finish match' }),
+    () => expect(page.locator('.mud-dialog')).toBeVisible(),
+  );
+  await submitDialog(page, 'Finish match');
+  await clickFor(
+    page.getByRole('button', { name: 'Edit result' }),
+    () => expect(page).toHaveURL(/\/games\/\d+\/result/),
+  );
+
+  await clickFor(
+    page.getByRole('button', { name: 'Copy match result' }),
+    () => expect(page.getByText('Copied to clipboard', { exact: false })).toBeVisible(),
+  );
+
+  const clipboard = await page.evaluate(() => navigator.clipboard.readText());
+  // Two goals, one in each half, so the break sits between them — never before the first or
+  // after the last, and never doubled between goals that share a half.
+  const lines = clipboard.split('\n').filter(line => line.length > 0);
+  const goalLines = lines.filter(line => line.startsWith('⚽'));
+  expect(goalLines).toHaveLength(2);
+  const breakIndex = lines.indexOf('———————————');
+  expect(breakIndex).toBeGreaterThan(lines.indexOf(goalLines[0]));
+  expect(breakIndex).toBeLessThan(lines.indexOf(goalLines[1]));
 });
 
 test('a kick-off time set on the game dialog shows up on the result page', async ({ page }) => {

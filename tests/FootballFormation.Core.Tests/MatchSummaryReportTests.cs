@@ -122,34 +122,7 @@ public class MatchSummaryReportTests
     }
 
     [Fact]
-    public void A_game_never_run_live_has_no_half_time_score_to_report()
-    {
-        var game = Match(scoreHome: 2, scoreAway: 1);
-
-        var summary = MatchSummaryReport.Build(game, []);
-
-        Assert.Null(summary.HalfTimeScore);
-    }
-
-    [Fact]
-    public void A_match_still_in_its_first_half_has_no_half_time_score_yet()
-    {
-        var game = Match(scoreHome: 1, scoreAway: 0);
-        var first = game.AddPeriod(PeriodType.FirstHalf);
-        game.AddPeriod(PeriodType.SecondHalf);
-        first.StartedAtSeconds = 0;
-        game.Goals.Add(new GameGoal
-        {
-            GamePeriodId = first.Id, AtSeconds = 600, ScorerId = 1, Scorer = TestData.Player(1)
-        });
-
-        var summary = MatchSummaryReport.Build(game, []);
-
-        Assert.Null(summary.HalfTimeScore);
-    }
-
-    [Fact]
-    public void The_half_time_score_only_counts_first_half_goals()
+    public void A_goal_reports_the_half_it_was_scored_in()
     {
         var game = Match(scoreHome: 2, scoreAway: 1);
         var first = game.AddPeriod(PeriodType.FirstHalf);
@@ -159,17 +132,29 @@ public class MatchSummaryReportTests
 
         game.Goals.Add(new GameGoal
         {
-            GamePeriodId = first.Id, AtSeconds = 600, ScorerId = 1, Scorer = TestData.Player(1)
+            GamePeriodId = first.Id, AtSeconds = 600, ScorerId = 1, Scorer = TestData.Player(1, "Fleur")
         });
         game.Goals.Add(new GameGoal { GamePeriodId = second.Id, AtSeconds = 2000, IsOpponentGoal = true });
         game.Goals.Add(new GameGoal
         {
-            GamePeriodId = second.Id, AtSeconds = 2400, ScorerId = 1, Scorer = TestData.Player(1)
+            GamePeriodId = second.Id, AtSeconds = 2400, ScorerId = 1, Scorer = TestData.Player(1, "Fleur")
         });
 
         var summary = MatchSummaryReport.Build(game, []);
 
-        Assert.Equal(new VenueScore(1, 0), summary.HalfTimeScore);
+        Assert.Equal([PeriodType.FirstHalf, PeriodType.SecondHalf], summary.Goals.Select(g => g.Half));
+    }
+
+    [Fact]
+    public void A_game_never_run_live_reports_every_goal_as_first_half()
+    {
+        var game = Match(scoreHome: 2, scoreAway: 0);
+        game.Goals.Add(new GameGoal { ScorerId = 1, Scorer = TestData.Player(1, "Fleur"), Minute = 12 });
+        game.Goals.Add(new GameGoal { ScorerId = 1, Scorer = TestData.Player(1, "Fleur"), Minute = 50 });
+
+        var summary = MatchSummaryReport.Build(game, []);
+
+        Assert.All(summary.Goals, g => Assert.Equal(PeriodType.FirstHalf, g.Half));
     }
 
     [Fact]
