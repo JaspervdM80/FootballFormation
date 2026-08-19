@@ -9,9 +9,8 @@ namespace FootballFormation.Core.Reporting;
 /// </summary>
 /// <param name="Minute">Null for a goal typed in with none — the summary omits the bracket rather
 /// than printing (0').</param>
-/// <param name="Half">Which half the goal was scored in, so the copyable summary can draw the same
-/// dashed break the live timeline does — see <c>LiveMatch.razor.cs</c>'s <c>HalfTimeAbove</c> — by
-/// comparing one goal's half to the next rather than repeating that arithmetic in the UI layer.</param>
+/// <param name="Half">Which half the goal was scored in — the summary breaks its list where two
+/// consecutive goals cross it.</param>
 public record MatchSummaryGoal(string ScorerName, string? AssistName, MatchMinute? Minute, PeriodType Half);
 
 /// <summary>

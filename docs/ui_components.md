@@ -280,9 +280,12 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   `FormationOverview` need the same test to decide whether there is a result worth copying.
 - **The copyable match summary** (`MatchSummaryReport` in `Core/Reporting`, composed into text by
   `MatchSummaryTextBuilder` in `UI/Helpers`) is offered on both `/result` and `/overview` once
-  `game.HasFinalScore` — the scoreline, in venue order, the half-time score once the second half has
-  kicked off, our own goals with their assist on one line, and any **public** comment. Never gated on
-  admin-ness: sharing the result is the point for whoever just watched the match, and the anonymous
+  `game.HasFinalScore` — a 📆 date line, the scoreline in venue order, our own goals with their
+  assist on one line, and any **public** comment. No half-time score: the paste is a group-chat
+  message, not a report. Where two consecutive goals cross half time, a plain-character dashed
+  break stands in for the live timeline's own rule — see `MatchSummaryGoal.Half` and
+  `MatchSummaryTextBuilder.GoalLines` — but a break with no goal on one side of it stays silent.
+  Never gated on admin-ness: sharing the result is the point for whoever just watched the match, and the anonymous
   overview page already shows the same public comments as text — `includePrivate: false` is passed
   unconditionally there, same as everywhere else a visitor reads a comment. Both pages render the
   composed text into a hidden `<pre>` and copy it from a plain `onclick` into `js/clipboard.js`

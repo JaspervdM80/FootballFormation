@@ -12,9 +12,8 @@ namespace FootballFormation.UI.Helpers;
 /// </summary>
 public static class MatchSummaryTextBuilder
 {
-    /// <summary>The same dashed break the live timeline draws between halves — see
-    /// <c>LiveMatch.razor.css</c> — spelled out in plain characters since a paste target has no CSS
-    /// to draw a rule with.</summary>
+    /// <summary>A plain-character stand-in for the live timeline's half-time rule, without its
+    /// "Half time" label — the paste is a message, not a report.</summary>
     private const string HalfBreak = "———————————";
 
     public static string Build(Game game, MatchSummary summary, IStringLocalizer<Strings> L)
@@ -44,9 +43,8 @@ public static class MatchSummaryTextBuilder
         return string.Join('\n', lines);
     }
 
-    /// <summary>One line per goal, with the half break inserted wherever two consecutive goals
-    /// cross it — the same transition <c>LiveMatch.razor.cs</c>'s <c>HalfTimeAbove</c> tests for,
-    /// so a break with no goal on one side of it stays silent here too.</summary>
+    // A break only where two consecutive goals cross half time — with no goal on one side of it,
+    // nothing is drawn.
     private static IEnumerable<string> GoalLines(IReadOnlyList<MatchSummaryGoal> goals)
     {
         for (var i = 0; i < goals.Count; i++)

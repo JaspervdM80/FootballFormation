@@ -146,6 +146,18 @@ public class MatchSummaryReportTests
     }
 
     [Fact]
+    public void A_game_never_run_live_reports_every_goal_as_first_half()
+    {
+        var game = Match(scoreHome: 2, scoreAway: 0);
+        game.Goals.Add(new GameGoal { ScorerId = 1, Scorer = TestData.Player(1, "Fleur"), Minute = 12 });
+        game.Goals.Add(new GameGoal { ScorerId = 1, Scorer = TestData.Player(1, "Fleur"), Minute = 50 });
+
+        var summary = MatchSummaryReport.Build(game, []);
+
+        Assert.All(summary.Goals, g => Assert.Equal(PeriodType.FirstHalf, g.Half));
+    }
+
+    [Fact]
     public void Only_public_comments_make_the_summary()
     {
         var game = Match(scoreHome: 1, scoreAway: 0);
