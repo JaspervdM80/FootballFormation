@@ -18,8 +18,8 @@ public record MatchSummaryGoal(string ScorerName, string? AssistName, MatchMinut
 /// page only has localized labels to add around them, not arithmetic to redo.
 /// </summary>
 public record MatchSummary(
-    (int Home, int Away) Score,
-    (int Home, int Away)? HalfTimeScore,
+    VenueScore Score,
+    VenueScore? HalfTimeScore,
     IReadOnlyList<MatchSummaryGoal> Goals,
     IReadOnlyList<string> PublicComments);
 
@@ -59,7 +59,7 @@ public static class MatchSummaryReport
     /// in by hand has no half at all, and a match still in its first half has not reached one yet;
     /// either way showing a score would claim a break that has not happened.
     /// </summary>
-    private static (int Home, int Away)? HalfTimeScore(Game game)
+    private static VenueScore? HalfTimeScore(Game game)
     {
         var secondHalfKickedOff = game.Periods
             .Any(p => p.PeriodType.Half() == PeriodType.SecondHalf && p.StartedAtSeconds is not null);

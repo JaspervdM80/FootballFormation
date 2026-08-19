@@ -52,7 +52,7 @@ public class MatchSummaryReportTests
         var summary = MatchSummaryReport.Build(game, []);
 
         Assert.Empty(summary.Goals);
-        Assert.Equal((0, 1), summary.Score);
+        Assert.Equal(new VenueScore(0, 1), summary.Score);
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public class MatchSummaryReportTests
         var summary = MatchSummaryReport.Build(game, []);
 
         Assert.Empty(summary.Goals);
-        Assert.Equal((0, 1), summary.Score);
+        Assert.Equal(new VenueScore(0, 1), summary.Score);
     }
 
     [Fact]
@@ -107,7 +107,7 @@ public class MatchSummaryReportTests
 
         var summary = MatchSummaryReport.Build(game, []);
 
-        Assert.Equal((1, 3), summary.Score);
+        Assert.Equal(new VenueScore(1, 3), summary.Score);
     }
 
     [Fact]
@@ -118,7 +118,7 @@ public class MatchSummaryReportTests
         var summary = MatchSummaryReport.Build(game, []);
 
         Assert.Empty(summary.Goals);
-        Assert.Equal((2, 1), summary.Score);
+        Assert.Equal(new VenueScore(2, 1), summary.Score);
     }
 
     [Fact]
@@ -169,7 +169,7 @@ public class MatchSummaryReportTests
 
         var summary = MatchSummaryReport.Build(game, []);
 
-        Assert.Equal((1, 0), summary.HalfTimeScore);
+        Assert.Equal(new VenueScore(1, 0), summary.HalfTimeScore);
     }
 
     [Fact]

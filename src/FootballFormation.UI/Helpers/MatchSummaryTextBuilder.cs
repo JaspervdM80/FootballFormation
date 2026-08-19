@@ -19,14 +19,14 @@ public static class MatchSummaryTextBuilder
 
         var lines = new List<string>
         {
-            $"{homeName} {summary.Score.Home} – {summary.Score.Away} {awayName}",
+            $"{homeName} {summary.Score} {awayName}",
             Subtitle(game, L)
         };
 
         // Reuses the live screen's own key rather than a second one for the same word — see
         // Strings.nl.resx and the localization skill on duplicate resx keys.
         if (summary.HalfTimeScore is { } ht)
-            lines.Add($"{L["Half time"]}: {ht.Home} – {ht.Away}");
+            lines.Add($"{L["Half time"]}: {ht}");
 
         if (summary.Goals.Count > 0)
         {

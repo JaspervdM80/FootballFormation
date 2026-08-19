@@ -37,15 +37,7 @@ public partial class Home
     };
 
     /// <summary>The score in venue order — ours first at home, the opponent's first away.</summary>
-    private string LiveScore
-    {
-        get
-        {
-            if (TodaysGame is null) return "";
-            var (home, away) = TodaysGame.ScoreboardOrder();
-            return $"{home} – {away}";
-        }
-    }
+    private string LiveScore => TodaysGame?.ScoreboardOrder().ToString() ?? "";
 
     protected override async Task OnInitializedAsync()
     {

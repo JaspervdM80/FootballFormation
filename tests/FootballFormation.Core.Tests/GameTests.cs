@@ -294,13 +294,19 @@ public class GameTests
         game.ScoreHome = ours;
         game.ScoreAway = theirs;
 
-        Assert.Equal((expectedHome, expectedAway), game.ScoreboardOrder());
+        Assert.Equal(new VenueScore(expectedHome, expectedAway), game.ScoreboardOrder());
     }
 
     [Fact]
     public void ScoreboardOrder_reads_a_score_not_yet_typed_in_as_nil_all()
     {
-        Assert.Equal((0, 0), TestData.Game().ScoreboardOrder());
+        Assert.Equal(new VenueScore(0, 0), TestData.Game().ScoreboardOrder());
+    }
+
+    [Fact]
+    public void A_venue_score_reads_home_side_first_with_an_en_dash()
+    {
+        Assert.Equal("3 – 1", new VenueScore(3, 1).ToString());
     }
 
     [Theory]

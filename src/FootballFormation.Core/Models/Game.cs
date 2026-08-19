@@ -260,13 +260,13 @@ public class Game
     /// Flips a (us, them) pair into the order a scoreboard reads: the home side first. The one
     /// flip between what is stored — always us/them, see <see cref="ScoreHome"/> — and how a
     /// scoreline is shown, spelled out once here rather than respelled at every place that shows
-    /// one (the home banner, the copyable match summary).
+    /// one (the games list, the home banner, the copyable match summary).
     /// </summary>
-    public (int Home, int Away) InVenueOrder(int us, int them) => IsHomeGame ? (us, them) : (them, us);
+    public VenueScore InVenueOrder(int us, int them) => IsHomeGame ? new VenueScore(us, them) : new VenueScore(them, us);
 
     /// <summary>The final score in venue order. A null score reads as 0-0, the same fallback the
     /// home banner already used before this was pulled out.</summary>
-    public (int Home, int Away) ScoreboardOrder() => InVenueOrder(ScoreHome ?? 0, ScoreAway ?? 0);
+    public VenueScore ScoreboardOrder() => InVenueOrder(ScoreHome ?? 0, ScoreAway ?? 0);
 }
 
 /// <summary>
