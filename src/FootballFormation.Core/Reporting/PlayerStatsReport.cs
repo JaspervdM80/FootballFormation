@@ -114,12 +114,13 @@ public static class PlayerStatsReport
     {
         var gameStats = new List<PlayerGameStat>();
 
-        // Seconds, not minutes: real timings rarely land on a whole minute, and rounding each game
-        // separately would drift. The conversion happens once, at the end.
+        // Seconds, not minutes, for every accumulator below: real timings rarely land on a whole
+        // minute, and rounding each game separately can disagree with rounding the total once —
+        // see Game.SecondsToMinutes. Each figure is converted to minutes exactly once, at the end.
         var positionSeconds = new Dictionary<PlayerPosition, int>();
-        var availableMinutes = 0;
-        var injuredMinutes = 0;
-        var unavailableMinutes = 0;
+        var availableSeconds = 0;
+        var injuredSeconds = 0;
+        var unavailableSeconds = 0;
 
         foreach (var game in games)
         {
@@ -128,24 +129,24 @@ public static class PlayerStatsReport
 
             // A game with a lineup gives up its whole duration, to one bucket or split across two.
             // Available = in the roster, whether they started, subbed, or sat the bench; a game
-            // they were hurt in counts only up to the injury — see Game.AvailableMinutesFor — and
+            // they were hurt in counts only up to the injury — see Game.AvailableSecondsFor — and
             // the rest of it is time they could not have played. Out of the roster, the game says
             // which of the two reasons it was.
             if (game.HasLineup)
             {
                 if (game.IsInRoster(player, squads))
                 {
-                    var available = game.AvailableMinutesFor(player.Id);
-                    availableMinutes += available;
-                    injuredMinutes += game.PlayedDurationMinutes - available;
+                    var available = game.AvailableSecondsFor(player.Id);
+                    availableSeconds += available;
+                    injuredSeconds += game.PlayedDurationSecondsEffective - available;
                 }
                 else if (game.InjuredPlayerIds.Contains(player.Id))
                 {
-                    injuredMinutes += game.PlayedDurationMinutes;
+                    injuredSeconds += game.PlayedDurationSecondsEffective;
                 }
                 else
                 {
-                    unavailableMinutes += game.PlayedDurationMinutes;
+                    unavailableSeconds += game.PlayedDurationSecondsEffective;
                 }
             }
 
@@ -158,7 +159,7 @@ public static class PlayerStatsReport
                 seconds += span;
             }
 
-            var minutes = GameMinutesReport.ToMinutes(seconds);
+            var minutes = Game.SecondsToMinutes(seconds);
 
             // Own goals don't count towards the scorer's tally.
             var goals = game.Goals.Count(g => g.ScorerId == player.Id && !g.IsOwnGoal);
@@ -178,13 +179,13 @@ public static class PlayerStatsReport
         }
 
         var totalSeconds = positionSeconds.Values.Sum();
-        var totalMinutes = GameMinutesReport.ToMinutes(totalSeconds);
+        var totalMinutes = Game.SecondsToMinutes(totalSeconds);
 
         var positions = positionSeconds
             .Select(kv => new PositionStat
             {
                 Position = kv.Key,
-                Minutes = GameMinutesReport.ToMinutes(kv.Value),
+                Minutes = Game.SecondsToMinutes(kv.Value),
                 // From seconds, so the share is exact even where the rounded minutes are not.
                 Percentage = totalSeconds > 0
                     ? Math.Round((double)kv.Value / totalSeconds * 100, 0)
@@ -199,10 +200,10 @@ public static class PlayerStatsReport
             Player = player,
             GamesPlayed = gameStats.Count(g => g.Played),
             TotalMinutes = totalMinutes,
-            GoalkeeperMinutes = GameMinutesReport.ToMinutes(positionSeconds.GetValueOrDefault(PlayerPosition.GK)),
-            AvailableMinutes = availableMinutes,
-            InjuredMinutes = injuredMinutes,
-            UnavailableMinutes = unavailableMinutes,
+            GoalkeeperMinutes = Game.SecondsToMinutes(positionSeconds.GetValueOrDefault(PlayerPosition.GK)),
+            AvailableMinutes = Game.SecondsToMinutes(availableSeconds),
+            InjuredMinutes = Game.SecondsToMinutes(injuredSeconds),
+            UnavailableMinutes = Game.SecondsToMinutes(unavailableSeconds),
             Goals = gameStats.Sum(g => g.Goals),
             Assists = gameStats.Sum(g => g.Assists),
             Positions = positions,

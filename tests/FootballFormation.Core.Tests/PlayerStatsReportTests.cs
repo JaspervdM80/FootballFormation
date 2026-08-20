@@ -324,21 +324,80 @@ public class PlayerStatsReportTests
     [Fact]
     public void Rounding_happens_once_at_the_end_not_per_game()
     {
-        // Three games of 29:50 each. Rounding per game gives 3 × 30 = 90; rounding the total
-        // (5370s) gives 90 too — but the position share must come from the exact seconds.
+        // Three games of 29:24 each (1764s, a .4 fraction that rounds *down* on its own). Summing
+        // that per-game rounding gives 3 x 29 = 87; the three games together ran 5292s, which
+        // rounds to 88 — the figure both the numerator (TotalMinutes) and the denominator
+        // (AvailableMinutes) must land on, or a full-match player reads under- or over 100%.
         var games = Enumerable.Range(1, 3).Select(i =>
         {
             var game = TestData.Game(id: i, durationMinutes: 60);
             game.MatchState = MatchState.Finished;
             var period = game.AddPeriod(PeriodType.FirstHalf, TestData.Starter(1, PlayerPosition.CM, 5));
             period.StartedAtSeconds = 0;
-            period.EndedAtSeconds = 1790;
+            period.EndedAtSeconds = 1764;
             return game;
         }).ToList();
 
         var stats = PlayerStatsReport.Build(Subject, games, SeasonSquads.Of(TestData.Squad(1, [Subject])));
 
-        Assert.Equal(90, stats.TotalMinutes);
+        Assert.Equal(88, stats.TotalMinutes);
+        Assert.Equal(88, stats.AvailableMinutes);
+        Assert.Equal(100, stats.Utilization);
         Assert.Equal(100, stats.Positions.Single().Percentage);
+    }
+
+    [Fact]
+    public void Utilisation_across_several_overrunning_games_never_exceeds_100_percent()
+    {
+        // Two matches that each ran 20s into stoppage time (3620s = 60:20). Rounding each game's
+        // AvailableMinutes on its own and summing the results gave 121' / 120' (101%) for a player
+        // on the pitch throughout, the exact shape of the reported bug — see
+        // docs/known_issues/domain.md.
+        var games = Enumerable.Range(1, 2).Select(i =>
+        {
+            var game = TestData.Game(id: i, durationMinutes: 60);
+            game.MatchState = MatchState.Finished;
+
+            var first = game.AddPeriod(PeriodType.FirstHalf, TestData.Starter(1, PlayerPosition.CM, 5));
+            first.StartedAtSeconds = 0;
+            first.EndedAtSeconds = 1810;
+
+            var second = game.AddPeriod(PeriodType.SecondHalf, TestData.Starter(1, PlayerPosition.CM, 5));
+            second.StartedAtSeconds = 1810;
+            second.EndedAtSeconds = 3620;
+
+            return game;
+        }).ToList();
+
+        var stats = PlayerStatsReport.Build(Subject, games, SeasonSquads.Of(TestData.Squad(1, [Subject])));
+
+        Assert.Equal(121, stats.TotalMinutes);
+        Assert.Equal(121, stats.AvailableMinutes);
+        Assert.Equal(100, stats.Utilization);
+    }
+
+    [Fact]
+    public void A_full_match_player_is_never_shown_over_100_percent_utilisation()
+    {
+        // Two halves that ran into stoppage time: 1825s each, 3650s (60:50) total, on a cumulative
+        // match clock like MatchClockService writes. Rounding the numerator (61') while truncating
+        // the denominator (60') used to read as 102% for a player who was on the pitch the entire
+        // match — see Game.SecondsToMinutes.
+        var game = TestData.Game(id: 1, durationMinutes: 60);
+        game.MatchState = MatchState.Finished;
+
+        var first = game.AddPeriod(PeriodType.FirstHalf, TestData.Starter(1, PlayerPosition.CM, 5));
+        first.StartedAtSeconds = 0;
+        first.EndedAtSeconds = 1825;
+
+        var second = game.AddPeriod(PeriodType.SecondHalf, TestData.Starter(1, PlayerPosition.CM, 5));
+        second.StartedAtSeconds = 1825;
+        second.EndedAtSeconds = 3650;
+
+        var stats = PlayerStatsReport.Build(Subject, [game], SeasonSquads.Of(TestData.Squad(1, [Subject])));
+
+        Assert.Equal(61, stats.TotalMinutes);
+        Assert.Equal(61, stats.AvailableMinutes);
+        Assert.Equal(100, stats.Utilization);
     }
 }

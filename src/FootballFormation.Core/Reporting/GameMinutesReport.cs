@@ -164,13 +164,6 @@ public static class GameMinutesReport
     }
 
     /// <summary>
-    /// Rounds seconds to the nearest minute rather than truncating: a half whistled at 29:50 is
-    /// 30 minutes played, not 29. Every report that turns these seconds into minutes goes through
-    /// here, so the same match cannot read one minute shorter on one page than on another.
-    /// </summary>
-    public static int ToMinutes(int seconds) => (int)Math.Round(seconds / 60.0);
-
-    /// <summary>
     /// Adds a stretch of time to everyone on the pitch, each in the position they held for it.
     /// Non-positive spans are ignored — two substitutions in the same second are normal and must
     /// not subtract time.

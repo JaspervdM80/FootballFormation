@@ -49,9 +49,12 @@ would shift while it is still being played. More computed members support the re
 | `PeriodDurationMinutes` | The same length as a `decimal`, fractional when it has to be. Display only |
 | `HasLineup` | Does any period have someone on the pitch? Needs `PlayerPositions` loaded |
 | `HasActualTimings` | Was any half actually kicked off, i.e. are there real timings to prefer over the plan? |
-| `PlayedDurationSeconds` | The same sum in seconds, without the fallback — the denominator for a share of one game's playing time, where truncating to minutes would let an ever-present player round past 100% |
-| `PlayedDurationMinutes` | How long the match really lasted, summed over the periods played out; falls back to `GameDurationMinutes`. The denominator for utilisation, so a match that over-ran cannot push anyone past 100% |
-| `AvailableMinutesFor(playerId)` | The same, cut short at the minute that player went off hurt. What `PlayerStatsReport` actually adds up, so being carried off at 20' is not scored as an hour on the bench. Capped by `PlayedDurationSeconds` |
+| `PlayedDurationSeconds` | The same sum in seconds, without the fallback — the exact seconds a game was live for |
+| `SecondsToMinutes(seconds)` | Rounds to the nearest minute (ties to even). The one conversion every played/available minutes figure goes through, on this type and in `PlayerStatsReport` — see [known_issues](../known_issues/domain.md) for why a figure summed across several games must stay in seconds until this is called once, at the end, rather than being applied per game and summed |
+| `PlayedDurationSecondsEffective` | `PlayedDurationSeconds` when the game was run live, `GameDurationMinutes * 60` otherwise — the seconds form of `PlayedDurationMinutes`. What an accumulator spanning several games should sum |
+| `PlayedDurationMinutes` | `SecondsToMinutes(PlayedDurationSecondsEffective)`. The denominator for one game's utilisation |
+| `AvailableSecondsFor(playerId)` | `PlayedDurationSecondsEffective`, cut short at the moment that player went off hurt. The seconds form of `AvailableMinutesFor` |
+| `AvailableMinutesFor(playerId)` | `AvailableSecondsFor(playerId)`, rounded. A single game's figure only — `PlayerStatsReport` sums `AvailableSecondsFor` across a player's games and rounds once, rather than adding up this already-rounded result, so being carried off at 20' is not scored as an hour on the bench and a season of over-running matches cannot push utilisation past 100% |
 | `WasReplaced(injury)` / `InjuryFor(substitution)` | The two directions of the pairing between an injury and the substitution made for it. One touchline action writes both rows, and both the timeline and `GameMinutesReport` need to know which injuries a substitution already accounts for |
 | `CurrentOrLastHalf()` | The half the match is *about*, as the line-up it is played with: the live one, else the last played, else the one the match opens with — so the live screen is never blank |
 | `LiveHalf()` | The half on the pitch, or null before kick-off, at half time and after full time. What a substitution may touch |

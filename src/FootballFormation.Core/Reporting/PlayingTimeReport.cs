@@ -101,7 +101,7 @@ public static class PlayingTimeReport
         {
             Player = player,
             PeriodDetails = details,
-            TotalMinutes = GameMinutesReport.ToMinutes(seconds),
+            TotalMinutes = Game.SecondsToMinutes(seconds),
             Percentage = playableSeconds > 0
                 ? Math.Round((double)seconds / playableSeconds * 100, 0)
                 : 0,
