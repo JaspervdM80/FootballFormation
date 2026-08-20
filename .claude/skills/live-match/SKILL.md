@@ -16,7 +16,7 @@ everyone else watches the same URL read-only. Every control sits inside
 | `LiveMatchService` | Reading — `GetLiveAsync`, `GetTodaysMatchAsync`. Public like every other read |
 | `MatchClockService` | Kick-off, half time, next half, final whistle, and `BankClock` |
 | `MatchGoalService` | The live minute a goal is stamped with; storage delegates to `GameService` |
-| `MatchSubstitutionService` | The slot swap and its record, in one `SaveChanges`, and undo |
+| `MatchSubstitutionService` | The slot swap and its record, in one `SaveChanges`, an injury, and undo |
 
 A page injecting all four is expected. A **facade** over them is the signal the split was cut along
 the wrong line.
@@ -88,6 +88,23 @@ are unaffected.
 and handing the recorded slot back would seat two players in it.
 
 Two substitutions in the same second settle by **id**, not just the clock.
+
+## An injury is a substitution that also stops the clock on her availability
+
+`MarkInjuredAsync` lives in the same service because it is the same write: it takes her off the
+pitch, and brings a replacement on when one was picked. What it adds is a `GameInjury` — the only
+record that can say the rest of the match was never hers to play, which is what
+`Game.AvailableMinutesFor` reads and `PlayerStats.Utilization` divides by.
+
+**No replacement is a real case**, and it is the one the injury row has to carry alone: nothing else
+says she left the pitch, so `GameMinutesReport` walks an unreplaced injury as a line-up change and
+skips a replaced one (`Game.WasReplaced`). Walking both would take her off twice and hand her slot
+back in the rewind.
+
+One touchline action, one timeline entry: a substitution made for an injury is marked with the red
+cross rather than listed twice, and undoing it removes both rows. The standing
+`SeasonSquadMember.IsInjured` flag is a different thing — it has no date, so it can say nothing
+about a match.
 
 Each select's `Placeholder` is set **only** when its list is empty: MudSelect shows a placeholder
 whenever nothing is chosen, so a standing "nobody is on the bench" would greet a full bench.

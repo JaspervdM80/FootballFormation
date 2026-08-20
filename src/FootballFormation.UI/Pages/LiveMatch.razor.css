@@ -239,6 +239,12 @@
     color: var(--color-danger);
 }
 
+/* The cross is the whole of what marks an injury on the timeline — no word beside it — so it has
+   to carry the colour that says so. Same red as the squad page's .injured-mark. */
+.live-event-injury {
+    color: var(--color-danger-bright);
+}
+
 /* Anything that put the ball in our net reads in the opponent's colour. */
 .live-event-against .live-event-main {
     color: var(--color-away);

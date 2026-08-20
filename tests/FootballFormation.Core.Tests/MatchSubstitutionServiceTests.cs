@@ -81,6 +81,20 @@ public class MatchSubstitutionServiceTests : LiveMatchTestBase
     }
 
     [Fact]
+    public async Task Nobody_can_be_brought_on_who_is_already_on()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        // players[0] is in goal. Bringing them on for the midfielder would seat them twice.
+        var result = await Subs.SubstituteAsync(game.Id, players[1].Id, players[0].Id);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("That player is already on the pitch", result.Error);
+    }
+
+    [Fact]
     public async Task A_substitution_needs_a_period_to_be_running()
     {
         var game = await SeedGameAsync();

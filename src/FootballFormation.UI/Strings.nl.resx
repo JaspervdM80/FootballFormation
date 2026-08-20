@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -214,7 +214,7 @@
   <data name="Finish match" xml:space="preserve"><value>Wedstrijd afsluiten</value></data>
   <data name="Edit result" xml:space="preserve"><value>Uitslag aanpassen</value></data>
   <data name="Line-up" xml:space="preserve"><value>Opstelling</value></data>
-  <data name="Tap a player to substitute them or change their position." xml:space="preserve"><value>Tik op een speler om te wisselen of van positie te veranderen.</value></data>
+  <data name="Tap a player to substitute them, change their position, or mark them injured." xml:space="preserve"><value>Tik op een speler om te wisselen, van positie te veranderen of haar geblesseerd te melden.</value></data>
   <data name="Goal against" xml:space="preserve"><value>Tegen doelpunt</value></data>
   <data name="Timeline" xml:space="preserve"><value>Tijdlijn</value></data>
   <data name="Nothing has happened yet" xml:space="preserve"><value>Er is nog niets gebeurd</value></data>
@@ -256,6 +256,11 @@
   <data name="A position swap keeps both players on the pitch and is not a substitution." xml:space="preserve"><value>Bij een positiewissel blijven beide spelers op het veld; het is geen wissel.</value></data>
   <data name="Swap positions" xml:space="preserve"><value>Posities wisselen</value></data>
   <data name="Positions swapped" xml:space="preserve"><value>Posities gewisseld</value></data>
+  <data name="The rest of the match stops counting towards her playing time." xml:space="preserve"><value>De rest van de wedstrijd telt niet meer mee voor haar speeltijd.</value></data>
+  <data name="Off injured" xml:space="preserve"><value>Geblesseerd naar de kant</value></data>
+  <data name="Off injured, not replaced" xml:space="preserve"><value>Geblesseerd naar de kant, niet vervangen</value></data>
+  <data name="{0} is off injured" xml:space="preserve"><value>{0} is geblesseerd naar de kant</value></data>
+  <data name="Injury undone" xml:space="preserve"><value>Blessure ongedaan gemaakt</value></data>
 
   <!-- Player stats -->
   <data name="Player Stats" xml:space="preserve"><value>Spelersstatistieken</value></data>
@@ -484,6 +489,7 @@
   <data name="Game not found" xml:space="preserve"><value>Wedstrijd niet gevonden</value></data>
   <data name="Game with ID {0} not found" xml:space="preserve"><value>Wedstrijd met ID {0} niet gevonden</value></data>
   <data name="Goal not found" xml:space="preserve"><value>Doelpunt niet gevonden</value></data>
+  <data name="Injury not found" xml:space="preserve"><value>Blessure niet gevonden</value></data>
   <data name="No half is being played" xml:space="preserve"><value>Er wordt op dit moment geen helft gespeeld</value></data>
   <data name="No season selected" xml:space="preserve"><value>Geen seizoen geselecteerd</value></data>
   <data name="No seasons defined" xml:space="preserve"><value>Nog geen seizoenen ingesteld</value></data>
@@ -491,11 +497,13 @@
   <data name="Player is not in this squad" xml:space="preserve"><value>Speler zit niet in deze selectie</value></data>
   <data name="Player not found" xml:space="preserve"><value>Speler niet gevonden</value></data>
   <data name="Player with ID {0} not found" xml:space="preserve"><value>Speler met ID {0} niet gevonden</value></data>
+  <data name="Somebody else is in that place now" xml:space="preserve"><value>Er staat nu iemand anders op die plek</value></data>
   <data name="Season not found" xml:space="preserve"><value>Seizoen niet gevonden</value></data>
   <data name="Season {0} has no squad to copy" xml:space="preserve"><value>Seizoen {0} heeft geen selectie om te kopiëren</value></data>
   <data name="Season {0} is the current season" xml:space="preserve"><value>Seizoen {0} is het huidige seizoen</value></data>
   <data name="Season {0} still has {1} games" xml:space="preserve"><value>Seizoen {0} heeft nog {1} wedstrijden</value></data>
   <data name="Substitution not found" xml:space="preserve"><value>Wissel niet gevonden</value></data>
+  <data name="That player is already marked injured" xml:space="preserve"><value>Die speler is al als geblesseerd gemarkeerd</value></data>
   <data name="That player is already on the pitch" xml:space="preserve"><value>Die speler staat al op het veld</value></data>
   <data name="That player is not on the pitch" xml:space="preserve"><value>Die speler staat niet op het veld</value></data>
   <data name="The end date must be after the start date" xml:space="preserve"><value>De einddatum moet na de startdatum liggen</value></data>
@@ -547,6 +555,7 @@
   <data name="look up the season for that date" xml:space="preserve"><value>seizoen bij die datum opzoeken</value></data>
   <data name="make the substitution" xml:space="preserve"><value>wissel doorvoeren</value></data>
   <data name="prepare seasons" xml:space="preserve"><value>seizoenen voorbereiden</value></data>
+  <data name="record the injury" xml:space="preserve"><value>blessure vastleggen</value></data>
   <data name="remove comment" xml:space="preserve"><value>opmerking verwijderen</value></data>
   <data name="remove goal" xml:space="preserve"><value>doelpunt verwijderen</value></data>
   <data name="remove the goal" xml:space="preserve"><value>doelpunt verwijderen</value></data>
@@ -556,6 +565,7 @@
   <data name="start the next half" xml:space="preserve"><value>volgende helft starten</value></data>
   <data name="swap the positions" xml:space="preserve"><value>posities wisselen</value></data>
   <data name="switch season" xml:space="preserve"><value>van seizoen wisselen</value></data>
+  <data name="undo the injury" xml:space="preserve"><value>blessure ongedaan maken</value></data>
   <data name="undo the substitution" xml:space="preserve"><value>wissel ongedaan maken</value></data>
   <data name="update comment" xml:space="preserve"><value>opmerking bijwerken</value></data>
   <data name="update game" xml:space="preserve"><value>wedstrijd bijwerken</value></data>

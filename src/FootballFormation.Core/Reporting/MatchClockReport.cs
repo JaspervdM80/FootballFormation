@@ -75,6 +75,10 @@ public static class MatchClockReport
     public static MatchMinute MinuteOf(Game game, GameSubstitution substitution) =>
         MinuteAt(game, substitution.GamePeriodId, substitution.AtSeconds);
 
+    /// <summary>The minute a player went off hurt, read the same way a substitution's is.</summary>
+    public static MatchMinute MinuteOf(Game game, GameInjury injury) =>
+        MinuteAt(game, injury.GamePeriodId, injury.AtSeconds);
+
     /// <summary>
     /// The minute a goal is written down against — derived the same way a substitution's is, from
     /// the clock reading and the half it was scored in, so correcting a half's timings corrects

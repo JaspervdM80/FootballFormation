@@ -58,3 +58,27 @@ internal sealed class GameSubstitutionConfiguration : IEntityTypeConfiguration<G
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
+
+internal sealed class GameInjuryConfiguration : IEntityTypeConfiguration<GameInjury>
+{
+    public void Configure(EntityTypeBuilder<GameInjury> entity)
+    {
+        entity.HasKey(i => i.Id);
+
+        entity.HasOne(i => i.GamePeriod)
+            .WithMany()
+            .HasForeignKey(i => i.GamePeriodId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Restrict, like GameSubstitution's player legs: deleting someone who was hurt in a match
+        // fails loudly rather than silently rewriting how long she was available for it.
+        entity.HasOne(i => i.Player)
+            .WithMany()
+            .HasForeignKey(i => i.PlayerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // One injury per player per match. She leaves the pitch for it and does not come back, so
+        // a second row would only ever be a double tap — and AvailableMinutesFor reads the first.
+        entity.HasIndex(i => new { i.GameId, i.PlayerId }).IsUnique();
+    }
+}

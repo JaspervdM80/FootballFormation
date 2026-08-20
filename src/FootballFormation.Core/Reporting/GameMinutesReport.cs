@@ -32,10 +32,10 @@ public class GameMinutes
 /// Playing time for one game, per player and per position. The single place that decides whether
 /// a game's minutes come from what actually happened or from what was planned.
 /// <para>
-/// A game that was run live carries the truth in its half timings and its
-/// <see cref="GameSubstitution"/> rows. The lineup alone cannot express it —
-/// <c>MatchSubstitutionService</c> rewrites it in place, so afterwards it shows only the
-/// <em>final</em> occupants.
+/// A game that was run live carries the truth in its half timings, its
+/// <see cref="GameSubstitution"/> rows and any <see cref="GameInjury"/> nobody came on for. The
+/// lineup alone cannot express it — <c>MatchSubstitutionService</c> rewrites it in place, so
+/// afterwards it shows only the <em>final</em> occupants.
 /// </para>
 /// <para>
 /// The choice is made per game, not per line-up, on <see cref="Game.HasActualTimings"/>: once a
@@ -86,37 +86,35 @@ public static class GameMinutesReport
             var isLive = game.LivePeriodId == period.Id;
             var end = period.EndedAtSeconds ?? (isLive ? elapsedSeconds : start);
 
-            var subs = game.Substitutions
-                .Where(s => s.GamePeriodId == period.Id)
-                .OrderBy(s => s.AtSeconds)
-                // Two changes in the same second are a double substitution, and the walk below
-                // only rewinds to the right kick-off lineup if it takes them in the order they
-                // were made. The id is what says so — RecordedAt can be the same instant too.
-                .ThenBy(s => s.Id)
-                .ToList();
+            var changes = ChangesIn(game, period);
 
-            // The lineup records where everyone stands *now*. Rewinding this half's
-            // substitutions recovers who stood where when it kicked off, which is the only point
-            // the forward walk below can start from. GameSubstitution.Position is the position
-            // that changed hands, so it hands the slot back to the player who came off.
+            // The lineup records where everyone stands *now*. Rewinding this half's changes
+            // recovers who stood where when it kicked off, which is the only point the forward
+            // walk below can start from. Each change carries the position that changed hands, so
+            // it hands the slot back to the player who left it.
             var onPitch = period.PlayerPositions
                 .Where(p => !p.IsSubstitute)
                 .ToDictionary(p => p.PlayerId, p => p.Position);
 
-            for (var i = subs.Count - 1; i >= 0; i--)
+            for (var i = changes.Count - 1; i >= 0; i--)
             {
-                onPitch.Remove(subs[i].PlayerOnId);
-                onPitch[subs[i].PlayerOffId] = subs[i].Position;
+                if (changes[i].PlayerOnId is { } cameOn) onPitch.Remove(cameOn);
+                onPitch[changes[i].PlayerOffId] = changes[i].Position;
             }
 
             var cursor = start;
-            foreach (var sub in subs)
+            foreach (var change in changes)
             {
-                CreditAll(seconds, onPitch, sub.AtSeconds - cursor);
-                onPitch.Remove(sub.PlayerOffId);
-                onPitch[sub.PlayerOnId] = sub.Position;
-                known.Add(sub.PlayerOnId);
-                cursor = sub.AtSeconds;
+                CreditAll(seconds, onPitch, change.AtSeconds - cursor);
+                onPitch.Remove(change.PlayerOffId);
+
+                if (change.PlayerOnId is { } cameOn)
+                {
+                    onPitch[cameOn] = change.Position;
+                    known.Add(cameOn);
+                }
+
+                cursor = change.AtSeconds;
             }
 
             CreditAll(seconds, onPitch, end - cursor);
@@ -133,6 +131,39 @@ public static class GameMinutesReport
             OnPitchNow = onPitchNow,
             IsActual = isActual
         };
+    }
+
+    /// <summary>
+    /// One player leaving the pitch, and the one who took the place over when somebody did. A
+    /// substitution is both halves of that; an injury with nobody coming on is only the first, and
+    /// is the sole record that the team played the rest of the half a player short.
+    /// </summary>
+    private readonly record struct LineupChange(
+        int AtSeconds, int Id, int PlayerOffId, int? PlayerOnId, PlayerPosition Position);
+
+    /// <summary>
+    /// Everything that moved somebody off the pitch in this line-up, in the order it happened.
+    /// <para>
+    /// An injury that a substitution already accounts for is left out: one touchline action writes
+    /// both rows, and walking the pair would take the same player off twice — handing her slot back
+    /// in the rewind above. Two changes in the same second are routine (a double substitution is
+    /// two taps), and the walk only reaches the right kick-off line-up if it takes them in the
+    /// order they were made, which is what the id settles — <c>RecordedAt</c> can be the same
+    /// instant too. Across the two kinds an id tie is arbitrary, but the two never concern the same
+    /// player, so nothing depends on how it falls.
+    /// </para>
+    /// </summary>
+    private static List<LineupChange> ChangesIn(Game game, GamePeriod period)
+    {
+        var subs = game.Substitutions
+            .Where(s => s.GamePeriodId == period.Id)
+            .Select(s => new LineupChange(s.AtSeconds, s.Id, s.PlayerOffId, s.PlayerOnId, s.Position));
+
+        var unreplaced = game.Injuries
+            .Where(i => i.GamePeriodId == period.Id && !game.WasReplaced(i))
+            .Select(i => new LineupChange(i.AtSeconds, i.Id, i.PlayerId, null, i.Position));
+
+        return [.. subs.Concat(unreplaced).OrderBy(c => c.AtSeconds).ThenBy(c => c.Id)];
     }
 
     /// <summary>

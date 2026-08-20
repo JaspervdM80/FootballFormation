@@ -155,6 +155,11 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   them (`SubstituteAsync`), or they trade positions with a team-mate who stays on
   (`SwapPositionsAsync`). Choosing in either list clears the other, so the single action button
   always has exactly one change to make and says which — "Make substitution" or "Swap positions".
+  A third control, the **"Injured" switch**, is not a third change: it says *why* she is going off,
+  so the "Comes on" list above still names her replacement and the button reads "Off injured"
+  (`MarkInjuredAsync`). It is the one way the dialog closes with nobody named — a bench with nothing
+  left on it, and the team plays a player short. Turning it on clears the swap; picking a swap
+  clears it.
   A position swap writes no `GameSubstitution`: nobody's minutes changed, and a row there would say
   they did. The price is the *split by position* — `GameMinutesReport` reads the lineup as it finally
   stands, so after a swap the whole half is credited to the position each player moved **into**
@@ -186,6 +191,12 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   falls. `LiveMatch.Timeline` marks the one entry it is drawn above, because the markup renders an
   entry at a time and cannot see its neighbour, and because the substitutions filter decides who
   the neighbours are.
+- **An injury is one entry on the timeline, not two** (`.live-event-injury`, a red
+  `MedicalServices` cross). A substitution made for one takes the cross instead of the swap arrows,
+  and only the injuries nobody came on for get a line of their own — `Game.WasReplaced` is the
+  filter. Undo follows the same pairing: undoing the substitution removes the injury with it, and
+  undoing a standalone injury puts her back in the slot she left. Injuries are never folded away by
+  the substitutions checkbox below — it is the one change on the list that outlives the match.
 - A **"Show substitutions" checkbox** (`.live-timeline-toggle`) drops the substitutions from the
   timeline and leaves the goals: a rotated squad buries the goals among swaps nobody is scrolling
   back for. The state is per circuit and deliberately not stored. It rides the card's heading row

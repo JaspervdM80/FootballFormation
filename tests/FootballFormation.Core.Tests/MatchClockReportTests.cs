@@ -199,6 +199,10 @@ public class MatchClockReportTests
         // A substitution whose period is not loaded still says something better than 1'.
         var orphan = new GameSubstitution { GamePeriodId = 99, AtSeconds = 34 * 60 };
         Assert.Equal(new MatchMinute(35, 0), MatchClockReport.MinuteOf(game, orphan));
+
+        // An injury is placed off the same clock, so the two read the same minute on one timeline.
+        var injury = new GameInjury { GamePeriodId = 7, AtSeconds = 34 * 60 };
+        Assert.Equal(new MatchMinute(33, 0), MatchClockReport.MinuteOf(game, injury));
     }
 
     /// <summary>

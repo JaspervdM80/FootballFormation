@@ -27,7 +27,7 @@
 
         <MudSelect T="int?" @bind-Value="SwapWithId" Label="@L["Swaps position with"]" Class="mt-4" Clearable="true"
                    Placeholder="@(OnPitch.Count == 0 ? L["Nobody else is on the pitch."].Value : null)"
-                   Disabled="@(OnPitch.Count == 0)">
+                   Disabled="@(OnPitch.Count == 0 || Injured)">
             @foreach (var other in OnPitch)
             {
                 <MudSelectItem T="int?" Value="other.Player.Id">
@@ -39,11 +39,20 @@
         <MudText Typo="Typo.caption" Class="mt-2" Style="color: var(--ink-muted); display: block;">
             @L["A position swap keeps both players on the pitch and is not a substitution."]
         </MudText>
+
+        @* Not a third list: it says why she is going off, so "Comes on" above still names her
+           replacement — and with the bench empty, nobody, which is the one way this dialog closes
+           without a name in it. *@
+        <MudDivider Class="my-3" />
+        <MudSwitch @bind-Value="Injured" Color="Color.Error">@L["Injured"]</MudSwitch>
+        <MudText Typo="Typo.caption" Style="color: var(--ink-muted); display: block;">
+            @L["The rest of the match stops counting towards her playing time."]
+        </MudText>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
         <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="@(!HasChoice)" OnClick="Submit">
-            @(IsPositionSwap ? L["Swap positions"] : L["Make substitution"])
+            @(IsPositionSwap ? L["Swap positions"] : Injured ? L["Off injured"] : L["Make substitution"])
         </MudButton>
     </DialogActions>
 </MudDialog>

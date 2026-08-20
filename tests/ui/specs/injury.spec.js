@@ -1,6 +1,7 @@
-// Marking a player generally injured: the squad-page status, and what it does to a match's
-// line-up — an injured player is never offered a slot, and is shown separately from a player who
-// is merely unavailable for one fixture.
+// Injury, in both the senses the app knows. The standing squad status: an injured player is never
+// offered a slot, and is shown separately from a player who is merely unavailable for one fixture.
+// And the one that happens on the day: a player marked injured mid-match leaves the pitch, and the
+// rest of the match stops counting towards her.
 import { test, expect } from '../fixtures.js';
 import {
   addPlayer, clickFor, createMatch, gameRow, goto, openDialog, playerMenuItem, playerRow, submitDialog,
@@ -64,4 +65,61 @@ test('the unavailable-players picker leaves an injured player out, and says why'
 
   await expect(panel.getByText('injured player(s) not listed', { exact: false })).toBeVisible();
   await panel.getByRole('button', { name: 'Cancel' }).click();
+});
+
+/**
+ * A match with players on the pitch and the clock running, which is the only state an injury can
+ * be recorded from. Two players, so taking one off still leaves the pitch non-empty.
+ */
+async function liveMatchWithLineup(page, opponent) {
+  await createMatch(page, { opponent });
+  await gameRow(page, opponent).getByTitle(/Formation|Add lineup/).click();
+  await page.waitForURL(/\/games\/\d+\/formation/);
+  const id = Number(page.url().match(/\/games\/(\d+)\//)[1]);
+
+  const available = page.locator('.draggable-player');
+  const chips = page.locator('.pitch .pitch-player');
+  await expect(available.first()).toBeVisible();
+  for (let i = 0; i < 2; i++) {
+    await available.first().dragTo(page.locator('.pitch .pitch-empty').first());
+    await expect(chips).toHaveCount(i + 1);
+  }
+  await clickFor(
+    page.getByRole('button', { name: /^Save( All Lineups)?$/ }).first(),
+    () => expect(page.getByText('All lineups saved', { exact: false })).toBeVisible(),
+    { settle: 10_000 },
+  );
+
+  await goto(page, `/games/${id}/live`);
+  await clickFor(
+    page.getByRole('button', { name: 'Start match' }),
+    () => expect(page.getByRole('button', { name: 'Finish match' })).toBeVisible(),
+  );
+  return id;
+}
+
+test('a player marked injured mid-match leaves the pitch and can be put back', async ({ page }) => {
+  await liveMatchWithLineup(page, 'FC Blessurewissel');
+
+  const chips = page.locator('.live-lineup .pitch-player');
+  await expect(chips).toHaveCount(2);
+
+  await clickFor(chips.first(), () => expect(page.locator('.mud-dialog')).toBeVisible());
+  const dialog = await openDialog(page);
+
+  // The switch alone is a complete answer: nobody has to come on, which is what the button says
+  // before anything is picked from the "Comes on" list.
+  await dialog.locator('label.mud-switch', { hasText: 'Injured' }).click();
+  await submitDialog(page, 'Off injured');
+  // Scoped to the snackbar: the timeline entry below says "Off injured" too.
+  await expect(page.locator('.mud-snackbar-content-message', { hasText: 'off injured' })).toBeVisible();
+
+  // She is off, nobody replaced her, and the timeline carries the cross rather than a swap.
+  await expect(chips).toHaveCount(1);
+  const event = page.locator('.live-event', { hasText: 'not replaced' });
+  await expect(event).toHaveCount(1);
+  await expect(event.locator('.live-event-injury')).toBeVisible();
+
+  await clickFor(event.getByRole('button'), () => expect(chips).toHaveCount(2));
+  await expect(page.locator('.live-event')).toHaveCount(0);
 });

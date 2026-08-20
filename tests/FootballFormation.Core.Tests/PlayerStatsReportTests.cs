@@ -116,6 +116,34 @@ public class PlayerStatsReportTests
     }
 
     [Fact]
+    public void Being_hurt_during_a_match_ends_the_minutes_it_counts_as_available()
+    {
+        // Hurt on 20' of the first half, with nobody coming on. She played 20 of the 20 she could
+        // have — measuring her against the full hour would read as a player who was rested.
+        var game = TestData.Game(durationMinutes: 60);
+        game.MatchState = MatchState.Finished;
+        game.ScoreHome = 1;
+        game.ScoreAway = 0;
+
+        var first = game.AddPeriod(PeriodType.FirstHalf,
+            TestData.Starter(2, PlayerPosition.GK, 0),
+            TestData.Sub(1));
+        var second = game.AddPeriod(PeriodType.SecondHalf, TestData.Starter(2, PlayerPosition.GK, 0));
+
+        first.StartedAtSeconds = 0;
+        first.EndedAtSeconds = 1800;
+        second.StartedAtSeconds = 1800;
+        second.EndedAtSeconds = 3600;
+        TestData.Injury(game, first, playerId: 1, atSeconds: 1200, position: PlayerPosition.CM, slot: 5);
+
+        var stats = PlayerStatsReport.Build(Subject, [game], SeasonSquads.Of(TestData.Squad(1, [Subject])));
+
+        Assert.Equal(20, stats.TotalMinutes);
+        Assert.Equal(20, stats.AvailableMinutes);
+        Assert.Equal(100, stats.Utilization);
+    }
+
+    [Fact]
     public void Sitting_the_whole_bench_still_counts_as_available()
     {
         var game = FinishedGame();

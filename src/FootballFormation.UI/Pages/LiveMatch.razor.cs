@@ -12,7 +12,13 @@ using MudBlazor;
 namespace FootballFormation.UI.Pages;
 
 /// <summary>
-/// One entry on the match timeline — a goal or a substitution — so both can be listed together.
+/// One entry on the match timeline — a goal, a substitution or an injury — so all three can be
+/// listed together.
+/// <para>
+/// <paramref name="Injury"/> is set alongside <paramref name="Substitution"/> when the player who
+/// came off was hurt: one tap wrote both rows, so the timeline shows one line for them, marked with
+/// the cross. It stands alone only when nobody came on for her.
+/// </para>
 /// <para>
 /// Sorted on <paramref name="AtSeconds"/>, then <paramref name="RecordedAt"/>, then
 /// <paramref name="Id"/>. The elapsed clock runs on across the break, so a first-half stoppage
@@ -29,8 +35,8 @@ namespace FootballFormation.UI.Pages;
 /// </summary>
 public record MatchEvent(
     int AtSeconds, MatchMinute? Minute, PeriodType Half, DateTime RecordedAt, int Id,
-    GameGoal? Goal, GameSubstitution? Substitution, MatchScore? Score = null,
-    bool HalfTimeAbove = false);
+    GameGoal? Goal, GameSubstitution? Substitution, GameInjury? Injury = null,
+    MatchScore? Score = null, bool HalfTimeAbove = false);
 
 /// <summary>
 /// The sideline screen. An admin runs the clock and records what happens; everyone else sees the
@@ -212,9 +218,10 @@ public partial class LiveMatch
 
     /// <summary>
     /// Who can come on: the bench for this half, plus anyone in the roster with no lineup entry
-    /// at all — a late arrival should not be locked out of a match already under way. A player
-    /// generally injured is never offered, on top of <see cref="Game.SelectRoster"/> — the same
-    /// exclusion <c>FormationBuilder</c> applies when building the line-up in the first place.
+    /// at all — a late arrival should not be locked out of a match already under way. Two
+    /// exclusions on top of <see cref="Game.SelectRoster"/>: a player generally injured, the same
+    /// one <c>FormationBuilder</c> applies when building the line-up in the first place; and
+    /// anyone already hurt in this match, who is on the bench for exactly that reason.
     /// </summary>
     private List<Player> SubCandidates
     {
@@ -222,12 +229,13 @@ public partial class LiveMatch
         {
             if (GameData is null) return [];
 
+            var hurt = GameData.Injuries.Select(i => i.PlayerId).ToHashSet();
             var inLineup = DisplayLineup.Select(p => p.PlayerId).ToHashSet();
             var bench = OnBench.Select(p => FindPlayer(p.PlayerId)).OfType<Player>();
             var unlisted = GameData.SelectRoster(AllPlayers, Squad)
                 .Where(p => !inLineup.Contains(p.Id) && !Squad.IsInjured(p.Id));
 
-            return [.. bench.Concat(unlisted)];
+            return [.. bench.Concat(unlisted).Where(p => !hurt.Contains(p.Id))];
         }
     }
 
@@ -245,12 +253,18 @@ public partial class LiveMatch
     /// </summary>
     private bool MinutesAreActual => GameData?.HasActualTimings == true;
 
+    /// <summary>
+    /// Whether an empty timeline is the checkbox's doing rather than the truth. Only the two kinds
+    /// the checkbox can hide are counted — an injury is always listed, so a match with one never
+    /// reaches the empty state at all.
+    /// </summary>
     private bool HasEvents => GameData is { } game && (game.Goals.Count > 0 || game.Substitutions.Count > 0);
 
     /// <summary>
-    /// Goals and substitutions on one timeline, most recent first. Substitutions can be left out:
-    /// a match with a lot of rotation buries the goals among them, and the goals are what someone
-    /// scrolling back is usually after.
+    /// Goals, substitutions and injuries on one timeline, most recent first. Substitutions can be
+    /// left out: a match with a lot of rotation buries the goals among them, and the goals are what
+    /// someone scrolling back is usually after. An injury is never folded away — it is the one
+    /// change on this list that outlives the match.
     /// </summary>
     private List<MatchEvent> Timeline
     {
@@ -269,21 +283,31 @@ public partial class LiveMatch
                     at,
                     MatchClockReport.MinuteOf(GameData, g),
                     MatchClockReport.HalfOf(GameData, g.GamePeriodId, at),
-                    g.RecordedAt, g.Id, g, null, progression[g.Id]);
+                    g.RecordedAt, g.Id, g, null, Score: progression[g.Id]);
             });
             IEnumerable<MatchEvent> subs = ShowSubstitutions
                 ? GameData.Substitutions.Select(s => new MatchEvent(
                     s.AtSeconds,
                     MatchClockReport.MinuteOf(GameData, s),
                     MatchClockReport.HalfOf(GameData, s.GamePeriodId, s.AtSeconds),
-                    s.RecordedAt, s.Id, null, s))
+                    s.RecordedAt, s.Id, null, s, GameData.InjuryFor(s)))
                 : [];
+
+            // Only the injuries nobody came on for. The rest are already on the line above, as the
+            // substitution they were made with — see Game.WasReplaced.
+            var injuries = GameData.Injuries
+                .Where(i => !GameData.WasReplaced(i))
+                .Select(i => new MatchEvent(
+                    i.AtSeconds,
+                    MatchClockReport.MinuteOf(GameData, i),
+                    MatchClockReport.HalfOf(GameData, i.GamePeriodId, i.AtSeconds),
+                    i.RecordedAt, i.Id, null, null, i));
 
             // A goal and the sub that followed it commonly share a second; the entry time keeps
             // them in the order they actually happened rather than the order they were queried.
             // The id then settles a double substitution, so the entry this list shows on top is
             // the one MatchSubstitutionService.RemoveSubstitutionAsync will let an admin undo.
-            var ordered = goals.Concat(subs)
+            var ordered = goals.Concat(subs).Concat(injuries)
                 .OrderByDescending(e => e.AtSeconds)
                 .ThenByDescending(e => e.RecordedAt)
                 .ThenByDescending(e => e.Id)
@@ -408,9 +432,22 @@ public partial class LiveMatch
         Snackbar.Report(L, await SubService.RemoveSubstitutionAsync(sub.Id),
             L["Substitution undone"], Severity.Warning);
 
+    private async Task RemoveInjury(GameInjury injury) =>
+        Snackbar.Report(L, await SubService.RemoveInjuryAsync(injury.Id),
+            L["Injury undone"], Severity.Warning);
+
+    /// <summary>The icon a timeline entry is marked with. The cross wins over the swap arrows on a
+    /// substitution made for an injury: what happened there was the injury.</summary>
+    private static string EventIcon(MatchEvent entry) => entry switch
+    {
+        { Goal: not null } => Icons.Material.Filled.SportsSoccer,
+        { Injury: not null } => Icons.Material.Filled.MedicalServices,
+        _ => Icons.Material.Filled.SwapHoriz
+    };
+
     /// <summary>
-    /// Tapping a player on the pitch asks what happens to them: someone comes on for them, or they
-    /// trade positions with a team-mate who stays on.
+    /// Tapping a player on the pitch asks what happens to them: someone comes on for them, they
+    /// trade positions with a team-mate who stays on, or they go off hurt.
     /// </summary>
     private async Task OpenSubDialog(int playerId)
     {
@@ -432,12 +469,21 @@ public partial class LiveMatch
 
         if (choice.IsPositionSwap)
         {
-            var swap = await SubService.SwapPositionsAsync(GameId, playerId, choice.PlayerId);
+            var swap = await SubService.SwapPositionsAsync(GameId, playerId, choice.PlayerId!.Value);
             Snackbar.Report(L, swap, L["Positions swapped"]);
             return;
         }
 
-        var sub = await SubService.SubstituteAsync(GameId, playerId, choice.PlayerId);
+        // One call for both, because it is one change: the injury takes her off and the
+        // replacement, when there is one, comes on in the same write.
+        if (choice.IsInjury)
+        {
+            var injured = await SubService.MarkInjuredAsync(GameId, playerId, choice.PlayerId);
+            Snackbar.Report(L, injured, L["{0} is off injured", player.ShortName], Severity.Warning);
+            return;
+        }
+
+        var sub = await SubService.SubstituteAsync(GameId, playerId, choice.PlayerId!.Value);
         Snackbar.Report(L, sub, L["Substitution made"]);
     }
 

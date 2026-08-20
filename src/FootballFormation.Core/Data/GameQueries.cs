@@ -49,6 +49,25 @@ internal static class GameQueries
     internal static IQueryable<Game> WithSubstitutions(this IQueryable<Game> games) =>
         games.Include(g => g.Substitutions);
 
+    /// <summary>
+    /// An injury with nobody coming on for it is a line-up change no substitution row records, and
+    /// it is what stops a hurt player's available minutes where she stopped playing
+    /// (<c>PlayerStatsReport</c>).
+    /// <para>
+    /// **Never composed without the substitutions.** <c>Game.WasReplaced</c> reads the substitution
+    /// rows to tell an injury somebody came on for from one nobody did; with none loaded every
+    /// injury looks unreplaced, and <c>GameMinutesReport</c> would walk a replaced player off the
+    /// pitch twice — crediting her replacement the whole half on top of it.
+    /// </para>
+    /// </summary>
+    internal static IQueryable<Game> WithInjuries(this IQueryable<Game> games) =>
+        games.Include(g => g.Injuries);
+
+    internal static IQueryable<Game> WithInjuredPlayers(this IQueryable<Game> games) =>
+        games
+            .Include(g => g.Injuries)
+                .ThenInclude(i => i.Player);
+
     internal static IQueryable<Game> WithSubstitutionPlayers(this IQueryable<Game> games) =>
         games
             .Include(g => g.Substitutions)

@@ -130,6 +130,7 @@ always had, and keeps games referencing a since-departed player rendering sensib
 | ClockAccumulatedSeconds | int | Seconds banked from earlier running stretches |
 | LivePeriodId | int? | The line-up on the pitch — the row that opened the half being played. Null before kick-off, at half time and after full time |
 | Substitutions | List\<GameSubstitution\> | Cascade delete |
+| Injuries | List\<GameInjury\> | Cascade delete. Players hurt during this match |
 | Comments | List\<GameComment\> | Cascade delete. Never eager-loaded — see GameComment |
 
 The match clock is stored as an **anchor plus a banked total**, never as a ticking value:
@@ -157,6 +158,8 @@ would shift while it is still being played. More computed members support the re
 | `HasActualTimings` | Was any half actually kicked off, i.e. are there real timings to prefer over the plan? |
 | `PlayedDurationSeconds` | The same sum in seconds, without the fallback — the denominator for a share of one game's playing time, where truncating to minutes would let an ever-present player round past 100% |
 | `PlayedDurationMinutes` | How long the match really lasted, summed over the periods played out; falls back to `GameDurationMinutes`. The denominator for utilisation, so a match that over-ran cannot push anyone past 100% |
+| `AvailableMinutesFor(playerId)` | The same, cut short at the minute that player went off hurt. What `PlayerStatsReport` actually adds up, so being carried off at 20' is not scored as an hour on the bench. Capped by `PlayedDurationSeconds` |
+| `WasReplaced(injury)` / `InjuryFor(substitution)` | The two directions of the pairing between an injury and the substitution made for it. One touchline action writes both rows, and both the timeline and `GameMinutesReport` need to know which injuries a substitution already accounts for |
 | `CurrentOrLastHalf()` | The half the match is *about*, as the line-up it is played with: the live one, else the last played, else the one the match opens with — so the live screen is never blank |
 | `LiveHalf()` | The half on the pitch, or null before kick-off, at half time and after full time. What a substitution may touch |
 | `NextHalf()` | The half the clock goes to next, as the line-up opening it. Skips a line-up planned for the middle of a half already played, so a quarters second half opens at Q3 |
@@ -280,6 +283,39 @@ reversing an older swap would fight every change made on that slot since. "Most 
 says which of them came second. `GameMinutesReport` walks them in that same order — see
 [known_issues.md](known_issues.md#data--domain).
 
+## GameInjury
+| Property | Type | Notes |
+|---|---|---|
+| Id | int | PK |
+| GameId | int | FK → Game (cascade delete). Unique with `PlayerId` — one injury per player per match |
+| GamePeriodId | int | FK → GamePeriod (cascade delete) |
+| PlayerId | int | FK → Player, **Restrict**, for the same reason as `GameSubstitution`'s legs |
+| AtSeconds | int | Match-clock second she went off |
+| SlotIndex | int? | The pitch slot she left, so the record can be undone |
+| Position | PlayerPosition | The position she was holding — the minutes before it are credited there |
+| RecordedAt | DateTime | UTC entry time — orders events that share a minute |
+
+**A player hurt on the day, as opposed to `SeasonSquadMember.IsInjured`, which is a standing status
+with no time dimension.** The flag says she cannot be picked; this says the rest of *this* match was
+never hers to play, which is a thing only a moment on the clock can say. `Game.AvailableMinutesFor`
+is what reads it, and `PlayerStats.Utilization` is what it changes: carried off on 20' of an hour,
+she is judged on 20 minutes rather than on 60.
+
+`MatchSubstitutionService.MarkInjuredAsync` writes it, with an optional replacement. **Naming one
+writes a `GameSubstitution` beside the injury, in the same `SaveChangesAsync`**; leaving it out
+writes only the injury, and the team plays on a player short. `Game.WasReplaced(injury)` /
+`Game.InjuryFor(substitution)` are the pairing, and two things read it:
+
+- `GameMinutesReport` walks an **unreplaced** injury as the line-up change it is — nothing else
+  records that she left the pitch. A replaced one is skipped, because its substitution already
+  takes her off and walking both would hand her slot back in the rewind.
+- The live timeline shows one entry per touchline action: a substitution made for an injury is
+  marked with the cross rather than listed twice, and undoing it removes both rows.
+
+Undoing an unreplaced injury (`RemoveInjuryAsync`) puts her back in the slot she left, and refuses
+if anything is standing in it — which nothing should be, since a swap needs two players already on
+and a substitution reuses the slot of whoever it takes off.
+
 ## GameComment
 | Property | Type | Notes |
 |---|---|---|
@@ -396,6 +432,8 @@ Game 1──* GameGoal *──1 Player (scorer, assister — both SetNull)
 GamePeriod 1──* GameGoal (the half it was scored in — nullable, cascade)
 GamePeriod 1──* GameSubstitution (the half it was made in — cascade)
 Game 1──* GameSubstitution *──1 Player (off, on — both Restrict)
+GamePeriod 1──* GameInjury (the half it happened in — cascade)
+Game 1──* GameInjury *──1 Player (Restrict; unique on GameId + PlayerId)
 Game 1──* GameComment *──1 AppUser (author — SetNull)
 ```
 Cascading deletes throughout, **except Season → Game, which is `Restrict`**: deleting a season must
