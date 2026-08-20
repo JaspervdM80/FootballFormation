@@ -788,24 +788,13 @@ html, body {
     border: 1px solid color-mix(in srgb, var(--color-guest) 20%, transparent);
 }
 
-/* Red, and carries its own icon — unlike GUEST and ARCHIVED this badge means "cannot be selected
-   anywhere", not just "handled differently", so it reads as the loudest of the three. */
-.badge-injured {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+/* Not a badge: injury is the one status that reads as a mark against the name, so it is a bare red
+   cross in front of it rather than a worded chip after it. GUEST and ARCHIVED still need their word
+   — nothing about them is pictured. */
+.injured-mark {
     color: var(--color-danger-bright);
-    border: 1px solid color-mix(in srgb, var(--color-danger) 20%, transparent);
-}
-
-.badge-injured .mud-icon-root {
-    font-size: 0.85rem;
+    font-size: 1rem;
+    flex-shrink: 0;
 }
 
 /* "No longer at the club" — deliberately the quietest badge on the row. It is a statement of
@@ -1490,9 +1479,13 @@ html, body {
 }
 
 .player-name-cell .badge-guest,
-.player-name-cell .badge-archived,
-.player-name-cell .badge-injured {
+.player-name-cell .badge-archived {
     margin-left: 6px;
+}
+
+/* The mark leads the name, so its gap is on the other side. */
+.player-name-cell .injured-mark {
+    margin-right: 4px;
 }
 
 /* Position abbreviations are two or three letters (GK, CB, CDM), and a badge that shrink-wraps

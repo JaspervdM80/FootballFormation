@@ -506,13 +506,17 @@ Season-scoped: it follows the season picker and shows that season's squad, not e
   a squad is the everyday action; the two that act on the *person* are demoted out of the icon row,
   with archive listed above delete because it is what is almost always meant.
 - **Guest and injured status are switches in the Edit Player dialog, not icons on the row.** The
-  `GUEST` and `INJURED` badges already state them, and a toggle next to a badge saying the same
-  thing is two controls for one fact. `PlayerDialog` therefore returns a
-  `PlayerEdit(Player, IsGuest, IsInjured)` record rather than a `Player`: the person and the two
-  membership flags are separate writes, and the page only makes each one when its own switch moved,
-  so renaming someone never touches the squad. Both switches are seeded from the row's flags, are
-  separated from the person's fields by a divider, and name the season under them — the flags
-  belong to one season's squad, not to the person.
+  row already states them, and a toggle next to a mark saying the same thing is two controls for one
+  fact. `PlayerDialog` therefore returns a `PlayerEdit(Player, IsGuest, IsInjured)` record rather
+  than a `Player`: the person and the two membership flags are separate writes, and the page only
+  makes each one when its own switch moved, so renaming someone never touches the squad. Both
+  switches are seeded from the row's flags and separated from the person's fields by a divider.
+  Only Guest carries a caption — "Injured" on a red switch explains itself, and the caption under it
+  only restated what the row shows.
+- **Injury is a red cross in front of the name (`.injured-mark`), not a worded badge after it.** It
+  is the one status on the row that is read without being spelled out, and the one worth seeing
+  before the name rather than after it. `GUEST` and `ARCHIVED` stay worded badges — nothing about
+  either is pictured.
 - **Archive vs delete.** Archiving retires someone who has left the club: nothing they are in
   changes, they simply stop being offered for seasons still to come (see
   [models.md](models.md#archiving-and-why-deleting-is-guarded)). Its confirm says so; the delete

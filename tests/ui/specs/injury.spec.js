@@ -8,28 +8,28 @@ import {
 
 /** Toggles the Injured switch in the open Edit Player dialog and saves. */
 async function setInjured(panel, injured) {
-  // Scoped to the switch that carries the "Injured player" label, not by position — Guest player
-  // sits above it, and this must keep pointing at Injured however many switches join them later.
+  // Scoped to the switch that carries the "Injured" label, not by position — Guest player sits
+  // above it, and this must keep pointing at Injured however many switches join them later.
   // MudSwitch puts the "mud-switch" class on both the root <label> and the inner text <span>, so
   // this has to say <label> explicitly or it matches both and Playwright refuses the ambiguity.
-  const injuredSwitch = panel.locator('label.mud-switch', { hasText: 'Injured player' });
+  const injuredSwitch = panel.locator('label.mud-switch', { hasText: 'Injured' });
   const input = injuredSwitch.locator('input[type="checkbox"]');
   if ((await input.isChecked()) !== injured) await injuredSwitch.click();
   await submitDialog(panel.page());
 }
 
-test('marking a player injured shows the badge, and clearing it removes it', async ({ page }) => {
+test('marking a player injured marks the row, and clearing it removes the mark', async ({ page }) => {
   await addPlayer(page, { firstName: 'Injury', surname: 'Badge', shirt: 81 });
 
   await playerMenuItem(page, 'Injury Badge', 'Edit Player');
   await setInjured(await openDialog(page), true);
 
   const row = playerRow(page, 'Injury Badge');
-  await expect(row.locator('.badge-injured')).toBeVisible();
+  await expect(row.locator('.injured-mark')).toBeVisible();
 
   await playerMenuItem(page, 'Injury Badge', 'Edit Player');
   await setInjured(await openDialog(page), false);
-  await expect(row.locator('.badge-injured')).toHaveCount(0);
+  await expect(row.locator('.injured-mark')).toHaveCount(0);
 });
 
 test('an injured player is left out of the line-up and shown in its own panel', async ({ page }) => {
