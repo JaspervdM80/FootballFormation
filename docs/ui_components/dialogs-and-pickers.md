@@ -26,8 +26,8 @@ Two rules are not part of that layout and so sit in their own query, `max-width:
 short rather than narrow but it is still a thumb:
 
 - **The action buttons' 44px floor.** Left inside the sheet block it did not apply in landscape, so
-  a landscape phone got MudBlazor's own 36.5px buttons — the exact geometry that was reported. The
-  touch-target guard measures this at 844x390.
+  a landscape phone got MudBlazor's own 36.5px buttons — the exact geometry that was reported. Check
+  it by eye at 844x390 when touching this rule.
 - **A numeric field's steppers are hidden.** `.mud-input-numeric-spin` is two 24x16 buttons stacked
   flush inside a 32px input row: a third of the 44px floor, no gap between them, and opposite
   effects, so a tap that misses one hits the other and counts down instead of up. Two 44px targets
@@ -89,8 +89,8 @@ In landscape the 56px toolbar has room for one 44px button, not two, so the date
 the year button keeps its target. That strands nothing: the picker's flow is **year → month → day**,
 and the date line only restates what is already in the field behind the popover.
 
-Every number in this section is now measured on each `scripts/visual-check.sh` run — see
-[testing](../testing/visual-and-touch-checks.md#touch-targets). Changing one of them means changing what the guard measures,
-not just what this page says.
+Nothing measures these numbers automatically any more — see
+[known_issues](../known_issues/touch-pwa.md) and check by eye at 320x568, 360x640 and 844x390
+landscape before changing any of them.
 
 

@@ -61,7 +61,6 @@ in `manifest.webmanifest` must change with it, or the PWA chrome keeps the old b
   on a `<body>` box shorter than the viewport. Walking ancestors to intersect every clipping box then
   reports every dialog as half scrolled out of view. It is not: an ancestor's overflow only clips a
   descendant it is a containing block for, and MudBlazor's dialog container is `position: fixed`.
-  `scripts/touch-targets.mjs` carries that rule as `containsFor`.
 - **The date picker's month header slides**, so for a moment after *Previous month* it still reports
   the month you just left. Wait for the header text to *change* before reading it again, and choose
   the direction from that settled value so an overshoot walks back instead of spiralling. Anything

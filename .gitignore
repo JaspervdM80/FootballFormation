@@ -66,9 +66,6 @@ backups/
 publish/
 out/
 
-# Node tooling for scripts/ — not part of the app build
-scripts/node_modules/
-scripts/package-lock.json
 
 # Playwright UI tests. The signed-in browser states under .auth/ are credentials for the throwaway
 # database a run creates, and everything else here is a run's own output.

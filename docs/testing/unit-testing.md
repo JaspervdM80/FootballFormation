@@ -69,8 +69,7 @@ what a service wrote without tracking interference.
 ## What is not covered
 
 No component tests — no bUnit. A Razor component is never rendered in isolation; the UI is checked
-by driving the real app in a real browser, which is what `tests/ui` (behaviour) and
-`scripts/visual-check.sh` (rendering and touch geometry) do.
+by driving the real app in a real browser, which is what `tests/ui` does.
 
 ## Coverage
 
@@ -103,8 +102,8 @@ below is out of the report entirely — not merely out of the judgement:
   either is instrumented today; naming them keeps that true the day somebody adds a reference for
   one helper. A `.razor` compiles to a generated class whose lines map back to markup and a
   `.razor.cs` is the other half of that same partial class — neither is reachable without rendering
-  a component, and nothing in `tests/` renders one. Those two are covered by `tests/ui` and
-  `visual-check.sh` instead, and a change there is reported as unmeasured rather than as a miss.
+  a component, and nothing in `tests/` renders one. Those two are covered by `tests/ui` instead,
+  and a change there is reported as unmeasured rather than as a miss.
 - **Migrations and the model snapshot.** A `Down()` is never executed by the suite and never will
   be, and counting scaffolded code makes the gate a lottery on how much of it a change touched.
   Excluding them took `Core` from a comfortable 96.4% over 9,960 lines to an honest 93.3% over

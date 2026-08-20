@@ -107,8 +107,7 @@
 /* On a touch screen the buttons sit flush. A 2px gap between two targets is a dead gutter — too
    narrow to see or aim around, wide enough to swallow a tap, and awarded by the browser to
    whichever neighbour has the larger contact area. A gap has to be nothing or at least 8px, and
-   with six buttons on a card there is nowhere to find five 8px gaps. See
-   scripts/touch-targets.mjs. */
+   with six buttons on a card there is nowhere to find five 8px gaps. */
 @media (pointer: coarse) {
     .game-actions {
         gap: 0;

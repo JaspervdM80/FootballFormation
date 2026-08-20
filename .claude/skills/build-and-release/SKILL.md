@@ -1,6 +1,6 @@
 ---
 name: build-and-release
-description: Building, the CI checks, and how a merge reaches production. Covers Release-only warnings-as-errors, the MSB3568 promotion, the global.json SDK pin, the four required checks, and merge-is-release. Use before pushing, when CI is red, or when touching a workflow, Dockerfile or global.json.
+description: Building, the CI checks, and how a merge reaches production. Covers Release-only warnings-as-errors, the MSB3568 promotion, the global.json SDK pin, the three required checks, and merge-is-release. Use before pushing, when CI is red, or when touching a workflow, Dockerfile or global.json.
 ---
 
 # Build and release
@@ -35,12 +35,12 @@ Claude Code web containers ship no .NET SDK, so `.claude/hooks/session-start.sh`
 egress policy blocks `builds.dotnet.microsoft.com` and `dotnet-install.sh` 403s. Chromium is already
 at `/opt/pw-browsers/chromium`.
 
-## Four checks, and the merge waits for all of them
+## Three checks, and the merge waits for all of them
 
 `main` takes pull requests only. The merge button stays disabled until **Build and test**,
-**Coverage**, **Playwright** and **Visual check** are all green, the branch is up to date with `main`,
-and every review thread is resolved. `.github/rulesets/main-every-check-green.json` grants no bypass
-to anyone.
+**Coverage** and **Playwright** are all green, the branch is up to date with `main`, and every
+review thread is resolved. `.github/rulesets/main-every-check-green.json` grants no bypass to
+anyone.
 
 `ci.yml` deliberately carries **no `paths:` filter** — a required check that never reports leaves a
 pull request pending forever rather than mergeable, so "skip CI for docs" would wedge every docs-only
@@ -52,7 +52,7 @@ A flaky browser job is **re-run, not merged past**.
 
 `fly-deploy.yml` starts on the merge commit with no gate job and no approval, then smoke-checks
 `/health` until it reports the commit that was just built. There is no staging environment and
-nothing re-runs on `main`, so the four checks on the pull request are the last look.
+nothing re-runs on `main`, so the three checks on the pull request are the last look.
 
 The app **auto-migrates against the live volume on boot**, so a merge is also a schema change. See the
 `migrations` skill before writing one.

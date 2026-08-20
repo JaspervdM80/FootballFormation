@@ -183,8 +183,8 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   against each other: a gap between two touch targets has to be nothing or at least 8px, and there
   is nowhere to find five 8px gaps. Fixed rather than split evenly because the row's length varies
   with both the game's state and who is looking — see [known_issues](../known_issues/index.md). The
-  card's horizontal padding drops to 12px there so the six still clear 44px on a 320px phone.
-  `scripts/touch-targets.mjs` measures all of it — see [testing](../testing/visual-and-touch-checks.md#touch-targets).
+  card's horizontal padding drops to 12px there so the six still clear 44px on a 320px phone —
+  check by eye on a 320px phone when touching this row; see [known_issues](../known_issues/touch-pwa.md).
 - **The venue is a word, at every width.** A `<VenueBadge Inline="true" />` trails the opponent's
   name and spells out *THUIS*/*UIT*, in the same green and blue the card's edge stripe uses. The
   stripe had been saying it alone, which is a convention nobody reads off a stripe; now the colour

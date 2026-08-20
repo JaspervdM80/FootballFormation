@@ -3,7 +3,7 @@
 // A Blazor render failure does not fail a request or blank the page — it logs to the console and
 // leaves the circuit in a state where the next interaction does nothing. So a test that only
 // asserts on what it can see would pass a page that is quietly broken. Every test here fails if the
-// browser logged an error, which is the same check scripts/visual-check.sh makes.
+// browser logged an error.
 import { test as base, expect } from '@playwright/test';
 
 // Noise from the app's own progressive-web-app plumbing, none of it a render failure. Keep this

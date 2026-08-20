@@ -213,7 +213,7 @@ html, body {
    same thumb, and MudBlazor's own button is 36.5px tall, which is what "Annuleren" was when a tap
    aimed at it opened the dropdown above instead. 44px is the platform minimum touch target, and the
    width keeps the two buttons far enough apart that a thumb cannot take Opslaan while aiming for
-   Annuleren. Found by scripts/touch-targets.mjs, which measures this at 844x390. */
+   Annuleren. Found by measuring at 844x390 landscape. */
 @media (max-width: 599.98px), (max-height: 559.98px) {
     .mud-dialog.dialog-sheet .mud-dialog-actions .mud-button-root {
         min-height: 44px;
@@ -514,9 +514,9 @@ html, body {
 }
 
 /* A finger needs more than the 32px the pointer version uses. 40px was the first answer and it was
-   short of the 44px floor on every phone viewport — the guess nobody could check until /games came
-   into scripts/touch-targets.mjs. Six of these sit side by side on a game card on match day; how
-   they are arranged so six of them fit is Games.razor.css's problem, but none of them is under 44
+   short of the 44px floor on every phone viewport — a guess that went unchecked until someone
+   measured /games directly. Six of these sit side by side on a game card on match day; how they
+   are arranged so six of them fit is Games.razor.css's problem, but none of them is under 44
    anywhere. */
 @media (pointer: coarse) {
     :root {
@@ -698,8 +698,8 @@ html, body {
 /* Flush on a touch screen, for the same reason the game card's action row is: 2px between two
    targets is a dead gutter — too narrow to see or aim around, wide enough to swallow a tap, and
    handed by the browser to whichever neighbour has the larger contact area. A gap has to be
-   nothing or at least 8px. See scripts/touch-targets.mjs. (/settings is not in that audit's scope
-   yet — this row is the same three-button shape as the game card's, fixed with it.) */
+   nothing or at least 8px — this row is the same three-button shape as the game card's, fixed
+   with it. */
 @media (pointer: coarse) {
     .season-row-actions {
         gap: 0;

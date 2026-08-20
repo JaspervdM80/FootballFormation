@@ -225,8 +225,7 @@ happened:
 fixture — they are pure functions. Anything touching the database inherits `ServiceTestBase` and
 arranges with `TestData`. Test names are sentences. Time comes from `FakeTimeProvider`, never a
 sleep. And the negatives matter as much: **do not ask for a component test** — there is no bUnit,
-by design; the UI is covered by `tests/ui` and `scripts/visual-check.sh` — and do not touch the
-`xUnit1051` suppression.
+by design; the UI is covered by `tests/ui` — and do not touch the `xUnit1051` suppression.
 
 **Coverage of the change must be at least 80%.** Run it:
 
@@ -245,8 +244,8 @@ file, listing the uncovered line numbers. Read the report the same way:
 - A file under the floor is a **Blocking** finding: name the uncovered lines and say which test is
   missing — not "add tests", but *which behaviour has no test*.
 - `UI` and `Web` are not measured, and that is not a gap to report. They have no unit tests on
-  purpose; a change there is answered by `tests/ui` and `scripts/visual-check.sh`, so say which of
-  those covers it (or that neither does, which *is* a finding).
+  purpose; a change there is answered by `tests/ui`, so say whether it covers it (or that it does
+  not, which *is* a finding).
 - Migrations and `DesignTimeDbContextFactory` are excluded — scaffolded or design-time code whose
   `Down()` no suite will ever run.
 - Coverage is a floor, not a target. 100% of a change whose only test asserts it doesn't throw is

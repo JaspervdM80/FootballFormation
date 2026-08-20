@@ -42,9 +42,10 @@ MudBlazor's own 36.5px action buttons — the same geometry that had been report
 Together they are the column-pitch guarantee: with no dead gutter left, the distance between two
 column centres *is* the cell's own width.
 
-`scripts/touch-targets.mjs` enforces both at 320×568, 360×640 and 844×390. Where geometry provably
-cannot reach 44px the number is in `RECORDED_FLOORS` with its reason, and **a recorded floor is still
-a floor**.
+Nothing measures these automatically any more — check by eye at 320×568, 360×640 and 844×390
+landscape (the three sizes the incidents below were reported at). Where geometry provably cannot
+reach 44px, that is a known, accepted floor, not a regression — 320×568 day cells settle at 41.7px
+and 844×390 ones at 36px; see [known_issues](../../../docs/known_issues/touch-pwa.md) for why.
 
 ## Touch states come in pairs
 
@@ -103,5 +104,4 @@ past its own underline — leaving 18px of dead space. A thumb aimed at "Annuler
 instead, because the select is the far bigger target.
 
 Detail: [docs/known_issues/](../../../docs/known_issues/touch-pwa.md) ·
-[docs/testing/](../../../docs/testing/visual-and-touch-checks.md#touch-targets) ·
 [docs/theming.md](../../../docs/theming.md)

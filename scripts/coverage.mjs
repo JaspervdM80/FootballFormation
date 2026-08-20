@@ -172,10 +172,10 @@ if (measured.length === 0) {
 }
 
 // Named rather than silently dropped: a reviewer has to know which parts of the diff this number
-// says nothing about. UI and Web have no unit tests by design — tests/ui and visual-check.sh are
-// what cover them — so a change there is answered by those, not by this.
+// says nothing about. UI and Web have no unit tests by design — tests/ui is what covers them — so
+// a change there is answered by that, not by this.
 if (unmeasured.length) {
-    console.log(`\n  Not measured here (no unit tests by design — see tests/ui and scripts/visual-check.sh):`);
+    console.log(`\n  Not measured here (no unit tests by design — see tests/ui):`);
     for (const p of unmeasured) console.log(`    ${p}`);
 }
 if (excluded.length) {
@@ -224,7 +224,7 @@ if (process.env.GITHUB_STEP_SUMMARY) {
         paths.length ? [`<details><summary>${summary} (${paths.length})</summary>`, '',
             ...paths.map(p => `- \`${p}\``), '', '</details>', ''] : [];
     md.push(
-        ...details('Not measured here — no unit tests by design, see <code>tests/ui</code> and <code>scripts/visual-check.sh</code>', unmeasured),
+        ...details('Not measured here — no unit tests by design, see <code>tests/ui</code>', unmeasured),
         ...details('Excluded from the report — see coverage.runsettings', excluded),
         `**${verdict}**`,
     );

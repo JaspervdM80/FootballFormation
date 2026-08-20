@@ -50,4 +50,4 @@ fi
 echo "Restoring packages..."
 dotnet restore "$REPO/FootballFormation.slnx"
 
-echo "Ready: dotnet build / dotnet test / scripts/visual-check.sh"
+echo "Ready: dotnet build / dotnet test"

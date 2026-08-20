@@ -32,7 +32,7 @@ Anything touching the database inherits `ServiceTestBase`: `Db` arranges and ass
 gives a fresh context for reading back what a service wrote without tracking interference.
 
 **There are no component tests and no bUnit, by design.** A Razor component is never rendered in
-isolation. Do not ask for one — the UI is covered by `tests/ui` and `scripts/visual-check.sh`.
+isolation. Do not ask for one — the UI is covered by `tests/ui`.
 
 ## Two suppressions to leave alone
 
@@ -61,8 +61,8 @@ gate would pass with an entirely untested new service in the diff. If you quote 
 changed-line one, and never quote one you did not measure.
 
 `UI` and `Web` are not measured and that is not a gap: they have no unit tests on purpose, and a
-change there is answered by `tests/ui` or `visual-check.sh`. Migrations and
-`DesignTimeDbContextFactory` are excluded as scaffolded or design-time code.
+change there is answered by `tests/ui`. Migrations and `DesignTimeDbContextFactory` are excluded as
+scaffolded or design-time code.
 
 Coverage is a floor, not a target. 100% of a change whose only test asserts it doesn't throw is worse
 than 85% with the rule pinned.

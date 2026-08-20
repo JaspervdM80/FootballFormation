@@ -10,10 +10,10 @@
           <Format>cobertura</Format>
 
           <!-- Modules. The report is Core-only today because the test project references Core
-               alone, and UI and Web are covered by tests/ui and visual-check.sh rather than by
-               unit tests. Naming them anyway keeps that true by construction: adding a reference
-               to UI for one helper would otherwise drop every Razor component into the number at
-               0%, and the first thing anyone would do with that number is stop reading it. -->
+               alone, and UI and Web are covered by tests/ui rather than by unit tests. Naming
+               them anyway keeps that true by construction: adding a reference to UI for one
+               helper would otherwise drop every Razor component into the number at 0%, and the
+               first thing anyone would do with that number is stop reading it. -->
           <Exclude>[FootballFormation.UI]*,[FootballFormation.Web]*</Exclude>
 
           <!-- Files. A .razor compiles to a generated class whose lines map back to markup, and a

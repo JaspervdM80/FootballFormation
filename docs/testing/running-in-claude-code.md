@@ -11,6 +11,6 @@ not from `dotnet-install.sh` — the container's egress policy blocks
 `builds.dotnet.microsoft.com`, so the usual installer 403s before it downloads anything.
 `api.nuget.org` is reachable, so `dotnet restore` works normally.
 
-Chromium is already in the image at `/opt/pw-browsers/chromium`; `scripts/visual-check.sh`
-installs the Playwright npm package on first use and drives that binary rather than downloading
-its own.
+Chromium is already in the image at `/opt/pw-browsers/chromium`; `tests/ui`'s Playwright config
+picks it up automatically rather than downloading its own — see
+[docs/testing/ui-testing.md](ui-testing.md).

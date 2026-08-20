@@ -4,7 +4,7 @@
 // config is imported again by every worker process — anything it created or deleted would happen
 // more than once, and deleting a database halfway through a run is not a failure mode worth having.
 // Here it happens once, before Playwright is started, and the path is handed down through the
-// environment. Same reasoning as scripts/visual-check.sh, which owns its own temp database.
+// environment.
 //
 //   npm test                 # everything
 //   npm test -- squad        # specs matching "squad"

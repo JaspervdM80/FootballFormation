@@ -67,7 +67,7 @@ FootballFormation/
 │   ├── patterns/                  # Result, transactions, EF Core, UI state, ..., split with an index.md
 │   ├── ui_components/             # Live match, dialogs, shared components, ..., split with an index.md
 │   ├── theming.md
-│   ├── testing/                   # Unit, UI, visual/touch checks, split with an index.md
+│   ├── testing/                   # Unit and UI testing, split with an index.md
 │   ├── deployment.md
 │   └── known_issues/              # One file per topic, split with an index.md
 └── FootballFormation.slnx
@@ -124,9 +124,9 @@ Release before pushing. The exception is `MSB3568` (a duplicate resource name, w
 what the app says), an error in every configuration.
 
 A ruleset makes those checks binding: `main` takes pull requests only, the branch has to be up to
-date with `main`, and the merge button stays disabled until all four — `Build and test`, `Coverage`,
-`Playwright` and `Visual check` — are green. Merging is what releases: nothing runs on `main`
-afterwards, so those four are the last word on what reaches production. The ruleset lives in
+date with `main`, and the merge button stays disabled until all three — `Build and test`,
+`Coverage` and `Playwright` — are green. Merging is what releases: nothing runs on `main`
+afterwards, so those three are the last word on what reaches production. The ruleset lives in
 `.github/rulesets/main-every-check-green.json` and has to be imported into the repository's settings
 once — see [docs/deployment.md](docs/deployment.md#only-a-green-build-can-be-merged).
 
@@ -140,26 +140,7 @@ Playwright, driving the real app in a browser against a database that exists onl
 public/admin split, the squad and match dialogs, the full match-day journey from dragging a lineup
 to blowing the final whistle, both languages, and the phone layout. About a minute, 34 tests. Runs
 on every pull request as the `Playwright` job in `.github/workflows/ci.yml`, against the app that
-workflow published — one of the four checks the merge waits for. See [docs/testing/](docs/testing/ui-testing.md#ui-tests-testsui).
-
-### Visual checks
-
-```bash
-scripts/visual-check.sh
-```
-
-Boots the app against a throwaway database, seeds a small squad through the real dialogs, and
-screenshots every page into `artifacts/visual/`. It fails if the browser logged an error, which is
-where a Blazor render failure surfaces. Nothing else in the repo checks that a page renders at all
-— the tests cover the domain rules.
-
-It then measures rather than looks: the match dialog and its date picker are reopened at 320, 360
-and landscape phone sizes and every touch target is checked for the 44px minimum and for dead space
-between it and its neighbours. That is the only thing holding the touch fixes in
-[docs/known_issues/](docs/known_issues/touch-pwa.md) in place, so it runs on every pull request too — the
-`Visual check` job in `ci.yml`, blocking like the one beside it, and it uploads its screenshots
-either way.
-See [docs/testing/](docs/testing/visual-and-touch-checks.md).
+workflow published — one of the three checks the merge waits for. See [docs/testing/](docs/testing/ui-testing.md#ui-tests-testsui).
 
 ### Claude Code on the web
 

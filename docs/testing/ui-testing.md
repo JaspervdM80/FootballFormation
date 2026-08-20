@@ -69,12 +69,11 @@ an afternoon to find:
 
 ### One pipeline, one compile
 
-Everything lives in `.github/workflows/ci.yml`, in four jobs on one chain, all four required checks:
+Everything lives in `.github/workflows/ci.yml`, in three jobs on one chain, all three required checks:
 
 ```
 Build and test ──┬── Coverage
-                 ├── Playwright
-                 └── Visual check
+                 └── Playwright
 ```
 
 **`Build and test`** restores, builds Release, runs `dotnet test`, then publishes `--no-build`, so it
@@ -88,9 +87,9 @@ locally. It is the one job checked out with `fetch-depth: 0`, because judging a 
 against its merge base and a single-commit checkout has nothing to diff against. The verdict and a
 per-file table with the uncovered line numbers go to `$GITHUB_STEP_SUMMARY`.
 
-**`Playwright` and `Visual check`** download the published artifact and start it. Neither calls a
-compiler — they install the SDK only for the runtime. `UI_TEST_APP_DLL` and `VISUAL_APP_DLL` point
-each harness at the artifact; both are unset locally, where each falls back to `dotnet run`.
+**`Playwright`** downloads the published artifact and starts it. It calls no compiler — it installs
+the SDK only for the runtime. `UI_TEST_APP_DLL` points the harness at the artifact; unset locally,
+where it falls back to `dotnet run`.
 
 Three details are deliberate:
 
@@ -168,20 +167,6 @@ that does bind handlers, waiting for them is the whole point.
 `rendermode.spec.js` is where the render-mode split is pinned — that `/stats`, the player pages and
 the match report open no WebSocket at all, and that `/games` still does, so the probe cannot rot
 into passing on a listener that stopped working.
-
-The same rule now holds in `scripts/`, where `blazor.mjs` carries `goto`, `clickFor`,
-`waitForStableBox` and `waitUntil` for the visual harness. That harness was written before any of
-this was understood and was built on fourteen fixed sleeps; replacing them with waits on the thing
-itself took a local run from **123s to 67s** and made it steadier rather than less safe — verified
-by reintroducing the three regressions it exists to catch and watching it fail on all of them. The
-two copies are deliberate: `scripts/` and `tests/ui/` are separate npm packages with different
-dependencies, and a dozen duplicated lines beat a cross-package import. Change one, look at the
-other.
-
-`waitForStableBox` is the one worth knowing about. MudBlazor scales a dialog and a popover in, so
-anything measured the moment it becomes visible is measured mid-animation — a full-width sheet reads
-about 86% of its width. Two identical bounding boxes a frame apart is the exact answer, and it costs
-what the animation actually takes rather than what a sleep guessed.
 
 The other half of the answer is `clickFor(locator, expectation)`: it clicks, checks for the outcome,
 and clicks again if it has not happened. Use it for anything idempotent. **Do not** use it for

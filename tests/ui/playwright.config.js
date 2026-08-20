@@ -5,8 +5,8 @@ import { tmpdir } from 'node:os';
 
 const PORT = Number(process.env.UI_TEST_PORT ?? 5299);
 
-// Not 5228: that is what `dotnet run` and scripts/visual-check.sh use, and a test run that killed
-// the app someone had open to look at something would be a poor trade.
+// Not 5228: that is what `dotnet run` uses, and a test run that killed the app someone had open to
+// look at something would be a poor trade.
 export const BASE_URL = `http://127.0.0.1:${PORT}`;
 
 // run.mjs makes this per-run and throws it away afterwards. The fallback only matters when someone

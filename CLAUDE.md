@@ -21,7 +21,6 @@ dotnet build -c Release        # what CI builds — warnings are errors here
 dotnet test                    # xUnit v3, real SQLite
 cd src/FootballFormation.Web && dotnet run     # http://localhost:5228
 cd tests/ui && npm test        # Playwright, ~1 min (npm install first)
-scripts/visual-check.sh        # screenshots every page, then measures every touch target
 scripts/coverage.sh            # coverage of the lines this branch changed, 80% floor
 ```
 
@@ -36,7 +35,7 @@ src/FootballFormation.UI/     Razor Class Library: pages, components, navigation
 src/FootballFormation.Web/    Host: Program.cs, App.razor, Routes.razor, wwwroot (CSS, JS, PWA)
 tests/FootballFormation.Core.Tests/   xUnit v3
 docs/                         Detailed reference and the incident record
-scripts/                      visual-check.sh + its Playwright driver
+scripts/                      coverage.sh + its report judge
 ```
 
 Dependencies point one way: `Web → UI → Core`. **UI is a separate RCL for future MAUI Blazor Hybrid
@@ -83,11 +82,11 @@ These fail silently or expensively, so they are here rather than only in a skill
 ## Workflow
 
 - Work on a feature branch. `main` takes pull requests only, and the merge button stays disabled
-  until **Build and test**, **Coverage**, **Playwright** and **Visual check** are all green, the
-  branch is up to date with `main`, and every review thread is resolved.
+  until **Build and test**, **Coverage** and **Playwright** are all green, the branch is up to date
+  with `main`, and every review thread is resolved.
 - **Merging to `main` releases**, straight onto the live volume, with no staging environment and
-  nothing re-running on `main`. The four checks on the pull request are the last look — which is why
-  a flaky browser job is re-run rather than merged past.
+  nothing re-running on `main`. The three checks on the pull request are the last look — which is
+  why a flaky browser job is re-run rather than merged past.
 - Commit messages are plain imperative sentences describing the intent, not conventional-commit
   prefixes: *"Split the games list on the scoreline, not the calendar"*.
 - `.editorconfig` codifies the existing style (CRLF, 4 spaces, file-scoped namespaces, `_camelCase`

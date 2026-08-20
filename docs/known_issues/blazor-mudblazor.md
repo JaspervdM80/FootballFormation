@@ -57,8 +57,8 @@
   the obvious way to work out what is actually on screen, and the answer is that every dialog and
   popover in the app is half scrolled out of view. It is not: an ancestor's overflow only clips a
   descendant it is a containing block for, and MudBlazor's dialog container is `position: fixed`, so
-  a plain `overflow: hidden` on `<body>` cannot clip it. `scripts/touch-targets.mjs` carries that
-  rule (`containsFor`); it was worth about an hour of believing the buttons were off screen.
+  a plain `overflow: hidden` on `<body>` cannot clip it. It was worth about an hour of believing the
+  buttons were off screen.
 - **The date picker's month header slides, so it reads the month you just left.** The element is a
   `.mud-picker-slide-transition`, and for a moment after *Previous month* it still reports the old
   text. A loop that clicks and then immediately re-reads therefore spends a second click on a month

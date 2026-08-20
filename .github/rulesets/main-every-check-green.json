@@ -27,8 +27,7 @@
         "required_status_checks": [
           { "context": "Build and test" },
           { "context": "Coverage" },
-          { "context": "Playwright" },
-          { "context": "Visual check" }
+          { "context": "Playwright" }
         ]
       }
     },

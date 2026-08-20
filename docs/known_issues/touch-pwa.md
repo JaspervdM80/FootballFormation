@@ -32,19 +32,20 @@
   select is the far bigger target, so a thumb aimed at the button opened the dropdown instead.
   This is invisible to `document.elementFromPoint`, which reports the button as reachable — the
   measurement that finds it is the **gap** to the nearest interactive element above.
-- **All of the above is now measured, and the measuring found three more.** Everything in this
-  section was CSS that nothing verified — a MudBlazor upgrade or one more global `.mud-*` rule would
-  have undone any of it silently, which is how the day cells shipped twice. `scripts/visual-check.sh`
-  now reopens the match dialog and its date picker at 320x568, 360x640 and 844x390 and fails on a
-  target under 44x44 or a gap that is neither zero nor at least 8px (see
-  [testing](../testing/visual-and-touch-checks.md#touch-targets)). Its first run reported: a **landscape phone got 36.5px
+- **All of the above was, for a while, measured — and the measuring found three more.** Everything
+  in this section is CSS that nothing verifies today — a MudBlazor upgrade or one more global
+  `.mud-*` rule can undo any of it silently, which is how the day cells shipped twice. A harness
+  that reopened the match dialog and its date picker at 320x568, 360x640 and 844x390 and failed on a
+  target under 44x44 or a gap that was neither zero nor at least 8px used to run on every pull
+  request; it has since been removed. Its first run reported: a **landscape phone got 36.5px
   action buttons**, because the `.dialog-sheet` block is width-only and 844px is not below 600px —
   the same geometry that was reported for "Annuleren" in the first place; **6px of dead space** on
   either side of the picker's month name, from MudBlazor's `margin: 6px` on the arrows, in the row
   this file already calls the worst of the picker; and a numeric field's **24x16 steppers**, stacked
   flush so a tap that misses one hits the other and steps the wrong way. All three are fixed in
   `app.css`. The lesson is the ordering: three fixes had been argued for in prose here for months,
-  and the first thing that measured them found three more in an afternoon.
+  and the first thing that measured them found three more in an afternoon — a reason to check by eye
+  at those three sizes whenever this CSS changes, now that nothing checks automatically.
 - **Widening that guard to `/games` found a card that had already run out of room.** The action
   buttons on a game card were 40px under `(pointer: coarse)`, set deliberately and with a comment
   saying a finger needs more than the 32px a mouse gets — four short of the floor, and separated by
@@ -64,9 +65,8 @@
   visitor's lone Overview button rendered as a 312px bar that reads as a call to action rather than
   an icon. Fixed width and right-aligned instead: Delete is under the same thumb position on every
   card, and every other button counts in from the same edge.
-  **The audit only ever sees six because `visual-check.mjs` seeds its game dated *today*.** Move
-  that date and the widest row the app has quietly stops being measured, with nothing failing to
-  say so.
+  **The six-button row only shows up on a game dated *today*.** Seed or open a game on a different
+  date and the widest row the app has goes unseen — check it deliberately when touching this CSS.
 - **A width-only media query does not cover a phone.** Turned sideways, a 390px-tall phone is 844px
   wide and every `max-width: 599.98px` rule stops applying — while the thumb does not change size.
   The picker block keys off `(max-width: 599.98px), (max-height: 559.98px)` for exactly this reason,
@@ -135,6 +135,6 @@
   opening the mobile context in a browser that already holds a desktop one, and taking a `fullPage`
   screenshot — after which `matchMedia('(pointer: coarse)')` reads false and every touch-sized rule
   is off, so 44px targets measure 32. Give the phone pass its own `chromium.launch`, and give it a
-  viewport tall enough that the capture needs no `fullPage`. `scripts/touch-targets.mjs` is safe on
-  both counts (its own contexts, no screenshots), which is why this only shows up in ad-hoc scripts.
+  viewport tall enough that the capture needs no `fullPage` — this is the trap to watch for in any
+  ad-hoc Playwright script that screenshots a phone viewport.
 

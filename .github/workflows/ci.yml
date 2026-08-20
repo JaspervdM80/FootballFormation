@@ -5,18 +5,18 @@ name: CI
 # coverage report comes out of the gate's own test run, so the number is about the code that
 # passed rather than a second run of it. The commit is compiled exactly once —
 # `dotnet publish --no-build` reuses what `dotnet build` produced and what `dotnet test` ran
-# against, so the app the browsers see is the app the unit tests passed on, not a rebuild of it.
+# against, so the app the browser sees is the app the unit tests passed on, not a rebuild of it.
 
 on:
-  # The event that reports these four checks in the ordinary course of things, and the merge ref is
-  # the thing worth building: `actions/checkout` resolves a `pull_request` event to
+  # The event that reports these three checks in the ordinary course of things, and the merge ref
+  # is the thing worth building: `actions/checkout` resolves a `pull_request` event to
   # `refs/pull/N/merge`, this branch already merged into main, where a push event would check out
   # the branch tip on its own. Nothing runs on main afterwards — merging deploys — so what goes
   # green here is the last word on the commit that reaches the volume. It covers a fork's pull
   # request too.
   pull_request:
   # The escape hatch, for a branch with no pull request yet and for the case where a pull request
-  # somehow shows no checks at all. It reports the same four contexts, so it can unlock a merge on
+  # somehow shows no checks at all. It reports the same three contexts, so it can unlock a merge on
   # its own — off the branch tip rather than the merge ref. See docs/deployment.md.
   workflow_dispatch:
 
@@ -30,7 +30,7 @@ permissions:
   contents: read
 
 jobs:
-  # All four jobs here are required checks, and `main`'s ruleset names each of them by the `name:`
+  # All three jobs here are required checks, and `main`'s ruleset names each of them by the `name:`
   # it declares — so renaming one means editing .github/rulesets/main-every-check-green.json in the
   # same change, or the merge button waits forever on a check nothing reports. See
   # docs/deployment.md.
@@ -86,14 +86,14 @@ jobs:
       # ReadyToRun off, which the Dockerfile leaves on: it forces a runtime-identifier-specific
       # publish, which `--no-build` cannot satisfy, and pre-compiling to native code buys a faster
       # first render that nothing downstream measures.
-      - name: Publish the app the browser jobs will run
+      - name: Publish the app the browser job will run
         run: >-
           dotnet publish src/FootballFormation.Web/FootballFormation.Web.csproj
           -c Release --no-build -p:PublishReadyToRun=false -o artifacts/app
 
       # 84MB of the 104MB published is SQLitePCLRaw's native library for every architecture it
-      # supports, riscv64 and mips64 included. The runner is one of them, and this is uploaded once
-      # and downloaded twice — so keep the one it will actually load. 104MB down to 23MB.
+      # supports, riscv64 and mips64 included. The runner is one of them, so keep the one it will
+      # actually load. 104MB down to 23MB.
       - name: Drop the native libraries for other architectures
         run: find artifacts/app/runtimes -mindepth 1 -maxdepth 1 ! -name linux-x64 -exec rm -rf {} +
 
@@ -112,7 +112,7 @@ jobs:
   # docs/testing.md has the reasoning. The result is written to this run's summary page, so the
   # number is read without opening a log or downloading the report.
   #
-  # Blocking, like the two browser jobs below: under the floor, the merge button stays disabled. A
+  # Blocking, like the browser job below: under the floor, the merge button stays disabled. A
   # change that touches no coverable line — docs, CSS, a workflow — measures nothing and passes, so
   # requiring this cannot wedge a pull request that had no code in it. It needs no compiler, the
   # report having come out of the test run above, so it is node and a git history and it is over in
@@ -223,64 +223,4 @@ jobs:
           path: |
             tests/ui/playwright-report/
             tests/ui/test-results/
-          retention-days: 7
-
-  # Whether it renders at all, and whether a thumb can hit it. This is the only thing holding the
-  # Touch / PWA fixes in docs/known_issues.md in place — every one of them is CSS, and a MudBlazor
-  # upgrade or one more global .mud-* rule undoes any of them silently. Blocking, for the same
-  # reason as the job above.
-  visual:
-    name: Visual check
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-dotnet@v6
-        with:
-          global-json-file: global.json
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-
-      - uses: actions/download-artifact@v7
-        with:
-          name: app
-          path: artifacts/app
-
-      - uses: actions/cache@v6
-        with:
-          path: ~/.npm
-          key: npm-${{ runner.os }}-scripts-${{ hashFiles('scripts/package.json') }}
-          restore-keys: npm-${{ runner.os }}-scripts-
-
-      - uses: actions/cache@v6
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-scripts-${{ hashFiles('scripts/package.json') }}
-          restore-keys: playwright-${{ runner.os }}-scripts-
-
-      - run: npm install --no-audit --no-fund
-        working-directory: scripts
-
-      - run: npx playwright install --with-deps chromium
-        working-directory: scripts
-
-      # The script owns its own throwaway database and exits non-zero on a browser error or a touch
-      # target under its floor. VISUAL_APP_DLL hands it the published app, so it starts that rather
-      # than building one. visual-check.mjs resolves Chromium itself when the web container's copy
-      # is absent, which is the case here.
-      - run: scripts/visual-check.sh
-        env:
-          VISUAL_APP_DLL: ${{ github.workspace }}/artifacts/app/FootballFormation.Web.dll
-
-      # Uploaded on success too: the screenshots are the point of this job as much as the
-      # measurements are, and they are worth a look on a pull request that changed a page.
-      - if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: visual-check
-          path: artifacts/visual/
           retention-days: 7

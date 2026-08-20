@@ -36,23 +36,23 @@ That is affordable because the weight sits at the other end — every check has 
 branch up to date with `main` before the merge button unlocks, so merging and releasing are the same
 decision. See [Only a green build can be merged](#only-a-green-build-can-be-merged).
 
-Pull requests are gated by a **separate** workflow, `ci.yml`, running four jobs: `Build and test`
-(restore, a Release build where warnings are errors, the suite), `Coverage`, `Playwright` and
-`Visual check`. It holds no deploy job and no Fly token, so a pull request cannot reach the volume
-even in principle. Nothing re-runs on `main` afterwards — those four checks are the last word on the
-commit that reaches the volume.
+Pull requests are gated by a **separate** workflow, `ci.yml`, running three jobs: `Build and test`
+(restore, a Release build where warnings are errors, the suite), `Coverage` and `Playwright`. It
+holds no deploy job and no Fly token, so a pull request cannot reach the volume even in principle.
+Nothing re-runs on `main` afterwards — those three checks are the last word on the commit that
+reaches the volume.
 
 ## Only a green build can be merged
 
 A workflow can report a failure but cannot refuse a merge — that is a repository setting.
 `.github/rulesets/main-every-check-green.json` is that setting written down: a ruleset on the default
-branch which requires a pull request, requires **all four** checks, requires the branch to be **up to
-date with `main`**, blocks deletion and force-pushes, and grants **no bypass to anyone**.
+branch which requires a pull request, requires **all three** checks, requires the branch to be **up
+to date with `main`**, blocks deletion and force-pushes, and grants **no bypass to anyone**.
 
 It is applied by hand from the GitHub UI — nothing in a repo can grant itself branch protection. The
 file is the reviewable record of what is configured; change it and re-import.
 
-**All four have to run on every pull request, or the guard inverts.** A required check that never
+**All three have to run on every pull request, or the guard inverts.** A required check that never
 reports leaves a PR pending forever rather than mergeable, so `ci.yml` deliberately carries no
 `paths:` filter — adding one to "skip CI for docs" would silently wedge every docs-only PR. If a job
 is renamed, the ruleset's `context` must be renamed in the same change.
@@ -63,11 +63,11 @@ no coverable line in it measures nothing and passes rather than dividing by zero
 `ci.yml` triggers on `pull_request` and nothing else automatic — a `push` trigger was removed after
 every pull request was found to be building twice (see [testing](testing/index.md)). A pull request
 showing *no* checks rather than a red one is what a regression here looks like. The escape hatch is
-`workflow_dispatch`, which reports the same four contexts but checks out the **branch tip** where
+`workflow_dispatch`, which reports the same three contexts but checks out the **branch tip** where
 `pull_request` resolves to `refs/pull/N/merge`; prefer one more commit and keep the dispatch for when
 there is nothing to push.
 
-**A flake now blocks a merge.** That is the intended cost of requiring the browser jobs: re-run the
+**A flake now blocks a merge.** That is the intended cost of requiring the browser job: re-run the
 failed job. There is no bypass, so an emergency means setting the ruleset to *Disabled* — a visible,
 logged act — after which an unbuilt, untested commit merges, deploys and migrates the live volume
 within a couple of minutes. Turn it back on.

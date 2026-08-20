@@ -1,9 +1,9 @@
 ---
 name: ui-testing
-description: Writing or debugging a Playwright test in tests/ui, or the visual-check/touch-target harness in scripts/. Covers the Blazor prerender trap, goto/clickFor/waitForStableBox, why there are no fixed sleeps, and .count() failing open. Use before adding or changing any browser test.
+description: Writing or debugging a Playwright test in tests/ui. Covers the Blazor prerender trap, goto/clickFor/openDialog, why there are no fixed sleeps, and .count() failing open. Use before adding or changing any browser test.
 ---
 
-# UI tests and the visual harness
+# UI tests
 
 ```bash
 cd tests/ui
@@ -11,7 +11,6 @@ npm install          # first time only
 npm test             # ~40 tests, about a minute
 npm test -- squad    # specs matching "squad"
 npm run test:headed  # watch it happen
-scripts/visual-check.sh   # screenshots every page, then measures every touch target
 ```
 
 `run.mjs` makes a throwaway data directory, Playwright's `webServer` starts the app against it, and it
@@ -48,8 +47,8 @@ whole point.
 `rendermode.spec.js` is where "this page has no circuit" is asserted, and it proves its own probe by
 checking that `/games` still opens one.
 
-**There is not a single fixed sleep in `tests/ui` or `scripts/`. Do not introduce one** — it is how the
-suite starts failing on a slow machine.
+**There is not a single fixed sleep in `tests/ui`. Do not introduce one** — it is how the suite starts
+failing on a slow machine.
 
 ## The helpers, and when each applies
 
@@ -57,14 +56,9 @@ suite starts failing on a slow machine.
   happened. Use it for anything idempotent. **Do not** use it for anything that is not — the
   seeded-password change is clicked exactly once on purpose, because a second attempt would use a
   password that is no longer current.
-- **`waitForStableBox`** — MudBlazor scales a dialog and a popover in, so anything measured the moment
-  it becomes visible is measured mid-animation (a full-width sheet reads about 86% of its width). Two
-  identical bounding boxes a frame apart is the exact answer.
 - **`openDialog()`** asserts visibility and waits. Prefer it over a manual check.
 
-`scripts/blazor.mjs` carries its own copy of `goto`/`clickFor`/`waitForStableBox`/`waitUntil` for the
-visual harness. The duplication is deliberate — `scripts/` and `tests/ui/` are separate npm packages —
-so change one and look at the other.
+Both, along with `goto`/`gotoRendered`/`waitForHandlers`, live in `tests/ui/helpers.js`.
 
 ## `.count()` is the one locator call that does not wait, and it fails open
 
@@ -95,12 +89,11 @@ retry, add that player a second time — read a two-attempt failure as "flaked, 
 
 ## Touch targets
 
-`scripts/touch-targets.mjs` reopens the app at **320×568**, **360×640** and **844×390** landscape, and
-enforces two rules: every hit-testable element is at least **44×44** CSS px, and the gap to its
-nearest neighbour is either zero or at least **8px** — anything between is a dead gutter the browser
-awards to whichever neighbour has the larger contact area. Where the geometry provably cannot reach
-44px the number is in `RECORDED_FLOORS` with its reason, and **a recorded floor is still a floor**.
+There is no automated touch-target check any more — tap-target sizing (the 44px/8px floors) is a
+manual review concern now. See the `responsive-and-touch` skill and
+[docs/known_issues/touch-pwa.md](../../../docs/known_issues/touch-pwa.md) before changing anything a
+thumb touches.
 
-Both browser jobs are required checks; a red run holds the merge.
+The browser job is a required check; a red run holds the merge.
 
 Detail: [docs/testing/](../../../docs/testing/ui-testing.md#ui-tests-testsui)
