@@ -608,11 +608,12 @@ between them, which is also why every rule in `SeasonStats.razor.css` selects fo
 input — it has to stay the list's first sibling inside the `MudPaper`. The input is visually hidden
 but not `display: none`, or it would leave the tab order with its label behind.
 
-**Time lost to the standing `SeasonSquadMember.IsInjured` status shows as *not played*, not as
-*injured*.** Only a mid-match `GameInjury` carries a moment on the clock; the squad status is a flag
-with no date, so nothing says which past matches it covered. Colouring them from today's flag would
-be the retroactive rewrite `Game.IsInRoster` refuses for the same reason (models.md, "Injured").
-Giving that time its own colour needs the status to become dated first.
+**The injured segment has two sources**, and neither is today's squad flag: a `GameInjury` for the
+stretch after she was carried off, and the match's own `InjuredPlayerIds` for one she missed
+entirely. The second is a copy of `SeasonSquadMember.IsInjured` taken at the final whistle
+(`StandingInjuries.RecordAsync`, models.md) — reading the live flag here would be the retroactive
+rewrite `Game.IsInRoster` refuses, since a girl injured today would have her whole season recoloured
+including the matches she was fit for.
 
 **The per-game rows carry `<VenueBadge Inline="true" />`**, rather than the `vs` / `@` prefix the
 rest of the app still uses in running text. The row is a list of fixtures where the venue is a fact

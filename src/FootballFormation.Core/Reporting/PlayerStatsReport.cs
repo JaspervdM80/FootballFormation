@@ -44,12 +44,12 @@ public class PlayerStats
     /// denominator: on-pitch minutes vs. bench time they could have been called off.</summary>
     public int AvailableMinutes { get; init; }
 
-    /// <summary>Minutes lost to going off hurt: the stretch between the injury and the final
-    /// whistle, over every game she was hurt in. Only a mid-match injury is dated, so the standing
-    /// squad status contributes nothing here — see <see cref="MaximumMinutes"/>.</summary>
+    /// <summary>Minutes injury cost her: the whole of a match <see cref="Game.InjuredPlayerIds"/>
+    /// records her missing, and the stretch from the injury to the final whistle in one she was
+    /// carried off in.</summary>
     public int InjuredMinutes { get; init; }
 
-    /// <summary>Minutes of games she was left out of the roster for.</summary>
+    /// <summary>Minutes of matches she was left out of the roster for, injury aside.</summary>
     public int UnavailableMinutes { get; init; }
 
     public int Goals { get; init; }
@@ -71,11 +71,6 @@ public class PlayerStats
     /// injured, unavailable — partition it, and because each game contributes its whole duration to
     /// exactly one of them, this comes out the same for every squad member. That is what lets the
     /// availability bars on /stats be read against each other rather than each against itself.
-    /// <para>
-    /// Time lost to the standing <c>SeasonSquadMember.IsInjured</c> status lands in
-    /// <see cref="NotPlayedMinutes"/>, not in <see cref="InjuredMinutes"/>: the status carries no
-    /// date, so there is nothing to say which past games it covered.
-    /// </para>
     /// </summary>
     public int MaximumMinutes => AvailableMinutes + InjuredMinutes + UnavailableMinutes;
 
@@ -131,7 +126,8 @@ public static class PlayerStatsReport
             // A game with a lineup gives up its whole duration, to one bucket or split across two.
             // Available = in the roster, whether they started, subbed, or sat the bench; a game
             // they were hurt in counts only up to the injury — see Game.AvailableMinutesFor — and
-            // the rest of it is time they could not have played.
+            // the rest of it is time they could not have played. Out of the roster, the game says
+            // which of the two reasons it was.
             if (game.HasLineup)
             {
                 if (game.IsInRoster(player, squads))
@@ -139,6 +135,10 @@ public static class PlayerStatsReport
                     var available = game.AvailableMinutesFor(player.Id);
                     availableMinutes += available;
                     injuredMinutes += game.PlayedDurationMinutes - available;
+                }
+                else if (game.InjuredPlayerIds.Contains(player.Id))
+                {
+                    injuredMinutes += game.PlayedDurationMinutes;
                 }
                 else
                 {

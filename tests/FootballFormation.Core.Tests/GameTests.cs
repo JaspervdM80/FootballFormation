@@ -264,17 +264,29 @@ public class GameTests
     }
 
     [Fact]
-    public void IsInRoster_is_blind_to_injury_the_same_way_it_is_blind_to_archiving()
+    public void IsInRoster_is_blind_to_the_squads_injury_flag_the_way_it_is_blind_to_archiving()
     {
-        // A game is judged the way it was played. Injury is set after the fact, on the squad the
-        // roster rule reads live, so IsInRoster must not let it rewrite a past game's roster —
-        // that is what would zero out AvailableMinutes for every game already played this season.
+        // A game is judged the way it was played. The flag is live and undated, so letting it reach
+        // in here would zero out AvailableMinutes for every game already played this season.
         // Callers building a *future* line-up filter injured players out themselves.
         var player = TestData.Player(1);
         var squad = TestData.Squad(1, [player], injuredIds: [1]);
         var game = TestData.Game();
 
         Assert.True(game.IsInRoster(player, squad));
+    }
+
+    [Fact]
+    public void A_game_that_recorded_her_injured_takes_her_out_of_its_own_roster()
+    {
+        // The other half of the rule above: what the game itself wrote down at the final whistle
+        // does count, because it is history rather than a status.
+        var player = TestData.Player(1);
+        var squad = TestData.Squad(1, [player]);
+        var game = TestData.Game();
+
+        game.InjuredPlayerIds.Add(player.Id);
+        Assert.False(game.IsInRoster(player, squad));
     }
 
     [Fact]

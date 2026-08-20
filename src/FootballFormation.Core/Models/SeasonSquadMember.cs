@@ -24,8 +24,9 @@ public class SeasonSquadMember
 
     /// <summary>
     /// Generally injured, as opposed to <see cref="Game.UnavailablePlayerIds"/>, which opts someone
-    /// out of a single fixture. An injured player is excluded from every game's roster in this
-    /// season until cleared — see <see cref="Game.IsInRoster(Player, SeasonSquad)"/>.
+    /// out of a single fixture. She is offered no place in a line-up while it is set, and every
+    /// match she misses copies it into its own <see cref="Game.InjuredPlayerIds"/> as it finishes —
+    /// this flag has no date on it, so that copy is all the statistics have left once it is cleared.
     /// <para>
     /// Lives here rather than on <see cref="Player"/> for the same reason as <see cref="IsGuest"/>:
     /// it is this season's medical status, not the person's. It is also why

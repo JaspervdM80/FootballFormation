@@ -155,8 +155,17 @@ public class GameService(
                 return Result.Failure("Game not found");
             }
 
+            // A match played on paper becomes part of the record here, so this is its one chance to
+            // catch who was injured at the time. Only on the way in: re-editing a score that already
+            // settled the match must not restamp it from today's squad.
+            var wasComplete = game.IsComplete;
+
             game.ScoreHome = scoreHome;
             game.ScoreAway = scoreAway;
+
+            if (!wasComplete && game.IsComplete)
+                await StandingInjuries.RecordAsync(db, game, cancellationToken);
+
             await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Saved score {Home}-{Away} for game {GameId}",

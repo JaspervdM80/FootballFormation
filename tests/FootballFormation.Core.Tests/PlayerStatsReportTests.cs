@@ -187,6 +187,28 @@ public class PlayerStatsReportTests
     }
 
     [Fact]
+    public void A_match_missed_injured_is_told_apart_from_one_simply_missed()
+    {
+        var injured = FinishedGame(1);
+        injured.Periods[0].PlayerPositions[0] = TestData.Starter(2, PlayerPosition.CM, 5);
+        injured.Periods[1].PlayerPositions[0] = TestData.Starter(2, PlayerPosition.CM, 5);
+        injured.InjuredPlayerIds.Add(Subject.Id);
+
+        var missed = FinishedGame(2);
+        missed.Periods[0].PlayerPositions[0] = TestData.Starter(2, PlayerPosition.CM, 5);
+        missed.Periods[1].PlayerPositions[0] = TestData.Starter(2, PlayerPosition.CM, 5);
+        missed.UnavailablePlayerIds.Add(Subject.Id);
+
+        var stats = PlayerStatsReport.Build(
+            Subject, [injured, missed], SeasonSquads.Of(TestData.Squad(1, [Subject])));
+
+        Assert.Equal(60, stats.InjuredMinutes);
+        Assert.Equal(60, stats.UnavailableMinutes);
+        Assert.Equal(0, stats.NotPlayedMinutes);
+        Assert.Equal(120, stats.MaximumMinutes);
+    }
+
+    [Fact]
     public void The_maximum_is_the_same_figure_for_everybody()
     {
         // The whole point of the availability bars: they are read against each other, so the scale
