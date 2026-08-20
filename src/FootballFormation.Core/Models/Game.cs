@@ -157,38 +157,62 @@ public class Game
 
     /// <summary>
     /// Rounds to the nearest minute rather than truncating: a half whistled at 29:50 is 30 minutes
-    /// played, not 29. The one place every played/available seconds-to-minutes conversion goes
-    /// through, so a numerator and a denominator built from the same seconds can never drift apart
-    /// by using different rounding rules — see <see cref="PlayedDurationMinutes"/>,
-    /// <see cref="AvailableMinutesFor"/> and <c>GameMinutesReport.ToMinutes</c>.
+    /// played, not 29 (an exact half-minute rounds to even, .NET's default — 29:30 becomes 30,
+    /// 30:30 stays 30). The one function every played/available seconds-to-minutes conversion goes
+    /// through — see <see cref="PlayedDurationMinutes"/> and <see cref="AvailableMinutesFor"/>.
+    /// <para>
+    /// That keeps a numerator and a denominator from rounding apart only when each is converted
+    /// once, over its own full total in seconds — rounding does not distribute over addition, so
+    /// summing several already-converted minutes and comparing that against a total converted once
+    /// can still disagree. An accumulator spanning more than one game must stay in seconds until the
+    /// very end: see <see cref="PlayedDurationSecondsEffective"/>, <see cref="AvailableSecondsFor"/>
+    /// and <c>PlayerStatsReport.Build</c>, and docs/known_issues/domain.md.
+    /// </para>
     /// </summary>
     public static int SecondsToMinutes(int seconds) => (int)Math.Round(seconds / 60.0);
 
     /// <summary>
-    /// How long the match really lasted, summed over the periods that were played out. Falls back
-    /// to the scheduled duration when the game was never run live. This is the denominator for a
-    /// player's available minutes, so utilisation cannot exceed 100% on a match that over-ran.
+    /// <see cref="PlayedDurationSeconds"/> when the game was run live, the scheduled duration
+    /// otherwise. The seconds form of <see cref="PlayedDurationMinutes"/> — reach for this in any
+    /// accumulator that sums a game's played duration across several games, and convert the sum to
+    /// minutes once at the end rather than summing this property's already-rounded result.
     /// </summary>
-    public int PlayedDurationMinutes => HasActualTimings
-        ? SecondsToMinutes(PlayedDurationSeconds)
-        : GameDurationMinutes;
+    public int PlayedDurationSecondsEffective => HasActualTimings
+        ? PlayedDurationSeconds
+        : GameDurationMinutes * 60;
 
     /// <summary>
-    /// Minutes <paramref name="playerId"/> could have played: the whole played duration, or the
-    /// stretch up to the moment she was hurt. The denominator behind
-    /// <c>PlayerStats.Utilization</c>, so an injury at 20' leaves her judged on 20 minutes rather
-    /// than on the hour she was never going to get. Rounded like <see cref="PlayedDurationMinutes"/>,
-    /// and capped by it so a match that over-ran cannot push anyone past 100%.
+    /// How long the match really lasted, summed over the periods that were played out. Falls back
+    /// to the scheduled duration when the game was never run live. The denominator for one game's
+    /// utilisation; a multi-game total should sum <see cref="PlayedDurationSecondsEffective"/>
+    /// instead of this, for the reason on <see cref="SecondsToMinutes"/>.
     /// </summary>
-    public int AvailableMinutesFor(int playerId)
+    public int PlayedDurationMinutes => SecondsToMinutes(PlayedDurationSecondsEffective);
+
+    /// <summary>
+    /// Seconds <paramref name="playerId"/> could have played: the whole played duration, or the
+    /// stretch up to the moment she was hurt. The seconds form of <see cref="AvailableMinutesFor"/>
+    /// — reach for this, not that, when accumulating availability across more than one game.
+    /// </summary>
+    public int AvailableSecondsFor(int playerId)
     {
         // Only the live screen writes an injury, so a game never run live can have none.
-        if (!HasActualTimings) return PlayedDurationMinutes;
+        if (!HasActualTimings) return PlayedDurationSecondsEffective;
 
         return Injuries.FirstOrDefault(i => i.PlayerId == playerId) is { } injury
-            ? SecondsToMinutes(Math.Min(injury.AtSeconds, PlayedDurationSeconds))
-            : PlayedDurationMinutes;
+            ? Math.Min(injury.AtSeconds, PlayedDurationSeconds)
+            : PlayedDurationSecondsEffective;
     }
+
+    /// <summary>
+    /// Minutes <paramref name="playerId"/> could have played — <see cref="AvailableSecondsFor"/>,
+    /// rounded. The denominator behind <c>PlayerStats.Utilization</c> for a single game, so an
+    /// injury at 20' leaves her judged on 20 minutes rather than on the hour she was never going to
+    /// get. A multi-game total must sum <see cref="AvailableSecondsFor"/> and round once, the way
+    /// <c>PlayerStatsReport.Build</c> does — summing this already-rounded result per game can push
+    /// the total past what a once-rounded numerator gives, reading over 100% utilisation.
+    /// </summary>
+    public int AvailableMinutesFor(int playerId) => SecondsToMinutes(AvailableSecondsFor(playerId));
 
     /// <summary>
     /// Whether somebody came on for an injured player. The <see cref="GameSubstitution"/> is what

@@ -164,15 +164,6 @@ public static class GameMinutesReport
     }
 
     /// <summary>
-    /// Every report that turns these seconds into minutes goes through here, so the same match
-    /// cannot read one minute shorter on one page than on another. Delegates to
-    /// <see cref="Game.SecondsToMinutes"/>, the single conversion also behind
-    /// <see cref="Game.PlayedDurationMinutes"/> and <see cref="Game.AvailableMinutesFor"/>, so a
-    /// numerator and a denominator built from the same seconds can never round apart.
-    /// </summary>
-    public static int ToMinutes(int seconds) => Game.SecondsToMinutes(seconds);
-
-    /// <summary>
     /// Adds a stretch of time to everyone on the pitch, each in the position they held for it.
     /// Non-positive spans are ignored — two substitutions in the same second are normal and must
     /// not subtract time.
