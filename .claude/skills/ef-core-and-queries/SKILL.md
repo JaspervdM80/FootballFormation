@@ -83,5 +83,5 @@ caller's decision.
   `List<PlayerPosition>` or `List<int>`.
 - `AsNoTracking` on reads; the `CancellationToken` threaded to *every* EF call underneath.
 
-Incident detail: [docs/known_issues.md](../../../docs/known_issues.md) ·
-conventions: [docs/patterns.md](../../../docs/patterns.md)
+Incident detail: [docs/known_issues/](../../../docs/known_issues/ef-core.md) ·
+conventions: [docs/patterns/](../../../docs/patterns/ef-core.md)

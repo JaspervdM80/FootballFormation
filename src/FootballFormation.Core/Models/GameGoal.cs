@@ -36,7 +36,7 @@ public class GameGoal
     /// The minute somebody typed in on the result page, where there is no clock to read. Also what
     /// a goal logged before this row carried a clock still shows, unless it was scored in stoppage
     /// time — those said so on the row and were moved onto the clock by the migration that
-    /// introduced it (see docs/known_issues.md, "a goal's minute is derived, not stored").
+    /// introduced it (see docs/known_issues/live-match.md, "a goal's minute is derived, not stored").
     /// The rest keep only this, because nothing left in one says whether a 37 in a 35-minute half
     /// was stoppage time or a number typed in by hand.
     /// </summary>

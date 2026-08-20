@@ -4,7 +4,7 @@ namespace FootballFormation.Core.Models;
 /// One season's squad, as an immutable lookup.
 /// <para>
 /// Passed to <see cref="Game.IsInRoster(Player, SeasonSquad)"/> so the roster rule stays on the
-/// model (see docs/patterns.md) while the per-season data it now needs arrives as an explicit
+/// model (see docs/patterns/service-structure.md) while the per-season data it now needs arrives as an explicit
 /// argument rather than a navigation property that may or may not have been loaded.
 /// </para>
 /// </summary>

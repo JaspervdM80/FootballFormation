@@ -340,7 +340,7 @@ html, body {
     /* 24px icon + 8px padding = a 40px arrow. These step the month, so they are tapped as often as
        a day is. MudBlazor also gives them `margin: 6px`, which put 6px of dead space between each
        arrow and the month name — the same kind of hole as the 4px gutters between the day cells,
-       and in the row known_issues.md already calls the worst of the picker. The margin stays on the
+       and in the row docs/known_issues/touch-pwa.md already calls the worst of the picker. The margin stays on the
        vertical axis, where it sets the row's height; sideways it goes, and the month button grows
        to meet the arrows. */
     .mud-picker-popover .mud-picker-calendar-header-switch > .mud-icon-button {
@@ -1161,7 +1161,7 @@ html, body {
 /* --- The drawer, which is a checkbox ---
    No JS and no circuit: the layout is statically rendered on every page, so the open state is an
    :checked sibling rather than a bool on a component. A drawer that depended on a script would
-   fail the way known_issues.md records for blazor.web.js — silently, and completely. */
+   fail the way docs/known_issues/touch-pwa.md records for blazor.web.js — silently, and completely. */
 
 /* Visually hidden but still focusable: this is the control a keyboard or screen reader gets, and
    display:none or visibility:hidden would take it out of the tab order with it. */

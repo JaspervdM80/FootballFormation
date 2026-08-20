@@ -84,7 +84,7 @@ Services/
                             only half time stops it
   MatchGoalService.cs     — Goals logged live: the live minute added here, storage and the
                             recounted scoreline delegated to GameService, which writes the two in
-                            one save (see patterns.md, "When two rows have to agree")
+                            one save (see patterns/transactions-and-writes.md, "When two rows have to agree")
   MatchSubstitutionService.cs — The slot swap and the record of it, in one SaveChanges, plus undoing
                             the most recent one of a half, plus SwapPositionsAsync — two players
                             already on trading slots, which writes no substitution row (so the undo
@@ -206,7 +206,7 @@ the page's island, and a render mode cannot be put on a layout at all — `@Body
 `RenderFragment` and Blazor cannot serialise one as a root component parameter. That is why the
 chrome is written to work without a circuit (a checkbox drawer, `<details>` pickers, links to
 `/culture/set` and `/season/set`) and why `<InteractiveShell />` carries the MudBlazor providers and
-the revocation gate down into each interactive page. See `docs/known_issues.md`.
+the revocation gate down into each interactive page. See `docs/known_issues/blazor-mudblazor.md`.
 
 ## Web (`src/FootballFormation.Web/`)
 ```
@@ -254,7 +254,7 @@ docs/deployment.md — Full setup, DNS for gjs-meiden.nl, redeploy & backup comm
 - `List<PlayerPosition>` stored as comma-separated ints
 - `List<int>` (UnavailablePlayerIds) stored as comma-separated values
 - `Games.SeasonId` is a required FK with `ON DELETE RESTRICT`; the `AddSeasons` migration backfilled
-  existing rows (see the EF Core conventions in [patterns.md](patterns.md))
+  existing rows (see the EF Core conventions in [patterns](patterns/ef-core.md))
 - `SeasonSquadMembers` holds per-season squad membership, unique on `(SeasonId, PlayerId)`, cascading
   from both parents. The `AddSeasonSquads` migration backfilled it from the old `Players.IsGuest`
   column and then dropped that column — a parent-table rebuild, so verify with `PRAGMA foreign_key_check`

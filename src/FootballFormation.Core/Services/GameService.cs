@@ -243,7 +243,7 @@ public class GameService(
     /// and counting in memory <em>before</em> the save would make this a read-modify-write, which
     /// two touchline devices logging a goal in the same moment would both get wrong. Counting
     /// afterwards makes the second one wait for SQLite's write lock and then count both goals.
-    /// See docs/patterns.md.
+    /// See docs/patterns/transactions-and-writes.md.
     /// </para>
     /// </summary>
     private static async Task RecountScorelineAsync(

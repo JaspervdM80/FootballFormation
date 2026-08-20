@@ -63,13 +63,13 @@ FootballFormation/
 ├── .claude/skills/                # The working rules, one skill per area
 ├── docs/                          # Detailed reference and the incident record
 │   ├── architecture.md
-│   ├── models.md
-│   ├── patterns.md
-│   ├── ui_components.md
+│   ├── models/                    # Player, Season, Game, ..., split with an index.md
+│   ├── patterns/                  # Result, transactions, EF Core, UI state, ..., split with an index.md
+│   ├── ui_components/             # Live match, dialogs, shared components, ..., split with an index.md
 │   ├── theming.md
-│   ├── testing.md
+│   ├── testing/                   # Unit, UI, visual/touch checks, split with an index.md
 │   ├── deployment.md
-│   └── known_issues.md
+│   └── known_issues/              # One file per topic, split with an index.md
 └── FootballFormation.slnx
 ```
 
@@ -140,7 +140,7 @@ Playwright, driving the real app in a browser against a database that exists onl
 public/admin split, the squad and match dialogs, the full match-day journey from dragging a lineup
 to blowing the final whistle, both languages, and the phone layout. About a minute, 34 tests. Runs
 on every pull request as the `Playwright` job in `.github/workflows/ci.yml`, against the app that
-workflow published — one of the four checks the merge waits for. See [docs/testing.md](docs/testing.md#ui-tests-testsui).
+workflow published — one of the four checks the merge waits for. See [docs/testing/](docs/testing/ui-testing.md#ui-tests-testsui).
 
 ### Visual checks
 
@@ -156,10 +156,10 @@ where a Blazor render failure surfaces. Nothing else in the repo checks that a p
 It then measures rather than looks: the match dialog and its date picker are reopened at 320, 360
 and landscape phone sizes and every touch target is checked for the 44px minimum and for dead space
 between it and its neighbours. That is the only thing holding the touch fixes in
-[docs/known_issues.md](docs/known_issues.md) in place, so it runs on every pull request too — the
+[docs/known_issues/](docs/known_issues/touch-pwa.md) in place, so it runs on every pull request too — the
 `Visual check` job in `ci.yml`, blocking like the one beside it, and it uploads its screenshots
 either way.
-See [docs/testing.md](docs/testing.md).
+See [docs/testing/](docs/testing/visual-and-touch-checks.md).
 
 ### Claude Code on the web
 

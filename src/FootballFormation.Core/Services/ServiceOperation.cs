@@ -11,7 +11,7 @@ namespace FootballFormation.Core.Services;
 /// <para>
 /// A cancelled call is answered with <see cref="Result.Cancelled()"/> instead. Without that, every
 /// navigation-away would log an error and raise a snackbar on the page the visitor moved to —
-/// see docs/patterns.md.
+/// see docs/patterns/result-and-cancellation.md.
 /// </para>
 /// </summary>
 public static class ServiceOperation

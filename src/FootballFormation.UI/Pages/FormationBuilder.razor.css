@@ -202,7 +202,7 @@
 
 /* Minutes read off the match clock, and minutes that are only what the line-up plans for.
    The estimate keeps the "~" it is prefixed with in the markup; the colour is the quieter half
-   of the signal. Same convention as the player report — see docs/ui_components.md. */
+   of the signal. Same convention as the player report — see docs/ui_components/formation-and-pitch.md. */
 .pt-exact {
     color: var(--ink);
 }

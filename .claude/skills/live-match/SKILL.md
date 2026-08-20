@@ -109,5 +109,5 @@ about a match.
 Each select's `Placeholder` is set **only** when its list is empty: MudSelect shows a placeholder
 whenever nothing is chosen, so a standing "nobody is on the bench" would greet a full bench.
 
-Detail: [docs/ui_components.md](../../../docs/ui_components.md) ·
-[docs/known_issues.md](../../../docs/known_issues.md)
+Detail: [docs/ui_components/](../../../docs/ui_components/live-match-screen.md) ·
+[docs/known_issues/](../../../docs/known_issues/live-match.md)

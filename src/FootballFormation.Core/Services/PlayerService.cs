@@ -82,7 +82,7 @@ public class PlayerService(
     /// </summary>
     public Task<Result> SetArchivedAsync(int id, bool archived, CancellationToken cancellationToken = default) =>
         // "archive the player", not "archive player": resx keys are case-insensitive and the menu
-        // item on /players is "Archive player", which would be the same key. See known_issues.md.
+        // item on /players is "Archive player", which would be the same key. See docs/known_issues/localization.md.
         ServiceOperation.RunAdminAsync(currentUser, logger, "archive the player", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);

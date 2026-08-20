@@ -90,6 +90,6 @@ migrations are pending, keeping the newest 5, then migrates, then runs `PRAGMA i
 `PRAGMA foreign_key_check`. The snapshot is named for the *schema state*, not the attempt, so a crash
 loop cannot prune the only good copy. A failed backup aborts the migration on purpose.
 
-Detail: [docs/patterns.md](../../../docs/patterns.md#migrations-are-one-file) ·
+Detail: [docs/patterns/](../../../docs/patterns/ef-core.md#migrations-are-one-file) ·
 [docs/deployment.md](../../../docs/deployment.md) ·
-[docs/known_issues.md](../../../docs/known_issues.md)
+[docs/known_issues/](../../../docs/known_issues/ef-core.md)

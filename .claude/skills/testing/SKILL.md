@@ -67,4 +67,4 @@ change there is answered by `tests/ui` or `visual-check.sh`. Migrations and
 Coverage is a floor, not a target. 100% of a change whose only test asserts it doesn't throw is worse
 than 85% with the rule pinned.
 
-Detail: [docs/testing.md](../../../docs/testing.md)
+Detail: [docs/testing/](../../../docs/testing/index.md)

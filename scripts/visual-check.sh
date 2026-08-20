@@ -1,5 +1,5 @@
 #!/bin/bash
-# Boots the app against a throwaway database and screenshots every page. See docs/testing.md.
+# Boots the app against a throwaway database and screenshots every page. See docs/testing/visual-and-touch-checks.md.
 #
 #   scripts/visual-check.sh            # screenshots into artifacts/visual/
 #   VISUAL_PORT=5300 scripts/visual-check.sh

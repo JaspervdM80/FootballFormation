@@ -1,6 +1,6 @@
 #!/bin/bash
 # Runs the test suite with coverage collection, then judges the lines this branch changed. See
-# docs/testing.md.
+# docs/testing/unit-testing.md.
 #
 #   scripts/coverage.sh                       # against origin/main, 80% floor
 #   COVERAGE_BASE=HEAD~1 scripts/coverage.sh  # against the previous commit

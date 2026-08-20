@@ -12,7 +12,7 @@ create` / `fly volumes create` / `fly certs add`, and A/AAAA/CNAME records at th
 | File | Purpose |
 |------|---------|
 | `Dockerfile` | Multi-stage build (SDK → aspnet runtime), listens on 8080 |
-| `global.json` | Pins the SDK for CI and web containers. `.dockerignore` keeps it out of the image, which builds on `sdk:10.0` — see [known_issues.md](known_issues.md) |
+| `global.json` | Pins the SDK for CI and web containers. `.dockerignore` keeps it out of the image, which builds on `sdk:10.0` — see [known_issues](known_issues/index.md) |
 | `fly.toml` | App `gjs-meiden`, volume `data` mounted at `/data` with 30-day snapshot retention, suspend-when-idle enabled |
 | `Program.cs` | `APP_DATA_DIR` env var overrides the data folder (DB, logs, data-protection keys); maps `/health` |
 
@@ -61,7 +61,7 @@ is renamed, the ruleset's `context` must be renamed in the same change.
 no coverable line in it measures nothing and passes rather than dividing by zero and going red.
 
 `ci.yml` triggers on `pull_request` and nothing else automatic — a `push` trigger was removed after
-every pull request was found to be building twice (see [testing.md](testing.md)). A pull request
+every pull request was found to be building twice (see [testing](testing/index.md)). A pull request
 showing *no* checks rather than a red one is what a regression here looks like. The escape hatch is
 `workflow_dispatch`, which reports the same four contexts but checks out the **branch tip** where
 `pull_request` resolves to `refs/pull/N/merge`; prefer one more commit and keep the dispatch for when
@@ -108,7 +108,7 @@ keeps that original id precisely because `/data/footballformation.db` already li
 is the whole point: a new id would have re-run `CREATE TABLE` against a live database. That volume's
 history still names the nineteen that followed; EF ignores rows it has no file for. Anything
 scaffolded from here is an ordinary migration on top — see
-[patterns.md](patterns.md#migrations-are-one-file) before rescaffolding the first one.
+[patterns](patterns/ef-core.md#migrations-are-one-file) before rescaffolding the first one.
 
 ## A deploy has to prove it serves
 

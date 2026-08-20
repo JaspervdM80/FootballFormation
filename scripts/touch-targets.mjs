@@ -1,7 +1,7 @@
 // Measures every touch target the browser can reach on a phone, and fails the run when one is too
 // small or sits behind dead space.
 //
-// Why this exists: the Touch / PWA section of docs/known_issues.md is the longest in the file, and
+// Why this exists: docs/known_issues/touch-pwa.md is the longest section in docs/known_issues/, and
 // every entry in it was reported from a touchline — twice, after the first fix was thought to be
 // complete. All of those fixes are CSS, and until now nothing verified any of them. A MudBlazor
 // upgrade or one more global `.mud-*` rule would undo any of them silently.
@@ -23,7 +23,7 @@
 //              the target. The two checks together are what the pitch requirement amounts to: with
 //              no dead gutter left, the distance between two column centres is the cell's own width.
 //
-// The size floor is also what guards the "Annuleren" bug in docs/known_issues.md ("buttons need
+// The size floor is also what guards the "Annuleren" bug in docs/known_issues/touch-pwa.md ("buttons need
 // clear space above them"): the dead space above that button was what made a 36.5px target
 // unhittable, but the number a harness can hold a line on is the 36.5px, not the 18px — a gap that
 // size is unremarkable between two equally sized fields. So clearance catches the gutter, size
@@ -53,7 +53,7 @@ export const RECORDED_FLOORS = [
     match: 'mud-day',
     floor: 41,
     why: 'Seven 44px columns need 308px and a 320px phone has 308px of usable width, so --dp-day '
-      + 'settles at 41.7px. Every wider phone clears 44. See docs/known_issues.md, "Centring the '
+      + 'settles at 41.7px. Every wider phone clears 44. See docs/known_issues/touch-pwa.md, "Centring the '
       + 'calendar was only half of it".',
   },
   {
@@ -62,7 +62,7 @@ export const RECORDED_FLOORS = [
     floor: 36,
     why: 'A landscape phone is short, not narrow: six 44px rows plus the picker chrome is 438px in '
       + 'a 390px-tall viewport, so --dp-day is sized by height and lands on MudBlazor\'s own 36px '
-      + 'rather than making the month scroll. See docs/known_issues.md, "The picker\'s flow is '
+      + 'rather than making the month scroll. See docs/known_issues/touch-pwa.md, "The picker\'s flow is '
       + 'year -> month -> day".',
   },
 ];
@@ -290,7 +290,7 @@ const table = (rows) => {
   return [line(head), `|${cols.map(() => '---').join('|')}|`, ...rows.map(line)].join('\n');
 };
 
-// The three widths docs/known_issues.md argues from. 320 is the narrowest phone the picker has to
+// The three widths docs/known_issues/touch-pwa.md argues from. 320 is the narrowest phone the picker has to
 // fit, 360 is the common one, and landscape is short rather than narrow — a different failure, and
 // the reason app.css hides the picker's date line to buy the year button its 44px.
 const VIEWPORTS = [

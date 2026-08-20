@@ -46,7 +46,7 @@
                             @L["Copy squad from {0}", _previousSeason.Name]
                         </MudButton>
                     }
-                    @* MudMenu's built-in Label, not ActivatorContent — see docs/ui_components.md *@
+                    @* MudMenu's built-in Label, not ActivatorContent — see docs/ui_components/mudblazor-notes.md *@
                     <MudMenu Label="@L["Add Player"]" Variant="Variant.Filled" Class="btn-gold btn-compact"
                              StartIcon="@Icons.Material.Filled.PersonAdd" Dense="true">
                         <MudMenuItem OnClick="AddNewPlayer">@L["New player"]</MudMenuItem>
@@ -122,7 +122,7 @@
             @* An anchor, the same as /stats/positions: the destination has no circuit, and this
                used to be an OnRowClick, which navigated *and* re-rendered the table on the way out
                — the render that conjures MudTable's small-devices sort select, whose popover then
-               went looking for a provider the destination has not got. See docs/known_issues.md.
+               went looking for a provider the destination has not got. See docs/known_issues/blazor-mudblazor.md.
 
                Also the one wrapper that makes the mobile card's flex row treat number + name as a
                single item; otherwise space-between pushes them to opposite ends. *@

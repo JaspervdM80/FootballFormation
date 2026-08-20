@@ -2,7 +2,7 @@
 //
 // This is the assertion the render-mode split exists for. A statistics page with no circuit can
 // never show "Reconnecting…", never force a reload, and survives a phone suspending the app,
-// because there is no socket to lose — see docs/known_issues.md. None of that is visible from
+// because there is no socket to lose — see docs/known_issues/blazor-mudblazor.md. None of that is visible from
 // looking at the page: it works either way, only worse.
 //
 // Signed out on purpose. The parents watching from the touchline are most of the traffic and never
