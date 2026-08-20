@@ -157,6 +157,12 @@ public class GameService(
 
             game.ScoreHome = scoreHome;
             game.ScoreAway = scoreAway;
+
+            // Where a match played on paper becomes part of the record, and so where it catches who
+            // was injured at the time. Asked on every save; RecordAsync answers only the first.
+            if (game.IsComplete)
+                await StandingInjuries.RecordAsync(db, game, cancellationToken);
+
             await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Saved score {Home}-{Away} for game {GameId}",

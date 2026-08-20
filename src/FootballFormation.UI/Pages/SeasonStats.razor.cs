@@ -72,4 +72,17 @@ public partial class SeasonStats
 
     /// <summary>Single-letter form pill, localized (W/D/L in English, W/G/V in Dutch).</summary>
     private string ResultLetter(GameResult r) => L[r.ToString()].ToString()[..1];
+
+    /// <summary>The availability bar's four segments, in the order they are stacked.</summary>
+    private (string Class, string Label)[] Legend =>
+    [
+        ("pt-played", L["Played"]),
+        ("pt-injured", L["Injured"]),
+        ("pt-unavailable", L["Unavailable"]),
+        ("pt-idle", L["Not played"])
+    ];
+
+    /// <summary>Segment tooltip: the exact figure a colour only approximates. The legend is what
+    /// names it on a phone, where a title attribute never surfaces.</summary>
+    private static string Figure(string label, int minutes) => $"{label}: {minutes}'";
 }

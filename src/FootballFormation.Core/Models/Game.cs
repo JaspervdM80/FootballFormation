@@ -92,6 +92,22 @@ public class Game
 
     public List<int> UnavailablePlayerIds { get; set; } = [];
 
+    /// <summary>
+    /// Squad members who missed this match injured — out of the roster for the same reason
+    /// <see cref="UnavailablePlayerIds"/> is, but with the reason on the record. The two lists may
+    /// name the same player; injury is the more specific answer, and what the bar on /stats shows.
+    /// <para>Written by <c>StandingInjuries.RecordAsync</c>, which says why and when.</para>
+    /// </summary>
+    public List<int> InjuredPlayerIds { get; set; } = [];
+
+    /// <summary>
+    /// True once <see cref="InjuredPlayerIds"/> has been written, which happens exactly once per
+    /// match. An empty list is otherwise indistinguishable from an unwritten one, and the two must
+    /// not be confused: a match settled in September with nobody injured would be restamped with
+    /// November's casualties the first time somebody retyped its scoreline.
+    /// </summary>
+    public bool AbsencesRecorded { get; set; }
+
     /// <summary>Guests of this game's season, explicitly opted in to this game.</summary>
     public List<int> GuestPlayerIds { get; set; } = [];
 
@@ -197,17 +213,18 @@ public class Game
     /// rule always had.
     /// </para>
     /// <para>
-    /// Deliberately blind to <see cref="SeasonSquad.IsInjured"/>, the same way it is blind to
-    /// <see cref="Player.IsArchived"/> — this judges a game the way it was played, and a status set
-    /// after the fact must not rewrite it. A completed game's <c>AvailableMinutes</c>
+    /// Injury counts through <see cref="InjuredPlayerIds"/> — this game's own record — and never
+    /// through <see cref="SeasonSquad.IsInjured"/>, the same way it stays blind to
+    /// <see cref="Player.IsArchived"/>. This judges a game the way it was played, and a status set
+    /// after the fact must not rewrite it: a completed game's <c>AvailableMinutes</c>
     /// (<c>PlayerStatsReport</c>) reads this, so injuring someone today would otherwise zero out
     /// every game they already played this season. Callers building a <em>future</em> line-up
-    /// (<c>FormationBuilder</c>, <c>GameDialog</c>, <c>LiveMatch</c>) filter injured players out
+    /// (<c>FormationBuilder</c>, <c>GameDialog</c>, <c>LiveMatch</c>) filter on the live status
     /// themselves, on top of this.
     /// </para>
     /// </summary>
     public bool IsInRoster(Player player, SeasonSquad squad) => squad.IsFullMember(player.Id)
-        ? !UnavailablePlayerIds.Contains(player.Id)
+        ? !UnavailablePlayerIds.Contains(player.Id) && !InjuredPlayerIds.Contains(player.Id)
         : GuestPlayerIds.Contains(player.Id);
 
     /// <summary>

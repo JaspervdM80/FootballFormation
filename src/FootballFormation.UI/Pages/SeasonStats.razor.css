@@ -146,3 +146,132 @@ a.pt-row:hover .pt-name { color: var(--club-primary-bright); }
     color: var(--ink-muted);
 }
 
+/* --- The availability switch, which is a checkbox ---
+   Same reasoning as the nav drawer in app.css: /stats renders statically, so the choice is
+   :checked on a hidden input and every rule below is a sibling of it. Visually hidden but still
+   focusable — display:none would take it out of the tab order. */
+.availability-toggle {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+}
+
+.availability-switch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+    cursor: pointer;
+}
+
+.availability-switch-track {
+    position: relative;
+    width: 34px;
+    height: 14px;
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--ink) 26%, transparent);
+    transition: background 150ms ease;
+}
+
+.availability-switch-track::after {
+    content: "";
+    position: absolute;
+    top: -3px;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--surface-card);
+    box-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 30%, transparent);
+    transition: transform 150ms ease;
+}
+
+.availability-toggle:checked ~ .live-card-head .availability-switch {
+    color: var(--club-primary-bright);
+}
+
+.availability-toggle:checked ~ .live-card-head .availability-switch-track {
+    background: color-mix(in srgb, var(--club-primary-bright) 50%, transparent);
+}
+
+.availability-toggle:checked ~ .live-card-head .availability-switch-track::after {
+    background: var(--club-primary-bright);
+    transform: translateX(14px);
+}
+
+.availability-toggle:focus-visible ~ .live-card-head .availability-switch-track {
+    outline: 2px solid var(--club-primary-bright);
+    outline-offset: 3px;
+}
+
+/* The switch is the only thing on this page a thumb aims at, and 14px of track is not a target. */
+@media (pointer: coarse) {
+    .availability-switch {
+        min-height: 44px;
+    }
+}
+
+/* --- The two views, both rendered, one of them hidden --- */
+.pt-legend,
+.pt-meta-max,
+.pt-split {
+    display: none;
+}
+
+.availability-toggle:checked ~ .pt-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin-bottom: 12px;
+}
+
+.availability-toggle:checked ~ .pt-list .pt-meta-max {
+    display: inline;
+}
+
+.availability-toggle:checked ~ .pt-list .pt-split {
+    display: flex;
+}
+
+.availability-toggle:checked ~ .pt-list .pt-meta-share,
+.availability-toggle:checked ~ .pt-list .position-track:not(.pt-split) {
+    display: none;
+}
+
+.pt-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.68rem;
+    color: var(--ink-muted);
+}
+
+.pt-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+}
+
+/* A zero-minute segment collapses on its own, so there is no empty-case branch to write. */
+.pt-seg {
+    flex-basis: 0;
+    min-width: 0;
+}
+
+/* Injured is amber rather than the danger red it is everywhere else: the club's own colour is red,
+   so beside the played segment the two were shades of the same thing. Unavailable takes the neutral
+   amber left behind — she chose not to be there, which warns of nothing. */
+.pt-played { background: var(--gradient-primary); }
+.pt-injured { background: var(--color-warning); }
+.pt-unavailable { background: color-mix(in srgb, var(--ink) 34%, transparent); }
+
+/* Not played is the bare track — the same absence the fairness bar leaves, kept as it was. Only
+   the legend swatch needs an outline, because there it has no track around it to read against. */
+.pt-idle { background: transparent; }
+.pt-swatch.pt-idle { border: 1px solid var(--ink-faint); }
+

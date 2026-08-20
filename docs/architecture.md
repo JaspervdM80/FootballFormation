@@ -252,7 +252,7 @@ docs/deployment.md — Full setup, DNS for gjs-meiden.nl, redeploy & backup comm
 - SQLite at `%LOCALAPPDATA%\FootballFormation\footballformation.db` (or `$APP_DATA_DIR` when set — `/data` volume on Fly.io)
 - Auto-migrates on startup
 - `List<PlayerPosition>` stored as comma-separated ints
-- `List<int>` (UnavailablePlayerIds) stored as comma-separated values
+- `List<int>` (UnavailablePlayerIds, InjuredPlayerIds, GuestPlayerIds) stored as comma-separated values
 - `Games.SeasonId` is a required FK with `ON DELETE RESTRICT`; the `AddSeasons` migration backfilled
   existing rows (see the EF Core conventions in [patterns](patterns/ef-core.md))
 - `SeasonSquadMembers` holds per-season squad membership, unique on `(SeasonId, PlayerId)`, cascading
