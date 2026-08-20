@@ -41,6 +41,10 @@ const SELECTORS = {
   'the statistics screens': ['stat-label', 'stat-tiles', 'stat-tiles-3', 'game-head', 'g-num',
                              'game-list', 'game-list-no-minutes', 'game-note', 'g-opp-name',
                              'position-meta', 'pt-row', 'badge-venue'],
+  // The availability view is two sets of markup with CSS choosing between them, so a rename here
+  // shows up as a switch that appears to do nothing rather than as a test going red.
+  'the availability bar': ['availability-switch', 'availability-toggle', 'pt-legend', 'pt-split',
+                           'pt-seg', 'pt-played', 'pt-meta-share', 'pt-meta-max', 'position-fill'],
   'the phone layout': ['dialog-sheet', 'stacked-table', 'topbar-nav'],
   // The chrome the specs drive without a circuit: the drawer is a checkbox and the two pickers are
   // <details> disclosures, so these names are the only handle the tests have on them.

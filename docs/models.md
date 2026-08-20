@@ -299,7 +299,9 @@ says which of them came second. `GameMinutesReport` walks them in that same orde
 with no time dimension.** The flag says she cannot be picked; this says the rest of *this* match was
 never hers to play, which is a thing only a moment on the clock can say. `Game.AvailableMinutesFor`
 is what reads it, and `PlayerStats.Utilization` is what it changes: carried off on 20' of an hour,
-she is judged on 20 minutes rather than on 60.
+she is judged on 20 minutes rather than on 60. The other 40 become
+`PlayerStats.InjuredMinutes`, the only figure the availability bar on `/stats` can colour as injured
+— the standing flag has no date to attribute a missed match to.
 
 `MatchSubstitutionService.MarkInjuredAsync` writes it, with an optional replacement. **Naming one
 writes a `GameSubstitution` beside the injury, in the same `SaveChangesAsync`**; leaving it out

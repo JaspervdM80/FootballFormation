@@ -127,9 +127,26 @@
 @* The card is minutes from top to bottom, so it is admin-only in full rather than redacted. *@
 <AuthorizeView Roles="@AppRoles.Admin">
     <MudPaper Class="pa-5 mt-4" Elevation="2" Style="border-radius: 16px;">
-        <div class="card-label">@L["Playing time"]</div>
+        @* A checkbox rather than a bound component, the way the nav drawer is one: /stats has no
+           circuit, so the two views are both rendered and CSS picks between them off :checked. *@
+        <input type="checkbox" id="availability-toggle" class="availability-toggle" />
+        <div class="live-card-head">
+            <div class="card-label">@L["Playing time"]</div>
+            <label class="availability-switch" for="availability-toggle">
+                <span class="availability-switch-track"></span>
+                @L["Availability"]
+            </label>
+        </div>
+
         @if (_playingTime.Count > 0)
         {
+            <div class="pt-legend">
+                @foreach (var (cls, label) in Legend)
+                {
+                    <span class="pt-legend-item"><span class="pt-swatch @cls"></span>@label</span>
+                }
+            </div>
+
             <div class="pt-list">
                 @foreach (var p in _playingTime)
                 {
@@ -142,13 +159,23 @@
                                 }
                                 @p.Player.DisplayName
                             </span>
-                            <span class="pt-meta">@p.TotalMinutes' / @p.AvailableMinutes' · @(p.Utilization.ToString("0"))%</span>
+                            <span class="pt-meta pt-meta-share">@p.TotalMinutes' / @p.AvailableMinutes' · @(p.Utilization.ToString("0"))%</span>
+                            <span class="pt-meta pt-meta-max">@p.TotalMinutes' / @p.MaximumMinutes' · @(p.Availability.ToString("0"))%</span>
                         </div>
                         @* Filled to the player's own available minutes, not to the busiest player's
                            total: this table is about how much of their time each of them got, and
                            against a squad maximum the top player is 100% by definition. *@
                         <div class="position-track">
                             <div class="position-fill" style="width: @(p.Utilization.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
+                        </div>
+                        @* The other view: the same maximum for everyone, so these bars compare
+                           across rows. flex-grow rather than percentages — the four numbers
+                           normalise themselves, whatever rounding did to them. *@
+                        <div class="position-track pt-split">
+                            <span class="pt-seg pt-played" style="flex-grow: @p.TotalMinutes;" title="@Figure(L["Played"], p.TotalMinutes)"></span>
+                            <span class="pt-seg pt-injured" style="flex-grow: @p.InjuredMinutes;" title="@Figure(L["Injured"], p.InjuredMinutes)"></span>
+                            <span class="pt-seg pt-unavailable" style="flex-grow: @p.UnavailableMinutes;" title="@Figure(L["Unavailable"], p.UnavailableMinutes)"></span>
+                            <span class="pt-seg pt-idle" style="flex-grow: @p.NotPlayedMinutes;" title="@Figure(L["Not played"], p.NotPlayedMinutes)"></span>
                         </div>
                     </a>
                 }

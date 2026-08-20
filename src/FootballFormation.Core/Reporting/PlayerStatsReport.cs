@@ -44,6 +44,14 @@ public class PlayerStats
     /// denominator: on-pitch minutes vs. bench time they could have been called off.</summary>
     public int AvailableMinutes { get; init; }
 
+    /// <summary>Minutes lost to going off hurt: the stretch between the injury and the final
+    /// whistle, over every game she was hurt in. Only a mid-match injury is dated, so the standing
+    /// squad status contributes nothing here — see <see cref="MaximumMinutes"/>.</summary>
+    public int InjuredMinutes { get; init; }
+
+    /// <summary>Minutes of games she was left out of the roster for.</summary>
+    public int UnavailableMinutes { get; init; }
+
     public int Goals { get; init; }
     public int Assists { get; init; }
 
@@ -54,8 +62,28 @@ public class PlayerStats
 
     public int GoalContributions => Goals + Assists;
 
+    /// <summary>Available minutes spent off the pitch. Floored at zero for the one case that can
+    /// go negative: a player marked unavailable for a game she was picked for anyway.</summary>
+    public int NotPlayedMinutes => Math.Max(0, AvailableMinutes - TotalMinutes);
+
+    /// <summary>
+    /// Every minute the games covered had to offer. The four figures behind it — played, not played,
+    /// injured, unavailable — partition it, and because each game contributes its whole duration to
+    /// exactly one of them, this comes out the same for every squad member. That is what lets the
+    /// availability bars on /stats be read against each other rather than each against itself.
+    /// <para>
+    /// Time lost to the standing <c>SeasonSquadMember.IsInjured</c> status lands in
+    /// <see cref="NotPlayedMinutes"/>, not in <see cref="InjuredMinutes"/>: the status carries no
+    /// date, so there is nothing to say which past games it covered.
+    /// </para>
+    /// </summary>
+    public int MaximumMinutes => AvailableMinutes + InjuredMinutes + UnavailableMinutes;
+
     /// <summary>Share of available minutes actually spent on the pitch, 0–100.</summary>
     public double Utilization => AvailableMinutes > 0 ? Math.Round((double)TotalMinutes / AvailableMinutes * 100, 0) : 0;
+
+    /// <summary>Share of <see cref="MaximumMinutes"/> spent on the pitch, 0–100.</summary>
+    public double Availability => MaximumMinutes > 0 ? Math.Round((double)TotalMinutes / MaximumMinutes * 100, 0) : 0;
 
     public double AverageMinutes => GamesPlayed > 0 ? (double)TotalMinutes / GamesPlayed : 0;
     public double GoalsPerGame => GamesPlayed > 0 ? (double)Goals / GamesPlayed : 0;
@@ -92,17 +120,31 @@ public static class PlayerStatsReport
         // separately would drift. The conversion happens once, at the end.
         var positionSeconds = new Dictionary<PlayerPosition, int>();
         var availableMinutes = 0;
+        var injuredMinutes = 0;
+        var unavailableMinutes = 0;
 
         foreach (var game in games)
         {
             // A game in progress contributes nothing at all until it has been played out.
             if (!game.IsComplete) continue;
 
-            // Available = the player was in the roster for a game that actually has a lineup,
-            // whether they started, subbed, or sat the bench. Unavailable games don't count, and a
-            // game they were hurt in counts only up to the injury — see Game.AvailableMinutesFor.
-            if (game.HasLineup && game.IsInRoster(player, squads))
-                availableMinutes += game.AvailableMinutesFor(player.Id);
+            // A game with a lineup gives up its whole duration, to one bucket or split across two.
+            // Available = in the roster, whether they started, subbed, or sat the bench; a game
+            // they were hurt in counts only up to the injury — see Game.AvailableMinutesFor — and
+            // the rest of it is time they could not have played.
+            if (game.HasLineup)
+            {
+                if (game.IsInRoster(player, squads))
+                {
+                    var available = game.AvailableMinutesFor(player.Id);
+                    availableMinutes += available;
+                    injuredMinutes += game.PlayedDurationMinutes - available;
+                }
+                else
+                {
+                    unavailableMinutes += game.PlayedDurationMinutes;
+                }
+            }
 
             var gameMinutes = GameMinutesReport.Build(game);
             var seconds = 0;
@@ -156,6 +198,8 @@ public static class PlayerStatsReport
             TotalMinutes = totalMinutes,
             GoalkeeperMinutes = GameMinutesReport.ToMinutes(positionSeconds.GetValueOrDefault(PlayerPosition.GK)),
             AvailableMinutes = availableMinutes,
+            InjuredMinutes = injuredMinutes,
+            UnavailableMinutes = unavailableMinutes,
             Goals = gameStats.Sum(g => g.Goals),
             Assists = gameStats.Sum(g => g.Assists),
             Positions = positions,
