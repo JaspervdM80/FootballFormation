@@ -10,7 +10,7 @@ namespace FootballFormation.UI.Components;
 /// Reads take <see cref="Cancellation"/>; writes deliberately do not — an admin who taps "finish
 /// match" and then loses the circuit must still have finished the match. A caller whose failure
 /// branch does something the visitor would notice checks <c>IsCancelled</c> first.
-/// See docs/ui_components.md.
+/// See docs/ui_components/shared-components.md.
 /// </para>
 /// </summary>
 public abstract class CancellableComponent : ComponentBase, IDisposable

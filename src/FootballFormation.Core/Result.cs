@@ -12,7 +12,7 @@ public class Result
     /// <summary>
     /// The caller went away before the operation finished. An <see cref="IsFailure"/> too, so every
     /// "did that work?" check reads it as no — but carrying no message, so there is nothing for the
-    /// UI to show. See docs/patterns.md.
+    /// UI to show. See docs/patterns/result-and-cancellation.md.
     /// </summary>
     public bool IsCancelled { get; }
 
@@ -24,7 +24,7 @@ public class Result
     /// <summary>
     /// The untranslated message template, e.g. <c>"Game with ID {0} not found"</c>. This is the
     /// resource key — the app's convention is that English text is the key (see
-    /// docs/ui_components.md) — so the UI can look it up and fall back to <see cref="Error"/> when
+    /// docs/ui_components/shared-components.md) — so the UI can look it up and fall back to <see cref="Error"/> when
     /// no translation exists. For a message with no placeholders it equals <see cref="Error"/>.
     /// </summary>
     public string? ErrorKey { get; }

@@ -1,5 +1,5 @@
 // Reads the Cobertura report scripts/coverage.sh just produced and answers one question: is the
-// code this branch *changed* covered? See docs/testing.md.
+// code this branch *changed* covered? See docs/testing/unit-testing.md.
 //
 // The distinction is the whole point. Core sits above 96% line coverage, so a solution-wide gate at
 // 80% passes with a brand-new untested service in the diff — the number moves by tenths. Judging

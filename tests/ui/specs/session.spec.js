@@ -99,7 +99,7 @@ test.describe('an account revoked while its owner is looking at the app', () => 
   test('loses its authority without anyone reloading anything', async ({ page, browser }) => {
     // Named per attempt, not per test: Playwright's CI retry re-runs this against the database the
     // failed attempt left behind, and a username is unique — a fixed one would fail the retry on
-    // "already exists" rather than on whatever went wrong. See known_issues.md.
+    // "already exists" rather than on whatever went wrong. See docs/known_issues/authentication.md.
     const username = `revoked-${Date.now()}`;
     const password = 'revoked-admin-1';
 

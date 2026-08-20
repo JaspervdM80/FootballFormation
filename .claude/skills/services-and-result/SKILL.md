@@ -90,4 +90,4 @@ every method had to remember becomes **part of the operation shape** (`LiveMatch
 makes the notify call itself). A page injecting all four is expected. A *facade* over them is the
 signal the split was cut along the wrong line.
 
-Full detail, including the rejected alternatives: [docs/patterns.md](../../../docs/patterns.md)
+Full detail, including the rejected alternatives: [docs/patterns/](../../../docs/patterns/index.md)

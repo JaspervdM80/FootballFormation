@@ -1,112 +1,4 @@
-# Domain Models
-
-## Player
-| Property | Type | Notes |
-|---|---|---|
-| Id | int | PK |
-| FirstName | string | Required, max 50 |
-| Surname | string? | Optional, max 50 |
-| ShirtNumber | int? | Optional |
-| PreferredPosition | PlayerPosition | Single preferred |
-| AlternativePositions | List\<PlayerPosition\> | Stored as comma-separated ints |
-| IsArchived | bool | Default false. Has left the club — see below |
-| DisplayName | string | Computed: "First Last" or "First" |
-| ShortName | string | Computed: "F. Last" or "First" |
-
-`Player` is a season-agnostic **person** record, deliberately with no guest flag and no membership
-navigation. Whether someone is in the squad, and whether they are a guest, belongs to a season —
-see `SeasonSquadMember`.
-
-### Archiving, and why deleting is guarded
-`GamePlayerPosition` and `SeasonSquadMember` cascade from this row and `GameGoal` nulls out, so
-deleting a person edits **every season they played** — last season's top scorer vanishing from last
-season's table, from a click that only said "are you sure". `PlayerService.DeleteAsync` therefore
-refuses once the player has any lineup or goal rows, counted across all seasons because the cascade
-is across all seasons too. Delete is still there for the case it is for: someone entered by mistake,
-with nothing behind them yet.
-
-`IsArchived` is what an admin reaches for instead. It changes nothing that already exists — the
-archived player keeps their squad memberships, minutes, goals and statistics, exactly as they were —
-and only takes them out of the two places that decide **future** seasons:
-
-| Filters on `IsArchived` | Does not |
-|---|---|
-| `SeasonSquadService.GetNonMembersAsync` — the "add existing player" picker | `PlayerService.GetAllAsync`, the id → name lookup every page resolves against |
-| `SeasonSquadService.CopyFromAsync` — copying a squad into a new season | `GetSquadAsync` / `GetSquadsAsync`, and so every report built from them |
-|  | `Game.IsInRoster`, which must judge a past game the way it was played |
-
-Restoring is the same call with `archived: false`. An archived player still shows in the squads of
-the seasons they played, badged `ARCHIVED` on `/players`, which is where the restore lives.
-
-## Season
-| Property | Type | Notes |
-|---|---|---|
-| Id | int | PK |
-| Name | string | Required, max 20. e.g. "2025/26". Editable |
-| StartDate | DateTime | Unique index |
-| EndDate | DateTime | |
-| IsCurrent | bool | Exactly one row. `SeasonService.SetCurrentAsync` owns the invariant |
-| Games | List\<Game\> | |
-| SquadMembers | List\<SeasonSquadMember\> | This season's squad |
-
-Seasons run **1 July – 30 June** (`Season.StartMonth = 7`), matching the KNVB amateur season.
-The windows are deliberately **gapless** — every date maps to exactly one season, which is what
-lets `Game.SeasonId` be required and `GetOrCreateForDateAsync` always resolve. An Aug–Jun window
-would orphan July fixtures and force an "unassigned" branch into every filter and list.
-
-That was documented but unenforced, and it bit: a hand-entered 2026/27 starting 1 August left all
-of July 2026 belonging to no season, so the game dialog answered every July date with "this date
-starts a new season" and an empty squad. Three things now hold the invariant up:
-
-- `ValidateAsync` rejects a **gap** as well as an overlap, naming the date the season should
-  start or end on.
-- `GetOrCreateForDateAsync` **clamps** an auto-created season to its neighbours, so filling a
-  gap narrower than a full season cannot produce an overlapping window.
-- `CloseSeasonGapsAsync` is an idempotent startup repair for databases written before the check
-  existed. It only ever moves a start date *earlier*, and never moves a game between seasons —
-  `Game.SeasonId` is stored on the game itself.
-
-Helpers on the model: `Contains(date)` (date-only), `ShortName` ("25/26", for the app bar),
-`StartYearFor(date)`, `NameForStartYear(year)`, and `CreateFor(date)` for a fresh unsaved season.
-
-## SeasonSquadMember
-| Property | Type | Notes |
-|---|---|---|
-| Id | int | PK |
-| SeasonId | int | FK → Season, **Cascade** delete |
-| PlayerId | int | FK → Player, **Cascade** delete |
-| IsGuest | bool | Guest **for this season only** |
-| IsInjured | bool | Generally injured **for this season only** |
-
-Unique index on `(SeasonId, PlayerId)` — one row per player per season.
-
-The squad is **authoritative**: it decides who can be picked for that season's games and who appears
-in its stats. This is what stops a past season showing today's squad. Guest and injury status both
-live here rather than on `Player`, and for the same reason: someone can be a guest in 2025/26 and a
-full squad member in 2026/27, or injured this season and not the next.
-
-Cascade on both sides is the exception to the Restrict rule below: a membership row carries no
-history, so it must never block deleting a person or an (already game-free) season.
-
-New seasons start with an **empty** squad; they are populated by `SeasonSquadService.CopyFromAsync`
-("copy squad from {previous season}" on `/players`), which preserves guest flags and is idempotent.
-Injury status is deliberately **not** carried forward — every copied row starts fit, since an injury
-is expected to have healed by the time next season's squad is set up, unlike guest status, which is
-a standing arrangement. `RemoveMemberAsync` refuses once the player has minutes or goals that season.
-
-### SeasonSquad / SeasonSquads
-Two immutable value objects in `Models/SeasonSquad.cs`, not entities:
-
-- **`SeasonSquad`** — one season's members as a lookup: `Contains(id)`, `IsGuest(id)`,
-  `IsFullMember(id)`, `IsInjured(id)`, `Players` / `FullMembers` / `Guests` / `Injured`, plus
-  `SeasonSquad.Empty`. Its constructor owns the guests-last ordering that `PlayerService.GetAllAsync`
-  used to provide.
-- **`SeasonSquads`** — several seasons keyed by id, for reports spanning them: `For(seasonId)`,
-  `AllPlayers`, `IsFullMemberAnywhere(playerId)`, `Of(squad)`, `SeasonSquads.Empty`.
-
-`IsGuest` returns true for anyone **outside** the squad as well as for actual guests. Both mean
-"not a regular", which collapses three membership states back into the two branches the roster rule
-always had, and keeps games referencing a since-departed player rendering sensibly.
+# Game
 
 ## Game
 | Property | Type | Notes |
@@ -144,7 +36,7 @@ lives: an own goal counts for the opponent, so it is excluded from ours and incl
 `CountScoreFrom(goals)` applies both to a game at once, and it is a **recount** rather than an
 increment on purpose — a score derived afresh from the goals repairs itself, which is what lets the
 final whistle and the next goal logged both settle a scoreline that drifted. See
-[patterns.md](patterns.md).
+[patterns](../patterns/transactions-and-writes.md).
 
 **`Game.IsComplete` decides whether a game counts towards statistics at all**: the final whistle
 went on the live screen, or the game was never run live and has a final score on file. A match in
@@ -291,7 +183,7 @@ Only the **most recent** substitution of a half can be undone (`RemoveSubstituti
 reversing an older swap would fight every change made on that slot since. "Most recent" is
 `AtSeconds` then `Id`: a double substitution puts two rows in the same second, and the id is what
 says which of them came second. `GameMinutesReport` walks them in that same order — see
-[known_issues.md](known_issues.md#data--domain).
+[known_issues](../known_issues/domain.md).
 
 ## GameInjury
 | Property | Type | Notes |
@@ -353,111 +245,9 @@ the same cascading auth state that decides what it renders.
 **And the service does not take that flag on trust.** `GetCommentsAsync` re-confirms it against
 `ICurrentUser`, so a caller passing `true` without being an admin gets the public comments and
 nothing else. This is the one read in the app with something to hide, which makes it the wrong
-place for a boolean argument nobody checks — see [patterns.md](patterns.md#authorization-is-at-the-service-boundary-not-only-in-the-markup).
+place for a boolean argument nobody checks — see [patterns](../patterns/authorization-and-auth.md#authorization-is-at-the-service-boundary-not-only-in-the-markup).
 
 Indexed on `(GameId, CreatedAt)` — every read is "this game's comments, newest first". The author
 leg is `SetNull` like `GameGoal.Scorer`: a comment is part of the match record and outlives the
 account that wrote it.
 
-## MatchPreferences (one row per season)
-| Property | Type | Default |
-|---|---|---|
-| Id | int | PK |
-| SeasonId | int | FK -> Season, **Cascade** delete. Unique index |
-| GameDurationMinutes | int | 60 |
-| DefaultSplitType | GameSplitType | Halves |
-| DefaultFormation | FormationType | F442 |
-| MatchDay | DayOfWeek | Saturday |
-
-The defaults a new game starts from are **per season**, not per app: a team moving up an age group
-plays longer games and often a different shape, and the fixture day can move too. Keeping one row
-per season means setting this year's values never rewrites the ones last year's games were created
-under.
-
-The row is created on first read by `MatchPreferencesService.GetAsync(seasonId)`, seeded via
-`MatchPreferences.CopyFor` from the newest season **before** it that has one — so a new season
-inherits last year's settings rather than the hardcoded 4-4-2 / 60 minutes, and per-season storage
-costs the user no extra work. There is no "current season" overload — every caller has a season in
-hand, from the picker or from the game being edited.
-
-`GetNextMatchDateAsync(seasonId)` uses that season's `MatchDay`, counts only that season's games,
-and keeps its answer inside the season window: it measures from the opening day for a season not
-started yet, and falls back to the last match day of the window for one already over. Without that
-clamp, adding the first fixture of next season proposed a date in the season we are living in.
-
-## AppUser (table `Users`)
-| Property | Type | Notes |
-|---|---|---|
-| Id | int | PK |
-| DisplayName | string(100) | The person, shown in the app bar and the user list |
-| Username | string(50) | The login. **Unique index** |
-| PasswordHash | string | PBKDF2, via `PasswordHasher<AppUser>` — never a plaintext column |
-| Role | UserRole | Stored as int. Written into the auth cookie as `Role.ToString()` |
-| SecurityStamp | string(64) | Guid "N". Changes whenever the account's authority does |
-| MustChangePassword | bool | Set on the account a fresh install seeds, whose password is public knowledge. While true the session can sign in and nothing else — every route sends it to `/settings`, and `ICurrentUser.IsAdminAsync()` answers false, so the services refuse it too. Cleared by `ChangePasswordAsync` |
-
-Nothing an account owns can make it undeletable. The one reference to it — `GameComment.AuthorId` —
-is `SetNull`, so deleting a user leaves their comments in place, unattributed.
-
-**The role is the grant.** `[Authorize(Roles = AppRoles.Admin)]` and
-`<AuthorizeView Roles="@AppRoles.Admin">` match `Role.ToString()`, which `AppRoles` ties back to the
-enum member name — so renaming a `UserRole` member breaks the build rather than quietly
-unauthorizing everyone. Anonymous (not signed in) is not a role and needs no member.
-
-**SecurityStamp is what makes a change take effect now.** The cookie lasts fourteen days and is
-sliding, so without it, deleting an account or changing its role would leave the old session working
-until it lapsed. The stamp is copied into the cookie at sign-in and re-checked on every authenticated
-request by `OnValidatePrincipal` (Program.cs) via `UserService.FindForSessionAsync`; a mismatch
-rejects the principal and signs the browser out. `UserService` regenerates it on password change and
-role change — but deliberately **not** on a rename, which changes nothing about what the account may
-do.
-
-A live Blazor circuit is still not re-validated per SignalR message — that would be a database read
-per keystroke. It is re-validated **on a timer** instead, by
-`RevalidatingUserAuthenticationStateProvider` (Web/Security), which asks `FindForSessionAsync` the
-same question `OnValidatePrincipal` asks and signs the circuit out when the answer is no. Five
-minutes by default, `Auth:RevalidationIntervalSeconds` to change it. Without it a tab open since
-before the change kept its authority until someone reloaded — and because `CircuitCurrentUser` reads
-that same provider, so did the write guard on every service.
-
-`UserService.DeleteAsync` and `UpdateAsync` both refuse to remove or demote the **last** Admin —
-the one operation with no way back short of editing the database by hand. `EnsureAdminSeededAsync`
-runs on every startup and does nothing once any account exists, so a changed password survives.
-
-## Key Enums
-- **UserRole** (1): Admin. See AppUser above — the member name *is* the claim value
-- **MatchType** (3): Competition (0), Cup, Practice. Descriptive only — nothing in the reports
-  branches on it. `DisplayName()` returns the English name, which is also the resx key
-- **PlayerPosition** (16 values): GK, LB, CB, RB, DEF, CDM, CM, LM, RM, CAM, MID, LW, RW, W, ST, ATT
-- **FormationType** (12): F442, F433, F4231, F352, F343, F4141, F4411, F532, F541, F4321, F3421, F3511
-- **Duplicate positions in a formation are normal.** `F442.DefaultPositions()` returns two CBs and
-  two STs, and that is fine: which slot a player occupies comes from
-  `GamePlayerPosition.SlotIndex` (ordered by `FormationSlots.OrdinalOf`), not from the enum member.
-  The side-specific members that used to exist for this — LCB, RCB, LWB, RWB, LCDM, RCDM, LCM, RCM,
-  LCAM, RCAM, LF, RF, CF, LST, RST — were deleted by the `ConsolidatePlayerPositions` and
-  `ConsolidatePositionsRound2` migrations. Do not reintroduce them.
-
-## Relationships
-```
-Season 1──* Game 1──* GamePeriod 1──* GamePlayerPosition *──1 Player
-Season 1──* SeasonSquadMember *──1 Player
-Game 1──* GameGoal *──1 Player (scorer, assister — both SetNull)
-GamePeriod 1──* GameGoal (the half it was scored in — nullable, cascade)
-GamePeriod 1──* GameSubstitution (the half it was made in — cascade)
-Game 1──* GameSubstitution *──1 Player (off, on — both Restrict)
-GamePeriod 1──* GameInjury (the half it happened in — cascade)
-Game 1──* GameInjury *──1 Player (Restrict; unique on GameId + PlayerId)
-Game 1──* GameComment *──1 AppUser (author — SetNull)
-```
-Cascading deletes throughout, **except Season → Game, which is `Restrict`**: deleting a season must
-never take a year of games, lineups and goals with it. `SeasonService.DeleteAsync` refuses with a
-readable message when a season still has games, or when it is the current one, rather than letting
-the caller hit a raw `DbUpdateException`.
-
-`SeasonSquadMember` cascades from *both* parents — it is pure membership with no history of its own,
-so it must not make a person or a game-free season undeletable. Deleting a season therefore takes
-its squad rows with it; deleting a **person** removes them from every season's squad and cascades
-their lineup and goal rows (see [known_issues.md](known_issues.md)).
-
-`Season 1--1 MatchPreferences` — cascade, like `SeasonSquadMember`: a preferences row is pure
-configuration with no history, so it must never make an otherwise game-free season undeletable.

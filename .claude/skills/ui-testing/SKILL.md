@@ -103,4 +103,4 @@ awards to whichever neighbour has the larger contact area. Where the geometry pr
 
 Both browser jobs are required checks; a red run holds the merge.
 
-Detail: [docs/testing.md](../../../docs/testing.md#ui-tests-testsui)
+Detail: [docs/testing/](../../../docs/testing/ui-testing.md#ui-tests-testsui)

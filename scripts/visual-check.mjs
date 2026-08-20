@@ -8,7 +8,7 @@
 // It then measures rather than looks: touch-targets.mjs re-walks the new-match dialog and its date
 // picker on three phone-sized viewports and fails the run on a target under 44px or a dead gap
 // between two of them. That half is not about a page rendering at all — it is the only thing
-// holding the Touch / PWA fixes in docs/known_issues.md in place.
+// holding the Touch / PWA fixes in docs/known_issues/touch-pwa.md in place.
 //
 // Started by scripts/visual-check.sh, which boots the app first. Run that, not this.
 import { chromium } from 'playwright';

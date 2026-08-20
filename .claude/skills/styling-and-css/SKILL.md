@@ -68,4 +68,4 @@ in `manifest.webmanifest` must change with it, or the PWA chrome keeps the old b
   stepping a MudBlazor picker has this shape.
 
 Detail: [docs/theming.md](../../../docs/theming.md) ·
-[docs/known_issues.md](../../../docs/known_issues.md)
+[docs/known_issues/](../../../docs/known_issues/blazor-mudblazor.md)

@@ -200,7 +200,7 @@ public class GameServiceTests : ServiceTestBase
     /// Creating a game may save a season first, in its own context, so the two saves are two
     /// transactions and something can stop between them. What it leaves behind is an empty season,
     /// and this is why that is allowed to stand rather than being wrapped in machinery: a season is
-    /// a gapless window, so the next attempt resolves to the one already there. See docs/patterns.md.
+    /// a gapless window, so the next attempt resolves to the one already there. See docs/patterns/transactions-and-writes.md.
     /// </summary>
     [Fact]
     public async Task A_game_scheduled_into_an_empty_season_joins_it_rather_than_making_a_second_one()

@@ -20,7 +20,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     /// <summary>
     /// Each entity's mapping lives beside it in <c>Data/Configurations</c>. The delete behaviours
-    /// in particular are deliberate and reasoned per entity (see docs/models.md), and they are far
+    /// in particular are deliberate and reasoned per entity (see docs/models/enums-and-relationships.md), and they are far
     /// easier to review one aggregate at a time than as one long method.
     /// </summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder) =>

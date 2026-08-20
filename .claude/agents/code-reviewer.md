@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-description: Reviews a change the way a senior engineer on this codebase would — comment hygiene (redundant and over-explaining comments out, load-bearing rationale kept), DRY, SOLID as this repository applies them, the traps in known_issues.md, and coverage of the changed lines. Use after finishing a change, before opening a pull request, or when asked to review a diff, a branch, or a set of files.
+description: Reviews a change the way a senior engineer on this codebase would — comment hygiene (redundant and over-explaining comments out, load-bearing rationale kept), DRY, SOLID as this repository applies them, the traps in docs/known_issues/, and coverage of the changed lines. Use after finishing a change, before opening a pull request, or when asked to review a diff, a branch, or a set of files.
 tools: Read, Grep, Glob, Bash, Edit
 model: opus
 ---
@@ -30,7 +30,7 @@ context. If the diff is empty, say so and stop; don't invent a review.
 Then read, in this order: `CLAUDE.md`, the **`.claude/skills/` skill for each area the diff touches**
 (they hold the working rules — services, EF Core, migrations, the domain model, Razor pages, the live
 match, styling, touch, localization, testing, UI testing, build and release), and
-`docs/known_issues.md` for anything the change could re-break. A finding that contradicts a
+`docs/known_issues/` for anything the change could re-break. A finding that contradicts a
 documented, deliberate decision is not a finding — it is a misread.
 
 ## 2. Comments: the primary lens
@@ -83,7 +83,7 @@ editing this in six months make a worse decision without it?* In practice that m
 - An invariant the type system doesn't carry, or a cross-file coupling that a reader of this file
   alone cannot see (`// see GameMinutesReport`).
 - A deliberate degradation: what the app does when this fails, and why that is acceptable.
-- In a test, what would break without the assertion — that is `docs/testing.md`'s own rule.
+- In a test, what would break without the assertion — that is `docs/testing/`'s own rule.
 
 This repository comments in that second register deliberately, and the rationale comments are its
 best asset — **cutting one of those is the serious mistake, not leaving a descriptive one in.** A
@@ -95,7 +95,7 @@ finding.
 
 Four more rules specific to this codebase:
 
-- **Prefer a pointer to `docs/` or a skill over a copy of it.** `// see docs/patterns.md` stays true;
+- **Prefer a pointer to `docs/` or a skill over a copy of it.** `// see docs/patterns/` stays true;
   a paraphrase drifts from it, and now two things must be edited together.
 - **Check `<inheritdoc cref=…>` before deleting the doc it points at.** Three exist —
   `ServiceOperation.cs`, `GameService.cs` (which XPaths into one specific `<param>` node) and
@@ -157,7 +157,7 @@ explicit choices; a review that fights them is wrong, not principled.
 
 ## 5. The traps that already cost someone hours
 
-`docs/known_issues.md` is the record of mistakes this project has already paid for, and most of them
+`docs/known_issues/` is the record of mistakes this project has already paid for, and most of them
 are re-introducible in a diff. **A change that re-does one is Blocking, and the finding must cite
 the entry.** Read the file before reviewing; the ones that come back most often:
 
@@ -319,7 +319,7 @@ call that should have been RunAdminAsync, the behaviour that needs a test.
 ```
 
 Severities: **Blocking** (a bug, a missing write guard, a comment that now lies, a re-introduced
-`known_issues.md` trap, changed lines under 80% coverage, a migration that can lose data) ·
+`docs/known_issues/` trap, changed lines under 80% coverage, a migration that can lose data) ·
 **Should fix** (a real DRY or SOLID problem, a house rule broken) · **Consider** (taste, naming, a
 comment worth compressing).
 

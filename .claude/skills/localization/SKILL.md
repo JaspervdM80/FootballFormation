@@ -48,5 +48,5 @@ changed.
 - `UiFeedback.Translate` looks up both the message template and its arguments — a service states its
   error in English and the page translates it with `L`.
 
-Detail: [docs/ui_components.md](../../../docs/ui_components.md) ·
-[docs/known_issues.md](../../../docs/known_issues.md)
+Detail: [docs/ui_components/](../../../docs/ui_components/index.md) ·
+[docs/known_issues/](../../../docs/known_issues/localization.md)

@@ -9,7 +9,7 @@ namespace FootballFormation.Core.Data.Configurations;
 /// These are short, always read whole, and never queried by element — a join table would cost a
 /// second query for no benefit. The <see cref="ValueComparer{T}"/> is not optional: without it EF
 /// compares the list by reference, so mutating one in place is silently never persisted (see
-/// docs/known_issues.md).
+/// docs/known_issues/ef-core.md).
 /// </para>
 /// </summary>
 internal static class CsvListConverters

@@ -35,7 +35,7 @@ test('a match can be added from a phone, through the full-screen sheet', async (
   await clickFor(page.getByRole('button', { name: 'Add' }).first(), () => expect(sheet).toBeVisible());
 
   // The sheet is the whole viewport below 600px — that is what keeps the action row clear of the
-  // last field, and it is the fix docs/known_issues.md records for the "Annuleren" bug.
+  // last field, and it is the fix docs/known_issues/touch-pwa.md records for the "Annuleren" bug.
   // Polled, not measured once: MudBlazor scales a dialog in, so an immediate reading catches it
   // mid-animation at about 86% of its final width.
   const viewport = page.viewportSize();

@@ -131,5 +131,5 @@ chrome, and the circuit behind an interactive page's island.
 is otherwise indistinguishable from Cancel; a value-typed dialog needs its own helper handing back
 `TValue?`.
 
-Detail: [docs/ui_components.md](../../../docs/ui_components.md) ·
-[docs/patterns.md](../../../docs/patterns.md#ui-state-services)
+Detail: [docs/ui_components/](../../../docs/ui_components/index.md) ·
+[docs/patterns/](../../../docs/patterns/ui-state-and-navigation.md#ui-state-services)

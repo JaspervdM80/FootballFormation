@@ -6,7 +6,7 @@
 
 @* The three MudBlazor providers that only work inside an interactive render mode. A render mode
    cannot be put on a layout at all — @Body is a RenderFragment and Blazor cannot serialise one as a
-   root component parameter — so left where they were they would be static, and known_issues.md
+   root component parameter — so left where they were they would be static, and docs/known_issues/blazor-mudblazor.md
    records what that looks like: dialogs that simply never appear.
 
    MudThemeProvider stays in the layout on purpose. MudBlazor separated theming from the popover

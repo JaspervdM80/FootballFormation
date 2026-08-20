@@ -53,7 +53,7 @@ queries, migrations, the domain model, Razor pages and the circuit, the live mat
 and breakpoints, localization, testing, UI testing, build and release. **Load the skill for the area
 you are touching before changing it**; each one ends with a pointer into `docs/` for the full story.
 
-`docs/` is the detailed reference and the incident record. `docs/known_issues.md` in particular is
+`docs/` is the detailed reference and the incident record. `docs/known_issues/` in particular is
 not a changelog — it is a list of traps that already cost someone hours. Add to it when you find a
 new one, and **update the doc for an area in the same change that alters its behaviour**.
 
@@ -100,7 +100,7 @@ Claude Code web containers are rebuilt every session and ship no .NET SDK, so
 `.claude/hooks/session-start.sh` installs `dotnet-sdk-10.0` from **Ubuntu's own archive** — it has to
 be Ubuntu's, because the container's egress policy blocks `builds.dotnet.microsoft.com`. Chromium is
 already at `/opt/pw-browsers/chromium`. `global.json` pins 10.0.110 with `rollForward: disable`; see
-`docs/known_issues.md`, "the SDK the pin cannot reach", before changing any of it.
+`docs/known_issues/blazor-components.md`, "the SDK the pin cannot reach", before changing any of it.
 
 Locally the database and logs live under `%LOCALAPPDATA%\FootballFormation\`; set `APP_DATA_DIR` to
 put them elsewhere (it is `/data` in the container).

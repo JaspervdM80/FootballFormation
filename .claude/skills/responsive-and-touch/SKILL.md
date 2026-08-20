@@ -102,6 +102,6 @@ The game dialog's action row sat 28px under the last field, and `MudSelect`'s hi
 past its own underline — leaving 18px of dead space. A thumb aimed at "Annuleren" opened the dropdown
 instead, because the select is the far bigger target.
 
-Detail: [docs/known_issues.md](../../../docs/known_issues.md) ·
-[docs/testing.md](../../../docs/testing.md#touch-targets) ·
+Detail: [docs/known_issues/](../../../docs/known_issues/touch-pwa.md) ·
+[docs/testing/](../../../docs/testing/visual-and-touch-checks.md#touch-targets) ·
 [docs/theming.md](../../../docs/theming.md)

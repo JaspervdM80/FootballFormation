@@ -84,4 +84,4 @@ undeletable.
 
 Players are **archived, not deleted**, where a delete would take history with it.
 
-Full property tables: [docs/models.md](../../../docs/models.md)
+Full property tables: [docs/models/](../../../docs/models/index.md)
