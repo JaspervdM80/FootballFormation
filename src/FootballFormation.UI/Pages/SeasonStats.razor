@@ -132,10 +132,15 @@
         <input type="checkbox" id="availability-toggle" class="availability-toggle" />
         <div class="live-card-head">
             <div class="card-label">@L["Playing time"]</div>
-            <label class="availability-switch" for="availability-toggle">
-                <span class="availability-switch-track"></span>
-                @L["Availability"]
-            </label>
+            @* One season only. Across all of them the maximum is the club's whole history, so a
+               girl who joined this year reads as unavailable for the years before she was here. *@
+            @if (SeasonId is not null)
+            {
+                <label class="availability-switch" for="availability-toggle">
+                    <span class="availability-switch-track"></span>
+                    @L["Availability"]
+                </label>
+            }
         </div>
 
         @if (_playingTime.Count > 0)

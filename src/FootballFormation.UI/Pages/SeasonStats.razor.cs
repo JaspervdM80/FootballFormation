@@ -82,6 +82,7 @@ public partial class SeasonStats
         ("pt-idle", L["Not played"])
     ];
 
-    /// <summary>Tooltip for a segment, which is all the label a colour gets on a phone.</summary>
+    /// <summary>Segment tooltip: the exact figure a colour only approximates. The legend is what
+    /// names it on a phone, where a title attribute never surfaces.</summary>
     private static string Figure(string label, int minutes) => $"{label}: {minutes}'";
 }

@@ -68,9 +68,12 @@ public class PlayerStats
 
     /// <summary>
     /// Every minute the games covered had to offer. The four figures behind it — played, not played,
-    /// injured, unavailable — partition it, and because each game contributes its whole duration to
-    /// exactly one of them, this comes out the same for every squad member. That is what lets the
-    /// availability bars on /stats be read against each other rather than each against itself.
+    /// injured, unavailable — partition it, except where somebody was picked for a match she was
+    /// marked out of (see <see cref="NotPlayedMinutes"/>); and because each game contributes its
+    /// whole duration to exactly one of them, this comes out the same for every squad member of the
+    /// season. That is what lets the availability bars on /stats be read against each other rather
+    /// than each against itself — and why the switch offering them is not shown on "All seasons",
+    /// where a player who joined late shares no history with one who did not.
     /// </summary>
     public int MaximumMinutes => AvailableMinutes + InjuredMinutes + UnavailableMinutes;
 

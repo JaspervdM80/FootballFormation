@@ -62,6 +62,9 @@ namespace FootballFormation.Core.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("AbsencesRecorded")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("ClockAccumulatedSeconds")
                         .HasColumnType("INTEGER");
 

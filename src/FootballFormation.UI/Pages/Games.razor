@@ -84,12 +84,15 @@ else
                             <span class="badge-teal">@L[game.MatchType.DisplayName()]</span>
                         }
                         <span class="badge-gold">@game.FormationType.DisplayName()</span>
-                        @* Both reasons, one badge: the card says how many were missing, not why. *@
-                        @if (game.UnavailablePlayerIds.Count + game.InjuredPlayerIds.Count > 0)
+                        @* Both reasons, one badge: the card says how many were missing, not why.
+                           Unioned, because a player marked out of this fixture and later recorded
+                           injured is in both lists and is still one girl. *@
+                        @{
+                            var missing = game.UnavailablePlayerIds.Union(game.InjuredPlayerIds).Count();
+                        }
+                        @if (missing > 0)
                         {
-                            <span class="badge-unavailable">
-                                @L["{0} out", game.UnavailablePlayerIds.Count + game.InjuredPlayerIds.Count]
-                            </span>
+                            <span class="badge-unavailable">@L["{0} out", missing]</span>
                         }
                         @if (game.GuestPlayerIds.Count > 0)
                         {

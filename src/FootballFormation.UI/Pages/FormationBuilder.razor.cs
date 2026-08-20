@@ -73,7 +73,7 @@ public partial class FormationBuilder
     private List<Player> RosterPlayers =>
         AllPlayers is null || GameData is null
             ? []
-            : GameData.SelectRoster(AllPlayers, Squad).Where(p => !Squad.IsInjured(p.Id)).ToList();
+            : GameData.SelectRoster(AllPlayers, Squad).Where(p => !IsInjured(p.Id)).ToList();
 
     /// <summary>Squad players who opted out of this game. Guests are simply not added, not
     /// unavailable. Injured players are listed separately by <see cref="InjuredPlayers"/> even when
@@ -86,7 +86,7 @@ public partial class FormationBuilder
 
             var unavailable = GameData.UnavailablePlayerIds.ToHashSet();
             return AllPlayers
-                .Where(p => Squad.IsFullMember(p.Id) && unavailable.Contains(p.Id) && !Squad.IsInjured(p.Id))
+                .Where(p => Squad.IsFullMember(p.Id) && unavailable.Contains(p.Id) && !IsInjured(p.Id))
                 .ToList();
         }
     }
@@ -95,7 +95,16 @@ public partial class FormationBuilder
     /// unavailable for this one fixture. Excluded from <see cref="RosterPlayers"/> above, so never
     /// offered as a drag target for a new line-up.</summary>
     private List<Player> InjuredPlayers =>
-        AllPlayers is null ? [] : AllPlayers.Where(p => Squad.IsInjured(p.Id)).ToList();
+        AllPlayers is null ? [] : AllPlayers.Where(p => IsInjured(p.Id)).ToList();
+
+    /// <summary>
+    /// Injured for the purposes of this screen: flagged in the squad now, or recorded as having
+    /// missed this match. The second half matters on a completed game whose player has since
+    /// recovered — <c>Game.IsInRoster</c> keeps reading the game's record, so without it she would
+    /// be in none of the three panels and simply vanish from a line-up someone came back to fix.
+    /// </summary>
+    private bool IsInjured(int playerId) =>
+        Squad.IsInjured(playerId) || (GameData?.InjuredPlayerIds.Contains(playerId) ?? false);
 
     private List<Player> GetAvailablePlayers(int periodId)
     {

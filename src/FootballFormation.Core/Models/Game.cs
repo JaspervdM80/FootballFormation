@@ -94,15 +94,19 @@ public class Game
 
     /// <summary>
     /// Squad members who missed this match injured — out of the roster for the same reason
-    /// <see cref="UnavailablePlayerIds"/> is, but with the reason on the record.
-    /// <para>
-    /// Written once, by <c>StandingInjuries.RecordAsync</c>, at the moment the match becomes
-    /// complete: <see cref="SeasonSquadMember.IsInjured"/> is a flag with no date on it, so the
-    /// only chance to say which matches it covered is while it is still true. Anyone who took part
-    /// is left out of it however she was flagged — the lineup is the better witness.
-    /// </para>
+    /// <see cref="UnavailablePlayerIds"/> is, but with the reason on the record. The two lists may
+    /// name the same player; injury is the more specific answer, and what the bar on /stats shows.
+    /// <para>Written by <c>StandingInjuries.RecordAsync</c>, which says why and when.</para>
     /// </summary>
     public List<int> InjuredPlayerIds { get; set; } = [];
+
+    /// <summary>
+    /// True once <see cref="InjuredPlayerIds"/> has been written, which happens exactly once per
+    /// match. An empty list is otherwise indistinguishable from an unwritten one, and the two must
+    /// not be confused: a match settled in September with nobody injured would be restamped with
+    /// November's casualties the first time somebody retyped its scoreline.
+    /// </summary>
+    public bool AbsencesRecorded { get; set; }
 
     /// <summary>Guests of this game's season, explicitly opted in to this game.</summary>
     public List<int> GuestPlayerIds { get; set; } = [];

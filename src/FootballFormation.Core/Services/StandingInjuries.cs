@@ -10,21 +10,28 @@ namespace FootballFormation.Core.Services;
 /// <para>
 /// <see cref="SeasonSquadMember.IsInjured"/> is a flag with no date on it: once it is cleared,
 /// nothing is left to say which matches it kept her out of. So the flag is read exactly once per
-/// match — on the transition to <see cref="Game.IsComplete"/> — and copied into
-/// <see cref="Game.InjuredPlayerIds"/>, where it stops being a status and becomes history. Every
-/// later read (<c>Game.IsInRoster</c>, <c>PlayerStatsReport</c>) goes to the game's own list, so
-/// clearing the flag afterwards changes nothing that already happened.
+/// match, as it is settled, and copied into <see cref="Game.InjuredPlayerIds"/>, where it stops
+/// being a status and becomes history. Every later read (<c>Game.IsInRoster</c>,
+/// <c>PlayerStatsReport</c>) goes to the game's own list, so clearing the flag afterwards changes
+/// nothing that already happened.
 /// </para>
 /// </summary>
 internal static class StandingInjuries
 {
     /// <summary>
-    /// Fills in <paramref name="game"/>'s record from the squad it is being played by. The caller
-    /// saves — this is meant to ride the same <c>SaveChangesAsync</c> as whatever completed the
-    /// match, so a match can never be settled without its absences beside it.
+    /// Fills in <paramref name="game"/>'s record from the squad it is being played by, the first
+    /// time it is settled and never again — see <see cref="Game.AbsencesRecorded"/>. Callers can
+    /// therefore ask on every completion without working out which one is the first.
+    /// <para>
+    /// The caller saves. This is meant to ride the same <c>SaveChangesAsync</c> as whatever settled
+    /// the match, so a match can never be settled without its absences beside it.
+    /// </para>
     /// </summary>
     internal static async Task RecordAsync(AppDbContext db, Game game, CancellationToken cancellationToken)
     {
+        if (game.AbsencesRecorded) return;
+        game.AbsencesRecorded = true;
+
         var injured = await db.SeasonSquadMembers
             .Where(m => m.SeasonId == game.SeasonId && m.IsInjured && !m.IsGuest)
             .Select(m => m.PlayerId)

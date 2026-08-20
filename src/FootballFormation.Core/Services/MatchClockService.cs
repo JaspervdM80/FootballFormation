@@ -144,8 +144,7 @@ public class MatchClockService(
             var goals = await db.GameGoals.Where(g => g.GameId == gameId).ToListAsync(cancellationToken);
             game.CountScoreFrom(goals);
 
-            // The other way a match becomes part of the record, and so the other place the squad's
-            // standing injuries have to be written down before the flag outlives them.
+            // The other place a match becomes part of the record.
             await StandingInjuries.RecordAsync(db, game, cancellationToken);
 
             await db.SaveChangesAsync(cancellationToken);

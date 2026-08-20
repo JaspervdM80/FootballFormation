@@ -96,6 +96,43 @@ public class StandingInjuryTests : LiveMatchTestBase
     }
 
     [Fact]
+    public async Task Clearing_a_settled_score_and_typing_it_again_leaves_the_record_alone()
+    {
+        var game = await SeedGameAsync();
+        var players = await PlayersAsync();
+        await JoinSquadAsync(game.SeasonId, players);
+
+        // Nobody hurt when it was played, so the record is written and empty — which is exactly
+        // what an unwritten one looks like, and why the game carries a flag saying it was written.
+        Assert.True((await Games.SaveScoreAsync(game.Id, 2, 1)).IsSuccess);
+
+        await MarkInjuredAsync(game.SeasonId, players[3].Id);
+
+        // The long way round to fixing a typo: empty the field, then type it again.
+        Assert.True((await Games.SaveScoreAsync(game.Id, null, null)).IsSuccess);
+        Assert.True((await Games.SaveScoreAsync(game.Id, 3, 1)).IsSuccess);
+
+        Assert.Empty((await ReloadAsync(game.Id)).InjuredPlayerIds);
+    }
+
+    [Fact]
+    public async Task Finishing_a_match_that_was_already_finished_does_not_rewrite_it()
+    {
+        var game = await SeedGameAsync();
+        var players = await PlayersAsync();
+        await JoinSquadAsync(game.SeasonId, players);
+
+        await MatchClock.StartMatchAsync(game.Id);
+        await MatchClock.FinishMatchAsync(game.Id);
+        Assert.Empty((await ReloadAsync(game.Id)).InjuredPlayerIds);
+
+        await MarkInjuredAsync(game.SeasonId, players[3].Id);
+        await MatchClock.FinishMatchAsync(game.Id);
+
+        Assert.Empty((await ReloadAsync(game.Id)).InjuredPlayerIds);
+    }
+
+    [Fact]
     public async Task An_unsettled_score_is_not_a_record_yet()
     {
         var game = await SeedGameAsync();

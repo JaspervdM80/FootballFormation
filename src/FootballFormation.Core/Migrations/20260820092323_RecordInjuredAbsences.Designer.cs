@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FootballFormation.Core.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260820083132_RecordInjuredAbsences")]
+    [Migration("20260820092323_RecordInjuredAbsences")]
     partial class RecordInjuredAbsences
     {
         /// <inheritdoc />
@@ -63,6 +63,9 @@ namespace FootballFormation.Core.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("AbsencesRecorded")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("ClockAccumulatedSeconds")
