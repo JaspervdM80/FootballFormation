@@ -339,6 +339,31 @@ public class PlayerStatsReportTests
         var stats = PlayerStatsReport.Build(Subject, games, SeasonSquads.Of(TestData.Squad(1, [Subject])));
 
         Assert.Equal(90, stats.TotalMinutes);
+        Assert.Equal(90, stats.AvailableMinutes);
         Assert.Equal(100, stats.Positions.Single().Percentage);
+    }
+
+    [Fact]
+    public void A_full_match_player_is_never_shown_over_100_percent_utilisation()
+    {
+        // Two halves that ran into stoppage time: 1825s each, 3650s (60:50) total. Rounding the
+        // numerator (61') while truncating the denominator (60') used to read as 102% for a player
+        // who was on the pitch the entire match — see Game.SecondsToMinutes.
+        var game = TestData.Game(id: 1, durationMinutes: 60);
+        game.MatchState = MatchState.Finished;
+
+        var first = game.AddPeriod(PeriodType.FirstHalf, TestData.Starter(1, PlayerPosition.CM, 5));
+        first.StartedAtSeconds = 0;
+        first.EndedAtSeconds = 1825;
+
+        var second = game.AddPeriod(PeriodType.SecondHalf, TestData.Starter(1, PlayerPosition.CM, 5));
+        second.StartedAtSeconds = 0;
+        second.EndedAtSeconds = 1825;
+
+        var stats = PlayerStatsReport.Build(Subject, [game], SeasonSquads.Of(TestData.Squad(1, [Subject])));
+
+        Assert.Equal(61, stats.TotalMinutes);
+        Assert.Equal(61, stats.AvailableMinutes);
+        Assert.Equal(100, stats.Utilization);
     }
 }

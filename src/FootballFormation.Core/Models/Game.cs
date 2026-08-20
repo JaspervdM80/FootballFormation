@@ -156,21 +156,29 @@ public class Game
         .Sum(p => p.EndedAtSeconds!.Value - p.StartedAtSeconds!.Value);
 
     /// <summary>
+    /// Rounds to the nearest minute rather than truncating: a half whistled at 29:50 is 30 minutes
+    /// played, not 29. The one place every played/available seconds-to-minutes conversion goes
+    /// through, so a numerator and a denominator built from the same seconds can never drift apart
+    /// by using different rounding rules — see <see cref="PlayedDurationMinutes"/>,
+    /// <see cref="AvailableMinutesFor"/> and <c>GameMinutesReport.ToMinutes</c>.
+    /// </summary>
+    public static int SecondsToMinutes(int seconds) => (int)Math.Round(seconds / 60.0);
+
+    /// <summary>
     /// How long the match really lasted, summed over the periods that were played out. Falls back
     /// to the scheduled duration when the game was never run live. This is the denominator for a
     /// player's available minutes, so utilisation cannot exceed 100% on a match that over-ran.
     /// </summary>
     public int PlayedDurationMinutes => HasActualTimings
-        ? PlayedDurationSeconds / 60
+        ? SecondsToMinutes(PlayedDurationSeconds)
         : GameDurationMinutes;
 
     /// <summary>
     /// Minutes <paramref name="playerId"/> could have played: the whole played duration, or the
     /// stretch up to the moment she was hurt. The denominator behind
     /// <c>PlayerStats.Utilization</c>, so an injury at 20' leaves her judged on 20 minutes rather
-    /// than on the hour she was never going to get. Truncating like
-    /// <see cref="PlayedDurationMinutes"/>, and capped by it so a match that over-ran cannot push
-    /// anyone past 100%.
+    /// than on the hour she was never going to get. Rounded like <see cref="PlayedDurationMinutes"/>,
+    /// and capped by it so a match that over-ran cannot push anyone past 100%.
     /// </summary>
     public int AvailableMinutesFor(int playerId)
     {
@@ -178,7 +186,7 @@ public class Game
         if (!HasActualTimings) return PlayedDurationMinutes;
 
         return Injuries.FirstOrDefault(i => i.PlayerId == playerId) is { } injury
-            ? Math.Min(injury.AtSeconds, PlayedDurationSeconds) / 60
+            ? SecondsToMinutes(Math.Min(injury.AtSeconds, PlayedDurationSeconds))
             : PlayedDurationMinutes;
     }
 

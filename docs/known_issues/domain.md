@@ -26,4 +26,15 @@
   the division itself instead of asking the model. Reach for `PeriodDurationSeconds` in any new
   arithmetic; `PeriodDurationMinutes` only ever goes on screen.
 - **Archiving is a filter on the future, not on the past**: only the "add existing player" picker and copy-forward look at `IsArchived`. `PlayerService.GetAllAsync` deliberately still returns archived players — it is the id → name lookup the match report and live screen resolve against, so filtering it would blank a scorer out of a game they scored in, which is the very thing archiving exists to prevent. Same reasoning for `Game.IsInRoster`: a past game has to be judged the way it was played. If a picker ever *should* hide them, filter at that call site, not in the lookup.
+- **A played-time fraction can only exceed 100% if its two sides round differently**: `Game.PlayedDurationMinutes` and `AvailableMinutesFor` used to convert seconds to minutes by truncating
+  (`seconds / 60` in `int`), while `GameMinutesReport.ToMinutes` — which builds the numerator from the
+  same underlying seconds — rounded to the nearest minute. A player on the pitch for the whole match
+  is credited seconds numerically equal to `PlayedDurationSeconds`, so any match that overran by
+  30–59 seconds of stoppage time (routine) rounded the numerator up a minute while the denominator
+  stayed truncated, showing e.g. `85' / 84' · 101%` for someone who never left the pitch. The fix is
+  the same rule as the period-length issue above, generalised: **there is exactly one seconds-to-
+  minutes conversion for playing time**, `Game.SecondsToMinutes`, and every consumer —
+  `PlayedDurationMinutes`, `AvailableMinutesFor`, `GameMinutesReport.ToMinutes` — calls through it
+  rather than keeping its own rounding. Two figures built from the same seconds can no longer round
+  apart, by construction rather than by convention.
 

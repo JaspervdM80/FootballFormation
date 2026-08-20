@@ -164,11 +164,13 @@ public static class GameMinutesReport
     }
 
     /// <summary>
-    /// Rounds seconds to the nearest minute rather than truncating: a half whistled at 29:50 is
-    /// 30 minutes played, not 29. Every report that turns these seconds into minutes goes through
-    /// here, so the same match cannot read one minute shorter on one page than on another.
+    /// Every report that turns these seconds into minutes goes through here, so the same match
+    /// cannot read one minute shorter on one page than on another. Delegates to
+    /// <see cref="Game.SecondsToMinutes"/>, the single conversion also behind
+    /// <see cref="Game.PlayedDurationMinutes"/> and <see cref="Game.AvailableMinutesFor"/>, so a
+    /// numerator and a denominator built from the same seconds can never round apart.
     /// </summary>
-    public static int ToMinutes(int seconds) => (int)Math.Round(seconds / 60.0);
+    public static int ToMinutes(int seconds) => Game.SecondsToMinutes(seconds);
 
     /// <summary>
     /// Adds a stretch of time to everyone on the pitch, each in the position they held for it.
