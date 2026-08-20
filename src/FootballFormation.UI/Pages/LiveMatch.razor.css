@@ -1,4 +1,4 @@
-/* Phone-first: one column everywhere. The screen is used one-handed on a touchline, so it never
+﻿/* Phone-first: one column everywhere. The screen is used one-handed on a touchline, so it never
    splits into panels — it just gets a comfortable max width on a desktop. */
 .live-layout {
     display: flex;
@@ -239,8 +239,8 @@
     color: var(--color-danger);
 }
 
-/* The cross is the whole of what marks an injury on the timeline — no word beside it — so it has
-   to carry the colour that says so. Same red as the squad page's .injured-mark. */
+/* The cross is all that marks an injury here — no word beside it — so the colour has to say so.
+   The same red as the squad page's .injured-mark. */
 .live-event-injury {
     color: var(--color-danger-bright);
 }

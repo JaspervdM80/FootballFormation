@@ -1,4 +1,4 @@
-using FootballFormation.Core.Models;
+﻿using FootballFormation.Core.Models;
 
 namespace FootballFormation.Core.Tests;
 
@@ -78,8 +78,8 @@ internal static class TestData
         return sub;
     }
 
-    /// <summary>A player hurt during the match. Pair it with a <see cref="Substitution"/> for the
-    /// same player to describe an injury somebody came on for.</summary>
+    /// <summary>Pair it with a <see cref="Substitution"/> at the same second to describe an injury
+    /// somebody came on for.</summary>
     public static GameInjury Injury(
         Game game, GamePeriod period, int playerId, int atSeconds, PlayerPosition position, int? slot = null)
     {

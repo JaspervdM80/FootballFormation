@@ -1,7 +1,6 @@
-// Injury, in both the senses the app knows. The standing squad status: an injured player is never
-// offered a slot, and is shown separately from a player who is merely unavailable for one fixture.
-// And the one that happens on the day: a player marked injured mid-match leaves the pitch, and the
-// rest of the match stops counting towards her.
+﻿// Injury, in both the senses the app knows. The standing squad status: an injured player is never
+// offered a slot, and is shown separately from one merely unavailable for a fixture. And the one
+// that happens on the day: a player marked injured mid-match leaves the pitch.
 import { test, expect } from '../fixtures.js';
 import {
   addPlayer, clickFor, createMatch, gameRow, goto, openDialog, playerMenuItem, playerRow, submitDialog,
@@ -67,10 +66,7 @@ test('the unavailable-players picker leaves an injured player out, and says why'
   await panel.getByRole('button', { name: 'Cancel' }).click();
 });
 
-/**
- * A match with players on the pitch and the clock running, which is the only state an injury can
- * be recorded from. Two players, so taking one off still leaves the pitch non-empty.
- */
+/** A match with a lineup and the clock running — the only state an injury can be recorded from. */
 async function liveMatchWithLineup(page, opponent) {
   await createMatch(page, { opponent });
   await gameRow(page, opponent).getByTitle(/Formation|Add lineup/).click();
@@ -107,8 +103,7 @@ test('a player marked injured mid-match leaves the pitch and can be put back', a
   await clickFor(chips.first(), () => expect(page.locator('.mud-dialog')).toBeVisible());
   const dialog = await openDialog(page);
 
-  // The switch alone is a complete answer: nobody has to come on, which is what the button says
-  // before anything is picked from the "Comes on" list.
+  // The switch alone is a complete answer: nobody has to come on.
   await dialog.locator('label.mud-switch', { hasText: 'Injured' }).click();
   await submitDialog(page, 'Off injured');
   // Scoped to the snackbar: the timeline entry below says "Off injured" too.

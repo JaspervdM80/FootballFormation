@@ -1,4 +1,4 @@
-@inject IStringLocalizer<Strings> L
+﻿@inject IStringLocalizer<Strings> L
 
 <MudDialog>
     <DialogContent>
@@ -21,9 +21,7 @@
                 }
             </MudSelect>
             @* Everything above is the person; these two are their place in a single season's squad,
-               which is what the divider says. Same switches as SquadMemberDialog, because they set
-               the same flags. Injured carries no caption: a red switch reading "Injured" says all of
-               it, and the caption only restated what the squad page already shows. *@
+               which is what the divider says. Same switches as SquadMemberDialog. *@
             <MudDivider Class="my-3" />
             <MudSwitch @bind-Value="Guest" Color="Color.Warning" Class="mb-1">@L["Guest player"]</MudSwitch>
             <MudText Typo="Typo.caption" Class="d-block" Style="color: var(--ink-muted);">

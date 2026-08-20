@@ -1,12 +1,11 @@
-using FootballFormation.Core.Models;
+﻿using FootballFormation.Core.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace FootballFormation.Core.Tests;
 
 /// <summary>
 /// A player hurt during the match: what the line-up says afterwards, what was written down about
-/// it, and what taking it back does. The injury half of <c>MatchSubstitutionService</c> — it lives
-/// there because it is the same write, and it is tested apart because it is a different question.
+/// it, and what taking it back does. The injury half of <c>MatchSubstitutionService</c>.
 /// </summary>
 public class MatchInjuryTests : LiveMatchTestBase
 {
@@ -25,8 +24,7 @@ public class MatchInjuryTests : LiveMatchTestBase
         Assert.Equal(PlayerPosition.CM, result.Value.Position);
         Assert.Equal(5, result.Value.SlotIndex);
 
-        // Both rows, from one call: the substitution is what hands the slot over, and the injury is
-        // the only thing that says the rest of the match was never hers to play.
+        // Both rows, from one call.
         var sub = Assert.Single(await Read().GameSubstitutions.ToListAsync());
         Assert.Equal(players[1].Id, sub.PlayerOffId);
         Assert.Equal(players[2].Id, sub.PlayerOnId);
@@ -50,7 +48,7 @@ public class MatchInjuryTests : LiveMatchTestBase
         Assert.True(result.IsSuccess);
         Assert.Equal(1200, result.Value!.AtSeconds);
 
-        // No substitution: nobody came on, and a row here would name somebody who did not.
+        // Nobody came on, and a substitution row here would name somebody who did not.
         Assert.Empty(await Read().GameSubstitutions.ToListAsync());
 
         var period = await LivePeriodAsync(game.Id);
@@ -110,8 +108,7 @@ public class MatchInjuryTests : LiveMatchTestBase
 
         Assert.True((await Subs.MarkInjuredAsync(game.Id, players[1].Id)).IsSuccess);
 
-        // Back on the pitch first, so the refusal is about the injury and not about where she is
-        // standing — a double tap on the second half's line-up would land exactly here.
+        // Back on the pitch first, so the refusal is about the injury and not about where she is.
         Assert.True((await Subs.SubstituteAsync(game.Id, players[0].Id, players[1].Id)).IsSuccess);
         var again = await Subs.MarkInjuredAsync(game.Id, players[1].Id);
 
@@ -155,8 +152,7 @@ public class MatchInjuryTests : LiveMatchTestBase
         var sub = await Read().GameSubstitutions.SingleAsync();
         Assert.True((await Subs.RemoveSubstitutionAsync(sub.Id)).IsSuccess);
 
-        // One tap made the pair; leaving the injury behind would keep clipping her availability
-        // for a change that no longer happened.
+        // One tap made the pair, so undoing that tap has to take both.
         Assert.Empty(await Read().GameInjuries.ToListAsync());
 
         var period = await LivePeriodAsync(game.Id);
@@ -174,8 +170,7 @@ public class MatchInjuryTests : LiveMatchTestBase
         Assert.True((await Subs.MarkInjuredAsync(game.Id, players[1].Id)).IsSuccess);
         await MatchClock.FinishMatchAsync(game.Id);
 
-        // Without the include, AvailableMinutesFor silently reads an empty list and every hurt
-        // player's utilisation goes back to being measured against the whole match.
+        // Without the include, AvailableMinutesFor silently reads an empty list.
         var loaded = (await Games.GetAllWithDetailsAsync()).Value!.Single();
 
         Assert.Equal(900, Assert.Single(loaded.Injuries).AtSeconds);

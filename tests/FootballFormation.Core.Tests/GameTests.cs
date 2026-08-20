@@ -1,4 +1,4 @@
-using FootballFormation.Core.Models;
+﻿using FootballFormation.Core.Models;
 
 namespace FootballFormation.Core.Tests;
 
@@ -143,9 +143,8 @@ public class GameTests
     [Fact]
     public void AvailableMinutesFor_never_exceeds_what_the_match_actually_ran()
     {
-        // Nothing should be able to record an injury past the final whistle — the live screen
-        // refuses one without a half in play. But this is what utilisation divides by, and a
-        // percentage over 100 gets read as a broken report rather than as a broken row.
+        // The live screen refuses an injury without a half in play, so this should be unreachable
+        // — but it is what utilisation divides by, and over 100% reads as a broken report.
         var game = TimedGame();
         TestData.Injury(game, game.Periods[1], playerId: 1, atSeconds: 9999, position: PlayerPosition.CM);
 
@@ -180,8 +179,7 @@ public class GameTests
     public void A_substitution_made_earlier_in_the_half_is_not_an_injurys_replacement()
     {
         // Taken off on 10', back on on 20', hurt on 30' with the bench empty. Pairing on the player
-        // alone would read the first substitution as this injury's replacement and stop the minutes
-        // walk from ever taking her off.
+        // alone would read the first substitution as this injury's replacement.
         var game = TimedGame();
         var half = game.Periods[0];
         TestData.Substitution(game, half, offId: 1, onId: 2, atSeconds: 600, position: PlayerPosition.CM);

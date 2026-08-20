@@ -1,4 +1,4 @@
-@inject IStringLocalizer<Strings> L
+﻿@inject IStringLocalizer<Strings> L
 
 <MudDialog>
     <DialogContent>
@@ -16,7 +16,6 @@
             <MudText Typo="Typo.caption" Style="color: var(--ink-muted);">
                 @L["Guests are left out of every game unless you add them to it explicitly."]
             </MudText>
-            @* No caption, unlike Guest: a red switch reading "Injured" needs no explaining. *@
             <MudSwitch @bind-Value="IsInjured" Color="Color.Error" Class="mt-2">@L["Injured"]</MudSwitch>
         </MudForm>
     </DialogContent>

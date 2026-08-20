@@ -1,4 +1,4 @@
-using FootballFormation.Core.Data;
+﻿using FootballFormation.Core.Data;
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Security;
 using Microsoft.EntityFrameworkCore;
@@ -19,9 +19,7 @@ namespace FootballFormation.Core.Services;
 /// </para>
 /// <para>
 /// An injury lives here rather than in a service of its own because it is the same write: it takes
-/// a player off the pitch, and half the time it brings one on. What it adds is a
-/// <see cref="GameInjury"/> beside the substitution, which is the only thing that can say the rest
-/// of the match was time she was never available for.
+/// a player off the pitch, and half the time it brings one on.
 /// </para>
 /// </summary>
 public class MatchSubstitutionService(
@@ -145,8 +143,8 @@ public class MatchSubstitutionService(
     /// availability (<see cref="Game.AvailableMinutesFor"/>).
     /// <para>
     /// <paramref name="replacementPlayerId"/> is optional: name someone and this is an ordinary
-    /// substitution with an injury recorded beside it; leave it out and the team plays the rest of
-    /// the half a player short, with the injury row the only thing that says she left.
+    /// substitution with an injury recorded beside it; leave it out and the team plays on a player
+    /// short.
     /// </para>
     /// </summary>
     public Task<Result<GameInjury>> MarkInjuredAsync(
@@ -167,8 +165,8 @@ public class MatchSubstitutionService(
             if (half is null)
                 return Result.Failure<GameInjury>("No half is being played");
 
-            // Checked before the lineup is touched: the unique index would refuse the second row
-            // anyway, but as a constraint violation rather than as something to read on a phone.
+            // Before the lineup is touched: the unique index refuses the second row anyway, but as
+            // a constraint violation rather than as something to read on a phone.
             if (await db.GameInjuries.AnyAsync(
                     i => i.GameId == gameId && i.PlayerId == playerId, cancellationToken))
                 return Result.Failure<GameInjury>("That player is already marked injured");
@@ -224,8 +222,8 @@ public class MatchSubstitutionService(
 
     /// <summary>
     /// Undoes an injury: the record goes, and when nobody came on for her she goes back into the
-    /// slot she left. A replaced injury is undone through its substitution instead — that row is
-    /// what holds the slot, and it takes the injury with it.
+    /// slot she left. A replaced injury is undone through its substitution instead, which holds the
+    /// slot and takes the injury with it.
     /// </summary>
     public Task<Result> RemoveInjuryAsync(int injuryId, CancellationToken cancellationToken = default) =>
         LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "undo the injury",
@@ -249,11 +247,8 @@ public class MatchSubstitutionService(
                     .Where(pp => pp.GamePeriodId == injury.GamePeriodId)
                     .ToListAsync(cancellationToken);
 
-                // Nothing on this screen takes an empty slot over — a position swap needs two
-                // players already on, and a substitution reuses the slot of whoever it takes off.
-                // The formation screen does, though: saving a line-up there is delete-and-reinsert
-                // and nothing stops it happening mid-match. Refusing beats seating two players in
-                // one place.
+                // Nothing on this screen takes an empty slot over, but the formation screen can:
+                // saving a line-up there is delete-and-reinsert, mid-match included.
                 if (positions.Any(pp => !pp.IsSubstitute && pp.SlotIndex == injury.SlotIndex))
                     return Result.Failure<int>("Somebody else is in that place now");
 
@@ -276,9 +271,8 @@ public class MatchSubstitutionService(
     /// Undoes a substitution. Only the most recent one in its half can go, because reversing an
     /// older swap would fight every change made on that slot since.
     /// <para>
-    /// An injury recorded for the player who came off goes with it: the two rows were one tap, and
-    /// leaving the injury behind would keep clipping her availability for a change that no longer
-    /// happened.
+    /// An injury recorded for the player who came off goes with it — the two rows were one tap, and
+    /// leaving the injury behind would clip her availability for a change that no longer happened.
     /// </para>
     /// </summary>
     public Task<Result> RemoveSubstitutionAsync(int subId, CancellationToken cancellationToken = default) =>
@@ -342,8 +336,7 @@ public class MatchSubstitutionService(
             return Result.Success(sub.GameId);
         });
 
-    /// <summary>The slot and position a player was holding, handed from whoever left it to whoever
-    /// takes it over.</summary>
+    /// <summary>The place a player was holding, handed to whoever takes it over.</summary>
     private readonly record struct PitchSlot(int? Index, PlayerPosition Position);
 
     /// <summary>
@@ -364,7 +357,6 @@ public class MatchSubstitutionService(
         return Result.Success(slot);
     }
 
-    /// <summary>Puts <paramref name="playerId"/> into the place just freed.</summary>
     private static Result BringOnThePitch(GamePeriod half, int playerId, PitchSlot slot)
     {
         var on = half.PlayerPositions.FirstOrDefault(pp => pp.PlayerId == playerId);

@@ -62,7 +62,6 @@ public class Game
     public List<GameGoal> Goals { get; set; } = [];
     public List<GameSubstitution> Substitutions { get; set; } = [];
 
-    /// <summary>Players hurt during this match, with the minute each of them went off.</summary>
     public List<GameInjury> Injuries { get; set; } = [];
 
     /// <summary>
@@ -150,19 +149,16 @@ public class Game
         : GameDurationMinutes;
 
     /// <summary>
-    /// Minutes <paramref name="playerId"/> could have played in this match: the whole played
-    /// duration, or the stretch up to the moment she was hurt in it. The denominator behind
+    /// Minutes <paramref name="playerId"/> could have played: the whole played duration, or the
+    /// stretch up to the moment she was hurt. The denominator behind
     /// <c>PlayerStats.Utilization</c>, so an injury at 20' leaves her judged on 20 minutes rather
-    /// than on the hour she was never going to get.
-    /// <para>
-    /// Truncating like <see cref="PlayedDurationMinutes"/>, and capped by it: a match that over-ran
-    /// must not let an injury in stoppage time buy more availability than the match itself had.
-    /// </para>
+    /// than on the hour she was never going to get. Truncating like
+    /// <see cref="PlayedDurationMinutes"/>, and capped by it so a match that over-ran cannot push
+    /// anyone past 100%.
     /// </summary>
     public int AvailableMinutesFor(int playerId)
     {
-        // Nothing to measure an injury against on a game that was never run live, and there is no
-        // way to record one on it either — the live screen is the only thing that writes them.
+        // Only the live screen writes an injury, so a game never run live can have none.
         if (!HasActualTimings) return PlayedDurationMinutes;
 
         return Injuries.FirstOrDefault(i => i.PlayerId == playerId) is { } injury
@@ -174,13 +170,12 @@ public class Game
     /// Whether somebody came on for an injured player. The <see cref="GameSubstitution"/> is what
     /// takes a replaced player off the pitch in every minutes calculation; without one, the injury
     /// row is the only thing that says she left, and <c>GameMinutesReport</c> has to walk it as the
-    /// change it was. It is also why a replaced injury gets no timeline entry of its own: one
-    /// touchline action writes both rows, and the substitution is the one shown and undone.
+    /// change it was. It is also why a replaced injury gets no timeline entry of its own.
     /// <para>
     /// Matched on the second as well as the player, because that is what "one action wrote both"
-    /// means — <c>MarkInjuredAsync</c> stamps the pair from a single clock reading. Being taken off
-    /// earlier in the same half, brought back on and only then hurt is three separate things, and
-    /// pairing on the player alone would read the first of them as this injury's replacement.
+    /// means. Being taken off earlier in the same half, brought back on and only then hurt is three
+    /// separate things, and pairing on the player alone would read the first as this injury's
+    /// replacement.
     /// </para>
     /// </summary>
     public bool WasReplaced(GameInjury injury) => Substitutions
@@ -188,8 +183,7 @@ public class Game
                   && s.PlayerOffId == injury.PlayerId
                   && s.AtSeconds == injury.AtSeconds);
 
-    /// <summary>The injury a substitution was made for, or null when the player who came off simply
-    /// came off. The other side of <see cref="WasReplaced"/>.</summary>
+    /// <summary>The other side of <see cref="WasReplaced"/>.</summary>
     public GameInjury? InjuryFor(GameSubstitution substitution) => Injuries
         .FirstOrDefault(i => i.GamePeriodId == substitution.GamePeriodId
                              && i.PlayerId == substitution.PlayerOffId

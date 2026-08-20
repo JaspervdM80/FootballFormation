@@ -1,4 +1,4 @@
-using System.Timers;
+﻿using System.Timers;
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Reporting;
 using FootballFormation.Core.Services;
@@ -16,8 +16,8 @@ namespace FootballFormation.UI.Pages;
 /// listed together.
 /// <para>
 /// <paramref name="Injury"/> is set alongside <paramref name="Substitution"/> when the player who
-/// came off was hurt: one tap wrote both rows, so the timeline shows one line for them, marked with
-/// the cross. It stands alone only when nobody came on for her.
+/// came off was hurt: one tap wrote both rows, so they get one line. It stands alone only when
+/// nobody came on for her.
 /// </para>
 /// <para>
 /// Sorted on <paramref name="AtSeconds"/>, then <paramref name="RecordedAt"/>, then
@@ -220,8 +220,7 @@ public partial class LiveMatch
     /// Who can come on: the bench for this half, plus anyone in the roster with no lineup entry
     /// at all — a late arrival should not be locked out of a match already under way. Two
     /// exclusions on top of <see cref="Game.SelectRoster"/>: a player generally injured, the same
-    /// one <c>FormationBuilder</c> applies when building the line-up in the first place; and
-    /// anyone already hurt in this match, who is on the bench for exactly that reason.
+    /// one <c>FormationBuilder</c> applies; and anyone already hurt in this match.
     /// </summary>
     private List<Player> SubCandidates
     {
@@ -255,16 +254,14 @@ public partial class LiveMatch
 
     /// <summary>
     /// Whether an empty timeline is the checkbox's doing rather than the truth. Only the two kinds
-    /// the checkbox can hide are counted — an injury is always listed, so a match with one never
-    /// reaches the empty state at all.
+    /// it can hide are counted — an injury is always listed.
     /// </summary>
     private bool HasEvents => GameData is { } game && (game.Goals.Count > 0 || game.Substitutions.Count > 0);
 
     /// <summary>
     /// Goals, substitutions and injuries on one timeline, most recent first. Substitutions can be
     /// left out: a match with a lot of rotation buries the goals among them, and the goals are what
-    /// someone scrolling back is usually after. An injury is never folded away — it is the one
-    /// change on this list that outlives the match.
+    /// someone scrolling back is usually after. An injury is never folded away.
     /// </summary>
     private List<MatchEvent> Timeline
     {
@@ -293,8 +290,7 @@ public partial class LiveMatch
                     s.RecordedAt, s.Id, null, s, GameData.InjuryFor(s)))
                 : [];
 
-            // Only the injuries nobody came on for. The rest are already on the line above, as the
-            // substitution they were made with — see Game.WasReplaced.
+            // Only the injuries nobody came on for; the rest are on their substitution's line.
             var injuries = GameData.Injuries
                 .Where(i => !GameData.WasReplaced(i))
                 .Select(i => new MatchEvent(
@@ -436,8 +432,8 @@ public partial class LiveMatch
         Snackbar.Report(L, await SubService.RemoveInjuryAsync(injury.Id),
             L["Injury undone"], Severity.Warning);
 
-    /// <summary>The icon a timeline entry is marked with. The cross wins over the swap arrows on a
-    /// substitution made for an injury: what happened there was the injury.</summary>
+    /// <summary>The cross wins over the swap arrows on a substitution made for an injury: what
+    /// happened there was the injury.</summary>
     private static string EventIcon(MatchEvent entry) => entry switch
     {
         { Goal: not null } => Icons.Material.Filled.SportsSoccer,
@@ -474,8 +470,7 @@ public partial class LiveMatch
             return;
         }
 
-        // One call for both, because it is one change: the injury takes her off and the
-        // replacement, when there is one, comes on in the same write.
+        // One call for both: the injury takes her off and any replacement comes on in one write.
         if (choice.IsInjury)
         {
             var injured = await SubService.MarkInjuredAsync(GameId, playerId, choice.PlayerId);

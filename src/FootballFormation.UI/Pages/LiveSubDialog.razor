@@ -1,4 +1,4 @@
-@inject IStringLocalizer<Strings> L
+﻿@inject IStringLocalizer<Strings> L
 
 <MudDialog>
     <DialogContent>
@@ -41,8 +41,7 @@
         </MudText>
 
         @* Not a third list: it says why she is going off, so "Comes on" above still names her
-           replacement — and with the bench empty, nobody, which is the one way this dialog closes
-           without a name in it. *@
+           replacement — or, with an empty bench, nobody. *@
         <MudDivider Class="my-3" />
         <MudSwitch @bind-Value="Injured" Color="Color.Error">@L["Injured"]</MudSwitch>
         <MudText Typo="Typo.caption" Style="color: var(--ink-muted); display: block;">

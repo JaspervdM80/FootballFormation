@@ -1,4 +1,4 @@
-using FootballFormation.Core.Models;
+﻿using FootballFormation.Core.Models;
 using FootballFormation.Core.Reporting;
 
 namespace FootballFormation.Core.Tests;
@@ -118,8 +118,7 @@ public class PlayerStatsReportTests
     [Fact]
     public void Being_hurt_during_a_match_ends_the_minutes_it_counts_as_available()
     {
-        // Hurt on 20' of the first half, with nobody coming on. She played 20 of the 20 she could
-        // have — measuring her against the full hour would read as a player who was rested.
+        // Hurt on 20' of the first half, with nobody coming on: 20 of the 20 she could have played.
         var game = TestData.Game(durationMinutes: 60);
         game.MatchState = MatchState.Finished;
         game.ScoreHome = 1;

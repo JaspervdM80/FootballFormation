@@ -135,8 +135,7 @@ public static class GameMinutesReport
 
     /// <summary>
     /// One player leaving the pitch, and the one who took the place over when somebody did. A
-    /// substitution is both halves of that; an injury with nobody coming on is only the first, and
-    /// is the sole record that the team played the rest of the half a player short.
+    /// substitution is both halves of that; an injury with nobody coming on is only the first.
     /// </summary>
     private readonly record struct LineupChange(
         int AtSeconds, int Id, int PlayerOffId, int? PlayerOnId, PlayerPosition Position);
@@ -144,13 +143,11 @@ public static class GameMinutesReport
     /// <summary>
     /// Everything that moved somebody off the pitch in this line-up, in the order it happened.
     /// <para>
-    /// An injury that a substitution already accounts for is left out: one touchline action writes
-    /// both rows, and walking the pair would take the same player off twice — handing her slot back
-    /// in the rewind above. Two changes in the same second are routine (a double substitution is
-    /// two taps), and the walk only reaches the right kick-off line-up if it takes them in the
-    /// order they were made, which is what the id settles — <c>RecordedAt</c> can be the same
-    /// instant too. Across the two kinds an id tie is arbitrary, but the two never concern the same
-    /// player, so nothing depends on how it falls.
+    /// An injury a substitution already accounts for is left out: one touchline action writes both
+    /// rows, and walking the pair would take the same player off twice — handing her slot back in
+    /// the rewind above. Two changes in the same second are routine (a double substitution is two
+    /// taps), and the walk only reaches the right kick-off line-up if it takes them in the order
+    /// they were made, which is what the id settles — <c>RecordedAt</c> can be the same instant too.
     /// </para>
     /// </summary>
     private static List<LineupChange> ChangesIn(Game game, GamePeriod period)

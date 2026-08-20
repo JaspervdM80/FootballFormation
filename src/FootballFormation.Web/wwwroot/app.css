@@ -1,4 +1,4 @@
-/* Self-hosted DM Sans — eliminates render-blocking Google Fonts request */
+﻿/* Self-hosted DM Sans — eliminates render-blocking Google Fonts request */
 @font-face {
     font-family: 'DM Sans';
     font-style: normal;
@@ -788,9 +788,8 @@ html, body {
     border: 1px solid color-mix(in srgb, var(--color-guest) 20%, transparent);
 }
 
-/* Not a badge: injury is the one status that reads as a mark against the name, so it is a bare red
-   cross in front of it rather than a worded chip after it. GUEST and ARCHIVED still need their word
-   — nothing about them is pictured. */
+/* Not a badge: a red cross in front of the name is read without being spelled out. GUEST and
+   ARCHIVED still need their word — nothing about them is pictured. */
 .injured-mark {
     color: var(--color-danger-bright);
     font-size: 1rem;
@@ -1483,7 +1482,6 @@ html, body {
     margin-left: 6px;
 }
 
-/* The mark leads the name, so its gap is on the other side. */
 .player-name-cell .injured-mark {
     margin-right: 4px;
 }

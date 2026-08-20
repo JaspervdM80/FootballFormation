@@ -1,4 +1,4 @@
-using FootballFormation.Core.Models;
+﻿using FootballFormation.Core.Models;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -12,8 +12,8 @@ public record PitchPlayer(Player Player, PlayerPosition Position);
 /// trade positions with a team-mate who stays on, or they go off hurt.
 /// <para>
 /// <paramref name="IsInjury"/> rides along with the first rather than replacing it — a player who
-/// is hurt still hands her place to whoever comes on. <paramref name="PlayerId"/> is null in the
-/// one case where nobody does: she is off injured and the bench had nobody left.
+/// is hurt still hands her place to whoever comes on. <paramref name="PlayerId"/> is null only when
+/// nobody does: she is off injured and the bench had nobody left.
 /// </para>
 /// </summary>
 public record LiveSubChoice(int? PlayerId, bool IsPositionSwap, bool IsInjury);
@@ -77,9 +77,9 @@ public partial class LiveSubDialog
     }
 
     /// <summary>
-    /// Why she is going off, not a third thing that can happen to her — so it leaves
-    /// <see cref="PlayerOnId"/> alone, which is still where her replacement is named. It does clear
-    /// the swap: a player being helped off the pitch is not trading positions with anyone.
+    /// Why she is going off, not a third thing that can happen to her, so it leaves
+    /// <see cref="PlayerOnId"/> alone — that is still where her replacement is named. It does clear
+    /// the swap: a player being helped off is not trading positions with anyone.
     /// </summary>
     private bool Injured
     {

@@ -1,4 +1,4 @@
-using FootballFormation.Core.Models;
+﻿using FootballFormation.Core.Models;
 using FootballFormation.Core.Reporting;
 
 namespace FootballFormation.Core.Tests;
@@ -235,8 +235,7 @@ public class GameMinutesReportTests
     public void An_injury_nobody_came_on_for_stops_the_hurt_player_and_leaves_the_rest_playing()
     {
         var game = TestData.Game();
-        // The lineup as it finally stands: player 1 was helped off and nobody replaced her, so the
-        // team played out the half with ten. Only the injury row says when that happened.
+        // Player 1 was helped off and nobody replaced her, so only the injury row says she left.
         var period = game.AddPeriod(PeriodType.FirstHalf,
             TestData.Starter(2, PlayerPosition.GK, 0),
             TestData.Sub(1));
@@ -262,8 +261,7 @@ public class GameMinutesReportTests
 
         period.StartedAtSeconds = 0;
         period.EndedAtSeconds = 1800;
-        // One touchline action writes both rows. Walking the pair would take player 1 off twice —
-        // and hand her slot back in the rewind, crediting player 2 the whole half.
+        // Walking the pair would take player 1 off twice, handing her slot back in the rewind.
         TestData.Substitution(game, period, offId: 1, onId: 2, atSeconds: 600, position: PlayerPosition.CM, slot: 5);
         TestData.Injury(game, period, playerId: 1, atSeconds: 600, position: PlayerPosition.CM, slot: 5);
 
@@ -278,8 +276,7 @@ public class GameMinutesReportTests
     {
         var game = TestData.Game();
         // Player 2 came on for player 1 on 10', then went off hurt on 20' with the bench empty.
-        // Both are on the bench at the end, so the rewind has to undo them in order to find who
-        // kicked the half off at all.
+        // Both are benched at the end, so the rewind has to undo them in order to find who started.
         var period = game.AddPeriod(PeriodType.FirstHalf,
             TestData.Starter(3, PlayerPosition.GK, 0),
             TestData.Sub(1),

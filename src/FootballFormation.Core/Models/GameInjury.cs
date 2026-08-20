@@ -1,25 +1,18 @@
 namespace FootballFormation.Core.Models;
 
 /// <summary>
-/// A player hurt during a match, recorded at the moment she left the pitch for it.
+/// A player hurt during a match, stamped with the moment she left the pitch.
 /// <para>
-/// Distinct from <see cref="SeasonSquadMember.IsInjured"/>, which is a standing status with no time
-/// dimension: this is one afternoon, on the match clock. It is what lets a game's availability stop
-/// where the injury did — see <see cref="Game.AvailableMinutesFor"/> — which a flag on the squad row
-/// can never say, because it carries no date.
+/// Distinct from <see cref="SeasonSquadMember.IsInjured"/>, which is a standing status with no date
+/// on it. Only a moment on the clock can stop a game's availability where the injury did — see
+/// <see cref="Game.AvailableMinutesFor"/>. When nobody came on for her this is also the only row
+/// that says she left at all, which is why it carries the slot and position she left behind.
 /// </para>
 /// <para>
-/// The line-up is still the source of truth for who stands where. This row says <em>when</em> she
-/// stopped standing there, the same way <see cref="GameSubstitution"/> does; and when nobody came on
-/// for her it is the only row that says so at all, which is why it carries the slot and position she
-/// left behind.
-/// </para>
-/// <para>
-/// Three foreign keys and no navigation beside any of them, the way
-/// <see cref="GameGoal.GamePeriodId"/> is written and for the same reason: every reader already has
-/// what it needs. The half is resolved against the game's own <see cref="Game.Periods"/>
-/// (<c>MatchClockReport</c>), and the player against the pool the live screen loads once for the
-/// whole match — so a navigation would only be an invitation to <c>Include</c> the same rows again.
+/// Foreign keys with no navigation beside them, the way <see cref="GameGoal.GamePeriodId"/> is
+/// written: the half is resolved against the game's own <see cref="Game.Periods"/> and the player
+/// against the pool the live screen already loads, so a navigation would only invite a second
+/// <c>Include</c> of the same rows.
 /// </para>
 /// </summary>
 public class GameInjury
@@ -33,17 +26,10 @@ public class GameInjury
     /// played.</summary>
     public int AtSeconds { get; set; }
 
-    /// <summary>The pitch slot she left, so the record can be undone.</summary>
     public int? SlotIndex { get; set; }
-
-    /// <summary>The position she was holding, for the same reason — and so
-    /// <c>GameMinutesReport</c> can credit the minutes before it when no substitution row does.</summary>
     public PlayerPosition Position { get; set; }
 
-    /// <summary>
-    /// When it was entered. <see cref="AtSeconds"/> says where on the match clock it sits; this
-    /// breaks ties against goals and substitutions in the same second. See
-    /// <see cref="GameGoal.RecordedAt"/>.
-    /// </summary>
+    /// <summary>UTC entry time — breaks ties against goals and substitutions in the same second.
+    /// See <see cref="GameGoal.RecordedAt"/>.</summary>
     public DateTime RecordedAt { get; set; } = DateTime.UtcNow;
 }
