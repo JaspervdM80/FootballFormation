@@ -215,8 +215,6 @@ public class MatchSubstitutionService(
             // off and no row saying why would credit her the whole half back on the next report.
             await db.SaveChangesAsync(cancellationToken);
 
-            await db.Entry(injury).Reference(i => i.Player).LoadAsync(cancellationToken);
-
             logger.LogInformation("Game {GameId}: {Player} off injured at {Seconds}s in the {Half}, {Replacement}",
                 gameId, playerId, atSeconds, half.PeriodType.Half(),
                 replacementPlayerId is { } on ? $"replaced by {on}" : "not replaced");

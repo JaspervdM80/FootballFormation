@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FootballFormation.Core.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260820001943_AddMatchInjuries")]
+    [Migration("20260820072039_AddMatchInjuries")]
     partial class AddMatchInjuries
     {
         /// <inheritdoc />
@@ -525,29 +525,23 @@ namespace FootballFormation.Core.Migrations
 
             modelBuilder.Entity("FootballFormation.Core.Models.GameInjury", b =>
                 {
-                    b.HasOne("FootballFormation.Core.Models.Game", "Game")
+                    b.HasOne("FootballFormation.Core.Models.Game", null)
                         .WithMany("Injuries")
                         .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("FootballFormation.Core.Models.GamePeriod", "GamePeriod")
+                    b.HasOne("FootballFormation.Core.Models.GamePeriod", null)
                         .WithMany()
                         .HasForeignKey("GamePeriodId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("FootballFormation.Core.Models.Player", "Player")
+                    b.HasOne("FootballFormation.Core.Models.Player", null)
                         .WithMany()
                         .HasForeignKey("PlayerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Game");
-
-                    b.Navigation("GamePeriod");
-
-                    b.Navigation("Player");
                 });
 
             modelBuilder.Entity("FootballFormation.Core.Models.GamePeriod", b =>

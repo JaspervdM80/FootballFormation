@@ -63,11 +63,6 @@ internal static class GameQueries
     internal static IQueryable<Game> WithInjuries(this IQueryable<Game> games) =>
         games.Include(g => g.Injuries);
 
-    internal static IQueryable<Game> WithInjuredPlayers(this IQueryable<Game> games) =>
-        games
-            .Include(g => g.Injuries)
-                .ThenInclude(i => i.Player);
-
     internal static IQueryable<Game> WithSubstitutionPlayers(this IQueryable<Game> games) =>
         games
             .Include(g => g.Substitutions)

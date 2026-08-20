@@ -29,6 +29,13 @@ internal sealed class GameConfiguration : IEntityTypeConfiguration<Game>
             .HasForeignKey(s => s.GameId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // WithOne() rather than WithOne(i => i.Game): GameInjury carries the id without a
+        // navigation back, so this side is the only one that names the pair.
+        entity.HasMany(g => g.Injuries)
+            .WithOne()
+            .HasForeignKey(i => i.GameId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         entity.HasMany(g => g.Comments)
             .WithOne(c => c.Game)
             .HasForeignKey(c => c.GameId)

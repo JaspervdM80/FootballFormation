@@ -14,18 +14,20 @@ namespace FootballFormation.Core.Models;
 /// for her it is the only row that says so at all, which is why it carries the slot and position she
 /// left behind.
 /// </para>
+/// <para>
+/// Three foreign keys and no navigation beside any of them, the way
+/// <see cref="GameGoal.GamePeriodId"/> is written and for the same reason: every reader already has
+/// what it needs. The half is resolved against the game's own <see cref="Game.Periods"/>
+/// (<c>MatchClockReport</c>), and the player against the pool the live screen loads once for the
+/// whole match — so a navigation would only be an invitation to <c>Include</c> the same rows again.
+/// </para>
 /// </summary>
 public class GameInjury
 {
     public int Id { get; set; }
     public int GameId { get; set; }
-    public Game Game { get; set; } = null!;
-
     public int GamePeriodId { get; set; }
-    public GamePeriod GamePeriod { get; set; } = null!;
-
     public int PlayerId { get; set; }
-    public Player Player { get; set; } = null!;
 
     /// <summary>Match-clock second she went off. Everything after it is time she could not have
     /// played.</summary>

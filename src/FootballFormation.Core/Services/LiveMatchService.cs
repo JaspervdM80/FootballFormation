@@ -38,7 +38,7 @@ public class LiveMatchService(
                 .WithNamedLineups()
                 .WithGoalsAndScorers()
                 .WithSubstitutionPlayers()
-                .WithInjuredPlayers()
+                .WithInjuries()
                 .FirstOrDefaultAsync(g => g.Id == gameId, cancellationToken);
 
             if (game is null)

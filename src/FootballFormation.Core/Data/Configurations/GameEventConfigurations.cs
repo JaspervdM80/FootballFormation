@@ -65,14 +65,15 @@ internal sealed class GameInjuryConfiguration : IEntityTypeConfiguration<GameInj
     {
         entity.HasKey(i => i.Id);
 
-        entity.HasOne(i => i.GamePeriod)
+        // Both legs declared without a navigation — see GameInjury, which carries the ids alone.
+        entity.HasOne<GamePeriod>()
             .WithMany()
             .HasForeignKey(i => i.GamePeriodId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // Restrict, like GameSubstitution's player legs: deleting someone who was hurt in a match
         // fails loudly rather than silently rewriting how long she was available for it.
-        entity.HasOne(i => i.Player)
+        entity.HasOne<Player>()
             .WithMany()
             .HasForeignKey(i => i.PlayerId)
             .OnDelete(DeleteBehavior.Restrict);
