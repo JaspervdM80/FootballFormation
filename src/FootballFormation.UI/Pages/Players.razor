@@ -132,17 +132,15 @@
                 {
                     <span class="shirt-inline">#@context.Player!.ShirtNumber</span>
                 }
+                @if (context.IsInjured)
+                {
+                    <MudIcon Class="injured-mark" Icon="@Icons.Material.Filled.MedicalServices"
+                             Size="Size.Small" Title="@L["Injured"]" />
+                }
                 <span style="font-weight: 600; color: var(--ink);">@context.Player!.DisplayName</span>
                 @if (context.IsGuest)
                 {
                     <span class="badge-guest">@L["GUEST"]</span>
-                }
-                @if (context.IsInjured)
-                {
-                    <span class="badge-injured">
-                        <MudIcon Icon="@Icons.Material.Filled.MedicalServices" Size="Size.Small" />
-                        @L["INJURED"]
-                    </span>
                 }
                 @* An archived player still belongs to the seasons they played, so they stay in this
                    list — the badge is what says they are no longer being picked for new ones. *@

@@ -47,6 +47,7 @@ public class GameService(
                 .WithPeriodLineups()
                 .WithGoals()
                 .WithSubstitutions()
+                .WithInjuries()
                 .ToListAsync(cancellationToken))
                 .NewestFirst();
 

@@ -62,6 +62,8 @@ public class Game
     public List<GameGoal> Goals { get; set; } = [];
     public List<GameSubstitution> Substitutions { get; set; } = [];
 
+    public List<GameInjury> Injuries { get; set; } = [];
+
     /// <summary>
     /// Admin-written notes about this game, most of them private. Deliberately not eager-loaded
     /// anywhere — every read goes through <c>GameService.GetCommentsAsync</c>, which is the one
@@ -145,6 +147,47 @@ public class Game
     public int PlayedDurationMinutes => HasActualTimings
         ? PlayedDurationSeconds / 60
         : GameDurationMinutes;
+
+    /// <summary>
+    /// Minutes <paramref name="playerId"/> could have played: the whole played duration, or the
+    /// stretch up to the moment she was hurt. The denominator behind
+    /// <c>PlayerStats.Utilization</c>, so an injury at 20' leaves her judged on 20 minutes rather
+    /// than on the hour she was never going to get. Truncating like
+    /// <see cref="PlayedDurationMinutes"/>, and capped by it so a match that over-ran cannot push
+    /// anyone past 100%.
+    /// </summary>
+    public int AvailableMinutesFor(int playerId)
+    {
+        // Only the live screen writes an injury, so a game never run live can have none.
+        if (!HasActualTimings) return PlayedDurationMinutes;
+
+        return Injuries.FirstOrDefault(i => i.PlayerId == playerId) is { } injury
+            ? Math.Min(injury.AtSeconds, PlayedDurationSeconds) / 60
+            : PlayedDurationMinutes;
+    }
+
+    /// <summary>
+    /// Whether somebody came on for an injured player. The <see cref="GameSubstitution"/> is what
+    /// takes a replaced player off the pitch in every minutes calculation; without one, the injury
+    /// row is the only thing that says she left, and <c>GameMinutesReport</c> has to walk it as the
+    /// change it was. It is also why a replaced injury gets no timeline entry of its own.
+    /// <para>
+    /// Matched on the second as well as the player, because that is what "one action wrote both"
+    /// means. Being taken off earlier in the same half, brought back on and only then hurt is three
+    /// separate things, and pairing on the player alone would read the first as this injury's
+    /// replacement.
+    /// </para>
+    /// </summary>
+    public bool WasReplaced(GameInjury injury) => Substitutions
+        .Any(s => s.GamePeriodId == injury.GamePeriodId
+                  && s.PlayerOffId == injury.PlayerId
+                  && s.AtSeconds == injury.AtSeconds);
+
+    /// <summary>The other side of <see cref="WasReplaced"/>.</summary>
+    public GameInjury? InjuryFor(GameSubstitution substitution) => Injuries
+        .FirstOrDefault(i => i.GamePeriodId == substitution.GamePeriodId
+                             && i.PlayerId == substitution.PlayerOffId
+                             && i.AtSeconds == substitution.AtSeconds);
 
     /// <summary>
     /// Squad players are in unless marked unavailable; guests are out unless explicitly added.

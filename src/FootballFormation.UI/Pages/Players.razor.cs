@@ -215,7 +215,6 @@ public partial class Players
             if (player is not null) p.Add(x => x.Player, player);
             p.Add(x => x.IsGuest, isGuest);
             p.Add(x => x.IsInjured, isInjured);
-            p.Add(x => x.SeasonName, SeasonName);
         });
     }
 

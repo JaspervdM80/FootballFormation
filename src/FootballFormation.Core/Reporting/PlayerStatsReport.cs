@@ -40,7 +40,8 @@ public class PlayerStats
 
     /// <summary>Minutes the player was available to play — the played duration of every game
     /// they were in the roster for (with a lineup). Games they were unavailable for don't
-    /// count, so this is a fair denominator: on-pitch minutes vs. bench/unavailable time.</summary>
+    /// count, and a game they were hurt in counts only up to the injury, so this is a fair
+    /// denominator: on-pitch minutes vs. bench time they could have been called off.</summary>
     public int AvailableMinutes { get; init; }
 
     public int Goals { get; init; }
@@ -98,9 +99,10 @@ public static class PlayerStatsReport
             if (!game.IsComplete) continue;
 
             // Available = the player was in the roster for a game that actually has a lineup,
-            // whether they started, subbed, or sat the bench. Unavailable games don't count.
+            // whether they started, subbed, or sat the bench. Unavailable games don't count, and a
+            // game they were hurt in counts only up to the injury — see Game.AvailableMinutesFor.
             if (game.HasLineup && game.IsInRoster(player, squads))
-                availableMinutes += game.PlayedDurationMinutes;
+                availableMinutes += game.AvailableMinutesFor(player.Id);
 
             var gameMinutes = GameMinutesReport.Build(game);
             var seconds = 0;

@@ -1,4 +1,4 @@
-using FootballFormation.Core.Models;
+﻿using FootballFormation.Core.Models;
 
 namespace FootballFormation.Core.Tests;
 
@@ -114,6 +114,90 @@ public class GameTests
         second.StartedAtSeconds = 1800;   // no end yet
 
         Assert.Equal(30, game.PlayedDurationMinutes);
+    }
+
+    /// <summary>A 60-minute match played out in two 30-minute halves, run live.</summary>
+    private static Game TimedGame()
+    {
+        var game = TestData.Game(durationMinutes: 60);
+        var first = game.AddPeriod(PeriodType.FirstHalf);
+        var second = game.AddPeriod(PeriodType.SecondHalf);
+
+        first.StartedAtSeconds = 0;
+        first.EndedAtSeconds = 1800;
+        second.StartedAtSeconds = 1800;
+        second.EndedAtSeconds = 3600;
+        return game;
+    }
+
+    [Fact]
+    public void AvailableMinutesFor_stops_at_the_injury_and_gives_everyone_else_the_whole_match()
+    {
+        var game = TimedGame();
+        TestData.Injury(game, game.Periods[1], playerId: 1, atSeconds: 2400, position: PlayerPosition.CM);
+
+        Assert.Equal(40, game.AvailableMinutesFor(1));
+        Assert.Equal(60, game.AvailableMinutesFor(2));
+    }
+
+    [Fact]
+    public void AvailableMinutesFor_never_exceeds_what_the_match_actually_ran()
+    {
+        // The live screen refuses an injury without a half in play, so this should be unreachable
+        // — but it is what utilisation divides by, and over 100% reads as a broken report.
+        var game = TimedGame();
+        TestData.Injury(game, game.Periods[1], playerId: 1, atSeconds: 9999, position: PlayerPosition.CM);
+
+        Assert.Equal(60, game.AvailableMinutesFor(1));
+    }
+
+    [Fact]
+    public void AvailableMinutesFor_falls_back_to_the_schedule_on_a_game_never_run_live()
+    {
+        var game = TestData.Game(durationMinutes: 60);
+        game.AddPeriod(PeriodType.FirstHalf);
+
+        Assert.Equal(60, game.AvailableMinutesFor(1));
+    }
+
+    [Fact]
+    public void An_injury_knows_whether_anybody_came_on_for_it()
+    {
+        var game = TimedGame();
+        var replaced = TestData.Injury(game, game.Periods[0], playerId: 1, atSeconds: 600, position: PlayerPosition.CM);
+        var alone = TestData.Injury(game, game.Periods[0], playerId: 2, atSeconds: 900, position: PlayerPosition.ST);
+
+        var sub = TestData.Substitution(
+            game, game.Periods[0], offId: 1, onId: 3, atSeconds: 600, position: PlayerPosition.CM);
+
+        Assert.True(game.WasReplaced(replaced));
+        Assert.False(game.WasReplaced(alone));
+        Assert.Same(replaced, game.InjuryFor(sub));
+    }
+
+    [Fact]
+    public void A_substitution_made_earlier_in_the_half_is_not_an_injurys_replacement()
+    {
+        // Taken off on 10', back on on 20', hurt on 30' with the bench empty. Pairing on the player
+        // alone would read the first substitution as this injury's replacement.
+        var game = TimedGame();
+        var half = game.Periods[0];
+        TestData.Substitution(game, half, offId: 1, onId: 2, atSeconds: 600, position: PlayerPosition.CM);
+        TestData.Substitution(game, half, offId: 2, onId: 1, atSeconds: 1200, position: PlayerPosition.CM);
+        var injury = TestData.Injury(game, half, playerId: 1, atSeconds: 1500, position: PlayerPosition.CM);
+
+        Assert.False(game.WasReplaced(injury));
+        Assert.Null(game.InjuryFor(game.Substitutions[0]));
+    }
+
+    [Fact]
+    public void A_substitution_nobody_was_hurt_for_has_no_injury_to_find()
+    {
+        var game = TimedGame();
+        var sub = TestData.Substitution(
+            game, game.Periods[0], offId: 1, onId: 3, atSeconds: 600, position: PlayerPosition.CM);
+
+        Assert.Null(game.InjuryFor(sub));
     }
 
     [Fact]

@@ -13,6 +13,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<GamePlayerPosition> GamePlayerPositions => Set<GamePlayerPosition>();
     public DbSet<GameGoal> GameGoals => Set<GameGoal>();
     public DbSet<GameSubstitution> GameSubstitutions => Set<GameSubstitution>();
+    public DbSet<GameInjury> GameInjuries => Set<GameInjury>();
     public DbSet<GameComment> GameComments => Set<GameComment>();
     public DbSet<MatchPreferences> MatchPreferences => Set<MatchPreferences>();
     public DbSet<AppUser> Users => Set<AppUser>();

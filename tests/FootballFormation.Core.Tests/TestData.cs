@@ -1,4 +1,4 @@
-using FootballFormation.Core.Models;
+﻿using FootballFormation.Core.Models;
 
 namespace FootballFormation.Core.Tests;
 
@@ -76,6 +76,26 @@ internal static class TestData
 
         game.Substitutions.Add(sub);
         return sub;
+    }
+
+    /// <summary>Pair it with a <see cref="Substitution"/> at the same second to describe an injury
+    /// somebody came on for.</summary>
+    public static GameInjury Injury(
+        Game game, GamePeriod period, int playerId, int atSeconds, PlayerPosition position, int? slot = null)
+    {
+        var injury = new GameInjury
+        {
+            Id = game.Injuries.Count + 1,
+            GameId = game.Id,
+            GamePeriodId = period.Id,
+            PlayerId = playerId,
+            AtSeconds = atSeconds,
+            Position = position,
+            SlotIndex = slot
+        };
+
+        game.Injuries.Add(injury);
+        return injury;
     }
 
     public static GameGoal Goal(int gameId = 1, int? scorerId = null, int? assisterId = null,

@@ -155,6 +155,11 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   them (`SubstituteAsync`), or they trade positions with a team-mate who stays on
   (`SwapPositionsAsync`). Choosing in either list clears the other, so the single action button
   always has exactly one change to make and says which — "Make substitution" or "Swap positions".
+  A third control, the **"Injured" switch**, is not a third change: it says *why* she is going off,
+  so the "Comes on" list above still names her replacement and the button reads "Off injured"
+  (`MarkInjuredAsync`). It is the one way the dialog closes with nobody named — a bench with nothing
+  left on it, and the team plays a player short. Turning it on clears the swap; picking a swap
+  clears it.
   A position swap writes no `GameSubstitution`: nobody's minutes changed, and a row there would say
   they did. The price is the *split by position* — `GameMinutesReport` reads the lineup as it finally
   stands, so after a swap the whole half is credited to the position each player moved **into**
@@ -186,6 +191,12 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   falls. `LiveMatch.Timeline` marks the one entry it is drawn above, because the markup renders an
   entry at a time and cannot see its neighbour, and because the substitutions filter decides who
   the neighbours are.
+- **An injury is one entry on the timeline, not two** (`.live-event-injury`, a red
+  `MedicalServices` cross). A substitution made for one takes the cross instead of the swap arrows,
+  and only the injuries nobody came on for get a line of their own — `Game.WasReplaced` is the
+  filter. Undo follows the same pairing: undoing the substitution removes the injury with it, and
+  undoing a standalone injury puts her back in the slot she left. Injuries are never folded away by
+  the substitutions checkbox below — it is the one change on the list that outlives the match.
 - A **"Show substitutions" checkbox** (`.live-timeline-toggle`) drops the substitutions from the
   timeline and leaves the goals: a rotated squad buries the goals among swaps nobody is scrolling
   back for. The state is per circuit and deliberately not stored. It rides the card's heading row
@@ -506,13 +517,17 @@ Season-scoped: it follows the season picker and shows that season's squad, not e
   a squad is the everyday action; the two that act on the *person* are demoted out of the icon row,
   with archive listed above delete because it is what is almost always meant.
 - **Guest and injured status are switches in the Edit Player dialog, not icons on the row.** The
-  `GUEST` and `INJURED` badges already state them, and a toggle next to a badge saying the same
-  thing is two controls for one fact. `PlayerDialog` therefore returns a
-  `PlayerEdit(Player, IsGuest, IsInjured)` record rather than a `Player`: the person and the two
-  membership flags are separate writes, and the page only makes each one when its own switch moved,
-  so renaming someone never touches the squad. Both switches are seeded from the row's flags, are
-  separated from the person's fields by a divider, and name the season under them — the flags
-  belong to one season's squad, not to the person.
+  row already states them, and a toggle next to a mark saying the same thing is two controls for one
+  fact. `PlayerDialog` therefore returns a `PlayerEdit(Player, IsGuest, IsInjured)` record rather
+  than a `Player`: the person and the two membership flags are separate writes, and the page only
+  makes each one when its own switch moved, so renaming someone never touches the squad. Both
+  switches are seeded from the row's flags and separated from the person's fields by a divider.
+  Only Guest carries a caption — "Injured" on a red switch explains itself, and the caption under it
+  only restated what the row shows.
+- **Injury is a red cross in front of the name (`.injured-mark`), not a worded badge after it.** It
+  is the one status on the row that is read without being spelled out, and the one worth seeing
+  before the name rather than after it. `GUEST` and `ARCHIVED` stay worded badges — nothing about
+  either is pictured.
 - **Archive vs delete.** Archiving retires someone who has left the club: nothing they are in
   changes, they simply stop being offered for seasons still to come (see
   [models.md](models.md#archiving-and-why-deleting-is-guarded)). Its confirm says so; the delete

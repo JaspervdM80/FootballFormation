@@ -25,10 +25,6 @@ public partial class PlayerDialog
     [Parameter]
     public bool IsInjured { get; set; }
 
-    /// <summary>Named in the caption under the switch, so it is clear the flag is per season.</summary>
-    [Parameter]
-    public string? SeasonName { get; set; }
-
     private MudForm Form { get; set; } = null!;
     private string FirstName { get; set; } = string.Empty;
     private string? Surname { get; set; }

@@ -1,4 +1,4 @@
-using FootballFormation.Core.Models;
+﻿using FootballFormation.Core.Models;
 using FootballFormation.Core.Reporting;
 
 namespace FootballFormation.Core.Tests;
@@ -229,6 +229,69 @@ public class GameMinutesReportTests
 
         Assert.Contains(2, minutes.PlayerIds);
         Assert.Equal(1500, minutes.SecondsFor(2));
+    }
+
+    [Fact]
+    public void An_injury_nobody_came_on_for_stops_the_hurt_player_and_leaves_the_rest_playing()
+    {
+        var game = TestData.Game();
+        // Player 1 was helped off and nobody replaced her, so only the injury row says she left.
+        var period = game.AddPeriod(PeriodType.FirstHalf,
+            TestData.Starter(2, PlayerPosition.GK, 0),
+            TestData.Sub(1));
+
+        period.StartedAtSeconds = 0;
+        period.EndedAtSeconds = 1800;
+        TestData.Injury(game, period, playerId: 1, atSeconds: 600, position: PlayerPosition.CM, slot: 5);
+
+        var minutes = GameMinutesReport.Build(game);
+
+        Assert.Equal(600, minutes.SecondsFor(1));    // on the pitch until she went off on 10'
+        Assert.Equal(PlayerPosition.CM, minutes.PositionsFor(1).Single().Key);
+        Assert.Equal(1800, minutes.SecondsFor(2));   // the rest played the half out
+    }
+
+    [Fact]
+    public void An_injury_somebody_came_on_for_is_left_to_the_substitution_that_records_it()
+    {
+        var game = TestData.Game();
+        var period = game.AddPeriod(PeriodType.FirstHalf,
+            TestData.Starter(2, PlayerPosition.CM, 5),
+            TestData.Sub(1));
+
+        period.StartedAtSeconds = 0;
+        period.EndedAtSeconds = 1800;
+        // Walking the pair would take player 1 off twice, handing her slot back in the rewind.
+        TestData.Substitution(game, period, offId: 1, onId: 2, atSeconds: 600, position: PlayerPosition.CM, slot: 5);
+        TestData.Injury(game, period, playerId: 1, atSeconds: 600, position: PlayerPosition.CM, slot: 5);
+
+        var minutes = GameMinutesReport.Build(game);
+
+        Assert.Equal(600, minutes.SecondsFor(1));
+        Assert.Equal(1200, minutes.SecondsFor(2));
+    }
+
+    [Fact]
+    public void A_substitute_who_is_hurt_after_coming_on_is_walked_back_through_both_changes()
+    {
+        var game = TestData.Game();
+        // Player 2 came on for player 1 on 10', then went off hurt on 20' with the bench empty.
+        // Both are benched at the end, so the rewind has to undo them in order to find who started.
+        var period = game.AddPeriod(PeriodType.FirstHalf,
+            TestData.Starter(3, PlayerPosition.GK, 0),
+            TestData.Sub(1),
+            TestData.Sub(2));
+
+        period.StartedAtSeconds = 0;
+        period.EndedAtSeconds = 1800;
+        TestData.Substitution(game, period, offId: 1, onId: 2, atSeconds: 600, position: PlayerPosition.CM, slot: 5);
+        TestData.Injury(game, period, playerId: 2, atSeconds: 1200, position: PlayerPosition.CM, slot: 5);
+
+        var minutes = GameMinutesReport.Build(game);
+
+        Assert.Equal(600, minutes.SecondsFor(1));
+        Assert.Equal(600, minutes.SecondsFor(2));
+        Assert.Equal(1800, minutes.SecondsFor(3));
     }
 
     [Fact]

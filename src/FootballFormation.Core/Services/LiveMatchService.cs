@@ -22,7 +22,7 @@ public class LiveMatchService(
 {
     /// <summary>
     /// Everything the live screen renders, in one round trip: the periods with their lineups and
-    /// players, the goals, and the substitutions with both players named.
+    /// players, the goals, the substitutions with both players named, and the injuries.
     /// </summary>
     public Task<Result<Game>> GetLiveAsync(int gameId, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "load live match", cancellationToken, async () =>
@@ -38,6 +38,7 @@ public class LiveMatchService(
                 .WithNamedLineups()
                 .WithGoalsAndScorers()
                 .WithSubstitutionPlayers()
+                .WithInjuries()
                 .FirstOrDefaultAsync(g => g.Id == gameId, cancellationToken);
 
             if (game is null)

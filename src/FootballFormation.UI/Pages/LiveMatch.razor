@@ -95,7 +95,7 @@
             @if (CanSubstitute)
             {
                 <MudText Typo="Typo.caption" Class="live-pitch-hint">
-                    @L["Tap a player to substitute them or change their position."]
+                    @L["Tap a player to substitute them, change their position, or mark them injured."]
                 </MudText>
             }
 
@@ -183,8 +183,9 @@
                     var against = entry.Goal is { } g && (g.IsOwnGoal || g.IsOpponentGoal);
                     <div class="live-event @(against ? "live-event-against" : "")">
                         <span class="live-event-min">@(entry.Minute is { } at ? $"{at}'" : "—")</span>
-                        <MudIcon Size="Size.Small"
-                                 Icon="@(entry.Goal is not null ? Icons.Material.Filled.SportsSoccer : Icons.Material.Filled.SwapHoriz)" />
+                        <MudIcon Size="Size.Small" Icon="@EventIcon(entry)"
+                                 Class="@(entry.Injury is not null ? "live-event-injury" : null)"
+                                 Title="@(entry.Injury is not null ? L["Injured"].Value : null)" />
                         <div class="live-event-body">
                             @if (entry.Goal is { } goal)
                             {
@@ -205,6 +206,12 @@
                                 <div class="live-event-main">@PlayerLabel(sub.PlayerOnId)</div>
                                 <div class="live-event-sub">↔ @PlayerLabel(sub.PlayerOffId)</div>
                             }
+                            else if (entry.Injury is { } injury)
+                            {
+                                @* Only ever an injury nobody came on for. *@
+                                <div class="live-event-main">@PlayerLabel(injury.PlayerId)</div>
+                                <div class="live-event-sub">@L["Off injured, not replaced"]</div>
+                            }
                         </div>
                         @* The score the goal made it, in the scoreboard's order. Reading it off the
                            list is otherwise impossible: the list runs backwards. *@
@@ -221,9 +228,16 @@
                             }
                             else if (entry.Substitution is { } subToRemove)
                             {
+                                @* This also drops any injury recorded with it — one tap made both. *@
                                 <MudIconButton Icon="@Icons.Material.Filled.Undo" Size="Size.Small"
                                                title="@L["Undo"]"
                                                OnClick="() => RemoveSubstitution(subToRemove)" />
+                            }
+                            else if (entry.Injury is { } injuryToRemove)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Undo" Size="Size.Small"
+                                               title="@L["Undo"]"
+                                               OnClick="() => RemoveInjury(injuryToRemove)" />
                             }
                         </AuthorizeView>
                     </div>

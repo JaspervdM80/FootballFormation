@@ -1,4 +1,4 @@
-@inject IStringLocalizer<Strings> L
+﻿@inject IStringLocalizer<Strings> L
 
 <MudDialog>
     <DialogContent>
@@ -20,24 +20,14 @@
                     <MudSelectItem Value="pos">@pos.ToString() - @pos.DisplayName()</MudSelectItem>
                 }
             </MudSelect>
-            @* Everything above is the person; this one is their place in a single season's squad,
-               which is what the divider and the season line say. Same switch and caption as
-               SquadMemberDialog, because it sets the same flag. *@
+            @* Everything above is the person; these two are their place in a single season's squad,
+               which is what the divider says. Same switches as SquadMemberDialog. *@
             <MudDivider Class="my-3" />
             <MudSwitch @bind-Value="Guest" Color="Color.Warning" Class="mb-1">@L["Guest player"]</MudSwitch>
             <MudText Typo="Typo.caption" Class="d-block" Style="color: var(--ink-muted);">
                 @L["Guests are left out of every game unless you add them to it explicitly."]
             </MudText>
-            <MudSwitch @bind-Value="Injured" Color="Color.Error" Class="mb-1 mt-2">@L["Injured player"]</MudSwitch>
-            <MudText Typo="Typo.caption" Class="d-block" Style="color: var(--ink-muted);">
-                @L["An injured player is left out of every game's line-up until cleared."]
-            </MudText>
-            @if (!string.IsNullOrEmpty(SeasonName))
-            {
-                <MudText Typo="Typo.caption" Class="d-block" Style="color: var(--ink-subtle);">
-                    @L["Applies to the {0} squad only.", SeasonName]
-                </MudText>
-            }
+            <MudSwitch @bind-Value="Injured" Color="Color.Error" Class="mt-2">@L["Injured"]</MudSwitch>
         </MudForm>
     </DialogContent>
     <DialogActions>

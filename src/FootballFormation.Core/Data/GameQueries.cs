@@ -49,6 +49,15 @@ internal static class GameQueries
     internal static IQueryable<Game> WithSubstitutions(this IQueryable<Game> games) =>
         games.Include(g => g.Substitutions);
 
+    /// <summary>
+    /// **Never composed without <see cref="WithSubstitutions"/>.** <c>Game.WasReplaced</c> reads the
+    /// substitution rows to tell an injury somebody came on for from one nobody did; with none
+    /// loaded every injury looks unreplaced, and <c>GameMinutesReport</c> walks a replaced player
+    /// off the pitch twice — crediting her replacement the whole half on top of it.
+    /// </summary>
+    internal static IQueryable<Game> WithInjuries(this IQueryable<Game> games) =>
+        games.Include(g => g.Injuries);
+
     internal static IQueryable<Game> WithSubstitutionPlayers(this IQueryable<Game> games) =>
         games
             .Include(g => g.Substitutions)
