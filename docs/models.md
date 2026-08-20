@@ -124,6 +124,7 @@ always had, and keeps games referencing a since-departed player rendering sensib
 | Periods | List\<GamePeriod\> | Auto-created on game creation |
 | Goals | List\<GameGoal\> | Cascade delete |
 | UnavailablePlayerIds | List\<int\> | Squad players opted **out**. Comma-separated |
+| InjuredPlayerIds | List\<int\> | Squad players who missed it injured. Comma-separated. Written once, at the final whistle — see below |
 | GuestPlayerIds | List\<int\> | Guests **of this game's season**, opted in. Comma-separated |
 | MatchState | MatchState | NotStarted / InProgress / Finished. Driven by the live match screen |
 | ClockRunningSince | DateTime? | UTC anchor; null whenever the clock is stopped |
@@ -175,14 +176,23 @@ the season if the date falls beyond those defined. An explicit id passes through
 changing a game's date later never silently moves it between seasons.
 
 `Game.IsInRoster(player, squad)` / `Game.SelectRoster(players, squad)` centralize the rule: squad
-players are in unless marked unavailable, guests are out unless explicitly added. Use these rather
-than filtering on the id lists directly.
+players are in unless marked unavailable or recorded injured, guests are out unless explicitly
+added. Use these rather than filtering on the id lists directly.
 
 **Deliberately blind to `SeasonSquad.IsInjured`**, the same way it is blind to `Player.IsArchived`
 (see above): this judges a game the way it was played, and `PlayerStatsReport.AvailableMinutes` reads
 it for games already complete, so a status set after the fact must never rewrite one. A caller
 building a *future* line-up — `FormationBuilder.RosterPlayers`, `GameDialog.SquadPlayers`,
 `LiveMatch.SubCandidates` — filters injured players out itself, on top of this.
+
+Injury reaches the rule through the game's own `InjuredPlayerIds` instead, which is history rather
+than a status. `StandingInjuries.RecordAsync` copies the flag into it **once, on the transition to
+`IsComplete`** — from `MatchClockService.FinishMatchAsync` for a match run live, and from
+`GameService.SaveScoreAsync` for one played on paper — because `SeasonSquadMember.IsInjured` carries
+no date and there is nothing left to reconstruct from once it is cleared. Anyone named in a line-up
+is left out of the copy however she was flagged: the line-up is the better witness of who was
+actually there. Correcting a score that had already settled the match does not restamp it, so a
+recovery weeks later cannot backdate itself into matches that were played before it.
 
 The season's squad is passed **in** rather than eager-loaded through `Game.Season`. That is
 deliberate: `Game.Season` is nullable, so any query forgetting the `.Include` chain would silently
@@ -299,7 +309,10 @@ says which of them came second. `GameMinutesReport` walks them in that same orde
 with no time dimension.** The flag says she cannot be picked; this says the rest of *this* match was
 never hers to play, which is a thing only a moment on the clock can say. `Game.AvailableMinutesFor`
 is what reads it, and `PlayerStats.Utilization` is what it changes: carried off on 20' of an hour,
-she is judged on 20 minutes rather than on 60.
+she is judged on 20 minutes rather than on 60. The other 40 become `PlayerStats.InjuredMinutes` —
+which `Game.InjuredPlayerIds` also feeds, with the whole of a match she missed rather than played
+part of. Two records, because they answer different questions: this one needs a moment on the clock,
+that one only needs to survive the flag being cleared.
 
 `MatchSubstitutionService.MarkInjuredAsync` writes it, with an optional replacement. **Naming one
 writes a `GameSubstitution` beside the injury, in the same `SaveChangesAsync`**; leaving it out

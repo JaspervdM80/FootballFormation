@@ -293,6 +293,8 @@
   <data name="Loss" xml:space="preserve"><value>Verlies</value></data>
   <data name="Top scorers" xml:space="preserve"><value>Topscorers</value></data>
   <data name="Playing time" xml:space="preserve"><value>Speeltijd</value></data>
+  <data name="Availability" xml:space="preserve"><value>Beschikbaarheid</value></data>
+  <data name="Not played" xml:space="preserve"><value>Niet gespeeld</value></data>
   <data name="Goalkeeper minutes" xml:space="preserve"><value>Keeperminuten</value></data>
   <data name="No goalkeeper minutes yet." xml:space="preserve"><value>Nog geen keeperminuten.</value></data>
   <data name="{0}% of {1}'" xml:space="preserve"><value>{0}% van {1}'</value></data>

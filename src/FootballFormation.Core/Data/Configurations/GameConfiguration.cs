@@ -12,6 +12,7 @@ internal sealed class GameConfiguration : IEntityTypeConfiguration<Game>
         entity.Property(g => g.Opponent).IsRequired().HasMaxLength(100);
 
         entity.Property(g => g.UnavailablePlayerIds).HasCsvListConversion();
+        entity.Property(g => g.InjuredPlayerIds).HasCsvListConversion();
         entity.Property(g => g.GuestPlayerIds).HasCsvListConversion();
 
         entity.HasMany(g => g.Periods)

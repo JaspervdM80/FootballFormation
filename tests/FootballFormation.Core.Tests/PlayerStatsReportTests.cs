@@ -143,6 +143,109 @@ public class PlayerStatsReportTests
     }
 
     [Fact]
+    public void The_four_availability_figures_partition_the_season_maximum()
+    {
+        // One game played out, one she was left out of, one she was hurt 20' into, one on the bench.
+        var played = FinishedGame(1);
+
+        var missed = FinishedGame(2);
+        missed.Periods[0].PlayerPositions[0] = TestData.Starter(2, PlayerPosition.CM, 5);
+        missed.Periods[1].PlayerPositions[0] = TestData.Starter(2, PlayerPosition.CM, 5);
+        missed.UnavailablePlayerIds.Add(Subject.Id);
+
+        var hurt = TestData.Game(id: 3, durationMinutes: 60);
+        hurt.MatchState = MatchState.Finished;
+        var first = hurt.AddPeriod(PeriodType.FirstHalf,
+            TestData.Starter(1, PlayerPosition.CM, 5), TestData.Starter(2, PlayerPosition.GK, 0));
+        var second = hurt.AddPeriod(PeriodType.SecondHalf, TestData.Starter(2, PlayerPosition.GK, 0));
+        first.StartedAtSeconds = 0;
+        first.EndedAtSeconds = 1800;
+        second.StartedAtSeconds = 1800;
+        second.EndedAtSeconds = 3600;
+        TestData.Injury(hurt, first, playerId: 1, atSeconds: 1200, position: PlayerPosition.CM, slot: 5);
+
+        var benched = FinishedGame(4);
+        benched.Periods[0].PlayerPositions[0] = TestData.Sub(1);
+        benched.Periods[1].PlayerPositions[0] = TestData.Sub(1);
+        benched.Periods[0].PlayerPositions.Add(TestData.Starter(2, PlayerPosition.CM, 5));
+        benched.Periods[1].PlayerPositions.Add(TestData.Starter(2, PlayerPosition.CM, 5));
+
+        List<Game> games = [played, missed, hurt, benched];
+        var stats = PlayerStatsReport.Build(Subject, games, SeasonSquads.Of(TestData.Squad(1, [Subject])));
+
+        Assert.Equal(80, stats.TotalMinutes);
+        Assert.Equal(60, stats.NotPlayedMinutes);
+        Assert.Equal(40, stats.InjuredMinutes);
+        Assert.Equal(60, stats.UnavailableMinutes);
+
+        // Four games of an hour, however the hours were spent.
+        Assert.Equal(240, stats.MaximumMinutes);
+        Assert.Equal(
+            stats.MaximumMinutes,
+            stats.TotalMinutes + stats.NotPlayedMinutes + stats.InjuredMinutes + stats.UnavailableMinutes);
+        Assert.Equal(33, stats.Availability);
+    }
+
+    [Fact]
+    public void A_match_missed_injured_is_told_apart_from_one_simply_missed()
+    {
+        var injured = FinishedGame(1);
+        injured.Periods[0].PlayerPositions[0] = TestData.Starter(2, PlayerPosition.CM, 5);
+        injured.Periods[1].PlayerPositions[0] = TestData.Starter(2, PlayerPosition.CM, 5);
+        injured.InjuredPlayerIds.Add(Subject.Id);
+
+        var missed = FinishedGame(2);
+        missed.Periods[0].PlayerPositions[0] = TestData.Starter(2, PlayerPosition.CM, 5);
+        missed.Periods[1].PlayerPositions[0] = TestData.Starter(2, PlayerPosition.CM, 5);
+        missed.UnavailablePlayerIds.Add(Subject.Id);
+
+        var stats = PlayerStatsReport.Build(
+            Subject, [injured, missed], SeasonSquads.Of(TestData.Squad(1, [Subject])));
+
+        Assert.Equal(60, stats.InjuredMinutes);
+        Assert.Equal(60, stats.UnavailableMinutes);
+        Assert.Equal(0, stats.NotPlayedMinutes);
+        Assert.Equal(120, stats.MaximumMinutes);
+    }
+
+    [Fact]
+    public void The_maximum_is_the_same_figure_for_everybody()
+    {
+        // The whole point of the availability bars: they are read against each other, so the scale
+        // cannot move from row to row.
+        var other = TestData.Player(2, "Other", PlayerPosition.GK, shirt: 1);
+
+        var played = FinishedGame(1);
+        played.Periods[0].PlayerPositions.Add(TestData.Starter(2, PlayerPosition.GK, 0));
+        played.Periods[1].PlayerPositions.Add(TestData.Starter(2, PlayerPosition.GK, 0));
+
+        var missed = FinishedGame(2);
+        missed.Periods[0].PlayerPositions[0] = TestData.Starter(2, PlayerPosition.GK, 0);
+        missed.Periods[1].PlayerPositions[0] = TestData.Starter(2, PlayerPosition.GK, 0);
+        missed.UnavailablePlayerIds.Add(Subject.Id);
+
+        var squads = SeasonSquads.Of(TestData.Squad(1, [Subject, other]));
+        List<Game> games = [played, missed];
+
+        Assert.Equal(
+            PlayerStatsReport.Build(other, games, squads).MaximumMinutes,
+            PlayerStatsReport.Build(Subject, games, squads).MaximumMinutes);
+    }
+
+    [Fact]
+    public void A_game_nobody_was_picked_for_offers_nobody_any_minutes()
+    {
+        var game = FinishedGame();
+        game.Periods[0].PlayerPositions.Clear();
+        game.Periods[1].PlayerPositions.Clear();
+
+        var stats = PlayerStatsReport.Build(Subject, [game], SeasonSquads.Of(TestData.Squad(1, [Subject])));
+
+        Assert.Equal(0, stats.MaximumMinutes);
+        Assert.Equal(0, stats.Availability);
+    }
+
+    [Fact]
     public void Sitting_the_whole_bench_still_counts_as_available()
     {
         var game = FinishedGame();

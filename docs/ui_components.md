@@ -594,6 +594,27 @@ someone who missed half the season is not punished for it. The inline `width:` n
 `InvariantCulture`, like every other percentage in this app — a Dutch decimal comma kills the bar
 silently.
 
+**The Availability switch beside that card's label swaps in a second bar**, filled to
+`PlayerStats.MaximumMinutes` instead — every minute the season's completed matches offered. The two
+answer different questions: the fairness bar is each player against her own availability, so a girl
+who was there for two matches and played both reads 100%; the availability bar puts every player on
+one scale, and hers is short. It splits into the four figures that partition that maximum — played,
+injured, unavailable, not played — with the segments sized by `flex-grow` rather than by a
+percentage, so the four normalise themselves whatever per-game rounding did to them.
+
+**The switch is a checkbox, for the same reason the nav drawer is one**: `/stats` has no circuit, so
+`@bind` would bind to nothing. Both views are rendered and `.availability-toggle:checked ~ …` picks
+between them, which is also why every rule in `SeasonStats.razor.css` selects forward from that
+input — it has to stay the list's first sibling inside the `MudPaper`. The input is visually hidden
+but not `display: none`, or it would leave the tab order with its label behind.
+
+**The injured segment has two sources**, and neither is today's squad flag: a `GameInjury` for the
+stretch after she was carried off, and the match's own `InjuredPlayerIds` for one she missed
+entirely. The second is a copy of `SeasonSquadMember.IsInjured` taken at the final whistle
+(`StandingInjuries.RecordAsync`, models.md) — reading the live flag here would be the retroactive
+rewrite `Game.IsInRoster` refuses, since a girl injured today would have her whole season recoloured
+including the matches she was fit for.
+
 **The per-game rows carry `<VenueBadge Inline="true" />`**, rather than the `vs` / `@` prefix the
 rest of the app still uses in running text. The row is a list of fixtures where the venue is a fact
 about each one, not a sentence about a single match — a badge reads down it, a prefix does not.
