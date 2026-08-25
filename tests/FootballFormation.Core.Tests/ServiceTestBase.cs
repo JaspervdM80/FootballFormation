@@ -32,8 +32,8 @@ public abstract class ServiceTestBase : IDisposable
         _connection = new SqliteConnection("Filename=:memory:");
         _connection.Open();
 
-        // Its own cache and its own invalidator per test, like everything else here: a static one
-        // would let the generation a parallel test class bumped decide what this one reads back.
+        // Per test, like everything else here: a shared one would let the generation a parallel
+        // test class bumped decide what this one reads back.
         StatsCache = new StatsCache(new MemoryCache(new MemoryCacheOptions()));
 
         DbFactory = new TestDbContextFactory(_connection, new StatsCacheInvalidator(StatsCache));
@@ -97,7 +97,7 @@ public abstract class ServiceTestBase : IDisposable
     protected UserService Users { get; }
 
     /// <summary>The cached statistics. <see cref="Services.StatsCache.Generation"/> is how a test
-    /// asks whether a write was noticed without timing anything.</summary>
+    /// asks whether a write was noticed, without timing anything.</summary>
     protected StatsService Stats { get; }
 
     protected StatsCache StatsCache { get; }
@@ -144,9 +144,9 @@ public abstract class ServiceTestBase : IDisposable
     /// <para>
     /// <see cref="DateInSqlInterceptor"/> rides along on every one of them, so the whole suite —
     /// not a single test that has to remember to look — is what stops a date comparison reaching
-    /// SQL. <see cref="StatsCacheInvalidator"/> rides along for the same reason and is the one
-    /// carried over from production: a test that writes has to drop the cached statistics exactly
-    /// as the app does, or the caching would only ever be exercised where somebody remembered it.
+    /// SQL. <see cref="StatsCacheInvalidator"/> is carried over from production for the same
+    /// reason: a test that writes drops the cached statistics as the app does, rather than only
+    /// where somebody remembered to.
     /// </para>
     /// </summary>
     private sealed class TestDbContextFactory(SqliteConnection connection, StatsCacheInvalidator invalidator)

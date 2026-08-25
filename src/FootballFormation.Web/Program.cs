@@ -99,10 +99,7 @@ try
     // open, so a scoped DbContext would be shared by every component on the page — and two of them
     // querying at once (the layout's season picker and the page itself) throws. Each service
     // operation now opens and disposes its own short-lived context instead.
-    //
-    // StatsCacheInvalidator rides on every one of those contexts, which is what makes "the
-    // statistics are stale" impossible to cause by forgetting something: it drops the cached
-    // reports after any successful SaveChanges, so a new write method invalidates them by writing.
+    // StatsCacheInvalidator rides on every one of them, so any write drops the cached statistics.
     builder.Services.AddDbContextFactory<AppDbContext>((sp, options) =>
         options
             .UseSqlite($"Data Source={dbPath}",
@@ -111,8 +108,8 @@ try
 
     builder.Services.AddSingleton(TimeProvider.System);
 
-    // Singletons, both: the generation a cache key is built from has to be process-wide, or a
-    // write on one circuit would leave every other circuit reading its own stale copy.
+    // Singletons: the generation has to be process-wide, or a write on one circuit would leave
+    // every other circuit reading its own stale copy.
     builder.Services.AddMemoryCache();
     builder.Services.AddSingleton<StatsCache>();
     builder.Services.AddSingleton<StatsCacheInvalidator>();

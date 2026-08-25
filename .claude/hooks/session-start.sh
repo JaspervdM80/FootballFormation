@@ -20,12 +20,11 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
 fi
 export DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1
 
-# **Everything the agent is told leaves as one JSON object on stdout, and nothing else does.**
-# `additionalContext` is the only channel a SessionStart hook has into the model's context, and
-# `systemMessage` the only one to the person — a non-zero exit with a message on stderr reaches
-# neither, which is exactly how a session once spent its first twenty minutes rediscovering a
-# broken SDK pin this script had already diagnosed at startup. Progress chatter therefore goes to
-# stderr: one stray line on stdout makes the object unparseable and the message is lost again.
+# One JSON object on stdout and nothing else: `additionalContext` is the only channel into the
+# model's context and `systemMessage` the only one to the person, where a non-zero exit with a
+# message on stderr reaches neither — which is how a session once rediscovered by hand a broken SDK
+# pin this script had already diagnosed. Progress goes to stderr; a stray line on stdout makes the
+# object unparseable and loses the message again.
 say() { echo "$@" >&2; }
 
 emit() {
@@ -39,8 +38,8 @@ emit() {
      }'
 }
 
-# Always zero, even when the SDK is unusable. The session is still worth having — the code can be
-# read and reasoned about — and a non-zero exit is what threw the explanation away.
+# Always zero, even when the SDK is unusable: the code can still be read, and a non-zero exit is
+# what threw the explanation away.
 emit_and_exit() { emit "$1" "$2"; exit 0; }
 
 # .NET 10 ships in Ubuntu 24.04's own archive (noble-updates/main), so this needs no extra apt
@@ -63,11 +62,9 @@ nothing was compiled or run."
   fi
 fi
 
-# global.json pins the SDK so this container and CI compile the same code rather than two feature
-# bands of it. `rollForward: latestPatch` means Ubuntu shipping a newer *patch* is absorbed in
-# silence; what still lands here is the archive moving to a different feature band, which the pin
-# refuses on purpose — that divergence is what once let an RZ2005 Razor error fail in a web session
-# while CI stayed green. See docs/known_issues/blazor-components.md.
+# global.json pins the SDK so this container and CI compile the same code. `latestPatch` absorbs a
+# newer patch from Ubuntu silently, so anything reaching here is a feature-band move — the
+# divergence that once let an RZ2005 error fail in a web session while CI stayed green.
 if ! (cd "$REPO" && dotnet --version >/dev/null 2>&1); then
   emit_and_exit \
     "The installed .NET SDK does not satisfy global.json — nothing will build until that is settled." \

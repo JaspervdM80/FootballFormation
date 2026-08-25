@@ -52,16 +52,13 @@ public partial class PlayerStats
             return;
         }
 
-        // Normally a lookup in the season report /stats already cached — the figures there are
-        // built by the same builder, for the same player, from the same games. GetByIdAsync stays:
-        // the page is reachable for anyone on file, including someone in no current squad, and
-        // StatsService builds for them separately when the season's squad does not have them.
+        // GetByIdAsync stays: the page is reachable for anyone on file, including someone in no
+        // current squad, whom StatsService reports on separately.
         var statsResult = await StatsService.GetPlayerAsync(playerResult.Value!, SeasonId, Cancellation);
         if (statsResult.IsCancelled) return;
 
-        // An empty report rather than null on failure: the markup returns early on a null _stats,
-        // before it reaches <InlineNotice>, so the visitor would get a blank page instead of the
-        // reason for it.
+        // Empty rather than null on failure — the markup returns early on a null _stats, before it
+        // reaches <InlineNotice>, leaving a blank page instead of the reason for it.
         _stats = _notice.ReportFailure(L, statsResult)
             ? statsResult.Value!
             : PlayerStatsReport.Build(playerResult.Value!, [], SeasonSquads.Empty);

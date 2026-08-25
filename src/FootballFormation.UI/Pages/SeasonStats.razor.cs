@@ -28,8 +28,6 @@ public partial class SeasonStats
         // Back to the spinner while the newly selected season loads.
         _loaded = false;
 
-        // One call, and on all but the first load after a write it is a dictionary lookup: the
-        // report is cached until something is written (StatsService).
         var result = await StatsService.GetSeasonAsync(SeasonId, Cancellation);
         var view = _notice.ReportFailure(L, result)
             ? result.Value!

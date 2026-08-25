@@ -4,9 +4,8 @@ using Microsoft.EntityFrameworkCore;
 namespace FootballFormation.Core.Tests;
 
 /// <summary>
-/// The cached statistics. Two rules matter and they pull against each other: the report must be
-/// reused between reads, and it must not survive a write by a single read. Everything here is one
-/// or the other, or the seam between them.
+/// The cached statistics. Two rules that pull against each other: the report is reused between
+/// reads, and it does not survive a write by a single read.
 /// </summary>
 public class StatsServiceTests : ServiceTestBase
 {
@@ -28,8 +27,7 @@ public class StatsServiceTests : ServiceTestBase
 
         var game = created.Value!;
 
-        // A lineup in both halves, so GameMinutesReport has something to reconstruct and the
-        // player ends the match with minutes rather than an empty report.
+        // A lineup in both halves, so the player ends with minutes rather than an empty report.
         var db = Read();
         var periods = await db.GamePeriods.Where(p => p.GameId == game.Id).ToListAsync();
         foreach (var period in periods)
@@ -42,8 +40,8 @@ public class StatsServiceTests : ServiceTestBase
             });
         }
 
-        // A scoreline on a match nobody ran live is enough to make it complete (Game.IsComplete),
-        // which is the state every figure here depends on.
+        // A scoreline on a match nobody ran live is enough to make it complete; every figure
+        // here depends on that.
         var stored = await db.Games.FirstAsync(g => g.Id == game.Id);
         stored.ScoreHome = goals;
         stored.ScoreAway = 0;
@@ -61,10 +59,9 @@ public class StatsServiceTests : ServiceTestBase
         Assert.True(first.IsSuccess);
         Assert.Equal(1, first.Value!.Stats.GoalsFor);
 
-        // Raw SQL on purpose: it is the one write that does *not* go through SaveChanges, so it
-        // changes the data without StatsCacheInvalidator noticing. That makes it the only way to
-        // prove the second read never looked at the database — a real write would invalidate, and
-        // an unchanged answer would prove nothing.
+        // Raw SQL is the one write that skips SaveChanges, so the invalidator never sees it —
+        // the only way to prove the second read never looked at the database. A real write would
+        // invalidate, and an unchanged answer would prove nothing.
         await Read().Database.ExecuteSqlRawAsync(
             "UPDATE Games SET ScoreHome = 99 WHERE Id = {0}", game.Id);
 
@@ -99,9 +96,9 @@ public class StatsServiceTests : ServiceTestBase
 
         var generation = StatsCache.Generation;
 
-        // A user has nothing to do with anyone's minutes. It still counts: the alternative is a
-        // list of which writes matter, and being wrong about that list is a stale figure nobody
-        // can explain. A needless rebuild costs milliseconds.
+        // A user has nothing to do with anyone's minutes, and still counts: the alternative is a
+        // list of which writes matter, and being wrong about it is a stale figure. A needless
+        // rebuild costs milliseconds.
         Assert.True((await Users.CreateAsync("Nieuw", "nieuw", "x!Password1", UserRole.Admin)).IsSuccess);
 
         Assert.NotEqual(generation, StatsCache.Generation);
@@ -115,9 +112,8 @@ public class StatsServiceTests : ServiceTestBase
 
         var generation = StatsCache.Generation;
 
-        // SaveChanges, not SaveChangesAsync. Nothing in the app writes this way today, and the
-        // interceptor overrides both anyway — the day something does is not the day to find out
-        // the statistics quietly stopped noticing writes.
+        // SaveChanges, not SaveChangesAsync: nothing writes this way today, and the day
+        // something does is not the day to find out the statistics stopped noticing.
         var db = Read();
         db.Players.Add(new Player { FirstName = "Synchroon", PreferredPosition = PlayerPosition.CB });
         db.SaveChanges();
@@ -131,8 +127,8 @@ public class StatsServiceTests : ServiceTestBase
         await ArrangeSeasonAsync();
         var generation = StatsCache.Generation;
 
-        // No tracked changes, so SaveChanges reports zero rows. Bumping here would throw the
-        // reports away for a write that never happened.
+        // No tracked changes, so zero rows — bumping would drop the reports for a write that
+        // never happened.
         await Read().SaveChangesAsync();
 
         Assert.Equal(generation, StatsCache.Generation);
@@ -146,9 +142,8 @@ public class StatsServiceTests : ServiceTestBase
         var seasonStats = await Stats.GetSeasonAsync(season.Id);
         var playerStats = await Stats.GetPlayerAsync(player, season.Id);
 
-        // Same object, not merely equal figures. SeasonStatsReport builds its per-player entries by
-        // calling PlayerStatsReport unchanged, so /players/{id}/stats can read the report /stats
-        // already cached — which is why a squad of twenty costs one cache entry and not twenty-one.
+        // Same object, not merely equal figures: that is what lets /players/{id}/stats read the
+        // report /stats already cached, so a squad of twenty costs one entry and not twenty-one.
         Assert.Same(
             seasonStats.Value!.Stats.Players.Single(p => p.Player.Id == player.Id),
             playerStats.Value);
@@ -159,8 +154,7 @@ public class StatsServiceTests : ServiceTestBase
     {
         var (season, _, _) = await ArrangeSeasonAsync();
 
-        // On file, in nobody's squad — someone who left, or who is reached from another season.
-        // The page is reachable for them, so the service has to answer rather than fail.
+        // On file, in nobody's squad. The page is reachable for them, so this has to answer.
         var outsider = (await Players.CreateAsync(new Player
         {
             FirstName = "Vertrokken",
@@ -197,10 +191,9 @@ public class StatsServiceTests : ServiceTestBase
     {
         var (season, _, game) = await ArrangeSeasonAsync();
 
-        // The race the generation-in-the-key exists for. Take the key the way StatsService does,
-        // before loading; let a write land; then store under it. A cache that invalidated by
-        // dropping entries would serve this stale value until the next write — here it goes
-        // somewhere no later reader looks.
+        // The race the generation-in-the-key exists for: take the key before loading, let a write
+        // land, then store under it. A cache that dropped entries instead would serve this stale
+        // value until the next write.
         var key = StatsCache.KeyFor($"season:{season.Id}");
 
         game.ScoreHome = 7;

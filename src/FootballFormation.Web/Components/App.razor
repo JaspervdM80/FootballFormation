@@ -15,10 +15,8 @@
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="icons/icon-180.png" />
     <ResourcePreloader />
-    @* Through Assets[] like the stylesheets below it, not by its plain path: that is what gets the
-       fingerprinted route, and the fingerprinted route is the one served `immutable` — which is
-       the only thing service-worker.js will cache. At 611KB this file is most of the app's weight,
-       so it is most of what that cache is for. *@
+    @* Through Assets[], not its plain path: only the fingerprinted route is served `immutable`,
+       which is all service-worker.js will cache. At 611KB this is most of the app's weight. *@
     <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet" />
     @* The club's colors, from the same ClubTheme record that builds MudBlazor's palette. Inline
        and first, so every stylesheet below can read the tokens. The values are compile-time

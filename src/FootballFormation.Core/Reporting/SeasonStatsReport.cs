@@ -32,9 +32,8 @@ public class SeasonStats
     public int GoalDifference => GoalsFor - GoalsAgainst;
     public double WinPercentage => Played > 0 ? Math.Round((double)Won / Played * 100, 0) : 0;
 
-    /// <summary>No games and nobody, for the page whose load failed — the same answer
-    /// <see cref="SeasonStatsReport.Build"/> gives for an empty season, so the markup needs no
-    /// second shape to render. Matches <see cref="SeasonSquads.Empty"/>.</summary>
+    /// <summary>For a page whose load failed: what <see cref="SeasonStatsReport.Build"/> gives for
+    /// an empty season, so the markup needs no second shape.</summary>
     public static SeasonStats Empty { get; } = new() { Form = [], Players = [] };
 }
 

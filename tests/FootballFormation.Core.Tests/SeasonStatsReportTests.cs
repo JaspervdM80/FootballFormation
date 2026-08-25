@@ -21,8 +21,8 @@ public class SeasonStatsReportTests
     {
         var built = SeasonStatsReport.Build([], [], SeasonSquads.Empty);
 
-        // SeasonStats.Empty is what a page renders when its load failed, so it has to be the same
-        // shape Build produces rather than a second one the markup would need to handle.
+        // What a page renders when its load failed, so it has to match what Build produces rather
+        // than be a second shape the markup handles.
         Assert.Equal(built.Played, SeasonStats.Empty.Played);
         Assert.Equal(built.GoalsFor, SeasonStats.Empty.GoalsFor);
         Assert.Equal(built.GoalsAgainst, SeasonStats.Empty.GoalsAgainst);
