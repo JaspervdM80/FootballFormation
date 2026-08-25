@@ -4,6 +4,7 @@ using FootballFormation.Core.Security;
 using FootballFormation.Core.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
 
@@ -31,7 +32,11 @@ public abstract class ServiceTestBase : IDisposable
         _connection = new SqliteConnection("Filename=:memory:");
         _connection.Open();
 
-        DbFactory = new TestDbContextFactory(_connection);
+        // Its own cache and its own invalidator per test, like everything else here: a static one
+        // would let the generation a parallel test class bumped decide what this one reads back.
+        StatsCache = new StatsCache(new MemoryCache(new MemoryCacheOptions()));
+
+        DbFactory = new TestDbContextFactory(_connection, new StatsCacheInvalidator(StatsCache));
         Db = DbFactory.CreateDbContext();
         Db.Database.EnsureCreated();
 
@@ -53,6 +58,8 @@ public abstract class ServiceTestBase : IDisposable
             NullLogger<MatchSubstitutionService>.Instance);
 
         Users = new UserService(DbFactory, CurrentUser, NullLogger<UserService>.Instance);
+
+        Stats = new StatsService(Games, Squads, StatsCache, NullLogger<StatsService>.Instance);
     }
 
     /// <summary>
@@ -88,6 +95,12 @@ public abstract class ServiceTestBase : IDisposable
     protected MatchGoalService Goals { get; }
     protected MatchSubstitutionService Subs { get; }
     protected UserService Users { get; }
+
+    /// <summary>The cached statistics. <see cref="Services.StatsCache.Generation"/> is how a test
+    /// asks whether a write was noticed without timing anything.</summary>
+    protected StatsService Stats { get; }
+
+    protected StatsCache StatsCache { get; }
 
     /// <summary>A fresh context, for reading back what a service wrote without tracking interference.</summary>
     protected AppDbContext Read() => DbFactory.CreateDbContext();
@@ -131,15 +144,18 @@ public abstract class ServiceTestBase : IDisposable
     /// <para>
     /// <see cref="DateInSqlInterceptor"/> rides along on every one of them, so the whole suite —
     /// not a single test that has to remember to look — is what stops a date comparison reaching
-    /// SQL.
+    /// SQL. <see cref="StatsCacheInvalidator"/> rides along for the same reason and is the one
+    /// carried over from production: a test that writes has to drop the cached statistics exactly
+    /// as the app does, or the caching would only ever be exercised where somebody remembered it.
     /// </para>
     /// </summary>
-    private sealed class TestDbContextFactory(SqliteConnection connection) : IDbContextFactory<AppDbContext>
+    private sealed class TestDbContextFactory(SqliteConnection connection, StatsCacheInvalidator invalidator)
+        : IDbContextFactory<AppDbContext>
     {
         public AppDbContext CreateDbContext() =>
             new(new DbContextOptionsBuilder<AppDbContext>()
                 .UseSqlite(connection)
-                .AddInterceptors(new DateInSqlInterceptor())
+                .AddInterceptors(new DateInSqlInterceptor(), invalidator)
                 .Options);
     }
 }

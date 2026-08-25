@@ -17,6 +17,20 @@ public class SeasonStatsReportTests
     }
 
     [Fact]
+    public void The_empty_report_is_the_answer_Build_gives_for_a_season_with_nothing_in_it()
+    {
+        var built = SeasonStatsReport.Build([], [], SeasonSquads.Empty);
+
+        // SeasonStats.Empty is what a page renders when its load failed, so it has to be the same
+        // shape Build produces rather than a second one the markup would need to handle.
+        Assert.Equal(built.Played, SeasonStats.Empty.Played);
+        Assert.Equal(built.GoalsFor, SeasonStats.Empty.GoalsFor);
+        Assert.Equal(built.GoalsAgainst, SeasonStats.Empty.GoalsAgainst);
+        Assert.Empty(SeasonStats.Empty.Players);
+        Assert.Empty(SeasonStats.Empty.Form);
+    }
+
+    [Fact]
     public void The_table_counts_only_finished_games()
     {
         var inProgress = Result(4, 5, 0, new DateTime(2026, 4, 1));

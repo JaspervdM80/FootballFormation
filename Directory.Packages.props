@@ -11,6 +11,10 @@
     <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="10.0.10" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
+    <!-- Referenced explicitly by Core rather than taken from EF Core, which happens to pull it in:
+         Core is a plain Microsoft.NET.Sdk library with no framework reference to fall back on, so
+         StatsCache would break on an EF bump that dropped the transitive edge. -->
+    <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Identity.Core" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Localization" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />

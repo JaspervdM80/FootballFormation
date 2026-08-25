@@ -99,11 +99,23 @@ try
     // open, so a scoped DbContext would be shared by every component on the page — and two of them
     // querying at once (the layout's season picker and the page itself) throws. Each service
     // operation now opens and disposes its own short-lived context instead.
-    builder.Services.AddDbContextFactory<AppDbContext>(options =>
-        options.UseSqlite($"Data Source={dbPath}",
-            x => x.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
+    //
+    // StatsCacheInvalidator rides on every one of those contexts, which is what makes "the
+    // statistics are stale" impossible to cause by forgetting something: it drops the cached
+    // reports after any successful SaveChanges, so a new write method invalidates them by writing.
+    builder.Services.AddDbContextFactory<AppDbContext>((sp, options) =>
+        options
+            .UseSqlite($"Data Source={dbPath}",
+                x => x.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery))
+            .AddInterceptors(sp.GetRequiredService<StatsCacheInvalidator>()));
 
     builder.Services.AddSingleton(TimeProvider.System);
+
+    // Singletons, both: the generation a cache key is built from has to be process-wide, or a
+    // write on one circuit would leave every other circuit reading its own stale copy.
+    builder.Services.AddMemoryCache();
+    builder.Services.AddSingleton<StatsCache>();
+    builder.Services.AddSingleton<StatsCacheInvalidator>();
 
     builder.Services.AddScoped<ICurrentUser, CircuitCurrentUser>();
 
@@ -117,6 +129,7 @@ try
     builder.Services.AddScoped<MatchSubstitutionService>();
     builder.Services.AddScoped<MatchPreferencesService>();
     builder.Services.AddScoped<UserService>();
+    builder.Services.AddScoped<StatsService>();
 
     // Singleton, not scoped: a substitution on the sideline has to reach every circuit watching,
     // not just the one that made it.
