@@ -20,34 +20,89 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
 fi
 export DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1
 
+# **Everything the agent is told leaves as one JSON object on stdout, and nothing else does.**
+# `additionalContext` is the only channel a SessionStart hook has into the model's context, and
+# `systemMessage` the only one to the person — a non-zero exit with a message on stderr reaches
+# neither, which is exactly how a session once spent its first twenty minutes rediscovering a
+# broken SDK pin this script had already diagnosed at startup. Progress chatter therefore goes to
+# stderr: one stray line on stdout makes the object unparseable and the message is lost again.
+say() { echo "$@" >&2; }
+
+emit() {
+  jq -n --arg summary "$1" --arg context "$2" \
+    '{
+       systemMessage: $summary,
+       hookSpecificOutput: {
+         hookEventName: "SessionStart",
+         additionalContext: $context
+       }
+     }'
+}
+
+# Always zero, even when the SDK is unusable. The session is still worth having — the code can be
+# read and reasoned about — and a non-zero exit is what threw the explanation away.
+emit_and_exit() { emit "$1" "$2"; exit 0; }
+
 # .NET 10 ships in Ubuntu 24.04's own archive (noble-updates/main), so this needs no extra apt
 # source. That matters: the usual dotnet-install.sh route downloads from builds.dotnet.microsoft.com,
 # which the container's egress policy blocks — the install would 403 before it fetched anything.
 if ! command -v dotnet >/dev/null 2>&1; then
-  echo "Installing the .NET SDK..."
+  say "Installing the .NET SDK..."
   # Unrelated third-party PPAs in the base image are also blocked by that policy and fail here.
   # Their failure says nothing about the Ubuntu archive, so it must not abort the install.
-  apt-get update -o Acquire::Retries=3 || true
-  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends dotnet-sdk-10.0
+  apt-get update -o Acquire::Retries=3 >&2 || true
+
+  if ! DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends dotnet-sdk-10.0 >&2; then
+    emit_and_exit \
+      "The .NET SDK could not be installed — this session cannot build or test." \
+      "The .NET SDK is not installed and apt could not install it, so dotnet build, dotnet test
+and the Playwright suite are all unavailable this session. Ubuntu's archive is the only source
+this container can reach (builds.dotnet.microsoft.com is blocked by the egress policy), so there
+is no second route to try. Read and reason about the code, but say plainly in your summary that
+nothing was compiled or run."
+  fi
 fi
 
-# global.json pins the exact SDK, so this container and CI compile the same code rather than two
-# feature bands of it. What apt hands over is the only candidate — builds.dotnet.microsoft.com is
-# blocked here, so a second version cannot be fetched — which makes an archive that has moved past
-# the pin a dead end worth naming now, not at the first confusing build error.
+# global.json pins the SDK so this container and CI compile the same code rather than two feature
+# bands of it. `rollForward: latestPatch` means Ubuntu shipping a newer *patch* is absorbed in
+# silence; what still lands here is the archive moving to a different feature band, which the pin
+# refuses on purpose — that divergence is what once let an RZ2005 Razor error fail in a web session
+# while CI stayed green. See docs/known_issues/blazor-components.md.
 if ! (cd "$REPO" && dotnet --version >/dev/null 2>&1); then
-  echo "The installed SDK does not satisfy $REPO/global.json." >&2
-  echo "  installed: $(dotnet --list-sdks | tr '\n' ' ')" >&2
-  echo "Ubuntu's archive is the only SDK source this container can reach, so bump the version in" >&2
-  echo "global.json to match it — CI installs whatever that file names, so the two stay together." >&2
-  exit 1
-fi
+  emit_and_exit \
+    "The installed .NET SDK does not satisfy global.json — nothing will build until that is settled." \
+    "dotnet build, dotnet test and the Playwright suite will all fail immediately this session:
+the SDK installed here does not satisfy $REPO/global.json.
 
-(cd "$REPO" && dotnet --version)
+  pinned:    $(jq -r '.sdk.version + " (rollForward: " + .sdk.rollForward + ")"' "$REPO/global.json" 2>/dev/null || echo "unreadable")
+  installed: $(dotnet --list-sdks 2>/dev/null | tr '\n' ' ')
+
+Ubuntu's archive is the only SDK source this container can reach, so the installed one cannot be
+changed — builds.dotnet.microsoft.com is blocked by the egress policy. rollForward is latestPatch,
+so this is a *feature band* difference, not a patch: the band is the digit group in 10.0.1xx, and
+crossing it is what the pin exists to catch.
+
+**Do not work around this by editing global.json for one build and putting it back.** CI installs
+whatever that file names, so the pin and the archive have to be reconciled deliberately: raise it
+with the user, and check docs/known_issues/blazor-components.md before moving the band. Until then,
+report honestly that nothing was compiled or run."
+fi
 
 # Warms the NuGet cache into the cached container image, so the first build of the session is a
 # build rather than a download.
-echo "Restoring packages..."
-dotnet restore "$REPO/FootballFormation.slnx"
+say "Restoring packages..."
+if ! dotnet restore "$REPO/FootballFormation.slnx" >&2; then
+  emit_and_exit \
+    "dotnet restore failed at startup — the first build may be slow or broken." \
+    "The SDK is fine ($(cd "$REPO" && dotnet --version)) but dotnet restore failed at session start.
+api.nuget.org is normally reachable from this container, so treat a repeated failure as a real
+problem rather than a warm-up step. Try the build anyway — it restores again — and if that fails
+too, report the restore error rather than working around it."
+fi
 
-echo "Ready: dotnet build / dotnet test / scripts/visual-check.sh"
+emit \
+  "Ready: dotnet build / dotnet test / scripts/visual-check.sh" \
+  "The .NET SDK $(cd "$REPO" && dotnet --version) is installed and satisfies global.json, and the
+NuGet cache is warm. dotnet build -c Release, dotnet test and the browser harnesses in tests/ui and
+scripts/ are all available. Chromium is already at /opt/pw-browsers/chromium — never run
+'playwright install'."
