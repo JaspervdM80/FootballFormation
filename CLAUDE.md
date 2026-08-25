@@ -52,7 +52,9 @@ Solution file is `FootballFormation.slnx`. Package versions are centralized in
 queries, migrations, the domain model, Razor pages and the circuit, the live match, styling, touch
 and breakpoints, localization, testing, UI testing, build and release. **Load the skill for the area
 you are touching before changing it**; each one ends with a pointer into `docs/` for the full story.
-**`comments` applies to every change**, whatever else it touches.
+**`comment-rule` applies to every change**, whatever else it touches: default to no comments, write
+one only for a non-obvious *why*, and never a paragraph. `comments` holds the few repository facts
+that change how it lands here.
 
 `docs/` is the detailed reference and the incident record. `docs/known_issues/` in particular is
 not a changelog — it is a list of traps that already cost someone hours. Add to it when you find a

@@ -108,8 +108,7 @@ try
 
     builder.Services.AddSingleton(TimeProvider.System);
 
-    // Singletons: the generation has to be process-wide, or a write on one circuit would leave
-    // every other circuit reading its own stale copy.
+    // Singletons: a per-circuit generation would leave every other circuit reading a stale copy.
     builder.Services.AddMemoryCache();
     builder.Services.AddSingleton<StatsCache>();
     builder.Services.AddSingleton<StatsCacheInvalidator>();

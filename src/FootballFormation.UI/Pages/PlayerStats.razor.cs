@@ -52,13 +52,10 @@ public partial class PlayerStats
             return;
         }
 
-        // GetByIdAsync stays: the page is reachable for anyone on file, including someone in no
-        // current squad, whom StatsService reports on separately.
         var statsResult = await StatsService.GetPlayerAsync(playerResult.Value!, SeasonId, Cancellation);
         if (statsResult.IsCancelled) return;
 
-        // Empty rather than null on failure — the markup returns early on a null _stats, before it
-        // reaches <InlineNotice>, leaving a blank page instead of the reason for it.
+        // Empty, not null: the markup returns early on a null _stats, before <InlineNotice>.
         _stats = _notice.ReportFailure(L, statsResult)
             ? statsResult.Value!
             : PlayerStatsReport.Build(playerResult.Value!, [], SeasonSquads.Empty);

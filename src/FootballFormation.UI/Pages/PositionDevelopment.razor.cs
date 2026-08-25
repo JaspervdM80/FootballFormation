@@ -22,8 +22,8 @@ public partial class PositionDevelopment
     {
         _loaded = false;
 
-        // Filtered rather than rebuilt, so this shares the cache entry /stats reads: each player's
-        // figures are built independently, so dropping the guests afterwards is the same answer.
+        // Filtered, not rebuilt, so this shares /stats' cache entry — each player's figures are
+        // built independently, so dropping the guests afterwards is the same answer.
         var result = await StatsService.GetSeasonAsync(SeasonId, Cancellation);
         var view = _notice.ReportFailure(L, result)
             ? result.Value!

@@ -16,13 +16,10 @@ swap_size_mb = 512
 [http_service]
   internal_port = 8080
   force_https = true
-  # min_machines_running = 1 pins the one machine this app runs, so auto_stop_machines never fires:
-  # it governs machines *above* the minimum. Kept at "suspend" because it is the value that has to
-  # be right the moment that stops being true — drop the minimum back to 0, or run a second
-  # machine, and "stop" would cold-boot (a pre-migration backup, a migration and an integrity check
-  # before it serves anything) and lose every circuit held for `DisconnectedCircuitRetentionPeriod`,
-  # which lives in memory and nowhere else. See docs/known_issues/touch-pwa.md, "past the retention
-  # period there is no reconnect at all". Suspend needs RAM <= 2G; this VM is 512mb.
+  # auto_stop_machines never fires while min_machines_running pins the only machine — it governs
+  # machines above the minimum. Kept at "suspend" for the day that changes: "stop" would cold-boot
+  # through a backup, a migration and an integrity check, and lose every retained circuit with it
+  # (docs/known_issues/touch-pwa.md). Suspend needs RAM <= 2G; this VM is 512mb.
   #
   # KeepAlivePingService now pings a machine that cannot stop — dead weight, not a safeguard.
   auto_stop_machines = "suspend"

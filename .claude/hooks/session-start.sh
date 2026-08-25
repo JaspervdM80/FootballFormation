@@ -20,11 +20,9 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
 fi
 export DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1
 
-# One JSON object on stdout and nothing else: `additionalContext` is the only channel into the
-# model's context and `systemMessage` the only one to the person, where a non-zero exit with a
-# message on stderr reaches neither — which is how a session once rediscovered by hand a broken SDK
-# pin this script had already diagnosed. Progress goes to stderr; a stray line on stdout makes the
-# object unparseable and loses the message again.
+# One JSON object on stdout and nothing else: additionalContext is the only channel into the model's
+# context, and a non-zero exit with a message on stderr reaches nobody. Progress goes to stderr, or
+# a stray line makes the object unparseable.
 say() { echo "$@" >&2; }
 
 emit() {
@@ -38,8 +36,7 @@ emit() {
      }'
 }
 
-# Always zero, even when the SDK is unusable: the code can still be read, and a non-zero exit is
-# what threw the explanation away.
+# Always zero: a non-zero exit is what throws the explanation away.
 emit_and_exit() { emit "$1" "$2"; exit 0; }
 
 # .NET 10 ships in Ubuntu 24.04's own archive (noble-updates/main), so this needs no extra apt
@@ -62,9 +59,8 @@ nothing was compiled or run."
   fi
 fi
 
-# global.json pins the SDK so this container and CI compile the same code. `latestPatch` absorbs a
-# newer patch from Ubuntu silently, so anything reaching here is a feature-band move — the
-# divergence that once let an RZ2005 error fail in a web session while CI stayed green.
+# latestPatch absorbs a newer Ubuntu patch silently, so anything reaching here is a feature-band
+# move — the divergence that once let an RZ2005 error fail here while CI stayed green.
 if ! (cd "$REPO" && dotnet --version >/dev/null 2>&1); then
   emit_and_exit \
     "The installed .NET SDK does not satisfy global.json — nothing will build until that is settled." \
@@ -102,4 +98,9 @@ emit \
   "The .NET SDK $(cd "$REPO" && dotnet --version) is installed and satisfies global.json, and the
 NuGet cache is warm. dotnet build -c Release, dotnet test and the browser harnesses in tests/ui and
 scripts/ are all available. Chromium is already at /opt/pw-browsers/chromium — never run
-'playwright install'."
+'playwright install'.
+
+Before writing or editing any code, read .claude/skills/comment-rule/SKILL.md. It is the
+commenting rule for this repository and it applies to every change: default to no comments, write
+one only for a non-obvious *why*, one line and never a paragraph. Repository-specific exceptions
+are in .claude/skills/comments/SKILL.md."

@@ -32,8 +32,7 @@ public abstract class ServiceTestBase : IDisposable
         _connection = new SqliteConnection("Filename=:memory:");
         _connection.Open();
 
-        // Per test, like everything else here: a shared one would let the generation a parallel
-        // test class bumped decide what this one reads back.
+        // Per test: a shared one would let a parallel test class's writes decide what this reads.
         StatsCache = new StatsCache(new MemoryCache(new MemoryCacheOptions()));
 
         DbFactory = new TestDbContextFactory(_connection, new StatsCacheInvalidator(StatsCache));
@@ -96,8 +95,7 @@ public abstract class ServiceTestBase : IDisposable
     protected MatchSubstitutionService Subs { get; }
     protected UserService Users { get; }
 
-    /// <summary>The cached statistics. <see cref="Services.StatsCache.Generation"/> is how a test
-    /// asks whether a write was noticed, without timing anything.</summary>
+    // StatsCache.Generation is how a test asks whether a write was noticed, without timing.
     protected StatsService Stats { get; }
 
     protected StatsCache StatsCache { get; }
@@ -144,9 +142,8 @@ public abstract class ServiceTestBase : IDisposable
     /// <para>
     /// <see cref="DateInSqlInterceptor"/> rides along on every one of them, so the whole suite —
     /// not a single test that has to remember to look — is what stops a date comparison reaching
-    /// SQL. <see cref="StatsCacheInvalidator"/> is carried over from production for the same
-    /// reason: a test that writes drops the cached statistics as the app does, rather than only
-    /// where somebody remembered to.
+    /// SQL. <see cref="StatsCacheInvalidator"/> rides along for the same reason: a test that
+    /// writes drops the cached statistics as the app does.
     /// </para>
     /// </summary>
     private sealed class TestDbContextFactory(SqliteConnection connection, StatsCacheInvalidator invalidator)

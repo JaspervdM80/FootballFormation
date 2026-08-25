@@ -35,18 +35,20 @@ documented, deliberate decision is not a finding — it is a misread.
 
 ## 2. Comments: the primary lens
 
-**Read `.claude/skills/comments/SKILL.md` and review against it.** It holds the cut/keep test, the
-over-explaining middle case, the XML-doc rule for a repo that generates no documentation file, and
-the `<inheritdoc>` trap. It is the canonical statement; do not re-derive it here.
+**Read `.claude/skills/comment-rule/SKILL.md` and review against it** — default to no comments, one
+only for a non-obvious *why*, one line and never a paragraph. `.claude/skills/comments/SKILL.md`
+adds the repository facts (no documentation file is generated, the `<inheritdoc>` trap, the
+conventions that already have a canonical home). Those two are canonical; do not re-derive them.
 
-Reviewing adds three things to it:
+Reviewing adds three things:
 
-- **Show the compressed version in the finding.** Over-explaining is fixed by compressing to the
-  load-bearing sentence, not by deleting — so the finding has to carry the replacement text.
+- **Show the replacement in the finding.** A comment carrying a real reason at three paragraphs is
+  compressed to one line, not deleted — so the finding has to carry that line.
 - **A comment that disagrees with its code is Blocking**, every time. A stale comment is worse than
   none, and one that has become *false* is the worst case in the file.
-- **Cutting a rationale comment is the serious mistake**, not leaving a descriptive one in. Where a
-  comment is borderline, leave it and say why you considered it.
+- **Judge against the rule, not against the surrounding file.** Much of this repository predates it
+  and comments in a far more expansive register; that is not licence, and it is not a backlog
+  either — flag it only where the diff already touches it.
 
 ## 3. DRY
 

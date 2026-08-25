@@ -4,28 +4,18 @@ using Microsoft.Extensions.Logging;
 
 namespace FootballFormation.Core.Services;
 
-/// <summary>A season's figures and the squads they were built from — the pages filter by squad
-/// membership, and guest status is per season.</summary>
+// Paired because guest status is per season, so the figures are only correct against these squads.
 public sealed record SeasonStatsView(SeasonStats Stats, SeasonSquads Squads);
 
-/// <summary>
-/// The statistics pages' one way in: loads what a report needs, builds it, and serves it from
-/// <see cref="StatsCache"/> until something is written.
-/// <para>
-/// One entry covers all three pages, because <see cref="SeasonStatsReport.Build"/> makes its
-/// per-player figures by calling <see cref="PlayerStatsReport.Build"/> unchanged — so a player's
-/// entry in <see cref="SeasonStats.Players"/> is the object <c>/players/{id}/stats</c> would have
-/// built for itself. See docs/patterns/service-structure.md for why this caches the report rather
-/// than the markup or the loaded games.
-/// </para>
-/// </summary>
+// One entry covers all three statistics pages: SeasonStatsReport builds its per-player figures by
+// calling PlayerStatsReport unchanged. See docs/patterns/service-structure.md.
 public class StatsService(
     GameService games,
     SeasonSquadService squads,
     StatsCache cache,
     ILogger<StatsService> logger)
 {
-    /// <param name="seasonId">The season to report on. Null covers every season.</param>
+    // seasonId null covers every season.
     public Task<Result<SeasonStatsView>> GetSeasonAsync(
         int? seasonId, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "load the statistics", cancellationToken, async () =>
@@ -40,8 +30,7 @@ public class StatsService(
 
             var (allGames, allSquads) = inputs.Value!;
 
-            // The squad is the roster, not everyone on file: that is what stops a past season
-            // showing today's squad.
+            // The squad, not everyone on file, or a past season shows today's squad.
             var view = new SeasonStatsView(
                 SeasonStatsReport.Build(allSquads.AllPlayers, allGames, allSquads),
                 allSquads);
@@ -63,8 +52,7 @@ public class StatsService(
             var existing = seasonResult.Value!.Stats.Players.FirstOrDefault(p => p.Player.Id == player.Id);
             if (existing is not null) return Result.Success(existing);
 
-            // In no squad of this season, but the page is reachable for anyone on file. Rare enough
-            // to earn its own load rather than a wider season report.
+            // In no squad of this season, but the page is reachable for anyone on file.
             var key = cache.KeyFor($"player:{player.Id}:{seasonId}");
 
             if (cache.TryGet<PlayerStats>(key, out var hit)) return Result.Success(hit);

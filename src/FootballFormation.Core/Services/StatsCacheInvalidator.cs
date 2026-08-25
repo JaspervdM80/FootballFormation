@@ -2,15 +2,9 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace FootballFormation.Core.Services;
 
-/// <summary>
-/// Drops the cached statistics after any write.
-/// <para>
-/// On <c>SaveChanges</c> rather than <see cref="ServiceOperation.RunAdminAsync"/>: it sits lower,
-/// needs no argument threaded through every write, and leaves nothing to remember — a new write
-/// method invalidates by writing. The way past it is a write that never reaches <c>SaveChanges</c>,
-/// so adding an <c>ExecuteUpdate</c>, <c>ExecuteDelete</c> or raw SQL would go behind its back.
-/// </para>
-/// </summary>
+// On SaveChanges rather than the service shape, so a new write method invalidates by writing. An
+// ExecuteUpdate, ExecuteDelete or raw SQL would go behind its back; the app uses none outside the
+// migrations.
 public sealed class StatsCacheInvalidator(StatsCache cache) : SaveChangesInterceptor
 {
     public override int SavedChanges(SaveChangesCompletedEventData eventData, int result)
