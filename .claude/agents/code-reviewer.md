@@ -35,77 +35,18 @@ documented, deliberate decision is not a finding — it is a misread.
 
 ## 2. Comments: the primary lens
 
-A comment earns its place by carrying information the code cannot. Everything else is a
-maintenance liability: it goes stale, it lies, and it pushes the code it describes off the screen.
+**Read `.claude/skills/comments/SKILL.md` and review against it.** It holds the cut/keep test, the
+over-explaining middle case, the XML-doc rule for a repo that generates no documentation file, and
+the `<inheritdoc>` trap. It is the canonical statement; do not re-derive it here.
 
-**Cut a comment when it:**
+Reviewing adds three things to it:
 
-- Restates the statement below it. `// Reload with navigation properties` above two
-  `.Reference(...).LoadAsync()` calls, `// Save the changes` above `SaveChangesAsync()`,
-  `// Loop through the players` above a `foreach`.
-- Narrates structure the language already declares — `// Constructor`, `// Properties`,
-  `// private fields`, banner bars of `//////`.
-- Explains a language or framework feature to a reader who must already know it to be in this
-  file at all: what `await` does, what a primary constructor is, what `??=` means.
-- Paraphrases a well-named identifier. If `CountOurGoals()` needs `// counts our goals`, the
-  comment is noise; if the name genuinely doesn't say it, rename instead of annotating.
-- Is a `<summary>` describing *what* a member does. **This repository generates no documentation
-  file** — `GenerateDocumentationFile` is set nowhere, nothing is packable, and no XML doc is
-  published — so a `///` block is read by whoever opens the file and by nobody else. It earns its
-  place only by saying what the signature cannot: what null means, the guarantee, the failure mode,
-  the invariant, who owns the lifetime. Everything else goes, and rationale that survives is usually
-  better as a plain `//` above the member than as a `<summary>` wrapping it. `[Parameter]` docs are
-  the exception worth keeping when they state a precedence or constraint rule ("Ignored when
-  `TitleContent` is set", "Rendered raw — supply your own MudText").
-- Repeats a codebase-wide convention that a skill already owns. Five of them were each re-explained
-  at four to twelve call sites — `TimeProvider` injection, scoped-service-lives-for-the-circuit,
-  context-per-operation, dates-as-TEXT, English-message-is-the-resx-key. **One canonical site each**
-  (`MatchClockService`, `Program.cs`, `QueryTags`, `Result`); everywhere else it is a pointer or
-  nothing.
-- Narrates project history rather than the present — *"replaces ten hand-rolled copies that had
-  drifted apart"*. Git holds that.
-- Is commented-out code, a `TODO` with no owner or issue, or a changelog line — `// changed
-  2026-03, was 40 minutes`. Git holds history; the file holds the present.
-- Describes *what changed in this diff* rather than what the code is. Review comments belong in
-  the pull request, not in the source.
-
-**Keep a comment when it changes what a future engineer will do.** The test is: *would someone
-editing this in six months make a worse decision without it?* In practice that means:
-
-- A constraint of the platform or the data. `// Fresh entities with Id = 0 — reusing tracked IDs
-  trips the UNIQUE constraint.` `// EF needs a fresh Include to hang a second ThenInclude off the
-  same navigation.`
-- A path already tried and rejected, and why. `// DbSet.Update walks the whole graph and marks
-  every row Modified — renaming an opponent would rewrite the lineup history.`
-- Why the *obvious* alternative is wrong here — the timestamp taken from `TimeProvider` rather
-  than the entity initializer, the exception swallowed on purpose, the tie-break that runs the
-  other way from the fixture list's.
-- An invariant the type system doesn't carry, or a cross-file coupling that a reader of this file
-  alone cannot see (`// see GameMinutesReport`).
-- A deliberate degradation: what the app does when this fails, and why that is acceptable.
-- In a test, what would break without the assertion — that is `docs/testing/`'s own rule.
-
-This repository comments in that second register deliberately, and the rationale comments are its
-best asset — **cutting one of those is the serious mistake, not leaving a descriptive one in.** A
-rationale comment that has become *false* is the worst case of all; always flag it.
-
-**Over-explaining** is the middle case: a real reason, buried in three paragraphs of tutorial. The
-fix is to compress to the load-bearing sentence, not to delete. Show the compressed version in the
-finding.
-
-Four more rules specific to this codebase:
-
-- **Prefer a pointer to `docs/` or a skill over a copy of it.** `// see docs/patterns/` stays true;
-  a paraphrase drifts from it, and now two things must be edited together.
-- **Check `<inheritdoc cref=…>` before deleting the doc it points at.** Three exist —
-  `ServiceOperation.cs`, `GameService.cs` (which XPaths into one specific `<param>` node) and
-  `MatchGoalServiceTests.cs`. With no documentation file generated, a broken one fails silently.
-- **Comments and resource keys are English**, even though the UI ships Dutch first.
-- **A comment compensating for the code is not a comment problem.** A block that needs a paragraph
-  to be followable wants an extraction and a name. Say that instead of accepting the comment.
-
-The failure mode that outranks verbosity: **the comment and the code disagree.** Always a finding,
-always Blocking — a stale comment is worse than none.
+- **Show the compressed version in the finding.** Over-explaining is fixed by compressing to the
+  load-bearing sentence, not by deleting — so the finding has to carry the replacement text.
+- **A comment that disagrees with its code is Blocking**, every time. A stale comment is worse than
+  none, and one that has become *false* is the worst case in the file.
+- **Cutting a rationale comment is the serious mistake**, not leaving a descriptive one in. Where a
+  comment is borderline, leave it and say why you considered it.
 
 ## 3. DRY
 

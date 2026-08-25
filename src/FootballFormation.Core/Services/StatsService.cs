@@ -12,15 +12,11 @@ public sealed record SeasonStatsView(SeasonStats Stats, SeasonSquads Squads);
 /// The statistics pages' one way in: loads what a report needs, builds it, and serves it from
 /// <see cref="StatsCache"/> until something is written.
 /// <para>
-/// One entry covers all three pages. <see cref="SeasonStatsReport.Build"/> makes its per-player
-/// figures by calling <see cref="PlayerStatsReport.Build"/> unchanged, so a player's entry in
-/// <see cref="SeasonStats.Players"/> is the object <c>/players/{id}/stats</c> would have built for
-/// itself.
-/// </para>
-/// <para>
-/// The reports carry the minutes for everyone and the pages hide them from a visitor
-/// (<c>_isAdmin</c>), so one copy is correct for both and there is no per-viewer keying. That is
-/// why this caches the report and not the markup, which varies by viewer, language and season.
+/// One entry covers all three pages, because <see cref="SeasonStatsReport.Build"/> makes its
+/// per-player figures by calling <see cref="PlayerStatsReport.Build"/> unchanged — so a player's
+/// entry in <see cref="SeasonStats.Players"/> is the object <c>/players/{id}/stats</c> would have
+/// built for itself. See docs/patterns/service-structure.md for why this caches the report rather
+/// than the markup or the loaded games.
 /// </para>
 /// </summary>
 public class StatsService(

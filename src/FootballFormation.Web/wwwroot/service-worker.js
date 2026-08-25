@@ -1,21 +1,14 @@
 // Caches the assets the app is built from, and nothing else.
 //
-// The policy is one line: cache what the server calls immutable. MapStaticAssets fingerprints every
-// asset referenced through `@Assets[...]` and serves that route `max-age=31536000, immutable`,
-// while the un-fingerprinted route for the same file gets `no-cache`. So the header is the build
-// stating the bytes can never change — the precondition cache-first needs.
+// Cache what the server calls immutable: MapStaticAssets serves a fingerprinted route
+// `max-age=31536000, immutable` and the un-fingerprinted route for the same file `no-cache`, so the
+// header is the build stating the bytes can never change.
 //
-// Three things fall out of reading it off the response rather than keeping a list:
+// Reading that off the response rather than keeping a list means there is no cache version to bust,
+// and markup — always `no-cache` — can never be stored, so an admin's /stats and the minutes #98
+// holds back cannot reach the next person on a shared phone.
 //
-//   * No cache version to bust. A deploy re-fingerprints what changed, so the new build asks for a
-//     different URL and the old entry is never requested again.
-//   * Markup is never cached, being `no-cache` — so an admin's copy of /stats and the minutes #98
-//     holds back from visitors cannot be stored and served to the next person on a shared phone.
-//   * Getting it wrong is a missed optimisation, never a stale asset.
-//
-// Not offline support: with only assets cached, a page still needs the network for its markup.
-// Caching pages is #104 — a cached *interactive* page is a dead shell, and the render mode that
-// decides which is which is invisible from a URL.
+// Not offline support: a page still needs the network for its markup. Caching pages is #104.
 
 const CACHE = 'ff-immutable-assets';
 
