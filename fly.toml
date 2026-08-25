@@ -16,21 +16,27 @@ swap_size_mb = 512
 [http_service]
   internal_port = 8080
   force_https = true
-  # Scale to zero when idle, so the bill stays near zero. "suspend" rather than "stop": suspend
-  # saves the machine's memory to disk and resumes from it, where stop cold-boots — and this app's
-  # boot is not cheap, since it takes a pre-migration backup, migrates and runs an integrity check
-  # before it serves anything.
+  # `min_machines_running = 1` pins the one machine this app runs to the started state, so
+  # `auto_stop_machines` never actually fires: it governs machines *above* the minimum, and there
+  # are none. It is kept at "suspend" rather than removed because it is the value that has to be
+  # right the moment that stops being true — drop the minimum back to 0, or ever run a second
+  # machine, and "stop" would be the wrong answer for two independent reasons.
   #
-  # Resuming from memory is also the only way a phone gets its circuit back. Circuits held for
+  # First, boot is not cheap: it takes a pre-migration backup, migrates, and runs an integrity
+  # check before it serves anything. Suspend saves the machine's memory to disk and resumes from
+  # it; stop cold-boots.
+  #
+  # Second, resuming from memory is the only way a phone gets its circuit back. Circuits held for
   # `DisconnectedCircuitRetentionPeriod` (ten minutes, see Program.cs) live in memory and nowhere
   # else, so a stopped machine loses every one of them and a returning phone is always a rejected
-  # reconnect and a forced reload — see docs/known_issues.md, "past the retention period there is
-  # no reconnect at all". A resumed machine still has them, so the rejoin can actually happen.
+  # reconnect and a forced reload — see docs/known_issues/touch-pwa.md, "past the retention period
+  # there is no reconnect at all". A resumed machine still has them, so the rejoin can happen.
   #
-  # The idle period before this fires is roughly five minutes and Fly does not expose it, so it
-  # cannot be lengthened directly — see KeepAlivePingService (src/FootballFormation.Web/KeepAlive/)
-  # for how the app instead keeps itself pinged for up to 30 minutes after the last real visitor.
   # Suspend needs RAM <= 2G — this VM is 512mb — and leaves the mounted volume untouched.
+  #
+  # KeepAlivePingService (src/FootballFormation.Web/KeepAlive/) exists only to hold off the idle
+  # sweep this setting used to trigger, and a pinned machine is never swept. It is now pinging a
+  # machine that cannot stop; harmless, but it is dead weight rather than a safeguard.
   auto_stop_machines = "suspend"
   auto_start_machines = true
   min_machines_running = 1

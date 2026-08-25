@@ -10,6 +10,15 @@
   the network panel, where every request is a green 200. It surfaces only as every `_bl_*` wait in
   the UI harnesses timing out. Both places that start a published app (`ci.yml`'s browser jobs, via
   `UI_TEST_APP_DLL` and `VISUAL_APP_DLL`) `cd` into the artifact first.
+- **Editing a file in the publish output does not change what the app serves.** `MapStaticAssets`
+  answers from the manifest baked at publish time — content length and ETag included — and reads the
+  bytes off disk against it. Overwrite `publish/wwwroot/service-worker.js` with a shorter file and
+  the next request dies with `System.ArgumentOutOfRangeException: (Parameter 'count')`; the
+  behaviour for any other edit is equally undefined, because the response was described before the
+  file was touched. This bites whenever a published app is the thing under test — `ci.yml`'s browser
+  jobs run one, via `UI_TEST_APP_DLL` and `VISUAL_APP_DLL` — and it is tempting precisely because
+  editing the output *looks* like the fast way to try a one-line change to a script or a stylesheet.
+  It is not a shortcut, it is a different app. Republish.
 - **`.count()` is the one Playwright query that does not wait, and it fails open.** Every other
   locator call in `tests/ui` retries until its timeout; `count()` answers from the DOM as it stands
   right now. `if (await dialog.count()) await confirmDialog(...)` therefore read zero before a
