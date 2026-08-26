@@ -8,11 +8,7 @@ namespace FootballFormation.UI.Helpers;
 /// <summary>
 /// Bridges the service-layer <see cref="Result"/> pattern and MudBlazor's snackbar so
 /// pages don't repeat the same success/error branch after every service call.
-/// <para>
-/// A cancelled result gets no snackbar: the snackbar belongs to the circuit rather than to the page
-/// that made the call, so reporting one would raise it on the page the visitor moved to. Both
-/// methods still answer false.
-/// </para>
+/// A cancelled result gets no snackbar — it belongs to the circuit, not to the page the visitor left — and still answers false.
 /// </summary>
 public static class UiFeedback
 {
@@ -71,10 +67,7 @@ public static class UiFeedback
     {
         if (result.ErrorKey is null) return string.Empty;
 
-        // Only the two ServiceOperation wrappers take a translatable argument: their placeholder is
-        // an English action phrase ("load games"), so it needs its own lookup or half the sentence
-        // stays in English. Every other argument is data — a player name, a season, a count — and
-        // must pass through untouched, or a player called "Start" would come out translated.
+        // Only these two keys take a translatable argument; every other ErrorArg is data, so a player named "Start" must not come out translated.
         if (result.ErrorKey is ServiceOperation.UnexpectedFailureKey or ServiceOperation.NotAllowedKey
             && result.ErrorArgs is [string action])
             return localizer[result.ErrorKey, localizer[action].Value];

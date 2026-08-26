@@ -9,12 +9,7 @@ namespace FootballFormation.UI.Navigation;
 /// <param name="Icon">Shown in the drawer only; the app bar hides it via .topbar-nav-link.</param>
 /// <param name="Match">How the active-page highlight matches the current URL.</param>
 /// <param name="AdminOnly">Wrapped in an AuthorizeView restricted to the Admin role when true.</param>
-public sealed record NavItem(
-    string Path,
-    string LabelKey,
-    string Icon,
-    NavLinkMatch Match,
-    bool AdminOnly = false);
+public sealed record NavItem(string Path, string LabelKey, string Icon, NavLinkMatch Match, bool AdminOnly = false);
 
 /// <summary>
 /// What a route is called and where it belongs in the chrome. The menu, the "Back to …" labels and
@@ -38,11 +33,7 @@ public static class AppNav
     /// <summary>
     /// What to call the page at <paramref name="path"/>, as a localization key — this is what names
     /// the menu entries and fills in the "Back to {0}" label, so a page is called the same thing
-    /// wherever it is referred to.
-    /// <para>
-    /// Null for anything outside the app's own routes (/login, /not-found, /Error). That is how the
-    /// back arrow knows to take its fallback rather than offer to return to a page it cannot name.
-    /// </para>
+    /// wherever it is referred to. Null outside the app's own routes (/login, /not-found, /Error), which is how the back arrow knows to take its fallback instead.
     /// </summary>
     public static string? PageNameKey(string? path) => Segments(path) switch
     {
@@ -75,6 +66,5 @@ public static class AppNav
         _ => false,
     };
 
-    private static string[] Segments(string? path) =>
-        (path ?? "").Split('?')[0].Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+    private static string[] Segments(string? path) => (path ?? "").Split('?')[0].Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
 }

@@ -7,19 +7,7 @@ namespace FootballFormation.UI.Navigation;
 /// Where the visitor came from, so a back button can return them there instead of to whichever page
 /// someone hardcoded. Reaching a player from the season statistics and reaching the same player from
 /// the squad used to end up in the same place; now each goes back where it came from.
-/// <para>
-/// This reads the <c>Referer</c> header off the request rather than keeping a list of navigations,
-/// and the reason is the render-mode split. The list only ever existed inside a circuit, and
-/// <c>MainLayout</c> — its only entry point — is statically rendered on every page now. The browser
-/// already knows the answer and sends it on the request, so the trail was reconstructing something
-/// it was being told. It survives a refresh as a side effect, which the list never did.
-/// </para>
-/// <para>
-/// A circuit's own scope is the exception, and deliberately so: it is created during the
-/// <c>/_blazor</c> request, which carries no referrer. A back button inside an interactive island
-/// therefore falls through to its <c>Fallback</c> — and each of those pages (the builder, the live
-/// screen, the match result) is reached from /games, which is what its fallback already says.
-/// </para>
+/// Read off the <c>Referer</c> header, which a circuit's own scope has none of (/_blazor), so a back button inside an interactive island falls through to its <c>Fallback</c>.
 /// </summary>
 public sealed class NavigationTrail(NavigationManager navigation, RequestContext request)
 {
@@ -49,10 +37,6 @@ public sealed class NavigationTrail(NavigationManager navigation, RequestContext
     /// it. Without this the redirect target's back button would point at the page that just failed
     /// and bounce the visitor straight into it — and so would the browser's own back button, which
     /// is why the history entry is replaced too.
-    /// <para>
-    /// During a static render <c>replace</c> is moot: <c>NavigateTo</c> becomes a real redirect,
-    /// which adds no history entry of its own.
-    /// </para>
     /// </summary>
     public void Redirect(string path) => navigation.NavigateTo(path, replace: true);
 }

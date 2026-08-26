@@ -45,7 +45,6 @@ public static class DialogPrompts
     /// and the page saves it (see SquadMemberDialog) — so unwrapping the result is the same six
     /// lines everywhere, and this is them.
     /// </summary>
-    /// <param name="configure">Sets the dialog's parameters. Omit for a dialog that takes none.</param>
     public static async Task<TResult?> PromptAsync<TDialog, TResult>(
         this IDialogService dialogService,
         string title,

@@ -5,11 +5,6 @@ namespace FootballFormation.UI.Helpers;
 
 /// <summary>
 /// Reading the signed-in user's role and identity off a <see cref="ClaimsPrincipal"/>.
-/// <para>
-/// Pages used to ask <c>Identity?.IsAuthenticated == true</c>, which was only ever right because
-/// every account was an admin. Going through <see cref="IsAdmin"/> means the day a second role
-/// exists, none of them silently grant it admin rights.
-/// </para>
 /// </summary>
 public static class PrincipalExtensions
 {
