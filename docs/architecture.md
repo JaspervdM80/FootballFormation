@@ -15,7 +15,8 @@ Models/
   GameGoal.cs            — A goal: scorer (null for the opponent), assister, the half + clock reading it was
                            scored at, own/opponent flags
   GameSubstitution.cs    — A timestamped change made during a live match
-  MatchPreferences.cs    — Per-season game defaults (duration, split, formation, match day)
+  MatchPreferences.cs    — Per-season game defaults (duration, split, formation, match day, training days)
+  Training.cs            — A training session: date, who was unavailable, one note. Plus TrainingOrdering
   GameComment.cs         — An admin's note on a game: body, public/private, author, edited marker
   MatchType.cs           — MatchType enum (Competition / Cup / Practice) + DisplayName()
   AppUser.cs             — An account that can sign in: name, login, hash, role, security stamp
@@ -73,6 +74,9 @@ Services/
   SeasonService.cs        — CRUD + SetCurrent/FindForDate/GetOrCreateForDate/EnsureCurrentSeason/CloseSeasonGaps
   SeasonSquadService.cs   — Squad membership: get/add/remove/set-guest/copy-forward, with guards
   GameService.cs          — CRUD + SavePeriodLineupAsync, optional seasonId filter, returns Result<T>
+  TrainingService.cs      — CRUD over training sessions. The one service whose *reads* are
+                            RunAdminAsync too: who missed a training is the only thing in this app
+                            that is not a public read. See docs/models/training.md
   LiveMatchService.cs     — Reads a match being played: GetLiveAsync for everything the live screen
                             renders, GetTodaysMatchAsync for the home-page banner (in-progress
                             first, else today's fixture, upcoming or finished). Writing to one is
@@ -111,6 +115,8 @@ Pages/
   PlayerDialog.razor(.cs)     — Dialog: first name, surname, shirt #, positions (no guest switch — that's per season)
   SquadMemberDialog.razor(.cs)— Dialog: add someone already on file to this season's squad
   Games.razor(.cs)            — /games — Game list with formation builder link
+  Trainings.razor(.cs)(.css)  — /trainings — Admin-only: the season's training sessions, grouped by ISO week
+  TrainingDialog.razor(.cs)   — Dialog: date, start time, unavailable players, note
   GameDialog.razor(.cs)       — Dialog: opponent, date, season, formation, split, duration, unavailable players
   FormationBuilder.razor(.cs) — /games/{id}/formation — Pitch + player list + subs + playing time overview
   SeasonStats.razor(.cs)(.css)— /stats — Season dashboard: record, goals, form, scorers, playing time
@@ -192,8 +198,8 @@ season, and a report may walk games spanning several of them.
 
 ## Render modes: most pages have no circuit
 `@rendermode InteractiveServer` is declared **per page**, never on `<Routes>` or `<HeadOutlet>`.
-Eight pages carry it — the start page, the games list and the squad, the four game screens, and
-settings and users. Everything else is plain server HTML: `/stats`, `/stats/positions`,
+Nine pages carry it — the start page, the games list, the squad and the trainings list, the four
+game screens, and settings and users. Everything else is plain server HTML: `/stats`, `/stats/positions`,
 `/players/{id}/stats`, `/games/{id}/overview`, `/login`, `/Error` and `/not-found`.
 
 The reason is a phone. Backgrounding an installed PWA suspends the tab and kills the circuit's
@@ -255,6 +261,9 @@ docs/deployment.md — Full setup, DNS for gjs-meiden.nl, redeploy & backup comm
 - `List<int>` (UnavailablePlayerIds, InjuredPlayerIds, GuestPlayerIds) stored as comma-separated values
 - `Games.SeasonId` is a required FK with `ON DELETE RESTRICT`; the `AddSeasons` migration backfilled
   existing rows (see the EF Core conventions in [patterns](patterns/ef-core.md))
+- `Trainings` is a plain table: `SeasonId` is a required FK with `ON DELETE RESTRICT`, like `Games`,
+  and who was absent is a comma-separated `UnavailablePlayerIds` column rather than a join table
+  (see [models](models/training.md))
 - `SeasonSquadMembers` holds per-season squad membership, unique on `(SeasonId, PlayerId)`, cascading
   from both parents. The `AddSeasonSquads` migration backfilled it from the old `Players.IsGuest`
   column and then dropped that column — a parent-table rebuild, so verify with `PRAGMA foreign_key_check`

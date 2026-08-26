@@ -34,6 +34,11 @@ test.describe('an anonymous visitor', () => {
     await expect(page.getByRole('button', { name: 'Add', exact: true })).toHaveCount(0);
     await expect(page.getByTitle('Edit', { exact: false })).toHaveCount(0);
     await expect(page.getByTitle('Delete', { exact: false })).toHaveCount(0);
+
+    // Trainings are admin-only outright, so the menu must not offer a link that would only bounce
+    // the visitor to the login page. Both renderings of the menu — app bar and drawer — are on the
+    // page at once, so a count of zero covers each.
+    await expect(page.getByRole('link', { name: 'Trainings', exact: false })).toHaveCount(0);
   });
 
   test('is not shown the playing-time table on the season statistics', async ({ page }) => {
@@ -51,7 +56,7 @@ test.describe('an anonymous visitor', () => {
   });
 
   test('is sent to the login page by an admin-only route', async ({ page }) => {
-    for (const path of ['/settings', '/users', '/stats/positions']) {
+    for (const path of ['/settings', '/users', '/stats/positions', '/trainings']) {
       await page.goto(path, { waitUntil: 'domcontentloaded' });
       await page.waitForURL(/\/login/, { timeout: 15_000 });
 
@@ -99,6 +104,7 @@ test.describe('an admin', () => {
       ['/settings', 'Match Preferences', goto],
       ['/users', 'Users', goto],
       ['/stats/positions', 'Position Development', gotoRendered],
+      ['/trainings', 'Trainings', goto],
     ]) {
       await open(page, path);
       await expect(page).toHaveURL(new RegExp(`${path}$`));

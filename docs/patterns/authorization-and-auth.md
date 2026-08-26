@@ -38,8 +38,18 @@ admin-only comments — and then confirms it against `ICurrentUser` rather than 
 caller passing `true` without the role gets the public ones. A read with something to hide should
 not be the one place a boolean argument is trusted. `AuthorizationTests` pins both halves —
 `An_anonymous_caller_asking_for_private_comments_gets_only_the_public_ones` alongside
-`Reads_stay_open_to_everyone`. Everything else public stays genuinely public; if a second such read
-appears, it belongs in this paragraph.
+`Reads_stay_open_to_everyone`.
+
+**The second such read is the training register**, and it goes further: `TrainingService`'s
+`GetAllAsync` and `GetByIdAsync` are `RunAdminAsync` outright rather than a filtered read, because
+there is no public half of a session to hand back. Who missed a training, and the note usually
+saying why, is a personal fact rather than a team one — unlike the squad, the fixtures and the
+statistics, which exist to be shared with parents. `/trainings` carries
+`[Authorize(Roles = AppRoles.Admin)]` and the menu entry is `AdminOnly` on top of that, so nobody is
+offered a link that only bounces them to `/login`. `Trainings_are_the_one_read_that_is_not_public`
+pins the service half; `authorization.spec.js` pins the route and the missing menu entry.
+
+Everything else public stays genuinely public; if a third such read appears, it belongs here too.
 
 `CircuitCurrentUser` answers false for an account still on its seeded password, so the first-login
 gate is a real restriction rather than a redirect that could be navigated around.

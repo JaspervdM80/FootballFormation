@@ -134,6 +134,28 @@
   <data name="Cup" xml:space="preserve"><value>Beker</value></data>
   <data name="Practice" xml:space="preserve"><value>Oefenwedstrijd</value></data>
 
+  <!-- Trainings. "Trainings" is the section; the lowercase "the training" phrases below are service actions and must stay apart from
+       these labels, since resx keys are case-insensitive. -->
+  <data name="Trainings" xml:space="preserve"><value>Trainingen</value></data>
+  <data name="{0} training" xml:space="preserve"><value>{0} training</value></data>
+  <data name="{0} trainings" xml:space="preserve"><value>{0} trainingen</value></data>
+  <data name="Week {0}" xml:space="preserve"><value>Week {0}</value></data>
+  <data name="No trainings in {0} yet." xml:space="preserve"><value>Nog geen trainingen in {0}.</value></data>
+  <data name="No trainings yet. Add your first session!" xml:space="preserve"><value>Nog geen trainingen. Voeg je eerste training toe!</value></data>
+  <data name="Set which weekdays the team trains under Preferences, and the date fills itself in." xml:space="preserve"><value>Stel bij Voorkeuren in op welke dagen het team traint, dan wordt de datum vanzelf ingevuld.</value></data>
+  <data name="New Training" xml:space="preserve"><value>Nieuwe training</value></data>
+  <data name="Edit Training" xml:space="preserve"><value>Training bewerken</value></data>
+  <data name="Delete Training" xml:space="preserve"><value>Training verwijderen</value></data>
+  <data name="Delete the training on {0}, along with the absences recorded for it?" xml:space="preserve"><value>De training van {0} verwijderen, samen met de afwezigheid die erbij is vastgelegd?</value></data>
+  <data name="Training on {0} added" xml:space="preserve"><value>Training van {0} toegevoegd</value></data>
+  <data name="Training on {0} updated" xml:space="preserve"><value>Training van {0} bijgewerkt</value></data>
+  <data name="Training on {0} deleted" xml:space="preserve"><value>Training van {0} verwijderd</value></data>
+
+  <!-- Training dialog -->
+  <data name="Start Time" xml:space="preserve"><value>Starttijd</value></data>
+  <data name="Notes" xml:space="preserve"><value>Notities</value></data>
+  <data name="What was trained, and anything worth remembering." xml:space="preserve"><value>Wat er getraind is, en alles wat het onthouden waard is.</value></data>
+
   <!-- Formation builder -->
   <data name="Formation Builder" xml:space="preserve"><value>Opstelling maken</value></data>
   <data name="1st Half" xml:space="preserve"><value>1e helft</value></data>
@@ -408,6 +430,8 @@
   <data name="Default Formation" xml:space="preserve"><value>Standaard opstelling</value></data>
   <data name="Match Day" xml:space="preserve"><value>Wedstrijddag</value></data>
   <data name="Next calculated match date:" xml:space="preserve"><value>Volgende berekende wedstrijddatum:</value></data>
+  <data name="Training Days" xml:space="preserve"><value>Trainingsdagen</value></data>
+  <data name="Next calculated training date:" xml:space="preserve"><value>Volgende berekende trainingsdatum:</value></data>
   <data name="Save Preferences" xml:space="preserve"><value>Voorkeuren opslaan</value></data>
   <data name="Change Password" xml:space="preserve"><value>Wachtwoord wijzigen</value></data>
   <data name="Current Password" xml:space="preserve"><value>Huidig wachtwoord</value></data>
@@ -504,7 +528,9 @@
   <data name="Season {0} has no squad to copy" xml:space="preserve"><value>Seizoen {0} heeft geen selectie om te kopiëren</value></data>
   <data name="Season {0} is the current season" xml:space="preserve"><value>Seizoen {0} is het huidige seizoen</value></data>
   <data name="Season {0} still has {1} games" xml:space="preserve"><value>Seizoen {0} heeft nog {1} wedstrijden</value></data>
+  <data name="Season {0} still has {1} trainings" xml:space="preserve"><value>Seizoen {0} heeft nog {1} trainingen</value></data>
   <data name="Substitution not found" xml:space="preserve"><value>Wissel niet gevonden</value></data>
+  <data name="Training not found" xml:space="preserve"><value>Training niet gevonden</value></data>
   <data name="That player is already marked injured" xml:space="preserve"><value>Die speler is al als geblesseerd gemarkeerd</value></data>
   <data name="That player is already on the pitch" xml:space="preserve"><value>Die speler staat al op het veld</value></data>
   <data name="That player is not on the pitch" xml:space="preserve"><value>Die speler staat niet op het veld</value></data>
@@ -525,6 +551,7 @@
   <data name="add the player to the squad" xml:space="preserve"><value>speler aan de selectie toevoegen</value></data>
   <data name="archive the player" xml:space="preserve"><value>speler archiveren</value></data>
   <data name="calculate next match date" xml:space="preserve"><value>volgende wedstrijddatum berekenen</value></data>
+  <data name="calculate the next training date" xml:space="preserve"><value>volgende trainingsdatum berekenen</value></data>
   <data name="change the squad status" xml:space="preserve"><value>selectiestatus wijzigen</value></data>
   <data name="close season gaps" xml:space="preserve"><value>gaten tussen seizoenen sluiten</value></data>
   <data name="copy the squad" xml:space="preserve"><value>selectie kopiëren</value></data>
@@ -532,7 +559,9 @@
   <data name="create game" xml:space="preserve"><value>wedstrijd aanmaken</value></data>
   <data name="create player" xml:space="preserve"><value>speler aanmaken</value></data>
   <data name="create season" xml:space="preserve"><value>seizoen aanmaken</value></data>
+  <data name="create the training" xml:space="preserve"><value>training aanmaken</value></data>
   <data name="create the user" xml:space="preserve"><value>gebruiker aanmaken</value></data>
+  <data name="delete the training" xml:space="preserve"><value>training verwijderen</value></data>
   <data name="delete the user" xml:space="preserve"><value>gebruiker verwijderen</value></data>
   <data name="end the half" xml:space="preserve"><value>helft beëindigen</value></data>
   <data name="find the previous season" xml:space="preserve"><value>vorig seizoen zoeken</value></data>
@@ -552,6 +581,7 @@
   <data name="load seasons" xml:space="preserve"><value>seizoenen laden</value></data>
   <data name="load the squad" xml:space="preserve"><value>selectie laden</value></data>
   <data name="load the squads" xml:space="preserve"><value>selecties laden</value></data>
+  <data name="load the trainings" xml:space="preserve"><value>trainingen laden</value></data>
   <data name="load users" xml:space="preserve"><value>gebruikers laden</value></data>
   <data name="log the goal" xml:space="preserve"><value>doelpunt vastleggen</value></data>
   <data name="look up the season for that date" xml:space="preserve"><value>seizoen bij die datum opzoeken</value></data>
@@ -573,5 +603,6 @@
   <data name="update game" xml:space="preserve"><value>wedstrijd bijwerken</value></data>
   <data name="update player" xml:space="preserve"><value>speler bijwerken</value></data>
   <data name="update season" xml:space="preserve"><value>seizoen bijwerken</value></data>
+  <data name="update the training" xml:space="preserve"><value>training bijwerken</value></data>
   <data name="update the user" xml:space="preserve"><value>gebruiker bijwerken</value></data>
 </root>

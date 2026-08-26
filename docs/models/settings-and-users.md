@@ -9,6 +9,7 @@
 | DefaultSplitType | GameSplitType | Halves |
 | DefaultFormation | FormationType | F442 |
 | MatchDay | DayOfWeek | Saturday |
+| TrainingDays | List\<DayOfWeek\> | empty — stored as comma-separated ints, like every other list column |
 
 The defaults a new game starts from are **per season**, not per app: a team moving up an age group
 plays longer games and often a different shape, and the fixture day can move too. Keeping one row
@@ -25,6 +26,15 @@ hand, from the picker or from the game being edited.
 and keeps its answer inside the season window: it measures from the opening day for a season not
 started yet, and falls back to the last match day of the window for one already over. Without that
 clamp, adding the first fixture of next season proposed a date in the season we are living in.
+
+`GetNextTrainingDateAsync(seasonId)` is the same walk over `TrainingDays` and that season's
+[trainings](training.md), and shares the reference-date step with it. Two differences: it picks the
+**soonest** of several weekdays rather than the one match day, and an empty `TrainingDays` — the
+state every season starts in — answers with the reference date itself rather than refusing, because
+the dialog needs a date and there is no weekday to land on yet.
+
+`TrainingDays` is copied by `CopyFor` as a new list, not shared: editing next season's days must
+not reach back into last season's row.
 
 ## AppUser (table `Users`)
 | Property | Type | Notes |

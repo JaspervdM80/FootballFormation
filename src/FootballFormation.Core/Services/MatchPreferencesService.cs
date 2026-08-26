@@ -38,8 +38,10 @@ public class MatchPreferencesService(
             db.MatchPreferences.Update(prefs);
             await db.SaveChangesAsync(cancellationToken);
 
-            logger.LogInformation("Saved match preferences for season {SeasonId}: {Duration}min, {Split}, {Formation}, {MatchDay}",
-                prefs.SeasonId, prefs.GameDurationMinutes, prefs.DefaultSplitType, prefs.DefaultFormation, prefs.MatchDay);
+            logger.LogInformation(
+                "Saved match preferences for season {SeasonId}: {Duration}min, {Split}, {Formation}, {MatchDay}, training {TrainingDays}",
+                prefs.SeasonId, prefs.GameDurationMinutes, prefs.DefaultSplitType, prefs.DefaultFormation, prefs.MatchDay,
+                prefs.TrainingDays);
             return Result.Success();
         });
 
@@ -65,19 +67,9 @@ public class MatchPreferencesService(
                 .ToListAsync(cancellationToken);
 
             var matchDay = prefsResult.Value!.MatchDay;
-            var today = time.GetLocalNow().Date;
-            var lastGame = seasonDates.Count > 0 ? seasonDates.Max().Date : (DateTime?)null;
+            var (referenceDate, stepPastReference) = ReferenceDate(season, seasonDates);
 
-            // Only step off the last game while it is still ahead of us — a run of fixtures entered in advance. Measuring from one
-            // already behind us would open the dialog months back.
-            var lastGameIsUpcoming = lastGame is not null && lastGame >= today;
-            var referenceDate = lastGameIsUpcoming ? lastGame!.Value : today;
-
-            // A season we are not in yet has no useful "today", so measure from its opening day.
-            if (!lastGameIsUpcoming && referenceDate < season.StartDate.Date)
-                referenceDate = season.StartDate.Date;
-
-            var nextDate = CalculateNextMatchDay(referenceDate, matchDay, lastGameIsUpcoming);
+            var nextDate = CalculateNextMatchDay(referenceDate, matchDay, stepPastReference);
 
             // A late-entered result in a season already over must not propose a date past its end, which would belong to the next one.
             if (nextDate > season.EndDate.Date)
@@ -87,6 +79,80 @@ public class MatchPreferencesService(
                 seasonId, nextDate.ToString("yyyy-MM-dd"), matchDay);
             return Result.Success(nextDate);
         });
+
+    /// Kept inside the season's own window, like the match date it sits beside. Falls back to the reference date itself while no training
+    /// days are chosen, since there is then no weekday to land on.
+    public Task<Result<DateTime>> GetNextTrainingDateAsync(
+        int seasonId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "calculate the next training date", cancellationToken, async () =>
+        {
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            var prefsResult = await GetAsync(seasonId, cancellationToken);
+            if (prefsResult.IsFailure)
+                return prefsResult.To<DateTime>();
+
+            var season = await db.Seasons.FirstOrDefaultAsync(s => s.Id == seasonId, cancellationToken);
+            if (season is null)
+                return Result.Failure<DateTime>("Season not found");
+
+            // The dates alone, and the latest picked from them: see TrainingOrdering.
+            var seasonDates = await db.Trainings
+                .Where(t => t.SeasonId == seasonId)
+                .Select(t => t.Date)
+                .ToListAsync(cancellationToken);
+
+            var trainingDays = prefsResult.Value!.TrainingDays;
+            var (referenceDate, stepPastReference) = ReferenceDate(season, seasonDates);
+
+            var nextDate = trainingDays.Count == 0
+                ? (stepPastReference ? referenceDate.AddDays(1) : referenceDate)
+                : NextDayIn(referenceDate, trainingDays, stepPastReference);
+
+            if (nextDate > season.EndDate.Date)
+                nextDate = trainingDays.Count == 0
+                    ? season.EndDate.Date
+                    : LastDayInOnOrBefore(season.EndDate.Date, trainingDays);
+
+            logger.LogDebug("Next training date for season {SeasonId}: {NextDate} (training days: {TrainingDays})",
+                seasonId, nextDate.ToString("yyyy-MM-dd"), trainingDays);
+            return Result.Success(nextDate);
+        });
+
+    /// Where to measure the next date from, and whether the answer has to step past it — true when the reference is an entry already
+    /// scheduled, since two must not land on the same day; false when it is today, which is itself a valid answer.
+    private (DateTime Reference, bool StepPast) ReferenceDate(Season season, List<DateTime> seasonDates)
+    {
+        var today = time.GetLocalNow().Date;
+        var latest = seasonDates.Count > 0 ? seasonDates.Max().Date : (DateTime?)null;
+
+        // Only step off the last entry while it is still ahead of us — a run entered in advance. Measuring from one already behind us
+        // would open the dialog months back.
+        var latestIsUpcoming = latest is not null && latest >= today;
+        var reference = latestIsUpcoming ? latest!.Value : today;
+
+        // A season we are not in yet has no useful "today", so measure from its opening day.
+        if (!latestIsUpcoming && reference < season.StartDate.Date)
+            reference = season.StartDate.Date;
+
+        return (reference, latestIsUpcoming);
+    }
+
+    /// The soonest of <paramref name="days"/> on or after the start date. <paramref name="days"/> must not be empty.
+    private static DateTime NextDayIn(DateTime referenceDate, List<DayOfWeek> days, bool stepPastReference)
+    {
+        var startDate = stepPastReference ? referenceDate.AddDays(1) : referenceDate;
+
+        return Enumerable.Range(0, 7)
+            .Select(offset => startDate.AddDays(offset))
+            .First(date => days.Contains(date.DayOfWeek));
+    }
+
+    /// The latest of <paramref name="days"/> falling on or before <paramref name="date"/>. <paramref name="days"/> must not be empty.
+    private static DateTime LastDayInOnOrBefore(DateTime date, List<DayOfWeek> days) =>
+        Enumerable.Range(0, 7)
+            .Select(offset => date.AddDays(-offset))
+            .First(candidate => days.Contains(candidate.DayOfWeek));
 
     /// The latest <paramref name="matchDay"/> falling on or before <paramref name="date"/>.
     private static DateTime LastMatchDayOnOrBefore(DateTime date, DayOfWeek matchDay) =>

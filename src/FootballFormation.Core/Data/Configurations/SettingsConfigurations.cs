@@ -8,6 +8,8 @@ internal sealed class MatchPreferencesConfiguration : IEntityTypeConfiguration<M
     {
         entity.HasKey(m => m.Id);
 
+        entity.Property(m => m.TrainingDays).HasCsvListConversion();
+
         // Cascade, unlike Season -> Game: a preferences row is pure configuration with no history, so it must not make an otherwise
         // game-free season undeletable.
         entity.HasOne(m => m.Season)

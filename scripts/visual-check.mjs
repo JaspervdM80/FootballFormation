@@ -38,6 +38,7 @@ const SEED_PLAYERS = [
 ];
 
 const SEED_OPPONENT = 'SV Zwaluwen';
+const SEED_TRAINING_NOTE = 'Positiespel en afwerken';
 
 // The third entry marks a page that renders no MudBlazor control, so there is nothing for goto to
 // wait on — see gotoRendered in blazor.mjs. It says nothing about whether the page has a circuit.
@@ -45,6 +46,7 @@ const PAGES = [
   ['home', '/', true],
   ['players', '/players'],
   ['games', '/games'],
+  ['trainings', '/trainings'],
   ['stats', '/stats', true],
   ['position-development', '/stats/positions', true],
   ['users', '/users'],
@@ -150,6 +152,21 @@ if (!(await page.getByText(SEED_OPPONENT).count())) {
   await clickFor(dialog.getByRole('button', { name: rx('opslaan', 'save') }),
     async () => await page.locator('.mud-dialog').count() === 0, { settle: 10_000 });
   console.log(`seeded a game vs ${SEED_OPPONENT}, today`);
+}
+
+// One training session, for the same reason as the game above: an empty /trainings is a paragraph
+// of text, with no row to screenshot and no action buttons to measure. The dialog's date is already
+// usable — no training days are configured, so it proposes today.
+await goto(page, `${BASE}/trainings`);
+if (!(await page.locator('.training-row').count())) {
+  const dialog = page.locator('.mud-dialog');
+
+  await clickFor(page.getByRole('button', { name: rx('toevoegen', 'add') }).first(),
+    () => dialog.isVisible());
+  await dialog.locator('textarea').first().fill(SEED_TRAINING_NOTE);
+  await clickFor(dialog.getByRole('button', { name: rx('opslaan', 'save') }),
+    async () => await page.locator('.mud-dialog').count() === 0, { settle: 10_000 });
+  console.log('seeded a training, today');
 }
 
 for (const [name, path, bare] of PAGES) {

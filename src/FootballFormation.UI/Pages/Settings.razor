@@ -66,6 +66,19 @@
         <MudText Typo="Typo.caption" Style="color: var(--ink-muted);" Class="mb-4">
             @L["Next calculated match date:"] <strong style="color: var(--club-primary-bright);">@_nextMatchDate?.ToString("dddd dd MMM yyyy")</strong>
         </MudText>
+
+        <MudSelect T="DayOfWeek" Label="@L["Training Days"]" MultiSelection="true"
+                   SelectedValues="_prefs.TrainingDays" SelectedValuesChanged="OnTrainingDaysChanged"
+                   Class="mb-4">
+            @foreach (var day in Enum.GetValues<DayOfWeek>())
+            {
+                <MudSelectItem Value="day">@System.Globalization.CultureInfo.CurrentUICulture.DateTimeFormat.GetDayName(day)</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudText Typo="Typo.caption" Style="color: var(--ink-muted);" Class="mb-4">
+            @L["Next calculated training date:"] <strong style="color: var(--club-primary-bright);">@_nextTrainingDate?.ToString("dddd dd MMM yyyy")</strong>
+        </MudText>
     </MudForm>
 
     <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Save"

@@ -29,6 +29,7 @@ public abstract class ServiceTestBase : IDisposable
         Seasons = new SeasonService(DbFactory, Time, CurrentUser, NullLogger<SeasonService>.Instance);
         Squads = new SeasonSquadService(DbFactory, CurrentUser, NullLogger<SeasonSquadService>.Instance);
         Games = new GameService(DbFactory, Seasons, CurrentUser, Time, NullLogger<GameService>.Instance);
+        Trainings = new TrainingService(DbFactory, Seasons, CurrentUser, NullLogger<TrainingService>.Instance);
         Preferences = new MatchPreferencesService(DbFactory, Time, CurrentUser, NullLogger<MatchPreferencesService>.Instance);
         Live = new LiveMatchService(DbFactory, Time, NullLogger<LiveMatchService>.Instance);
 
@@ -54,6 +55,7 @@ public abstract class ServiceTestBase : IDisposable
     protected SeasonService Seasons { get; }
     protected SeasonSquadService Squads { get; }
     protected GameService Games { get; }
+    protected TrainingService Trainings { get; }
     protected MatchPreferencesService Preferences { get; }
 
     /// Shared by the three services below, the way the singleton is in the app. Subscribe to see what a spectator's screen would be told.

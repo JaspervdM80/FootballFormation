@@ -138,6 +138,20 @@ public class SeasonServiceTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task A_season_with_only_trainings_cannot_be_deleted_either()
+    {
+        var season = await SeedSeasonAsync(isCurrent: false);
+        await Trainings.CreateAsync(new Training { SeasonId = season.Id, Date = Now });
+
+        var result = await Seasons.DeleteAsync(season.Id);
+
+        // The Training FK is Restrict too, so without this guard the caller would hit a raw DbUpdateException instead of a sentence.
+        Assert.True(result.IsFailure);
+        Assert.Equal("Season {0} still has {1} trainings", result.ErrorKey);
+        Assert.Single(Read().Seasons);
+    }
+
+    [Fact]
     public async Task The_current_season_cannot_be_deleted()
     {
         var season = await SeedSeasonAsync(isCurrent: true);

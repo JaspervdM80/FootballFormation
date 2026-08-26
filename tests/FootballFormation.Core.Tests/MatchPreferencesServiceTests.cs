@@ -179,6 +179,82 @@ public class MatchPreferencesServiceTests : ServiceTestBase
         Assert.Equal(DayOfWeek.Saturday, next.DayOfWeek);
     }
 
+    [Fact]
+    public async Task The_training_days_carry_into_the_next_season_the_way_the_match_day_does()
+    {
+        var last = await SeedSeasonAsync(covering: Saturday.AddYears(-1), isCurrent: false);
+        var next = await SeedSeasonAsync(covering: Saturday);
+
+        await SetTrainingDaysAsync(last.Id, DayOfWeek.Tuesday, DayOfWeek.Thursday);
+
+        var inherited = (await Preferences.GetAsync(next.Id)).Value!;
+
+        // A copy, not the same list: editing next season's days must not reach back into last season's row.
+        Assert.Equal([DayOfWeek.Tuesday, DayOfWeek.Thursday], inherited.TrainingDays);
+        Assert.NotSame((await Preferences.GetAsync(last.Id)).Value!.TrainingDays, inherited.TrainingDays);
+    }
+
+    [Fact]
+    public async Task The_next_training_date_lands_on_the_soonest_of_the_days_chosen()
+    {
+        var season = await SeedSeasonAsync(covering: Saturday);
+        await SetTrainingDaysAsync(season.Id, DayOfWeek.Tuesday, DayOfWeek.Thursday);
+
+        var next = (await Preferences.GetNextTrainingDateAsync(season.Id)).Value;
+
+        // Today is Saturday, so Tuesday is the nearer of the two even though Thursday is listed second.
+        Assert.Equal(new DateTime(2026, 3, 17), next);
+    }
+
+    [Fact]
+    public async Task A_session_already_entered_pushes_the_next_one_past_it()
+    {
+        var season = await SeedSeasonAsync(covering: Saturday);
+        await SetTrainingDaysAsync(season.Id, DayOfWeek.Tuesday, DayOfWeek.Thursday);
+        await Trainings.CreateAsync(new Training { SeasonId = season.Id, Date = new DateTime(2026, 3, 17) });
+
+        var next = (await Preferences.GetNextTrainingDateAsync(season.Id)).Value;
+
+        // Two sessions on one day is legal, but proposing the day already filled in is never what was meant.
+        Assert.Equal(new DateTime(2026, 3, 19), next);
+    }
+
+    [Fact]
+    public async Task With_no_training_days_chosen_the_date_falls_back_to_today()
+    {
+        var season = await SeedSeasonAsync(covering: Saturday);
+
+        // The honest answer while the setting is empty: there is no weekday to land on, and refusing would leave the dialog with no date
+        // at all.
+        Assert.Equal(Saturday, (await Preferences.GetNextTrainingDateAsync(season.Id)).Value);
+    }
+
+    [Fact]
+    public async Task Without_a_season_there_is_no_training_date_to_propose()
+    {
+        // "All seasons" is a real choice in the picker, and the dialog opens under it — so this has to answer rather than throw.
+        Assert.True((await Preferences.GetNextTrainingDateAsync(0)).IsFailure);
+    }
+
+    [Fact]
+    public async Task A_season_already_over_proposes_a_training_date_inside_its_own_window()
+    {
+        var past = await SeedSeasonAsync(covering: Saturday.AddYears(-2), isCurrent: false);
+        await SetTrainingDaysAsync(past.Id, DayOfWeek.Tuesday);
+
+        var next = (await Preferences.GetNextTrainingDateAsync(past.Id)).Value;
+
+        Assert.InRange(next, past.StartDate.Date, past.EndDate.Date);
+        Assert.Equal(DayOfWeek.Tuesday, next.DayOfWeek);
+    }
+
+    private async Task SetTrainingDaysAsync(int seasonId, params DayOfWeek[] days)
+    {
+        var prefs = (await Preferences.GetAsync(seasonId)).Value!;
+        prefs.TrainingDays = [.. days];
+        await Preferences.SaveAsync(prefs);
+    }
+
     private async Task SetMatchDayAsync(int seasonId, DayOfWeek matchDay)
     {
         var prefs = (await Preferences.GetAsync(seasonId)).Value!;

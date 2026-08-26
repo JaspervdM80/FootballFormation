@@ -127,6 +127,14 @@ public class SeasonService(
                 return Result.Failure("Season {0} still has {1} games", season.Name, gameCount);
             }
 
+            var trainingCount = await db.Trainings.CountAsync(t => t.SeasonId == id, cancellationToken);
+            if (trainingCount > 0)
+            {
+                logger.LogWarning("Cannot delete season {SeasonName}: {Count} trainings still assigned",
+                    season.Name, trainingCount);
+                return Result.Failure("Season {0} still has {1} trainings", season.Name, trainingCount);
+            }
+
             if (season.IsCurrent)
             {
                 logger.LogWarning("Cannot delete season {SeasonName}: it is the current season", season.Name);

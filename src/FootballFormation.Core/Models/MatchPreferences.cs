@@ -15,6 +15,9 @@ public class MatchPreferences
     public FormationType DefaultFormation { get; set; } = FormationType.F442;
     public DayOfWeek MatchDay { get; set; } = DayOfWeek.Saturday;
 
+    /// Empty until an admin picks them, which is what makes the next-training date fall back to today rather than to a guessed weekday.
+    public List<DayOfWeek> TrainingDays { get; set; } = [];
+
     /// How a season without a row of its own is seeded, so it inherits last year's settings instead of the hardcoded ones.
     public MatchPreferences CopyFor(int seasonId) => new()
     {
@@ -22,6 +25,7 @@ public class MatchPreferences
         GameDurationMinutes = GameDurationMinutes,
         DefaultSplitType = DefaultSplitType,
         DefaultFormation = DefaultFormation,
-        MatchDay = MatchDay
+        MatchDay = MatchDay,
+        TrainingDays = [.. TrainingDays]
     };
 }

@@ -9,6 +9,7 @@ public static class AppRoutes
     public const string Home = "/";
     public const string Players = "/players";
     public const string Games = "/games";
+    public const string Trainings = "/trainings";
     public const string SeasonStats = "/stats";
     public const string PositionDevelopment = "/stats/positions";
     public const string Settings = "/settings";

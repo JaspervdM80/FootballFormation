@@ -1,0 +1,80 @@
+@page "/trainings"
+@attribute [Authorize(Roles = AppRoles.Admin)]
+@inherits SeasonAwarePage
+@rendermode InteractiveServer
+
+@* See InteractiveShell: the providers and the session gate this page no longer inherits, because
+   the layout renders statically. *@
+<InteractiveShell AdminOnly="true" />
+
+<PageTitle>@L["Trainings"]</PageTitle>
+
+<PageHeader Class="mb-6" Title="@L["Trainings"]">
+    <SubtitleContent>
+        <MudText Typo="Typo.body2" Class="page-header-subtitle">
+            @if (_trainings is not null)
+            {
+                @(_trainings.Count == 1 ? L["{0} training", _trainings.Count] : L["{0} trainings", _trainings.Count])
+                @if (SeasonState.SelectedSeason is { } season)
+                {
+                    <span> · @season.Name</span>
+                }
+            }
+        </MudText>
+    </SubtitleContent>
+    <Actions>
+        <MudButton Variant="Variant.Filled" Class="btn-gold btn-compact" StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="OpenAddDialog">
+            @L["Add"]
+        </MudButton>
+    </Actions>
+</PageHeader>
+
+@if (_trainings is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else if (_trainings.Count == 0)
+{
+    <MudPaper Class="pa-6" Elevation="2" Style="border-radius: 16px; text-align: center;">
+        <MudIcon Icon="@Icons.Material.Filled.FitnessCenter" Size="Size.Large" Style="color: var(--ink-faint);" />
+        <MudText Typo="Typo.body1" Class="mt-3" Style="color: var(--ink-muted);">
+            @(SeasonState.SelectedSeason is { } season
+                ? L["No trainings in {0} yet.", season.Name]
+                : L["No trainings yet. Add your first session!"])
+        </MudText>
+        <MudText Typo="Typo.caption" Class="mt-2 d-block" Style="color: var(--ink-faint);">
+            @L["Set which weekdays the team trains under Preferences, and the date fills itself in."]
+        </MudText>
+    </MudPaper>
+}
+else
+{
+    @foreach (var week in Weeks())
+    {
+        <div class="training-week">
+            <div class="card-label">@week.Title</div>
+            <div class="training-rows">
+                @foreach (var training in week.Trainings)
+                {
+                    <div class="training-row" @onclick="() => OpenEditDialog(training)">
+                        <span class="training-date">@training.DateLine("ddd dd MMM")</span>
+                        @if (training.UnavailablePlayerIds.Count > 0)
+                        {
+                            <span class="badge-unavailable">@L["{0} out", training.UnavailablePlayerIds.Count]</span>
+                        }
+                        <span class="training-notes">@training.Notes</span>
+                        <div class="training-actions" @onclick:stopPropagation="true">
+                            <button class="action-btn" title="@L["Edit"]" @onclick="() => OpenEditDialog(training)">
+                                <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                            </button>
+                            <button class="action-btn action-delete" title="@L["Delete"]" @onclick="() => DeleteTraining(training)">
+                                <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
