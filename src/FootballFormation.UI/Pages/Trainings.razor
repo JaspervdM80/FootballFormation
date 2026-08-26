@@ -19,6 +19,11 @@
                 {
                     <span> · @season.Name</span>
                 }
+                var cancelled = _trainings.Count(t => t.DidNotTakePlace);
+                if (cancelled > 0)
+                {
+                    <span> · @L["{0} cancelled", cancelled]</span>
+                }
             }
         </MudText>
     </SubtitleContent>
@@ -57,9 +62,15 @@ else
             <div class="training-rows">
                 @foreach (var training in week.Trainings)
                 {
-                    <div class="training-row" @onclick="() => OpenEditDialog(training)">
+                    @* An evening that did not happen is dimmed rather than hidden: the week reads honestly, and the sessions that were
+                       actually held still read first. *@
+                    <div class="training-row @(training.DidNotTakePlace ? "cancelled" : "")" @onclick="() => OpenEditDialog(training)">
                         <span class="training-date">@training.DateLine("ddd dd MMM")</span>
-                        @if (training.UnavailablePlayerIds.Count > 0)
+                        @if (training.DidNotTakePlace)
+                        {
+                            <span class="badge-warning">@L["Cancelled"]</span>
+                        }
+                        else if (training.UnavailablePlayerIds.Count > 0)
                         {
                             <span class="badge-unavailable">@L["{0} out", training.UnavailablePlayerIds.Count]</span>
                         }

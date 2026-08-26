@@ -136,6 +136,67 @@ public class TrainingServiceTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task A_session_that_did_not_take_place_records_nobody_as_absent()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(2);
+
+        // The caller may pass absences anyway — the dialog hides the picker, but the markup is not what holds the rule up.
+        await Trainings.CreateAsync(new Training
+        {
+            SeasonId = season.Id,
+            Date = Now,
+            DidNotTakePlace = true,
+            UnavailablePlayerIds = [players[0].Id],
+            Notes = "Vorst, veld dicht",
+        });
+
+        var stored = Read().Trainings.Single();
+        Assert.True(stored.DidNotTakePlace);
+        Assert.Empty(stored.UnavailablePlayerIds);
+        Assert.Equal("Vorst, veld dicht", stored.Notes);
+    }
+
+    [Fact]
+    public async Task Marking_a_session_that_was_held_as_cancelled_drops_the_absences_it_had()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(2);
+        var training = (await Trainings.CreateAsync(new Training
+        {
+            SeasonId = season.Id,
+            Date = Now,
+            UnavailablePlayerIds = [players[0].Id, players[1].Id],
+        })).Value!;
+
+        training.DidNotTakePlace = true;
+        Assert.True((await Trainings.UpdateAsync(training)).IsSuccess);
+
+        // The update path is the one that actually loses data: a session entered as held, then corrected, would otherwise keep saying
+        // two people missed an evening nobody had.
+        var stored = Read().Trainings.Single();
+        Assert.True(stored.DidNotTakePlace);
+        Assert.Empty(stored.UnavailablePlayerIds);
+    }
+
+    [Fact]
+    public async Task A_cancelled_session_can_be_put_back_as_one_that_was_held()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(1);
+        var training = (await Trainings.CreateAsync(
+            new Training { SeasonId = season.Id, Date = Now, DidNotTakePlace = true })).Value!;
+
+        training.DidNotTakePlace = false;
+        training.UnavailablePlayerIds = [players[0].Id];
+        Assert.True((await Trainings.UpdateAsync(training)).IsSuccess);
+
+        var stored = Read().Trainings.Single();
+        Assert.False(stored.DidNotTakePlace);
+        Assert.Equal([players[0].Id], stored.UnavailablePlayerIds);
+    }
+
+    [Fact]
     public async Task Deleting_a_session_that_is_not_there_is_refused_rather_than_ignored()
     {
         Assert.True((await Trainings.DeleteAsync(9999)).IsFailure);

@@ -35,15 +35,42 @@ public class MatchPreferencesService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
+            var season = await db.Seasons.FirstOrDefaultAsync(s => s.Id == prefs.SeasonId, cancellationToken);
+            if (season is null)
+            {
+                logger.LogWarning("Cannot save preferences for season {SeasonId}: not found", prefs.SeasonId);
+                return Result.Failure("Season not found");
+            }
+
+            // Materialised first: Season.Contains is date-only in memory, and comparing a TEXT date in SQL is what QueryTags is about.
+            var periodResult = ValidateTrainingPeriod(prefs, season);
+            if (periodResult.IsFailure) return periodResult;
+
             db.MatchPreferences.Update(prefs);
             await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation(
-                "Saved match preferences for season {SeasonId}: {Duration}min, {Split}, {Formation}, {MatchDay}, training {TrainingDays}",
+                "Saved match preferences for season {SeasonId}: {Duration}min, {Split}, {Formation}, {MatchDay}, training {TrainingDays} "
+                + "from {FirstTraining} to {LastTraining}",
                 prefs.SeasonId, prefs.GameDurationMinutes, prefs.DefaultSplitType, prefs.DefaultFormation, prefs.MatchDay,
-                prefs.TrainingDays);
+                prefs.TrainingDays, prefs.FirstTrainingDate, prefs.LastTrainingDate);
             return Result.Success();
         });
+
+    /// Either end may be null — that is "the season's own window", which is what every row held before the period existed.
+    private static Result ValidateTrainingPeriod(MatchPreferences prefs, Season season)
+    {
+        if (prefs.FirstTrainingDate is { } first && prefs.LastTrainingDate is { } last && last.Date < first.Date)
+            return Result.Failure("The last training must not be before the first");
+
+        foreach (var date in new[] { prefs.FirstTrainingDate, prefs.LastTrainingDate })
+        {
+            if (date is { } value && !season.Contains(value))
+                return Result.Failure("The training period must fall inside season {0}", season.Name);
+        }
+
+        return Result.Success();
+    }
 
     /// Kept inside the season's own window: scheduling the opening fixture of a future season must not propose a date from this one.
     public Task<Result<DateTime>> GetNextMatchDateAsync(
@@ -67,7 +94,7 @@ public class MatchPreferencesService(
                 .ToListAsync(cancellationToken);
 
             var matchDay = prefsResult.Value!.MatchDay;
-            var (referenceDate, stepPastReference) = ReferenceDate(season, seasonDates);
+            var (referenceDate, stepPastReference) = ReferenceDate(season.StartDate.Date, seasonDates);
 
             var nextDate = CalculateNextMatchDay(referenceDate, matchDay, stepPastReference);
 
@@ -80,8 +107,10 @@ public class MatchPreferencesService(
             return Result.Success(nextDate);
         });
 
-    /// Kept inside the season's own window, like the match date it sits beside. Falls back to the reference date itself while no training
-    /// days are chosen, since there is then no weekday to land on.
+    /// Kept inside the season's training period — <see cref="MatchPreferences.FirstTrainingDate"/> to
+    /// <see cref="MatchPreferences.LastTrainingDate"/>, each falling back to the season's own window when unset, which is what stops a
+    /// July date being proposed to a team that trains from August. Falls back to the reference date itself while no training days are
+    /// chosen, since there is then no weekday to land on.
     public Task<Result<DateTime>> GetNextTrainingDateAsync(
         int seasonId, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "calculate the next training date", cancellationToken, async () =>
@@ -102,26 +131,30 @@ public class MatchPreferencesService(
                 .Select(t => t.Date)
                 .ToListAsync(cancellationToken);
 
-            var trainingDays = prefsResult.Value!.TrainingDays;
-            var (referenceDate, stepPastReference) = ReferenceDate(season, seasonDates);
+            var prefs = prefsResult.Value!;
+            var trainingDays = prefs.TrainingDays;
+            var windowStart = prefs.FirstTrainingDate?.Date ?? season.StartDate.Date;
+            var windowEnd = prefs.LastTrainingDate?.Date ?? season.EndDate.Date;
+
+            var (referenceDate, stepPastReference) = ReferenceDate(windowStart, seasonDates);
 
             var nextDate = trainingDays.Count == 0
                 ? (stepPastReference ? referenceDate.AddDays(1) : referenceDate)
                 : NextDayIn(referenceDate, trainingDays, stepPastReference);
 
-            if (nextDate > season.EndDate.Date)
+            if (nextDate > windowEnd)
                 nextDate = trainingDays.Count == 0
-                    ? season.EndDate.Date
-                    : LastDayInOnOrBefore(season.EndDate.Date, trainingDays);
+                    ? windowEnd
+                    : LastDayInOnOrBefore(windowEnd, trainingDays);
 
-            logger.LogDebug("Next training date for season {SeasonId}: {NextDate} (training days: {TrainingDays})",
-                seasonId, nextDate.ToString("yyyy-MM-dd"), trainingDays);
+            logger.LogDebug("Next training date for season {SeasonId}: {NextDate} (training days: {TrainingDays}, {Start} to {End})",
+                seasonId, nextDate.ToString("yyyy-MM-dd"), trainingDays, windowStart, windowEnd);
             return Result.Success(nextDate);
         });
 
     /// Where to measure the next date from, and whether the answer has to step past it — true when the reference is an entry already
     /// scheduled, since two must not land on the same day; false when it is today, which is itself a valid answer.
-    private (DateTime Reference, bool StepPast) ReferenceDate(Season season, List<DateTime> seasonDates)
+    private (DateTime Reference, bool StepPast) ReferenceDate(DateTime windowStart, List<DateTime> seasonDates)
     {
         var today = time.GetLocalNow().Date;
         var latest = seasonDates.Count > 0 ? seasonDates.Max().Date : (DateTime?)null;
@@ -131,9 +164,9 @@ public class MatchPreferencesService(
         var latestIsUpcoming = latest is not null && latest >= today;
         var reference = latestIsUpcoming ? latest!.Value : today;
 
-        // A season we are not in yet has no useful "today", so measure from its opening day.
-        if (!latestIsUpcoming && reference < season.StartDate.Date)
-            reference = season.StartDate.Date;
+        // A window we are not inside yet has no useful "today", so measure from its opening day.
+        if (!latestIsUpcoming && reference < windowStart)
+            reference = windowStart;
 
         return (reference, latestIsUpcoming);
     }

@@ -22,6 +22,7 @@ public partial class TrainingDialog
     /// Training.HasStartTime.
     private string? StartTimeText { get; set; }
     private string? Notes { get; set; }
+    private bool DidNotTakePlace { get; set; }
     private IReadOnlyCollection<int> UnavailablePlayerIds { get; set; } = [];
 
     /// 0 is "resolve from the date", which TrainingService.CreateAsync does on save. An existing session keeps its own season, so
@@ -104,6 +105,7 @@ public partial class TrainingDialog
             Date = Training.Date;
             StartTimeText = Training.HasStartTime ? Training.Date.ToString("HH:mm") : null;
             Notes = Training.Notes;
+            DidNotTakePlace = Training.DidNotTakePlace;
             SeasonId = Training.SeasonId;
             UnavailablePlayerIds = Training.UnavailablePlayerIds.ToList();
         }
@@ -118,8 +120,9 @@ public partial class TrainingDialog
         var startTime = TimeSpan.TryParse(StartTimeText, out var parsed) ? parsed : TimeSpan.Zero;
         training.Date = (Date ?? DateTime.Today).Date + startTime;
         training.Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim();
+        training.DidNotTakePlace = DidNotTakePlace;
         training.SeasonId = SeasonId;
-        training.UnavailablePlayerIds = UnavailablePlayerIds.ToList();
+        training.UnavailablePlayerIds = DidNotTakePlace ? [] : UnavailablePlayerIds.ToList();
 
         MudDialog.Close(DialogResult.Ok(training));
     }

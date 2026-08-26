@@ -34,6 +34,17 @@
     font-variant-numeric: tabular-nums;
 }
 
+/* Quieter than the sessions around it — the date is still legible, it just stops competing with the evenings that were actually held.
+   The badge keeps its own colour, so the row still says why it is dimmed. */
+.training-row.cancelled .training-date {
+    color: var(--ink-subtle);
+    font-weight: 500;
+}
+
+.training-row.cancelled .training-notes {
+    color: var(--ink-faint);
+}
+
 .training-notes {
     flex: 1;
     min-width: 0;

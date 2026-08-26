@@ -38,6 +38,8 @@ public class TrainingService(
                 training.SeasonId = seasonResult.Value!.Id;
             }
 
+            ClearAbsencesIfCancelled(training);
+
             db.Trainings.Add(training);
             await db.SaveChangesAsync(cancellationToken);
 
@@ -50,6 +52,8 @@ public class TrainingService(
         ServiceOperation.RunAdminAsync(currentUser, logger, "update the training", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            ClearAbsencesIfCancelled(training);
 
             // Setting State rather than DbSet.Update, for the reason spelled out in GameService.UpdateAsync.
             db.Entry(training).State = EntityState.Modified;
@@ -79,4 +83,11 @@ public class TrainingService(
                 training.Date.ToString("yyyy-MM-dd"), training.Id);
             return Result.Success();
         });
+
+    /// Here rather than only in the dialog that hides the picker: an invariant enforced in the render tree stops holding the moment the
+    /// service is reached another way, and marking an ordinary session cancelled is the path that would otherwise keep its absences.
+    private static void ClearAbsencesIfCancelled(Training training)
+    {
+        if (training.DidNotTakePlace) training.UnavailablePlayerIds = [];
+    }
 }

@@ -24,6 +24,13 @@ Date (with the start time when there is one), a `.badge-unavailable` count when 
 note, then the edit/delete `.action-btn` pair. All four of those classes are `app.css`'s; only the
 row and the week block are scoped in `Trainings.razor.css`.
 
+**A session that did not take place is dimmed, not hidden.** It carries a `cancelled` class that
+mutes the date and note, and shows `.badge-warning` **"Cancelled"** *instead of* the absence count —
+the two are mutually exclusive, because a cancelled evening is not one everybody missed. Dimmed
+rather than removed so the week still reads honestly: a fortnight with nothing in it and a fortnight
+that was called off look nothing alike. The header subtitle appends "· {0} cancelled" when there are
+any, the way `/games` appends "{0} without lineup".
+
 **The row says how many were out, not who.** Four names on a card is unreadable at a glance, and the
 names are one tap away in the dialog. Below 600px the note wraps to a line of its own rather than
 being clipped to nothing beside the date, and the actions keep the 44px floor `app.css` gives every
@@ -42,5 +49,19 @@ Injured players are left out of the picker, as in `GameDialog`: they are out of 
 and offering them says the same thing twice.
 
 The date arrives pre-filled from `MatchPreferencesService.GetNextTrainingDateAsync`, which is what
-the per-season training days are for. With none chosen it proposes today (or the day after the last
-session entered), so the section is usable before anyone visits Preferences.
+the per-season training days and the training period are for. With neither set it proposes today (or
+the day after the last session entered), so the section is usable before anyone visits Preferences.
+
+**The "Did not take place" switch** sits under a divider at the foot of the form, amber rather than
+red — a cancelled evening is a fact, not a problem. Turning it on removes the unavailable-players
+select entirely instead of leaving it there contradicting the switch, and the note's placeholder
+changes to ask why. `Submit` sends an empty list either way; `TrainingService` clears it regardless,
+because [that invariant does not live in the markup](../models/training.md#a-session-that-did-not-take-place).
+
+## Preferences
+
+`/settings` carries the training block: the weekday multi-select, then **First training** and **Last
+training** as two `Clearable` `MudDatePicker`s, then the "Next calculated training date" caption the
+three of them move. Clearable matters — an empty date is a real value here, meaning the season's own
+window, not an unfilled field. A period that ends before it starts, or reaches outside the season,
+is refused by `SaveAsync` with a message rather than saved.

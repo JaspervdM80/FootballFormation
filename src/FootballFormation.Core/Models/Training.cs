@@ -13,8 +13,13 @@ public class Training
     /// back, like GameInjury: nothing reads the season off a session, and a nav nobody includes is a null waiting to be trusted.
     public int SeasonId { get; set; }
 
-    /// Squad members who were not there. Guests are not tracked: a training is the season's squad, and nobody else is expected.
+    /// Squad members who were not there. Guests are not tracked: a training is the season's squad, and nobody else is expected. Always
+    /// empty once <see cref="DidNotTakePlace"/> is set — TrainingService clears it, because a session nobody had is not one everybody
+    /// missed and two facts that can disagree eventually do.
     public List<int> UnavailablePlayerIds { get; set; } = [];
+
+    /// Frost, a holiday, a hall double-booked. The session stays on file so the week reads honestly; <see cref="Notes"/> says why.
+    public bool DidNotTakePlace { get; set; }
 
     public string? Notes { get; set; }
 

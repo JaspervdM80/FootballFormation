@@ -7,8 +7,9 @@ One session on one date, with the squad members who were not there and a note ab
 | Id | int | PK |
 | Date | DateTime | Carries a start time; midnight is how "no time entered" is stored (`HasStartTime`) |
 | SeasonId | int | FK → Season, **Restrict** delete. Indexed, not unique. No navigation in either direction |
-| UnavailablePlayerIds | List\<int\> | Comma-separated text, like `Game.UnavailablePlayerIds` |
-| Notes | string(2000)? | Free text: what was trained, and anything worth remembering |
+| UnavailablePlayerIds | List\<int\> | Comma-separated text, like `Game.UnavailablePlayerIds`. Always empty when the session did not take place |
+| DidNotTakePlace | bool | The evening was cancelled — frost, a holiday, a hall double-booked |
+| Notes | string(2000)? | Free text: what was trained, or why it did not go ahead |
 
 Helpers on the model: `HasStartTime`, `DateLine(format)`, and `TrainingOrdering.NewestFirst` at the
 bottom of the file — in memory, never in SQL, for the reason in
@@ -33,6 +34,24 @@ sentence about the session, not a field per absentee.
 
 Guests are not tracked either: a training is the season's squad, and nobody else is expected.
 
+## A session that did not take place
+
+`DidNotTakePlace` is a fact about the evening, not a status with a workflow: the row stays on file so
+the week reads honestly, and `Notes` says why. The alternative — deleting it — loses the fact that
+the club had intended to train, which is exactly what the register is for.
+
+**A cancelled session records nobody as absent.** `TrainingService.CreateAsync` and `UpdateAsync`
+both clear `UnavailablePlayerIds` when the flag is set, because a session nobody had is not one
+everybody missed, and two facts that can disagree eventually do. That guard lives in the service,
+not only in the dialog that hides the picker: an invariant enforced in the render tree stops holding
+the moment the service is reached another way, the same reasoning as the admin guard above. The
+update path is the one that matters — a session entered as held and *later* corrected is where the
+stale absences would otherwise survive.
+
+Nothing in `Core` branches on the flag yet. It is what the attendance report in
+[#124](https://github.com/JaspervdM80/FootballFormation/issues/124) has to exclude from its
+denominator: a player cannot miss an evening that never happened.
+
 ## Restrict, and the guard in front of it
 
 `Season → Training` is `Restrict`, like `Season → Game`: a session records attendance, so deleting a
@@ -55,7 +74,11 @@ to `/login` has been told the section exists and nothing else.
 
 ## Which weekdays the team trains
 
-`MatchPreferences.TrainingDays` — per season, beside `MatchDay`. It **seeds the date** and nothing
-else: a session is always a row somebody created, so a week off is simply a week nobody entered, and
-there is no generated-then-cancelled state to keep in step. See
+`MatchPreferences.TrainingDays` — per season, beside `MatchDay` — bounded by
+`FirstTrainingDate`/`LastTrainingDate`, the season's **training period**. Together they **seed the
+date** and nothing else: a session is always a row somebody created, so a week off is simply a week
+nobody entered, and there is no generated calendar to keep in step with reality.
+
+The period is a bound on what gets *proposed*, not a rule about what may be *entered*: a one-off
+extra session in the summer saves without complaint. What is validated is the period itself — see
 [settings](settings-and-users.md#matchpreferences-one-row-per-season).

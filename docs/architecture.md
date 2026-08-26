@@ -15,8 +15,10 @@ Models/
   GameGoal.cs            — A goal: scorer (null for the opponent), assister, the half + clock reading it was
                            scored at, own/opponent flags
   GameSubstitution.cs    — A timestamped change made during a live match
-  MatchPreferences.cs    — Per-season game defaults (duration, split, formation, match day, training days)
-  Training.cs            — A training session: date, who was unavailable, one note. Plus TrainingOrdering
+  MatchPreferences.cs    — Per-season game defaults (duration, split, formation, match day, training days
+                           and the training period the last of those is walked inside)
+  Training.cs            — A training session: date, who was unavailable, whether it went ahead, one
+                           note. Plus TrainingOrdering
   GameComment.cs         — An admin's note on a game: body, public/private, author, edited marker
   MatchType.cs           — MatchType enum (Competition / Cup / Practice) + DisplayName()
   AppUser.cs             — An account that can sign in: name, login, hash, role, security stamp
@@ -116,7 +118,7 @@ Pages/
   SquadMemberDialog.razor(.cs)— Dialog: add someone already on file to this season's squad
   Games.razor(.cs)            — /games — Game list with formation builder link
   Trainings.razor(.cs)(.css)  — /trainings — Admin-only: the season's training sessions, grouped by ISO week
-  TrainingDialog.razor(.cs)   — Dialog: date, start time, unavailable players, note
+  TrainingDialog.razor(.cs)   — Dialog: date, start time, unavailable players, note, did-not-take-place
   GameDialog.razor(.cs)       — Dialog: opponent, date, season, formation, split, duration, unavailable players
   FormationBuilder.razor(.cs) — /games/{id}/formation — Pitch + player list + subs + playing time overview
   SeasonStats.razor(.cs)(.css)— /stats — Season dashboard: record, goals, form, scorers, playing time

@@ -76,6 +76,10 @@
             }
         </MudSelect>
 
+        @* Clearable on purpose: an empty date is a real value here, meaning the season's own window. *@
+        <MudDatePicker @bind-Date="_prefs.FirstTrainingDate" Label="@L["First Training"]" Clearable="true" Class="mb-4" />
+        <MudDatePicker @bind-Date="_prefs.LastTrainingDate" Label="@L["Last Training"]" Clearable="true" Class="mb-4" />
+
         <MudText Typo="Typo.caption" Style="color: var(--ink-muted);" Class="mb-4">
             @L["Next calculated training date:"] <strong style="color: var(--club-primary-bright);">@_nextTrainingDate?.ToString("dddd dd MMM yyyy")</strong>
         </MudText>

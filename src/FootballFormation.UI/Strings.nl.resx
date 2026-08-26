@@ -140,6 +140,8 @@
   <data name="{0} training" xml:space="preserve"><value>{0} training</value></data>
   <data name="{0} trainings" xml:space="preserve"><value>{0} trainingen</value></data>
   <data name="Week {0}" xml:space="preserve"><value>Week {0}</value></data>
+  <data name="Cancelled" xml:space="preserve"><value>Vervallen</value></data>
+  <data name="{0} cancelled" xml:space="preserve"><value>{0} vervallen</value></data>
   <data name="No trainings in {0} yet." xml:space="preserve"><value>Nog geen trainingen in {0}.</value></data>
   <data name="No trainings yet. Add your first session!" xml:space="preserve"><value>Nog geen trainingen. Voeg je eerste training toe!</value></data>
   <data name="Set which weekdays the team trains under Preferences, and the date fills itself in." xml:space="preserve"><value>Stel bij Voorkeuren in op welke dagen het team traint, dan wordt de datum vanzelf ingevuld.</value></data>
@@ -155,6 +157,8 @@
   <data name="Start Time" xml:space="preserve"><value>Starttijd</value></data>
   <data name="Notes" xml:space="preserve"><value>Notities</value></data>
   <data name="What was trained, and anything worth remembering." xml:space="preserve"><value>Wat er getraind is, en alles wat het onthouden waard is.</value></data>
+  <data name="Did not take place" xml:space="preserve"><value>Ging niet door</value></data>
+  <data name="Why the training did not go ahead." xml:space="preserve"><value>Waarom de training niet doorging.</value></data>
 
   <!-- Formation builder -->
   <data name="Formation Builder" xml:space="preserve"><value>Opstelling maken</value></data>
@@ -431,6 +435,8 @@
   <data name="Match Day" xml:space="preserve"><value>Wedstrijddag</value></data>
   <data name="Next calculated match date:" xml:space="preserve"><value>Volgende berekende wedstrijddatum:</value></data>
   <data name="Training Days" xml:space="preserve"><value>Trainingsdagen</value></data>
+  <data name="First Training" xml:space="preserve"><value>Eerste training</value></data>
+  <data name="Last Training" xml:space="preserve"><value>Laatste training</value></data>
   <data name="Next calculated training date:" xml:space="preserve"><value>Volgende berekende trainingsdatum:</value></data>
   <data name="Save Preferences" xml:space="preserve"><value>Voorkeuren opslaan</value></data>
   <data name="Change Password" xml:space="preserve"><value>Wachtwoord wijzigen</value></data>
@@ -475,6 +481,8 @@
   <data name="Username must be at most {0} characters" xml:space="preserve"><value>Gebruikersnaam mag maximaal {0} tekens lang zijn</value></data>
   <data name="A user with username {0} already exists" xml:space="preserve"><value>Er bestaat al een gebruiker met gebruikersnaam {0}</value></data>
   <data name="The last administrator cannot be removed or demoted" xml:space="preserve"><value>De laatste beheerder kan niet worden verwijderd of gedegradeerd</value></data>
+  <data name="The last training must not be before the first" xml:space="preserve"><value>De laatste training mag niet vóór de eerste liggen</value></data>
+  <data name="The training period must fall inside season {0}" xml:space="preserve"><value>De trainingsperiode moet binnen seizoen {0} vallen</value></data>
   <data name="User with ID {0} not found" xml:space="preserve"><value>Gebruiker met ID {0} niet gevonden</value></data>
 
   <!-- Login -->
