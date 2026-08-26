@@ -1,10 +1,4 @@
-﻿using FootballFormation.Core.Data;
-using FootballFormation.Core.Models;
-using FootballFormation.Core.Security;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-
-namespace FootballFormation.Core.Services;
+﻿namespace FootballFormation.Core.Services;
 
 /// <summary>
 /// Who stands where once a match is under way: a substitution, where a slot and a position change

@@ -1,6 +1,4 @@
-﻿using FootballFormation.Core.Models;
-
-namespace FootballFormation.Core.Tests;
+﻿namespace FootballFormation.Core.Tests;
 
 /// <summary>
 /// Builders for the object graphs the domain and report tests need. Games in this app are a

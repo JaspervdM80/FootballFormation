@@ -1,5 +1,3 @@
-using FootballFormation.Core.Models;
-
 namespace FootballFormation.Core.Reporting;
 
 /// <summary>One player's row in the squad-wide positions grid — every position they were on the

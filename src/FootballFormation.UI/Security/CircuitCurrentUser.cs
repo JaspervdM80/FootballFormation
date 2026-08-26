@@ -1,5 +1,4 @@
 using FootballFormation.Core.Security;
-using FootballFormation.UI.Helpers;
 using Microsoft.AspNetCore.Components.Authorization;
 
 namespace FootballFormation.UI.Security;

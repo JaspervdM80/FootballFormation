@@ -1,6 +1,3 @@
-using FootballFormation.Core.Security;
-using Microsoft.Extensions.Logging;
-
 namespace FootballFormation.Core.Services;
 
 /// <summary>

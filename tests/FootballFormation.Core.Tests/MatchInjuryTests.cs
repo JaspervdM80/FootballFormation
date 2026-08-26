@@ -1,7 +1,4 @@
-﻿using FootballFormation.Core.Models;
-using Microsoft.EntityFrameworkCore;
-
-namespace FootballFormation.Core.Tests;
+﻿namespace FootballFormation.Core.Tests;
 
 /// <summary>
 /// A player hurt during the match: what the line-up says afterwards, what was written down about

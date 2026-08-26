@@ -1,7 +1,3 @@
-using FootballFormation.Core.Models;
-using Microsoft.AspNetCore.Components;
-using MudBlazor;
-
 namespace FootballFormation.UI.Pages;
 
 /// <summary>What the caller picked: which person, whether they join as a guest, and whether they

@@ -1,8 +1,4 @@
-using FootballFormation.Core.Models;
-using FootballFormation.Core.Services;
 using FootballFormation.UI.State;
-using Microsoft.AspNetCore.Components;
-using MudBlazor;
 
 namespace FootballFormation.UI.Pages;
 

@@ -1,7 +1,3 @@
-using FootballFormation.UI.Navigation;
-using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Localization;
-
 namespace FootballFormation.UI.Components;
 
 /// <summary>

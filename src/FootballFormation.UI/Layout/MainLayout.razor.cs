@@ -1,9 +1,5 @@
-using FootballFormation.UI.Helpers;
-using FootballFormation.UI.Navigation;
 using FootballFormation.UI.Theming;
-using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
-using MudBlazor;
 
 namespace FootballFormation.UI.Layout;
 

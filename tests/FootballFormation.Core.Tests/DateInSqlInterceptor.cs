@@ -1,7 +1,5 @@
 using System.Data.Common;
 using System.Text.RegularExpressions;
-using FootballFormation.Core.Data;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace FootballFormation.Core.Tests;

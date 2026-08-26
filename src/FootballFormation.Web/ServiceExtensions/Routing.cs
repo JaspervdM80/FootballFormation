@@ -1,16 +1,7 @@
 using System.Net;
 using System.Security.Claims;
-using FootballFormation.Core.Data;
 using FootballFormation.Core.Models;
-using FootballFormation.Core.Security;
-using FootballFormation.Core.Services;
 using FootballFormation.Core.Reporting;
-using FootballFormation.UI.State;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Localization;
-using Microsoft.EntityFrameworkCore;
-using Serilog;
 
 namespace FootballFormation.Web.ServiceExtensions;
 

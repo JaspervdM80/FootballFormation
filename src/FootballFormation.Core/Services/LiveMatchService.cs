@@ -1,8 +1,3 @@
-using FootballFormation.Core.Data;
-using FootballFormation.Core.Models;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-
 namespace FootballFormation.Core.Services;
 
 /// <summary>

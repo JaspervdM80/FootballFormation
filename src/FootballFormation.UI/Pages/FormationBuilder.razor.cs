@@ -1,13 +1,6 @@
-using FootballFormation.Core.Models;
 using FootballFormation.Core.Reporting;
 using FootballFormation.UI.Components;
-using FootballFormation.Core.Services;
-using FootballFormation.UI.Helpers;
-using FootballFormation.UI.Navigation;
-using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
-using MudBlazor;
 
 namespace FootballFormation.UI.Pages;
 

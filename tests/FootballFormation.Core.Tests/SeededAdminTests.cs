@@ -1,5 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-
 namespace FootballFormation.Core.Tests;
 
 /// <summary>

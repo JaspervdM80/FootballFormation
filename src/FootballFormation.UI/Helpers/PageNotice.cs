@@ -1,6 +1,4 @@
 using FootballFormation.Core;
-using Microsoft.Extensions.Localization;
-using MudBlazor;
 
 namespace FootballFormation.UI.Helpers;
 

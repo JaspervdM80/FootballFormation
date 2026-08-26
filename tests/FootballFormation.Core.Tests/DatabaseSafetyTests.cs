@@ -1,6 +1,4 @@
-using FootballFormation.Core.Data;
 using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FootballFormation.Core.Tests;

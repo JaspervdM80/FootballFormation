@@ -1,8 +1,4 @@
-﻿using FootballFormation.Core.Models;
-using Microsoft.AspNetCore.Components;
-using MudBlazor;
-
-namespace FootballFormation.UI.Pages;
+﻿namespace FootballFormation.UI.Pages;
 
 /// <summary>A player standing on the pitch right now, with the position they are holding.</summary>
 public record PitchPlayer(Player Player, PlayerPosition Position);

@@ -1,6 +1,4 @@
-﻿using FootballFormation.Core.Models;
-
-namespace FootballFormation.Core.Tests;
+﻿namespace FootballFormation.Core.Tests;
 
 public class GameTests
 {

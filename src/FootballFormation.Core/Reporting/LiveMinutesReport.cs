@@ -1,5 +1,3 @@
-using FootballFormation.Core.Models;
-
 namespace FootballFormation.Core.Reporting;
 
 public record LiveMinutesRow(Player Player, int Seconds, bool IsOnPitch)

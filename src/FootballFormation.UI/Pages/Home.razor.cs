@@ -1,10 +1,4 @@
-﻿using FootballFormation.Core.Models;
-using FootballFormation.Core.Services;
-using FootballFormation.UI.Navigation;
-using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Localization;
-
-namespace FootballFormation.UI.Pages;
+﻿namespace FootballFormation.UI.Pages;
 
 /// <summary>
 /// The landing page. Its only moving part is the live banner: whenever a match is being played,

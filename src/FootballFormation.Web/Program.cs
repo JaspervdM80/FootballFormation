@@ -1,23 +1,13 @@
 using System.Threading.RateLimiting;
-using FootballFormation.Core.Data;
 using Microsoft.AspNetCore.DataProtection;
-using FootballFormation.Core.Security;
-using FootballFormation.Core.Services;
 using FootballFormation.UI.Navigation;
 using FootballFormation.UI.Security;
-using FootballFormation.UI.State;
 using FootballFormation.Web.Components;
 using FootballFormation.Web.KeepAlive;
 using FootballFormation.Web.Security;
 using FootballFormation.Web.ServiceExtensions;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.ResponseCompression;
-using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
-using Serilog;
 
 // Honors APP_DATA_DIR — the persistent volume when hosted (e.g. /data on Fly.io)
 var dbPath = DatabasePathHelper.GetDatabasePath();

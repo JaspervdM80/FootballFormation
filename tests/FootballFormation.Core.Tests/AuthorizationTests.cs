@@ -1,7 +1,3 @@
-using FootballFormation.Core.Models;
-using FootballFormation.Core.Services;
-using Microsoft.EntityFrameworkCore;
-
 namespace FootballFormation.Core.Tests;
 
 /// <summary>

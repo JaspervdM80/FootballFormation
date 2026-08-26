@@ -1,7 +1,5 @@
 using System.Security.Claims;
-using FootballFormation.Core.Models;
 using FootballFormation.Core.Security;
-using Microsoft.EntityFrameworkCore;
 
 namespace FootballFormation.Core.Tests;
 

@@ -1,7 +1,3 @@
-using FootballFormation.Core.Models;
-using Microsoft.AspNetCore.Components;
-using MudBlazor;
-
 namespace FootballFormation.UI.Pages;
 
 /// <summary>What the dialog edited: the person, and their guest and injury status in the season

@@ -1,5 +1,3 @@
-using FootballFormation.Core.Models;
-
 namespace FootballFormation.UI.Helpers;
 
 /// <summary>

@@ -1,5 +1,4 @@
 using FootballFormation.UI.State;
-using Microsoft.AspNetCore.Components;
 
 namespace FootballFormation.UI.Components;
 

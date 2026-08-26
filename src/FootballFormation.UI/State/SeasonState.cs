@@ -1,7 +1,4 @@
-﻿using FootballFormation.Core.Models;
-using FootballFormation.Core.Services;
-
-namespace FootballFormation.UI.State;
+﻿namespace FootballFormation.UI.State;
 
 /// <summary>
 /// The season the whole UI is filtered by. The choice is remembered in a cookie for eight hours

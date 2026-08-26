@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Components.Routing;
-using MudBlazor;
 
 namespace FootballFormation.UI.Navigation;
 

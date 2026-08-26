@@ -1,6 +1,3 @@
-using FootballFormation.Core.Models;
-using Microsoft.AspNetCore.Components;
-
 namespace FootballFormation.UI.Components;
 
 public partial class SubstituteBench

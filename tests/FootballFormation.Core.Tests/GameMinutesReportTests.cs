@@ -1,7 +1,4 @@
-﻿using FootballFormation.Core.Models;
-using FootballFormation.Core.Reporting;
-
-namespace FootballFormation.Core.Tests;
+﻿namespace FootballFormation.Core.Tests;
 
 /// <summary>
 /// The calculation every minutes figure in the app funnels through — the live bench table, the

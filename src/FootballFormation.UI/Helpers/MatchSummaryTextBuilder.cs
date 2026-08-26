@@ -1,6 +1,4 @@
-using FootballFormation.Core.Models;
 using FootballFormation.Core.Reporting;
-using Microsoft.Extensions.Localization;
 
 namespace FootballFormation.UI.Helpers;
 

@@ -1,0 +1,10 @@
+global using FootballFormation.Core.Data;
+global using FootballFormation.Core.Security;
+global using FootballFormation.Core.Services;
+global using FootballFormation.UI.State;
+global using Microsoft.AspNetCore.Authentication;
+global using Microsoft.AspNetCore.Authentication.Cookies;
+global using Microsoft.AspNetCore.Components.Authorization;
+global using Microsoft.AspNetCore.Localization;
+global using Microsoft.EntityFrameworkCore;
+global using Serilog;

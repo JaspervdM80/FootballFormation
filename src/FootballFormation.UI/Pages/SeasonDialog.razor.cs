@@ -1,7 +1,3 @@
-using FootballFormation.Core.Models;
-using Microsoft.AspNetCore.Components;
-using MudBlazor;
-
 namespace FootballFormation.UI.Pages;
 
 public partial class SeasonDialog

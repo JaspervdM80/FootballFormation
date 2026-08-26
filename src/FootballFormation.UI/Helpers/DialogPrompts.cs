@@ -1,6 +1,4 @@
 using FootballFormation.UI.Components;
-using Microsoft.AspNetCore.Components;
-using MudBlazor;
 
 namespace FootballFormation.UI.Helpers;
 

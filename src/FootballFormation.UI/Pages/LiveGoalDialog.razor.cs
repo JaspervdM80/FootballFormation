@@ -1,7 +1,3 @@
-using FootballFormation.Core.Models;
-using Microsoft.AspNetCore.Components;
-using MudBlazor;
-
 namespace FootballFormation.UI.Pages;
 
 public record LiveGoalChoice(int ScorerId, int? AssisterId, bool IsOwnGoal);

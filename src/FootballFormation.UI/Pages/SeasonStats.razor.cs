@@ -1,10 +1,4 @@
-﻿using FootballFormation.Core.Models;
-using FootballFormation.Core.Reporting;
-using FootballFormation.Core.Services;
-using FootballFormation.UI.Helpers;
-using FootballFormation.UI.Navigation;
-using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Localization;
+﻿using FootballFormation.Core.Reporting;
 
 namespace FootballFormation.UI.Pages;
 

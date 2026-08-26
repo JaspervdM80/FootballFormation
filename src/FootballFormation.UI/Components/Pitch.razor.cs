@@ -1,7 +1,4 @@
-using FootballFormation.Core.Models;
 using FootballFormation.Core.Reporting;
-using FootballFormation.UI.Helpers;
-using Microsoft.AspNetCore.Components;
 
 namespace FootballFormation.UI.Components;
 
