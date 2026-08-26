@@ -1,11 +1,4 @@
-using FootballFormation.Core.Models;
-using FootballFormation.Core.Services;
-using FootballFormation.UI.Helpers;
-using FootballFormation.UI.Navigation;
-using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.Extensions.Localization;
-using MudBlazor;
 
 namespace FootballFormation.UI.Pages;
 
@@ -33,36 +26,21 @@ public partial class Games
 
     protected override async Task LoadAsync()
     {
-        // Details variant loads the period lineups so we can flag games missing one.
+        // The details variant loads the period line-ups, which is what lets a game missing one be flagged.
         var result = await GameService.GetAllWithDetailsAsync(SeasonId, Cancellation);
         _games = Snackbar.ReportFailure(L, result) ? result.Value : [];
     }
 
     private DateTime Today => Time.GetLocalNow().Date;
 
-    /// <summary>A game that has already been played but has no lineup entered — its playing
-    /// time can't be computed, so the data is incomplete. Future games are legitimately empty.</summary>
+    /// Played but with no line-up entered, so no playing time can be computed. A future game is legitimately empty.
     private bool IsIncomplete(Game game) =>
         game.Date.Date < Today && !game.HasLineup;
 
-    /// <summary>One headed block of the games list.</summary>
     private sealed record GameSection(string Title, List<Game> Games);
 
-    /// <summary>
-    /// The page reads as two lists, because a fixture and a result are two different things to
-    /// look at: what is still to play, soonest first, and then what has been played, most recent
-    /// result first. A single list has to put one of them at the wrong end.
-    /// <para>
-    /// The scoreline decides which, not the calendar: a game keeps its place in the fixture list
-    /// until a result is on file. So a match that was never played stays there after its date has
-    /// gone by — deliberately, since the only thing to do with one is delete it, and a stale row
-    /// in the fixture list is what prompts that. <see cref="Game.HasFinalScore"/> tests the match
-    /// state as well, so a game being played now stays among the fixtures rather than moving
-    /// across on its first goal.
-    /// </para>
-    /// <para>Either block is dropped when it is empty — a season yet to start is all fixtures, and
-    /// one that is over is all results.</para>
-    /// </summary>
+    /// Two lists, soonest-first and newest-first, because a single one has to put one of them at the wrong end. The scoreline decides
+    /// which, not the calendar — so a match never played stays among the fixtures, which is the prompt to delete it.
     private IEnumerable<GameSection> Sections()
     {
         if (_games is null) yield break;
@@ -74,14 +52,10 @@ public partial class Games
         if (results.Count > 0) yield return new GameSection(L["Results"], results);
     }
 
-    /// <summary>The live screen runs a real clock and writes real substitution timings, so
-    /// opening it on a fixture weeks out banks minutes against a match nobody is playing. The
-    /// button that leads there only appears on the day itself.</summary>
+    /// The live screen runs a real clock, so opening it on a fixture weeks out would bank minutes against a match nobody is playing.
     private bool IsMatchDay(Game game) => game.Date.Date == Today;
 
-    /// <summary>A match still to be played. There is no result to read and none to enter yet, so
-    /// the card leaves the result page out — see <c>MatchResult</c>, which says the same thing to
-    /// anyone who arrives there by URL.</summary>
+    /// No result to read and none to enter yet, so the card leaves the result page out. MatchResult says the same to anyone arriving by URL.
     private bool IsFuture(Game game) => game.Date.Date > Today;
 
     private async Task OpenAddDialog()
@@ -104,8 +78,7 @@ public partial class Games
         await LoadAsync();
     }
 
-    /// <summary>Row click: a match under way beats everything; then finished games open the
-    /// result; admins build formations; visitors get the overview.</summary>
+    /// A match under way beats everything; then finished games open the result; admins build formations; visitors get the overview.
     private void OpenGame(Game game)
     {
         if (game.MatchState == MatchState.InProgress)
@@ -138,7 +111,7 @@ public partial class Games
 
     private void OpenLive(int gameId) => Navigation.NavigateTo(AppRoutes.Live(gameId));
 
-    /// <summary>Returns the edited game, or null when the dialog was cancelled.</summary>
+    /// Null when the dialog was cancelled.
     private async Task<Game?> ShowGameDialogAsync(string title, Game? game = null)
     {
         return await DialogService.PromptAsync<GameDialog, Game>(title, p =>

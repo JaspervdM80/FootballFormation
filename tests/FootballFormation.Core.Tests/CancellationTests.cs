@@ -1,14 +1,8 @@
-using FootballFormation.Core.Data;
-using FootballFormation.Core.Models;
-using FootballFormation.Core.Services;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// What happens when the caller goes away mid-call: an ordinary outcome, not an error.
-/// </summary>
+/// A caller going away mid-call is an ordinary outcome, not an error.
 public class CancellationTests : ServiceTestBase
 {
     [Fact]

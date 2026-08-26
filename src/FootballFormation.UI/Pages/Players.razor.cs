@@ -1,17 +1,6 @@
-using FootballFormation.Core.Models;
-using FootballFormation.Core.Services;
-using FootballFormation.UI.Helpers;
-using FootballFormation.UI.Navigation;
-using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Localization;
-using MudBlazor;
-
 namespace FootballFormation.UI.Pages;
 
-/// <summary>
-/// Season-scoped squad management. The squad is authoritative — it decides who can be picked for
-/// this season's games — so the page follows the season picker rather than listing everyone on file.
-/// </summary>
+/// Follows the season picker rather than listing everyone on file, because the squad is what decides who can be picked for this season.
 public partial class Players
 {
     [Inject] private PlayerService PlayerService { get; set; } = null!;
@@ -48,7 +37,7 @@ public partial class Players
         _loaded = true;
     }
 
-    /// <summary>Only read where the markup has already established the list is not empty.</summary>
+    /// Only read where the markup has already established the list is not empty.
     private Season CurrentSeason =>
         SeasonState.Seasons.FirstOrDefault(s => s.IsCurrent) ?? SeasonState.Seasons[0];
 
@@ -63,8 +52,7 @@ public partial class Players
         await LoadAsync();
     }
 
-    /// <summary>Creates a new person and puts them in this season's squad in one action — creating
-    /// someone you then have to add separately is never what you meant.</summary>
+    /// One action, because creating someone you then have to add separately is never what you meant.
     private async Task AddNewPlayer()
     {
         if (SeasonId is not { } seasonId) return;
@@ -80,8 +68,7 @@ public partial class Players
         await LoadAsync();
     }
 
-    /// <summary>Adds someone already on file — a player from an earlier season, or a guest being
-    /// promoted into this season's squad.</summary>
+    /// Adds someone already on file — a player from an earlier season, or a guest being promoted into this season's squad.
     private async Task AddExistingPlayer()
     {
         if (SeasonId is not { } seasonId) return;
@@ -105,8 +92,7 @@ public partial class Players
         await LoadAsync();
     }
 
-    /// <summary>Removing from a squad is the everyday action; the service refuses once the player
-    /// has minutes or goals that season, so history is never silently rewritten.</summary>
+    /// The everyday action; the service refuses once the player has minutes or goals that season, so history is never silently rewritten.
     private async Task RemoveMember(SeasonSquadMember member)
     {
         if (SeasonId is not { } seasonId) return;
@@ -122,12 +108,8 @@ public partial class Players
         await LoadAsync();
     }
 
-    /// <summary>
-    /// Edits the person and their place in this season's squad in one dialog. Guest and injury
-    /// status are separate writes from the player edit — a player is edited once and is a guest, or
-    /// injured, in one season and not in another — and each is only made when its switch actually
-    /// moved, so an ordinary name change does not touch the squad.
-    /// </summary>
+    /// Guest and injury status are separate writes from the player edit, since they are per season, and each is only made when its
+    /// switch actually moved — so an ordinary name change does not touch the squad.
     private async Task OpenEditDialog(SeasonSquadMember member)
     {
         if (SeasonId is not { } seasonId) return;
@@ -145,8 +127,7 @@ public partial class Players
         }
         else
         {
-            // The guest/injury line replaces the generic one rather than joining it: two snackbars
-            // for one Save reads as two things having happened.
+            // Replaces the generic line rather than joining it: two snackbars for one Save reads as two things having happened.
             if (edited.IsGuest != member.IsGuest)
             {
                 var guest = await SquadService.SetGuestAsync(seasonId, member.PlayerId, edited.IsGuest);
@@ -167,14 +148,12 @@ public partial class Players
         await LoadAsync();
     }
 
-    /// <summary>Retires someone who has left the club, or brings them back. Nothing is destroyed
-    /// either way, so this is the action to reach for instead of Delete.</summary>
+    /// Nothing is destroyed either way, so this is the action to reach for instead of Delete.
     private async Task ToggleArchived(Player player)
     {
         var name = player.DisplayName;
 
-        // Only archiving asks. Restoring puts someone back into the pickers and costs nothing if it
-        // was not meant — a confirm there is a click that teaches people to click through confirms.
+        // Only archiving asks: restoring costs nothing if it was not meant, and a confirm there just teaches people to click through them.
         var confirmed = player.IsArchived || await DialogService.ConfirmAsync(
             L["Archive player"],
             L["Archive {0}? They keep every appearance, goal and season they played, and stop being offered for seasons to come.", name],
@@ -188,11 +167,8 @@ public partial class Players
         await LoadAsync();
     }
 
-    /// <summary>
-    /// Deletes the person outright. The service refuses once they have played, so the dialog says
-    /// what is about to be lost rather than asking a bare "are you sure" about a cascade nobody can
-    /// see: it is the confirmation for someone entered by mistake, and the refusal carries the rest.
-    /// </summary>
+    /// The service refuses once they have played, so this dialog only ever confirms deleting someone entered by mistake — which is why
+    /// it names what is lost rather than asking a bare "are you sure" about a cascade nobody can see.
     private async Task DeletePlayer(Player player)
     {
         var confirmed = await DialogService.ConfirmDeleteAsync(
@@ -205,8 +181,7 @@ public partial class Players
         await LoadAsync();
     }
 
-    /// <summary>Returns the edited player and guest/injury flags, or null when the dialog was
-    /// cancelled.</summary>
+    /// Null when the dialog was cancelled.
     private async Task<PlayerEdit?> ShowPlayerDialogAsync(
         string title, Player? player = null, bool isGuest = false, bool isInjured = false)
     {
@@ -218,7 +193,7 @@ public partial class Players
         });
     }
 
-    /// <summary>Returns the picked player and guest status, or null when cancelled.</summary>
+    /// Null when cancelled.
     private async Task<SquadMemberChoice?> ShowSquadMemberDialogAsync(List<Player> candidates)
     {
         return await DialogService.PromptAsync<SquadMemberDialog, SquadMemberChoice>(

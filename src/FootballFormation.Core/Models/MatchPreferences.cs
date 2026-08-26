@@ -1,17 +1,12 @@
 namespace FootballFormation.Core.Models;
 
-/// <summary>
-/// The defaults a new game starts from — one row **per season**, not one row for the app. A team
-/// moving up an age group plays longer games and often a different shape, and the fixture day can
-/// move too, so last season's defaults must stay attached to last season's games rather than being
-/// overwritten when this year's are set.
-/// </summary>
+/// One row per season, not one for the app: a team moving up an age group plays longer games in a different shape, and last season's
+/// defaults have to stay attached to last season's games.
 public class MatchPreferences
 {
     public int Id { get; set; }
 
-    /// <summary>FK → Season. Unique: exactly one preferences row per season, created on first
-    /// read by <c>MatchPreferencesService.GetAsync</c>.</summary>
+    /// Unique: exactly one row per season, created on first read by MatchPreferencesService.GetAsync.
     public int SeasonId { get; set; }
     public Season? Season { get; set; }
 
@@ -20,8 +15,7 @@ public class MatchPreferences
     public FormationType DefaultFormation { get; set; } = FormationType.F442;
     public DayOfWeek MatchDay { get; set; } = DayOfWeek.Saturday;
 
-    /// <summary>A copy of these defaults for another season — how a season without a row of its
-    /// own is seeded, so a new season inherits last year's settings instead of the hardcoded ones.</summary>
+    /// How a season without a row of its own is seeded, so it inherits last year's settings instead of the hardcoded ones.
     public MatchPreferences CopyFor(int seasonId) => new()
     {
         SeasonId = seasonId,

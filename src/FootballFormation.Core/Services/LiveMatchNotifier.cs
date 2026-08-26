@@ -1,17 +1,10 @@
 namespace FootballFormation.Core.Services;
 
-/// <summary>
-/// Tells every open live match screen that a game changed, so spectators see a goal or a
-/// substitution without refreshing.
-/// <para>
-/// Registered as a singleton and deliberately in-process: the app runs as a single Fly.io
-/// instance. If it is ever scaled out, viewers on another instance would stop updating and this
-/// needs replacing with a backplane (Redis, SignalR backplane) rather than patching around.
-/// </para>
-/// </summary>
+/// A singleton and deliberately in-process, because the app runs as a single Fly.io instance. Scaling out would leave viewers on another
+/// instance silently un-updated, and needs a real backplane rather than a patch.
 public class LiveMatchNotifier
 {
-    /// <summary>Raised with the id of the game that changed. Subscribers must filter on it.</summary>
+    /// Raised with the id of the game that changed. Subscribers must filter on it.
     public event Action<int>? Changed;
 
     public void Notify(int gameId) => Changed?.Invoke(gameId);

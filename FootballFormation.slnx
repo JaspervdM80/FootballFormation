@@ -1,21 +1,139 @@
 <Solution>
-  <Folder Name="/Solution Files/" />
-  <Folder Name="/Solution Files/Instructions/">
+  <Folder Name="/docs/">
     <File Path="docs/architecture.md" />
-    <File Path="docs/known_issues.md" />
-    <File Path="docs/models.md" />
-    <File Path="docs/patterns.md" />
-    <File Path="docs/project_overview.md" />
-    <File Path="docs/testing.md" />
+    <File Path="docs/deployment.md" />
     <File Path="docs/theming.md" />
-    <File Path="docs/ui_components.md" />
+  </Folder>
+  <Folder Name="/docs/known_issues/">
+    <File Path="docs/known_issues/authentication.md" />
+    <File Path="docs/known_issues/blazor-components.md" />
+    <File Path="docs/known_issues/blazor-mudblazor.md" />
+    <File Path="docs/known_issues/css-scoping.md" />
+    <File Path="docs/known_issues/domain.md" />
+    <File Path="docs/known_issues/ef-core.md" />
+    <File Path="docs/known_issues/formation-pitch.md" />
+    <File Path="docs/known_issues/general.md" />
+    <File Path="docs/known_issues/index.md" />
+    <File Path="docs/known_issues/live-match.md" />
+    <File Path="docs/known_issues/localization.md" />
+    <File Path="docs/known_issues/result.md" />
+    <File Path="docs/known_issues/touch-pwa.md" />
+  </Folder>
+  <Folder Name="/docs/models/">
+    <File Path="docs/models/enums-and-relationships.md" />
+    <File Path="docs/models/game.md" />
+    <File Path="docs/models/index.md" />
+    <File Path="docs/models/player.md" />
+    <File Path="docs/models/season-and-squad.md" />
+    <File Path="docs/models/settings-and-users.md" />
+  </Folder>
+  <Folder Name="/docs/patterns/">
+    <File Path="docs/patterns/authorization-and-auth.md" />
+    <File Path="docs/patterns/blazor-rendering.md" />
+    <File Path="docs/patterns/ef-core.md" />
+    <File Path="docs/patterns/index.md" />
+    <File Path="docs/patterns/result-and-cancellation.md" />
+    <File Path="docs/patterns/service-registration.md" />
+    <File Path="docs/patterns/service-structure.md" />
+    <File Path="docs/patterns/transactions-and-writes.md" />
+    <File Path="docs/patterns/ui-state-and-navigation.md" />
+  </Folder>
+  <Folder Name="/docs/testing/">
+    <File Path="docs/testing/index.md" />
+    <File Path="docs/testing/running-in-claude-code.md" />
+    <File Path="docs/testing/ui-testing.md" />
+    <File Path="docs/testing/unit-testing.md" />
+    <File Path="docs/testing/visual-and-touch-checks.md" />
+  </Folder>
+  <Folder Name="/docs/ui_components/">
+    <File Path="docs/ui_components/dialogs-and-pickers.md" />
+    <File Path="docs/ui_components/formation-and-pitch.md" />
+    <File Path="docs/ui_components/index.md" />
+    <File Path="docs/ui_components/live-match-screen.md" />
+    <File Path="docs/ui_components/mudblazor-notes.md" />
+    <File Path="docs/ui_components/shared-components.md" />
+    <File Path="docs/ui_components/squad-and-stats.md" />
   </Folder>
   <Folder Name="/Solution Items/">
-    <File Path=".dockerignore" />
     <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path="coverage.runsettings" />
     <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
     <File Path="README.md" />
+  </Folder>
+  <Folder Name="/Solution Items/claude/">
+    <File Path="CLAUDE.md" />
+  </Folder>
+  <Folder Name="/Solution Items/claude/agents/">
+    <File Path=".claude/agents/code-reviewer.md" />
+  </Folder>
+  <Folder Name="/Solution Items/claude/hooks/">
+    <File Path=".claude/hooks/session-start.sh" />
+  </Folder>
+  <Folder Name="/Solution Items/claude/skills/" />
+  <Folder Name="/Solution Items/claude/skills/build-and-release/">
+    <File Path=".claude/skills/build-and-release/SKILL.md" />
+  </Folder>
+  <Folder Name="/Solution Items/claude/skills/comment-rule/">
+    <File Path=".claude/skills/comment-rule/SKILL.md" />
+  </Folder>
+  <Folder Name="/Solution Items/claude/skills/domain-model/">
+    <File Path=".claude/skills/domain-model/SKILL.md" />
+  </Folder>
+  <Folder Name="/Solution Items/claude/skills/live-match/">
+    <File Path=".claude/skills/live-match/SKILL.md" />
+  </Folder>
+  <Folder Name="/Solution Items/claude/skills/localization/">
+    <File Path=".claude/skills/localization/SKILL.md" />
+  </Folder>
+  <Folder Name="/Solution Items/claude/skills/migrations/">
+    <File Path=".claude/skills/migrations/SKILL.md" />
+  </Folder>  
+  <Folder Name="/Solution Items/claude/skills/razor-pages-and-circuit/">
+    <File Path=".claude/skills/razor-pages-and-circuit/SKILL.md" />
+  </Folder>
+  <Folder Name="/Solution Items/claude/skills/responsive-and-touch/">
+    <File Path=".claude/skills/responsive-and-touch/SKILL.md" />
+  </Folder>  
+  <Folder Name="/Solution Items/claude/skills/service-and-results/">
+    <File Path=".claude/skills/service-and-results/SKILL.md" />
+  </Folder>
+  <Folder Name="/Solution Items/claude/skills/styling-and-css/">
+    <File Path=".claude/skills/styling-and-css/SKILL.md" />
+  </Folder>
+  <Folder Name="/Solution Items/claude/skills/testing/">
+    <File Path=".claude/skills/testing/SKILL.md" />
+  </Folder>
+  <Folder Name="/Solution Items/claude/skills/ui-testing/">
+    <File Path=".claude/skills/ui-testing/SKILL.md" />
+  </Folder>
+  <Folder Name="/Solution Items/claude/skills/verify-ui/">
+    <File Path=".claude/skills/verify-ui/SKILL.md" />
+  </Folder>
+  <Folder Name="/Solution Items/docker/">
+    <File Path=".dockerignore" />
+    <File Path="Dockerfile" />
+  </Folder>
+  <Folder Name="/Solution Items/github/">
+    <File Path=".github/pull_request_template.md" />
+  </Folder>
+  <Folder Name="/Solution Items/github/rulesets/">
+    <File Path=".github/rulesets/main-every-check-green.json" />
+  </Folder>
+  <Folder Name="/Solution Items/github/workflows/">
+    <File Path=".github/workflows/ci.yml" />
+    <File Path=".github/workflows/fly-deploy.yml" />
+  </Folder>
+  <Folder Name="/Solution Items/scripts/">
+    <File Path="scripts/blazor.mjs" />
+    <File Path="scripts/coverage.mjs" />
+    <File Path="scripts/coverage.sh" />
+    <File Path="scripts/package.json" />
+    <File Path="scripts/touch-targets.mjs" />
+    <File Path="scripts/visual-check.mjs" />
+    <File Path="scripts/visual-check.sh" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/FootballFormation.Core/FootballFormation.Core.csproj" />

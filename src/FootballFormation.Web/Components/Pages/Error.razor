@@ -5,10 +5,8 @@
 @inject IStringLocalizer<FootballFormation.UI.Strings> L
 @layout MainLayout
 
-@* Was the verbatim ASP.NET template, English and including the "Swapping to Development
-   environment" paragraph — instructions for a developer, shown to Dutch-speaking parents when
-   something breaks. The request id stays: it is the one thing that makes a report actionable,
-   since it matches a line in the Serilog file. *@
+@* Not the ASP.NET template, whose "Swapping to Development environment" paragraph is developer instructions shown to Dutch-speaking
+   parents. The request id stays: it matches a line in the Serilog file, which is what makes a report actionable. *@
 
 <PageTitle>@L["Something went wrong"]</PageTitle>
 

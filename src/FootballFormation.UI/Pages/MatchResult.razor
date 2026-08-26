@@ -33,9 +33,8 @@
     <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">
         <div class="card-label">@L["Final Score"]</div>
         @{
-            // ScoreHome/ScoreAway always mean "us"/"them"; only the display order follows the venue.
-            // A box to type in or a number to read, decided once by CanEditScore — a visitor never
-            // gets one, and neither does anyone on a match still to be played.
+            // ScoreHome/ScoreAway always mean "us"/"them"; only the display order follows the venue. Box or number is decided once by
+            // CanEditScore, so a visitor never gets one and neither does anyone on a match still to be played.
             RenderFragment ourSide =
                 @<div class="score-side">
                     <span class="score-name">@L["Us"]</span>
@@ -85,10 +84,8 @@
                 @L["Save Score"]
             </MudButton>
         }
-        @* Not IsAdmin-gated: sharing the result is the point for anyone who watched the match. A
-           plain onclick into js/clipboard.js rather than a Blazor handler:
-           navigator.clipboard.writeText must run inside the click's own task, and a round trip
-           through server interop loses that gesture on iOS Safari and Firefox. *@
+        @* A plain onclick into js/clipboard.js, not a Blazor handler: navigator.clipboard.writeText must run inside the click's own
+           task, and a round trip through server interop loses that gesture on iOS Safari and Firefox. *@
         @if (SummaryText is not null)
         {
             <button type="button" class="btn-gold mt-3 result-copy"
@@ -112,10 +109,8 @@
         @if (GameData.Goals.Count > 0)
         {
             <div class="goal-timeline">
-                @* Ordered on the elapsed match clock, which runs on across the break, so a goal in
-                   first-half stoppage time keeps its place above the restart rather than sorting
-                   past it. A minute typed in on this page is a scoreboard reading and is converted
-                   onto that clock — see MatchClockReport.ElapsedOf. *@
+                @* Ordered on the elapsed match clock, which runs on across the break, so a goal in first-half stoppage keeps its place
+                   above the restart. A minute typed in here is a scoreboard reading, converted by MatchClockReport.ElapsedOf. *@
                 @foreach (var goal in GameData.Goals.OrderBy(g => MatchClockReport.ElapsedOf(GameData, g)))
                 {
                     @* Own goals and opponent goals both count against us, so they share the styling. *@
@@ -200,10 +195,8 @@
         }
     </MudPaper>
 
-    @* An empty comments card on the public site is just clutter, so a visitor with nothing to read
-       gets no card at all. Admins always get it — it is where comments are written.
-       IsAdmin comes from the same place the load does, so the controls on screen can never disagree
-       with what GetCommentsAsync was asked for. *@
+    @* A visitor with nothing to read gets no card at all; an admin always does, since it is where comments are written. IsAdmin comes
+       from the same place the load does, so the controls can never disagree with what GetCommentsAsync was asked for. *@
     @if (IsAdmin || Comments.Count > 0)
     {
         <MudPaper Class="pa-5 result-comments" Elevation="2" Style="border-radius: 16px;">

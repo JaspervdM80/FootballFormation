@@ -1,12 +1,7 @@
-using Microsoft.EntityFrameworkCore;
-
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// The account a fresh install seeds. Its password is in the source and in the log, so what keeps
-/// a new deployment from being an open door is the flag that holds it back until the password is
-/// replaced — not secrecy.
-/// </summary>
+/// The seeded password is in the source and in the log, so what keeps a new deployment from being an open door is the flag holding the
+/// account back until it is replaced — not secrecy.
 public class SeededAdminTests : ServiceTestBase
 {
     [Fact]

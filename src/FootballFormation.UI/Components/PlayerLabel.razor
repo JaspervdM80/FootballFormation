@@ -1,8 +1,5 @@
-@*
-    A player as one line of text: "#7 Jasper", or just the name when they have no shirt number.
-    Used wherever a player is named in prose or a list — dialogs, the bench, the scorer pickers —
-    so the format is decided once instead of at every call site.
-*@
+@* A player as one line of text: "#7 Jasper", or just the name without a shirt number. One component so the format is decided once
+   rather than at every call site. *@
 @if (Player is not null)
 {
     @(Player.ShirtNumber is not null ? $"#{Player.ShirtNumber} " : "")@Player.DisplayName

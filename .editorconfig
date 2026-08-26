@@ -10,6 +10,7 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 indent_style = space
 indent_size = 4
+max_line_length = 240
 
 [*.{json,yml,yaml,csproj,props,targets,slnx,resx,runsettings,webmanifest}]
 indent_size = 2

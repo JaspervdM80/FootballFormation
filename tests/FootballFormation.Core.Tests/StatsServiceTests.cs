@@ -1,6 +1,3 @@
-using FootballFormation.Core.Models;
-using Microsoft.EntityFrameworkCore;
-
 namespace FootballFormation.Core.Tests;
 
 // Two rules that pull against each other: the report is reused between reads, and it does not

@@ -1,5 +1,3 @@
-using FootballFormation.Core.Models;
-
 namespace FootballFormation.Core.Reporting;
 
 public enum GameResult
@@ -16,17 +14,16 @@ public class SeasonStats
     public int Drawn { get; init; }
     public int Lost { get; init; }
 
-    /// <summary>Goals we scored — sum of <see cref="Game.ScoreHome"/> over finished games.</summary>
+    /// Goals we scored — <see cref="Game.ScoreHome"/> is always ours, whatever the venue.
     public int GoalsFor { get; init; }
 
-    /// <summary>Goals conceded — sum of <see cref="Game.ScoreAway"/> over finished games.</summary>
+    /// Goals conceded — <see cref="Game.ScoreAway"/> is always theirs, whatever the venue.
     public int GoalsAgainst { get; init; }
 
-    /// <summary>Most recent finished games first, capped for a form guide.</summary>
+    /// Most recent finished games first, capped for a form guide.
     public required List<GameResult> Form { get; init; }
 
-    /// <summary>Per-player figures, one entry per squad member of the seasons covered (guests
-    /// included; the page filters them out of the fairness table but keeps them in scorer lists).</summary>
+    /// Guests included — the page filters them out of the fairness table but keeps them in scorer lists.
     public required List<PlayerStats> Players { get; init; }
 
     public int GoalDifference => GoalsFor - GoalsAgainst;
@@ -36,21 +33,16 @@ public class SeasonStats
     public static SeasonStats Empty { get; } = new() { Form = [], Players = [] };
 }
 
-/// <summary>
-/// Aggregates a whole season into team totals plus per-player stats. Pure computation — no
-/// state, no service calls. Team record and goals come from the authoritative scoreline;
-/// per-player figures reuse <see cref="PlayerStatsReport"/> so minute/goal logic stays in one place.
-/// </summary>
+/// Team record and goals come from the stored scoreline; per-player figures go through <see cref="PlayerStatsReport"/>, so the minute
+/// and goal rules stay in one place.
 public static class SeasonStatsReport
 {
     private const int FormLength = 5;
 
-    /// <param name="squads">The squads of every season <paramref name="games"/> covers — forwarded
-    /// to <see cref="PlayerStatsReport.Build"/>, which needs per-season guest status.</param>
     public static SeasonStats Build(IReadOnlyList<Player> players, IReadOnlyList<Game> games, SeasonSquads squads)
     {
-        // IsComplete, not just "has a score": a match in progress has a running scoreline from its
-        // first goal, and must not move the table, the form guide or the record until full time.
+        // IsComplete, not just "has a score": a match in progress has a running scoreline from its first goal, and must not move the
+        // table until full time.
         var finished = games
             .Where(g => g.IsComplete && g.ScoreHome.HasValue && g.ScoreAway.HasValue)
             .ToList();

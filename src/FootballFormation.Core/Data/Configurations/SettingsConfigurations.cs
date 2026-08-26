@@ -1,5 +1,3 @@
-using FootballFormation.Core.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace FootballFormation.Core.Data.Configurations;
@@ -10,8 +8,7 @@ internal sealed class MatchPreferencesConfiguration : IEntityTypeConfiguration<M
     {
         entity.HasKey(m => m.Id);
 
-        // Cascade, like SeasonSquadMember and unlike Season -> Game: a preferences row is
-        // pure configuration with no history of its own, so it must not make an otherwise
+        // Cascade, unlike Season -> Game: a preferences row is pure configuration with no history, so it must not make an otherwise
         // game-free season undeletable.
         entity.HasOne(m => m.Season)
             .WithMany()

@@ -1,16 +1,10 @@
-using FootballFormation.Core.Models;
-using FootballFormation.Core.Reporting;
-
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// The scoreboard clock. It is deliberately not the elapsed time: a half stops at the length of a
-/// half, and the second half starts at half the match duration however long the first one really
-/// took — otherwise an over-running first half drags the whole second half out of step.
-/// </summary>
+/// The scoreboard clock, which is deliberately not the elapsed time: a half stops at the length of a half, and the second half starts at
+/// half the match duration however long the first really took.
 public class MatchClockReportTests
 {
-    /// <summary>A 60-minute game in quarters: two 30-minute halves, Q1/Q2 then Q3/Q4.</summary>
+    /// A 60-minute game in quarters: two 30-minute halves, Q1/Q2 then Q3/Q4.
     private static Game QuartersGame()
     {
         var game = TestData.Game(split: GameSplitType.Quarters, durationMinutes: 60);
@@ -62,7 +56,7 @@ public class MatchClockReportTests
         Assert.True(clock.IsInAdditionalTime);
     }
 
-    /// <summary>The reason the cap exists: the second half must not inherit the overrun.</summary>
+    /// The reason the cap exists: the second half must not inherit the overrun.
     [Fact]
     public void The_second_half_starts_at_half_the_match_however_long_the_first_half_took()
     {
@@ -108,10 +102,7 @@ public class MatchClockReportTests
         Assert.Equal(4 * 60, clock.AdditionalSeconds);
     }
 
-    /// <summary>
-    /// 45 minutes in two halves splits to 22:30 each. Working in minutes would round each half
-    /// down to 22 and the clock would stop a minute short of full time.
-    /// </summary>
+    /// 45 minutes in two halves splits to 22:30 each — working in minutes would round each half down and stop the clock short of full time.
     [Fact]
     public void An_odd_duration_does_not_lose_the_half_minute()
     {
@@ -129,10 +120,7 @@ public class MatchClockReportTests
         Assert.Equal(0, atFullTime.AdditionalSeconds);
     }
 
-    /// <summary>
-    /// A half that has been played out stops counting minutes and starts counting them alongside,
-    /// the way football writes 30+2 — so the minute never runs into the numbers the next half uses.
-    /// </summary>
+    /// A played-out half counts alongside rather than on, the way football writes 30+2, so its minutes never run into the next half's.
     [Fact]
     public void The_minute_stops_with_the_clock_and_additional_time_is_counted_beside_it()
     {
@@ -147,12 +135,8 @@ public class MatchClockReportTests
         Assert.Equal("30+2", clock.Minute.ToString());
     }
 
-    /// <summary>
-    /// The whole point of the pair: a goal in first-half stoppage time and one just after the
-    /// restart are a minute apart, and a single counted-on number would have written them 32 and
-    /// 31. Which of them came first is the elapsed clock's answer, not the pair's — the pair only
-    /// has to say something a scoreboard would.
-    /// </summary>
+    /// The whole point of the pair: a goal in first-half stoppage time and one just after the restart are a minute apart, and a single
+    /// counted-on number would have written them 32 and 31.
     [Fact]
     public void A_stoppage_time_minute_stays_inside_the_half_it_was_played_in()
     {
@@ -205,10 +189,7 @@ public class MatchClockReportTests
         Assert.Equal(new MatchMinute(33, 0), MatchClockReport.MinuteOf(game, injury));
     }
 
-    /// <summary>
-    /// A goal is placed the same way a substitution is, off its own half's clock — which is the
-    /// point of storing the pair on the row rather than the minute they produce.
-    /// </summary>
+    /// A goal is placed off its own half's clock like a substitution is, which is the point of storing the pair rather than the minute.
     [Fact]
     public void A_goal_is_written_against_the_clock_its_own_half_was_showing()
     {
@@ -226,10 +207,7 @@ public class MatchClockReportTests
         Assert.Equal(new MatchMinute(60, 2), MatchClockReport.MinuteOf(game, stoppage));
     }
 
-    /// <summary>
-    /// Correcting a half's timings corrects the goals scored in it. That is what deriving the
-    /// minute buys over storing it, and it is the whole reason the column moved.
-    /// </summary>
+    /// Correcting a half's timings corrects the goals scored in it — what deriving the minute buys over storing it.
     [Fact]
     public void Moving_a_halfs_kick_off_moves_the_goals_scored_in_it()
     {
@@ -243,9 +221,8 @@ public class MatchClockReportTests
         var goal = new GameGoal { GamePeriodId = 7, AtSeconds = 40 * 60 };
         Assert.Equal(new MatchMinute(39, 0), MatchClockReport.MinuteOf(game, goal));
 
-        // The half really kicked off three minutes later than recorded, so the goal moves back
-        // with it. A stored minute would have stayed where it was and disagreed with the
-        // substitutions around it.
+        // The half kicked off three minutes later than recorded, so the goal moves with it. A stored minute would have stayed put and
+        // disagreed with the substitutions around it.
         secondHalf.StartedAtSeconds = 35 * 60;
         Assert.Equal(new MatchMinute(36, 0), MatchClockReport.MinuteOf(game, goal));
     }
@@ -263,12 +240,8 @@ public class MatchClockReportTests
         Assert.Null(MatchClockReport.MinuteOf(game, new GameGoal()));
     }
 
-    /// <summary>
-    /// The timeline orders on elapsed seconds, so a minute typed in by hand has to be converted
-    /// onto that scale rather than read as though it already were one. The two only agree while
-    /// the halves run to length: this first half is three minutes long, and from the restart the
-    /// scoreboard trails the elapsed clock by exactly that.
-    /// </summary>
+    /// The timeline orders on elapsed seconds, so a hand-typed minute has to be converted onto that scale. The two agree only while the
+    /// halves run to length; this first half is three minutes long.
     [Fact]
     public void A_typed_in_minute_is_converted_onto_the_elapsed_clock_through_its_half()
     {
@@ -282,9 +255,8 @@ public class MatchClockReportTests
         Assert.Equal(0, Elapsed(1));
         Assert.Equal(20 * 60, Elapsed(21));
 
-        // Second half: 31' is the first minute after a scoreboard restart at 30, which really
-        // happened at 33:00. Read as elapsed seconds it would have landed at 30:00 — before a goal
-        // scored in first-half stoppage time, and on the wrong side of the half-time rule.
+        // 31' is the first minute after a scoreboard restart at 30, which really happened at 33:00. Read as elapsed seconds it would
+        // land before a goal scored in first-half stoppage time.
         Assert.Equal(33 * 60, Elapsed(31));
         Assert.Equal(35 * 60, Elapsed(33));
         Assert.Equal(PeriodType.SecondHalf, MatchClockReport.HalfOf(game, null, Elapsed(31)));
@@ -296,11 +268,7 @@ public class MatchClockReportTests
         Assert.Equal(0, MatchClockReport.ElapsedOf(game, new GameGoal()));
     }
 
-    /// <summary>
-    /// A match nobody ran from the touchline has no timings to convert through, so the typed
-    /// minutes keep the only order they have — and go on reading exactly as they did before goals
-    /// carried a clock at all.
-    /// </summary>
+    /// A match nobody ran from the touchline has no timings to convert through, so the typed minutes keep the only order they have.
     [Fact]
     public void Typed_in_minutes_stand_on_their_own_when_no_half_was_ever_kicked_off()
     {
@@ -311,10 +279,7 @@ public class MatchClockReportTests
         Assert.Equal(59 * 60, MatchClockReport.ElapsedOf(game, new GameGoal { Minute = 60 }));
     }
 
-    /// <summary>
-    /// Where the timeline draws half time. An event knows its own half; a goal typed in by hand
-    /// knows only a clock reading, and the second half's kick-off is the line it falls one side of.
-    /// </summary>
+    /// A goal typed in by hand knows only a clock reading, so the second half's kick-off is the line it falls one side of.
     [Fact]
     public void An_event_belongs_to_the_half_its_line_up_played_or_to_the_side_of_the_restart_it_falls()
     {

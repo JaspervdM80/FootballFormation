@@ -1,11 +1,8 @@
 @namespace FootballFormation.UI.Components
 @inject IStringLocalizer<Strings> L
 
-@* Rendered hidden and handed to js/pwa.js, which unhides it and wires the buttons. Everything the
-   decision needs — display-mode, the user agent, a dismissal in localStorage, and whether Chrome
-   ever offered a native prompt — is known only to the browser, and this markup renders on pages
-   with no circuit to ask it over. The strings are still localized here, because the resx is the
-   server's. *@
+@* Rendered hidden and handed to js/pwa.js: everything the decision needs is known only to the browser, and this markup renders on pages
+   with no circuit to ask it over. The strings stay localized here, because the resx is the server's. *@
 <div id="install-banner" class="install-banner" hidden
      data-instruction-ios="@L["Tap Share, then \"Add to Home Screen\"."]"
      data-instruction-android="@L["In the browser menu (⋮), tap \"Add to Home screen\"."]">

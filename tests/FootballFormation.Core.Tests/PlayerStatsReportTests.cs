@@ -1,13 +1,10 @@
-﻿using FootballFormation.Core.Models;
-using FootballFormation.Core.Reporting;
-
-namespace FootballFormation.Core.Tests;
+﻿namespace FootballFormation.Core.Tests;
 
 public class PlayerStatsReportTests
 {
     private static readonly Player Subject = TestData.Player(1, "Subject", PlayerPosition.CM, shirt: 8);
 
-    /// <summary>A finished 60-minute game with the subject playing both halves in one position.</summary>
+    /// A finished 60-minute game with the subject playing both halves in one position.
     private static Game FinishedGame(int id = 1, PlayerPosition position = PlayerPosition.CM)
     {
         var game = TestData.Game(id: id, durationMinutes: 60);
@@ -104,8 +101,7 @@ public class PlayerStatsReportTests
     {
         var game = FinishedGame();
 
-        // Injured *now*, on the live squad the report reads — must not rewrite what already
-        // happened. IsInRoster is deliberately blind to it for exactly this reason.
+        // Injured now, on the live squad — IsInRoster is blind to it so this cannot rewrite what already happened.
         var squad = TestData.Squad(1, [Subject], injuredIds: [Subject.Id]);
 
         var stats = PlayerStatsReport.Build(Subject, [game], SeasonSquads.Of(squad));
@@ -211,8 +207,7 @@ public class PlayerStatsReportTests
     [Fact]
     public void The_maximum_is_the_same_figure_for_everybody()
     {
-        // The whole point of the availability bars: they are read against each other, so the scale
-        // cannot move from row to row.
+        // The availability bars are read against each other, so the scale cannot move from row to row.
         var other = TestData.Player(2, "Other", PlayerPosition.GK, shirt: 1);
 
         var played = FinishedGame(1);
@@ -324,10 +319,8 @@ public class PlayerStatsReportTests
     [Fact]
     public void Rounding_happens_once_at_the_end_not_per_game()
     {
-        // Three games of 29:24 each (1764s, a .4 fraction that rounds *down* on its own). Summing
-        // that per-game rounding gives 3 x 29 = 87; the three games together ran 5292s, which
-        // rounds to 88 — the figure both the numerator (TotalMinutes) and the denominator
-        // (AvailableMinutes) must land on, or a full-match player reads under- or over 100%.
+        // Three games of 29:24 round down to 87 minutes one at a time, but to 88 taken together — the figure both numerator and
+        // denominator must land on, or a full-match player reads off 100%.
         var games = Enumerable.Range(1, 3).Select(i =>
         {
             var game = TestData.Game(id: i, durationMinutes: 60);
@@ -349,10 +342,8 @@ public class PlayerStatsReportTests
     [Fact]
     public void Utilisation_across_several_overrunning_games_never_exceeds_100_percent()
     {
-        // Two matches that each ran 20s into stoppage time (3620s = 60:20). Rounding each game's
-        // AvailableMinutes on its own and summing the results gave 121' / 120' (101%) for a player
-        // on the pitch throughout, the exact shape of the reported bug — see
-        // docs/known_issues/domain.md.
+        // Two matches 20s into stoppage each: rounding AvailableMinutes per game and summing gave 121'/120' for a player on the pitch
+        // throughout. See docs/known_issues/domain.md.
         var games = Enumerable.Range(1, 2).Select(i =>
         {
             var game = TestData.Game(id: i, durationMinutes: 60);
@@ -379,10 +370,8 @@ public class PlayerStatsReportTests
     [Fact]
     public void A_full_match_player_is_never_shown_over_100_percent_utilisation()
     {
-        // Two halves that ran into stoppage time: 1825s each, 3650s (60:50) total, on a cumulative
-        // match clock like MatchClockService writes. Rounding the numerator (61') while truncating
-        // the denominator (60') used to read as 102% for a player who was on the pitch the entire
-        // match — see Game.SecondsToMinutes.
+        // Two halves into stoppage time, 3650s total. Rounding the numerator while truncating the denominator read as 102% for a player
+        // on the pitch throughout — see Game.SecondsToMinutes.
         var game = TestData.Game(id: 1, durationMinutes: 60);
         game.MatchState = MatchState.Finished;
 

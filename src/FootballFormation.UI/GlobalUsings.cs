@@ -1,5 +1,10 @@
-// Implicit usings pull in System.IO, which has its own MatchType (a file-globbing enum). Without
-// this alias every page and dialog that names our MatchType has to spell out the full namespace,
-// and the razor files would need it too. Core is unaffected — inside FootballFormation.Core.Models
-// the local type already wins.
+global using FootballFormation.Core.Models;
+global using FootballFormation.Core.Services;
+global using FootballFormation.UI.Helpers;
+global using FootballFormation.UI.Navigation;
+global using Microsoft.AspNetCore.Components;
+global using Microsoft.Extensions.Localization;
+global using MudBlazor;
+// ImplicitUsings pulls in System.IO, which has its own MatchType, so the bare name is ambiguous here.
+// Core needs no alias — inside FootballFormation.Core.Models the local type already wins.
 global using MatchType = FootballFormation.Core.Models.MatchType;

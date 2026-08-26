@@ -1,18 +1,11 @@
-using FootballFormation.Core.Models;
-using Microsoft.EntityFrameworkCore;
-
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// What the live-match test classes share: a game laid out in periods with a lineup on the pitch,
-/// and a reload that reads back what a service actually wrote. Each touchline service has its own
-/// class, but they are all about the same match being played, so the fixture is described here once.
-/// </summary>
+/// Each touchline service has its own class, but they are all about the same match being played, so the fixture is described once here.
 public abstract class LiveMatchTestBase : ServiceTestBase
 {
     protected static readonly DateTime KickOff = Now;
 
-    /// <summary>A 60-minute game in halves with both periods laid out and a lineup on the pitch.</summary>
+    /// A 60-minute game in halves with both periods laid out and a line-up on the pitch.
     protected async Task<Game> SeedGameAsync(GameSplitType split = GameSplitType.Halves)
     {
         var season = Season.CreateFor(KickOff);

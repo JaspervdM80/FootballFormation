@@ -1,12 +1,7 @@
-﻿using FootballFormation.Core.Models;
+﻿namespace FootballFormation.Core.Tests;
 
-namespace FootballFormation.Core.Tests;
-
-/// <summary>
-/// Builders for the object graphs the domain and report tests need. Games in this app are a
-/// four-level graph (game → periods → lineups → players) and constructing one inline buries the
-/// single fact a test is actually about, so the shape is built here once.
-/// </summary>
+/// A game is a four-level graph — game → periods → line-ups → players — and constructing one inline buries the single fact a test is
+/// actually about.
 internal static class TestData
 {
     public static Player Player(int id, string name = "Player", PlayerPosition preferred = PlayerPosition.CM,

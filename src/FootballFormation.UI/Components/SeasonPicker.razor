@@ -2,18 +2,16 @@
 
 @if (Visible && SeasonState.Seasons.Count > 0)
 {
-    @* A <details> disclosure rather than MudMenu: this renders in the layout, which is static on
-       every page, so there is no circuit to open a popover from — and the browser gives keyboard
-       and screen-reader behaviour here for free. *@
+    @* A <details> disclosure rather than MudMenu: the layout is static on every page, so there is no circuit to open a popover from —
+       and the browser gives the keyboard and screen-reader behaviour for free. *@
     <details class="season-picker">
         <summary aria-label="@L["Select season"]">
             <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Size="Size.Small" />
             <span class="season-picker-label">@Label</span>
             <MudIcon Icon="@Icons.Material.Filled.ExpandMore" Size="Size.Small" />
         </summary>
-        @* A real page load, not enhanced navigation. The season is read off the request that
-           creates a scope, so an island whose circuit is already up would keep the old one while
-           the chrome around it showed the new — see RequestContext. *@
+        @* A real page load, not enhanced navigation: the season is read off the request that creates a scope, so an island already up
+           would keep the old one while the chrome showed the new. See RequestContext. *@
         <div class="season-picker-menu" data-enhance-nav="false">
             @foreach (var season in SeasonState.Seasons)
             {

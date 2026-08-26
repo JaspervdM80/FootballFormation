@@ -1,17 +1,11 @@
-using FootballFormation.Core.Data;
-using FootballFormation.Core.Models;
-using FootballFormation.Core.Services;
 using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
 
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
 /// A real SQLite database per test, held open in memory for the life of the connection.
-/// </summary>
 public abstract class ServiceTestBase : IDisposable
 {
     protected static readonly DateTime Now = new(2026, 3, 14, 12, 0, 0, DateTimeKind.Utc);
@@ -47,13 +41,10 @@ public abstract class ServiceTestBase : IDisposable
         Stats = new StatsService(Games, Squads, StatsCache, NullLogger<StatsService>.Instance);
     }
 
-    /// <summary>
-    /// An admin by default, so a test that is about something else does not have to say so. Set
-    /// <see cref="FakeCurrentUser.IsAdmin"/> to false to exercise the refusal path.
-    /// </summary>
+    /// An admin by default, so a test about something else does not have to say so.
     protected FakeCurrentUser CurrentUser { get; } = new();
 
-    /// <summary>A context for arranging and asserting. The services use their own, as in production.</summary>
+    /// For arranging and asserting. The services use their own, as in production.
     protected AppDbContext Db { get; }
 
     protected IDbContextFactory<AppDbContext> DbFactory { get; }
@@ -65,16 +56,13 @@ public abstract class ServiceTestBase : IDisposable
     protected GameService Games { get; }
     protected MatchPreferencesService Preferences { get; }
 
-    /// <summary>
-    /// The one every live write announces itself on, shared by the three services below the way the
-    /// singleton is in the app. Subscribe to it to see what a spectator's screen would be told.
-    /// </summary>
+    /// Shared by the three services below, the way the singleton is in the app. Subscribe to see what a spectator's screen would be told.
     protected LiveMatchNotifier Notifier { get; } = new();
 
-    /// <summary>Reading a live match. The three below are how one is written to.</summary>
+    /// Reading a live match. The three below are how one is written to.
     protected LiveMatchService Live { get; }
 
-    /// <summary>The match clock, not the <see cref="TimeProvider"/> driving it — that is <see cref="Time"/>.</summary>
+    /// The match clock, not the <see cref="TimeProvider"/> driving it — that is <see cref="Time"/>.
     protected MatchClockService MatchClock { get; }
 
     protected MatchGoalService Goals { get; }
@@ -121,10 +109,7 @@ public abstract class ServiceTestBase : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    /// <summary>
-    /// Hands every caller a new context over the one open connection, which is what keeps the
-    /// in-memory database alive between them.
-    /// </summary>
+    /// A new context over the one open connection, which is what keeps the in-memory database alive between them.
     private sealed class TestDbContextFactory(SqliteConnection connection, StatsCacheInvalidator invalidator) : IDbContextFactory<AppDbContext>
     {
         public AppDbContext CreateDbContext() => new(new DbContextOptionsBuilder<AppDbContext>().UseSqlite(connection).AddInterceptors(new DateInSqlInterceptor(), invalidator).Options);

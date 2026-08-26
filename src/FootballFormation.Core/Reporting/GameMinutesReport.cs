@@ -1,22 +1,17 @@
-using FootballFormation.Core.Models;
-
 namespace FootballFormation.Core.Reporting;
 
 public class GameMinutes
 {
-    /// <summary>Player id → position → seconds spent on the pitch in that position.</summary>
+    /// Player id → position → seconds spent on the pitch in that position.
     public required IReadOnlyDictionary<int, IReadOnlyDictionary<PlayerPosition, int>> SecondsByPlayer { get; init; }
 
-    /// <summary>Everyone named in a lineup or a substitution, including players with zero seconds.</summary>
+    /// Everyone named in a line-up or a substitution, players with zero seconds included.
     public required IReadOnlySet<int> PlayerIds { get; init; }
 
-    /// <summary>Who is on the pitch right now. Only populated while a half is being played.</summary>
+    /// Empty unless a half is being played right now.
     public required IReadOnlySet<int> OnPitchNow { get; init; }
 
-    /// <summary>
-    /// False when the figures are the planned <c>periods × period length</c> estimate rather than
-    /// real timings, so callers can label them as such.
-    /// </summary>
+    /// False when these are the planned periods × period length estimate rather than real timings, which callers have to label.
     public required bool IsActual { get; init; }
 
     public IReadOnlyDictionary<PlayerPosition, int> PositionsFor(int playerId) =>
@@ -28,36 +23,11 @@ public class GameMinutes
         SecondsByPlayer.TryGetValue(playerId, out var positions) ? positions.Values.Sum() : 0;
 }
 
-/// <summary>
-/// Playing time for one game, per player and per position. The single place that decides whether
-/// a game's minutes come from what actually happened or from what was planned.
-/// <para>
-/// A game that was run live carries the truth in its half timings, its
-/// <see cref="GameSubstitution"/> rows and any <see cref="GameInjury"/> nobody came on for. The
-/// lineup alone cannot express it — <c>MatchSubstitutionService</c> rewrites it in place, so
-/// afterwards it shows only the <em>final</em> occupants.
-/// </para>
-/// <para>
-/// The choice is made per game, not per line-up, on <see cref="Game.HasActualTimings"/>: once a
-/// match has been run live, a line-up with no kick-off is one the coach worked towards by hand
-/// inside a half that is already accounted for, and crediting it a full period's minutes would
-/// invent playing time.
-/// </para>
-/// <para>
-/// Known limitation: only a substitution records a position change. The walk below starts from the
-/// lineup as it <em>finally</em> stands and rewinds substitution rows, so a player who shifts
-/// position mid-half without one is credited the position they ended in for the whole half,
-/// the minutes before the shift included. The live screen's position swap
-/// (<c>MatchSubstitutionService.SwapPositionsAsync</c>) is exactly that case: it rewrites the
-/// lineup and writes nothing down, because a <see cref="GameSubstitution"/> would say someone left
-/// the pitch. Totals stay right; only the split by position does. That is a gap in what gets
-/// recorded, not in this calculation.
-/// </para>
-/// </summary>
+/// Decides per game on <see cref="Game.HasActualTimings"/> whether minutes come from what happened or what was planned — crediting an
+/// un-kicked-off line-up inside a played half would invent playing time. See docs/known_issues/domain.md for the position-split limit.
 public static class GameMinutesReport
 {
-    /// <param name="elapsedSeconds">The match clock right now, which closes off the running half.
-    /// Irrelevant for a settled game — any value will do.</param>
+    /// <paramref name="elapsedSeconds"/> closes off the running half, so any value will do for a settled game.
     public static GameMinutes Build(Game game, int elapsedSeconds = 0)
     {
         var seconds = new Dictionary<int, Dictionary<PlayerPosition, int>>();
@@ -71,16 +41,14 @@ public static class GameMinutesReport
 
             if (!isActual)
             {
-                // No timings anywhere in this game: everyone fielded gets the whole period in the
-                // position they were planned for. Substitutes get nothing, as before.
+                // No timings anywhere in this game, so everyone fielded gets the whole period and substitutes get nothing.
                 foreach (var entry in period.PlayerPositions.Where(p => !p.IsSubstitute))
                     Credit(seconds, entry.PlayerId, entry.Position, game.PeriodDurationSeconds);
 
                 continue;
             }
 
-            // A line-up that was never kicked off contributes no time — it is a plan for the
-            // middle of a half whose minutes the half's own line-up already accounts for.
+            // A line-up never kicked off contributes no time — it is a mid-half plan, and the half's own line-up already accounts for it.
             if (period.StartedAtSeconds is not { } start) continue;
 
             var isLive = game.LivePeriodId == period.Id;
@@ -88,10 +56,8 @@ public static class GameMinutesReport
 
             var changes = ChangesIn(game, period);
 
-            // The lineup records where everyone stands *now*. Rewinding this half's changes
-            // recovers who stood where when it kicked off, which is the only point the forward
-            // walk below can start from. Each change carries the position that changed hands, so
-            // it hands the slot back to the player who left it.
+            // The line-up records where everyone stands now, so rewinding this half's changes is the only way to recover the kick-off
+            // line-up the forward walk below has to start from.
             var onPitch = period.PlayerPositions
                 .Where(p => !p.IsSubstitute)
                 .ToDictionary(p => p.PlayerId, p => p.Position);
@@ -133,23 +99,12 @@ public static class GameMinutesReport
         };
     }
 
-    /// <summary>
-    /// One player leaving the pitch, and the one who took the place over when somebody did. A
-    /// substitution is both halves of that; an injury with nobody coming on is only the first.
-    /// </summary>
+    /// A substitution is both halves of this; an injury nobody came on for has a null <paramref name="PlayerOnId"/>.
     private readonly record struct LineupChange(
         int AtSeconds, int Id, int PlayerOffId, int? PlayerOnId, PlayerPosition Position);
 
-    /// <summary>
-    /// Everything that moved somebody off the pitch in this line-up, in the order it happened.
-    /// <para>
-    /// An injury a substitution already accounts for is left out: one touchline action writes both
-    /// rows, and walking the pair would take the same player off twice — handing her slot back in
-    /// the rewind above. Two changes in the same second are routine (a double substitution is two
-    /// taps), and the walk only reaches the right kick-off line-up if it takes them in the order
-    /// they were made, which is what the id settles — <c>RecordedAt</c> can be the same instant too.
-    /// </para>
-    /// </summary>
+    /// An injury a substitution already accounts for is left out, or the rewind would take the same player off twice. The id breaks ties
+    /// because two changes in one second are routine and RecordedAt can match too.
     private static List<LineupChange> ChangesIn(Game game, GamePeriod period)
     {
         var subs = game.Substitutions
@@ -163,11 +118,7 @@ public static class GameMinutesReport
         return [.. subs.Concat(unreplaced).OrderBy(c => c.AtSeconds).ThenBy(c => c.Id)];
     }
 
-    /// <summary>
-    /// Adds a stretch of time to everyone on the pitch, each in the position they held for it.
-    /// Non-positive spans are ignored — two substitutions in the same second are normal and must
-    /// not subtract time.
-    /// </summary>
+    /// Non-positive spans are ignored — two substitutions in the same second are normal and must not subtract time.
     private static void CreditAll(
         Dictionary<int, Dictionary<PlayerPosition, int>> seconds,
         Dictionary<int, PlayerPosition> onPitch,

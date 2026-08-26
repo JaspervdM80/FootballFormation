@@ -1,6 +1,3 @@
-using Microsoft.AspNetCore.Components;
-using MudBlazor;
-
 namespace FootballFormation.UI.Components;
 
 public partial class ConfirmDialog

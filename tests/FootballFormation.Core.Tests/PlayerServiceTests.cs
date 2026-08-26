@@ -1,18 +1,7 @@
-using FootballFormation.Core.Models;
-using Microsoft.EntityFrameworkCore;
-
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// The person record, and the two ways of getting rid of one.
-/// <para>
-/// A player's lineup and goal rows hang off this row, so deleting someone used to quietly edit
-/// every season they had played — last season's top scorer disappearing from last season's table,
-/// with nothing on screen having said that would happen. Delete now refuses that, and archiving is
-/// what the admin gets instead: the person stops being offered for seasons to come, and every row
-/// behind them stays exactly where it was.
-/// </para>
-/// </summary>
+/// Line-up and goal rows hang off the player row, so deleting someone used to quietly edit every season she had played. Delete now
+/// refuses that, and archiving takes her out of the seasons to come while leaving every row behind her where it was.
 public class PlayerServiceTests : ServiceTestBase
 {
     [Fact]
@@ -46,9 +35,8 @@ public class PlayerServiceTests : ServiceTestBase
     [Fact]
     public async Task Deleting_a_scorer_is_refused_even_with_no_lineup_to_their_name()
     {
-        // A goal is enough on its own. GameGoal.ScorerId is SetNull rather than cascade, so this
-        // one would not have deleted a row — it would have blanked the scorer out of a scoreline
-        // that still counted, which is worse to spot.
+        // A goal is enough on its own: ScorerId is SetNull rather than cascade, so deleting her blanks the scorer out of a scoreline
+        // that still counts — harder to spot than a missing row.
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(1);
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
@@ -115,9 +103,8 @@ public class PlayerServiceTests : ServiceTestBase
     [Fact]
     public async Task Archived_players_stay_in_the_lookup_the_pages_resolve_names_against()
     {
-        // GetAllAsync is how a match report turns a player id back into a name. Filtering archived
-        // players out of it would blank a scorer out of a game they scored in — the very thing
-        // archiving exists to prevent.
+        // GetAllAsync is how a match report turns a player id back into a name, so filtering archived players out would blank a scorer
+        // out of a game she scored in.
         var players = await SeedPlayersAsync(2);
         await Players.SetArchivedAsync(players[0].Id, true);
 

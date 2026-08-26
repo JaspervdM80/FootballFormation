@@ -1,27 +1,7 @@
-﻿using FootballFormation.Core.Data;
-using FootballFormation.Core.Models;
-using FootballFormation.Core.Security;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
+﻿namespace FootballFormation.Core.Services;
 
-namespace FootballFormation.Core.Services;
-
-/// <summary>
-/// Who stands where once a match is under way: a substitution, where a slot and a position change
-/// hands between the pitch and the bench and the swap is written down with the minute it happened;
-/// a straight position swap between two players already on; and a player going off hurt, with or
-/// without somebody to take her place.
-/// <para>
-/// The most intricate write in the app, and the reason it sits on its own: the lineup and the
-/// record of the change go in with one <c>SaveChanges</c>, because every minutes report is built
-/// from the two agreeing. It asks the clock only how far the game has run
-/// (<see cref="Game.ElapsedSecondsAt"/>), so it stays independent of <see cref="MatchClockService"/>.
-/// </para>
-/// <para>
-/// An injury lives here rather than in a service of its own because it is the same write: it takes
-/// a player off the pitch, and half the time it brings one on.
-/// </para>
-/// </summary>
+/// An injury lives here rather than in a service of its own because it is the same write: it takes a player off the pitch, and half the
+/// time it brings one on. Only <see cref="Game.ElapsedSecondsAt"/> is needed from the clock, so this stays free of MatchClockService.
 public class MatchSubstitutionService(
     IDbContextFactory<AppDbContext> dbFactory,
     LiveMatchNotifier notifier,
@@ -31,11 +11,6 @@ public class MatchSubstitutionService(
 {
     private DateTime UtcNow => time.GetUtcNow().UtcDateTime;
 
-    /// <summary>
-    /// Brings <paramref name="playerOnId"/> on for <paramref name="playerOffId"/> in the half
-    /// currently being played: the outgoing player's slot and position change hands, and the swap
-    /// is recorded with the minute it happened.
-    /// </summary>
     public Task<Result<GameSubstitution>> SubstituteAsync(
         int gameId, int playerOffId, int playerOnId, CancellationToken cancellationToken = default) =>
         LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "make the substitution",
@@ -69,9 +44,8 @@ public class MatchSubstitutionService(
                 PlayerOffId = playerOffId,
                 PlayerOnId = playerOnId,
                 AtSeconds = game.ElapsedSecondsAt(UtcNow),
-                // From this service's clock, not the entity initializer's wall-clock default —
-                // otherwise a match driven to an exact instant under test still records the real
-                // time here, and AtSeconds and RecordedAt describe different afternoons.
+                // This service's clock, not the entity initializer's wall-clock default, or a match driven to an exact instant under
+                // test would have AtSeconds and RecordedAt describing different afternoons.
                 RecordedAt = UtcNow,
                 SlotIndex = slot.Index,
                 Position = slot.Position
@@ -90,17 +64,8 @@ public class MatchSubstitutionService(
             return Result.Success(sub);
         });
 
-    /// <summary>
-    /// Swaps the pitch slots — and with them the positions — of two players who are both already
-    /// on. Nobody enters or leaves the match, so this writes no <see cref="GameSubstitution"/>:
-    /// the rows exist to say who was on the pitch when, and a shuffle changes none of that.
-    /// <para>
-    /// What it costs is the position half of the minutes report. <c>GameMinutesReport</c> reads the
-    /// lineup as it finally stands and rewinds only substitution rows, so after a swap each player
-    /// is credited the position they moved <em>into</em> for the whole half — including the
-    /// minutes before the swap. Totals are unaffected; only the split by position is.
-    /// </para>
-    /// </summary>
+    /// Writes no <see cref="GameSubstitution"/> — nobody enters or leaves. The cost is that GameMinutesReport rewinds substitutions
+    /// only, so after a swap each player is credited the position she moved into for the whole half. Totals are unaffected.
     public Task<Result> SwapPositionsAsync(
         int gameId, int playerAId, int playerBId, CancellationToken cancellationToken = default) =>
         LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "swap the positions",
@@ -137,16 +102,8 @@ public class MatchSubstitutionService(
             return Result.Success(gameId);
         });
 
-    /// <summary>
-    /// Takes <paramref name="playerId"/> off the pitch hurt, in the half currently being played,
-    /// and records the minute — which is what stops the rest of the match counting towards her
-    /// availability (<see cref="Game.AvailableMinutesFor"/>).
-    /// <para>
-    /// <paramref name="replacementPlayerId"/> is optional: name someone and this is an ordinary
-    /// substitution with an injury recorded beside it; leave it out and the team plays on a player
-    /// short.
-    /// </para>
-    /// </summary>
+    /// The recorded minute is what stops the rest of the match counting towards her availability — see <see cref="Game.AvailableMinutesFor"/>.
+    /// A null <paramref name="replacementPlayerId"/> means the team plays on a player short.
     public Task<Result<GameInjury>> MarkInjuredAsync(
         int gameId, int playerId, int? replacementPlayerId = null,
         CancellationToken cancellationToken = default) =>
@@ -220,11 +177,7 @@ public class MatchSubstitutionService(
             return Result.Success(injury);
         });
 
-    /// <summary>
-    /// Undoes an injury: the record goes, and when nobody came on for her she goes back into the
-    /// slot she left. A replaced injury is undone through its substitution instead, which holds the
-    /// slot and takes the injury with it.
-    /// </summary>
+    /// Only restores the slot when nobody came on: a replaced injury is undone through its substitution, which takes the injury with it.
     public Task<Result> RemoveInjuryAsync(int injuryId, CancellationToken cancellationToken = default) =>
         LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "undo the injury",
             cancellationToken, async () =>
@@ -267,14 +220,8 @@ public class MatchSubstitutionService(
             return Result.Success(injury.GameId);
         });
 
-    /// <summary>
-    /// Undoes a substitution. Only the most recent one in its half can go, because reversing an
-    /// older swap would fight every change made on that slot since.
-    /// <para>
-    /// An injury recorded for the player who came off goes with it — the two rows were one tap, and
-    /// leaving the injury behind would clip her availability for a change that no longer happened.
-    /// </para>
-    /// </summary>
+    /// Only the most recent substitution of a half can go, because reversing an older one would fight every change made on that slot since.
+    /// An injury recorded for the same player at the same second goes with it — one tap wrote both.
     public Task<Result> RemoveSubstitutionAsync(int subId, CancellationToken cancellationToken = default) =>
         LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "undo the substitution",
             cancellationToken, async () =>
@@ -284,9 +231,8 @@ public class MatchSubstitutionService(
             var sub = await db.GameSubstitutions.FindAsync([subId], cancellationToken);
             if (sub is null) return Result.Failure<int>("Substitution not found");
 
-            // A double substitution is two taps in a row, and AtSeconds is whole seconds, so the
-            // two changes routinely share one. The id settles which came second; without it both
-            // pass for "most recent" and undoing the earlier leaves two players in the same slot.
+            // AtSeconds is whole seconds and a double substitution is two taps in a row, so both routinely pass for "most recent" —
+            // the id settles which came second, and undoing the earlier one would leave two players in the same slot.
             var isNewest = !await db.GameSubstitutions
                 .AnyAsync(s => s.GamePeriodId == sub.GamePeriodId
                                && (s.AtSeconds > sub.AtSeconds
@@ -302,10 +248,8 @@ public class MatchSubstitutionService(
             var on = positions.FirstOrDefault(pp => pp.PlayerId == sub.PlayerOnId);
             var off = positions.FirstOrDefault(pp => pp.PlayerId == sub.PlayerOffId);
 
-            // Where the incoming player is standing *now*, not where they came on. A position swap
-            // moves a slot without writing a row here, so the slot this substitution recorded may
-            // belong to somebody else by now — handing it back would put two players in it and
-            // leave another empty. The recorded slot is only the fallback for a missing row.
+            // Where the incoming player stands now, not where she came on: a position swap moves a slot without writing a row here, so
+            // handing back the recorded slot could put two players in it. That slot is only the fallback for a missing row.
             var slot = on?.SlotIndex ?? sub.SlotIndex;
             var position = on is { IsSubstitute: false } ? on.Position : sub.Position;
 
@@ -336,13 +280,8 @@ public class MatchSubstitutionService(
             return Result.Success(sub.GameId);
         });
 
-    /// <summary>The place a player was holding, handed to whoever takes it over.</summary>
     private readonly record struct PitchSlot(int? Index, PlayerPosition Position);
 
-    /// <summary>
-    /// Frees the place <paramref name="playerId"/> was standing in and benches her. Shared by the
-    /// substitution and the injury, which differ only in whether anybody takes the place over.
-    /// </summary>
     private static Result<PitchSlot> TakeOffThePitch(GamePeriod half, int playerId)
     {
         var off = half.PlayerPositions.FirstOrDefault(pp => pp.PlayerId == playerId);

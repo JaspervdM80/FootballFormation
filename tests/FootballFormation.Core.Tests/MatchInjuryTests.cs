@@ -1,12 +1,6 @@
-﻿using FootballFormation.Core.Models;
-using Microsoft.EntityFrameworkCore;
+﻿namespace FootballFormation.Core.Tests;
 
-namespace FootballFormation.Core.Tests;
-
-/// <summary>
-/// A player hurt during the match: what the line-up says afterwards, what was written down about
-/// it, and what taking it back does. The injury half of <c>MatchSubstitutionService</c>.
-/// </summary>
+/// The injury half of MatchSubstitutionService: what the line-up says afterwards, and what taking it back does.
 public class MatchInjuryTests : LiveMatchTestBase
 {
     [Fact]

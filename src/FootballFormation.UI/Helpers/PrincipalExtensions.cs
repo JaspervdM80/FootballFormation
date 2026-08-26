@@ -3,34 +3,23 @@ using FootballFormation.Core.Security;
 
 namespace FootballFormation.UI.Helpers;
 
-/// <summary>
 /// Reading the signed-in user's role and identity off a <see cref="ClaimsPrincipal"/>.
-/// <para>
-/// Pages used to ask <c>Identity?.IsAuthenticated == true</c>, which was only ever right because
-/// every account was an admin. Going through <see cref="IsAdmin"/> means the day a second role
-/// exists, none of them silently grant it admin rights.
-/// </para>
-/// </summary>
 public static class PrincipalExtensions
 {
     public static bool IsAdmin(this ClaimsPrincipal? user) =>
         user?.IsInRole(AppRoles.Admin) == true;
 
-    /// <summary>The person's name, falling back to their login for cookies issued before
-    /// display names existed.</summary>
+    /// Falls back to the login for cookies issued before display names existed.
     public static string? DisplayName(this ClaimsPrincipal? user) =>
         user?.FindFirst(AppClaims.DisplayName)?.Value is { Length: > 0 } name
             ? name
             : user?.Identity?.Name;
 
-    /// <summary>The signed-in account's id, or null when nobody is signed in.</summary>
+    /// Null when nobody is signed in.
     public static int? UserId(this ClaimsPrincipal? user) =>
         int.TryParse(user?.FindFirst(AppClaims.UserId)?.Value, out var id) ? id : null;
 
-    /// <summary>
-    /// True while this account is still on the password a fresh install seeded. MainLayout holds
-    /// such a session on /settings until it is changed — see <see cref="AppClaims.MustChangePassword"/>.
-    /// </summary>
+    /// MainLayout holds such a session on /settings until the password is changed — see <see cref="AppClaims.MustChangePassword"/>.
     public static bool MustChangePassword(this ClaimsPrincipal? user) =>
         user?.FindFirst(AppClaims.MustChangePassword)?.Value == "true";
 }

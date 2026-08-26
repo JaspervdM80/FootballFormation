@@ -1,13 +1,7 @@
-using FootballFormation.Core.Models;
-using FootballFormation.Core.Reporting;
-
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// The copyable match summary — the group-chat text, not the result page. Own goals and the
-/// opponent's own regular goals stay out of the goal list on purpose: they are already in the
-/// scoreline and a summary this short has no room to explain them.
-/// </summary>
+/// Own goals and the opponent's regular goals stay out of the list on purpose: they are already in the scoreline, and a group-chat
+/// summary has no room to explain them.
 public class MatchSummaryReportTests
 {
     private static Game Match(

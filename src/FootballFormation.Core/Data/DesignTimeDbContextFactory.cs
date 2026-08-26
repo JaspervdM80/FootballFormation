@@ -1,11 +1,8 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
 namespace FootballFormation.Core.Data;
 
-/// <summary>
-/// Factory used by EF Core CLI tools (dotnet ef migrations) at design time.
-/// </summary>
+/// For the EF Core CLI tools at design time — nothing at runtime resolves this.
 public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 {
     public AppDbContext CreateDbContext(string[] args)

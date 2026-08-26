@@ -1,19 +1,7 @@
-using FootballFormation.Core.Data;
-using FootballFormation.Core.Models;
-using FootballFormation.Core.Security;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-
 namespace FootballFormation.Core.Services;
 
-/// <summary>
-/// Goals as they are logged at the touchline. What this adds is the one thing only a match in
-/// progress knows: where in the match the ball went in — the half being played and the reading on
-/// the clock, the same pair a substitution carries. Storing the goal — and, at
-/// the touchline, recounting the scoreline in the same save — is delegated to
-/// <see cref="GameService"/>, so there is one implementation of it and the two rows are written
-/// together rather than across two contexts.
-/// </summary>
+/// Adds the one thing only a match in progress knows: the half being played and the reading on the clock. The write itself is delegated
+/// to <see cref="GameService"/>, so the goal and the recounted scoreline go in together rather than across two contexts.
 public class MatchGoalService(
     IDbContextFactory<AppDbContext> dbFactory,
     GameService games,
@@ -24,7 +12,7 @@ public class MatchGoalService(
 {
     private DateTime UtcNow => time.GetUtcNow().UtcDateTime;
 
-    /// <param name="scorerId">Null for an opponent goal — we do not track their players.</param>
+    /// A null <paramref name="scorerId"/> means an opponent goal — we do not track their players.
     public Task<Result<GameGoal>> LogGoalAsync(
         int gameId, int? scorerId, int? assisterId, bool isOwnGoal, bool isOpponentGoal,
         CancellationToken cancellationToken = default) =>
@@ -45,9 +33,7 @@ public class MatchGoalService(
                 GameId = gameId,
                 ScorerId = scorerId,
                 AssisterId = assisterId,
-                // Where it happened, not what a scoreboard made of it. The displayed minute is
-                // derived from these two, so a half whose timings are corrected later takes its
-                // goals with it — exactly as it already does its substitutions.
+                // Where it happened, not what a scoreboard made of it — so a half whose timings are corrected later takes its goals with it.
                 GamePeriodId = game.CurrentOrLastHalf()?.Id,
                 AtSeconds = game.ElapsedSecondsAt(UtcNow),
                 IsOwnGoal = isOwnGoal,
@@ -57,7 +43,7 @@ public class MatchGoalService(
             return await games.AddGoalAsync(goal, recountScoreline: true, cancellationToken);
         });
 
-    /// <summary>Removes a goal and pulls the scoreline back in step with what is left.</summary>
+    /// Removes a goal and pulls the scoreline back in step with what is left.
     public Task<Result> RemoveGoalAsync(
         int gameId, int goalId, CancellationToken cancellationToken = default) =>
         LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "remove the goal",

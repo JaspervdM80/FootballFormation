@@ -1,15 +1,9 @@
-using FootballFormation.Core.Data;
 using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// The startup guards around migration. These need a real file on disk rather than the shared
-/// in-memory database the other suites use — a backup of a database that lives only in memory
-/// would prove nothing about the case that matters.
-/// </summary>
+/// A real file on disk rather than the shared in-memory database: a backup of one that lives only in memory would prove nothing.
 public class DatabaseSafetyTests : IDisposable
 {
     private readonly string _dir;
@@ -33,8 +27,7 @@ public class DatabaseSafetyTests : IDisposable
     [Fact]
     public async Task A_database_with_migrations_pending_is_backed_up_first()
     {
-        // Migrate to a real schema, then roll the history back so the same migrations read as
-        // pending again — the shape of a deploy that is about to change a live database.
+        // Roll the history back so the same migrations read as pending again — the shape of a deploy about to change a live database.
         await using (var db = Open()) await db.Database.MigrateAsync();
         await using (var db = Open())
             await db.Database.ExecuteSqlRawAsync("DELETE FROM __EFMigrationsHistory");
@@ -62,8 +55,7 @@ public class DatabaseSafetyTests : IDisposable
         await using var ctx = Open();
         var path = await DatabaseSafety.BackupBeforeMigrationsAsync(ctx, _dbPath, NullLogger.Instance);
 
-        // A File.Copy of a WAL database can miss the most recent writes entirely. Reading the row
-        // back out is what distinguishes a real snapshot from a plausible-looking file.
+        // A File.Copy of a WAL database can miss the newest writes, so reading the row back is what distinguishes a real snapshot.
         await using var restored = new SqliteConnection($"Data Source={path};Mode=ReadOnly");
         await restored.OpenAsync();
         await using var cmd = restored.CreateCommand();
@@ -79,8 +71,7 @@ public class DatabaseSafetyTests : IDisposable
         await using var ctx = Open();
         var path = await DatabaseSafety.BackupBeforeMigrationsAsync(ctx, _dbPath, NullLogger.Instance);
 
-        // Fly wakes this app from zero, so a restart with nothing pending is the common case.
-        // Writing a snapshot each time would push the useful ones out of the retention window.
+        // A restart with nothing pending is the common case, and a snapshot each time would push the useful ones out of retention.
         Assert.Null(path);
         Assert.Empty(Backups(BackupDir));
     }
@@ -117,10 +108,8 @@ public class DatabaseSafetyTests : IDisposable
     [Fact]
     public async Task Retrying_a_failed_migration_does_not_take_a_second_snapshot()
     {
-        // A migration that fails partway leaves the rest pending, and Fly restarts the machine. The
-        // restart arrives here with the database in whatever state the failure left it — so a
-        // snapshot named for the moment would capture the damage, and there would be one per
-        // restart. Only the copy taken before the first attempt is worth keeping.
+        // A migration failing partway leaves the rest pending and Fly restarts the machine, so a snapshot named for the moment would
+        // capture the damage once per restart. Only the copy from before the first attempt is worth keeping.
         await using (var db = Open()) await db.Database.MigrateAsync();
         await using (var db = Open())
             await db.Database.ExecuteSqlRawAsync("DELETE FROM __EFMigrationsHistory");
@@ -128,8 +117,7 @@ public class DatabaseSafetyTests : IDisposable
         await using var ctx = Open();
         var first = await DatabaseSafety.BackupBeforeMigrationsAsync(ctx, _dbPath, NullLogger.Instance);
 
-        // Stand in for the damage a half-applied migration does, so a fresh snapshot would be
-        // visibly different from the one already on disk.
+        // Stands in for the damage a half-applied migration does, so a fresh snapshot would be visibly different from the one on disk.
         await ctx.Database.ExecuteSqlRawAsync("DELETE FROM Players");
 
         for (var restart = 0; restart < DatabaseSafety.KeepBackups + 2; restart++)
@@ -175,8 +163,7 @@ public class DatabaseSafetyTests : IDisposable
         await using (var db = Open())
             await db.Database.ExecuteSqlRawAsync("DELETE FROM __EFMigrationsHistory");
 
-        // What a container killed midway through the copy leaves behind. It must not be picked up
-        // as the snapshot for this schema state — the whole guard rests on that file being complete.
+        // What a container killed midway through the copy leaves behind — the whole guard rests on that file being complete.
         Directory.CreateDirectory(BackupDir);
         var torn = Path.Combine(BackupDir, "pre-migration-empty.db.tmp");
         await File.WriteAllTextAsync(torn, "truncated");
@@ -207,9 +194,8 @@ public class DatabaseSafetyTests : IDisposable
         await using var db = Open();
         await db.Database.MigrateAsync();
 
-        // Foreign keys are not enforced on a connection that has not switched them on, which is
-        // exactly how a table-rebuilding migration can leave orphans behind. The check exists to
-        // catch that afterwards rather than on someone's next page load.
+        // Foreign keys go unenforced on a connection that has not switched them on, which is exactly how a table-rebuilding migration
+        // leaves orphans behind.
         await db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys = OFF");
         await db.Database.ExecuteSqlRawAsync(
             "INSERT INTO GamePeriods (GameId, PeriodType) VALUES (999999, 0)");

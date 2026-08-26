@@ -1,13 +1,7 @@
-using FootballFormation.Core.Models;
-
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// That every write to a match being played tells the viewers about it, and that a refused one does
-/// not. This is what <c>LiveMatchOperation</c> exists for: the notification is part of the write
-/// shape rather than a line each of the three services has to remember, and the failure it prevents
-/// — a spectator's screen quietly stuck on the old score — shows up nowhere else in the suite.
-/// </summary>
+/// What LiveMatchOperation exists for: the notification is part of the write shape rather than a line each service has to remember, and
+/// the failure it prevents — a spectator's screen quietly stuck on the old score — shows up nowhere else in the suite.
 public class LiveMatchNotificationTests : LiveMatchTestBase
 {
     private readonly List<int> _announced = [];

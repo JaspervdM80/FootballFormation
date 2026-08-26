@@ -1,12 +1,6 @@
-using FootballFormation.Core.Models;
-using Microsoft.EntityFrameworkCore;
-
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// Seasons come back in date order, and the window arithmetic that used to run as SQL still holds
-/// now that it runs on the loaded rows. Why it moved is pinned in <see cref="GameOrderingTests"/>.
-/// </summary>
+/// The window arithmetic runs on the loaded rows rather than as SQL — why it moved is pinned in <see cref="GameOrderingTests"/>.
 public class SeasonOrderingTests : ServiceTestBase
 {
     [Fact]
@@ -53,10 +47,7 @@ public class SeasonOrderingTests : ServiceTestBase
         Assert.Null(season);
     }
 
-    /// <summary>
-    /// The clamp in <c>GetOrCreateForDateAsync</c>: a full July–June window would straddle the
-    /// seasons either side of a narrower hole, so it is pulled back to fill exactly the hole.
-    /// </summary>
+    /// A full July–June window would straddle the seasons either side of a narrower hole, so GetOrCreateForDateAsync clamps it.
     [Fact]
     public async Task A_season_created_for_a_date_in_a_gap_is_clamped_to_its_neighbours()
     {
@@ -102,9 +93,7 @@ public class SeasonOrderingTests : ServiceTestBase
         Assert.Null(result.Value);
     }
 
-    /// <summary>Seasons written straight to the database, keyed by their opening year. Going
-    /// through <c>CreateAsync</c> would enforce the gapless rule, which is a different one than
-    /// these tests are about.</summary>
+    /// Straight to the database: going through CreateAsync would enforce the gapless rule, which is not what these tests are about.
     private async Task<Dictionary<int, Season>> SeedSeasonsAsync(params int[] startYears)
     {
         var seasons = startYears

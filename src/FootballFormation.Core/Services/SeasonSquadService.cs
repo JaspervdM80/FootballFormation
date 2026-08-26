@@ -1,24 +1,13 @@
-using FootballFormation.Core.Data;
-using FootballFormation.Core.Models;
-using FootballFormation.Core.Security;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-
 namespace FootballFormation.Core.Services;
 
-/// <summary>
-/// The season squad — who can be picked for a season's games, and who is only a guest.
-/// Deliberately separate from <see cref="SeasonService"/>: that owns the season lifecycle and the
-/// "exactly one current season" invariant, this owns membership. It takes no service dependency,
-/// so <c>GameService -&gt; SeasonService</c> stays the only service-to-service edge.
-/// </summary>
+/// Separate from <see cref="SeasonService"/>, which owns the season lifecycle, and takes no service dependency of its own — so
+/// GameService → SeasonService stays the only service-to-service edge.
 public class SeasonSquadService(
     IDbContextFactory<AppDbContext> dbFactory,
     ICurrentUser currentUser,
     ILogger<SeasonSquadService> logger)
 {
-    /// <summary>One season's squad, players loaded. An empty squad is a valid answer — a new
-    /// season has none until it is copied forward or filled in.</summary>
+    /// An empty squad is a valid answer, not a failure — a new season has none until it is copied forward or filled in.
     public Task<Result<SeasonSquad>> GetSquadAsync(int seasonId, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "load the squad", cancellationToken, async () =>
         {
@@ -34,8 +23,7 @@ public class SeasonSquadService(
             return Result.Success(new SeasonSquad(seasonId, members));
         });
 
-    /// <param name="seasonId">Limits the result to one season. Null loads every season — what the
-    /// stats pages need on "All seasons", where a report walks games across them.</param>
+    /// A null <paramref name="seasonId"/> loads every season, which is what "All seasons" needs to walk games across them.
     public Task<Result<SeasonSquads>> GetSquadsAsync(
         int? seasonId = null, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "load the squads", cancellationToken, async () =>
@@ -52,12 +40,7 @@ public class SeasonSquadService(
             return Result.Success(new SeasonSquads(members));
         });
 
-    /// <summary>People on file who are not in this season's squad — the "add existing player" picker.
-    /// <para>
-    /// Archived players are left out: they are the ones who have left, and offering them here is
-    /// what would make archiving pointless. Restoring one on the squad page puts them back in this
-    /// list.
-    /// </para></summary>
+    /// Archived players are left out — offering them in the "add existing player" picker is what would make archiving pointless.
     public Task<Result<List<Player>>> GetNonMembersAsync(
         int seasonId, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "load players outside the squad", cancellationToken, async () =>
@@ -99,8 +82,7 @@ public class SeasonSquadService(
                 return Result.Failure<SeasonSquadMember>("Player not found");
             }
 
-            // The unique index is the net; refuse here so the caller gets something readable
-            // instead of a raw DbUpdateException.
+            // The unique index is the net; refuse here so the caller gets something readable instead of a raw DbUpdateException.
             var exists = await db.SeasonSquadMembers
                 .AnyAsync(m => m.SeasonId == seasonId && m.PlayerId == playerId, cancellationToken);
             if (exists)
@@ -122,8 +104,7 @@ public class SeasonSquadService(
             return Result.Success(member);
         });
 
-    /// <summary>Refuses once the player has recorded minutes or goals in this season — removing
-    /// them would silently rewrite that season's stats.</summary>
+    /// Refuses once the player has minutes or goals in this season, because removing them would silently rewrite that season's stats.
     public Task<Result> RemoveMemberAsync(
         int seasonId, int playerId, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAdminAsync(currentUser, logger, "remove the player from the squad", cancellationToken, async () =>
@@ -210,21 +191,8 @@ public class SeasonSquadService(
             return Result.Success();
         });
 
-    /// <summary>
-    /// Populates a season's squad from another one, preserving guest status. Idempotent — players
-    /// already in the target are skipped, so running it twice adds nothing.
-    /// <para>
-    /// Archived players are skipped too. Copying forward is the one action that turns last year's
-    /// squad into next year's, so carrying someone who has left across the summer would undo their
-    /// archiving every time a season is set up.
-    /// </para>
-    /// <para>
-    /// Injury status is deliberately <b>not</b> preserved — every copied row starts fit. An injury
-    /// is expected to have healed by the time next season's squad is set up, unlike guest status,
-    /// which is a standing arrangement rather than a temporary condition.
-    /// </para>
-    /// </summary>
-    /// <returns>How many members were added.</returns>
+    /// Guest status carries over but injury does not: a standing arrangement survives the summer, a temporary condition should have
+    /// healed. Archived players are skipped, or copying forward would undo their archiving every time a season is set up.
     public Task<Result<int>> CopyFromAsync(
         int fromSeasonId, int toSeasonId, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAdminAsync(currentUser, logger, "copy the squad", cancellationToken, async () =>
@@ -286,8 +254,7 @@ public class SeasonSquadService(
             return Result.Success(added.Count);
         });
 
-    /// <summary>The season immediately before this one, for the copy-forward offer. A null value
-    /// with a successful result means there is no earlier season — a normal state, not an error.</summary>
+    /// A null value on a successful result means there is no earlier season — a normal state, not an error.
     public Task<Result<Season?>> FindPreviousSeasonAsync(
         int seasonId, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "find the previous season", cancellationToken, async () =>
@@ -308,11 +275,7 @@ public class SeasonSquadService(
             return Result.Success<Season?>(previous);
         });
 
-    /// <summary>
-    /// The load every membership write starts from: the row with its player, tracked so it can be
-    /// changed or removed. The player is there for the log lines and the failure messages, which
-    /// name a person rather than an id.
-    /// </summary>
+    /// Tracked, and with the player loaded — the log lines and failure messages name a person rather than an id.
     private static Task<SeasonSquadMember?> FindMemberAsync(
         AppDbContext db, int seasonId, int playerId, CancellationToken cancellationToken) =>
         db.SeasonSquadMembers

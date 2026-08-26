@@ -1,6 +1,4 @@
-﻿using FootballFormation.Core.Models;
-
-namespace FootballFormation.Core.Tests;
+﻿namespace FootballFormation.Core.Tests;
 
 public class GameTests
 {
@@ -28,8 +26,7 @@ public class GameTests
     public void The_periods_always_add_back_up_to_the_full_match_length(
         GameSplitType split, int duration)
     {
-        // The reason period length is carried in seconds: a fraction of a minute per period used
-        // to be truncated away, so four quarters of a 50 minute match added up to 48.
+        // Why period length is carried in seconds: the truncated fraction used to make four quarters of a 50-minute match add up to 48.
         var game = TestData.Game(split: split, durationMinutes: duration);
 
         Assert.Equal(duration * 60, game.PeriodCount * game.PeriodDurationSeconds);
@@ -116,7 +113,7 @@ public class GameTests
         Assert.Equal(30, game.PlayedDurationMinutes);
     }
 
-    /// <summary>A 60-minute match played out in two 30-minute halves, run live.</summary>
+    /// A 60-minute match played out in two 30-minute halves, run live.
     private static Game TimedGame()
     {
         var game = TestData.Game(durationMinutes: 60);
@@ -143,8 +140,7 @@ public class GameTests
     [Fact]
     public void AvailableMinutesFor_never_exceeds_what_the_match_actually_ran()
     {
-        // The live screen refuses an injury without a half in play, so this should be unreachable
-        // — but it is what utilisation divides by, and over 100% reads as a broken report.
+        // Unreachable through the live screen, but it is what utilisation divides by, and over 100% reads as a broken report.
         var game = TimedGame();
         TestData.Injury(game, game.Periods[1], playerId: 1, atSeconds: 9999, position: PlayerPosition.CM);
 
@@ -178,8 +174,7 @@ public class GameTests
     [Fact]
     public void A_substitution_made_earlier_in_the_half_is_not_an_injurys_replacement()
     {
-        // Taken off on 10', back on on 20', hurt on 30' with the bench empty. Pairing on the player
-        // alone would read the first substitution as this injury's replacement.
+        // Off on 10', back on on 20', hurt on 30'. Pairing on the player alone would read the first substitution as the replacement.
         var game = TimedGame();
         var half = game.Periods[0];
         TestData.Substitution(game, half, offId: 1, onId: 2, atSeconds: 600, position: PlayerPosition.CM);
@@ -227,8 +222,7 @@ public class GameTests
     [Fact]
     public void A_clock_anchor_in_the_future_never_runs_backwards()
     {
-        // Clock skew between server and the instant an anchor was written must not produce a
-        // negative elapsed time, which would read as a match un-playing itself.
+        // Clock skew must not produce a negative elapsed time, which would read as a match un-playing itself.
         var now = new DateTime(2026, 3, 14, 12, 0, 0, DateTimeKind.Utc);
         var game = TestData.Game();
         game.ClockAccumulatedSeconds = 100;
@@ -266,9 +260,7 @@ public class GameTests
     [Fact]
     public void IsInRoster_is_blind_to_the_squads_injury_flag_the_way_it_is_blind_to_archiving()
     {
-        // A game is judged the way it was played. The flag is live and undated, so letting it reach
-        // in here would zero out AvailableMinutes for every game already played this season.
-        // Callers building a *future* line-up filter injured players out themselves.
+        // The squad flag is live and undated, so letting it reach in here would zero out AvailableMinutes for every game already played.
         var player = TestData.Player(1);
         var squad = TestData.Squad(1, [player], injuredIds: [1]);
         var game = TestData.Game();
@@ -279,8 +271,7 @@ public class GameTests
     [Fact]
     public void A_game_that_recorded_her_injured_takes_her_out_of_its_own_roster()
     {
-        // The other half of the rule above: what the game itself wrote down at the final whistle
-        // does count, because it is history rather than a status.
+        // The other half of that: what the game wrote down at the final whistle does count, being history rather than a status.
         var player = TestData.Player(1);
         var squad = TestData.Squad(1, [player]);
         var game = TestData.Game();
@@ -354,8 +345,7 @@ public class GameTests
         // Before kick-off the next period is simply the first one.
         Assert.Equal(PeriodType.FirstQuarter, game.NextHalf()!.PeriodType);
 
-        // The first half has been played, so the line-up planned for the rest of it is behind the
-        // clock — the whistle hands over to the half that follows.
+        // The first half has been played, so the line-up planned for the rest of it is behind the clock.
         game.Periods.Single(p => p.PeriodType == PeriodType.FirstQuarter).StartedAtSeconds = 0;
         Assert.Equal(PeriodType.ThirdQuarter, game.NextHalf()!.PeriodType);
 
@@ -363,11 +353,8 @@ public class GameTests
         Assert.Null(game.NextHalf());
     }
 
-    /// <summary>
-    /// The plan the live screen offers as a reference. It is the line-up that would take over
-    /// partway through the half, which only a quarters game has — and it is looked up from the
-    /// plan rather than the clock, so it reads the same before kick-off as during play.
-    /// </summary>
+    /// Only a quarters game has one, and it is looked up from the plan rather than the clock — so it reads the same before kick-off as
+    /// during play.
     [Fact]
     public void Only_a_half_planned_in_two_line_ups_has_a_plan_for_its_middle()
     {

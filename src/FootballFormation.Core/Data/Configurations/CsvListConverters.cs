@@ -3,15 +3,8 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace FootballFormation.Core.Data.Configurations;
 
-/// <summary>
-/// Stores a small list of ids or enum values as comma-separated text in one column.
-/// <para>
-/// These are short, always read whole, and never queried by element — a join table would cost a
-/// second query for no benefit. The <see cref="ValueComparer{T}"/> is not optional: without it EF
-/// compares the list by reference, so mutating one in place is silently never persisted (see
-/// docs/known_issues/ef-core.md).
-/// </para>
-/// </summary>
+/// These lists are short, always read whole and never queried by element, so a join table would cost a second query for no benefit. The
+/// <see cref="ValueComparer{T}"/> is not optional: without it EF compares by reference and an in-place edit is silently never persisted.
 internal static class CsvListConverters
 {
     public static PropertyBuilder<List<int>> HasCsvListConversion(this PropertyBuilder<List<int>> property) =>
@@ -28,11 +21,7 @@ internal static class CsvListConverters
             text => ParseEnums<TEnum>(text),
             Comparer<TEnum>());
 
-    /// <summary>
-    /// Structural equality plus a deep copy of the snapshot. EF takes the snapshot when the entity
-    /// is loaded and compares it on save; both halves have to see the list's contents, not its
-    /// identity, or in-place edits go undetected.
-    /// </summary>
+    /// EF snapshots on load and compares on save, so both halves have to see the list's contents rather than its identity.
     private static ValueComparer<List<T>> Comparer<T>() => new(
         (a, b) => a != null && b != null && a.SequenceEqual(b),
         c => c.Aggregate(0, (hash, value) => HashCode.Combine(hash, value!.GetHashCode())),

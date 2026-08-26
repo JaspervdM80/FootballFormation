@@ -1,5 +1,3 @@
-using FootballFormation.Core.Models;
-
 namespace FootballFormation.Core.Reporting;
 
 public record LiveMinutesRow(Player Player, int Seconds, bool IsOnPitch)
@@ -7,16 +5,11 @@ public record LiveMinutesRow(Player Player, int Seconds, bool IsOnPitch)
     public int Minutes => Seconds / 60;
 }
 
-/// <summary>
-/// The live match screen's view of playing time: exact seconds on the pitch, ordered for the
-/// bench-management table. The calculation itself lives in <see cref="GameMinutesReport"/>, which
-/// the season and player statistics read too, so the live screen and the stats pages can never
-/// disagree about how long someone played.
-/// </summary>
+/// Ordering and shaping only — the calculation is <see cref="GameMinutesReport"/>'s, which the stats pages read too, so the live screen
+/// and the season table can never disagree about how long someone played.
 public static class LiveMinutesReport
 {
-    /// <param name="elapsedSeconds">The match clock right now, which closes off the running half.</param>
-    /// <param name="findPlayer">Resolves an id to a player; rows for unknown ids are dropped.</param>
+    /// Rows whose id <paramref name="findPlayer"/> cannot resolve are dropped.
     public static List<LiveMinutesRow> Build(Game game, int elapsedSeconds, Func<int, Player?> findPlayer)
     {
         var minutes = GameMinutesReport.Build(game, elapsedSeconds);

@@ -1,9 +1,3 @@
-using FootballFormation.Core.Models;
-using FootballFormation.Core.Data;
-using FootballFormation.Core.Security;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-
 namespace FootballFormation.Core.Services;
 
 public class MatchPreferencesService(
@@ -12,11 +6,8 @@ public class MatchPreferencesService(
     ICurrentUser currentUser,
     ILogger<MatchPreferencesService> logger)
 {
-    /// <summary>
-    /// The defaults for one season, created on first read. A brand-new season inherits the most
-    /// recent earlier season's settings rather than the hardcoded ones — game length and formation
-    /// usually carry over, so inheriting is what keeps per-season storage from costing the user work.
-    /// </summary>
+    /// Created on first read, inheriting the most recent earlier season's settings rather than the hardcoded ones — game length and
+    /// formation usually carry over, which is what keeps per-season storage from costing the user work.
     public Task<Result<MatchPreferences>> GetAsync(int seasonId, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "load preferences", cancellationToken, async () =>
         {
@@ -31,11 +22,8 @@ public class MatchPreferencesService(
             prefs = await SeedForAsync(db, seasonId, cancellationToken);
             db.MatchPreferences.Add(prefs);
 
-            // The one read in the app that writes, and the one place the "reads take the page's
-            // token, writes do not" rule would otherwise be broken: both /settings and the game
-            // dialog hand this a token that trips when the visitor navigates away. Everything above
-            // is cancellable and gives up having written nothing; from here the row exists in
-            // memory and is worth the one insert it costs, so the save is not.
+            // The one read in the app that writes, so the save deliberately drops the page's token: everything above gives up having
+            // written nothing, but from here the row exists in memory and is worth the one insert it costs.
             await db.SaveChangesAsync(CancellationToken.None);
 
             logger.LogInformation("Created match preferences for season {SeasonId} (ID: {Id})", seasonId, prefs.Id);
@@ -55,11 +43,7 @@ public class MatchPreferencesService(
             return Result.Success();
         });
 
-    /// <summary>
-    /// The next match date for <paramref name="seasonId"/>, on that season's match day. Only that
-    /// season's games count, and the answer is kept inside its window — scheduling the opening
-    /// fixture of a future season must not propose a date from the season we are living in.
-    /// </summary>
+    /// Kept inside the season's own window: scheduling the opening fixture of a future season must not propose a date from this one.
     public Task<Result<DateTime>> GetNextMatchDateAsync(
         int seasonId, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "calculate next match date", cancellationToken, async () =>
@@ -84,10 +68,8 @@ public class MatchPreferencesService(
             var today = time.GetLocalNow().Date;
             var lastGame = seasonDates.Count > 0 ? seasonDates.Max().Date : (DateTime?)null;
 
-            // Only step off the last game while it is still ahead of us — that is the case this
-            // was written for, a run of fixtures entered in advance. Once the last game is behind
-            // us, measuring from it proposes a date in the past (a season's final game would have
-            // the dialog opening months back), so today becomes the reference instead.
+            // Only step off the last game while it is still ahead of us — a run of fixtures entered in advance. Measuring from one
+            // already behind us would open the dialog months back.
             var lastGameIsUpcoming = lastGame is not null && lastGame >= today;
             var referenceDate = lastGameIsUpcoming ? lastGame!.Value : today;
 
@@ -97,9 +79,7 @@ public class MatchPreferencesService(
 
             var nextDate = CalculateNextMatchDay(referenceDate, matchDay, lastGameIsUpcoming);
 
-            // Filling in a season that is already over — a late-entered result, say — must not
-            // propose a date past its end, which would belong to the next season. Fall back to the
-            // last match day the season had.
+            // A late-entered result in a season already over must not propose a date past its end, which would belong to the next one.
             if (nextDate > season.EndDate.Date)
                 nextDate = LastMatchDayOnOrBefore(season.EndDate.Date, matchDay);
 
@@ -108,14 +88,11 @@ public class MatchPreferencesService(
             return Result.Success(nextDate);
         });
 
-    /// <summary>The latest <paramref name="matchDay"/> falling on or before <paramref name="date"/>.</summary>
+    /// The latest <paramref name="matchDay"/> falling on or before <paramref name="date"/>.
     private static DateTime LastMatchDayOnOrBefore(DateTime date, DayOfWeek matchDay) =>
         date.AddDays(-(((int)date.DayOfWeek - (int)matchDay + 7) % 7));
 
-    /// <summary>
-    /// A fresh row for a season, copied from the newest season <em>before</em> it that has one.
-    /// Falls back to the newest row of any season, then to the model's own defaults.
-    /// </summary>
+    /// Copied from the newest season before this one that has a row; then any season's newest; then the model's own defaults.
     private static async Task<MatchPreferences> SeedForAsync(
         AppDbContext db, int seasonId, CancellationToken cancellationToken)
     {
@@ -133,8 +110,7 @@ public class MatchPreferencesService(
             .ThenBy(p => p.SeasonId)
             .ToList();
 
-        // A season with no start date of its own has nothing to be "before", so it falls
-        // straight through to the newest row of any season.
+        // A season with no start date has nothing to be "before", so it falls through to the newest row of any season.
         var source = byNewestSeason
             .FirstOrDefault(p => startDate is not null && p.Season!.StartDate.Date < startDate.Value.Date)
             ?? byNewestSeason.FirstOrDefault();
@@ -142,14 +118,8 @@ public class MatchPreferencesService(
         return source?.CopyFor(seasonId) ?? new MatchPreferences { SeasonId = seasonId };
     }
 
-    /// <summary>
-    /// The next occurrence of <paramref name="matchDay"/> on or after <paramref name="referenceDate"/>.
-    /// </summary>
-    /// <param name="stepPastReference">
-    /// True when the reference is a match already scheduled, so the answer has to be a later date —
-    /// two games must not land on the same day. False when the reference is today, which is itself
-    /// a valid answer if today happens to be the match day.
-    /// </param>
+    /// <paramref name="stepPastReference"/> is true when the reference is a match already scheduled, since two games must not land on the
+    /// same day; false when it is today, which is itself a valid answer.
     private static DateTime CalculateNextMatchDay(DateTime referenceDate, DayOfWeek matchDay, bool stepPastReference)
     {
         var startDate = stepPastReference ? referenceDate.AddDays(1) : referenceDate;

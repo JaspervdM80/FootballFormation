@@ -1,12 +1,6 @@
-using FootballFormation.Core.Models;
-using Microsoft.AspNetCore.Components;
-using MudBlazor;
-
 namespace FootballFormation.UI.Pages;
 
-/// <summary>What the dialog edited: the person, and their guest and injury status in the season
-/// being edited. Three things, because guest and injury status belong to a season's squad and not
-/// to the person — the page makes them separate writes.</summary>
+/// Three things, because guest and injury status belong to a season's squad rather than to the person — the page writes them separately.
 public record PlayerEdit(Player Player, bool IsGuest, bool IsInjured);
 
 public partial class PlayerDialog
@@ -17,11 +11,11 @@ public partial class PlayerDialog
     [Parameter]
     public Player? Player { get; set; }
 
-    /// <summary>The member's guest flag in the season being edited, seeded from the squad row.</summary>
+    /// The member's guest flag in the season being edited, seeded from the squad row.
     [Parameter]
     public bool IsGuest { get; set; }
 
-    /// <summary>The member's injury flag in the season being edited, seeded from the squad row.</summary>
+    /// The member's injury flag in the season being edited, seeded from the squad row.
     [Parameter]
     public bool IsInjured { get; set; }
 
@@ -32,11 +26,10 @@ public partial class PlayerDialog
     private PlayerPosition PreferredPosition { get; set; } = PlayerPosition.CM;
     private IReadOnlyCollection<PlayerPosition> AlternativePositions { get; set; } = Array.Empty<PlayerPosition>();
 
-    /// <summary>What the switch edits. Seeded from <see cref="IsGuest"/> like every other field is
-    /// seeded from <see cref="Player"/>, rather than binding the parameter itself.</summary>
+    /// Seeded from <see cref="IsGuest"/> rather than binding the parameter itself, like every other field is seeded from Player.
     private bool Guest { get; set; }
 
-    /// <summary>Same reasoning as <see cref="Guest"/>, seeded from <see cref="IsInjured"/>.</summary>
+    /// Same reasoning as <see cref="Guest"/>, seeded from <see cref="IsInjured"/>.
     private bool Injured { get; set; }
 
     protected override void OnParametersSet()

@@ -1,10 +1,4 @@
-using FootballFormation.Core.Models;
-using FootballFormation.Core.Services;
-using FootballFormation.UI.Helpers;
-using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.Extensions.Localization;
-using MudBlazor;
 
 namespace FootballFormation.UI.Pages;
 
@@ -20,7 +14,7 @@ public partial class Users
 
     private List<AppUser>? _users;
 
-    /// <summary>Who is looking, so the list can mark their own row and hide its delete action.</summary>
+    /// Who is looking, so the list can mark their own row and hide its delete action.
     private int? _currentUserId;
 
     protected override async Task OnInitializedAsync()
@@ -61,10 +55,7 @@ public partial class Users
         await LoadUsers();
     }
 
-    /// <summary>
-    /// An admin setting someone else's password without knowing the old one. It signs that user out
-    /// of any session they had open — the security stamp changes — which is the point.
-    /// </summary>
+    /// Signs that user out of every session they had open, because the security stamp changes — which is the point.
     private async Task ResetPassword(AppUser user)
     {
         var edited = await ShowUserDialogAsync(L["Reset Password"], user, passwordOnly: true);
@@ -87,7 +78,7 @@ public partial class Users
         await LoadUsers();
     }
 
-    /// <summary>Returns what the dialog produced, or null when it was cancelled.</summary>
+    /// Null when the dialog was cancelled.
     private Task<UserDialog.Model?> ShowUserDialogAsync(
         string title, AppUser? user = null, bool passwordOnly = false) =>
         DialogService.PromptAsync<UserDialog, UserDialog.Model>(title, p =>

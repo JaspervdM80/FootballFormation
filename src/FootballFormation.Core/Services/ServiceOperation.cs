@@ -1,26 +1,11 @@
-using FootballFormation.Core.Security;
-using Microsoft.Extensions.Logging;
-
 namespace FootballFormation.Core.Services;
 
-/// <summary>
-/// Wraps a database operation so every service fails the same way: the exception is
-/// logged with its stack trace and the caller gets a "Failed to {action}" message
-/// instead of a raw exception. Expected failures (not found, validation) are returned
-/// by the operation itself as a <see cref="Result"/> and pass through untouched.
-/// <para>
-/// A cancelled call is answered with <see cref="Result.Cancelled()"/> instead. Without that, every
-/// navigation-away would log an error and raise a snackbar on the page the visitor moved to —
-/// see docs/patterns/result-and-cancellation.md.
-/// </para>
-/// </summary>
+/// Only unexpected exceptions are caught; a Result the operation returns itself passes through untouched. A cancelled call answers
+/// <see cref="Result.Cancelled()"/>, or every navigation-away would raise a snackbar on the page the visitor moved to.
 public static class ServiceOperation
 {
-    /// <summary>
-    /// The message every unexpected failure carries. Public because the UI has to recognise it:
-    /// its one argument is an English action phrase that needs translating too, unlike the data
-    /// every other message interpolates (see <c>UiFeedback.Translate</c>).
-    /// </summary>
+    /// Public because the UI has to recognise it: its argument is an English action phrase needing translation, unlike the data every
+    /// other message interpolates. See UiFeedback.Translate.
     public const string UnexpectedFailureKey = "Failed to {0}";
 
     internal static async Task<Result> RunAsync(
@@ -64,12 +49,8 @@ public static class ServiceOperation
         }
     }
 
-    /// <summary>
-    /// The same wrapper for an operation that writes: refuses before running when the caller is
-    /// not an admin. Every mutating service method goes through this rather than
-    /// <see cref="RunAsync(ILogger, string, CancellationToken, Func{Task{Result}})"/>, so the check
-    /// is a property of the shape instead of something each method has to remember.
-    /// </summary>
+    /// <summary>Every mutating service method goes through this rather than the plain overload, so the admin check is a property of the
+    /// shape instead of something each method has to remember.</summary>
     internal static async Task<Result> RunAdminAsync(
         ICurrentUser currentUser, ILogger logger, string action, CancellationToken cancellationToken,
         Func<Task<Result>> operation)
@@ -96,7 +77,7 @@ public static class ServiceOperation
         return await RunAsync(logger, action, cancellationToken, operation);
     }
 
-    /// <summary>Debug, not Warning: a visitor leaving a page is the most ordinary thing there is.</summary>
+    /// Debug, not Warning: a visitor leaving a page is the most ordinary thing there is.
     private static Result Abandoned(ILogger logger, string action)
     {
         logger.LogDebug("Gave up trying to {Action}: the caller went away", action);
@@ -109,10 +90,7 @@ public static class ServiceOperation
         return Result.Cancelled<T>();
     }
 
-    /// <summary>
-    /// A failed authorization check counts as a refusal, not an error: if the principal cannot be
-    /// resolved at all, the answer is still "no".
-    /// </summary>
+    /// A principal that cannot be resolved at all is a refusal, not an error — the answer is still "no".
     private static async Task<bool> IsAllowedAsync(ICurrentUser currentUser, ILogger logger, string action)
     {
         bool allowed;
@@ -130,9 +108,7 @@ public static class ServiceOperation
         return allowed;
     }
 
-    /// <summary>
-    /// Its argument is an English action phrase, so like <see cref="UnexpectedFailureKey"/> it
-    /// needs translating rather than passing through as data — see <c>UiFeedback.Translate</c>.
-    /// </summary>
+    /// Its argument is an English action phrase, so like <see cref="UnexpectedFailureKey"/> it needs translating rather than passing
+    /// through as data. See UiFeedback.Translate.
     public const string NotAllowedKey = "You are not signed in to {0}";
 }

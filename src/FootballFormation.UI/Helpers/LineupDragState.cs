@@ -1,17 +1,14 @@
 namespace FootballFormation.UI.Helpers;
 
-/// <summary>
-/// The drag currently in flight on the formation builder. Keeping the fields together
-/// stops the page from having to reset them by hand after every drop.
-/// </summary>
+/// Keeping the fields together stops the page from having to reset them by hand after every drop.
 public class LineupDragState
 {
     public int? PlayerId { get; private set; }
 
-    /// <summary>Set only when the drag started from a pitch slot, which makes the drop a swap.</summary>
+    /// Set only when the drag started from a pitch slot, which makes the drop a swap.
     public int? FromSlotIndex { get; private set; }
 
-    /// <summary>Set when the drag started from the substitute bench.</summary>
+    /// Set when the drag started from the substitute bench.
     public bool FromSub { get; private set; }
 
     public void StartFromList(int playerId)

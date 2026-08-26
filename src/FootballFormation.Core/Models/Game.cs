@@ -6,12 +6,11 @@ public class Game
     public required string Opponent { get; set; }
     public DateTime Date { get; set; }
 
-    /// <summary>The season this game counts towards. Derived from <see cref="Date"/> when the game
-    /// is created (see <c>SeasonService.GetOrCreateForDateAsync</c>) but reassignable afterwards.</summary>
+    /// Derived from <see cref="Date"/> at creation (SeasonService.GetOrCreateForDateAsync), but reassignable afterwards.
     public int SeasonId { get; set; }
     public Season? Season { get; set; }
 
-    /// <summary>What kind of fixture this is. Descriptive — it does not affect statistics.</summary>
+    /// Descriptive only — it does not affect statistics.
     public MatchType MatchType { get; set; } = MatchType.Competition;
 
     public FormationType FormationType { get; set; }
@@ -20,180 +19,91 @@ public class Game
 
     public bool IsHomeGame { get; set; } = true;
 
-    /// <summary>Our score. Not tied to venue — see <see cref="IsHomeGame"/>.</summary>
+    /// Home/Away name the sides, not the venue: ScoreHome is always ours. <see cref="InVenueOrder"/> does the flip for display.
     public int? ScoreHome { get; set; }
 
-    /// <summary>The opponent's score. Not tied to venue — see <see cref="IsHomeGame"/>.</summary>
     public int? ScoreAway { get; set; }
 
-    /// <summary>
-    /// True once a kick-off time has been set, rather than left at midnight — <see cref="Date"/>
-    /// carries both, and every page that shows the date drops the time when this is false rather
-    /// than printing a kick-off nobody entered.
-    /// </summary>
+    /// <see cref="Date"/> carries both parts, so midnight is how "no kick-off time entered" is stored.
     public bool HasStartTime => Date.TimeOfDay != TimeSpan.Zero;
 
-    /// <summary>
-    /// <paramref name="format"/> plus the kick-off time when one was set, comma-separated — the one
-    /// place this is spelled out, since the result page, the shareable overview and the copyable
-    /// summary all show the same date line.
-    /// </summary>
     public string DateLine(string format) =>
         HasStartTime ? $"{Date.ToString(format)}, {Date:HH:mm}" : Date.ToString(format);
 
-    /// <summary>
-    /// Whether the scoreline is settled. A live match writes <see cref="ScoreHome"/>/
-    /// <see cref="ScoreAway"/> as the goals go in, so a score on its own only means the game has
-    /// <em>started</em> — the state has to be checked too. Once it is settled there is nothing left
-    /// to run live, and the result page (and anything built from it, like the copyable summary) is
-    /// where the game's information lives. The same rule <c>Games.Sections</c> splits fixtures from
-    /// results on.
-    /// </summary>
+    /// A live match writes the score as the goals go in, so a score alone only means the game started — the state has to be checked too.
     public bool HasFinalScore =>
         MatchState != MatchState.InProgress && ScoreHome.HasValue && ScoreAway.HasValue;
 
-    /// <summary>
-    /// The line-ups this game is planned in. A match is played in two halves whatever the split
-    /// says; a period row is a <em>planned line-up</em> for a stretch of one, and a quarters game
-    /// simply plans two per half. The row that opens a half is the one the live match plays it
-    /// with, and the row after it inside the same half is a plan the coach carries out by hand.
-    /// </summary>
+    /// A period row is a planned line-up, not a stretch of clock: a match runs in two halves whatever the split says, and quarters just
+    /// plans two rows per half. The row opening a half is the one played; a later row in the same half is a change the coach makes by hand.
     public List<GamePeriod> Periods { get; set; } = [];
     public List<GameGoal> Goals { get; set; } = [];
     public List<GameSubstitution> Substitutions { get; set; } = [];
 
     public List<GameInjury> Injuries { get; set; } = [];
 
-    /// <summary>
-    /// Admin-written notes about this game, most of them private. Deliberately not eager-loaded
-    /// anywhere — every read goes through <c>GameService.GetCommentsAsync</c>, which is the one
-    /// place the public/private split is applied.
-    /// </summary>
+    /// Never eager-load these: GameService.GetCommentsAsync is the one place the public/private split is applied.
     public List<GameComment> Comments { get; set; } = [];
 
     public MatchState MatchState { get; set; } = MatchState.NotStarted;
 
-    /// <summary>
-    /// UTC instant the match clock was last started — at kick-off, or when a period took over from
-    /// a break; null whenever the clock is not running. The clock is stored as an anchor rather than a ticking value so every viewer
-    /// derives the same elapsed time without the server having to push each second.
-    /// </summary>
+    /// Null whenever the clock is not running. An anchor rather than a ticking value, so every viewer derives the same elapsed time
+    /// without the server pushing each second.
     public DateTime? ClockRunningSince { get; set; }
 
-    /// <summary>Seconds banked from earlier running stretches, excluding the current one.</summary>
+    /// Banked from earlier running stretches only — the current one is not in here. <see cref="ElapsedSecondsAt"/> adds it.
     public int ClockAccumulatedSeconds { get; set; }
 
-    /// <summary>
-    /// The line-up currently on the pitch — the row that opened the half being played. Null before
-    /// kick-off, at half time and after the final whistle, which are exactly the moments nothing
-    /// may be recorded against a half.
-    /// </summary>
+    /// Null before kick-off, at half time and after the final whistle — exactly the moments nothing may be recorded against a half.
     public int? LivePeriodId { get; set; }
 
     public List<int> UnavailablePlayerIds { get; set; } = [];
 
-    /// <summary>
-    /// Squad members who missed this match injured — out of the roster for the same reason
-    /// <see cref="UnavailablePlayerIds"/> is, but with the reason on the record. The two lists may
-    /// name the same player; injury is the more specific answer, and what the bar on /stats shows.
-    /// <para>Written by <c>StandingInjuries.RecordAsync</c>, which says why and when.</para>
-    /// </summary>
+    /// May name a player <see cref="UnavailablePlayerIds"/> already names; injury is the more specific answer. Written by
+    /// StandingInjuries.RecordAsync, which says why and when.
     public List<int> InjuredPlayerIds { get; set; } = [];
 
-    /// <summary>
-    /// True once <see cref="InjuredPlayerIds"/> has been written, which happens exactly once per
-    /// match. An empty list is otherwise indistinguishable from an unwritten one, and the two must
-    /// not be confused: a match settled in September with nobody injured would be restamped with
-    /// November's casualties the first time somebody retyped its scoreline.
-    /// </summary>
+    /// An empty <see cref="InjuredPlayerIds"/> is otherwise indistinguishable from an unwritten one, and a September match with nobody
+    /// hurt would be restamped with November's casualties the first time somebody retyped its scoreline.
     public bool AbsencesRecorded { get; set; }
 
-    /// <summary>Guests of this game's season, explicitly opted in to this game.</summary>
     public List<int> GuestPlayerIds { get; set; } = [];
 
     public int PeriodCount => SplitType.PeriodCount();
 
     public int PeriodDurationSeconds => SplitType.PeriodDurationSeconds(GameDurationMinutes);
 
-    /// <summary>
-    /// Minutes each period lasts, fractional when the split does not land on a whole minute
-    /// (50 in quarters is 4 × 12.5). For display — the arithmetic uses
-    /// <see cref="PeriodDurationSeconds"/>.
-    /// </summary>
+    /// For display only — the arithmetic uses <see cref="PeriodDurationSeconds"/>, which stays whole.
     public decimal PeriodDurationMinutes => SplitType.PeriodDurationMinutes(GameDurationMinutes);
 
-    /// <summary>
-    /// True when at least one period has a player placed on the pitch. Only meaningful when
-    /// <see cref="Periods"/> are loaded with their <see cref="GamePeriod.PlayerPositions"/>
-    /// (e.g. via <c>GetAllWithDetailsAsync</c>). Playing time is derived from lineups, so a
-    /// game without one produces no minutes for anyone.
-    /// </summary>
+    /// Silently false unless <see cref="Periods"/> were loaded with their PlayerPositions — GetAllWithDetailsAsync does, a plain load does not.
     public bool HasLineup => Periods.Any(p => p.PlayerPositions.Count > 0);
 
-    /// <summary>
-    /// True once the game's data is settled enough to count towards statistics: the final whistle
-    /// was blown on the live screen, or the game was never run live but has a final score on file.
-    /// A match in progress never counts, however many goals are already logged — otherwise the
-    /// season table and scorer lists would shift while the game is still being played.
-    /// </summary>
+    /// A match in progress never counts, however many goals are logged, or the season table would shift while the game is being played.
     public bool IsComplete => MatchState == MatchState.Finished
         || (MatchState == MatchState.NotStarted && ScoreHome.HasValue && ScoreAway.HasValue);
 
-    /// <summary>
-    /// True when at least one period was actually kicked off, i.e. the game has real timings and
-    /// the planned lineup is no longer the best source for who played how long.
-    /// </summary>
+    /// Once true, the planned line-up is no longer the best source for who played how long.
     public bool HasActualTimings => Periods.Any(p => p.StartedAtSeconds is not null);
 
-    /// <summary>
-    /// The seconds the match really ran, summed over the periods that were played out. A period
-    /// still in progress contributes nothing — it has no final whistle to measure against — which
-    /// matches what <c>GameMinutesReport</c> credits when no clock reading is passed to it.
-    /// Zero on a game that was never run live; ask <see cref="HasActualTimings"/> first.
-    /// </summary>
+    /// Zero on a game never run live, and a period still in progress contributes nothing — ask <see cref="HasActualTimings"/> first.
     public int PlayedDurationSeconds => Periods
         .Where(p => p.StartedAtSeconds is not null && p.EndedAtSeconds is not null)
         .Sum(p => p.EndedAtSeconds!.Value - p.StartedAtSeconds!.Value);
 
-    /// <summary>
-    /// Rounds to the nearest minute rather than truncating: a half whistled at 29:50 is 30 minutes
-    /// played, not 29 (an exact half-minute rounds to even, .NET's default — 29:30 becomes 30,
-    /// 30:30 stays 30). The one function every played/available seconds-to-minutes conversion goes
-    /// through — see <see cref="PlayedDurationMinutes"/> and <see cref="AvailableMinutesFor"/>.
-    /// <para>
-    /// That keeps a numerator and a denominator from rounding apart only when each is converted
-    /// once, over its own full total in seconds — rounding does not distribute over addition, so
-    /// summing several already-converted minutes and comparing that against a total converted once
-    /// can still disagree. An accumulator spanning more than one game must stay in seconds until the
-    /// very end: see <see cref="PlayedDurationSecondsEffective"/>, <see cref="AvailableSecondsFor"/>
-    /// and <c>PlayerStatsReport.Build</c>, and docs/known_issues/domain.md.
-    /// </para>
-    /// </summary>
+    /// Rounding does not distribute over addition, so an accumulator spanning several games must stay in seconds and convert once at the
+    /// very end — summing per-game minutes instead reads over 100% utilisation. See docs/known_issues/domain.md.
     public static int SecondsToMinutes(int seconds) => (int)Math.Round(seconds / 60.0);
 
-    /// <summary>
-    /// <see cref="PlayedDurationSeconds"/> when the game was run live, the scheduled duration
-    /// otherwise. The seconds form of <see cref="PlayedDurationMinutes"/> — reach for this in any
-    /// accumulator that sums a game's played duration across several games, and convert the sum to
-    /// minutes once at the end rather than summing this property's already-rounded result.
-    /// </summary>
+    /// The multi-game form: sum this, not <see cref="PlayedDurationMinutes"/>, for the reason on <see cref="SecondsToMinutes"/>.
     public int PlayedDurationSecondsEffective => HasActualTimings
         ? PlayedDurationSeconds
         : GameDurationMinutes * 60;
 
-    /// <summary>
-    /// How long the match really lasted, summed over the periods that were played out. Falls back
-    /// to the scheduled duration when the game was never run live. The denominator for one game's
-    /// utilisation; a multi-game total should sum <see cref="PlayedDurationSecondsEffective"/>
-    /// instead of this, for the reason on <see cref="SecondsToMinutes"/>.
-    /// </summary>
+    /// One game's utilisation denominator, falling back to the scheduled duration. Single-game only — see <see cref="SecondsToMinutes"/>.
     public int PlayedDurationMinutes => SecondsToMinutes(PlayedDurationSecondsEffective);
 
-    /// <summary>
-    /// Seconds <paramref name="playerId"/> could have played: the whole played duration, or the
-    /// stretch up to the moment she was hurt. The seconds form of <see cref="AvailableMinutesFor"/>
-    /// — reach for this, not that, when accumulating availability across more than one game.
-    /// </summary>
+    /// The whole played duration, or the stretch up to the moment she was hurt. The multi-game form — see <see cref="SecondsToMinutes"/>.
     public int AvailableSecondsFor(int playerId)
     {
         // Only the live screen writes an injury, so a game never run live can have none.
@@ -204,65 +114,31 @@ public class Game
             : PlayedDurationSecondsEffective;
     }
 
-    /// <summary>
-    /// Minutes <paramref name="playerId"/> could have played — <see cref="AvailableSecondsFor"/>,
-    /// rounded. The denominator behind <c>PlayerStats.Utilization</c> for a single game, so an
-    /// injury at 20' leaves her judged on 20 minutes rather than on the hour she was never going to
-    /// get. A multi-game total must sum <see cref="AvailableSecondsFor"/> and round once, the way
-    /// <c>PlayerStatsReport.Build</c> does — summing this already-rounded result per game can push
-    /// the total past what a once-rounded numerator gives, reading over 100% utilisation.
-    /// </summary>
+    /// An injury at 20' leaves her judged on 20 minutes, not on the hour she was never going to get. Single-game only — see
+    /// <see cref="SecondsToMinutes"/>.
     public int AvailableMinutesFor(int playerId) => SecondsToMinutes(AvailableSecondsFor(playerId));
 
-    /// <summary>
-    /// Whether somebody came on for an injured player. The <see cref="GameSubstitution"/> is what
-    /// takes a replaced player off the pitch in every minutes calculation; without one, the injury
-    /// row is the only thing that says she left, and <c>GameMinutesReport</c> has to walk it as the
-    /// change it was. It is also why a replaced injury gets no timeline entry of its own.
-    /// <para>
-    /// Matched on the second as well as the player, because that is what "one action wrote both"
-    /// means. Being taken off earlier in the same half, brought back on and only then hurt is three
-    /// separate things, and pairing on the player alone would read the first as this injury's
-    /// replacement.
-    /// </para>
-    /// </summary>
+    /// Matched on the second as well as the player: one action wrote both. Pairing on the player alone would read an earlier
+    /// substitution in the same half as this injury's replacement.
     public bool WasReplaced(GameInjury injury) => Substitutions
         .Any(s => s.GamePeriodId == injury.GamePeriodId
                   && s.PlayerOffId == injury.PlayerId
                   && s.AtSeconds == injury.AtSeconds);
 
-    /// <summary>The other side of <see cref="WasReplaced"/>.</summary>
+    /// The other side of <see cref="WasReplaced"/>.
     public GameInjury? InjuryFor(GameSubstitution substitution) => Injuries
         .FirstOrDefault(i => i.GamePeriodId == substitution.GamePeriodId
                              && i.PlayerId == substitution.PlayerOffId
                              && i.AtSeconds == substitution.AtSeconds);
 
-    /// <summary>
-    /// Squad players are in unless marked unavailable; guests are out unless explicitly added.
-    /// <para>
-    /// Guest status is per season, so the season's squad has to be passed in. Anyone outside the
-    /// squad is treated as a guest — three membership states collapse to the same two branches the
-    /// rule always had.
-    /// </para>
-    /// <para>
-    /// Injury counts through <see cref="InjuredPlayerIds"/> — this game's own record — and never
-    /// through <see cref="SeasonSquad.IsInjured"/>, the same way it stays blind to
-    /// <see cref="Player.IsArchived"/>. This judges a game the way it was played, and a status set
-    /// after the fact must not rewrite it: a completed game's <c>AvailableMinutes</c>
-    /// (<c>PlayerStatsReport</c>) reads this, so injuring someone today would otherwise zero out
-    /// every game they already played this season. Callers building a <em>future</em> line-up
-    /// (<c>FormationBuilder</c>, <c>GameDialog</c>, <c>LiveMatch</c>) filter on the live status
-    /// themselves, on top of this.
-    /// </para>
-    /// </summary>
+    /// Squad players are in unless marked unavailable; guests are out unless explicitly added. Blind to live status on purpose — this
+    /// judges a game as it was played, and injuring someone today would otherwise zero out every game she already played.
     public bool IsInRoster(Player player, SeasonSquad squad) => squad.IsFullMember(player.Id)
         ? !UnavailablePlayerIds.Contains(player.Id) && !InjuredPlayerIds.Contains(player.Id)
         : GuestPlayerIds.Contains(player.Id);
 
-    /// <summary>
-    /// Overload for reports that walk games across several seasons: the game picks its own season's
-    /// squad, so a player who was a guest one year and a regular the next is judged correctly in each.
-    /// </summary>
+    /// For reports walking several seasons: each game picks its own season's squad, so a guest one year and a regular the next is judged
+    /// correctly in each.
     public bool IsInRoster(Player player, SeasonSquads squads) => IsInRoster(player, squads.For(SeasonId));
 
     public List<Player> SelectRoster(IEnumerable<Player> allPlayers, SeasonSquad squad) =>
@@ -270,12 +146,7 @@ public class Game
 
     public bool IsClockRunning => ClockRunningSince is not null;
 
-    /// <summary>
-    /// The half the match is currently about, as the line-up it is played with: the one on the
-    /// pitch; at half time and after the final whistle the last one played; and before kick-off the
-    /// half the match opens with. Shared by the live screen and the goal log so the minute written
-    /// down is the one that was on screen.
-    /// </summary>
+    /// Never null while the game has periods: the one on the pitch, else the last played, else the one it opens with.
     public GamePeriod? CurrentOrLastHalf()
     {
         if (LiveHalf() is { } live) return live;
@@ -288,23 +159,12 @@ public class Game
         return lastPlayed ?? Periods.OrderBy(p => p.PeriodType).FirstOrDefault();
     }
 
-    /// <summary>
-    /// The half being played, as the line-up on the pitch, or null before kick-off, at half time
-    /// and after the final whistle. Stricter than <see cref="CurrentOrLastHalf"/>, which always
-    /// names a half if there is one to name: this is the one a substitution may touch.
-    /// </summary>
+    /// Stricter than <see cref="CurrentOrLastHalf"/>: null unless a half is actually being played, so this is the one a sub may touch.
     public GamePeriod? LiveHalf() =>
         LivePeriodId is null ? null : Periods.FirstOrDefault(p => p.Id == LivePeriodId);
 
-    /// <summary>
-    /// The half the clock goes to next, as the line-up it opens with — the first line-up not yet
-    /// kicked off whose half has not been played. Null once both halves have run.
-    /// <para>
-    /// A quarters game is planned as two line-ups per half but played as two halves, so once the
-    /// first half has run the next half to kick off opens with the third quarter's line-up, not
-    /// with the second quarter's plan left behind inside the half just played.
-    /// </para>
-    /// </summary>
+    /// Null once both halves have run. A quarters game plans two rows per half but plays two halves, so after the first half this is the
+    /// third quarter's line-up, not the second quarter's plan left behind inside the half just played.
     public GamePeriod? NextHalf()
     {
         var halvesPlayed = Periods
@@ -317,65 +177,40 @@ public class Game
             .FirstOrDefault(p => p.StartedAtSeconds is null && !halvesPlayed.Contains(p.PeriodType.Half()));
     }
 
-    /// <summary>
-    /// The line-up planned to take over partway through <paramref name="half"/>, or null when the
-    /// half is played out with the one it kicked off with. The clock never stops for it: it is a
-    /// plan the coach works through by hand, which is what makes it a reference rather than a step.
-    /// </summary>
+    /// The clock never stops for this one — it is a plan the coach works through by hand, not a step the match takes.
     public GamePeriod? MidHalfPlan(GamePeriod half) =>
         Periods
             .OrderBy(p => p.PeriodType)
             .FirstOrDefault(p => p.PeriodType > half.PeriodType
                                  && p.PeriodType.Half() == half.PeriodType.Half());
 
-    /// <summary>
-    /// The match clock in seconds at <paramref name="utcNow"/>. Callers that only need a settled
-    /// value (a stopped clock, a finished match) can pass any instant.
-    /// </summary>
+    /// <paramref name="utcNow"/> is ignored while the clock is stopped, so a settled value can be read with any instant.
     public int ElapsedSecondsAt(DateTime utcNow) => ClockAccumulatedSeconds +
         (ClockRunningSince is null ? 0 : Math.Max(0, (int)(utcNow - ClockRunningSince.Value).TotalSeconds));
 
-    /// <summary>
-    /// Our goals, counted from the logged goal rows. An own goal by one of ours counts for them,
-    /// so it is excluded here and included in <see cref="CountTheirGoals"/>.
-    /// </summary>
+    /// An own goal by one of ours counts for them, so it lands in <see cref="CountTheirGoals"/> instead.
     public static int CountOurGoals(IEnumerable<GameGoal> goals) =>
         goals.Count(g => g.CountsForUs);
 
-    /// <summary>Their goals: everything the opponent scored, plus our own goals.</summary>
+    /// Everything the opponent scored, plus our own goals.
     public static int CountTheirGoals(IEnumerable<GameGoal> goals) =>
         goals.Count(g => !g.CountsForUs);
 
-    /// <summary>
-    /// Rewrites the scoreline from <paramref name="goals"/>, so a live score is recounted rather
-    /// than incremented — the recount is what makes it self-correcting. Takes a materialised
-    /// collection because it reads the set twice, once for each end of the pitch.
-    /// </summary>
+    /// Recounts rather than increments, which is what makes a live scoreline self-correcting.
     public void CountScoreFrom(IReadOnlyCollection<GameGoal> goals)
     {
         ScoreHome = CountOurGoals(goals);
         ScoreAway = CountTheirGoals(goals);
     }
 
-    /// <summary>
-    /// Flips a (us, them) pair into the order a scoreboard reads: the home side first. The one
-    /// flip between what is stored — always us/them, see <see cref="ScoreHome"/> — and how a
-    /// scoreline is shown, spelled out once here rather than respelled at every place that shows
-    /// one (the games list, the home banner, the copyable match summary).
-    /// </summary>
+    /// The one flip between what is stored (always us/them) and how a scoreline is shown. Everything that displays one goes through here.
     public VenueScore InVenueOrder(int us, int them) => IsHomeGame ? new VenueScore(us, them) : new VenueScore(them, us);
 
-    /// <summary>The final score in venue order. A null score reads as 0-0, the same fallback the
-    /// home banner already used before this was pulled out.</summary>
+    /// A null score reads as 0-0.
     public VenueScore ScoreboardOrder() => InVenueOrder(ScoreHome ?? 0, ScoreAway ?? 0);
 }
 
-/// <summary>
-/// Ordering games by date in memory, because an <c>ORDER BY</c> in SQL would sort the text a date
-/// was written as — see <c>QueryTags.ComparesDatesInSql</c>. Both spell the tie-break out, so two
-/// fixtures on the same day keep the order they were entered in rather than whatever order the
-/// database handed them over in.
-/// </summary>
+/// In memory, never in SQL — see QueryTags.ComparesDatesInSql. The tie-break is spelled out so same-day fixtures keep entry order.
 public static class GameOrdering
 {
     public static List<Game> NewestFirst(this IEnumerable<Game> games) =>
@@ -400,27 +235,22 @@ public enum GameSplitType
 
 public static class GameSplitTypeExtensions
 {
-    /// <summary>Derived from the period table itself, so the two can never drift apart.</summary>
+    /// Derived from the period table itself, so the two can never drift apart.
     public static int PeriodCount(this GameSplitType splitType) =>
         PeriodTypeExtensions.ForSplitType(splitType).Length;
 
-    /// <summary>
-    /// How long one period lasts, in seconds. Seconds rather than minutes because a duration that
-    /// splits into fractions of a minute (50 in quarters, 45 in halves) still splits exactly into
-    /// seconds — 60 divides by every period count there is — so the periods always add back up to
-    /// the full match length instead of quietly losing the remainder to integer division.
-    /// </summary>
+    /// Seconds rather than minutes because 60 divides by every period count there is, so a 50-minute game in quarters still adds back up
+    /// to 50 instead of losing the remainder to integer division.
     public static int PeriodDurationSeconds(this GameSplitType splitType, int gameDurationMinutes)
     {
         var count = splitType.PeriodCount();
         return count == 0 ? 0 : gameDurationMinutes * 60 / count;
     }
 
-    /// <summary>The same length in minutes, fractional when it has to be. For display only.</summary>
+    /// For display only — fractional when the split does not land on a whole minute.
     public static decimal PeriodDurationMinutes(this GameSplitType splitType, int gameDurationMinutes) =>
         splitType.PeriodDurationSeconds(gameDurationMinutes) / 60m;
 
-    /// <summary>Singular noun for one period, for use in sentences ("copy to next half").</summary>
     public static string PeriodLabel(this GameSplitType splitType) =>
         splitType == GameSplitType.Halves ? "half" : "quarter";
 }

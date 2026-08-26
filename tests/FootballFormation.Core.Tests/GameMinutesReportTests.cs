@@ -1,13 +1,6 @@
-﻿using FootballFormation.Core.Models;
-using FootballFormation.Core.Reporting;
+﻿namespace FootballFormation.Core.Tests;
 
-namespace FootballFormation.Core.Tests;
-
-/// <summary>
-/// The calculation every minutes figure in the app funnels through — the live bench table, the
-/// player report and the season fairness bars all read it, so an error here is invisible until a
-/// whole season's statistics are wrong.
-/// </summary>
+/// Every minutes figure in the app funnels through this, so an error here is invisible until a whole season's statistics are wrong.
 public class GameMinutesReportTests
 {
     [Fact]
@@ -70,8 +63,7 @@ public class GameMinutesReportTests
     public void A_substitution_splits_the_period_between_both_players()
     {
         var game = TestData.Game();
-        // The lineup records the FINAL occupants — player 2 is on the pitch, player 1 is benched,
-        // because SubstituteAsync rewrote it in place. Rewinding the sub is the only way back.
+        // The line-up records the final occupants, because SubstituteAsync rewrote it in place. Rewinding is the only way back.
         var period = game.AddPeriod(PeriodType.FirstHalf,
             TestData.Starter(2, PlayerPosition.CM, 5),
             TestData.Sub(1));
@@ -107,10 +99,8 @@ public class GameMinutesReportTests
     [Fact]
     public void A_position_change_with_no_substitution_credits_the_position_it_ended_in()
     {
-        // The known limitation this report documents, pinned so it cannot change unnoticed. The
-        // live screen's position swap rewrites the lineup and records nothing, and the walk below
-        // starts from the lineup as it finally stands — so the whole period is credited to the
-        // position each player *moved into*, the minutes before the swap included.
+        // The known limitation, pinned so it cannot change unnoticed: a position swap records nothing, so the whole period is credited
+        // to the position each player moved into.
         var game = TestData.Game();
         var period = game.AddPeriod(PeriodType.FirstHalf,
             TestData.Starter(1, PlayerPosition.CM, 5),      // started in goal, swapped at half-way
@@ -158,8 +148,7 @@ public class GameMinutesReportTests
     public void Two_substitutions_on_one_slot_in_the_same_second_are_walked_in_the_order_they_were_made()
     {
         var game = TestData.Game();
-        // Player 3 holds the slot at the end: player 2 came on for player 1, then straight back off
-        // for player 3 — a change made and corrected in the same second.
+        // Player 2 came on for player 1, then straight back off for player 3 — a change made and corrected in the same second.
         var period = game.AddPeriod(PeriodType.FirstHalf,
             TestData.Starter(3, PlayerPosition.CM, 5),
             TestData.Sub(1),
@@ -170,8 +159,7 @@ public class GameMinutesReportTests
         var first = TestData.Substitution(game, period, offId: 1, onId: 2, atSeconds: 900, position: PlayerPosition.CM, slot: 5);
         var then = TestData.Substitution(game, period, offId: 2, onId: 3, atSeconds: 900, position: PlayerPosition.CM, slot: 5);
 
-        // RecordedAt cannot separate them: two changes entered in one instant share it, and rows
-        // written before the column existed all default to 0001-01-01. Only the id is left.
+        // RecordedAt cannot separate them: one instant, and rows predating the column all read 0001-01-01. Only the id is left.
         first.RecordedAt = then.RecordedAt = default;
 
         // EF hands the rows over in no promised order, so only the tie-break settles the chain.
@@ -275,7 +263,6 @@ public class GameMinutesReportTests
     public void A_substitute_who_is_hurt_after_coming_on_is_walked_back_through_both_changes()
     {
         var game = TestData.Game();
-        // Player 2 came on for player 1 on 10', then went off hurt on 20' with the bench empty.
         // Both are benched at the end, so the rewind has to undo them in order to find who started.
         var period = game.AddPeriod(PeriodType.FirstHalf,
             TestData.Starter(3, PlayerPosition.GK, 0),

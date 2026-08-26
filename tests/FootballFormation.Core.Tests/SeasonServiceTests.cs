@@ -1,13 +1,7 @@
-using FootballFormation.Core.Models;
-using Microsoft.EntityFrameworkCore;
-
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// The season window rules. Every game carries a SeasonId and every date must map to exactly one
-/// season, so both an overlap and a gap break the same invariant — a date inside a hole belongs to
-/// no season at all, and the game dialog then offers an empty squad for it.
-/// </summary>
+/// Every date must map to exactly one season, so an overlap and a gap break the same invariant — a date inside a hole belongs to no
+/// season at all, and the game dialog then offers an empty squad for it.
 public class SeasonServiceTests : ServiceTestBase
 {
     [Fact]

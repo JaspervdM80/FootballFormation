@@ -1,23 +1,15 @@
-using FootballFormation.Core.Models;
-using FootballFormation.Core.Services;
-using Microsoft.AspNetCore.Components;
-using MudBlazor;
-
 namespace FootballFormation.UI.Pages;
 
-/// <summary>
-/// Adds an account, edits one, or sets a password — three shapes of the same form, because they
-/// share every field and all three hand the page back the same value to save.
-/// </summary>
+/// Three shapes of one form, because they share every field and all hand the page back the same value to save.
 public partial class UserDialog
 {
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = null!;
 
-    /// <summary>The account being edited, or null when adding one.</summary>
+    /// Null when adding an account rather than editing one.
     [Parameter] public AppUser? User { get; set; }
 
-    /// <summary>Reset-password mode: only the password fields, for an account that already exists.</summary>
+    /// Reset-password mode: only the password fields, for an account that already exists.
     [Parameter] public bool PasswordOnly { get; set; }
 
     private MudForm Form { get; set; } = null!;
@@ -28,7 +20,7 @@ public partial class UserDialog
     private string Password { get; set; } = string.Empty;
     private string ConfirmPassword { get; set; } = string.Empty;
 
-    /// <summary>A new account needs a password; an existing one gets it from Reset Password instead.</summary>
+    /// A new account needs a password; an existing one gets it from Reset Password instead.
     private bool ShowPasswordFields => PasswordOnly || User is null;
 
     protected override void OnParametersSet()
@@ -53,10 +45,7 @@ public partial class UserDialog
     private string? ValidateConfirmation(string confirmation) =>
         confirmation == Password ? null : L["Passwords do not match"].Value;
 
-    /// <summary>
-    /// Duplicate logins and the last-admin rule live in <c>UserService</c>, so they apply to every
-    /// caller; the dialog only checks what the form itself can.
-    /// </summary>
+    /// Duplicate logins and the last-admin rule live in UserService so they apply to every caller; this checks only what the form can.
     private async Task Submit()
     {
         await Form.ValidateAsync();
@@ -73,8 +62,7 @@ public partial class UserDialog
 
     private void Cancel() => MudDialog.Cancel();
 
-    /// <summary>What the dialog hands back. Not an <see cref="AppUser"/> — that carries a password
-    /// hash and a security stamp the dialog has no business constructing.</summary>
+    /// Not an <see cref="AppUser"/> — that carries a password hash and a security stamp the dialog has no business constructing.
     public sealed class Model
     {
         public string DisplayName { get; init; } = string.Empty;

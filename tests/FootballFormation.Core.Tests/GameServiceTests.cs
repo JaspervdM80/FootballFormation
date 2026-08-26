@@ -1,17 +1,7 @@
-using FootballFormation.Core.Models;
-using Microsoft.EntityFrameworkCore;
-
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// Writing a game without disturbing what hangs off it. The pages hand these methods a Game they
-/// loaded with its whole graph attached, which makes "save this row" and "save everything reachable
-/// from this row" easy to confuse — and the difference is a season of lineups.
-/// <para>
-/// One read is pinned here too: a single game loads through the same <c>GameQueries</c> shapes the
-/// live screen uses, and a level dropped from a shared chain fails silently.
-/// </para>
-/// </summary>
+/// The pages hand these methods a Game loaded with its whole graph attached, which makes "save this row" and "save everything reachable
+/// from this row" easy to confuse — and the difference is a season of line-ups.
 public class GameServiceTests : ServiceTestBase
 {
     [Fact]
@@ -103,8 +93,7 @@ public class GameServiceTests : ServiceTestBase
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
         var period = Read().GamePeriods.First(p => p.GameId == game.Id);
 
-        // On the pitch and on the bench at once is the shape the unique index rules out. The
-        // service reports it as a failure rather than letting a raw DbUpdateException escape.
+        // On the pitch and on the bench at once — reported as a failure rather than a raw DbUpdateException.
         var result = await Games.SavePeriodLineupAsync(period.Id, [
             TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0),
             TestData.Sub(players[0].Id)
@@ -126,8 +115,7 @@ public class GameServiceTests : ServiceTestBase
             TestData.Starter(players[1].Id, PlayerPosition.CM, slot: 1)
         ]);
 
-        // Delete-then-insert: without a transaction the delete would already have committed by the
-        // time the insert fails, and the period would come out empty.
+        // Delete-then-insert: without a transaction the delete commits before the insert fails, and the period comes out empty.
         await Games.SavePeriodLineupAsync(period.Id, [
             TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0),
             TestData.Starter(players[0].Id, PlayerPosition.CM, slot: 1)
@@ -196,12 +184,8 @@ public class GameServiceTests : ServiceTestBase
         Assert.Equal(season.Id, created.Value!.SeasonId);
     }
 
-    /// <summary>
-    /// Creating a game may save a season first, in its own context, so the two saves are two
-    /// transactions and something can stop between them. What it leaves behind is an empty season,
-    /// and this is why that is allowed to stand rather than being wrapped in machinery: a season is
-    /// a gapless window, so the next attempt resolves to the one already there. See docs/patterns/transactions-and-writes.md.
-    /// </summary>
+    /// Creating a game may save a season first in its own context, so an interruption leaves an empty season behind. That is allowed to
+    /// stand because windows are gapless, so the next attempt resolves to it. See docs/patterns/transactions-and-writes.md.
     [Fact]
     public async Task A_game_scheduled_into_an_empty_season_joins_it_rather_than_making_a_second_one()
     {
@@ -215,11 +199,8 @@ public class GameServiceTests : ServiceTestBase
         Assert.Equal(2, Read().Seasons.Count());
     }
 
-    /// <summary>
-    /// The counterpart to the touchline recount in <c>MatchGoalServiceTests</c>. Here the score is
-    /// typed and the goal list is allowed to be shorter than it, so adding a scorer someone
+    /// The counterpart to the touchline recount: here the score is typed and the goal list may be shorter, so adding a scorer someone
     /// remembered afterwards must not rewrite a 3-1 as 1-0.
-    /// </summary>
     [Fact]
     public async Task A_goal_added_after_the_match_leaves_a_hand_typed_scoreline_alone()
     {

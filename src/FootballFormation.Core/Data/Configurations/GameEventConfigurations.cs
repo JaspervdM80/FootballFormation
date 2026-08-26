@@ -1,5 +1,3 @@
-using FootballFormation.Core.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace FootballFormation.Core.Data.Configurations;
@@ -10,8 +8,7 @@ internal sealed class GameGoalConfiguration : IEntityTypeConfiguration<GameGoal>
     {
         entity.HasKey(g => g.Id);
 
-        // SetNull, not Cascade: ScorerId is nullable now that opponent goals are tracked, and a
-        // deleted player must not take the goal (and with it the scoreline) out of the record.
+        // SetNull, not Cascade: a deleted player must not take the goal — and with it the scoreline — out of the record.
         entity.HasOne(g => g.Scorer)
             .WithMany()
             .HasForeignKey(g => g.ScorerId)
@@ -22,9 +19,7 @@ internal sealed class GameGoalConfiguration : IEntityTypeConfiguration<GameGoal>
             .HasForeignKey(g => g.AssisterId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        // Cascade like GameSubstitution's: the half and the events recorded during it are one
-        // record, and a goal pointing at a line-up that no longer exists has no minute to show.
-        // Declared without a navigation — see GameGoal.GamePeriodId.
+        // Cascade: a goal pointing at a line-up that no longer exists has no minute to show. No navigation — see GameGoal.GamePeriodId.
         entity.HasOne<GamePeriod>()
             .WithMany()
             .HasForeignKey(g => g.GamePeriodId)
@@ -43,10 +38,8 @@ internal sealed class GameSubstitutionConfiguration : IEntityTypeConfiguration<G
             .HasForeignKey(s => s.GamePeriodId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Restrict on both player legs. They are not nullable — a substitution without either
-        // side is meaningless — and two cascading paths from Players to the same row is exactly
-        // the multiple-cascade-path shape SQLite rejects. Deleting a player who was substituted
-        // therefore fails loudly rather than silently rewriting match history.
+        // Restrict on both legs: neither is nullable, and two cascade paths from Players to one row is the shape SQLite rejects outright.
+        // Deleting a substituted player therefore fails loudly rather than silently rewriting match history.
         entity.HasOne(s => s.PlayerOff)
             .WithMany()
             .HasForeignKey(s => s.PlayerOffId)
@@ -71,15 +64,14 @@ internal sealed class GameInjuryConfiguration : IEntityTypeConfiguration<GameInj
             .HasForeignKey(i => i.GamePeriodId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Restrict, like GameSubstitution's player legs: deleting someone who was hurt in a match
-        // fails loudly rather than silently rewriting how long she was available for it.
+        // Restrict: deleting someone hurt in a match fails loudly rather than silently rewriting how long she was available for it.
         entity.HasOne<Player>()
             .WithMany()
             .HasForeignKey(i => i.PlayerId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // One injury per player per match. She leaves the pitch for it and does not come back, so
-        // a second row would only ever be a double tap — and AvailableMinutesFor reads the first.
+        // One per player per match: she does not come back, so a second row is only ever a double tap — and AvailableMinutesFor reads
+        // the first.
         entity.HasIndex(i => new { i.GameId, i.PlayerId }).IsUnique();
     }
 }

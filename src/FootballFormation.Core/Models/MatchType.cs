@@ -1,15 +1,7 @@
 namespace FootballFormation.Core.Models;
 
-/// <summary>
-/// What kind of fixture a game is. Descriptive only — every type counts towards the season table
-/// and player statistics alike, so nothing in <c>SeasonStatsReport</c> or <c>PlayerStatsReport</c>
-/// branches on it.
-/// <para>
-/// <see cref="Competition"/> is 0 so it is what every pre-existing game reads as, and what a new
-/// game defaults to. Adding a type is a new member plus a Dutch entry in Strings.nl.resx — never
-/// renumber an existing one, the numbers are in the database.
-/// </para>
-/// </summary>
+/// Descriptive only — every type counts towards the season table and player statistics alike, so no report branches on it. Adding a type
+/// needs a Dutch entry in Strings.nl.resx; never renumber an existing one, the numbers are in the database.
 public enum MatchType
 {
     Competition = 0,
@@ -19,7 +11,7 @@ public enum MatchType
 
 public static class MatchTypeExtensions
 {
-    /// <summary>Rendered as <c>@L[game.MatchType.DisplayName()]</c>, like <c>PlayerPosition</c>.</summary>
+    /// Rendered as <c>@L[game.MatchType.DisplayName()]</c>, like <c>PlayerPosition</c>.
     public static string DisplayName(this MatchType type) => type switch
     {
         MatchType.Competition => "Competition",

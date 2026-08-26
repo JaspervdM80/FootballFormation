@@ -1,12 +1,6 @@
-using FootballFormation.Core.Models;
-using Microsoft.EntityFrameworkCore;
-
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// The slot swap: who is on the pitch afterwards, what was written down about it, and what can be
-/// taken back. Against real SQLite, because the lineup row and the substitution row go in together.
-/// </summary>
+/// Against real SQLite, because the line-up row and the substitution row have to go in together.
 public class MatchSubstitutionServiceTests : LiveMatchTestBase
 {
     [Fact]

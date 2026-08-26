@@ -22,7 +22,6 @@
     var periodFormation = activePeriod.FormationTypeOverride ?? GameData.FormationType;
 }
 
-@* --- Desktop: original single-row header + tab strip --- *@
 <div class="builder-desktop">
     <PageHeader BackFallback="@AppRoutes.Games" TitleTypo="Typo.h6" Class="mb-2"
                 Title="@($"{(GameData.IsHomeGame ? "vs" : "@")} {GameData.Opponent}")">
@@ -48,7 +47,6 @@
     </MudTabs>
 </div>
 
-@* --- Mobile: compact header, formation + overview row, and a period dropdown --- *@
 <div class="builder-mobile">
     <PageHeader BackFallback="@AppRoutes.Games" TitleTypo="Typo.h6" Class="mb-3"
                 TitleClass="builder-opponent" Title="@GameData.Opponent">
@@ -144,7 +142,6 @@
     </div>
 </div>
 
-@* Desktop: full labels, buttons grouped left *@
 <div class="builder-desktop">
     <div class="d-flex gap-2 mt-2 mb-4">
         <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Save"

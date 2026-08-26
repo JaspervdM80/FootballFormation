@@ -1,6 +1,3 @@
-using FootballFormation.Core.Models;
-using Microsoft.EntityFrameworkCore;
-
 namespace FootballFormation.Core.Data;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
@@ -18,11 +15,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<MatchPreferences> MatchPreferences => Set<MatchPreferences>();
     public DbSet<AppUser> Users => Set<AppUser>();
 
-    /// <summary>
-    /// Each entity's mapping lives beside it in <c>Data/Configurations</c>. The delete behaviours
-    /// in particular are deliberate and reasoned per entity (see docs/models/enums-and-relationships.md), and they are far
-    /// easier to review one aggregate at a time than as one long method.
-    /// </summary>
+    /// Each entity's mapping lives beside it in Data/Configurations — the delete behaviours especially are reasoned per entity, and are
+    /// far easier to review one aggregate at a time. See docs/models/enums-and-relationships.md.
     protected override void OnModelCreating(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 }

@@ -1,9 +1,3 @@
-using FootballFormation.Core.Data;
-using FootballFormation.Core.Models;
-using FootballFormation.Core.Security;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-
 namespace FootballFormation.Core.Services;
 
 public class SeasonService(
@@ -12,7 +6,7 @@ public class SeasonService(
     ICurrentUser currentUser,
     ILogger<SeasonService> logger)
 {
-    /// <summary>Newest first — the season picker and the current-season fallbacks rely on it.</summary>
+    /// Newest first — the season picker and the current-season fallbacks rely on it.
     public Task<Result<List<Season>>> GetAllAsync(CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "load seasons", cancellationToken, async () =>
         {
@@ -27,11 +21,8 @@ public class SeasonService(
             return Result.Success(seasons);
         });
 
-    /// <summary>
-    /// The season covering <paramref name="date"/>, or null when none is defined yet. Read-only
-    /// sibling of <see cref="GetOrCreateForDateAsync"/>, for callers that must not create a season
-    /// as a side effect — e.g. the game dialog reacting to a date the user may still cancel.
-    /// </summary>
+    /// The read-only sibling of <see cref="GetOrCreateForDateAsync"/>, for callers that must not create a season as a side effect — the
+    /// game dialog reacting to a date the user may still cancel.
     public Task<Result<Season?>> FindForDateAsync(DateTime date, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "look up the season for that date", cancellationToken, async () =>
         {
@@ -39,19 +30,14 @@ public class SeasonService(
 
             var day = date.Date;
 
-            // Matched in memory so Season.Contains decides it — the one date-only definition of
-            // a window. Windows do not overlap, so newest-first only breaks a tie a healthy
-            // database never has. See SeasonOrdering.
+            // In memory so Season.Contains decides it — the one date-only definition of a window. See SeasonOrdering.
             var seasons = await db.Seasons.AsNoTracking().ToListAsync(cancellationToken);
             var season = seasons.NewestFirst().FirstOrDefault(s => s.Contains(day));
 
             return Result.Success(season);
         });
 
-    /// <summary>
-    /// The season covering <paramref name="date"/>, created on the fly when a game is scheduled
-    /// beyond the seasons defined so far. Season windows are gapless, so this always resolves.
-    /// </summary>
+    /// Season windows are gapless, so this always resolves — creating one on the fly when a game is scheduled beyond those defined.
     public Task<Result<Season>> GetOrCreateForDateAsync(
         DateTime date, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAdminAsync(currentUser, logger, "find the season for that date", cancellationToken, async () =>
@@ -66,9 +52,8 @@ public class SeasonService(
 
             var season = Season.CreateFor(day);
 
-            // CreateFor always returns a full July–June window. If the date sits in a gap narrower
-            // than that, the window would overlap the seasons on either side, so clamp it to them:
-            // auto-creation can then only ever fill a hole, never straddle its neighbours.
+            // CreateFor always returns a full July–June window, so a date in a narrower gap would overlap its neighbours. Clamping means
+            // auto-creation can only ever fill a hole, never straddle one.
             var existing = (await db.Seasons.AsNoTracking().ToListAsync(cancellationToken)).OldestFirst();
 
             var previous = existing.Where(s => s.EndDate.Date < day).MaxBy(s => s.EndDate.Date);
@@ -133,8 +118,7 @@ public class SeasonService(
                 return Result.Failure("Season not found");
             }
 
-            // The FK is Restrict, so refuse here with something readable rather than letting the
-            // caller hit a raw DbUpdateException.
+            // The FK is Restrict, so refuse here rather than letting the caller hit a raw DbUpdateException.
             var gameCount = await db.Games.CountAsync(g => g.SeasonId == id, cancellationToken);
             if (gameCount > 0)
             {
@@ -178,17 +162,8 @@ public class SeasonService(
             return Result.Success();
         });
 
-    /// <summary>
-    /// Idempotent startup guard that pulls each season's start back to the day after the previous
-    /// one ends, closing any gap between them.
-    /// <para>
-    /// Gapless windows are an invariant the rest of the code relies on, but nothing enforced it
-    /// until <c>ValidateAsync</c> gained a gap check — so a database can already hold a hole that
-    /// strands every date inside it. This is a repair for those, not a rule: it only ever moves a
-    /// start date <em>earlier</em>, and never touches which season a game belongs to, since
-    /// <see cref="Game.SeasonId"/> is stored on the game itself.
-    /// </para>
-    /// </summary>
+    /// A repair for databases written before ValidateAsync checked for gaps, not a rule: it only ever moves a start date earlier, and
+    /// never changes which season a game belongs to, since <see cref="Game.SeasonId"/> lives on the game.
     public Task<Result<int>> CloseSeasonGapsAsync(CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "close season gaps", cancellationToken, async () =>
         {
@@ -218,10 +193,7 @@ public class SeasonService(
             return Result.Success(closed);
         });
 
-    /// <summary>
-    /// Idempotent startup guard. Runs on every boot so a fresh install — whose migration backfill
-    /// found no games to derive seasons from — still has a current season to fall back on.
-    /// </summary>
+    /// Runs every boot so a fresh install — whose migration backfill found no games to derive seasons from — still has one to fall back on.
     public Task<Result<Season>> EnsureCurrentSeasonAsync(CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "prepare seasons", cancellationToken, async () =>
         {
@@ -250,7 +222,7 @@ public class SeasonService(
             return Result.Success(season);
         });
 
-    /// <summary>Rules the dialog deliberately does not enforce, so any caller gets them.</summary>
+    /// Rules the dialog deliberately does not enforce, so any caller gets them.
     private async Task<Result> ValidateAsync(AppDbContext db, Season season, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(season.Name))
@@ -265,9 +237,8 @@ public class SeasonService(
             return Result.Failure("The end date must be after the start date");
         }
 
-        // Every other window, read once and compared in memory (see SeasonOrdering). AsNoTracking
-        // so validating a season the caller is about to Update() cannot pull a second instance of
-        // the same row into the change tracker.
+        // AsNoTracking so validating a season the caller is about to Update() cannot pull a second instance of the row into the change
+        // tracker. Compared in memory — see SeasonOrdering.
         var others = (await db.Seasons
             .AsNoTracking()
             .Where(s => s.Id != season.Id)
@@ -284,10 +255,8 @@ public class SeasonService(
             return Result.Failure("These dates overlap season {0}", overlapping.Name);
         }
 
-        // Gaps are as damaging as overlaps and used to pass unchecked. Game.SeasonId is required
-        // and every date must map to exactly one season (see Season.StartMonth), so a hole strands
-        // every date inside it: the game dialog finds no season and offers an empty squad, which
-        // reads as "I cannot pick a date past the end of last season".
+        // A gap is as damaging as an overlap: every date must map to exactly one season, so a hole leaves the game dialog finding none
+        // and offering an empty squad.
         var previous = others
             .Where(s => s.EndDate.Date < season.StartDate.Date)
             .MaxBy(s => s.EndDate.Date);

@@ -1,18 +1,7 @@
-using FootballFormation.Core.Models;
-using FootballFormation.Core.Services;
-using Microsoft.EntityFrameworkCore;
-
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// The services refuse to write for a caller who is not an admin.
-/// <para>
-/// The app already gates every mutating control behind an <c>AuthorizeView</c>, so in practice
-/// nobody reaches these methods unauthorized today. That is exactly why these tests exist: the
-/// guard is the layer that keeps holding when the markup stops — a new page, a minimal API, a
-/// control that outgrows its wrapper — and a silent regression there would look like nothing.
-/// </para>
-/// </summary>
+/// Nobody reaches these methods unauthorized today, which is exactly why the tests exist: this guard is the layer that keeps holding
+/// when the markup stops, and a silent regression in it would look like nothing at all.
 public class AuthorizationTests : ServiceTestBase
 {
     [Fact]
@@ -140,9 +129,8 @@ public class AuthorizationTests : ServiceTestBase
 
         CurrentUser.IsAdmin = false;
 
-        // Passing includePrivate: true is not the same as being allowed to. The result page
-        // prerenders server-side, so a private body reaching the query at all would ship in the
-        // markup even if the page hid the row.
+        // Passing includePrivate: true is not the same as being allowed to: the result page prerenders, so a private body reaching the
+        // query at all would ship in the markup even if the page hid the row.
         var comments = await Games.GetCommentsAsync(game.Id, includePrivate: true);
 
         Assert.True(comments.IsSuccess);

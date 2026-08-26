@@ -1,11 +1,5 @@
-﻿using FootballFormation.Core.Models;
-using FootballFormation.Core.Reporting;
-using FootballFormation.Core.Services;
-using FootballFormation.UI.Helpers;
-using FootballFormation.UI.Navigation;
-using Microsoft.AspNetCore.Components;
+﻿using FootballFormation.Core.Reporting;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.Extensions.Localization;
 
 namespace FootballFormation.UI.Pages;
 
@@ -26,9 +20,8 @@ public partial class PlayerStats
     private Core.Reporting.PlayerStats? _stats;
     private bool _loaded;
 
-    // A flag rather than an AuthorizeView per gated spot: two of them set a class on a container
-    // (.stat-tiles-3, .game-list-no-minutes) so the grid loses a track along with its cell, and
-    // nothing inside the rows can reach that far up.
+    // A flag rather than an AuthorizeView per gated spot: two of them set a class on a container so the grid loses a track along with
+    // its cell, and nothing inside the rows can reach that far up.
     private bool _isAdmin;
 
     protected override async Task OnInitializedCoreAsync()

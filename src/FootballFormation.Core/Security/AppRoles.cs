@@ -1,34 +1,25 @@
-using FootballFormation.Core.Models;
-
 namespace FootballFormation.Core.Security;
 
-/// <summary>
-/// The role names as they appear in the auth cookie, for the places that need a compile-time
-/// constant: <c>[Authorize(Roles = AppRoles.Admin)]</c> and <c>&lt;AuthorizeView Roles="..."&gt;</c>
-/// cannot call <c>ToString()</c> on an enum. Tied to <see cref="UserRole"/> by <c>nameof</c>, so
-/// renaming a member breaks the build rather than silently unauthorizing everyone.
-/// </summary>
+/// [Authorize] and AuthorizeView need a compile-time constant and cannot call ToString() on an enum. Tied to <see cref="UserRole"/> by
+/// nameof, so renaming a member breaks the build rather than silently unauthorizing everyone.
 public static class AppRoles
 {
     public const string Admin = nameof(UserRole.Admin);
 }
 
-/// <summary>Claim types this app mints beyond the standard <see cref="System.Security.Claims.ClaimTypes"/> ones.</summary>
+/// Claim types this app mints beyond the standard <see cref="System.Security.Claims.ClaimTypes"/> ones.
 public static class AppClaims
 {
-    /// <summary>The user's <see cref="AppUser.Id"/>, so a page can tell "this is me" without a name comparison.</summary>
+    /// So a page can tell "this is me" without a name comparison.
     public const string UserId = "uid";
 
-    /// <summary><see cref="AppUser.DisplayName"/> — ClaimTypes.Name carries the login, not the person.</summary>
+    /// <see cref="AppUser.DisplayName"/> — ClaimTypes.Name carries the login, not the person.
     public const string DisplayName = "display_name";
 
-    /// <summary><see cref="AppUser.SecurityStamp"/> as it was when the cookie was issued.</summary>
+    /// <see cref="AppUser.SecurityStamp"/> as it was when the cookie was issued.
     public const string SecurityStamp = "security_stamp";
 
-    /// <summary>
-    /// Present and "true" while <see cref="AppUser.MustChangePassword"/> is set. Changing the
-    /// password rolls the security stamp, which invalidates the cookie carrying this claim, so it
-    /// cannot outlive the condition it describes.
-    /// </summary>
+    /// Changing the password rolls the security stamp, which invalidates the cookie carrying this claim — so it cannot outlive the
+    /// condition it describes.
     public const string MustChangePassword = "must_change_password";
 }

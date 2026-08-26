@@ -1,20 +1,7 @@
-using FootballFormation.Core.Models;
-using Microsoft.EntityFrameworkCore;
-
 namespace FootballFormation.Core.Data;
 
-/// <summary>
-/// The include chains a <see cref="Game"/> is loaded with, named once and composed at the call
-/// site. Spelled out per call site they drift silently — nothing fails when one copy loses a level,
-/// the page just renders with an empty navigation.
-/// <para>
-/// Not a repository: they stay <see cref="IQueryable{T}"/>, so tracking, filtering, ordering and
-/// tagging stay the caller's. Each pair below runs shallow then deep over one navigation — compose
-/// one of a pair, never both, because EF rejects a filtered and an unfiltered include of the same
-/// navigation in one query. The deep ones include their collection twice for the same reason: a
-/// second <c>ThenInclude</c> off one navigation needs a fresh <c>Include</c>, spelled identically.
-/// </para>
-/// </summary>
+/// Named once because an include chain spelled out per call site drifts silently — nothing fails when one copy loses a level, the page
+/// just renders with an empty navigation. Compose one of each shallow/deep pair, never both: EF rejects two includes of one navigation.
 internal static class GameQueries
 {
     internal static IQueryable<Game> WithPeriods(this IQueryable<Game> games) =>
@@ -34,7 +21,7 @@ internal static class GameQueries
     internal static IQueryable<Game> WithGoals(this IQueryable<Game> games) =>
         games.Include(g => g.Goals);
 
-    /// <summary>Unordered — <c>MatchResult.razor</c> sorts for itself.</summary>
+    /// Unordered — MatchResult.razor sorts for itself.
     internal static IQueryable<Game> WithGoalsAndScorers(this IQueryable<Game> games) =>
         games
             .Include(g => g.Goals)
@@ -42,19 +29,13 @@ internal static class GameQueries
             .Include(g => g.Goals)
                 .ThenInclude(gl => gl.Assister);
 
-    /// <summary>
-    /// Statistics reconstruct playing time from these (<c>GameMinutesReport</c>); without them a
-    /// live-tracked game reads as if the final lineup had been on the pitch from kick-off.
-    /// </summary>
+    /// GameMinutesReport reconstructs playing time from these; without them a live-tracked game reads as if the final line-up had been
+    /// on the pitch from kick-off.
     internal static IQueryable<Game> WithSubstitutions(this IQueryable<Game> games) =>
         games.Include(g => g.Substitutions);
 
-    /// <summary>
-    /// **Never composed without <see cref="WithSubstitutions"/>.** <c>Game.WasReplaced</c> reads the
-    /// substitution rows to tell an injury somebody came on for from one nobody did; with none
-    /// loaded every injury looks unreplaced, and <c>GameMinutesReport</c> walks a replaced player
-    /// off the pitch twice — crediting her replacement the whole half on top of it.
-    /// </summary>
+    /// Never compose this without <see cref="WithSubstitutions"/>: Game.WasReplaced needs those rows, and with none loaded every injury
+    /// looks unreplaced, so GameMinutesReport walks a replaced player off the pitch twice.
     internal static IQueryable<Game> WithInjuries(this IQueryable<Game> games) =>
         games.Include(g => g.Injuries);
 
