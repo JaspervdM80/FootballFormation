@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Security.Claims;
 using System.Threading.RateLimiting;
 using FootballFormation.Core.Data;
@@ -17,7 +17,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Localization;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
@@ -442,8 +441,6 @@ try
         Log.Warning("Dev login endpoint mapped at /dev/login (Development + loopback only)");
     }
 
-    // Language switcher target: persists the choice in the culture cookie, then
-    // reloads so the whole circuit restarts in the new culture.
     app.MapGet("/culture/set", (string culture, string redirectUri, HttpContext context) =>
     {
         if (culture is "nl" or "en")
@@ -457,15 +454,8 @@ try
         return Results.LocalRedirect($"~/{redirectUri.TrimStart('/')}");
     });
 
-    // Season picker target, the same shape as the language switcher above. A season change is a
-    // navigation rather than an event because the picker lives in the layout, which renders
-    // statically for every page — there is no circuit there to handle a click, and this endpoint
-    // has the one thing a circuit never has: a response to put a Set-Cookie on.
     app.MapGet("/season/set", (string season, string redirectUri, HttpContext context) =>
     {
-        // Anything unparseable is simply not stored. Parse already treats an absent cookie and a
-        // hand-edited one the same way, so a bad query string lands the visitor back where they
-        // were, on the season they already had.
         if (season == SeasonPreference.AllSeasons || int.TryParse(season, out _))
         {
             context.Response.Cookies.Append(
@@ -519,8 +509,6 @@ static ClaimsPrincipal PrincipalFor(AppUser user)
     {
         new(ClaimTypes.NameIdentifier, user.Id.ToString()),
         new(ClaimTypes.Name, user.Username),
-        // ToString() rather than a literal: this is the string [Authorize(Roles = ...)] matches,
-        // and AppRoles ties those constants back to the same enum member names.
         new(ClaimTypes.Role, user.Role.ToString()),
         new(AppClaims.UserId, user.Id.ToString()),
         new(AppClaims.DisplayName, user.DisplayName),
@@ -528,11 +516,9 @@ static ClaimsPrincipal PrincipalFor(AppUser user)
     };
 
     // Only when set, so the common case carries no extra claim at all.
-    if (user.MustChangePassword)
-        claims.Add(new Claim(AppClaims.MustChangePassword, "true"));
+    if (user.MustChangePassword) claims.Add(new Claim(AppClaims.MustChangePassword, "true"));
 
-    return new ClaimsPrincipal(
-        new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
+    return new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
 }
 
 /// <summary>

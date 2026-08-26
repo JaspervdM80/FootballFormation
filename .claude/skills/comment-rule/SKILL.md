@@ -1,8 +1,6 @@
 ---
 name: comment-rule
-description: Defines when Claude should and should NOT write code comments. Apply on any code edit/write/refactor. Vendored from the mcpmarket-me plugin so it binds in web sessions too; the SessionStart hook points at it every session.
-metadata:
-  mcpmarket-version: 1.0.0
+description: When Claude should and should NOT write code comments, plus the repository facts that change how the rule applies here. Apply on any code edit/write/refactor; the SessionStart hook points at it every session.
 ---
 # The code commenting rule
 
@@ -34,11 +32,33 @@ Keep it to **one line** wherever possible. Two lines max. Never a paragraph, nev
 2. When editing existing code, treat redundant comments around your change as fair game to remove (don't go on a comment-stripping crusade in unrelated files).
 3. If the user explicitly asks for verbose comments, follow the user — they override this rule.
 
+## XML docs
+
+**No documentation file is generated.** `GenerateDocumentationFile` is set nowhere, nothing is
+packable, nothing is published — a `///` block is read by whoever opens the file and by nobody else.
+So it buys nothing a `//` does not, and the rule against docstrings with sections applies to it in
+full. Where a signature genuinely hides something — what null means, the failure mode, who owns the
+lifetime — one line above the member says it.
+
+**Check `<inheritdoc cref=…>` before deleting the doc it points at.** Four exist:
+`ServiceOperation.cs`, `GameService.cs` (which XPaths into one specific `<param>` node),
+`AppRoutes.cs` and `MatchGoalServiceTests.cs`. With no documentation file generated, a broken one
+fails silently. The bare `<inheritdoc />` in the migrations is scaffolded and points at nothing.
+
+## Conventions already have a canonical home
+
+`TimeProvider` injection, context-per-operation, dates-as-TEXT and English-message-is-the-resx-key
+are explained once each — in `MatchClockService`, `Program.cs`, `QueryTags` and `Result`. Elsewhere
+they are a pointer or nothing. The same goes for `docs/` and the other skills: point at them, never
+paraphrase, or the two drift and both have to be edited together.
+
+Comments are English, though the UI ships Dutch first.
+
 ## How it loads here
 
-The plugin's companion UserPromptSubmit hook does not run in this repository's web sessions, so
-`.claude/hooks/session-start.sh` names this skill in the context it emits at session start instead.
-Same job: make sure this file is read before code is written.
+`.claude/hooks/session-start.sh` names this skill in the context it emits at session start, so that
+it is read before code is written. The `code-reviewer` agent reviews a finished diff against it.
 
-`.claude/skills/comments/SKILL.md` holds the few repository facts that change how rule 1 is applied
-here — it defers to this file and never loosens it.
+This file is the repository's own copy of the rule, not a synced one: it began as the `mcpmarket-me`
+plugin's `comment-rule` skill and has diverged deliberately. Take an upstream improvement by hand,
+keeping the sections above.

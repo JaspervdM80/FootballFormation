@@ -50,11 +50,11 @@ Solution file is `FootballFormation.slnx`. Package versions are centralized in
 
 `.claude/skills/` holds the working rules, one skill per area — services and `Result`, EF Core and
 queries, migrations, the domain model, Razor pages and the circuit, the live match, styling, touch
-and breakpoints, localization, testing, UI testing, build and release. **Load the skill for the area
-you are touching before changing it**; each one ends with a pointer into `docs/` for the full story.
+and breakpoints, localization, testing, UI testing, verifying a UI change, build and release. **Load
+the skill for the area you are touching before changing it**; each one ends with a pointer into
+`docs/` for the full story.
 **`comment-rule` applies to every change**, whatever else it touches: default to no comments, write
-one only for a non-obvious *why*, and never a paragraph. `comments` holds the few repository facts
-that change how it lands here.
+one only for a non-obvious *why*, and never a paragraph.
 
 `docs/` is the detailed reference and the incident record. `docs/known_issues/` in particular is
 not a changelog — it is a list of traps that already cost someone hours. Add to it when you find a

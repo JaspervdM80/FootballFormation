@@ -102,5 +102,5 @@ scripts/ are all available. Chromium is already at /opt/pw-browsers/chromium —
 
 Before writing or editing any code, read .claude/skills/comment-rule/SKILL.md. It is the
 commenting rule for this repository and it applies to every change: default to no comments, write
-one only for a non-obvious *why*, one line and never a paragraph. Repository-specific exceptions
-are in .claude/skills/comments/SKILL.md."
+one only for a non-obvious *why*, one line and never a paragraph. It carries the repository-specific
+exceptions too."

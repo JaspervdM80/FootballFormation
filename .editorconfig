@@ -71,5 +71,9 @@ dotnet_naming_style.underscore_prefix.capitalization = camel_case
 dotnet_naming_style.underscore_prefix.required_prefix = _
 
 # Generated EF migrations are scaffolded, not hand-written — don't lint them
+
+# IDE0008: Use explicit type
+dotnet_diagnostic.IDE0008.severity = none
+
 [src/FootballFormation.Core/Migrations/*.cs]
 generated_code = true

@@ -36,9 +36,9 @@ documented, deliberate decision is not a finding — it is a misread.
 ## 2. Comments: the primary lens
 
 **Read `.claude/skills/comment-rule/SKILL.md` and review against it** — default to no comments, one
-only for a non-obvious *why*, one line and never a paragraph. `.claude/skills/comments/SKILL.md`
-adds the repository facts (no documentation file is generated, the `<inheritdoc>` trap, the
-conventions that already have a canonical home). Those two are canonical; do not re-derive them.
+only for a non-obvious *why*, one line and never a paragraph. It also carries the repository facts
+(no documentation file is generated, the `<inheritdoc>` trap, the conventions that already have a
+canonical home). It is canonical; do not re-derive it.
 
 Reviewing adds three things:
 

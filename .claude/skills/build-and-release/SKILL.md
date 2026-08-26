@@ -24,7 +24,7 @@ Release — and it silently changes what the app says.
 
 ## The SDK is pinned, and the pin follows Ubuntu
 
-`global.json` pins **10.0.110 with `rollForward: disable`**, and `ci.yml` installs from that file, so
+`global.json` pins **10.0.111 with `rollForward: latestPatch`**, and `ci.yml` installs from that file, so
 a green check means the same SDK compiled it. The pin is what Ubuntu's archive ships — the one thing
 here that cannot be chosen — so bumping it follows the archive rather than leading it.
 `.dockerignore` keeps `global.json` out of the image on purpose: no container image exists for the
