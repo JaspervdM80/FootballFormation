@@ -107,7 +107,9 @@ public class SeasonService(
         });
 
     public Task<Result> DeleteAsync(int id, CancellationToken cancellationToken = default) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "delete season", cancellationToken, async () =>
+        // "delete the season", not "delete season": resx keys are case-insensitive, and /settings already has a "Delete Season" confirm
+        // that would collide. See docs/known_issues/localization.md.
+        ServiceOperation.RunAdminAsync(currentUser, logger, "delete the season", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 

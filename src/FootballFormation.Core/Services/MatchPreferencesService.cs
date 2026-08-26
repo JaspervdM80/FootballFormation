@@ -31,7 +31,9 @@ public class MatchPreferencesService(
         });
 
     public Task<Result> SaveAsync(MatchPreferences prefs, CancellationToken cancellationToken = default) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "save preferences", cancellationToken, async () =>
+        // "save the preferences", not "save preferences": resx keys are case-insensitive, and /settings already has a "Save Preferences"
+        // button that would collide. See docs/known_issues/localization.md.
+        ServiceOperation.RunAdminAsync(currentUser, logger, "save the preferences", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 

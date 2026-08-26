@@ -88,7 +88,7 @@ public class PlayerService(
     /// Line-up and goal rows cascade from this one, so deleting last season's top scorer would silently edit last season's table. The
     /// counts below are unscoped by season because the damage is too; archiving is the way out for anyone who has played.
     public Task<Result> DeleteAsync(int id, CancellationToken cancellationToken = default) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "delete player", cancellationToken, async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "delete the player", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 

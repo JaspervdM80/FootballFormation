@@ -96,6 +96,7 @@ Three details are deliberate:
 
 - **Publish, not build.** The output has to survive the trip to another runner. A published directory
   is self-describing; a `bin/` tree needs the SDK and the sources it was built from.
+  It also changes one header, which one spec depends on — see below.
 - **`-p:PublishReadyToRun=false`.** R2R forces a runtime-identifier-specific publish that
   `--no-build` cannot satisfy.
 - **The `runtimes/` prune.** 84MB of the 104MB published is SQLitePCLRaw's native library for every
@@ -104,6 +105,24 @@ Three details are deliberate:
 `npx playwright install` still runs on a cache hit: it is a no-op when the revision is already there,
 and it is what fetches a new one when a patch release moves the browser revision without moving
 `package.json`.
+
+### The one spec that needs the published app
+
+`service-worker.spec.js` **skips unless `UI_TEST_APP_DLL` is set**, and the reason is a header rather
+than a shortcut. `MapStaticAssets` answers a fingerprinted route with `max-age=31536000, immutable`
+when the app is published, and `no-cache` for the very same file from a `dotnet run` off the sources
+— so an edit is picked up during development. The worker caches on that header alone
+(`isImmutable`), so from a source run there is nothing for it to keep and the spec asserted against
+an empty cache on every local run.
+
+The skip is keyed to **how the app was started**, not to a probe of the symptom: on the published run
+CI actually makes, the spec runs, and a build that stopped emitting the header fails here rather than
+skipping quietly. To run it by hand:
+
+```bash
+dotnet publish src/FootballFormation.Web -c Release -o /tmp/ff-publish
+UI_TEST_APP_DLL=/tmp/ff-publish/FootballFormation.Web.dll npm test -- service-worker
+```
 
 ### What triggers it
 

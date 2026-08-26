@@ -556,6 +556,8 @@
   <data name="{0} has already played — archive them instead of deleting them" xml:space="preserve"><value>{0} heeft al gespeeld — archiveer de speler in plaats van te verwijderen</value></data>
 
   <!-- Service actions — substituted into "Failed to {0}" -->
+  <data name="add the comment" xml:space="preserve"><value>opmerking toevoegen</value></data>
+  <data name="add the goal" xml:space="preserve"><value>doelpunt toevoegen</value></data>
   <data name="add the player to the squad" xml:space="preserve"><value>speler aan de selectie toevoegen</value></data>
   <data name="archive the player" xml:space="preserve"><value>speler archiveren</value></data>
   <data name="calculate next match date" xml:space="preserve"><value>volgende wedstrijddatum berekenen</value></data>
@@ -569,6 +571,9 @@
   <data name="create season" xml:space="preserve"><value>seizoen aanmaken</value></data>
   <data name="create the training" xml:space="preserve"><value>training aanmaken</value></data>
   <data name="create the user" xml:space="preserve"><value>gebruiker aanmaken</value></data>
+  <data name="delete the game" xml:space="preserve"><value>wedstrijd verwijderen</value></data>
+  <data name="delete the player" xml:space="preserve"><value>speler verwijderen</value></data>
+  <data name="delete the season" xml:space="preserve"><value>seizoen verwijderen</value></data>
   <data name="delete the training" xml:space="preserve"><value>training verwijderen</value></data>
   <data name="delete the user" xml:space="preserve"><value>gebruiker verwijderen</value></data>
   <data name="end the half" xml:space="preserve"><value>helft beëindigen</value></data>
@@ -587,8 +592,10 @@
   <data name="load players outside the squad" xml:space="preserve"><value>spelers buiten de selectie laden</value></data>
   <data name="load preferences" xml:space="preserve"><value>voorkeuren laden</value></data>
   <data name="load seasons" xml:space="preserve"><value>seizoenen laden</value></data>
+  <data name="load the player statistics" xml:space="preserve"><value>spelerstatistieken laden</value></data>
   <data name="load the squad" xml:space="preserve"><value>selectie laden</value></data>
   <data name="load the squads" xml:space="preserve"><value>selecties laden</value></data>
+  <data name="load the statistics" xml:space="preserve"><value>statistieken laden</value></data>
   <data name="load the trainings" xml:space="preserve"><value>trainingen laden</value></data>
   <data name="load users" xml:space="preserve"><value>gebruikers laden</value></data>
   <data name="log the goal" xml:space="preserve"><value>doelpunt vastleggen</value></data>
@@ -601,7 +608,10 @@
   <data name="remove the goal" xml:space="preserve"><value>doelpunt verwijderen</value></data>
   <data name="remove the player from the squad" xml:space="preserve"><value>speler uit de selectie verwijderen</value></data>
   <data name="save lineup" xml:space="preserve"><value>opstelling opslaan</value></data>
+  <data name="save the preferences" xml:space="preserve"><value>voorkeuren opslaan</value></data>
+  <data name="save the score" xml:space="preserve"><value>score opslaan</value></data>
   <data name="set the password" xml:space="preserve"><value>wachtwoord instellen</value></data>
+  <data name="start the match" xml:space="preserve"><value>wedstrijd starten</value></data>
   <data name="start the next half" xml:space="preserve"><value>volgende helft starten</value></data>
   <data name="swap the positions" xml:space="preserve"><value>posities wisselen</value></data>
   <data name="switch season" xml:space="preserve"><value>van seizoen wisselen</value></data>
