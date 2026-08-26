@@ -102,6 +102,20 @@ The game dialog's action row sat 28px under the last field, and `MudSelect`'s hi
 past its own underline — leaving 18px of dead space. A thumb aimed at "Annuleren" opened the dropdown
 instead, because the select is the far bigger target.
 
+## Drag and drop has to survive a finger
+
+The app installs as a PWA, and HTML5 drag events never fire natively on a phone.
+`Web/wwwroot/js/drag-drop-touch.js` converts touches on `[draggable="true"]` elements into synthetic
+`DragEvent`s, so ordinary `draggable="true"` + `@ondragstart`/`@ondrop` markup already works on
+mobile. Two rules come with it:
+
+- Blazor ignores a drag event whose `dataTransfer` is null, so any synthetic `DragEvent` — in tests
+  too — must carry `new DataTransfer()`.
+- `[draggable="true"]` gets `touch-action: none` globally, which also forbids scrolling. A draggable
+  row inside a scrollable list has to opt back in with `touch-action: pan-y` (`.draggable-player,
+  .sub-item` in `app.css`), or a finger landing on a player cannot scroll the list at all. Pitch
+  chips keep `none`: there, every direction is a drag.
+
 Detail: [docs/known_issues/](../../../docs/known_issues/touch-pwa.md) ·
 [docs/testing/](../../../docs/testing/visual-and-touch-checks.md#touch-targets) ·
 [docs/theming.md](../../../docs/theming.md)

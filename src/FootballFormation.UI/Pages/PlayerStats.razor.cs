@@ -12,8 +12,7 @@ namespace FootballFormation.UI.Pages;
 public partial class PlayerStats
 {
     [Inject] private PlayerService PlayerService { get; set; } = null!;
-    [Inject] private SeasonSquadService SquadService { get; set; } = null!;
-    [Inject] private GameService GameService { get; set; } = null!;
+    [Inject] private StatsService StatsService { get; set; } = null!;
     [Inject] private NavigationTrail Trail { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
@@ -53,16 +52,14 @@ public partial class PlayerStats
             return;
         }
 
-        // Squads carry per-season guest status, which decides whether a game counts towards this
-        // player's available minutes. GetByIdAsync stays: the page is reachable for anyone on file,
-        // including someone who is in no current squad.
-        var squadsResult = await SquadService.GetSquadsAsync(SeasonId, Cancellation);
-        var squads = _notice.ReportFailure(L, squadsResult) ? squadsResult.Value! : SeasonSquads.Empty;
+        var statsResult = await StatsService.GetPlayerAsync(playerResult.Value!, SeasonId, Cancellation);
+        if (statsResult.IsCancelled) return;
 
-        var gamesResult = await GameService.GetAllWithDetailsAsync(SeasonId, Cancellation);
-        var games = _notice.ReportFailure(L, gamesResult) ? gamesResult.Value! : [];
+        // Empty, not null: the markup returns early on a null _stats, before <InlineNotice>.
+        _stats = _notice.ReportFailure(L, statsResult)
+            ? statsResult.Value!
+            : PlayerStatsReport.Build(playerResult.Value!, [], SeasonSquads.Empty);
 
-        _stats = PlayerStatsReport.Build(playerResult.Value!, games, squads);
         _loaded = true;
     }
 }

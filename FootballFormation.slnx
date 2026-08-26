@@ -11,9 +11,11 @@
     <File Path="docs/ui_components.md" />
   </Folder>
   <Folder Name="/Solution Items/">
+    <File Path=".dockerignore" />
     <File Path=".editorconfig" />
     <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />
+    <File Path="README.md" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/FootballFormation.Core/FootballFormation.Core.csproj" />

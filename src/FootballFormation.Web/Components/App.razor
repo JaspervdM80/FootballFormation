@@ -15,7 +15,9 @@
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="icons/icon-180.png" />
     <ResourcePreloader />
-    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    @* Through Assets[], not its plain path: only the fingerprinted route is served `immutable`,
+       which is all service-worker.js will cache. At 611KB this is most of the app's weight. *@
+    <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet" />
     @* The club's colors, from the same ClubTheme record that builds MudBlazor's palette. Inline
        and first, so every stylesheet below can read the tokens. The values are compile-time
        constants in that record — nothing user-supplied reaches this markup. *@
@@ -44,7 +46,7 @@
         <span>@L["Something went wrong. Reload the page to continue."]</span>
         <a href="" class="reload">@L["Reload"]</a>
     </div>
-    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script src="@Assets["_content/MudBlazor/MudBlazor.min.js"]"></script>
     <script src="js/screenshot.js"></script>
     <script src="js/clipboard.js"></script>
     <script src="js/drag-drop-touch.js"></script>

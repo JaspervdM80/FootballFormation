@@ -1,6 +1,6 @@
 ---
 name: migrations
-description: Adding or reviewing an EF Core migration. There is one migration on file whose id is load-bearing, and the app auto-migrates against the live SQLite volume on deploy, so a bad Up() is a bad production database. Use whenever a migration is scaffolded, rescaffolded, a column is dropped, or a backfill is written.
+description: Adding or reviewing an EF Core migration. The base migration's id is load-bearing, and the app auto-migrates against the live SQLite volume on deploy, so a bad Up() is a bad production database. Use whenever a migration is scaffolded, rescaffolded, a column is dropped, or a backfill is written.
 ---
 
 # Migrations
@@ -12,14 +12,18 @@ dotnet ef database update    --project src/FootballFormation.Core
 
 `DesignTimeDbContextFactory` means no `--startup-project`. Migrations are run from `Core` alone.
 
+`dotnet ef` is not always on PATH. If the command is not found, call the tool by its full path
+(`~/.dotnet/tools/dotnet-ef`, `.exe` on Windows) and give `--project` an absolute path.
+
 **The app migrates itself unattended against the live volume on the next deploy.** `Program.cs` takes
 a pre-migration snapshot and refuses to migrate if that fails, but the snapshot is the last resort,
 not the plan.
 
-## There is one migration, and its id is load-bearing
+## The base migration's id is load-bearing
 
-`Migrations/` holds a single file, **`20260322100416_InitialCreate`**, with the whole schema. The
-twenty that grew it were folded into it once every database that exists had them all applied.
+`Migrations/` starts at **`20260322100416_InitialCreate`**, which carries the whole schema: the
+twenty that grew it were folded into it once every database that exists had them all applied. Three
+ordinary migrations have been added on top of it since, in August 2026.
 
 **That id is the original `InitialCreate`'s, not the timestamp of the scaffold that wrote the file,
 and that is what makes the fold safe.** The live volume already lists it in `__EFMigrationsHistory`,
@@ -77,6 +81,13 @@ SELECT name FROM sqlite_master WHERE name LIKE 'ef_temp%';   -- must be empty
 **`DropColumn` rebuilds the whole table.** When that table is a *parent* (other tables hold FKs into
 it — `Players` has three), check afterwards that its row count is unchanged and no `ef_temp_*` table
 survived.
+
+## Where the database is
+
+`DatabasePathHelper.GetDatabasePath()` resolves in order: `APP_DATA_DIR`, then `WEBSITE_INSTANCE_ID`
+(`/home/data`), then `%LOCALAPPDATA%\FootballFormation\`. In production that is the Fly.io volume;
+locally it is `%LOCALAPPDATA%\FootballFormation\footballformation.db` — one file shared by every
+branch, so a local *"no such column"* means the database is ahead of the code, not corrupt.
 
 ## Rehearse anything destructive on a copy
 

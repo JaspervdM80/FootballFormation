@@ -234,7 +234,7 @@ wwwroot/
   js/screenshot.js        — Renders the overview to a PNG via the bundled html2canvas
   js/vendor/html2canvas.min.js
   manifest.webmanifest    — PWA manifest (installable on iOS/Android via Add to Home Screen)
-  service-worker.js       — Pass-through SW required for Android installability (no offline caching)
+  service-worker.js       — Caches assets the server marks `immutable`; never markup (no offline mode)
   icons/                  — GJS club logo as app icons: 180 (apple-touch) / 192 / 512 / 512-maskable
   js/pwa.js               — Service worker registration, and the reload once a rejoin has failed
   js/drag-drop-touch.js   — Touch → HTML5 drag event shim for the formation builder on phones

@@ -31,6 +31,9 @@ public class SeasonStats
 
     public int GoalDifference => GoalsFor - GoalsAgainst;
     public double WinPercentage => Played > 0 ? Math.Round((double)Won / Played * 100, 0) : 0;
+
+    // For a page whose load failed, so the markup needs no second shape to render.
+    public static SeasonStats Empty { get; } = new() { Form = [], Players = [] };
 }
 
 /// <summary>

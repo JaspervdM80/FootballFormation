@@ -10,8 +10,7 @@ namespace FootballFormation.UI.Pages;
 
 public partial class SeasonStats
 {
-    [Inject] private SeasonSquadService SquadService { get; set; } = null!;
-    [Inject] private GameService GameService { get; set; } = null!;
+    [Inject] private StatsService StatsService { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
     private readonly PageNotice _notice = new();
@@ -29,18 +28,13 @@ public partial class SeasonStats
         // Back to the spinner while the newly selected season loads.
         _loaded = false;
 
-        // The squad is the authoritative roster, so the player list comes from it rather than from
-        // every person on file. That is what stops a past season showing today's squad.
-        var squadsResult = await SquadService.GetSquadsAsync(SeasonId, Cancellation);
-        var squads = _notice.ReportFailure(L, squadsResult) ? squadsResult.Value! : SeasonSquads.Empty;
-        var players = squads.AllPlayers;
+        var result = await StatsService.GetSeasonAsync(SeasonId, Cancellation);
+        var view = _notice.ReportFailure(L, result)
+            ? result.Value!
+            : new SeasonStatsView(Core.Reporting.SeasonStats.Empty, SeasonSquads.Empty);
 
-        var gamesResult = await GameService.GetAllWithDetailsAsync(SeasonId, Cancellation);
-        var games = _notice.ReportFailure(L, gamesResult) ? gamesResult.Value! : [];
-
-        // Build takes the games and squads as parameters, so filtering at the call site is all a
-        // season-scoped report needs — the report builders stay pure.
-        _stats = SeasonStatsReport.Build(players, games, squads);
+        _stats = view.Stats;
+        var squads = view.Squads;
 
         _scorers = _stats.Players
             .Where(p => p.Goals > 0 || p.Assists > 0)

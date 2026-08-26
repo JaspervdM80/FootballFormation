@@ -1,9 +1,9 @@
 using FootballFormation.Core.Data;
 using FootballFormation.Core.Models;
-using FootballFormation.Core.Security;
 using FootballFormation.Core.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
 
@@ -11,14 +11,6 @@ namespace FootballFormation.Core.Tests;
 
 /// <summary>
 /// A real SQLite database per test, held open in memory for the life of the connection.
-/// <para>
-/// Not the in-memory provider: these services lean on foreign keys, unique indexes, cascade
-/// behaviour and the CSV value converters, none of which the in-memory provider enforces. A test
-/// that passes there can still fail against the database the app actually ships with.
-/// </para>
-/// <para>
-/// Services are constructed here rather than in each test class, so the wiring lives in one place.
-/// </para>
 /// </summary>
 public abstract class ServiceTestBase : IDisposable
 {
@@ -31,7 +23,9 @@ public abstract class ServiceTestBase : IDisposable
         _connection = new SqliteConnection("Filename=:memory:");
         _connection.Open();
 
-        DbFactory = new TestDbContextFactory(_connection);
+        StatsCache = new StatsCache(new MemoryCache(new MemoryCacheOptions()));
+
+        DbFactory = new TestDbContextFactory(_connection, new StatsCacheInvalidator(StatsCache));
         Db = DbFactory.CreateDbContext();
         Db.Database.EnsureCreated();
 
@@ -41,18 +35,16 @@ public abstract class ServiceTestBase : IDisposable
         Seasons = new SeasonService(DbFactory, Time, CurrentUser, NullLogger<SeasonService>.Instance);
         Squads = new SeasonSquadService(DbFactory, CurrentUser, NullLogger<SeasonSquadService>.Instance);
         Games = new GameService(DbFactory, Seasons, CurrentUser, Time, NullLogger<GameService>.Instance);
-        Preferences = new MatchPreferencesService(DbFactory, Time, CurrentUser,
-            NullLogger<MatchPreferencesService>.Instance);
+        Preferences = new MatchPreferencesService(DbFactory, Time, CurrentUser, NullLogger<MatchPreferencesService>.Instance);
         Live = new LiveMatchService(DbFactory, Time, NullLogger<LiveMatchService>.Instance);
 
-        MatchClock = new MatchClockService(DbFactory, Notifier, Time, CurrentUser,
-            NullLogger<MatchClockService>.Instance);
-        Goals = new MatchGoalService(DbFactory, Games, Notifier, Time, CurrentUser,
-            NullLogger<MatchGoalService>.Instance);
-        Subs = new MatchSubstitutionService(DbFactory, Notifier, Time, CurrentUser,
-            NullLogger<MatchSubstitutionService>.Instance);
+        MatchClock = new MatchClockService(DbFactory, Notifier, Time, CurrentUser, NullLogger<MatchClockService>.Instance);
+        Goals = new MatchGoalService(DbFactory, Games, Notifier, Time, CurrentUser, NullLogger<MatchGoalService>.Instance);
+        Subs = new MatchSubstitutionService(DbFactory, Notifier, Time, CurrentUser, NullLogger<MatchSubstitutionService>.Instance);
 
         Users = new UserService(DbFactory, CurrentUser, NullLogger<UserService>.Instance);
+
+        Stats = new StatsService(Games, Squads, StatsCache, NullLogger<StatsService>.Instance);
     }
 
     /// <summary>
@@ -89,7 +81,11 @@ public abstract class ServiceTestBase : IDisposable
     protected MatchSubstitutionService Subs { get; }
     protected UserService Users { get; }
 
-    /// <summary>A fresh context, for reading back what a service wrote without tracking interference.</summary>
+    // StatsCache.Generation is how a test asks whether a write was noticed, without timing.
+    protected StatsService Stats { get; }
+
+    protected StatsCache StatsCache { get; }
+
     protected AppDbContext Read() => DbFactory.CreateDbContext();
 
     protected async Task<Season> SeedSeasonAsync(DateTime? covering = null, bool isCurrent = true)
@@ -128,18 +124,9 @@ public abstract class ServiceTestBase : IDisposable
     /// <summary>
     /// Hands every caller a new context over the one open connection, which is what keeps the
     /// in-memory database alive between them.
-    /// <para>
-    /// <see cref="DateInSqlInterceptor"/> rides along on every one of them, so the whole suite —
-    /// not a single test that has to remember to look — is what stops a date comparison reaching
-    /// SQL.
-    /// </para>
     /// </summary>
-    private sealed class TestDbContextFactory(SqliteConnection connection) : IDbContextFactory<AppDbContext>
+    private sealed class TestDbContextFactory(SqliteConnection connection, StatsCacheInvalidator invalidator) : IDbContextFactory<AppDbContext>
     {
-        public AppDbContext CreateDbContext() =>
-            new(new DbContextOptionsBuilder<AppDbContext>()
-                .UseSqlite(connection)
-                .AddInterceptors(new DateInSqlInterceptor())
-                .Options);
+        public AppDbContext CreateDbContext() => new(new DbContextOptionsBuilder<AppDbContext>().UseSqlite(connection).AddInterceptors(new DateInSqlInterceptor(), invalidator).Options);
     }
 }

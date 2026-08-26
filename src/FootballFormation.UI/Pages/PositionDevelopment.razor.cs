@@ -10,8 +10,7 @@ namespace FootballFormation.UI.Pages;
 
 public partial class PositionDevelopment
 {
-    [Inject] private SeasonSquadService SquadService { get; set; } = null!;
-    [Inject] private GameService GameService { get; set; } = null!;
+    [Inject] private StatsService StatsService { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
     private readonly PageNotice _notice = new();
@@ -23,19 +22,20 @@ public partial class PositionDevelopment
     {
         _loaded = false;
 
-        // Same source as /stats — the squad is the authoritative roster, not everyone on file.
-        var squadsResult = await SquadService.GetSquadsAsync(SeasonId, Cancellation);
-        var squads = _notice.ReportFailure(L, squadsResult) ? squadsResult.Value! : SeasonSquads.Empty;
-
-        var gamesResult = await GameService.GetAllWithDetailsAsync(SeasonId, Cancellation);
-        var games = _notice.ReportFailure(L, gamesResult) ? gamesResult.Value! : [];
+        // Filtered, not rebuilt, so this shares /stats' cache entry — each player's figures are
+        // built independently, so dropping the guests afterwards is the same answer.
+        var result = await StatsService.GetSeasonAsync(SeasonId, Cancellation);
+        var view = _notice.ReportFailure(L, result)
+            ? result.Value!
+            : new SeasonStatsView(Core.Reporting.SeasonStats.Empty, SeasonSquads.Empty);
 
         // Guests are left out, same as the playing-time fairness table on /stats: this grid is
         // about squad rotation, and a guest was never in the rotation to begin with.
-        var regulars = squads.AllPlayers.Where(p => squads.IsFullMemberAnywhere(p.Id)).ToList();
-        var stats = SeasonStatsReport.Build(regulars, games, squads);
+        var regulars = view.Stats.Players
+            .Where(p => view.Squads.IsFullMemberAnywhere(p.Player.Id))
+            .ToList();
 
-        _report = PositionDevelopmentReport.Build(stats.Players);
+        _report = PositionDevelopmentReport.Build(regulars);
         _loaded = true;
     }
 }

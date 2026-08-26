@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Security.Claims;
 using System.Threading.RateLimiting;
 using FootballFormation.Core.Data;
@@ -17,7 +17,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Localization;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
@@ -99,11 +98,19 @@ try
     // open, so a scoped DbContext would be shared by every component on the page — and two of them
     // querying at once (the layout's season picker and the page itself) throws. Each service
     // operation now opens and disposes its own short-lived context instead.
-    builder.Services.AddDbContextFactory<AppDbContext>(options =>
-        options.UseSqlite($"Data Source={dbPath}",
-            x => x.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
+    // StatsCacheInvalidator rides on every one of them, so any write drops the cached statistics.
+    builder.Services.AddDbContextFactory<AppDbContext>((sp, options) =>
+        options
+            .UseSqlite($"Data Source={dbPath}",
+                x => x.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery))
+            .AddInterceptors(sp.GetRequiredService<StatsCacheInvalidator>()));
 
     builder.Services.AddSingleton(TimeProvider.System);
+
+    // Singletons: a per-circuit generation would leave every other circuit reading a stale copy.
+    builder.Services.AddMemoryCache();
+    builder.Services.AddSingleton<StatsCache>();
+    builder.Services.AddSingleton<StatsCacheInvalidator>();
 
     builder.Services.AddScoped<ICurrentUser, CircuitCurrentUser>();
 
@@ -117,6 +124,7 @@ try
     builder.Services.AddScoped<MatchSubstitutionService>();
     builder.Services.AddScoped<MatchPreferencesService>();
     builder.Services.AddScoped<UserService>();
+    builder.Services.AddScoped<StatsService>();
 
     // Singleton, not scoped: a substitution on the sideline has to reach every circuit watching,
     // not just the one that made it.
@@ -433,8 +441,6 @@ try
         Log.Warning("Dev login endpoint mapped at /dev/login (Development + loopback only)");
     }
 
-    // Language switcher target: persists the choice in the culture cookie, then
-    // reloads so the whole circuit restarts in the new culture.
     app.MapGet("/culture/set", (string culture, string redirectUri, HttpContext context) =>
     {
         if (culture is "nl" or "en")
@@ -448,15 +454,8 @@ try
         return Results.LocalRedirect($"~/{redirectUri.TrimStart('/')}");
     });
 
-    // Season picker target, the same shape as the language switcher above. A season change is a
-    // navigation rather than an event because the picker lives in the layout, which renders
-    // statically for every page — there is no circuit there to handle a click, and this endpoint
-    // has the one thing a circuit never has: a response to put a Set-Cookie on.
     app.MapGet("/season/set", (string season, string redirectUri, HttpContext context) =>
     {
-        // Anything unparseable is simply not stored. Parse already treats an absent cookie and a
-        // hand-edited one the same way, so a bad query string lands the visitor back where they
-        // were, on the season they already had.
         if (season == SeasonPreference.AllSeasons || int.TryParse(season, out _))
         {
             context.Response.Cookies.Append(
@@ -510,8 +509,6 @@ static ClaimsPrincipal PrincipalFor(AppUser user)
     {
         new(ClaimTypes.NameIdentifier, user.Id.ToString()),
         new(ClaimTypes.Name, user.Username),
-        // ToString() rather than a literal: this is the string [Authorize(Roles = ...)] matches,
-        // and AppRoles ties those constants back to the same enum member names.
         new(ClaimTypes.Role, user.Role.ToString()),
         new(AppClaims.UserId, user.Id.ToString()),
         new(AppClaims.DisplayName, user.DisplayName),
@@ -519,11 +516,9 @@ static ClaimsPrincipal PrincipalFor(AppUser user)
     };
 
     // Only when set, so the common case carries no extra claim at all.
-    if (user.MustChangePassword)
-        claims.Add(new Claim(AppClaims.MustChangePassword, "true"));
+    if (user.MustChangePassword) claims.Add(new Claim(AppClaims.MustChangePassword, "true"));
 
-    return new ClaimsPrincipal(
-        new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
+    return new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
 }
 
 /// <summary>

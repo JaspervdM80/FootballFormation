@@ -189,8 +189,10 @@ It launches full-screen with its own icon like a native app. Touch drag-and-drop
 formation builder is supported via a built-in shim (`js/drag-drop-touch.js`).
 
 > **Note**: this is a Blazor Server app — it needs a live connection to the server.
-> There is deliberately no offline mode; the service worker exists only to satisfy
-> installability requirements.
+> There is deliberately no offline mode. The service worker caches the assets the app is
+> built from — the ones served `Cache-Control: immutable`, which is every file referenced
+> through `@Assets[...]` — so a repeat visit pays for markup and nothing else. It never
+> caches a page, so a phone with no signal still gets nothing.
 
 ## Design
 

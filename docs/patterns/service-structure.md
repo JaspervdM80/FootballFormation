@@ -48,6 +48,49 @@ Three things fall out of a split like this, and they are the parts worth copying
 A page injecting all four is fine and expected. A *facade* over them would be the signal that the
 split was cut along the wrong line.
 
+## The cached statistics, and where invalidation hangs from
+`StatsService` is the one service that composes two others (`GameService` and `SeasonSquadService`),
+which the rest of Core avoids. It earns it: the three statistics pages had the same four lines of
+loading copied into each of them, and a cache cannot skip a load the page has already started. The
+split is still by use case — "what the statistics pages need" — and it computes rather than
+delegates, which is what keeps it from being the facade the section above warns about.
+
+**One entry serves all three pages.** `SeasonStatsReport.Build` produces its per-player figures by
+calling `PlayerStatsReport.Build` unchanged, so a player's entry in `SeasonStats.Players` is the
+identical object `/players/{id}/stats` would have built for itself — `StatsServiceTests` asserts
+`Assert.Same`, not merely equal figures. `/stats/positions` filters the same list to the regulars
+rather than reporting on them separately. A squad of twenty costs one cache entry, not twenty-one.
+
+**Nothing is ever invalidated; the key changes.** A write bumps `StatsCache.Generation`, which is
+part of every key, so earlier entries are not stale but unreachable, and expire on their own after
+fifteen idle minutes. There is no key registry, no tag index and no eviction pass — and a report
+built while a write lands is orphaned rather than served, because `KeyFor` captures the generation
+*before* the load and `Set` stores under that captured key. Cancelling a shared eviction token
+instead would let that in-flight rebuild write its stale result back under the live key.
+
+**The bump hangs off `SaveChanges`, not off `ServiceOperation.RunAdminAsync`.** The service shape is
+the other single choke point and the more obvious candidate — `LiveMatchOperation.RunAdminAsync`
+delegates to it, so every write in the app really does pass through — but the interceptor
+(`StatsCacheInvalidator`, registered on the context factory in `Program.cs`) sits lower and needs no
+argument threaded through forty call sites. The difference that matters is that there is nothing
+left to remember: a new write method invalidates *by writing*. The one way around it is a write that
+never reaches `SaveChanges` — `ExecuteUpdate`, `ExecuteDelete` or raw SQL, none of which this app
+uses outside the migrations. Adding one would go behind the interceptor's back.
+
+**Cache the report, never `GetAllWithDetailsAsync`.** `Games.razor` and `FormationBuilder` hand a
+loaded `Game` straight back to `GameService.UpdateAsync`, which attaches it with
+`db.Entry(game).State = EntityState.Modified` — so caching at the service level would put a shared
+mutable graph into a `DbContext` and let a rename corrupt what another reader sees. The statistics
+pages never write, so caching their output is safe.
+
+**The report is auth- and culture-independent, which is why one copy serves everyone.**
+`PlayerStatsReport.Build` knows nothing about admin: it always computes the minutes, and the page
+hides them from a visitor with `_isAdmin`. Gating happens downstream of the cache, so there is no
+per-viewer keying to get wrong and nothing of what #98 holds back can leak through it. That is also
+the argument against output caching, which looks like a better fit until you count what the *markup*
+varies by: the `ff.auth`, culture and season cookies, three chances to serve an admin's minutes to a
+visitor.
+
 ## Domain logic on the model
 Anything computable without the database lives on the entity, not in a service or a page:
 `Game.PeriodCount`, `Game.PeriodDurationSeconds`, `Game.IsInRoster`, `Game.SelectRoster`,

@@ -1,7 +1,5 @@
 <Project>
 
-  <!-- Central package management: versions live here, csproj files list only package names.
-       MudBlazor and EF Core were each pinned in two projects and had to be bumped in step. -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
@@ -11,16 +9,12 @@
     <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="10.0.10" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Identity.Core" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Localization" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
     <PackageVersion Include="MudBlazor" Version="9.7.0" />
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
-    <!-- Overrides the vulnerable 2.1.11 that EF Core Sqlite pulls in transitively (GHSA-2m69-gcr7-jv3q,
-         a SQLite bug fixed in 3.50.2). Only this package is affected and only this one is pinned:
-         lib.e_sqlite3 is versioned after the SQLite release it carries, while its managed siblings
-         (core, bundle_e_sqlite3, provider.e_sqlite3) are on their own line and stay at whatever EF
-         Core resolves. The differing numbers are the scheme, not a mismatch — do not "align" them. -->
     <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />
 
     <!-- Test only -->

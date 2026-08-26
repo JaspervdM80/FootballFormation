@@ -76,6 +76,21 @@ so cancelling it for one page takes the app bar down with it.
 - Report through the `UiFeedback` extensions with `L` first, never a hand-rolled if/else:
   `Snackbar.Report(L, result, L["{0} added to the squad", player.DisplayName])`.
 
+## UserService opts out of Result on purpose
+
+`ValidateCredentialsAsync`, `FindForSessionAsync` and `ChangePasswordAsync` return raw values rather
+than a `Result`: the login endpoint needs "wrong password" and "no such user" to be
+indistinguishable, and a `Result` carrying a message hands an attacker the difference. Do not "fix"
+those three to match the convention.
+
+## Logging levels
+
+Serilog writes to the console and to `%LOCALAPPDATA%\FootballFormation\logs\`. Follow the levels
+already in use: `LogDebug` for a read, `LogInformation` for a mutation including the entity id,
+`LogWarning` for an expected miss. `LogError` belongs to `ServiceOperation` — do not raise one
+yourself. Always structured placeholders (`{PlayerId}`), never interpolation, or the properties stop
+being queryable in the log files.
+
 ## No interfaces for services
 
 Services are injected as concrete types. Do not add `IPlayerService` unless a second implementation

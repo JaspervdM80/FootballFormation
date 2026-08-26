@@ -42,10 +42,11 @@ jobs:
       - uses: actions/checkout@v7
 
       # The SDK comes from global.json, not from a floating '10.0.x' — that resolved to a different
-      # *feature band* than the one a Claude Code web container installs (10.0.302 against 10.0.110),
+      # *feature band* than the one a Claude Code web container installs (10.0.302 against a 1xx),
       # and an RZ2005 Razor error once failed there while this build stayed green. global.json sets
-      # rollForward: disable, so a runner that happens to preinstall a newer 10.x cannot be picked
-      # up instead of the version installed here.
+      # rollForward: latestPatch, so a runner that preinstalls a newer *band* cannot be picked up
+      # instead of the version installed here, while a patch bump in Ubuntu's archive — the web
+      # container's only SDK source — no longer leaves that container unable to build at all.
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
