@@ -9,27 +9,18 @@ public class Result
     public bool IsSuccess { get; }
     public bool IsFailure => !IsSuccess;
 
-    /// <summary>
-    /// The caller went away before the operation finished. An <see cref="IsFailure"/> too, so every
-    /// "did that work?" check reads it as no — but carrying no message, so there is nothing for the
-    /// UI to show. See docs/patterns/result-and-cancellation.md.
-    /// </summary>
+    /// An <see cref="IsFailure"/> too, so every "did that work?" check reads it as no — but carrying no message, so the UI shows nothing.
+    /// See docs/patterns/result-and-cancellation.md.
     public bool IsCancelled { get; }
 
-    /// <summary>
-    /// The failure in English, ready to display as-is. Null on success and on a cancellation.
-    /// </summary>
+    /// Null on success and on a cancellation.
     public string? Error { get; }
 
-    /// <summary>
-    /// The untranslated message template, e.g. <c>"Game with ID {0} not found"</c>. This is the
-    /// resource key — the app's convention is that English text is the key (see
-    /// docs/ui_components/shared-components.md) — so the UI can look it up and fall back to <see cref="Error"/> when
-    /// no translation exists. For a message with no placeholders it equals <see cref="Error"/>.
-    /// </summary>
+    /// The English text is itself the resource key, which is what lets the UI look it up and fall back to <see cref="Error"/> when no
+    /// translation exists. See docs/ui_components/shared-components.md.
     public string? ErrorKey { get; }
 
-    /// <summary>The values for <see cref="ErrorKey"/>'s placeholders, in order.</summary>
+    /// The values for <see cref="ErrorKey"/>'s placeholders, in order.
     public IReadOnlyList<object> ErrorArgs => _errorArgs;
 
     protected Result(bool isSuccess, string? errorKey, object[] errorArgs, bool isCancelled = false)
@@ -48,8 +39,7 @@ public class Result
 
     public static Result Success() => new(true, null, []);
 
-    /// <param name="errorKey">English message, and the resource key. Use <c>{0}</c> placeholders
-    /// for anything variable rather than interpolating, or the message cannot be translated.</param>
+    /// Use <c>{0}</c> placeholders for anything variable rather than interpolating, or the message cannot be translated.
     public static Result Failure(string errorKey, params object[] args) => new(false, errorKey, args);
 
     public static Result Cancelled() => new(false, null, [], isCancelled: true);
@@ -61,7 +51,7 @@ public class Result
 
     public static Result<T> Cancelled<T>() => new(default, false, null, [], isCancelled: true);
 
-    /// <summary>Carries a failure — or a cancellation — to a different value type, intact.</summary>
+    /// Carries a failure — or a cancellation — to a different value type, intact.
     public Result<T> To<T>() => new(default, IsSuccess, ErrorKey, _errorArgs, IsCancelled);
 }
 
@@ -73,11 +63,8 @@ public class Result<T> : Result
         : base(isSuccess, errorKey, errorArgs, isCancelled) =>
         _value = value;
 
-    /// <summary>
-    /// The result of the operation. Reading it on a failed result throws rather than handing back
-    /// a silent default — a caller that skipped the success check has a bug, and it should surface
-    /// here rather than as a null three frames away.
-    /// </summary>
+    /// Throws on a failed result rather than handing back a silent default: a caller that skipped the success check has a bug, and it
+    /// should surface here rather than as a null three frames away.
     public T? Value => IsSuccess
         ? _value
         : throw new InvalidOperationException(IsCancelled

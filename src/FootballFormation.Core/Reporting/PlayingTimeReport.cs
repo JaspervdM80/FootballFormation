@@ -21,8 +21,7 @@ public class PlayingTimeRow
     public int TotalMinutes { get; init; }
     public double Percentage { get; init; }
 
-    /// <summary>False when the minutes are the planned <c>periods × period length</c> estimate
-    /// because the game was never run live. See <see cref="GameMinutesReport"/>.</summary>
+    /// False when the minutes are the planned estimate — see <see cref="GameMinutesReport"/>.
     public bool IsActual { get; init; }
 
     public int PlayerId => Player.Id;
@@ -30,21 +29,8 @@ public class PlayingTimeRow
     public int? ShirtNumber => Player.ShirtNumber;
 }
 
-/// <summary>
-/// Turns the per-period lineups into the playing-time table, so the builder page only
-/// has to render it. Pure computation — no state, no service calls.
-/// <para>
-/// Minutes come from <see cref="GameMinutesReport"/> once a game has been run live: the match
-/// clock and the substitutions say what really happened, and the lineup — which
-/// <c>MatchSubstitutionService</c> rewrites in place — no longer does. A game that was never run
-/// live has no timings to read, so the plan is the only answer available and the estimate stands.
-/// The choice is per game, and every row of one table shares it.
-/// </para>
-/// <para>
-/// The per-period cells are a different question and always come from the lineups this page is
-/// editing, so a change made here shows up immediately rather than waiting for a save.
-/// </para>
-/// </summary>
+/// The totals follow <see cref="GameMinutesReport"/>, so a game run live is measured on what happened rather than what was planned. The
+/// per-period cells are a different question and always come from the line-ups being edited, so a change shows up before a save.
 public static class PlayingTimeReport
 {
     public static List<PlayingTimeRow> Build(
@@ -56,10 +42,8 @@ public static class PlayingTimeReport
 
         var actual = game.HasActualTimings ? GameMinutesReport.Build(game) : null;
 
-        // Against playable time, not GameDurationMinutes: a game whose periods are not all written
-        // up yet has less than a full match to share out, and playing every period there should
-        // still read 100%. A tracked game is measured against the time it really ran, for the same
-        // reason — a half whistled off early must not cap everyone who played it at 80%.
+        // Against playable time, not GameDurationMinutes: a game whose periods are not all written up has less than a full match to
+        // share out, and a half whistled off early must not cap everyone who played it at 80%.
         var playableSeconds = actual is not null
             ? game.PlayedDurationSeconds
             : orderedPeriods.Count * game.PeriodDurationSeconds;

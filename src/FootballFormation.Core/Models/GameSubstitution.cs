@@ -1,10 +1,6 @@
 namespace FootballFormation.Core.Models;
 
-/// <summary>
-/// One change made during a live match. The lineup itself is still the source of truth for who
-/// stands where (see <see cref="GamePlayerPosition"/>); this records <em>when</em> the swap
-/// happened, which the period lineup alone cannot express.
-/// </summary>
+/// The line-up stays the source of truth for who stands where; this records when the swap happened, which it alone cannot express.
 public class GameSubstitution
 {
     public int Id { get; set; }
@@ -20,18 +16,15 @@ public class GameSubstitution
     public int PlayerOnId { get; set; }
     public Player PlayerOn { get; set; } = null!;
 
-    /// <summary>Match-clock second the change was made.</summary>
+    /// Match-clock second the change was made.
     public int AtSeconds { get; set; }
 
-    /// <summary>The pitch slot that changed hands, so the swap can be reversed.</summary>
+    /// The pitch slot that changed hands, so the swap can be reversed.
     public int? SlotIndex { get; set; }
 
-    /// <summary>The position that changed hands, for the same reason.</summary>
+    /// The position that changed hands, for the same reason.
     public PlayerPosition Position { get; set; }
 
-    /// <summary>
-    /// When the change was entered. <see cref="AtSeconds"/> says where on the match clock it sits;
-    /// this breaks ties against goals in the same minute. See <see cref="GameGoal.RecordedAt"/>.
-    /// </summary>
+    /// Breaks ties against goals in the same second, where <see cref="AtSeconds"/> cannot. See <see cref="GameGoal.RecordedAt"/>.
     public DateTime RecordedAt { get; set; } = DateTime.UtcNow;
 }

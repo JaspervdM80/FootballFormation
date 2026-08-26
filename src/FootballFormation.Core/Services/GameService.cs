@@ -9,7 +9,7 @@ public class GameService(
 {
     private DateTime UtcNow => time.GetUtcNow().UtcDateTime;
 
-    /// <param name="seasonId">Limits the result to one season. Null loads every season.</param>
+    /// A null <paramref name="seasonId"/> loads every season.
     public Task<Result<List<Game>>> GetAllAsync(
         int? seasonId = null, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "load games", cancellationToken, async () =>
@@ -28,7 +28,7 @@ public class GameService(
             return Result.Success(games);
         });
 
-    /// <param name="seasonId">Limits the result to one season. Null loads every season.</param>
+    /// A null <paramref name="seasonId"/> loads every season.
     public Task<Result<List<Game>>> GetAllWithDetailsAsync(
         int? seasonId = null, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "load game details", cancellationToken, async () =>
@@ -75,9 +75,8 @@ public class GameService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            // SeasonId 0 is the dialog's "auto by date" default; an explicit choice passes through.
-            // Resolving it here rather than at the call site keeps "every game has a season" an
-            // invariant no caller can bypass.
+            // Resolved here rather than at the call site, so "every game has a season" is an invariant no caller can bypass. SeasonId 0
+            // is the dialog's "auto by date" default.
             if (game.SeasonId == 0)
             {
                 var seasonResult = await seasons.GetOrCreateForDateAsync(game.Date, cancellationToken);
@@ -104,11 +103,8 @@ public class GameService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            // Scalars only. The game handed in came from GetAllWithDetailsAsync, so its Periods,
-            // PlayerPositions, Goals and Substitutions are all populated — and DbSet.Update walks
-            // that whole graph and marks every row Modified. Renaming an opponent would rewrite
-            // the entire lineup history of the match. Setting State on the entry attaches the
-            // root alone and leaves the navigations untouched.
+            // Never DbSet.Update here: it walks the whole loaded graph and marks every row Modified, so renaming an opponent would
+            // rewrite the match's entire lineup history. Setting State attaches the root alone.
             db.Entry(game).State = EntityState.Modified;
             await db.SaveChangesAsync(cancellationToken);
 
@@ -152,8 +148,7 @@ public class GameService(
             game.ScoreHome = scoreHome;
             game.ScoreAway = scoreAway;
 
-            // Where a match played on paper becomes part of the record, and so where it catches who
-            // was injured at the time. Asked on every save; RecordAsync answers only the first.
+            // Asked on every save; RecordAsync answers only the first, which is what stamps who was injured at the time.
             if (game.IsComplete)
                 await StandingInjuries.RecordAsync(db, game, cancellationToken);
 
@@ -164,24 +159,16 @@ public class GameService(
             return Result.Success();
         });
 
-    /// <param name="recountScoreline">
-    /// True at the touchline, where the scoreline <em>is</em> the goals: the row and the recount
-    /// commit together, so no interruption can leave one written without the other. False on the
-    /// result page, where the score is typed by hand and the goal list is allowed to be shorter
-    /// than it — recounting there would turn a 3-1 into the two goals whose scorer someone
-    /// remembered.
-    /// </param>
+    /// <param name="recountScoreline">True at the touchline, where the scoreline is the goals and both commit together. False on the
+    /// result page, where recounting a hand-typed 3-1 would cut it down to the two goals whose scorer someone remembered.</param>
     public Task<Result<GameGoal>> AddGoalAsync(
         GameGoal goal, bool recountScoreline = false, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAdminAsync(currentUser, logger, "add goal", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            // Stamped here rather than left to the property initializer on the entity. That
-            // initializer reads the wall clock at construction, which meant a live match driven by
-            // a fake clock still recorded real timestamps — the one thing TimeProvider exists to
-            // prevent. The initializer stays as a sensible default for a goal built outside a
-            // service; when a service saves one, the service's clock decides.
+            // The service's clock, not the entity initializer's wall clock, or a live match driven by a fake clock would still record
+            // real timestamps. The initializer stays as the default for a goal built outside a service.
             goal.RecordedAt = UtcNow;
 
             await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
@@ -194,7 +181,6 @@ public class GameService(
 
             await tx.CommitAsync(cancellationToken);
 
-            // Reload with navigation properties
             if (goal.ScorerId is not null)
                 await db.Entry(goal).Reference(g => g.Scorer).LoadAsync(cancellationToken);
             if (goal.AssisterId is not null)
@@ -233,19 +219,8 @@ public class GameService(
             return Result.Success();
         });
 
-    /// <summary>
-    /// Rewrites a game's scoreline from the goals on file, through the <em>same</em> context and
-    /// inside the <em>same</em> transaction as the write that prompted it — and after that write
-    /// has been saved, so the goal it added or removed is already reflected in what is counted.
-    /// <para>
-    /// Both halves of that matter. A transaction cannot span two <see cref="AppDbContext"/>
-    /// instances, so counting through a second context would leave a gap nothing can roll back;
-    /// and counting in memory <em>before</em> the save would make this a read-modify-write, which
-    /// two touchline devices logging a goal in the same moment would both get wrong. Counting
-    /// afterwards makes the second one wait for SQLite's write lock and then count both goals.
-    /// See docs/patterns/transactions-and-writes.md.
-    /// </para>
-    /// </summary>
+    /// Must run on the caller's context and inside its transaction — one cannot span two — and only after its save, or two touchline
+    /// devices logging a goal at once would both read-modify-write the same scoreline. See docs/patterns/transactions-and-writes.md.
     private static async Task RecountScorelineAsync(
         AppDbContext db, int gameId, CancellationToken cancellationToken)
     {
@@ -259,17 +234,8 @@ public class GameService(
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    /// <param name="includePrivate">
-    /// True only for an admin. The filter lives in the query rather than in the page so a private
-    /// body never reaches a visitor at all — the result page prerenders server-side, so markup that
-    /// merely hides the row would still ship the text.
-    /// <para>
-    /// Asking is not the same as being allowed: the flag is confirmed against
-    /// <see cref="ICurrentUser"/> below, so a caller that passes true without being an admin gets
-    /// the public comments and nothing else. This is the one read with something to hide, and it
-    /// should not be the one place a boolean argument is taken on trust.
-    /// </para>
-    /// </param>
+    /// <paramref name="includePrivate"/> is a request, not a permission — it is confirmed against <see cref="ICurrentUser"/> below.
+    /// The filter belongs in the query because the result page prerenders, so markup that merely hides the row would still ship the text.
     public Task<Result<List<GameComment>>> GetCommentsAsync(
         int gameId, bool includePrivate, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "load comments", cancellationToken, async () =>
@@ -278,8 +244,7 @@ public class GameService(
 
             includePrivate = includePrivate && await currentUser.IsAdminAsync();
 
-            // The tie-break runs the other way to a fixture list's: two comments written in the
-            // same instant are a feed, and the later one belongs on top.
+            // The tie-break runs the other way to a fixture list's: two comments written in the same instant are a feed, newest on top.
             var comments = (await db.GameComments
                 .Where(c => c.GameId == gameId && (includePrivate || c.IsPublic))
                 .Include(c => c.Author)
@@ -327,8 +292,7 @@ public class GameService(
                 return Result.Failure("Comment not found");
             }
 
-            // Publishing on its own is not an edit — the text is unchanged, so the "edited" marker
-            // would be a lie.
+            // Publishing on its own is not an edit — the text is unchanged, so the "edited" marker would be a lie.
             if (comment.Body != body) comment.EditedAt = UtcNow;
 
             comment.Body = body;
@@ -365,8 +329,7 @@ public class GameService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            // Delete-then-insert needs both halves or neither: without the transaction, a failure
-            // on the insert leaves the period with no lineup at all rather than the one it had.
+            // Delete-then-insert needs both halves or neither, or a failed insert leaves the period with no line-up at all.
             await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
 
             var existing = await db.GamePlayerPositions

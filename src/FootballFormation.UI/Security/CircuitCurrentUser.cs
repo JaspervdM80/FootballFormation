@@ -3,20 +3,11 @@ using Microsoft.AspNetCore.Components.Authorization;
 
 namespace FootballFormation.UI.Security;
 
-/// <summary>
-/// <see cref="ICurrentUser"/> over the signed-in principal of the current Blazor circuit.
-/// <para>
-/// Scoped, like the provider it reads: in Blazor Server a scope is a circuit, so this answers for
-/// the tab that made the call. Registered in Program.cs.
-/// </para>
-/// </summary>
+/// Scoped, like the provider it reads: in Blazor Server a scope is a circuit, so this answers for the tab that made the call.
 public class CircuitCurrentUser(AuthenticationStateProvider authStateProvider) : ICurrentUser
 {
-    /// <summary>
-    /// An account still on the seeded password is deliberately not an admin yet. That is what makes
-    /// the first-login gate an actual restriction rather than a redirect somebody could navigate
-    /// around — the services refuse it too, until the password is changed.
-    /// </summary>
+    /// An account still on the seeded password is deliberately not an admin yet, which is what makes the first-login gate a real
+    /// restriction rather than a redirect somebody could navigate around.
     public async Task<bool> IsAdminAsync()
     {
         var user = (await authStateProvider.GetAuthenticationStateAsync()).User;

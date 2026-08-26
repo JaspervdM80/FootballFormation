@@ -18,9 +18,8 @@
     @* Through Assets[], not its plain path: only the fingerprinted route is served `immutable`,
        which is all service-worker.js will cache. At 611KB this is most of the app's weight. *@
     <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet" />
-    @* The club's colors, from the same ClubTheme record that builds MudBlazor's palette. Inline
-       and first, so every stylesheet below can read the tokens. The values are compile-time
-       constants in that record — nothing user-supplied reaches this markup. *@
+    @* Inline and first, so every stylesheet below can read the tokens. The values are compile-time constants in ClubTheme — nothing
+       user-supplied reaches this markup. *@
     <style>@(new MarkupString(FootballFormation.UI.Theming.ClubTheme.Current.ToCssVariables()))</style>
     <link rel="stylesheet" href="@Assets["theme.css"]" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
@@ -32,16 +31,14 @@
 </head>
 
 <body>
-    @* No render mode here. Each page declares its own, and the ones that do not — the statistics
-       pages, the match report, login and the error pages — are served as plain HTML with no circuit
-       to lose when a phone suspends the app. See docs/known_issues/touch-pwa.md. *@
+    @* No render mode here: each page declares its own, and the ones that do not are served as plain HTML with no circuit to lose when a
+       phone suspends the app. See docs/known_issues/touch-pwa.md. *@
     <Routes />
     @* Blazor toggles the classes on this element; styled dark in app.css and
        auto-reloaded by pwa.js so resuming a suspended phone app just works. *@
     <div id="components-reconnect-modal">@L["Reconnecting..."]</div>
-    @* Blazor unhides this when a circuit hits an unhandled error. The element used to be missing
-       while app.css still styled it, so the app had no error UI at all — a broken page just went
-       quiet. Reloading is the only recovery, so the whole bar is the button. *@
+    @* Blazor unhides this when a circuit hits an unhandled error; without the element a broken page just goes quiet. Reloading is the
+       only recovery, so the whole bar is the button. *@
     <div id="blazor-error-ui">
         <span>@L["Something went wrong. Reload the page to continue."]</span>
         <a href="" class="reload">@L["Reload"]</a>
@@ -51,31 +48,12 @@
     <script src="js/clipboard.js"></script>
     <script src="js/drag-drop-touch.js"></script>
     <script src="js/pwa.js"></script>
-    @* Blazor is started by hand here, because the reconnect retry schedule below cannot be set any
-       other way. Inline rather than a file under js/ on purpose: with autostart="false" nothing
-       starts the circuit if that script fails to arrive, and the page would render, look right and
-       be permanently inert — the same silent death docs/known_issues/touch-pwa.md records for an empty
-       blazor.web.js, but with a second file able to cause it. *@
+    @* Started by hand because the retry schedule below cannot be set any other way, and inline rather than a file under js/ because with
+       autostart="false" a script that fails to arrive leaves the page rendered, correct-looking and permanently inert. *@
     <script src="@Assets["_framework/blazor.web.js"]" autostart="false"></script>
     <script>
-        // The stock schedule is ten attempts with no delay between them at all, then five seconds
-        // between each one after that. A phone coming out of suspension has no network for the
-        // first moment, so all ten immediate attempts are spent and failed in a fraction of a
-        // second — and every return to the app therefore starts from the five-second bucket,
-        // showing "Reconnecting..." for ten seconds or more over a circuit the server was holding
-        // the whole time.
-        //
-        // One immediate attempt, which is what a circuit that is genuinely still there rejoins on,
-        // and then one a second while the radio comes back, which is where a real reconnect lands.
-        //
-        // Give up after roughly the ten minutes Program.cs asks the server to hold a disconnected
-        // circuit for. Sooner, and js/pwa.js reloads a page whose network is still down, landing on
-        // the browser's own error page with nothing left that retries; later, and the reload that
-        // has become the only way back is merely being postponed.
-        //
-        // The callback is documented as taking maxRetries as a second argument, but Blazor calls it
-        // with one — a `previousAttempts >= maxRetries` guard here would be dead code. The retry
-        // loop enforces the cap itself.
+        // The stock schedule burns all ten immediate attempts in the fraction of a second a resuming phone has no radio, so every return
+        // started from the five-second bucket. maxRetries covers the ten minutes Program.cs holds a circuit for — see touch-pwa.md.
         Blazor.start({
             circuit: {
                 reconnectionOptions: {

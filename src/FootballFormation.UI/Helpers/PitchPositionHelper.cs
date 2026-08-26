@@ -1,19 +1,14 @@
 namespace FootballFormation.UI.Helpers;
 
-/// <summary>
-/// Maps positions to (left%, top%) coordinates on the pitch.
-/// Pitch is vertical: our goal at bottom, opponent goal at top.
-/// When multiple slots share the same position (e.g. two CBs), the index/count
-/// parameters spread them across pre-defined left/center/right coordinates.
-/// </summary>
+/// The pitch is vertical, our goal at the bottom. Slots sharing a position — two centre-backs — are spread by index across pre-defined
+/// left/centre/right coordinates.
 public static class PitchPositionHelper
 {
     public static (double Left, double Top) GetCoordinates(PlayerPosition position, int index = 0, int count = 1) => position switch
     {
-        // Goalkeeper
+
         PlayerPosition.GK => (50, 93),
 
-        // Defenders
         PlayerPosition.LB => count switch
         {
             1 => (10, 78),
@@ -28,18 +23,14 @@ public static class PitchPositionHelper
             _ => (90, 78)
         },
 
-        // Defensive midfielders
         PlayerPosition.CDM => Spread(count, index, [(50, 65)], [(38, 65), (62, 65)]),
 
-        // Central midfielders
         PlayerPosition.CM => Spread(count, index, [(50, 53)], [(30, 55), (70, 55)], [(30, 55), (50, 53), (70, 55)]),
         PlayerPosition.LM => (8, 50),
         PlayerPosition.RM => (92, 50),
 
-        // Attacking midfielders
         PlayerPosition.CAM => Spread(count, index, [(50, 40)], [(35, 40), (65, 40)]),
 
-        // Forwards / Wingers
         PlayerPosition.LW => (12, 28),
         PlayerPosition.RW => (88, 28),
         PlayerPosition.ST => Spread(count, index, [(50, 15)], [(38, 15), (62, 15)]),

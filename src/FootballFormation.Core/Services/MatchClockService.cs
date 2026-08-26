@@ -1,18 +1,7 @@
 namespace FootballFormation.Core.Services;
 
-/// <summary>
-/// The clock and the run of play: kick-off, half time and the final whistle.
-/// <para>
-/// A match is two halves, whether its line-ups were planned in halves or in quarters. A line-up
-/// planned for the middle of a half never reaches this service — the coach works through it by
-/// hand while the clock runs — so the only stoppage here is half time.
-/// </para>
-/// <para>
-/// There is no pause: the clock runs from kick-off until the half is whistled off. A youth match
-/// is not paused at the touchline, and a clock that could be stopped by a stray tap is a clock the
-/// season's minutes cannot be trusted from.
-/// </para>
-/// </summary>
+/// Half time is the only stoppage: a line-up planned for the middle of a half never reaches this service, and there is deliberately no
+/// pause — a clock a stray tap could stop is a clock the season's minutes cannot be trusted from.
 public class MatchClockService(
     IDbContextFactory<AppDbContext> dbFactory,
     LiveMatchNotifier notifier,
@@ -20,12 +9,8 @@ public class MatchClockService(
     ICurrentUser currentUser,
     ILogger<MatchClockService> logger)
 {
-    /// <summary>
-    /// The clock every match-time decision reads. Injected rather than taken straight from
-    /// <see cref="DateTime.UtcNow"/> so the half arithmetic can be driven to an exact instant
-    /// under test — it is the part of the live match most likely to be silently wrong, and a
-    /// season's statistics depend on it.
-    /// </summary>
+    /// Injected rather than <see cref="DateTime.UtcNow"/> so the half arithmetic can be driven to an exact instant under test — it is
+    /// the part of the live match most likely to be silently wrong, and a season's statistics depend on it.
     private DateTime UtcNow => time.GetUtcNow().UtcDateTime;
 
     public Task<Result<Game>> StartMatchAsync(int gameId, CancellationToken cancellationToken = default) =>
@@ -56,7 +41,7 @@ public class MatchClockService(
             return Result.Success(game);
         });
 
-    /// <summary>Whistles the half off. The clock stops and no half is live until the next kicks off.</summary>
+    /// The clock stops and no half is live until the next kicks off.
     public Task<Result<Game>> EndHalfAsync(int gameId, CancellationToken cancellationToken = default) =>
         LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "end the half",
             cancellationToken, async () =>
@@ -79,10 +64,7 @@ public class MatchClockService(
             return Result.Success(game);
         });
 
-    /// <summary>
-    /// Kicks off the half after the break. <see cref="Game.NextHalf"/> decides which line-up opens
-    /// it, skipping any planned for the middle of the half just played.
-    /// </summary>
+    /// <see cref="Game.NextHalf"/> decides which line-up opens it, skipping any planned for the middle of the half just played.
     public Task<Result<Game>> StartNextHalfAsync(int gameId, CancellationToken cancellationToken = default) =>
         LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "start the next half",
             cancellationToken, async () =>
@@ -133,8 +115,7 @@ public class MatchClockService(
             game.LivePeriodId = null;
             game.MatchState = MatchState.Finished;
 
-            // Recounted here rather than through MatchGoalService: this is the recount that settles
-            // the game, and from here it counts towards the season.
+            // Recounted here rather than through MatchGoalService: this is the recount that settles the game for the season.
             var goals = await db.GameGoals.Where(g => g.GameId == gameId).ToListAsync(cancellationToken);
             game.CountScoreFrom(goals);
 
@@ -147,10 +128,7 @@ public class MatchClockService(
             return Result.Success(game);
         });
 
-    /// <summary>
-    /// Moves the time run so far out of the anchor and into the banked total, leaving the clock
-    /// stopped. Every state change calls this first so no seconds are lost or double-counted.
-    /// </summary>
+    /// Every state change calls this first, so no seconds are lost or double-counted between the anchor and the banked total.
     private void BankClock(Game game)
     {
         game.ClockAccumulatedSeconds = game.ElapsedSecondsAt(UtcNow);

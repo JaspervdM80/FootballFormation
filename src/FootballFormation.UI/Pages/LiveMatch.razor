@@ -54,9 +54,8 @@
         <div class="@StatusCssClass">@StatusLabel</div>
     </MudPaper>
 
-    @* Kick-off is the only thing there is to do before a match, so it stays under the scoreboard.
-       Everything the clock does afterwards is pressed once a half at most and lives at the foot of
-       the page instead — see .live-controls below. *@
+    @* Kick-off is the only thing to do before a match, so it stays under the scoreboard. Everything the clock does afterwards lives at
+       the foot of the page — see .live-controls below. *@
     @if (GameData.MatchState == MatchState.NotStarted)
     {
         <AuthorizeView Roles="@AppRoles.Admin">
@@ -69,9 +68,8 @@
         </AuthorizeView>
     }
 
-    @* No line-up for this half means an empty pitch and an empty bench, which says nothing the
-       formation screens are not already there to fix — the card stays away until someone is on it.
-       .live-lineup drops it below the timeline on a phone — see app.css. *@
+    @* An empty pitch and bench say nothing the formation screens are not already there to fix, so the card stays away until someone is
+       on it. .live-lineup drops it below the timeline on a phone — see app.css. *@
     @if (DisplayLineup.Count > 0)
     {
         <MudPaper Class="pa-4 live-lineup" Elevation="2" Style="border-radius: 16px;">
@@ -127,9 +125,8 @@
         </MudPaper>
     }
 
-    @* Nothing is scored before kick-off or after the final whistle, so the buttons stay out of the
-       way entirely rather than sitting there greyed out. A goal missed at the time is added back on
-       /result, which is where a finished match is corrected. *@
+    @* Nothing is scored before kick-off or after the whistle, so the buttons go entirely rather than sit greyed out. A goal missed at
+       the time is added back on /result, where a finished match is corrected. *@
     @if (GameData.MatchState == MatchState.InProgress)
     {
         <AuthorizeView Roles="@AppRoles.Admin">
@@ -147,9 +144,8 @@
     }
 
     <MudPaper Class="pa-4" Elevation="2" Style="border-radius: 16px;">
-        @* Rotation fills this list with swaps nobody is scrolling back for, so they fold away and
-           leave the goals on their own. The toggle rides the heading rather than sitting under it:
-           it is a setting for the list, not the first thing in it. *@
+        @* Rotation fills this list with swaps nobody is scrolling back for, so they fold away. The toggle rides the heading because it
+           is a setting for the list, not the first thing in it. *@
         <div class="live-card-head">
             <div class="card-label">@L["Timeline"]</div>
             <div class="live-timeline-toggle">
@@ -172,9 +168,8 @@
             <div class="live-timeline">
                 @foreach (var entry in Timeline)
                 {
-                    @* The list runs newest first, so the break lands between the second half's
-                       events and the first's — the only thing on the timeline that is not
-                       something somebody did. *@
+                    @* The list runs newest first, so the break lands between the second half's events and the first's — the only entry
+                       that is not something somebody did. *@
                     @if (entry.HalfTimeAbove)
                     {
                         <div class="live-event-break">@L["Half time"]</div>
@@ -277,9 +272,8 @@
         </AuthorizeView>
     }
 
-    @* The end of a half, of the match, and the way on to the result screen. Each is pressed once
-       and nothing above it can be reached past it, so they sit at the foot of the page rather than
-       between the scoreboard and the buttons that are pressed all match. *@
+    @* Each of these is pressed once a match at most, so they sit at the foot of the page rather than between the scoreboard and the
+       buttons pressed all afternoon. *@
     @if (GameData.MatchState != MatchState.NotStarted)
     {
         <AuthorizeView Roles="@AppRoles.Admin">
@@ -287,9 +281,8 @@
                 @if (GameData.MatchState == MatchState.InProgress)
                 {
                     <div class="live-control-row">
-                        @* The clock knows halves only. The line-up change partway through a half is
-                           made by hand from the pitch, so it has no control of its own here — it is a
-                           reference, behind the button on the line-up card. *@
+                        @* The clock knows halves only: a change partway through one is made by hand from the pitch, so it gets no
+                           control here — only the reference behind the button on the line-up card. *@
                         @if (HalfTimeFollows)
                         {
                             <MudButton Variant="Variant.Filled" Class="btn-gold"

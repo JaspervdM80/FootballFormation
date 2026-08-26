@@ -167,15 +167,13 @@
                             <span class="pt-meta pt-meta-share">@p.TotalMinutes' / @p.AvailableMinutes' · @(p.Utilization.ToString("0"))%</span>
                             <span class="pt-meta pt-meta-max">@p.TotalMinutes' / @p.MaximumMinutes' · @(p.Availability.ToString("0"))%</span>
                         </div>
-                        @* Filled to the player's own available minutes, not to the busiest player's
-                           total: this table is about how much of their time each of them got, and
-                           against a squad maximum the top player is 100% by definition. *@
+                        @* Filled to the player's own available minutes: against a squad maximum the busiest player is 100% by
+                           definition, and this table is about how much of her own time each of them got. *@
                         <div class="position-track">
                             <div class="position-fill" style="width: @(p.Utilization.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
                         </div>
-                        @* The other view: the same maximum for everyone, so these bars compare
-                           across rows. flex-grow rather than percentages — the four numbers
-                           normalise themselves, whatever rounding did to them. *@
+                        @* The same maximum for everyone, so these bars compare across rows. flex-grow rather than percentages, so the
+                           four numbers normalise themselves whatever rounding did to them. *@
                         <div class="position-track pt-split">
                             <span class="pt-seg pt-played" style="flex-grow: @p.TotalMinutes;" title="@Figure(L["Played"], p.TotalMinutes)"></span>
                             <span class="pt-seg pt-injured" style="flex-grow: @p.InjuredMinutes;" title="@Figure(L["Injured"], p.InjuredMinutes)"></span>

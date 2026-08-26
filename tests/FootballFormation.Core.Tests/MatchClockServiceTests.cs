@@ -1,12 +1,8 @@
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// The clock and the two halves it runs — the numbers a season's statistics are later built from,
-/// and the reason the match is driven to exact instants here rather than to a wall clock.
-/// </summary>
+/// The numbers a season's statistics are later built from, which is why the match is driven to exact instants rather than a wall clock.
 public class MatchClockServiceTests : LiveMatchTestBase
 {
-    // ---- Starting and stopping -------------------------------------------------------------
 
     [Fact]
     public async Task Starting_a_match_puts_the_first_half_on_the_pitch_with_a_zeroed_clock()
@@ -62,8 +58,6 @@ public class MatchClockServiceTests : LiveMatchTestBase
         Assert.Contains("999", result.Error);
     }
 
-    // ---- The clock -------------------------------------------------------------------------
-
     [Fact]
     public async Task The_clock_runs_from_kick_off_until_the_half_is_whistled_off()
     {
@@ -78,8 +72,6 @@ public class MatchClockServiceTests : LiveMatchTestBase
         Assert.True(running.IsClockRunning);
         Assert.Equal(420, running.ElapsedSecondsAt(Time.GetUtcNow().UtcDateTime));
     }
-
-    // ---- Halves ----------------------------------------------------------------------------
 
     [Fact]
     public async Task Ending_a_half_stops_the_clock_and_leaves_nothing_live()
@@ -130,11 +122,8 @@ public class MatchClockServiceTests : LiveMatchTestBase
         Assert.Equal("End the current half first", result.Error);
     }
 
-    /// <summary>
-    /// A quarters game is planned as two line-ups per half but played as two halves. The second
-    /// quarter's line-up is a plan the coach works through by hand — the clock never stops for it —
-    /// so the whistle after the first half hands over to the third quarter, not the second.
-    /// </summary>
+    /// The second quarter's line-up is a plan the coach works through by hand and the clock never stops for it, so the whistle after the
+    /// first half hands over to the third quarter.
     [Fact]
     public async Task The_second_half_of_a_quarters_game_starts_at_the_third_quarter()
     {
@@ -172,8 +161,6 @@ public class MatchClockServiceTests : LiveMatchTestBase
         Assert.True(result.IsFailure);
         Assert.Equal("Both halves have been played — finish the match instead", result.Error);
     }
-
-    // ---- Finishing -------------------------------------------------------------------------
 
     [Fact]
     public async Task Finishing_closes_the_running_half_and_writes_the_score_from_the_goals()

@@ -3,15 +3,8 @@ using Microsoft.AspNetCore.Identity;
 
 namespace FootballFormation.Core.Services;
 
-/// <summary>
-/// The accounts that can sign in, and the credential check itself.
-/// <para>
-/// The read/write methods follow the app's <see cref="Result"/> + <see cref="ServiceOperation"/>
-/// convention. <see cref="ValidateCredentialsAsync"/> deliberately does not: the login endpoint
-/// wants "these credentials are wrong" to be indistinguishable from "no such user", and a
-/// <c>Result</c> carrying a message would give an attacker something to tell them apart with.
-/// </para>
-/// </summary>
+/// <see cref="ValidateCredentialsAsync"/> deliberately breaks the Result convention the rest of this class follows: a Result carrying a
+/// message would let an attacker tell "wrong password" from "no such user".
 public class UserService(
     IDbContextFactory<AppDbContext> dbFactory,
     ICurrentUser currentUser,
@@ -23,8 +16,6 @@ public class UserService(
     private static readonly AppUser DummyUser = new();
     private static readonly string DummyHash = Hasher.HashPassword(DummyUser, "dummy-password-for-timing");
 
-    // ---------------------------------------------------------------- authentication
-
     public async Task<AppUser?> ValidateCredentialsAsync(
         string username, string password, CancellationToken cancellationToken = default)
     {
@@ -32,30 +23,21 @@ public class UserService(
         return await VerifyAsync(db, username, password, cancellationToken);
     }
 
-    /// <summary>
-    /// The account behind a signed-in principal, or null when the session it stands for is no longer
-    /// good. Two callers need exactly this question answered and must not drift on the answer:
-    /// <c>OnValidatePrincipal</c>, on every authenticated HTTP request, and the circuit's
-    /// revalidation loop, which is the only thing asking it between one page load and the next.
-    /// </summary>
+    /// Null when the session the principal stands for is no longer good. Shared by OnValidatePrincipal and the circuit's revalidation
+    /// loop so the two cannot drift on the answer.
     public Task<AppUser?> FindForSessionAsync(
         ClaimsPrincipal? principal, CancellationToken cancellationToken = default)
     {
         var stamp = principal?.FindFirst(AppClaims.SecurityStamp)?.Value;
         var userId = principal?.FindFirst(AppClaims.UserId)?.Value;
 
-        // Cookies issued before the security stamp shipped carry neither claim. Rejected rather
-        // than trusted — the only cost is one extra sign-in.
+        // Cookies issued before the security stamp shipped carry neither claim. Rejected rather than trusted; the cost is one sign-in.
         return stamp is not null && int.TryParse(userId, out var id)
             ? FindForSessionAsync(id, stamp, cancellationToken)
             : Task.FromResult<AppUser?>(null);
     }
 
-    /// <summary>
-    /// The account behind a live cookie, or null when it has been deleted or its authority changed
-    /// since the cookie was issued. Called on every authenticated request, so it reads no-tracking
-    /// and touches one row by key.
-    /// </summary>
+    /// Null once the account is deleted or its authority changed. On every authenticated request, so it stays no-tracking and by key.
     public async Task<AppUser?> FindForSessionAsync(
         int userId, string securityStamp, CancellationToken cancellationToken = default)
     {
@@ -78,8 +60,7 @@ public class UserService(
         if (newPassword == currentPassword)
             return PasswordChangeResult.PasswordReused;
 
-        // One context for both the check and the write: the user has to stay tracked between them,
-        // or the new hash is set on an entity nothing is going to save.
+        // One context for both the check and the write: the user has to stay tracked, or the new hash lands on an entity nothing saves.
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
         var user = await VerifyAsync(db, username, currentPassword, cancellationToken);
@@ -88,9 +69,8 @@ public class UserService(
         user.PasswordHash = Hasher.HashPassword(user, newPassword);
         user.SecurityStamp = NewStamp();
 
-        // The seeded account is only held back until its owner picks a password of their own —
-        // this is the moment that happens. The new stamp above signs the gated cookie out, so the
-        // next request re-reads the flag rather than trusting the claim minted at login.
+        // The new stamp above signs the gated cookie out, so the next request re-reads MustChangePassword rather than trusting the
+        // claim minted at login.
         user.MustChangePassword = false;
 
         await db.SaveChangesAsync(cancellationToken);
@@ -99,9 +79,7 @@ public class UserService(
         return PasswordChangeResult.Success;
     }
 
-    // ---------------------------------------------------------------- management
-
-    /// <summary>By name, because that is the column the user list is read down.</summary>
+    /// By name, because that is the column the user list is read down.
     public Task<Result<List<AppUser>>> GetAllAsync(CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "load users", cancellationToken, async () =>
         {
@@ -149,10 +127,7 @@ public class UserService(
             return Result.Success(user);
         });
 
-    /// <summary>
-    /// Name, login and role. The password is deliberately not here — changing it has to invalidate
-    /// sessions, so it is its own action (<see cref="SetPasswordAsync"/>).
-    /// </summary>
+    /// No password here on purpose: changing one has to invalidate sessions, so it is its own action (<see cref="SetPasswordAsync"/>).
     public Task<Result> UpdateAsync(
         int id, string displayName, string username, UserRole role,
         CancellationToken cancellationToken = default) =>
@@ -170,8 +145,7 @@ public class UserService(
             if (await db.Users.AnyAsync(u => u.Username == username && u.Id != id, cancellationToken))
                 return Result.Failure(DuplicateLoginKey, username);
 
-            // Demoting the last admin locks everyone out of the pages that create users, with no
-            // way back in short of editing the database by hand.
+            // Demoting the last admin locks everyone out of the pages that create users, short of editing the database by hand.
             if (user.Role == UserRole.Admin && role != UserRole.Admin && await IsLastAdminAsync(db, id, cancellationToken))
                 return Result.Failure(LastAdminKey);
 
@@ -191,7 +165,7 @@ public class UserService(
             return Result.Success();
         });
 
-    /// <summary>An admin resetting someone else's password, without knowing the old one.</summary>
+    /// An admin resetting someone else's password, without knowing the old one.
     public Task<Result> SetPasswordAsync(
         int id, string newPassword, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAdminAsync(currentUser, logger, "set the password", cancellationToken, async () =>
@@ -230,16 +204,8 @@ public class UserService(
             return Result.Success();
         });
 
-    /// <summary>
-    /// Gives a fresh install someone to sign in as. Runs on every startup and does nothing once any
-    /// account exists, so a changed password is never overwritten.
-    /// <para>
-    /// The credentials are public knowledge, which on a reachable deployment is a handed-over key.
-    /// So the account is seeded with <see cref="AppUser.MustChangePassword"/> set: it can sign in,
-    /// and it can do nothing else until the password is replaced. That keeps a fresh clone usable
-    /// without leaving a working admin login on the internet.
-    /// </para>
-    /// </summary>
+    /// Runs every startup and does nothing once any account exists, so a changed password is never overwritten. The seeded credentials
+    /// are public knowledge, hence <see cref="AppUser.MustChangePassword"/>: it can sign in and do nothing else until that is replaced.
     public async Task EnsureAdminSeededAsync(CancellationToken cancellationToken = default)
     {
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -261,19 +227,13 @@ public class UserService(
                           "It cannot do anything until the password is changed on /settings.");
     }
 
-    // ---------------------------------------------------------------- internals
-
-    /// <summary>
-    /// The credential check itself, on a context the caller owns. Returns the tracked user so a
-    /// caller that needs to write to it can, and null when the credentials do not match.
-    /// </summary>
+    /// Takes a context the caller owns and returns the user still tracked on it, so a caller that needs to write can.
     private static async Task<AppUser?> VerifyAsync(
         AppDbContext db, string username, string password, CancellationToken cancellationToken)
     {
         var user = await db.Users.FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
 
-        // Always run a hash verification to keep timing constant whether or not
-        // the username exists, mitigating user-enumeration via response time.
+        // Verify a hash even when there is no such user, so response time cannot be used to enumerate accounts.
         if (user is null)
         {
             Hasher.VerifyHashedPassword(DummyUser, DummyHash, password);

@@ -1,10 +1,7 @@
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// The behaviour that made the shared scoped <c>DbContext</c> a hazard: components on a Blazor
-/// Server circuit render concurrently, and two queries on one context throw. These are the tests
-/// that would have caught it, and that now prove the per-operation context fixed it.
-/// </summary>
+/// The behaviour that made a shared scoped DbContext a hazard: components on a circuit render concurrently, and two queries on one
+/// context throw.
 public class ServiceLifetimeTests : ServiceTestBase
 {
     [Fact]

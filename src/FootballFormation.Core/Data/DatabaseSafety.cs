@@ -2,31 +2,14 @@ using Microsoft.Data.Sqlite;
 
 namespace FootballFormation.Core.Data;
 
-/// <summary>
-/// What runs around <c>MigrateAsync()</c> on startup so a schema change cannot quietly cost the
-/// club its season.
-/// <para>
-/// The app migrates itself the moment the container boots, unattended, against a single SQLite
-/// file on one volume. Migrations are not all reversible in practice — of the twenty this schema
-/// was built from, one dropped a column and another deleted rows — so by the time anyone notices a
-/// bad one, the previous state is gone. A copy taken immediately before is the only thing that
-/// makes such a change undoable.
-/// </para>
-/// </summary>
+/// This app migrates itself unattended on boot, against one SQLite file, and not every migration is reversible in practice — so the copy
+/// taken immediately before is the only thing that makes a bad one undoable. See docs/deployment.md.
 public static class DatabaseSafety
 {
     public const int KeepBackups = 5;
 
-    /// <summary>
-    /// Copies the database if — and only if — migrations are about to change it, and at most once
-    /// per schema state. A restart with nothing pending is by far the common case (Fly wakes this
-    /// app from zero), and writing a snapshot each time would fill the volume with identical files
-    /// and push the useful ones out of the retention window.
-    /// </summary>
-    /// <returns>
-    /// The snapshot's path — freshly written, or the one already held for this schema state — or
-    /// null when there was nothing to migrate.
-    /// </returns>
+    /// At most one snapshot per schema state: a restart with nothing pending is the common case, and a copy each time would push the
+    /// useful ones out of the retention window. Returns null when there was nothing to migrate.
     public static async Task<string?> BackupBeforeMigrationsAsync(
         AppDbContext db, string dbPath, ILogger logger)
     {
@@ -45,14 +28,8 @@ public static class DatabaseSafety
         var backupDir = Path.Combine(Path.GetDirectoryName(dbPath)!, "backups");
         Directory.CreateDirectory(backupDir);
 
-        // Named for the schema state being left behind, not for the moment the copy is taken, so a
-        // state gets exactly one snapshot however many times the app tries to migrate away from it.
-        //
-        // That is what makes a crash loop survivable. Several migrations here run outside a
-        // transaction, so one that fails partway leaves the rest pending — and Fly restarts the
-        // machine. With a per-attempt name, every restart wrote another snapshot of the *broken*
-        // database and pruned an older one, so five restarts destroyed the only good copy, in about
-        // as many minutes, precisely when it was the thing that mattered.
+        // Named for the schema state left behind, not for the moment of the copy, which is what makes a crash loop survivable: with a
+        // per-attempt name, five restarts pruned away the only good snapshot in about as many minutes.
         var applied = (await db.Database.GetAppliedMigrationsAsync()).ToList();
         var schemaState = applied.Count > 0 ? applied[^1] : "empty";
         var backupPath = Path.Combine(backupDir, $"pre-migration-{schemaState}.db");
@@ -63,20 +40,15 @@ public static class DatabaseSafety
             return backupPath;
         }
 
-        // Written under a temporary name and moved into place, because the copy is not atomic: a
-        // container killed midway through one would otherwise leave a truncated file under the name
-        // that means "this state is safely backed up", and every later boot would trust it.
+        // The copy is not atomic, so it lands under a temporary name: a container killed midway would otherwise leave a truncated file
+        // under the name that means "safely backed up", and every later boot would trust it.
         var pendingPath = backupPath + ".tmp";
 
-        // Whatever a previous attempt left here is garbage by definition, and SQLite will not write
-        // into it — it opens the destination as a database and refuses a file that is not one. Left
-        // in place that turns a single killed backup into a boot the app can never complete, since
-        // a failed backup deliberately aborts the migration.
+        // SQLite opens the destination as a database and refuses one that is not, so a leftover partial file would turn a single killed
+        // backup into a boot that can never complete — a failed backup aborts the migration by design.
         File.Delete(pendingPath);
 
-        // SQLite's own backup API, not File.Copy: with WAL journalling the .db file alone can be
-        // missing everything still in the -wal, so a plain copy is a torn snapshot of exactly the
-        // rows most recently written.
+        // SQLite's own backup API, not File.Copy: with WAL journalling a plain copy is a torn snapshot missing the newest rows.
         await using (var source = new SqliteConnection($"Data Source={dbPath}"))
         await using (var destination = new SqliteConnection($"Data Source={pendingPath}"))
         {
@@ -95,14 +67,8 @@ public static class DatabaseSafety
         return backupPath;
     }
 
-    /// <summary>
-    /// Asks SQLite whether the file it just migrated is still sound, and whether every foreign key
-    /// still points at something. Runs after the migration rather than before: a migration that
-    /// rebuilds a table (SQLite does this for many alterations) is precisely where referential
-    /// integrity gets lost, and finding out on the next page load instead means finding out from a
-    /// parent on match day.
-    /// </summary>
-    /// <exception cref="InvalidOperationException">The database is damaged.</exception>
+    /// Throws when the database is damaged. Runs after the migration, not before: SQLite rebuilds a table for many alterations, and that
+    /// is precisely where a foreign key gets lost.
     public static async Task VerifyIntegrityAsync(AppDbContext db, ILogger logger)
     {
         var connection = db.Database.GetDbConnection();
@@ -141,10 +107,8 @@ public static class DatabaseSafety
         logger.LogInformation("Database integrity verified");
     }
 
-    /// <summary>Keeps the newest <see cref="KeepBackups"/> snapshots — newest by name, which is
-    /// newest by schema state, since a migration id begins with the timestamp it was scaffolded at.
-    /// A pruning failure is logged and swallowed — a full backup folder is a problem, but not one
-    /// worth refusing to boot over, unlike a missing backup.</summary>
+    /// Newest by name is newest by schema state, since a migration id begins with the timestamp it was scaffolded at. A pruning failure
+    /// is swallowed: a full backup folder is not worth refusing to boot over, unlike a missing backup.
     private static void Prune(string backupDir, ILogger logger)
     {
         try

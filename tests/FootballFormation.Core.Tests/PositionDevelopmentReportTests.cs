@@ -83,9 +83,8 @@ public class PositionDevelopmentReportTests
         Assert.Equal([PlayerA.Id, PlayerB.Id], report.Rows.Select(r => r.Player.Id));
     }
 
-    /// <summary>A player's stats built by hand, to put a stint too short to round up to a minute
-    /// beside a real one — the shape <see cref="GameMinutesReport"/> produces for a substitution
-    /// seconds before the whistle.</summary>
+    /// Built by hand to put a stint too short to round up to a minute beside a real one — what a substitution seconds before the whistle
+    /// produces.
     private static PlayerStats StatsWith(Player player, params PositionStat[] positions) =>
         new() { Player = player, Positions = [.. positions], Games = [] };
 

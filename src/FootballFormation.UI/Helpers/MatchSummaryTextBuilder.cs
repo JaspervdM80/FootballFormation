@@ -2,16 +2,11 @@ using FootballFormation.Core.Reporting;
 
 namespace FootballFormation.UI.Helpers;
 
-/// <summary>
-/// Turns a <see cref="MatchSummary"/> into the plain text a copy button hands to the clipboard.
-/// Composition lives here rather than in <c>Core/Reporting</c> because it needs localized labels,
-/// and <c>Core</c> carries no UI reference — see <c>MatchSummaryReport</c>. Both
-/// <c>MatchResult</c> and <c>FormationOverview</c> call this, so the layout is spelled out once.
-/// </summary>
+/// Here rather than in Core/Reporting because it needs localized labels and Core carries no UI reference. Both MatchResult and
+/// FormationOverview call it, so the layout is spelled out once.
 public static class MatchSummaryTextBuilder
 {
-    /// <summary>A plain-character stand-in for the live timeline's half-time rule, without its
-    /// "Half time" label — the paste is a message, not a report.</summary>
+    /// A plain-character stand-in for the live timeline's half-time rule: the paste is a message, not a report.
     private const string HalfBreak = "———————————";
 
     public static string Build(Game game, MatchSummary summary, IStringLocalizer<Strings> L)
@@ -41,8 +36,7 @@ public static class MatchSummaryTextBuilder
         return string.Join('\n', lines);
     }
 
-    // A break only where two consecutive goals cross half time — with no goal on one side of it,
-    // nothing is drawn.
+    // A break only where two consecutive goals cross half time — with no goal on one side of it, nothing is drawn.
     private static IEnumerable<string> GoalLines(IReadOnlyList<MatchSummaryGoal> goals)
     {
         for (var i = 0; i < goals.Count; i++)
@@ -54,8 +48,7 @@ public static class MatchSummaryTextBuilder
         }
     }
 
-    /// <summary>⚽ and 🅰️ carry the meaning a WhatsApp paste needs, without spending a line on
-    /// each — see the issue: emoji survive a paste where any formatting would not.</summary>
+    /// Emoji survive a paste where any formatting would not, and carry the meaning without spending a line on each.
     private static string GoalLine(MatchSummaryGoal goal)
     {
         var minutePart = goal.Minute is { } minute ? $" ({minute}')" : "";

@@ -20,8 +20,7 @@ public partial class FormationBuilder
     private Game? GameData { get; set; }
     private List<Player>? AllPlayers { get; set; }
 
-    /// <summary>The squad of this game's season. Taken from the game, not from the season picker —
-    /// the builder is scoped to one fixture and must not follow a global filter.</summary>
+    /// From the game, not the season picker: the builder is scoped to one fixture and must not follow a global filter.
     private SeasonSquad Squad { get; set; } = SeasonSquad.Empty;
     private Dictionary<int, List<GamePlayerPosition>> PeriodLineups { get; } = [];
     private int ActivePeriodIndex { get; set; }
@@ -46,8 +45,7 @@ public partial class FormationBuilder
         var squadResult = await SquadService.GetSquadAsync(GameData.SeasonId, Cancellation);
         Squad = Snackbar.ReportFailure(L, squadResult) ? squadResult.Value! : SeasonSquad.Empty;
 
-        // The full pool is still needed: a player who was lined up but has since left the squad
-        // must stay visible in the playing-time table (see GetPlayingTimeData).
+        // The full pool: a player lined up but since dropped from the squad must stay visible in the playing-time table.
         var playersResult = await PlayerService.GetAllAsync(Cancellation);
         AllPlayers = Snackbar.ReportFailure(L, playersResult) ? playersResult.Value! : [];
 
@@ -57,20 +55,14 @@ public partial class FormationBuilder
             GameId, GameData.Opponent);
     }
 
-    // --- Roster ---
-
-    /// <summary>Squad players who are available, plus guests explicitly added to this game. Injured
-    /// players are filtered out here rather than in <see cref="Game.IsInRoster"/> — this builds a
-    /// line-up still to be played, and that rule also judges games already played, where an injury
-    /// set after the fact must not rewrite what happened.</summary>
+    /// Injury is filtered here rather than in <see cref="Game.IsInRoster"/>, which also judges games already played — where a status set
+    /// after the fact must not rewrite what happened.
     private List<Player> RosterPlayers =>
         AllPlayers is null || GameData is null
             ? []
             : GameData.SelectRoster(AllPlayers, Squad).Where(p => !IsInjured(p.Id)).ToList();
 
-    /// <summary>Squad players who opted out of this game. Guests are simply not added, not
-    /// unavailable. Injured players are listed separately by <see cref="InjuredPlayers"/> even when
-    /// also marked unavailable for this fixture, so nobody appears in both panels.</summary>
+    /// Excludes anyone <see cref="InjuredPlayers"/> lists, even when they are also marked unavailable, so nobody appears in both panels.
     private List<Player> UnavailablePlayers
     {
         get
@@ -84,18 +76,12 @@ public partial class FormationBuilder
         }
     }
 
-    /// <summary>Squad players — full members or guests — who are generally injured, as opposed to
-    /// unavailable for this one fixture. Excluded from <see cref="RosterPlayers"/> above, so never
-    /// offered as a drag target for a new line-up.</summary>
+    /// Generally injured, as opposed to unavailable for this one fixture. Excluded from <see cref="RosterPlayers"/>, so never a drag target.
     private List<Player> InjuredPlayers =>
         AllPlayers is null ? [] : AllPlayers.Where(p => IsInjured(p.Id)).ToList();
 
-    /// <summary>
-    /// Injured for the purposes of this screen: flagged in the squad now, or recorded as having
-    /// missed this match. The second half matters on a completed game whose player has since
-    /// recovered — <c>Game.IsInRoster</c> keeps reading the game's record, so without it she would
-    /// be in none of the three panels and simply vanish from a line-up someone came back to fix.
-    /// </summary>
+    /// Flagged in the squad now, or recorded as having missed this match. Without the second half, a player since recovered would be in
+    /// none of the three panels and simply vanish from a line-up someone came back to fix.
     private bool IsInjured(int playerId) =>
         Squad.IsInjured(playerId) || (GameData?.InjuredPlayerIds.Contains(playerId) ?? false);
 
@@ -108,19 +94,15 @@ public partial class FormationBuilder
         return RosterPlayers.Where(p => !usedIds.Contains(p.Id)).ToList();
     }
 
-    // --- Slots ---
-
     private PlayerPosition[] GetAllSlots(int periodId)
     {
         var period = GameData!.Periods.First(p => p.Id == periodId);
         return FormationSlots.For(period.FormationTypeOverride ?? GameData.FormationType);
     }
 
-    /// <summary>Who is standing where in this period, using the same rule the pitch draws with.</summary>
+    /// Who is standing where in this period, using the same rule the pitch draws with.
     private GamePlayerPosition?[] BuildSlotAssignments(int periodId) =>
         FormationSlots.Assign(GetAllSlots(periodId), PeriodLineups.GetValueOrDefault(periodId, []));
-
-    // --- Drag & drop ---
 
     private void OnPlayerDragStart(int playerId) => Drag.StartFromList(playerId);
 
@@ -144,7 +126,7 @@ public partial class FormationBuilder
 
         if (Drag.FromSlotIndex is { } sourceSlotIndex)
         {
-            // Drag from one slot to another — swap
+
             var assignments = BuildSlotAssignments(periodId);
             var source = assignments[sourceSlotIndex];
             var target = assignments[slotIndex];
@@ -165,8 +147,7 @@ public partial class FormationBuilder
             var wasFromSub = Drag.FromSub;
             lineup.RemoveAll(p => p.PlayerId == player.Id);
 
-            // A drop from the bench sends the current occupant back to the bench;
-            // a drop from the list replaces them outright.
+            // A drop from the bench sends the current occupant back to it; a drop from the list replaces them outright.
             var existingAtSlot = BuildSlotAssignments(periodId)[slotIndex];
             if (existingAtSlot is not null)
             {
@@ -202,7 +183,7 @@ public partial class FormationBuilder
         StateHasChanged();
     }
 
-    /// <summary>Drop of a dragged starter onto a bench player: the two trade places.</summary>
+    /// Drop of a dragged starter onto a bench player: the two trade places.
     private void OnSwapFieldPlayerWithSub(int periodId, int subPlayerId)
     {
         if (Drag.PlayerId is null || Drag.PlayerId == subPlayerId) return;
@@ -253,8 +234,6 @@ public partial class FormationBuilder
             IsSubstitute = isSubstitute
         };
 
-    // --- Periods ---
-
     private bool IsLastPeriodSelected =>
         GameData is not null && ActivePeriodIndex >= GameData.Periods.Count - 1;
 
@@ -285,8 +264,6 @@ public partial class FormationBuilder
         Snackbar.Add(L["Lineup copied to {0}", L[nextPeriod.PeriodType.DisplayName()].Value], Severity.Info);
     }
 
-    // --- Persistence ---
-
     private async Task SaveAll()
     {
         var failures = new List<string>();
@@ -306,7 +283,7 @@ public partial class FormationBuilder
         Snackbar.Add(L["All lineups saved!"], Severity.Success);
         Logger.LogInformation("Saved all lineups for game {GameId}", GameId);
 
-        // Reload so the cached entries carry the DB-generated IDs
+        // Reload so the cached entries carry the database-generated ids.
         var gameResult = await GameService.GetByIdAsync(GameId, Cancellation);
         if (gameResult.IsSuccess)
         {
@@ -325,14 +302,11 @@ public partial class FormationBuilder
         }
     }
 
-    // --- Playing time overview ---
-
     private List<PlayingTimeRow> GetPlayingTimeData()
     {
         if (GameData is null || AllPlayers is null) return [];
 
-        // Roster plus anyone already placed in a lineup (e.g. a guest removed from the
-        // game after being lined up), so the table always accounts for the whole pitch.
+        // Roster plus anyone already placed in a line-up, so the table always accounts for the whole pitch.
         var linedUpIds = PeriodLineups.Values
             .SelectMany(lineup => lineup)
             .Select(p => p.PlayerId)
@@ -342,7 +316,7 @@ public partial class FormationBuilder
         return PlayingTimeReport.Build(GameData, players, PeriodLineups);
     }
 
-    /// <summary>The playing-time table colours its cells with the same five tiers as the pitch.</summary>
+    /// The playing-time table colours its cells with the same five tiers as the pitch.
     private static string GetFitCssClass(PositionFit fit) => Pitch.FitCssClass(fit);
 
     private static Color GetTimeColor(double percentage) => percentage switch

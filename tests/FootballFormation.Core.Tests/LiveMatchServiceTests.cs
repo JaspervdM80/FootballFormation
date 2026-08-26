@@ -1,14 +1,9 @@
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// Reading a live match: which match the home page points at on a given day, and that the live
-/// screen's own read comes back with everything it renders. The writing is tested next door, in
-/// <see cref="MatchClockServiceTests"/>, <see cref="MatchGoalServiceTests"/> and
-/// <see cref="MatchSubstitutionServiceTests"/>.
-/// </summary>
+/// Reading a live match only — the writing is tested next door, in <see cref="MatchClockServiceTests"/>,
+/// <see cref="MatchGoalServiceTests"/> and <see cref="MatchSubstitutionServiceTests"/>.
 public class LiveMatchServiceTests : LiveMatchTestBase
 {
-    // ---- Match day -------------------------------------------------------------------------
 
     [Fact]
     public async Task A_match_in_progress_wins_over_whatever_the_calendar_says()
@@ -36,8 +31,6 @@ public class LiveMatchServiceTests : LiveMatchTestBase
         Assert.True(result.IsSuccess);
         Assert.Null(result.Value);
     }
-
-    // ---- The live screen's read ------------------------------------------------------------
 
     [Fact]
     public async Task The_live_read_brings_back_the_lineups_the_goals_and_the_substitutions_at_once()
@@ -71,10 +64,7 @@ public class LiveMatchServiceTests : LiveMatchTestBase
         Assert.Contains("999", result.Error);
     }
 
-    /// <summary>
-    /// Reads stay open — the live screen is the one URL a parent at the touchline is given, and
-    /// nobody signs in to watch.
-    /// </summary>
+    /// Reads stay open: the live screen is the one URL a parent at the touchline is given, and nobody signs in to watch.
     [Fact]
     public async Task Anyone_can_read_a_live_match()
     {

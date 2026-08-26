@@ -4,26 +4,14 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// Fails any query that orders or compares a <see cref="DateTime"/> in SQL — the rule, and why it
-/// matters, are on <see cref="QueryTags.ComparesDatesInSql"/>.
-/// <para>
-/// Registered on the context factory in <see cref="ServiceTestBase"/>, so it watches every query
-/// the whole suite makes rather than the handful a dedicated test would remember to call. The
-/// failure it catches is silent and produces plausible output — a slightly wrong order nobody
-/// notices until a backup is restored — which is why prose alone was not enough.
-/// </para>
-/// </summary>
+/// Fails any query that orders or compares a <see cref="DateTime"/> in SQL — see <see cref="QueryTags.ComparesDatesInSql"/> for why.
+/// Registered on the factory in <see cref="ServiceTestBase"/>, so it watches every query the suite makes rather than a handful.
 public sealed class DateInSqlInterceptor : DbCommandInterceptor
 {
-    /// <summary>
-    /// Every date column in the schema, read from the EF model rather than listed by hand — a new
-    /// one is covered the moment it is mapped, which a hand-written list would not manage.
-    /// </summary>
+    /// Read from the EF model rather than listed by hand, so a new date column is covered the moment it is mapped.
     public static readonly IReadOnlySet<string> DateColumns = DiscoverDateColumns();
 
-    // EF puts ORDER BY at the end of a SELECT, ahead of LIMIT/OFFSET. Matching to one of those
-    // keywords rather than to end-of-string keeps a subquery's clause from swallowing the rest.
+    // Matching to LIMIT/OFFSET rather than to end-of-string keeps a subquery's ORDER BY from swallowing the rest.
     private static readonly Regex OrderByClause = new(
         @"ORDER\s+BY(?<clause>.*?)(?=\bLIMIT\b|\bOFFSET\b|\bUNION\b|$)",
         RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
@@ -115,8 +103,7 @@ public sealed class DateInSqlInterceptor : DbCommandInterceptor
         return ValueTask.FromResult(result);
     }
 
-    /// <summary>The offending columns, or empty when the SQL is clean. Public so a test can state
-    /// what the rule catches without having to provoke a real query.</summary>
+    /// Public so a test can state what the rule catches without having to provoke a real query.
     public static IReadOnlyList<string> Violations(string sql)
     {
         if (sql.Contains(QueryTags.ComparesDatesInSql, StringComparison.Ordinal)) return [];
@@ -199,5 +186,5 @@ public sealed class DateInSqlInterceptor : DbCommandInterceptor
     }
 }
 
-/// <summary>Its own type so a test can assert on the rule rather than on a message.</summary>
+/// Its own type so a test can assert on the rule rather than on a message.
 public sealed class DateComparedInSqlException(string message) : Exception(message);

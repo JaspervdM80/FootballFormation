@@ -12,7 +12,6 @@ public partial class SeasonStats
     private Core.Reporting.SeasonStats? _stats;
     private bool _loaded;
 
-    // Derived views over _stats, computed once on load for the razor.
     private List<Core.Reporting.PlayerStats> _scorers = [];
     private List<Core.Reporting.PlayerStats> _keepers = [];
     private List<Core.Reporting.PlayerStats> _playingTime = [];
@@ -43,11 +42,8 @@ public partial class SeasonStats
             .ThenBy(p => p.Player.ShirtNumber ?? int.MaxValue)
             .ToList();
 
-        // Fairness table is about squad rotation, so guests are left out — per season. On "All
-        // seasons" a player counts if they were a regular in at least one of the seasons shown.
-        // Ordered by share rather than by volume: someone who missed half the season and played
-        // every minute of the rest was not rotated out, and sorting on the total says they were.
-        // Utilization is whole percent, so ties are common and minutes break them.
+        // Guests are out because this is about squad rotation. Ordered by share rather than volume: someone who missed half the season
+        // and played every minute of the rest was not rotated out, though a total would say so. Minutes break the whole-percent ties.
         _playingTime = _stats.Players
             .Where(p => squads.IsFullMemberAnywhere(p.Player.Id))
             .OrderByDescending(p => p.Utilization)
@@ -58,10 +54,10 @@ public partial class SeasonStats
         _loaded = true;
     }
 
-    /// <summary>Single-letter form pill, localized (W/D/L in English, W/G/V in Dutch).</summary>
+    /// Single-letter form pill, localized (W/D/L in English, W/G/V in Dutch).
     private string ResultLetter(GameResult r) => L[r.ToString()].ToString()[..1];
 
-    /// <summary>The availability bar's four segments, in the order they are stacked.</summary>
+    /// The availability bar's four segments, in the order they are stacked.
     private (string Class, string Label)[] Legend =>
     [
         ("pt-played", L["Played"]),
@@ -70,7 +66,6 @@ public partial class SeasonStats
         ("pt-idle", L["Not played"])
     ];
 
-    /// <summary>Segment tooltip: the exact figure a colour only approximates. The legend is what
-    /// names it on a phone, where a title attribute never surfaces.</summary>
+    /// The exact figure a colour only approximates. On a phone the legend names it instead, since a title attribute never surfaces.
     private static string Figure(string label, int minutes) => $"{label}: {minutes}'";
 }

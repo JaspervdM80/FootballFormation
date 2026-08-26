@@ -9,10 +9,8 @@ public static class Routing
 {
     public static void MapMinimalApi(this WebApplication app)
     {
-        // The commit this container was built from, baked in by the Dockerfile's GIT_SHA build arg. The
-        // deploy workflow compares it against the commit it just built, which is how a deploy that
-        // "succeeded" while the previous machine kept serving gets caught. "unknown" locally, where there
-        // is no build arg and nothing comparing.
+        // Baked in by the Dockerfile's GIT_SHA arg and compared by the deploy workflow against the commit it just built, which is how a
+        // deploy that "succeeded" while the previous machine kept serving gets caught. "unknown" locally.
         var appVersion = Environment.GetEnvironmentVariable("APP_GIT_SHA") is { Length: > 0 } sha
             ? sha
             : "unknown";
@@ -25,8 +23,7 @@ public static class Routing
             try
             {
                 await using var db = await dbFactory.CreateDbContextAsync(ct);
-                // A real query, not CanConnectAsync: for SQLite that only opens the file, which
-                // succeeds against a database whose schema the migration left half-applied.
+                // A real query, not CanConnectAsync: for SQLite that only opens the file, which succeeds on a half-migrated schema.
                 await db.Seasons.CountAsync(ct);
 
                 var applied = (await db.Database.GetAppliedMigrationsAsync(ct)).Count();
@@ -84,14 +81,8 @@ public static class Routing
             return Results.Redirect("/");
         }).DisableAntiforgery();
 
-        // Development only: signs in as an existing admin without credentials, so the [Authorize]
-        // screens can be opened and inspected without anyone typing a password into the login form. It
-        // mints exactly the principal /auth/login does — same claims, same real database row — so what
-        // you see is the real authorized UI, and the security-stamp check accepts the cookie.
-        //
-        // Two independent guards, either one sufficient: the endpoint is not mapped outside
-        // Development (the Fly.io container runs Production), and it refuses non-loopback callers.
-        // Do NOT relax either — this is an unauthenticated route to full admin rights.
+        // An unauthenticated route to full admin rights, held back by two independent guards: not mapped outside Development, and
+        // refuses non-loopback callers. Do NOT relax either. See docs/testing/ui-testing.md.
         if (app.Environment.IsDevelopment())
         {
             app.MapGet("/dev/login", async (HttpContext context, UserService userService) =>
@@ -103,10 +94,8 @@ public static class Routing
                 var usersResult = await userService.GetAllAsync(context.RequestAborted);
                 if (usersResult.IsFailure) return Results.NotFound();
 
-                // The seeded account by preference, otherwise the oldest admin. Deterministic on
-                // purpose: GetAllAsync orders by display name, so "first admin" would otherwise mean
-                // "whoever happens to sort first", and adding a user could silently change who the
-                // dev route signs you in as.
+                // Deterministic on purpose: GetAllAsync orders by display name, so "first admin" would otherwise mean "whoever sorts
+                // first", and adding a user could silently change who this signs you in as.
                 var admins = usersResult.Value!.Where(u => u.Role == UserRole.Admin).ToList();
                 var admin = admins.FirstOrDefault(u => u.Username == "admin") ?? admins.OrderBy(u => u.Id).FirstOrDefault();
                 if (admin is null) return Results.NotFound();
@@ -141,9 +130,7 @@ public static class Routing
                     season,
                     new CookieOptions
                     {
-                        // Secure is left off so this still works over the plain http:// of a local
-                        // `dotnet run` — the value is a season id, not a credential. Lax because
-                        // nothing cross-site needs to send it.
+                        // Secure is left off so this works over the plain http:// of a local `dotnet run` — a season id is not a credential.
                         MaxAge = SeasonPreference.Lifetime,
                         SameSite = SameSiteMode.Lax,
                         IsEssential = true,
@@ -154,12 +141,8 @@ public static class Routing
         });
     }
 
-
-    /// <summary>
-    /// The signed-in identity for an account. The one place claims are built, so /auth/login and
-    /// /dev/login cannot drift — a claim missing from the dev principal would mean the dev route
-    /// exercises a different authorization path than the real one.
-    /// </summary>
+    /// The one place claims are built, so /auth/login and /dev/login cannot drift — a claim missing from the dev principal would mean
+    /// the dev route exercises a different authorization path than the real one.
     static ClaimsPrincipal PrincipalFor(AppUser user)
     {
         var claims = new List<Claim>
@@ -178,22 +161,8 @@ public static class Routing
         return new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
     }
 
-    /// <summary>
-    /// What makes a sign-in outlive the browser session, and the other half of the pair with
-    /// <see cref="PrincipalFor"/> — both sign-in routes use both, so neither can drift.
-    /// <para>
-    /// Without <c>IsPersistent</c> the cookie goes out with no <c>Expires</c> at all, and a browser is
-    /// free to drop a session cookie whenever it decides the session ended. On a phone that is every
-    /// time the OS reclaims a backgrounded tab, and on the installed PWA every relaunch after one —
-    /// which is a coach putting their phone away at half time. No <c>ExpireTimeSpan</c> can rescue
-    /// that: it bounds the ticket the cookie carries, not the browser's willingness to keep the cookie.
-    /// </para>
-    /// <para>
-    /// A new instance per sign-in rather than one shared static: the cookie handler writes
-    /// <c>IssuedUtc</c> and <c>ExpiresUtc</c> onto the object it is handed, so a shared one would pin
-    /// every later sign-in to the expiry stamped on the first since boot.
-    /// </para>
-    /// </summary>
+    /// Without IsPersistent the cookie carries no Expires, and a phone reclaiming a backgrounded tab drops it — a coach putting their
+    /// phone away at half time. A new instance per sign-in, because the cookie handler stamps IssuedUtc onto the object it is handed.
     static AuthenticationProperties PersistentSession() => new() { IsPersistent = true };
 
     static bool IsLocalUrl(string? url)

@@ -91,9 +91,8 @@
                 @if (stat is not null)
                 {
                     <span class="pd-pos-value">
-                        @* The phone card has no column headers to read the figure against — and
-                           .stacked-table drops MudBlazor's own DataLabel — so the chip says which
-                           position it is itself. Hidden on the desktop grid, where the header does. *@
+                        @* The phone card has no column headers, and .stacked-table drops MudBlazor's own DataLabel, so the chip names
+                           its own position. Hidden on the desktop grid, where the header does it. *@
                         <span class="pd-pos-label">@position.ToString()</span>
                         @stat.Minutes'
                         <span class="pd-pos-pct">@stat.Percentage.ToString("0")%</span>

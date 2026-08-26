@@ -1,13 +1,9 @@
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// The score each goal made it. The live timeline lists events newest first, so the totals cannot
-/// be counted off the list as it renders — they have to be walked forwards, in the same order the
-/// timeline puts events in backwards.
-/// </summary>
+/// The timeline lists events newest first, so the totals have to be walked forwards — in the same order it puts them in backwards.
 public class ScoreProgressionReportTests
 {
-    /// <summary>A 60-minute match — two 30-minute halves — carrying the goals it was scored in.</summary>
+    /// A 60-minute match — two 30-minute halves — carrying the goals it was scored in.
     private static Game Match(params GameGoal[] goals)
     {
         var game = TestData.Game(durationMinutes: 60);
@@ -15,7 +11,7 @@ public class ScoreProgressionReportTests
         return game;
     }
 
-    /// <summary>A goal off the touchline, placed by the elapsed match clock it was logged at.</summary>
+    /// A goal off the touchline, placed by the elapsed match clock it was logged at.
     private static GameGoal Goal(
         int id, int minute, bool ownGoal = false, bool opponentGoal = false) =>
         new()
@@ -68,8 +64,7 @@ public class ScoreProgressionReportTests
     [Fact]
     public void Two_goals_in_the_same_minute_are_separated_by_when_they_were_entered()
     {
-        // Typed in seconds apart, both logged as the 20th minute — the minute alone cannot say
-        // which was the equaliser and which put us ahead.
+        // Typed in seconds apart, both in the 20th minute — the minute alone cannot say which was the equaliser.
         var first = Goal(7, 20, opponentGoal: true);
         var second = Goal(4, 20);
         second.RecordedAt = first.RecordedAt.AddSeconds(20);
@@ -92,11 +87,8 @@ public class ScoreProgressionReportTests
         Assert.Equal(Game.CountTheirGoals(goals), final.Them);
     }
 
-    /// <summary>
-    /// A goal in first-half stoppage time was scored before one just after the restart, and the
-    /// running total follows that without anyone comparing scoreboard readings — the elapsed clock
-    /// runs on across the break, where the scoreboard reads 30+2 and then 31 all over again.
-    /// </summary>
+    /// The elapsed clock runs on across the break, where the scoreboard reads 30+2 and then 31 again — so a stoppage-time goal keeps its
+    /// place ahead of one just after the restart.
     [Fact]
     public void A_stoppage_time_goal_is_counted_inside_the_half_it_was_scored_in()
     {
@@ -111,11 +103,7 @@ public class ScoreProgressionReportTests
         Assert.Equal(new MatchScore(1, 1), progression[2]);
     }
 
-    /// <summary>
-    /// A goal typed in on the result page has no clock behind it, so the minute on the row is what
-    /// places it — which is the only thing keeping goals recorded before the clock was stored in
-    /// the order they have always had.
-    /// </summary>
+    /// With no clock behind it the row's minute is all there is, which is what keeps goals recorded before the clock in their old order.
     [Fact]
     public void A_goal_with_only_a_minute_is_counted_in_that_minute()
     {
@@ -128,17 +116,12 @@ public class ScoreProgressionReportTests
         Assert.Equal(new MatchScore(1, 1), progression[1]);
     }
 
-    /// <summary>
-    /// A typed-in minute is a scoreboard reading, and on a match whose first half over-ran the
-    /// scoreboard and the elapsed clock disagree by the overrun. Counting the typed minute as
-    /// elapsed time filed a second-half goal ahead of one scored in first-half stoppage time, and
-    /// handed both the wrong running score.
-    /// </summary>
+    /// A typed-in minute is a scoreboard reading, so on a match whose first half over-ran, reading it as elapsed time filed a second-half
+    /// goal ahead of one from first-half stoppage and handed both the wrong running score.
     [Fact]
     public void A_minute_typed_in_afterwards_is_placed_through_the_half_it_names()
     {
-        // A first half whistled off three minutes long, so the second half kicks off at 33:00
-        // while its scoreboard still starts at 30'.
+        // A first half whistled off three minutes long, so the second half kicks off at 33:00 while its scoreboard still starts at 30'.
         var game = Match();
         game.AddPeriod(PeriodType.FirstHalf);
         game.AddPeriod(PeriodType.SecondHalf);

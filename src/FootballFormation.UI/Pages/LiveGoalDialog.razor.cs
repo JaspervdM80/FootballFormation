@@ -2,25 +2,19 @@ namespace FootballFormation.UI.Pages;
 
 public record LiveGoalChoice(int ScorerId, int? AssisterId, bool IsOwnGoal);
 
-/// <summary>
-/// Logs one of our goals during a live match. Like every dialog here it never calls a service —
-/// the page persists the choice.
-/// </summary>
+/// Like every dialog here it never calls a service — the page persists the choice.
 public partial class LiveGoalDialog
 {
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = null!;
 
-    /// <summary>Players who can be credited, on-pitch first — see LiveMatch.GoalCandidates.</summary>
+    /// Players who can be credited, on-pitch first — see LiveMatch.GoalCandidates.
     [Parameter, EditorRequired]
     public List<Player> Candidates { get; set; } = [];
 
     private MudForm Form { get; set; } = null!;
 
-    /// <summary>
-    /// Nullable so the select opens genuinely empty. An int would bind to 0, which is nobody's id
-    /// but still renders as a chosen value and reads like the field is already filled in.
-    /// </summary>
+    /// Nullable so the select opens genuinely empty: an int binds to 0, which is nobody's id but still renders as a chosen value.
     private int? ScorerId { get; set; }
 
     private int? AssisterId { get; set; }

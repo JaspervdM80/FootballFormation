@@ -20,9 +20,8 @@ public partial class PlayerStats
     private Core.Reporting.PlayerStats? _stats;
     private bool _loaded;
 
-    // A flag rather than an AuthorizeView per gated spot: two of them set a class on a container
-    // (.stat-tiles-3, .game-list-no-minutes) so the grid loses a track along with its cell, and
-    // nothing inside the rows can reach that far up.
+    // A flag rather than an AuthorizeView per gated spot: two of them set a class on a container so the grid loses a track along with
+    // its cell, and nothing inside the rows can reach that far up.
     private bool _isAdmin;
 
     protected override async Task OnInitializedCoreAsync()

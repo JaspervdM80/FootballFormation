@@ -1,16 +1,12 @@
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// Match comments, and above all the one rule that matters: a private comment must not leave the
-/// service when the caller is not an admin. Everything on this page is written for a public club
-/// site, so the visibility filter is the only thing standing between a coach's working notes and
-/// the internet.
-/// </summary>
+/// The one rule that matters: a private comment must not leave the service for a caller who is not an admin. The visibility filter is
+/// all that stands between a coach's working notes and a public club site.
 public class GameCommentTests : ServiceTestBase
 {
     private Season? _season;
 
-    /// <summary>One season for the whole test — StartDate is unique, so seeding a second would fail.</summary>
+    /// One season for the whole test — StartDate is unique, so seeding a second would fail.
     private async Task<Game> SeedGameAsync()
     {
         _season ??= await SeedSeasonAsync();

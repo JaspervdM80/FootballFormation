@@ -40,10 +40,9 @@ So it buys nothing a `//` does not, and the rule against docstrings with section
 full. Where a signature genuinely hides something — what null means, the failure mode, who owns the
 lifetime — one line above the member says it.
 
-**Check `<inheritdoc cref=…>` before deleting the doc it points at.** Four exist:
-`ServiceOperation.cs`, `GameService.cs` (which XPaths into one specific `<param>` node),
-`AppRoutes.cs` and `MatchGoalServiceTests.cs`. With no documentation file generated, a broken one
-fails silently. The bare `<inheritdoc />` in the migrations is scaffolded and points at nothing.
+**Check `<inheritdoc cref=…>` before deleting the doc it points at.** Three exist:
+`ServiceOperation.cs`, `GameService.cs` (which XPaths into one specific `<param>` node)  and `MatchGoalServiceTests.cs`. With no documentation file generated, 
+a broken one fails silently. The bare `<inheritdoc />` in the migrations is scaffolded and points at nothing.
 
 ## Conventions already have a canonical home
 

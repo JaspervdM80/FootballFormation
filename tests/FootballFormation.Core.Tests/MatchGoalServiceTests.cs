@@ -4,12 +4,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// What logging a goal at the touchline adds over storing one: where in the match it happened —
-/// the half being played and the reading on the clock — and the scoreline that has to follow from
-/// the goals on file. The minute anyone sees is derived from that pair; these tests are about the
-/// pair being written, and <see cref="MatchClockReportTests"/> about what it is read back as.
-/// </summary>
+/// These are about the half-and-clock pair being written; <see cref="MatchClockReportTests"/> covers what it is read back as.
 public class MatchGoalServiceTests : LiveMatchTestBase
 {
     [Fact]
@@ -27,16 +22,12 @@ public class MatchGoalServiceTests : LiveMatchTestBase
         Assert.Equal(firstHalf.Id, goal.Value!.GamePeriodId);
         Assert.Equal(1500, goal.Value.AtSeconds);
 
-        // Nothing presentational on the row: the minute is the clock's to derive, and stays null
-        // so that a half whose timings are corrected later takes its goals with it.
+        // The minute stays null so a half whose timings are corrected later takes its goals with it.
         Assert.Null(goal.Value.Minute);
     }
 
-    /// <summary>
-    /// The half is recorded, not inferred from the clock reading. The two disagree the moment a
-    /// first half over-runs — this one is three minutes long past its 30 — and inferring is what
-    /// let a change to the match duration silently reinterpret goals already on file.
-    /// </summary>
+    /// The half is recorded, not inferred: the two disagree the moment a first half over-runs, and inferring is what let a change to the
+    /// match duration silently reinterpret goals already on file.
     [Fact]
     public async Task A_second_half_goal_is_stamped_with_the_second_half_however_long_the_first_ran()
     {
@@ -61,10 +52,7 @@ public class MatchGoalServiceTests : LiveMatchTestBase
         Assert.Equal(new MatchMinute(36, 0), MatchClockReport.MinuteOf(reloaded, goal.Value));
     }
 
-    /// <summary>
-    /// A goal after the half has been played out belongs to that half, and is shown 30+2 rather
-    /// than 32. The clock reading runs on past the cap; only the display stops at it.
-    /// </summary>
+    /// The clock reading runs on past the cap; only the display stops at it, so a goal there is 30+2 rather than 32.
     [Fact]
     public async Task A_goal_in_stoppage_time_belongs_to_the_half_that_is_over_running()
     {
@@ -125,13 +113,8 @@ public class MatchGoalServiceTests : LiveMatchTestBase
         Assert.Equal(1, (await ReloadAsync(game.Id)).ScoreHome);
     }
 
-    /// <summary>
-    /// The goal row and the scoreline it produces reach the database together. They used to be a
-    /// save each in a context each — and no transaction spans two contexts, so a lock timeout or a
-    /// deploy restarting the container between them left the goal on file with a stale score beside
-    /// it. One commit is the property that fixed it, and it is invisible from the outside until
-    /// something interrupts the two halves, so it is counted here instead.
-    /// </summary>
+    /// <summary>One commit, because no transaction spans two contexts: a deploy restarting the container between two saves left the goal
+    /// on file with a stale score beside it. Invisible from outside until something interrupts the pair, so it is counted here.</summary>
     [Fact]
     public async Task A_logged_goal_and_the_scoreline_it_makes_are_committed_together()
     {
@@ -166,11 +149,8 @@ public class MatchGoalServiceTests : LiveMatchTestBase
         Assert.Equal(1, commits.Count);
     }
 
-    /// <summary>
-    /// The scoreline counts the goal rows as the database has them, not as the caller last saw
-    /// them. Counting in memory ahead of the insert would read the same way here and be a
-    /// read-modify-write two touchline devices could both get wrong.
-    /// </summary>
+    /// Counts the rows as the database has them: counting in memory ahead of the insert reads the same here, but is a read-modify-write
+    /// two touchline devices could both get wrong.
     [Fact]
     public async Task The_scoreline_counts_a_goal_logged_behind_this_ones_back()
     {
@@ -187,17 +167,14 @@ public class MatchGoalServiceTests : LiveMatchTestBase
         Assert.Equal(2, (await ReloadAsync(game.Id)).ScoreHome);
     }
 
-    /// <summary>The same service, wired to a factory that can be asked what it was made to write.</summary>
+    /// The same service, wired to a factory that can be asked what it was made to write.
     private MatchGoalService GoalsOver(IDbContextFactory<AppDbContext> factory) =>
         new(factory,
             new GameService(factory, Seasons, CurrentUser, Time, NullLogger<GameService>.Instance),
             Notifier, Time, CurrentUser, NullLogger<MatchGoalService>.Instance);
 
-    /// <summary>
-    /// Hands out contexts over the test's one connection, like the base fixture does, and counts
-    /// what is committed through them — EF raises this for the transaction it opens around a lone
-    /// <c>SaveChanges</c> as well as for an explicit one, so two saves that commit once count once.
-    /// </summary>
+    /// EF raises this for the transaction it opens around a lone SaveChanges as well as for an explicit one, so two saves that commit
+    /// once count once.
     private sealed class CommitCountingDbContextFactory(DbConnection connection)
         : IDbContextFactory<AppDbContext>
     {

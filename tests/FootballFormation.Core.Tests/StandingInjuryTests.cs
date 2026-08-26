@@ -1,13 +1,7 @@
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// Turning the squad's standing injury flag into something a finished match remembers.
-/// <para>
-/// The flag itself carries no date, so a match has one chance to write down who it kept out: the
-/// moment the match becomes part of the record. Everything here is about that moment — which
-/// matches take the copy, who ends up in it, and what happens to it afterwards.
-/// </para>
-/// </summary>
+/// The squad's injury flag carries no date, so a match has exactly one chance to write down who it kept out: the moment it becomes part
+/// of the record. Everything here is about that moment.
 public class StandingInjuryTests : LiveMatchTestBase
 {
     [Fact]
@@ -34,8 +28,7 @@ public class StandingInjuryTests : LiveMatchTestBase
         var players = await PlayersAsync();
         await JoinSquadAsync(game.SeasonId, players);
 
-        // Hurt after the final whistle, or flagged the same evening the result was typed in. She
-        // was on the pitch, and the lineup outranks the flag.
+        // Hurt after the whistle, or flagged the evening the result was typed. She was on the pitch, and the line-up outranks the flag.
         await MarkInjuredAsync(game.SeasonId, players[1].Id);
 
         await MatchClock.StartMatchAsync(game.Id);
@@ -51,8 +44,7 @@ public class StandingInjuryTests : LiveMatchTestBase
         var players = await PlayersAsync();
         await JoinSquadAsync(game.SeasonId, players);
 
-        // players[2] is named on the bench, so she was there — bench time is availability, not
-        // absence, and the fairness bar already says she did not play.
+        // Named on the bench, so she was there: bench time is availability, not absence.
         await MarkInjuredAsync(game.SeasonId, players[2].Id);
 
         await MatchClock.StartMatchAsync(game.Id);
@@ -84,8 +76,7 @@ public class StandingInjuryTests : LiveMatchTestBase
 
         Assert.True((await Games.SaveScoreAsync(game.Id, 2, 1)).IsSuccess);
 
-        // Injured a fortnight later. The match was already settled, so a corrected scoreline must
-        // not backdate her injury into it.
+        // Injured a fortnight later, so a corrected scoreline must not backdate the injury into a match already settled.
         await MarkInjuredAsync(game.SeasonId, players[3].Id);
         Assert.True((await Games.SaveScoreAsync(game.Id, 3, 1)).IsSuccess);
 
@@ -99,8 +90,7 @@ public class StandingInjuryTests : LiveMatchTestBase
         var players = await PlayersAsync();
         await JoinSquadAsync(game.SeasonId, players);
 
-        // Nobody hurt when it was played, so the record is written and empty — which is exactly
-        // what an unwritten one looks like, and why the game carries a flag saying it was written.
+        // Written and empty is exactly what unwritten looks like, which is why the game carries a flag saying it was written.
         Assert.True((await Games.SaveScoreAsync(game.Id, 2, 1)).IsSuccess);
 
         await MarkInjuredAsync(game.SeasonId, players[3].Id);
@@ -156,8 +146,7 @@ public class StandingInjuryTests : LiveMatchTestBase
         await MatchClock.StartMatchAsync(game.Id);
         await MatchClock.FinishMatchAsync(game.Id);
 
-        // Back in training. The match still knows she missed it, which is the whole point of
-        // copying the flag rather than reading it.
+        // Back in training, and the match still knows she missed it — the whole point of copying the flag rather than reading it.
         await MarkInjuredAsync(game.SeasonId, players[3].Id, injured: false);
 
         Assert.Equal([players[3].Id], (await ReloadAsync(game.Id)).InjuredPlayerIds);
@@ -170,8 +159,7 @@ public class StandingInjuryTests : LiveMatchTestBase
         var players = await PlayersAsync();
         await JoinSquadAsync(game.SeasonId, players);
 
-        // Guests are out of every game unless opted in, so recording one as injured would put a
-        // match in her availability that was never offered to her.
+        // Guests are out unless opted in, so recording one as injured would put a match in her availability she was never offered.
         var guest = await Db.SeasonSquadMembers
             .FirstAsync(m => m.SeasonId == game.SeasonId && m.PlayerId == players[3].Id);
         guest.IsGuest = true;

@@ -1,13 +1,7 @@
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// Per-season defaults, and the date arithmetic behind "next match date".
-/// <para>
-/// That calculation is the kind that fails quietly: every branch returns a plausible-looking date,
-/// so a wrong one shows up as a game dialog opening on an odd day rather than as an error. The
-/// clock is <see cref="ServiceTestBase.Time"/>, so "today" is a fact the test states.
-/// </para>
-/// </summary>
+/// "Next match date" fails quietly — every branch returns a plausible date, so a wrong one shows up as a dialog opening on an odd day
+/// rather than as an error. The clock is <see cref="ServiceTestBase.Time"/>, so "today" is a fact the test states.
 public class MatchPreferencesServiceTests : ServiceTestBase
 {
     // Now is Saturday 14 March 2026 — the season window runs Jul 2025 – Jun 2026.
@@ -59,8 +53,7 @@ public class MatchPreferencesServiceTests : ServiceTestBase
 
         var inherited = (await Preferences.GetAsync(next.Id)).Value!;
 
-        // The point of inheriting: a new season should not cost the user the settings they already
-        // chose. A hardcoded default here would silently reset game length every July.
+        // The point of inheriting: a hardcoded default here would silently reset game length every July.
         Assert.Equal(50, inherited.GameDurationMinutes);
         Assert.Equal(FormationType.F442, inherited.DefaultFormation);
         Assert.Equal(DayOfWeek.Sunday, inherited.MatchDay);
@@ -79,8 +72,7 @@ public class MatchPreferencesServiceTests : ServiceTestBase
 
         var inherited = (await Preferences.GetAsync(current.Id)).Value!;
 
-        // Both directions have a row, so the rule decides: settings are inherited from the season
-        // that came before, not from one that has not happened yet.
+        // Both directions have a row, so the rule decides: inherit from the season before, not one that has not happened yet.
         Assert.Equal(50, inherited.GameDurationMinutes);
     }
 
@@ -94,8 +86,7 @@ public class MatchPreferencesServiceTests : ServiceTestBase
 
         var inherited = (await Preferences.GetAsync(current.Id)).Value!;
 
-        // Deliberate fallback: with no history to copy, settings someone actually chose beat the
-        // hardcoded defaults, even if they were chosen for a later season.
+        // With no history to copy, settings someone actually chose beat the hardcoded defaults even if chosen for a later season.
         Assert.Equal(90, inherited.GameDurationMinutes);
     }
 
@@ -132,8 +123,7 @@ public class MatchPreferencesServiceTests : ServiceTestBase
 
         var next = await Preferences.GetNextMatchDateAsync(season.Id);
 
-        // Entering a run of fixtures should step forward one match day at a time, never land twice
-        // on the same date.
+        // Entering a run of fixtures steps forward one match day at a time, never landing twice on the same date.
         Assert.Equal(Saturday.AddDays(14), next.Value);
     }
 
@@ -171,8 +161,7 @@ public class MatchPreferencesServiceTests : ServiceTestBase
 
         var next = (await Preferences.GetNextMatchDateAsync(future.Id)).Value;
 
-        // Scheduling next season's opening fixture must not propose a date from the season we are
-        // living in — "today" is meaningless for a season that has not started.
+        // "Today" is meaningless for a season that has not started, so this must not propose a date from the one we are living in.
         Assert.InRange(next, future.StartDate.Date, future.EndDate.Date);
         Assert.Equal(DayOfWeek.Saturday, next.DayOfWeek);
     }

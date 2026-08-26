@@ -9,10 +9,8 @@
     return;
 }
 
-@* Outside .overview-capture on purpose — the capture area is what gets screenshotted, and a
-   back button has no business in the shared image.
-   No subtitle: the capture block immediately below already names the fixture and the date, and
-   repeating them here reads as the page saying the same thing twice. *@
+@* Outside .overview-capture on purpose: that area is what gets screenshotted, and a back button has no business in the shared image.
+   No subtitle either, because the capture block below already names the fixture and the date. *@
 <PageHeader Title="@L["Formation Overview"]" TitleTypo="Typo.h6" Class="mb-3"
             BackFallback="@BackFallback" />
 
@@ -77,9 +75,8 @@
     }
 </div>
 
-@* A plain onclick into js/screenshot.js, not a Blazor handler: the script already takes only an
-   element id and does the download itself, and this page renders without a circuit to dispatch a
-   handler to. It also owns telling the visitor when it failed, which is what the notice is for. *@
+@* A plain onclick into js/screenshot.js, not a Blazor handler: this page renders without a circuit to dispatch one to, and the script
+   already takes an element id, does the download and reports its own failure. *@
 <div class="overview-actions">
     <button type="button" class="btn-gold overview-capture"
             onclick="captureFormationOverview('formation-overview', 'screenshot-error')">

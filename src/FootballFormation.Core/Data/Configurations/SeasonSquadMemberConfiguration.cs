@@ -8,9 +8,8 @@ internal sealed class SeasonSquadMemberConfiguration : IEntityTypeConfiguration<
     {
         entity.HasKey(m => m.Id);
 
-        // Cascade on both sides, unlike Season -> Game. A membership row carries no history —
-        // it is purely "is this person in that squad" — so it must never block deleting the
-        // person or an (already game-free) season, and an orphan row would be meaningless.
+        // Cascade on both sides, unlike Season -> Game: a membership row carries no history of its own, so it must never block deleting
+        // the person or an already game-free season.
         entity.HasOne(m => m.Season)
             .WithMany(s => s.SquadMembers)
             .HasForeignKey(m => m.SeasonId)

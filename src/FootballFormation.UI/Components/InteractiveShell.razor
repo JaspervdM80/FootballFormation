@@ -1,30 +1,16 @@
 ﻿@namespace FootballFormation.UI.Components
 
-@* What a page that declares @rendermode InteractiveServer needs and no longer inherits, because
-   MainLayout renders statically for every page and RouteView applies it outside the island. Every
-   such page renders one of these as its first element. *@
+@* What an interactive page no longer inherits, because MainLayout renders statically and RouteView applies it outside the island. Every
+   such page renders one of these first. *@
 
-@* The three MudBlazor providers that only work inside an interactive render mode. A render mode
-   cannot be put on a layout at all — @Body is a RenderFragment and Blazor cannot serialise one as a
-   root component parameter — so left where they were they would be static, and docs/known_issues/blazor-mudblazor.md
-   records what that looks like: dialogs that simply never appear.
-
-   MudThemeProvider stays in the layout on purpose. MudBlazor separated theming from the popover
-   provider precisely so it can live in a static one, and the theme has to reach the whole page. *@
+@* A render mode cannot go on a layout at all — @Body is a RenderFragment Blazor cannot serialise as a root parameter — so left there
+   these three would be static, which looks like dialogs that simply never appear. See docs/known_issues/blazor-mudblazor.md. *@
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-@* And, on the admin-only pages, the gate that boots a session revoked while its owner is looking at
-   the app. AuthorizeRouteView still guards the route, but it lives in the static router, so it is
-   evaluated once per request and hears nothing afterwards — where the revalidating
-   AuthenticationStateProvider goes on checking for as long as the circuit lives. This is the same
-   NotAuthorized branch, inside the island, so it still hears it. The redirect is also the request
-   that finally clears the auth cookie: a circuit has no response to clear it on.
-
-   Only where the page says so. The public pages need no gate — losing the role there re-renders
-   their AuthorizeView blocks into the visitor view, which is the correct outcome, and redirecting a
-   visitor who was never signed in would be plainly wrong. *@
+@* AuthorizeRouteView still guards the route, but it lives in the static router and is evaluated once per request — this is the same
+   NotAuthorized branch inside the island, which goes on hearing the revalidating provider. *@
 @if (AdminOnly)
 {
     <AuthorizeView Roles="@AppRoles.Admin">
@@ -35,10 +21,7 @@
 }
 
 @code {
-    /// <summary>
-    /// Mirrors the page's own <c>[Authorize(Roles = AppRoles.Admin)]</c>. Two statements of one
-    /// fact, a line apart in the same file, because the attribute is read by the router and this is
-    /// read inside the island — and only the island is still listening once the page is up.
-    /// </summary>
+    /// Mirrors the page's own <c>[Authorize(Roles = AppRoles.Admin)]</c>: the attribute is read by the router, this inside the island,
+    /// and only the island is still listening once the page is up.
     [Parameter] public bool AdminOnly { get; set; }
 }

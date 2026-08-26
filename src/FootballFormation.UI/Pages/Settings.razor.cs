@@ -23,9 +23,7 @@ public partial class Settings
 
     private List<Season>? _seasons;
 
-    /// <summary>The season the defaults card is editing. Starts on whatever the app bar picker is
-    /// showing, but it is its own choice: an admin sets next season's game length while still
-    /// looking at this season's games.</summary>
+    /// Starts on whatever the app bar picker shows but is its own choice, so an admin can set next season's game length from here.
     private int _prefsSeasonId;
 
     private Season? PrefsSeason => _seasons?.FirstOrDefault(s => s.Id == _prefsSeasonId);
@@ -34,8 +32,7 @@ public partial class Settings
     private string _newPassword = "";
     private string _confirmPassword = "";
 
-    /// <summary>The signed-in account is still on the password a fresh install seeded. MainLayout
-    /// has pinned them to this page; the card explains why.</summary>
+    /// The account is still on the seeded password, and MainLayout has pinned them to this page.
     private bool _mustChangePassword;
 
     protected override async Task OnInitializedAsync()
@@ -81,8 +78,7 @@ public partial class Settings
         _seasons = Snackbar.ReportFailure(L, result) ? result.Value : [];
     }
 
-    /// <summary>Every season mutation refreshes the picker too, so the app bar and this list can't
-    /// disagree without a page reload.</summary>
+    /// Every season mutation refreshes the picker too, so the app bar and this list cannot disagree.
     private async Task ReloadSeasons()
     {
         await LoadSeasons();
@@ -137,7 +133,7 @@ public partial class Settings
         await ReloadSeasons();
     }
 
-    /// <summary>Returns the edited season, or null when the dialog was cancelled.</summary>
+    /// Null when the dialog was cancelled.
     private async Task<Season?> ShowSeasonDialogAsync(string title, Season? season = null)
     {
         return await DialogService.PromptAsync<SeasonDialog, Season>(title, p =>
@@ -164,8 +160,7 @@ public partial class Settings
 
     private async Task ChangePassword()
     {
-        // The three fields are Required="true", so let the form say so in place rather than
-        // leaving those attributes decorative — same as GameDialog and UserDialog do.
+        // The three fields are Required="true", so let the form say so in place rather than leaving those attributes decorative.
         await _passwordForm.ValidateAsync();
 
         if (string.IsNullOrWhiteSpace(_currentPassword) || string.IsNullOrWhiteSpace(_newPassword))
@@ -180,9 +175,8 @@ public partial class Settings
             return;
         }
 
-        // ClaimTypes.Name carries the login, which is what ChangePasswordAsync verifies against.
-        // No fallback: the page is [Authorize]d, so an absent name means something is wrong with
-        // the principal — and defaulting to "admin" would aim the change at the wrong account.
+        // No fallback: the page is [Authorize]d, so an absent name means the principal is wrong, and defaulting to "admin" would aim the
+        // change at somebody else's account.
         var authState = await AuthStateTask;
         var username = authState.User.Identity?.Name;
         if (string.IsNullOrEmpty(username))
@@ -200,9 +194,8 @@ public partial class Settings
                 _newPassword = "";
                 _confirmPassword = "";
 
-                // The change rolled the security stamp, so this cookie is already dead — the next
-                // request would sign them out mid-navigation. Send them to the login form now, on
-                // a full reload, so it reads as "sign in again" rather than a session that broke.
+                // The change rolled the security stamp, so this cookie is already dead. A full reload to the login form now reads as
+                // "sign in again" rather than a session that broke mid-navigation.
                 if (_mustChangePassword)
                     Navigation.NavigateTo(AppRoutes.Login, forceLoad: true);
                 break;

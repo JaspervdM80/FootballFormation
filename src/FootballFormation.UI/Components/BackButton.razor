@@ -1,6 +1,5 @@
-@* An anchor, not a MudIconButton with an OnClick: this renders on pages that have no circuit to
-   dispatch a click to. .back-button in app.css gives it the icon button's look — scoped CSS cannot
-   reach the element MudIcon renders. *@
+@* An anchor, not a MudIconButton with an OnClick: this renders on pages with no circuit to dispatch a click to. .back-button lives in
+   app.css because scoped CSS cannot reach the element MudIcon renders. *@
 <a href="@Target" class="back-button" aria-label="@Label" title="@Label">
     <MudIcon Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" />
 </a>

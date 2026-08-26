@@ -5,16 +5,8 @@ public class PlayerService(
     ICurrentUser currentUser,
     ILogger<PlayerService> logger)
 {
-    /// <summary>Everyone on file, in shirt order. Guest status is per season now, so the
-    /// guests-last ordering moved to <see cref="SeasonSquad"/>, which is the only thing that can
-    /// know it.
-    /// <para>
-    /// Archived players are included, and that is not an oversight. This is the lookup the pages
-    /// resolve a player id against, so filtering here would blank the scorer out of a match report
-    /// they actually scored in. What archiving takes someone out of is the pickers —
-    /// <see cref="SeasonSquadService.GetNonMembersAsync"/> and
-    /// <see cref="SeasonSquadService.CopyFromAsync"/> — not the past.
-    /// </para></summary>
+    /// Archived players are included on purpose: this is the lookup pages resolve a player id against, and filtering here would blank
+    /// the scorer out of a match report she actually scored in. Archiving takes someone out of the pickers, not the past.
     public Task<Result<List<Player>>> GetAllAsync(CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "load players", cancellationToken, async () =>
         {
@@ -70,13 +62,10 @@ public class PlayerService(
             return Result.Success();
         });
 
-    /// <summary>
-    /// Retires someone from the club, or brings them back. The person's rows are not touched, so
-    /// the seasons they played read exactly as they did — see <see cref="Player.IsArchived"/>.
-    /// </summary>
+    /// Touches no other row, so the seasons she played read exactly as they did — see <see cref="Player.IsArchived"/>.
     public Task<Result> SetArchivedAsync(int id, bool archived, CancellationToken cancellationToken = default) =>
-        // "archive the player", not "archive player": resx keys are case-insensitive and the menu
-        // item on /players is "Archive player", which would be the same key. See docs/known_issues/localization.md.
+        // "archive the player", not "archive player": resx keys are case-insensitive, and /players already has an "Archive player" menu
+        // item that would collide. See docs/known_issues/localization.md.
         ServiceOperation.RunAdminAsync(currentUser, logger, "archive the player", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -96,16 +85,8 @@ public class PlayerService(
             return Result.Success();
         });
 
-    /// <summary>
-    /// Deletes the person outright — and refuses once that would take a season's history with them.
-    /// <para>
-    /// A player's lineup and goal rows cascade from this row, so deleting last season's top scorer
-    /// used to remove them from last season's table as well: a silent edit to a season nobody was
-    /// looking at. Both counts below are unscoped by season on purpose, because the damage is too.
-    /// Archiving is the way out for anyone who has played, and delete stays available for the case
-    /// it is actually for — a mistyped name added minutes ago, with nothing behind it yet.
-    /// </para>
-    /// </summary>
+    /// Line-up and goal rows cascade from this one, so deleting last season's top scorer would silently edit last season's table. The
+    /// counts below are unscoped by season because the damage is too; archiving is the way out for anyone who has played.
     public Task<Result> DeleteAsync(int id, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAdminAsync(currentUser, logger, "delete player", cancellationToken, async () =>
         {

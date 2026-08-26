@@ -1,10 +1,7 @@
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// The live screen never names a quarter — it announces the changes due halfway through the half
-/// instead, which is the difference between two planned line-ups. Get this wrong and a coach is
-/// told to make a substitution that was never planned.
-/// </summary>
+/// The changes due halfway through a half are the difference between two planned line-ups. Get this wrong and a coach is told to make a
+/// substitution nobody planned.
 public class PlannedChangesReportTests
 {
     private static Player? Find(int id) => TestData.Player(id, $"Player {id}");
@@ -31,10 +28,7 @@ public class PlannedChangesReportTests
         Assert.Empty(changes.Moves);
     }
 
-    /// <summary>
-    /// The case the split exists for: rewriting a back line touches every slot, but only one
-    /// player actually leaves the pitch, and that is what the coach has to act on.
-    /// </summary>
+    /// The case the split exists for: rewriting a back line touches every slot, but only one player actually leaves the pitch.
     [Fact]
     public void A_reshuffle_around_one_swap_reports_one_substitution_and_the_moves_separately()
     {
@@ -139,16 +133,13 @@ public class PlannedChangesReportTests
         Assert.Equal((1, 2), (swap.PlayerOff!.Id, swap.PlayerOn!.Id));
     }
 
-    /// <summary>
-    /// Play overtakes the plan. The line-up still differs from the next one, so the difference
-    /// still names the slot — but it now proposes to withdraw the player who came on for the one
-    /// the plan meant to take off, which is a substitution nobody planned.
-    /// </summary>
+    /// Play overtakes the plan: the difference still names the slot, but now proposes to withdraw whoever came on for the player the
+    /// plan meant to take off.
     [Fact]
     public void A_swap_whose_outgoing_player_has_already_been_taken_off_drops_out()
     {
         var game = TestData.Game(split: GameSplitType.Quarters);
-        // As the pitch stands after 2 went off for 4 — the lineup records where everyone is now.
+        // As the pitch stands after 2 went off for 4 — the line-up records where everyone is now.
         var q1 = game.AddPeriod(PeriodType.FirstQuarter,
             TestData.Starter(1, PlayerPosition.GK, 0),
             TestData.Starter(4, PlayerPosition.CM, 5),
@@ -184,11 +175,7 @@ public class PlannedChangesReportTests
         Assert.Equal((2, 3), (swap.PlayerOff!.Id, swap.PlayerOn!.Id));
     }
 
-    /// <summary>
-    /// The rewind has to unwind the substitutions newest first. Taken the other way round, a player
-    /// who left and returned reads as somebody who was never in the starting line-up, and the swap
-    /// the plan still holds for them disappears.
-    /// </summary>
+    /// Newest first, or a player who left and returned reads as somebody who never started, and the swap the plan holds for her vanishes.
     [Fact]
     public void A_player_who_went_off_and_came_back_is_still_the_one_the_plan_takes_off()
     {
@@ -207,7 +194,7 @@ public class PlannedChangesReportTests
         Assert.Equal((2, 4), (swap.PlayerOff!.Id, swap.PlayerOn!.Id));
     }
 
-    /// <summary>An arrival with nobody named to come off is a line-up worth flagging, not hiding.</summary>
+    /// An arrival with nobody named to come off is a line-up worth flagging, not hiding.
     [Fact]
     public void An_arrival_with_nobody_to_come_off_survives_the_viability_check()
     {

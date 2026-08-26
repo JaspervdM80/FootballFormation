@@ -1,9 +1,6 @@
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// Squad membership per season. The rule worth pinning down is the refusal: removing someone who
-/// already played would rewrite that season's statistics without anyone asking for it.
-/// </summary>
+/// The rule worth pinning is the refusal: removing someone who already played would rewrite that season's statistics unasked.
 public class SeasonSquadServiceTests : ServiceTestBase
 {
     [Fact]

@@ -1,10 +1,7 @@
 ﻿namespace FootballFormation.UI.Pages;
 
-/// <summary>
-/// The landing page. Its only moving part is the live banner: whenever a match is being played,
-/// the home page is the shortest route to it for anyone who was sent the site rather than a link
-/// to the game.
-/// </summary>
+/// The live banner is the only moving part: whenever a match is on, this is the shortest route to it for anyone sent the site rather
+/// than a link to the game.
 public partial class Home
 {
     [Inject] private LiveMatchService Live { get; set; } = null!;
@@ -15,7 +12,7 @@ public partial class Home
 
     private bool IsLive => TodaysGame?.MatchState == MatchState.InProgress;
 
-    /// <summary>Only a match actually being played gets the loud treatment.</summary>
+    /// Only a match actually being played gets the loud treatment.
     private string BannerCssClass => TodaysGame?.MatchState switch
     {
         MatchState.InProgress => "",
@@ -30,15 +27,15 @@ public partial class Home
         _ => L["Today"]
     };
 
-    /// <summary>The score in venue order — ours first at home, the opponent's first away.</summary>
+    /// The score in venue order — ours first at home, the opponent's first away.
     private string LiveScore => TodaysGame?.ScoreboardOrder().ToString() ?? "";
 
     protected override async Task OnInitializedAsync()
     {
         await LoadTodaysGameAsync();
 
-        // Any live-match change at all, not just this game's: the banner has no game of its own
-        // until it loads one, and a match starting is exactly the event it must not miss.
+        // Any live-match change, not just this game's: the banner has no game of its own until it loads one, and a match starting is
+        // exactly the event it must not miss.
         Notifier.Changed += OnLiveChanged;
     }
 
@@ -54,10 +51,7 @@ public partial class Home
         StateHasChanged();
     });
 
-    /// <summary>
-    /// Where the banner goes: the live screen while there is still a match to follow — before
-    /// kick-off too, and for spectators as much as the coach — and the result once it is over.
-    /// </summary>
+    /// The live screen while there is still a match to follow — before kick-off too, and for spectators as much as the coach — then the result.
     private string TodaysMatchUrl => TodaysGame is null
         ? AppRoutes.Home
         : TodaysGame.MatchState == MatchState.Finished

@@ -19,9 +19,7 @@ public partial class GameDialog
     private string Opponent { get; set; } = string.Empty;
     private DateTime? Date { get; set; } = DateTime.Today;
 
-    /// <summary>The kick-off time as the native time input reads and writes it ("HH:mm"), kept
-    /// apart from <see cref="Date"/> so a blank field round-trips as no time at all rather than
-    /// midnight — see <c>Game.HasStartTime</c>.</summary>
+    /// Kept apart from <see cref="Date"/> so a blank field round-trips as no time at all rather than midnight — see Game.HasStartTime.
     private string? StartTimeText { get; set; }
     private FormationType SelectedFormationType { get; set; } = FormationType.F442;
     private GameSplitType SplitType { get; set; } = GameSplitType.Halves;
@@ -33,25 +31,20 @@ public partial class GameDialog
 
     private List<Season> Seasons { get; set; } = [];
 
-    /// <summary>0 = "auto by date", which <c>GameService.CreateAsync</c> resolves from
-    /// <see cref="Date"/>. Editing a game shows its real season, and changing the date never
-    /// silently moves it — reassigning is an explicit choice.</summary>
+    /// 0 is "auto by date", resolved by GameService.CreateAsync. Editing a game shows its real season, and changing the date never
+    /// silently moves it — reassigning is an explicit choice.
     private int SelectedSeasonId { get; set; }
 
-    /// <summary>The squad of whichever season this game will land in. Reloaded whenever the season
-    /// or the date changes, so the two player pickers always offer that season's people.</summary>
+    /// Reloaded whenever the season or the date changes, so the two player pickers always offer that season's people.
     private SeasonSquad Squad { get; set; } = SeasonSquad.Empty;
 
-    /// <summary>True once a date resolves to no season at all — a fixture opening a new season.</summary>
+    /// True once a date resolves to no season at all — a fixture opening a new season.
     private bool SeasonNotCreatedYet { get; set; }
 
-    /// <summary>The season whose defaults are currently in the form, so they are re-applied only
-    /// when the game actually moves to a different season.</summary>
+    /// Tracks whose defaults are in the form, so they are re-applied only when the game actually moves to a different season.
     private int _defaultsFromSeasonId;
 
-    /// <summary>Full members offered in the "Unavailable Players" picker. Injured players are left
-    /// out — they are already out of the roster for every game, so offering them here would only be
-    /// a second, redundant way to say the same thing.</summary>
+    /// Injured players are left out — already out of the roster for every game, so offering them here says the same thing twice.
     private List<Player> SquadPlayers => [.. Squad.FullMembers.Where(p => !Squad.IsInjured(p.Id))];
     private List<Player> GuestPlayers => Squad.Guests;
 
@@ -67,10 +60,8 @@ public partial class GameDialog
 
         if (Game is null)
         {
-            // Preferences are per season, and the date comes out of them (the match day), so the
-            // season has to be picked before the date exists: the one the viewer is filtering by.
-            // The date that follows lands inside that season, so "Auto (by date)" still resolves
-            // to it and ReloadSquadAsync leaves the defaults alone.
+            // Preferences are per season and the match day comes out of them, so a season has to be picked before the date exists. The
+            // date that follows lands inside it, so "Auto (by date)" still resolves to the same one.
             var seasonId = SeasonState.SelectedSeasonId
                 ?? Seasons.FirstOrDefault(s => s.IsCurrent)?.Id
                 ?? Seasons.FirstOrDefault()?.Id
@@ -103,10 +94,6 @@ public partial class GameDialog
         return SelectedSeasonId == 0 ? ReloadSquadAsync() : Task.CompletedTask;
     }
 
-    /// <summary>
-    /// Resolves the squad for whichever season the game will land in: the explicit choice, or — on
-    /// "Auto (by date)" — the season covering the date currently in the picker.
-    /// </summary>
     private async Task ReloadSquadAsync()
     {
         var seasonId = SelectedSeasonId;
@@ -114,8 +101,8 @@ public partial class GameDialog
 
         if (seasonId == 0)
         {
-            // FindForDateAsync, not GetOrCreateForDateAsync: typing a date into a dialog the user
-            // may still cancel must never create a season. GameService.CreateAsync creates it on save.
+            // FindForDateAsync, not GetOrCreateForDateAsync: typing a date into a dialog the user may still cancel must never create a
+            // season. CreateAsync does that on save.
             var seasonResult = await SeasonService.FindForDateAsync(Date ?? DateTime.Today, Cancellation);
             seasonId = seasonResult.IsSuccess ? seasonResult.Value?.Id ?? 0 : 0;
             SeasonNotCreatedYet = seasonId == 0;
@@ -131,24 +118,19 @@ public partial class GameDialog
             Squad = squadResult.IsSuccess ? squadResult.Value! : SeasonSquad.Empty;
         }
 
-        // Formation, split and duration are season defaults too, so moving a *new* game to another
-        // season re-applies them. Only for a new game: an existing game's own settings are history
-        // and must never be rewritten by a season change.
+        // Only for a new game: an existing game's formation, split and duration are history, and a season change must not rewrite them.
         if (Game is null && seasonId != 0 && seasonId != _defaultsFromSeasonId)
             await ApplySeasonDefaultsAsync(seasonId);
 
-        // Drop selections that aren't valid for this season, so switching can't smuggle a stale id
-        // through to Submit. (Post-backfill nobody is outside a squad, but a later removal could.)
-        // Deliberately not filtered on injury: an existing game's stored UnavailablePlayerIds is
-        // history — a player marked injured after the fact must not silently erase that this game
-        // already recorded them as absent. SquadPlayers below is what stops a *new* selection.
+        // Drops ids not valid for this season, so switching cannot smuggle a stale one through to Submit. Deliberately not filtered on
+        // injury: a player marked injured after the fact must not erase that this game already recorded her as absent.
         UnavailablePlayerIds = [.. UnavailablePlayerIds.Where(Squad.IsFullMember)];
         GuestPlayerIds = [.. GuestPlayerIds.Where(id => Squad.Contains(id) && Squad.IsGuest(id))];
 
         StateHasChanged();
     }
 
-    /// <summary>Fills formation, split and duration from a season's preferences.</summary>
+    /// Fills formation, split and duration from a season's preferences.
     private async Task ApplySeasonDefaultsAsync(int seasonId)
     {
         if (seasonId <= 0) return;

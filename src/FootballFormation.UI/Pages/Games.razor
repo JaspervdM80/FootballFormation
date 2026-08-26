@@ -84,9 +84,8 @@ else
                             <span class="badge-teal">@L[game.MatchType.DisplayName()]</span>
                         }
                         <span class="badge-gold">@game.FormationType.DisplayName()</span>
-                        @* Both reasons, one badge: the card says how many were missing, not why.
-                           Unioned, because a player marked out of this fixture and later recorded
-                           injured is in both lists and is still one girl. *@
+                        @* One badge for both reasons — the card says how many were missing, not why. Unioned, because a player marked
+                           out of this fixture and later recorded injured is in both lists and still one girl. *@
                         @{
                             var missing = game.UnavailablePlayerIds.Union(game.InjuredPlayerIds).Count();
                         }
@@ -104,11 +103,8 @@ else
                             <span class="game-score @scoreClass">@game.ScoreboardOrder()</span>
                         }
                         <div class="game-actions" @onclick:stopPropagation="true">
-                            @* Live leads the row and wears the red wherever it appears; the extra class
-                               only adds the pulse. A match in progress is what everyone wants first, so it
-                               is not admin-gated, and it stays reachable whatever the calendar says.
-                               Otherwise the live screen is a match-day tool. Once the score is final there
-                               is nothing left to run, so the icon goes and Result is the way in. *@
+                            @* A match in progress is what everyone wants first, so it is not admin-gated and stays reachable whatever
+                               the calendar says. Otherwise the live screen is a match-day tool, and a final score removes it entirely. *@
                             @if (game.MatchState == MatchState.InProgress)
                             {
                                 <button class="action-btn action-live action-live-now" title="@L["Live"]" @onclick="() => OpenLive(game.Id)">

@@ -3,11 +3,8 @@ using FootballFormation.Core.Security;
 
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// Accounts and the credential check. The rules worth pinning down are the ones that lock people
-/// out when they go wrong: the last admin must survive, and anything that changes an account's
-/// authority must invalidate the sessions that were opened under the old one.
-/// </summary>
+/// The rules worth pinning are the ones that lock people out when they go wrong: the last admin must survive, and anything that changes
+/// an account's authority must invalidate the sessions opened under the old one.
 public class UserServiceTests : ServiceTestBase
 {
     private const string GoodPassword = "correct-horse";
@@ -27,9 +24,8 @@ public class UserServiceTests : ServiceTestBase
     {
         var created = await Users.CreateAsync("Jasper", "jasper", GoodPassword, UserRole.Admin);
 
-        // Program.cs mints ClaimTypes.Role from Role.ToString(); AppRoles.Admin is what the
-        // [Authorize] attributes and AuthorizeView markup match against. If these ever differ,
-        // every admin gate in the app silently stops letting anyone through.
+        // Program.cs mints ClaimTypes.Role from Role.ToString() and the [Authorize] attributes match AppRoles.Admin — if the two ever
+        // differ, every admin gate in the app silently stops letting anyone through.
         Assert.Equal(Core.Security.AppRoles.Admin, created.Value!.Role.ToString());
     }
 
@@ -210,11 +206,8 @@ public class UserServiceTests : ServiceTestBase
         Assert.Equal(["Anna", "Mila", "Zoe"], all.Value!.Select(u => u.DisplayName));
     }
 
-    // ---------------------------------------------------------------- sessions read from a principal
-
-    // Two callers ask "is this session still good" from a ClaimsPrincipal rather than an id and a
-    // stamp: the cookie handler on every HTTP request, and the circuit's revalidation loop. They
-    // share this overload so they cannot answer it differently.
+    // The cookie handler and the circuit's revalidation loop both ask "is this session still good" from a ClaimsPrincipal, and share
+    // this overload so they cannot answer it differently.
 
     [Fact]
     public async Task A_principal_carrying_a_live_accounts_claims_finds_that_account()

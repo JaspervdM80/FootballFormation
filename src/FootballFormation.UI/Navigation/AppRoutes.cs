@@ -2,11 +2,8 @@ using FootballFormation.UI.State;
 
 namespace FootballFormation.UI.Navigation;
 
-/// <summary>
-/// Every route in the app, in one place. Pages build URLs from here rather than interpolating a
-/// string at the call site, so renaming a route is one edit instead of hunting two dozen literals.
-/// The <c>@page</c> directives stay literal — Razor needs a compile-time constant — so keep the two in step.
-/// </summary>
+/// Pages build URLs from here rather than interpolating at the call site, so renaming a route is one edit. The <c>@page</c> directives
+/// stay literal because Razor needs a compile-time constant, so keep the two in step.
 public static class AppRoutes
 {
     public const string Home = "/";
@@ -28,12 +25,8 @@ public static class AppRoutes
 
     public static string Result(int gameId) => $"/games/{gameId}/result";
 
-    /// <summary>
-    /// The two chrome controls that are links to an endpoint rather than pages of their own. Both
-    /// write a cookie and send the visitor back where they were, because both settings are fixed
-    /// for the lifetime of a render: the circuit's culture is set at startup, and the season is
-    /// read off the request.
-    /// </summary>
+    /// Endpoints, not pages: both settings are fixed for the lifetime of a render — the circuit's culture at startup, the season off the
+    /// request — so each writes a cookie and sends the visitor back where they were.
     public static string SetCulture(string culture, string returnUrl) => $"/culture/set?culture={culture}&redirectUri={Uri.EscapeDataString(returnUrl)}";
 
     public static string SetSeason(int? seasonId, string returnUrl) => $"/season/set?season={SeasonPreference.Format(seasonId)}&redirectUri={Uri.EscapeDataString(returnUrl)}";

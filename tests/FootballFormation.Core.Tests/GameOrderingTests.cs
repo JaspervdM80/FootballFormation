@@ -1,10 +1,7 @@
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// The order games are handed back in. SQLite has no date type, so <see cref="Game.Date"/> lives
-/// in a TEXT column and an <c>ORDER BY</c> in the database compares the text a date was written
-/// as — these pin the ordering to the date itself.
-/// </summary>
+/// SQLite has no date type, so <see cref="Game.Date"/> lives in a TEXT column and an ORDER BY compares the text it was written as —
+/// these pin the ordering to the date itself.
 public class GameOrderingTests : ServiceTestBase
 {
     [Fact]
@@ -38,12 +35,8 @@ public class GameOrderingTests : ServiceTestBase
             games.Select(g => g.Opponent).ToArray());
     }
 
-    /// <summary>
-    /// The reason the ordering happens on the materialised date. EF writes a date as
-    /// <c>2026-03-21 09:00:00</c>; the ISO form writes the same instant as
-    /// <c>2026-03-21T09:00:00</c>, and <c>T</c> sorts after a space, so as text the earlier
-    /// kick-off climbs above the later one. Read as dates, it cannot.
-    /// </summary>
+    /// EF writes <c>2026-03-21 09:00:00</c> where the ISO form writes <c>2026-03-21T09:00:00</c>, and <c>T</c> sorts after a space — so
+    /// as text the earlier kick-off climbs above the later one.
     [Fact]
     public async Task A_date_written_in_another_text_format_still_sorts_by_its_date()
     {

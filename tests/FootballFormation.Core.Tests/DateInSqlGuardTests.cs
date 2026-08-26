@@ -1,9 +1,7 @@
 namespace FootballFormation.Core.Tests;
 
-/// <summary>
-/// The guard itself. Every other suite exercises it by accident — these say what it catches, so a
-/// change that quietly stops it catching anything fails here rather than passing everywhere.
-/// </summary>
+/// Every other suite exercises the guard by accident; these say what it catches, so a change that quietly stops it catching anything
+/// fails here rather than passing everywhere.
 public class DateInSqlGuardTests : ServiceTestBase
 {
     [Fact]

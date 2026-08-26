@@ -23,53 +23,41 @@ public partial class MatchResult
     private Game? GameData { get; set; }
     private List<Player>? AllPlayers { get; set; }
 
-    /// <summary>The squad of this game's season, for the no-lineup fallback below.</summary>
+    /// The squad of this game's season, for the no-lineup fallback below.
     private SeasonSquad Squad { get; set; } = SeasonSquad.Empty;
 
     private int? ScoreHome { get; set; }
     private int? ScoreAway { get; set; }
 
-    // New goal form
     private int? NewGoalMinute { get; set; }
     private int? NewGoalScorerId { get; set; }
     private int? NewGoalAssisterId { get; set; }
     private bool NewGoalIsOwnGoal { get; set; }
 
-    /// <summary>
-    /// Decides both what the comments card offers and — via <c>GetCommentsAsync</c> — which comments
-    /// are fetched at all. Deliberately one flag for both: a visitor's page must never contain a
-    /// private body, and reading the two from separate sources is how they would drift apart.
-    /// </summary>
+    /// One flag for what the card offers and what GetCommentsAsync fetches: a visitor's page must never contain a private body, and two
+    /// sources are how they would drift apart.
     private bool IsAdmin { get; set; }
 
-    /// <summary>The id written onto comments this visitor creates. Null only if the claim is absent.</summary>
+    /// Null only if the claim is absent.
     private int? CurrentUserId { get; set; }
 
     private List<GameComment> Comments { get; set; } = [];
 
-    // New comment form
     private string? NewCommentBody { get; set; }
     private bool NewCommentIsPublic { get; set; }
 
-    /// <summary>The copyable match summary, rendered into a hidden element for <c>clipboard.js</c>
-    /// to read — see the copy button's markup for why even this circuit-carrying page uses a plain
-    /// onclick rather than a Blazor handler. Null until there is a final score to report.</summary>
+    /// Rendered into a hidden element for clipboard.js — the copy button's markup says why even this circuit-carrying page uses a plain
+    /// onclick. Null until there is a final score to report.
     private string? SummaryText { get; set; }
 
-    /// <summary>A match still to be played. <c>/games</c> leaves the link to this page off such a
-    /// card; this is the same rule for whoever arrives by URL anyway.</summary>
+    /// /games leaves the link off such a card; this is the same rule for whoever arrives by URL anyway.
     private bool IsFuture => GameData is { } game && game.Date.Date > Time.GetLocalNow().Date;
 
-    /// <summary>Who may type a scoreline, and so who may log a goal — <c>AddGoalAsync</c> recounts
-    /// the score, so it is the same permission. Built on <see cref="IsAdmin"/> rather than an
-    /// <c>AuthorizeView</c> for the reason given there.</summary>
+    /// Logging a goal recounts the score, so it is the same permission as typing a scoreline. Built on <see cref="IsAdmin"/> rather than
+    /// an AuthorizeView for the reason given there.
     private bool CanEditScore => IsAdmin && !IsFuture;
 
-    /// <summary>
-    /// True when both scores are set AND every goal our team scored has a named scorer.
-    /// Opponent's regular goals aren't tracked, so we only gate on our side. Used to hide
-    /// the "add scorer" form once there's nothing left to add.
-    /// </summary>
+    /// Only our side is gated, because the opponent's regular goals are never tracked by scorer.
     private bool AllScorersLogged
     {
         get
@@ -80,9 +68,6 @@ public partial class MatchResult
         }
     }
 
-    /// <summary>
-    /// Players involved in this game (starters + subs across all periods).
-    /// </summary>
     private List<Player> SquadPlayers
     {
         get
@@ -95,7 +80,7 @@ public partial class MatchResult
                 .Distinct()
                 .ToHashSet();
 
-            // If no lineup yet, fall back to everyone selected for this game
+            // No line-up yet, so fall back to everyone selected for this game.
             if (involvedIds.Count == 0)
                 return GameData.SelectRoster(AllPlayers, Squad);
 
@@ -127,17 +112,15 @@ public partial class MatchResult
         var squadResult = await SquadService.GetSquadAsync(GameData.SeasonId, Cancellation);
         Squad = squadResult.IsSuccess ? squadResult.Value! : SeasonSquad.Empty;
 
-        // Anyone who actually appeared stays selectable as a scorer regardless of current
-        // membership, so the full pool is still loaded.
+        // The full pool, so anyone who actually appeared stays selectable as a scorer regardless of current membership.
         var playersResult = await PlayerService.GetAllAsync(Cancellation);
         AllPlayers = playersResult.IsSuccess ? playersResult.Value! : [];
 
         await ReloadComments();
     }
 
-    /// <summary>Only public comments make the summary regardless of what <see cref="Comments"/>
-    /// itself holds — <c>MatchSummaryReport</c> filters again on its own, so an admin's private
-    /// notes can never end up on someone's clipboard whatever this page loaded them for.</summary>
+    /// MatchSummaryReport filters privacy again on its own, so an admin's private notes can never reach someone's clipboard whatever
+    /// this page loaded.
     private void RefreshSummaryText()
     {
         if (GameData is null || !GameData.HasFinalScore)
@@ -155,9 +138,8 @@ public partial class MatchResult
         var result = await GameService.SaveScoreAsync(GameId, ScoreHome, ScoreAway);
         if (!Snackbar.Report(L, result, L["Score saved!"])) return;
 
-        // SaveScoreAsync writes straight to the database rather than handing back the row, so
-        // GameData is brought in line by hand — the copy button reads it, not the form fields, and
-        // would otherwise still see the score from before this save.
+        // SaveScoreAsync writes straight to the database rather than handing back the row, and the copy button reads GameData rather
+        // than the form fields — so without this it would still see the score from before the save.
         if (GameData is not null)
         {
             GameData.ScoreHome = ScoreHome;
@@ -218,8 +200,7 @@ public partial class MatchResult
     {
         var makePublic = !comment.IsPublic;
 
-        // Publishing puts the text on the club site, so it is worth a confirmation. Unpublishing
-        // takes it back down and needs none.
+        // Publishing puts the text on the club site, so it is worth a confirmation. Taking it back down is not.
         if (makePublic && !await DialogService.ConfirmAsync(
                 L["Publish comment"],
                 L["This comment becomes visible to everyone who opens this match. Continue?"],
