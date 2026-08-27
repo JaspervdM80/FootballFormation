@@ -144,6 +144,13 @@ public class MatchPreferencesService(
                 ? (stepPastReference ? referenceDate.AddDays(1) : referenceDate)
                 : NextDayIn(referenceDate, trainingDays, stepPastReference);
 
+            // Both ends, not just the far one: an extra evening entered outside the period is allowed, and while it is still ahead of us
+            // it becomes the reference the next date steps off — which would carry the answer out of the period with it.
+            if (nextDate < windowStart)
+                nextDate = trainingDays.Count == 0
+                    ? windowStart
+                    : NextDayIn(windowStart, trainingDays, stepPastReference: false);
+
             if (nextDate > windowEnd)
                 nextDate = trainingDays.Count == 0
                     ? windowEnd

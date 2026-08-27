@@ -249,6 +249,20 @@ public class MatchPreferencesServiceTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task A_one_off_session_before_the_period_does_not_drag_the_next_date_out_with_it()
+    {
+        var season = await SeedSeasonAsync(covering: Saturday);
+        await SetTrainingDaysAsync(season.Id, DayOfWeek.Tuesday);
+        await SetTrainingPeriodAsync(season.Id, new DateTime(2026, 4, 1), new DateTime(2026, 5, 31));
+
+        // An extra evening outside the period is allowed on purpose, and it is still ahead of us — so it becomes the reference the next
+        // date steps off. Without a floor the answer follows it out of the period, which is the case the period exists to prevent.
+        await Trainings.CreateAsync(new Training { SeasonId = season.Id, Date = new DateTime(2026, 3, 20) });
+
+        Assert.Equal(new DateTime(2026, 4, 7), (await Preferences.GetNextTrainingDateAsync(season.Id)).Value);
+    }
+
+    [Fact]
     public async Task The_next_training_date_starts_at_the_first_training_rather_than_at_the_season()
     {
         // A season we are not in yet, so "today" cannot be the answer and the window's opening day is what gets measured from.

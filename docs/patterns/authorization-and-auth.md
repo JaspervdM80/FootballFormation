@@ -41,7 +41,7 @@ not be the one place a boolean argument is trusted. `AuthorizationTests` pins bo
 `Reads_stay_open_to_everyone`.
 
 **The second such read is the training register**, and it goes further: `TrainingService`'s
-`GetAllAsync` and `GetByIdAsync` are `RunAdminAsync` outright rather than a filtered read, because
+`GetAllAsync` is `RunAdminAsync` outright rather than a filtered read, because
 there is no public half of a session to hand back. Who missed a training, and the note usually
 saying why, is a personal fact rather than a team one — unlike the squad, the fixtures and the
 statistics, which exist to be shared with parents. `/trainings` carries

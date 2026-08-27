@@ -42,7 +42,14 @@ public partial class TrainingDialog
     {
         await SeasonState.EnsureLoadedAsync();
 
-        if (Training is null)
+        if (Training is not null)
+        {
+            // Copied here rather than in OnParametersSet, which ComponentBase does not call until this method has run to completion:
+            // from there the reload below read a season of 0 and resolved the squad from today, so editing a session from another
+            // season offered this one's players.
+            ApplyTraining(Training);
+        }
+        else
         {
             // The training days are per season, so a season has to be picked before the date exists. The date that follows lands inside
             // it, so resolving the season from that date still finds the same one.
@@ -55,7 +62,6 @@ public partial class TrainingDialog
             }
         }
 
-        // Runs after OnParametersSet has copied an existing session's season and date in.
         await ReloadSquadAsync();
     }
 
@@ -98,17 +104,14 @@ public partial class TrainingDialog
         StateHasChanged();
     }
 
-    protected override void OnParametersSet()
+    private void ApplyTraining(Training training)
     {
-        if (Training is not null)
-        {
-            Date = Training.Date;
-            StartTimeText = Training.HasStartTime ? Training.Date.ToString("HH:mm") : null;
-            Notes = Training.Notes;
-            DidNotTakePlace = Training.DidNotTakePlace;
-            SeasonId = Training.SeasonId;
-            UnavailablePlayerIds = Training.UnavailablePlayerIds.ToList();
-        }
+        Date = training.Date;
+        StartTimeText = training.HasStartTime ? training.Date.ToString("HH:mm") : null;
+        Notes = training.Notes;
+        DidNotTakePlace = training.DidNotTakePlace;
+        SeasonId = training.SeasonId;
+        UnavailablePlayerIds = training.UnavailablePlayerIds.ToList();
     }
 
     private async Task Submit()
