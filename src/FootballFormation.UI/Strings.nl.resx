@@ -47,6 +47,7 @@
   <data name="Create games, build formations, and track results." xml:space="preserve"><value>Maak wedstrijden aan, bouw opstellingen en houd uitslagen bij.</value></data>
   <data name="Settings" xml:space="preserve"><value>Instellingen</value></data>
   <data name="Configure match duration, split type, and defaults." xml:space="preserve"><value>Stel wedstrijdduur, speelperiodes en standaardwaarden in.</value></data>
+  <data name="Keep the training evenings, and note who was not there." xml:space="preserve"><value>Houd de trainingsavonden bij, en noteer wie er niet was.</value></data>
 
   <!-- Players -->
   <data name="Players" xml:space="preserve"><value>Spelers</value></data>
@@ -140,11 +141,12 @@
   <data name="{0} training" xml:space="preserve"><value>{0} training</value></data>
   <data name="{0} trainings" xml:space="preserve"><value>{0} trainingen</value></data>
   <data name="Week {0}" xml:space="preserve"><value>Week {0}</value></data>
+  <data name="Earlier" xml:space="preserve"><value>Eerder</value></data>
   <data name="Cancelled" xml:space="preserve"><value>Vervallen</value></data>
   <data name="{0} cancelled" xml:space="preserve"><value>{0} vervallen</value></data>
   <data name="No trainings in {0} yet." xml:space="preserve"><value>Nog geen trainingen in {0}.</value></data>
   <data name="No trainings yet. Add your first session!" xml:space="preserve"><value>Nog geen trainingen. Voeg je eerste training toe!</value></data>
-  <data name="Set which weekdays the team trains under Preferences, and the date fills itself in." xml:space="preserve"><value>Stel bij Voorkeuren in op welke dagen het team traint, dan wordt de datum vanzelf ingevuld.</value></data>
+  <data name="Set the training days and the first and last training under Preferences, and the sessions fill themselves in." xml:space="preserve"><value>Stel onder Voorkeuren de trainingsdagen en de eerste en laatste training in, dan worden de trainingen vanzelf aangemaakt.</value></data>
   <data name="New Training" xml:space="preserve"><value>Nieuwe training</value></data>
   <data name="Edit Training" xml:space="preserve"><value>Training bewerken</value></data>
   <data name="Delete Training" xml:space="preserve"><value>Training verwijderen</value></data>
@@ -154,7 +156,6 @@
   <data name="Training on {0} deleted" xml:space="preserve"><value>Training van {0} verwijderd</value></data>
 
   <!-- Training dialog -->
-  <data name="Start Time" xml:space="preserve"><value>Starttijd</value></data>
   <data name="Notes" xml:space="preserve"><value>Notities</value></data>
   <data name="What was trained, and anything worth remembering." xml:space="preserve"><value>Wat er getraind is, en alles wat het onthouden waard is.</value></data>
   <data name="Did not take place" xml:space="preserve"><value>Ging niet door</value></data>
@@ -437,6 +438,8 @@
   <data name="Training Days" xml:space="preserve"><value>Trainingsdagen</value></data>
   <data name="First Training" xml:space="preserve"><value>Eerste training</value></data>
   <data name="Last Training" xml:space="preserve"><value>Laatste training</value></data>
+  <data name="Saving creates a session for every training day between the two, and removes the empty ones outside them." xml:space="preserve"><value>Opslaan maakt een training aan voor elke trainingsdag ertussen, en verwijdert de lege trainingen daarbuiten.</value></data>
+  <data name="{0} trainings created, {1} removed" xml:space="preserve"><value>{0} trainingen aangemaakt, {1} verwijderd</value></data>
   <data name="Next calculated training date:" xml:space="preserve"><value>Volgende berekende trainingsdatum:</value></data>
   <data name="Save Preferences" xml:space="preserve"><value>Voorkeuren opslaan</value></data>
   <data name="Change Password" xml:space="preserve"><value>Wachtwoord wijzigen</value></data>

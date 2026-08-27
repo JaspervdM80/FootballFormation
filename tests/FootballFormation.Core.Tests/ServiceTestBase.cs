@@ -29,7 +29,7 @@ public abstract class ServiceTestBase : IDisposable
         Seasons = new SeasonService(DbFactory, Time, CurrentUser, NullLogger<SeasonService>.Instance);
         Squads = new SeasonSquadService(DbFactory, CurrentUser, NullLogger<SeasonSquadService>.Instance);
         Games = new GameService(DbFactory, Seasons, CurrentUser, Time, NullLogger<GameService>.Instance);
-        Trainings = new TrainingService(DbFactory, Seasons, CurrentUser, NullLogger<TrainingService>.Instance);
+        Trainings = new TrainingService(DbFactory, Seasons, Time, CurrentUser, NullLogger<TrainingService>.Instance);
         Preferences = new MatchPreferencesService(DbFactory, Time, CurrentUser, NullLogger<MatchPreferencesService>.Instance);
         Live = new LiveMatchService(DbFactory, Time, NullLogger<LiveMatchService>.Instance);
 

@@ -55,11 +55,11 @@
             }
         </MudSelect>
 
-        <MudSelect T="DayOfWeek" @bind-Value="_prefs.MatchDay"
+        <MudSelect T="DayOfWeek" @bind-Value="_prefs.MatchDay" ToStringFunc="DayName"
                    Label="@L["Match Day"]" Class="mb-4">
             @foreach (var day in Enum.GetValues<DayOfWeek>())
             {
-                <MudSelectItem Value="day">@System.Globalization.CultureInfo.CurrentUICulture.DateTimeFormat.GetDayName(day)</MudSelectItem>
+                <MudSelectItem Value="day">@DayName(day)</MudSelectItem>
             }
         </MudSelect>
 
@@ -68,17 +68,22 @@
         </MudText>
 
         <MudSelect T="DayOfWeek" Label="@L["Training Days"]" MultiSelection="true"
-                   SelectedValues="_prefs.TrainingDays" SelectedValuesChanged="OnTrainingDaysChanged"
+                   SelectedValues="_prefs.TrainingDays" SelectedValuesChanged="OnTrainingDaysChanged" ToStringFunc="DayName"
                    Class="mb-4">
             @foreach (var day in Enum.GetValues<DayOfWeek>())
             {
-                <MudSelectItem Value="day">@System.Globalization.CultureInfo.CurrentUICulture.DateTimeFormat.GetDayName(day)</MudSelectItem>
+                <MudSelectItem Value="day">@DayName(day)</MudSelectItem>
             }
         </MudSelect>
 
-        @* Clearable on purpose: an empty date is a real value here, meaning the season's own window. *@
+        @* Clearable on purpose: an empty date is a real value here. It means the season's own window to the date calculation, and
+           no schedule at all to the generator below — which is how a period entered against the wrong dates is undone. *@
         <MudDatePicker @bind-Date="_prefs.FirstTrainingDate" Label="@L["First Training"]" Clearable="true" Class="mb-4" />
         <MudDatePicker @bind-Date="_prefs.LastTrainingDate" Label="@L["Last Training"]" Clearable="true" Class="mb-4" />
+
+        <MudText Typo="Typo.caption" Style="color: var(--ink-muted);" Class="mb-4">
+            @L["Saving creates a session for every training day between the two, and removes the empty ones outside them."]
+        </MudText>
 
         <MudText Typo="Typo.caption" Style="color: var(--ink-muted);" Class="mb-4">
             @L["Next calculated training date:"] <strong style="color: var(--club-primary-bright);">@_nextTrainingDate?.ToString("dddd dd MMM yyyy")</strong>

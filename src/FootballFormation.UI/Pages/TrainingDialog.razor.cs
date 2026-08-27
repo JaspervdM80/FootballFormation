@@ -18,9 +18,6 @@ public partial class TrainingDialog
     private MudForm Form { get; set; } = null!;
     private DateTime? Date { get; set; } = DateTime.Today;
 
-    /// Kept apart from <see cref="Date"/> so a blank field round-trips as no time at all rather than midnight — see
-    /// Training.HasStartTime.
-    private string? StartTimeText { get; set; }
     private string? Notes { get; set; }
     private bool DidNotTakePlace { get; set; }
     private IReadOnlyCollection<int> UnavailablePlayerIds { get; set; } = [];
@@ -107,7 +104,6 @@ public partial class TrainingDialog
     private void ApplyTraining(Training training)
     {
         Date = training.Date;
-        StartTimeText = training.HasStartTime ? training.Date.ToString("HH:mm") : null;
         Notes = training.Notes;
         DidNotTakePlace = training.DidNotTakePlace;
         SeasonId = training.SeasonId;
@@ -120,12 +116,15 @@ public partial class TrainingDialog
         if (!Form.IsValid) return;
 
         var training = Training ?? new Training();
-        var startTime = TimeSpan.TryParse(StartTimeText, out var parsed) ? parsed : TimeSpan.Zero;
-        training.Date = (Date ?? DateTime.Today).Date + startTime;
+        training.Date = (Date ?? DateTime.Today).Date;
         training.Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim();
         training.DidNotTakePlace = DidNotTakePlace;
         training.SeasonId = SeasonId;
         training.UnavailablePlayerIds = DidNotTakePlace ? [] : UnavailablePlayerIds.ToList();
+
+        // Saved by hand, so the schedule stops managing it: rewriting the training period must not sweep away an evening the coach has
+        // already been into.
+        training.FromSchedule = false;
 
         MudDialog.Close(DialogResult.Ok(training));
     }

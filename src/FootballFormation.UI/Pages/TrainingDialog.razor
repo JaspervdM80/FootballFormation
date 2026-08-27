@@ -7,9 +7,6 @@
         <MudForm @ref="Form">
             @* An explicit change handler, not @bind: the date decides which season's squad the player picker offers. *@
             <MudDatePicker Date="Date" DateChanged="OnDateChanged" Label="@L["Date"]" Class="mb-3" />
-            @* Optional — a blank field keeps the session with no start time, see Training.HasStartTime. *@
-            <MudTextField @bind-Value="StartTimeText" InputType="InputType.Time"
-                          Label="@L["Start Time"]" Class="mb-3 start-time-field" />
             @if (SeasonNotCreatedYet)
             {
                 <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--ink-muted);">

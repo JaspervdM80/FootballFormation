@@ -1,3 +1,4 @@
+using System.Globalization;
 using FootballFormation.UI.State;
 using Microsoft.AspNetCore.Components.Authorization;
 
@@ -73,6 +74,9 @@ public partial class Settings
         _prefsSeasonId = seasonId;
         await LoadPreferences();
     }
+
+    /// The dropdown items say it in the ambient culture; without this the collapsed field falls back to DayOfWeek.ToString().
+    private static string DayName(DayOfWeek day) => CultureInfo.CurrentUICulture.DateTimeFormat.GetDayName(day);
 
     private void OnTrainingDaysChanged(IReadOnlyCollection<DayOfWeek> days)
     {
@@ -157,6 +161,9 @@ public partial class Settings
 
         var saveResult = await PreferencesService.SaveAsync(_prefs);
         if (!Snackbar.Report(L, saveResult, L["Preferences for {0} saved!", PrefsSeason?.Name ?? ""])) return;
+
+        if (saveResult.Value is { IsEmpty: false } sync)
+            Snackbar.Add(L["{0} trainings created, {1} removed", sync.Created, sync.Removed], Severity.Info);
 
         await RefreshNextDates();
     }

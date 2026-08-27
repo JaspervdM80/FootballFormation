@@ -11,6 +11,12 @@
   checkbox drawer, `<details>` pickers, and links to `/culture/set` and `/season/set` instead of
   handlers. **Anything a page needs that the layout used to supply has to come down into
   `<InteractiveShell />`** — today the MudBlazor providers and the revocation gate below.
+- **`MudSelectItem`'s child content styles the open list only.** The value shown in the *collapsed*
+  field comes from the select's converter, which for an enum is `ToString()` — so a `MudSelect` whose
+  items render `GetDayName(day)` still reads "Monday, Wednesday" once it is closed, in a Dutch UI,
+  and nothing warns. `ToStringFunc` is what the closed field reads (`MultiSelectionTextFunc` sees
+  those strings, not the values). Both day selects on `/settings` pass one; `TrainingDialog`'s player
+  picker is the same trap solved the other way.
 - **A statically rendered page has no snackbar.** `ISnackbar` needs `MudSnackbarProvider`, which
   needs an interactive render mode, so a `Snackbar.ReportFailure` on one of those pages reports into
   nothing at all — silently. Use `PageNotice` + `<InlineNotice>`, which put the message on the page.

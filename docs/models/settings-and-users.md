@@ -29,11 +29,16 @@ and keeps its answer inside the season window: it measures from the opening day 
 started yet, and falls back to the last match day of the window for one already over. Without that
 clamp, adding the first fixture of next season proposed a date in the season we are living in.
 
-`GetNextTrainingDateAsync(seasonId)` is the same walk over `TrainingDays` and that season's
-[trainings](training.md), and shares the reference-date step with it. Two differences: it picks the
-**soonest** of several weekdays rather than the one match day, and an empty `TrainingDays` — the
-state every season starts in — answers with the reference date itself rather than refusing, because
-the dialog needs a date and there is no weekday to land on yet.
+`GetNextTrainingDateAsync(seasonId)` answers with the soonest of `TrainingDays` inside the period
+that has **no session on it yet**, and once every one is taken — the ordinary state after the period
+has generated them — with the soonest that *has* one, which is the next evening the team trains and
+what the caption on `/settings` names. Only a period already behind us falls back to its last
+training day, the same clamp the match date uses. It does not step off the latest entry the way the
+match date does: with the period generated in full, "the day after the last one entered" is the
+closing evening of the season. An
+empty `TrainingDays` — the state every season starts in — keeps the old reference-date walk and still
+answers with a date rather than refusing, because the dialog needs one and there is no weekday to
+land on yet.
 
 ## The training period
 
@@ -47,6 +52,17 @@ offered a Tuesday in early July, because July is when the season opens. The peri
 that. It is a bound on the date *proposed*, not a rule about what may be *entered* — a one-off
 session outside it saves without complaint, because an extra evening in the summer is legitimate and
 a guard second-guessing the date the admin typed would be in the way.
+
+**`SaveAsync` writes the sessions the period implies**, in the same `SaveChanges` as the preferences
+themselves: one for every training day between the two dates that has no session already, and away
+with the generated ones outside them that carry nothing. Both ends have to be set or there is no
+schedule at all; the rules, and what is deliberately never removed, are in
+[training](training.md#the-schedule-writes-the-sessions). It hands back a `TrainingSync(Created,
+Removed)` so `/settings` can report what it did.
+
+The diff runs **only when the period or the training days actually changed** — a save that moved the
+game length leaves the sessions alone, so an unrelated preference cannot resurrect an evening the
+admin deleted.
 
 `SaveAsync` validates the period itself, since it is the one write path and neither failure is a
 preference: an end before the start, and either end falling outside the season's own window. The
