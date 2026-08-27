@@ -58,15 +58,24 @@ session everybody attended, since both carry an empty absence list.
 ## Reading the register back
 
 `Core/Reporting/TrainingAttendanceReport.cs` — a pure builder like the rest of `Core/Reporting/`,
-taking the sessions and a `SeasonSquads`. **Attendance is the squad minus the absentees**, because a
-session records who was *not* there; who was *expected* has to come from the squad of the season the
-session belongs to.
+taking the sessions, a `SeasonSquads` and the date today. **Attendance is the squad minus the
+absentees**, because a session records who was *not* there; who was *expected* has to come from the
+squad of the season the session belongs to.
 
 That per-season lookup is the denominator rule: a player is measured against the sessions of the
 seasons she was a full member of, never against every session in view. On "All seasons" someone who
 joined this year is not charged for the year before she was here — the same problem
 `PlayerStats.Utilization` solves for minutes, solved the same way.
 
+- **Only sessions that have already been held count**, which is why the builder needs the date at
+  all — `StatsService` takes it from the injected `TimeProvider` and passes it in. A season's
+  evenings are all written the day its training period is saved, so in September most of them are
+  still ahead, and an evening nobody has been to yet carries the same empty absence list as one the
+  whole squad turned up to. Counting them put every figure within a few points of 100% and moved it
+  by whole percent as the calendar passed each session. A session dated *today* waits until tomorrow:
+  a row carries a date and no start time, so nothing can tell this evening's training from one that
+  is over. Sessions ahead are left out of `Cancelled` for the same reason, or a fresh season would
+  read *"2 held, 40 cancelled"*.
 - **Guests are left out entirely.** The dialog offers only full members, so a guest carries no
   absence and would otherwise read as a perfect attender.
 - **The squad figure weighs player-sessions, not players** — `Attended` summed over `Held` summed,

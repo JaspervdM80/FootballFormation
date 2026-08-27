@@ -201,19 +201,22 @@ public class StatsServiceTests : ServiceTestBase
         var players = await SeedPlayersAsync(2);
         foreach (var player in players) await Squads.AddMemberAsync(season.Id, player.Id);
 
-        await Trainings.CreateAsync(new Training { SeasonId = season.Id, Date = Now.Date });
+        await Trainings.CreateAsync(new Training { SeasonId = season.Id, Date = Now.Date.AddDays(-6) });
         await Trainings.CreateAsync(new Training
         {
             SeasonId = season.Id,
-            Date = Now.Date.AddDays(2),
+            Date = Now.Date.AddDays(-4),
             UnavailablePlayerIds = [players[0].Id]
         });
         await Trainings.CreateAsync(new Training
         {
             SeasonId = season.Id,
-            Date = Now.Date.AddDays(4),
+            Date = Now.Date.AddDays(-2),
             DidNotTakePlace = true
         });
+
+        // Still ahead, so it is nobody's yet — and it is the service that has the clock to know that.
+        await Trainings.CreateAsync(new Training { SeasonId = season.Id, Date = Now.Date.AddDays(3) });
 
         var result = await Stats.GetTrainingAttendanceAsync(season.Id);
 

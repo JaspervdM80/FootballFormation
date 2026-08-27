@@ -49,8 +49,10 @@ public static class DatabaseSafety
         File.Delete(pendingPath);
 
         // SQLite's own backup API, not File.Copy: with WAL journalling a plain copy is a torn snapshot missing the newest rows.
-        await using (var source = new SqliteConnection($"Data Source={dbPath}"))
-        await using (var destination = new SqliteConnection($"Data Source={pendingPath}"))
+        // Pooling off because disposing a pooled connection only returns it to the pool — the file handle stays open, and the rename
+        // below then fails on Windows. POSIX allows renaming over an open file, so the container never sees it.
+        await using (var source = new SqliteConnection($"Data Source={dbPath};Pooling=False"))
+        await using (var destination = new SqliteConnection($"Data Source={pendingPath};Pooling=False"))
         {
             await source.OpenAsync();
             await destination.OpenAsync();
