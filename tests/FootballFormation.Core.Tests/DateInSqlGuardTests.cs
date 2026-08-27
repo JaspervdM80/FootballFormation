@@ -8,7 +8,10 @@ public class DateInSqlGuardTests : ServiceTestBase
     public void Every_date_column_in_the_schema_is_watched()
     {
         Assert.Equal(
-            ["ClockRunningSince", "CreatedAt", "Date", "EditedAt", "EndDate", "RecordedAt", "StartDate"],
+            [
+                "ClockRunningSince", "CreatedAt", "Date", "EditedAt", "EndDate", "FirstTrainingDate", "LastTrainingDate",
+                "RecordedAt", "StartDate",
+            ],
             DateInSqlInterceptor.DateColumns.OrderBy(c => c, StringComparer.Ordinal));
     }
 

@@ -20,6 +20,7 @@ public partial class Settings
     private MatchPreferences? _prefs;
     private MudForm _passwordForm = null!;
     private DateTime? _nextMatchDate;
+    private DateTime? _nextTrainingDate;
 
     private List<Season>? _seasons;
 
@@ -56,6 +57,7 @@ public partial class Settings
         {
             _prefs = null;
             _nextMatchDate = null;
+            _nextTrainingDate = null;
             return;
         }
 
@@ -63,13 +65,20 @@ public partial class Settings
         if (!Snackbar.ReportFailure(L, prefsResult)) return;
 
         _prefs = prefsResult.Value;
-        await RefreshNextMatchDate();
+        await RefreshNextDates();
     }
 
     private async Task OnPrefsSeasonChanged(int seasonId)
     {
         _prefsSeasonId = seasonId;
         await LoadPreferences();
+    }
+
+    private void OnTrainingDaysChanged(IReadOnlyCollection<DayOfWeek> days)
+    {
+        if (_prefs is null) return;
+
+        _prefs.TrainingDays = [.. days];
     }
 
     private async Task LoadSeasons()
@@ -149,13 +158,16 @@ public partial class Settings
         var saveResult = await PreferencesService.SaveAsync(_prefs);
         if (!Snackbar.Report(L, saveResult, L["Preferences for {0} saved!", PrefsSeason?.Name ?? ""])) return;
 
-        await RefreshNextMatchDate();
+        await RefreshNextDates();
     }
 
-    private async Task RefreshNextMatchDate()
+    private async Task RefreshNextDates()
     {
-        var dateResult = await PreferencesService.GetNextMatchDateAsync(_prefsSeasonId, Cancellation);
-        if (dateResult.IsSuccess) _nextMatchDate = dateResult.Value;
+        var matchResult = await PreferencesService.GetNextMatchDateAsync(_prefsSeasonId, Cancellation);
+        if (matchResult.IsSuccess) _nextMatchDate = matchResult.Value;
+
+        var trainingResult = await PreferencesService.GetNextTrainingDateAsync(_prefsSeasonId, Cancellation);
+        if (trainingResult.IsSuccess) _nextTrainingDate = trainingResult.Value;
     }
 
     private async Task ChangePassword()

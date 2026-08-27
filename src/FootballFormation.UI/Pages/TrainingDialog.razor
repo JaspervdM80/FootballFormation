@@ -1,0 +1,47 @@
+@inject IStringLocalizer<Strings> L
+@inherits CancellableComponent
+
+@* Class: below 600px `.dialog-sheet` turns this into a full-screen sheet — see app.css. *@
+<MudDialog Class="dialog-sheet">
+    <DialogContent>
+        <MudForm @ref="Form">
+            @* An explicit change handler, not @bind: the date decides which season's squad the player picker offers. *@
+            <MudDatePicker Date="Date" DateChanged="OnDateChanged" Label="@L["Date"]" Class="mb-3" />
+            @* Optional — a blank field keeps the session with no start time, see Training.HasStartTime. *@
+            <MudTextField @bind-Value="StartTimeText" InputType="InputType.Time"
+                          Label="@L["Start Time"]" Class="mb-3 start-time-field" />
+            @if (SeasonNotCreatedYet)
+            {
+                <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color: var(--ink-muted);">
+                    @L["This date starts a new season — its squad is empty until you fill it in on the squad page."]
+                </MudText>
+            }
+            @* Nobody was absent from an evening that did not happen — everybody was — so the picker goes rather than standing there
+               offering a list that would contradict the switch. TrainingService clears it either way. *@
+            @if (!DidNotTakePlace)
+            {
+                <MudSelect T="int" Label="@L["Unavailable Players"]" MultiSelection="true"
+                           @bind-SelectedValues="UnavailablePlayerIds"
+                           MultiSelectionTextFunc="@(ids => L["{0} player(s) unavailable", ids.Count()])"
+                           Class="mb-3">
+                    @foreach (var player in SquadPlayers)
+                    {
+                        <MudSelectItem T="int" Value="player.Id">
+                            <PlayerLabel Player="player" />
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+            }
+            <MudTextField @bind-Value="Notes" Label="@L["Notes"]" Lines="3" MaxLength="2000"
+                          Placeholder="@(DidNotTakePlace
+                              ? L["Why the training did not go ahead."].Value
+                              : L["What was trained, and anything worth remembering."].Value)" Class="mb-3" />
+            <MudDivider Class="my-3" />
+            <MudSwitch @bind-Value="DidNotTakePlace" Color="Color.Warning">@L["Did not take place"]</MudSwitch>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">@L["Save"]</MudButton>
+    </DialogActions>
+</MudDialog>

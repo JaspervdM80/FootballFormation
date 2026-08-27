@@ -14,7 +14,7 @@ public class MatchClockService(
     private DateTime UtcNow => time.GetUtcNow().UtcDateTime;
 
     public Task<Result<Game>> StartMatchAsync(int gameId, CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "start match",
+        LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "start the match",
             cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);

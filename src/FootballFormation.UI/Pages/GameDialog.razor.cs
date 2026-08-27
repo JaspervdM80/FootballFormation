@@ -58,7 +58,14 @@ public partial class GameDialog
             Seasons = seasonsResult.Value!;
         }
 
-        if (Game is null)
+        if (Game is not null)
+        {
+            // Copied here rather than in OnParametersSet, which ComponentBase does not call until this method has run to completion:
+            // from there the reload below read a season of 0 and resolved the squad from today, so editing a match from another season
+            // offered this one's players.
+            ApplyGame(Game);
+        }
+        else
         {
             // Preferences are per season and the match day comes out of them, so a season has to be picked before the date exists. The
             // date that follows lands inside it, so "Auto (by date)" still resolves to the same one.
@@ -76,7 +83,6 @@ public partial class GameDialog
             }
         }
 
-        // Runs after OnParametersSet has copied an existing game's season and date in.
         await ReloadSquadAsync();
     }
 
@@ -145,22 +151,19 @@ public partial class GameDialog
         _defaultsFromSeasonId = seasonId;
     }
 
-    protected override void OnParametersSet()
+    private void ApplyGame(Game game)
     {
-        if (Game is not null)
-        {
-            Opponent = Game.Opponent;
-            Date = Game.Date;
-            StartTimeText = Game.HasStartTime ? Game.Date.ToString("HH:mm") : null;
-            SelectedFormationType = Game.FormationType;
-            SplitType = Game.SplitType;
-            SelectedMatchType = Game.MatchType;
-            GameDurationMinutes = Game.GameDurationMinutes;
-            IsHomeGame = Game.IsHomeGame;
-            SelectedSeasonId = Game.SeasonId;
-            UnavailablePlayerIds = Game.UnavailablePlayerIds.ToList();
-            GuestPlayerIds = Game.GuestPlayerIds.ToList();
-        }
+        Opponent = game.Opponent;
+        Date = game.Date;
+        StartTimeText = game.HasStartTime ? game.Date.ToString("HH:mm") : null;
+        SelectedFormationType = game.FormationType;
+        SplitType = game.SplitType;
+        SelectedMatchType = game.MatchType;
+        GameDurationMinutes = game.GameDurationMinutes;
+        IsHomeGame = game.IsHomeGame;
+        SelectedSeasonId = game.SeasonId;
+        UnavailablePlayerIds = game.UnavailablePlayerIds.ToList();
+        GuestPlayerIds = game.GuestPlayerIds.ToList();
     }
 
     private async Task Submit()

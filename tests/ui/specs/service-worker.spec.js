@@ -1,10 +1,23 @@
 // The assertions that matter are the two either side of "the stylesheet is cached": that a page
 // never is, and that a `no-cache` script is passed over despite being the same kind of request.
 import { test, expect } from '../fixtures.js';
-import { VISITOR_STATE } from '../playwright.config.js';
+import { PUBLISHED_APP, VISITOR_STATE } from '../playwright.config.js';
 import { gotoRendered } from '../helpers.js';
 
 test.use({ storageState: VISITOR_STATE });
+
+// The worker keys off `Cache-Control: immutable`, which MapStaticAssets writes only for a published
+// app; a `dotnet run` off the sources answers `no-cache` for the very same fingerprinted file, so an
+// edit is picked up. That is the whole of the difference — the worker and the assertions below are
+// right either way, there is simply nothing to cache locally, and this used to fail every local run.
+//
+// Keyed to how the app was started rather than to a probe of the symptom, so a published run where
+// the header went missing still fails here instead of quietly skipping. To run it locally:
+//
+//   dotnet publish src/FootballFormation.Web -c Release -o /tmp/ff-publish
+//   UI_TEST_APP_DLL=/tmp/ff-publish/FootballFormation.Web.dll npm test -- service-worker
+test.skip(!PUBLISHED_APP,
+  'assets are only marked immutable in a published app — set UI_TEST_APP_DLL to run this');
 
 const CACHE = 'ff-immutable-assets';
 

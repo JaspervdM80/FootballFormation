@@ -77,6 +77,7 @@ try
     builder.Services.AddScoped<SeasonService>();
     builder.Services.AddScoped<SeasonSquadService>();
     builder.Services.AddScoped<GameService>();
+    builder.Services.AddScoped<TrainingService>();
     builder.Services.AddScoped<LiveMatchService>();
     builder.Services.AddScoped<MatchClockService>();
     builder.Services.AddScoped<MatchGoalService>();

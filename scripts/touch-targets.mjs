@@ -302,12 +302,13 @@ const VIEWPORTS = [
 const rx = (nl, en) => new RegExp(`${nl}|${en}`, 'i');
 
 /**
- * Walks /games, the new-match dialog and its date picker on a phone-sized touch context and audits
- * each screen. The dialog and the picker came first because every entry in the Touch / PWA section
- * was found in one of them — the dialog is the app's longest form and the only one filled in at a
- * touchline, and the picker is inside it. The games list came next because it is the page a phone
- * opens most, and the row of icon buttons on every card is the densest cluster of targets in the
- * app.
+ * Walks /games, the new-match dialog and its date picker, then /trainings and its dialog, on a
+ * phone-sized touch context, and audits each screen. The dialog and the picker came first because
+ * every entry in the Touch / PWA section was found in one of them — the dialog is the app's longest
+ * form and the only one filled in at a touchline, and the picker is inside it. The games list came
+ * next because it is the page a phone opens most, and the row of icon buttons on every card is the
+ * densest cluster of targets in the app. The trainings pair came last: a row of a different shape,
+ * and the app's only switch.
  */
 export async function auditTouchTargets({ browser, base, out, onError = () => {} }) {
   const dir = `${out}/touch`;
@@ -398,7 +399,27 @@ export async function auditTouchTargets({ browser, base, out, onError = () => {}
     await waitForStableBox(popover);
     await audit('date picker, years', '.mud-picker-popover.mud-popover-open');
 
-    console.log(`${viewport.name.padEnd(8)} audited 6 screens`);
+    // The trainings section, reached by navigating rather than by closing what is open: the picker
+    // and the dialog both go with the page, and the next audit wants a clean one anyway.
+    //
+    // Two screens rather than one. The list is a different shape from the games list — two buttons
+    // on a row instead of up to six, right-aligned on their own line rather than filling it — and
+    // the dialog is the only form in the app with a switch on it, whose thumb is a target no other
+    // scene here measures.
+    await goto(page, `${base}/trainings`);
+    await waitUntil(page, async () =>
+      await page.locator('.training-row .action-btn').count() >= 2, {
+      what: 'the seeded training rows — visual-check.mjs seeds two, one of them cancelled, and a '
+        + 'list with no row in it measures the Add button, finds nothing wrong, and passes',
+    });
+    await audit('trainings list', '.app-main');
+
+    await clickFor(page.getByRole('button', { name: rx('toevoegen', 'add') }).first(),
+      () => dialog.isVisible());
+    await waitForStableBox(dialog);
+    await audit('new training dialog', '.mud-dialog');
+
+    console.log(`${viewport.name.padEnd(8)} audited 8 screens`);
     await context.close();
   }
 

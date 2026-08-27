@@ -28,6 +28,16 @@ export const CHROMIUM_PATH = process.env.UI_TEST_CHROMIUM
 // point this at that copy and start it directly rather than paying for a second compile here. Left
 // unset locally, where `dotnet run` off the sources is the whole point: it picks up an edit.
 const APP_DLL = process.env.UI_TEST_APP_DLL;
+
+/**
+ * Whether the app under test is a published build rather than `dotnet run` off the sources.
+ *
+ * It decides one thing only, and service-worker.spec.js is the one spec that cares:
+ * MapStaticAssets marks a fingerprinted route `max-age=31536000, immutable` **when published**, and
+ * serves the same file `no-cache` from a source run so an edit is picked up. The worker caches on
+ * that header alone, so from a source run there is nothing for it to keep.
+ */
+export const PUBLISHED_APP = Boolean(APP_DLL);
 const START_APP = APP_DLL
   ? `dotnet ${basename(APP_DLL)} --urls ${BASE_URL}`
   : 'dotnet run --project ../../src/FootballFormation.Web/FootballFormation.Web.csproj'

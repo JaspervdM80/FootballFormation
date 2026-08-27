@@ -13,6 +13,7 @@ public static class AppNav
     [
         new(AppRoutes.Players, PageNameKey(AppRoutes.Players)!, Icons.Material.Filled.Groups, NavLinkMatch.Prefix),
         new(AppRoutes.Games, PageNameKey(AppRoutes.Games)!, Icons.Material.Filled.SportsSoccer, NavLinkMatch.Prefix),
+        new(AppRoutes.Trainings, PageNameKey(AppRoutes.Trainings)!, Icons.Material.Filled.FitnessCenter, NavLinkMatch.Prefix, AdminOnly: true),
         new(AppRoutes.SeasonStats, PageNameKey(AppRoutes.SeasonStats)!, Icons.Material.Filled.BarChart, NavLinkMatch.Prefix),
         new(AppRoutes.Settings, PageNameKey(AppRoutes.Settings)!, Icons.Material.Filled.Settings, NavLinkMatch.All, AdminOnly: true),
         new(AppRoutes.Users, PageNameKey(AppRoutes.Users)!, Icons.Material.Filled.ManageAccounts, NavLinkMatch.All, AdminOnly: true),
@@ -30,6 +31,7 @@ public static class AppNav
         ["games", _, "overview"] => "Formation Overview",
         ["games", _, "live"] => "Live Match",
         ["games", _, "result"] => "Match Result",
+        ["trainings"] => "Trainings",
         ["stats"] => "Season",
         ["stats", "positions"] => "Position Development",
         ["settings"] => "Preferences",
@@ -41,7 +43,7 @@ public static class AppNav
     /// start page is the exception: nothing there is filtered, but it is where a visit begins.
     public static bool IsSeasonAware(string path) => Segments(path) switch
     {
-        [] or ["players"] or ["games"] or ["stats"] => true,
+        [] or ["players"] or ["games"] or ["trainings"] or ["stats"] => true,
         ["players", _, "stats"] or ["stats", "positions"] => true,
         _ => false,
     };

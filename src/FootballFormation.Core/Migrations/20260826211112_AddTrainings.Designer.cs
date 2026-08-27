@@ -3,6 +3,7 @@ using System;
 using FootballFormation.Core.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FootballFormation.Core.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260826211112_AddTrainings")]
+    partial class AddTrainings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
@@ -362,14 +365,8 @@ namespace FootballFormation.Core.Migrations
                     b.Property<int>("DefaultSplitType")
                         .HasColumnType("INTEGER");
 
-                    b.Property<DateTime?>("FirstTrainingDate")
-                        .HasColumnType("TEXT");
-
                     b.Property<int>("GameDurationMinutes")
                         .HasColumnType("INTEGER");
-
-                    b.Property<DateTime?>("LastTrainingDate")
-                        .HasColumnType("TEXT");
 
                     b.Property<int>("MatchDay")
                         .HasColumnType("INTEGER");
@@ -486,9 +483,6 @@ namespace FootballFormation.Core.Migrations
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("TEXT");
-
-                    b.Property<bool>("DidNotTakePlace")
-                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(2000)

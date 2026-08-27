@@ -15,13 +15,23 @@ public class MatchPreferences
     public FormationType DefaultFormation { get; set; } = FormationType.F442;
     public DayOfWeek MatchDay { get; set; } = DayOfWeek.Saturday;
 
-    /// How a season without a row of its own is seeded, so it inherits last year's settings instead of the hardcoded ones.
+    /// Empty until an admin picks them, which is what makes the next-training date fall back to today rather than to a guessed weekday.
+    public List<DayOfWeek> TrainingDays { get; set; } = [];
+
+    /// Null for either end means the season's own window, which is what every row held before the period existed.
+    public DateTime? FirstTrainingDate { get; set; }
+    public DateTime? LastTrainingDate { get; set; }
+
+    /// How a season without a row of its own is seeded, so it inherits last year's settings instead of the hardcoded ones. The training
+    /// period is deliberately left behind, unlike the training days: a date belongs to one season, and last year's opening night is not
+    /// a sensible guess at this year's.
     public MatchPreferences CopyFor(int seasonId) => new()
     {
         SeasonId = seasonId,
         GameDurationMinutes = GameDurationMinutes,
         DefaultSplitType = DefaultSplitType,
         DefaultFormation = DefaultFormation,
-        MatchDay = MatchDay
+        MatchDay = MatchDay,
+        TrainingDays = [.. TrainingDays]
     };
 }

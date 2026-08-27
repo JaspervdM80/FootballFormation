@@ -22,6 +22,69 @@ public class AuthorizationTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task Trainings_are_the_one_read_that_is_not_public()
+    {
+        var season = await SeedSeasonAsync();
+        await Trainings.CreateAsync(new Training { SeasonId = season.Id, Date = Now, Notes = "Ill, back next week" });
+
+        CurrentUser.IsAdmin = false;
+
+        // The absence and the note beside it are personal, so this read is guarded at the service boundary as well as by the page's
+        // [Authorize] — the markup gate stops holding the moment the service is reached another way.
+        var result = await Trainings.GetAllAsync(season.Id);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ServiceOperation.NotAllowedKey, result.ErrorKey);
+    }
+
+    [Fact]
+    public async Task An_anonymous_caller_cannot_create_a_training()
+    {
+        var season = await SeedSeasonAsync();
+
+        CurrentUser.IsAdmin = false;
+
+        var result = await Trainings.CreateAsync(new Training { SeasonId = season.Id, Date = Now });
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ServiceOperation.NotAllowedKey, result.ErrorKey);
+        Assert.Empty(Read().Trainings);
+    }
+
+    [Fact]
+    public async Task An_anonymous_caller_cannot_rewrite_who_was_at_a_training()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(1);
+        var training = (await Trainings.CreateAsync(
+            new Training { SeasonId = season.Id, Date = Now, UnavailablePlayerIds = [players[0].Id] })).Value!;
+
+        CurrentUser.IsAdmin = false;
+
+        training.UnavailablePlayerIds = [];
+        var result = await Trainings.UpdateAsync(training);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ServiceOperation.NotAllowedKey, result.ErrorKey);
+        Assert.Equal([players[0].Id], Read().Trainings.Single().UnavailablePlayerIds);
+    }
+
+    [Fact]
+    public async Task An_anonymous_caller_cannot_delete_a_training()
+    {
+        var season = await SeedSeasonAsync();
+        var training = (await Trainings.CreateAsync(new Training { SeasonId = season.Id, Date = Now })).Value!;
+
+        CurrentUser.IsAdmin = false;
+
+        var result = await Trainings.DeleteAsync(training.Id);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ServiceOperation.NotAllowedKey, result.ErrorKey);
+        Assert.Single(Read().Trainings);
+    }
+
+    [Fact]
     public async Task An_anonymous_caller_cannot_create_a_player()
     {
         CurrentUser.IsAdmin = false;

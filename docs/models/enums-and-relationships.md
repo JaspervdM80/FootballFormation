@@ -17,6 +17,7 @@
 ```
 Season 1──* Game 1──* GamePeriod 1──* GamePlayerPosition *──1 Player
 Season 1──* SeasonSquadMember *──1 Player
+Season 1──* Training (Restrict — no navigation in either direction)
 Game 1──* GameGoal *──1 Player (scorer, assister — both SetNull)
 GamePeriod 1──* GameGoal (the half it was scored in — nullable, cascade)
 GamePeriod 1──* GameSubstitution (the half it was made in — cascade)
@@ -25,10 +26,14 @@ GamePeriod 1──* GameInjury (the half it happened in — cascade)
 Game 1──* GameInjury *──1 Player (Restrict; unique on GameId + PlayerId)
 Game 1──* GameComment *──1 AppUser (author — SetNull)
 ```
-Cascading deletes throughout, **except Season → Game, which is `Restrict`**: deleting a season must
-never take a year of games, lineups and goals with it. `SeasonService.DeleteAsync` refuses with a
-readable message when a season still has games, or when it is the current one, rather than letting
-the caller hit a raw `DbUpdateException`.
+Cascading deletes throughout, **except Season → Game and Season → Training, which are `Restrict`**:
+deleting a season must never take a year of games, lineups, goals or training attendance with it.
+`SeasonService.DeleteAsync` refuses with a readable message when a season still has games or
+trainings, or when it is the current one, rather than letting the caller hit a raw
+`DbUpdateException`.
+
+`Training` names no players by foreign key at all — who was absent is a list of ids in a text column,
+like `Game.UnavailablePlayerIds`. See [training](training.md).
 
 `SeasonSquadMember` cascades from *both* parents — it is pure membership with no history of its own,
 so it must not make a person or a game-free season undeletable. Deleting a season therefore takes

@@ -114,7 +114,7 @@ public class GameService(
         });
 
     public Task<Result> DeleteAsync(int id, CancellationToken cancellationToken = default) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "delete game", cancellationToken, async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "delete the game", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
@@ -134,7 +134,7 @@ public class GameService(
 
     public Task<Result> SaveScoreAsync(
         int gameId, int? scoreHome, int? scoreAway, CancellationToken cancellationToken = default) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "save score", cancellationToken, async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "save the score", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
@@ -163,7 +163,7 @@ public class GameService(
     /// result page, where recounting a hand-typed 3-1 would cut it down to the two goals whose scorer someone remembered.</param>
     public Task<Result<GameGoal>> AddGoalAsync(
         GameGoal goal, bool recountScoreline = false, CancellationToken cancellationToken = default) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "add goal", cancellationToken, async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "add the goal", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
@@ -260,7 +260,7 @@ public class GameService(
 
     public Task<Result<GameComment>> AddCommentAsync(
         GameComment comment, CancellationToken cancellationToken = default) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "add comment", cancellationToken, async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "add the comment", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 

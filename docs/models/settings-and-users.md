@@ -9,6 +9,9 @@
 | DefaultSplitType | GameSplitType | Halves |
 | DefaultFormation | FormationType | F442 |
 | MatchDay | DayOfWeek | Saturday |
+| TrainingDays | List\<DayOfWeek\> | empty — stored as comma-separated ints, like every other list column |
+| FirstTrainingDate | DateTime? | null — meaning the season's own start |
+| LastTrainingDate | DateTime? | null — meaning the season's own end |
 
 The defaults a new game starts from are **per season**, not per app: a team moving up an age group
 plays longer games and often a different shape, and the fixture day can move too. Keeping one row
@@ -25,6 +28,40 @@ hand, from the picker or from the game being edited.
 and keeps its answer inside the season window: it measures from the opening day for a season not
 started yet, and falls back to the last match day of the window for one already over. Without that
 clamp, adding the first fixture of next season proposed a date in the season we are living in.
+
+`GetNextTrainingDateAsync(seasonId)` is the same walk over `TrainingDays` and that season's
+[trainings](training.md), and shares the reference-date step with it. Two differences: it picks the
+**soonest** of several weekdays rather than the one match day, and an empty `TrainingDays` — the
+state every season starts in — answers with the reference date itself rather than refusing, because
+the dialog needs a date and there is no weekday to land on yet.
+
+## The training period
+
+`FirstTrainingDate` and `LastTrainingDate` are the window `GetNextTrainingDateAsync` walks, in place
+of the season's own. **Either end being null means that end of the season**, which is exactly how
+every row behaved before the period existed — so nothing changed for a database that has not set one,
+and the migration needed no backfill.
+
+The weekdays alone know nothing about the summer: a team that trains from mid-August was being
+offered a Tuesday in early July, because July is when the season opens. The period is what stops
+that. It is a bound on the date *proposed*, not a rule about what may be *entered* — a one-off
+session outside it saves without complaint, because an extra evening in the summer is legitimate and
+a guard second-guessing the date the admin typed would be in the way.
+
+`SaveAsync` validates the period itself, since it is the one write path and neither failure is a
+preference: an end before the start, and either end falling outside the season's own window. The
+second matters because `Training.SeasonId` is resolved from the session's date — a period reaching
+into next season would be describing a season it is not attached to. Both checks run **in memory**
+on the materialised season row (`Season.Contains`), never in SQL; `DateInSqlInterceptor` discovers
+both columns from the EF model and `DateInSqlGuardTests` pins the list.
+
+**`CopyFor` deliberately leaves the period behind**, unlike `TrainingDays`. A date belongs to one
+season, last August's opening night is not a guess at this one, and a carried-forward date would
+fail the window check the moment anyone pressed Save. Same call `SeasonSquadService.CopyFromAsync`
+makes about `IsInjured`.
+
+`TrainingDays` *is* copied, as a new list rather than shared: editing next season's days must not
+reach back into last season's row.
 
 ## AppUser (table `Users`)
 | Property | Type | Notes |

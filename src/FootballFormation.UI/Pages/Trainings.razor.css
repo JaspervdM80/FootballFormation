@@ -1,0 +1,87 @@
+/* One block per week — the gap between them is what makes the grouping readable. */
+.training-week + .training-week {
+    margin-top: 28px;
+}
+
+.training-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.training-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 16px;
+    background: var(--gradient-card);
+    border: 1px solid color-mix(in srgb, var(--club-accent) 12%, transparent);
+    border-radius: 12px;
+    transition: all 0.15s;
+    cursor: pointer;
+}
+
+.training-row:hover {
+    background: var(--surface-card-alt);
+    border-color: color-mix(in srgb, var(--club-accent) 22%, transparent);
+}
+
+.training-date {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--ink);
+    min-width: 110px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Quieter than the sessions around it — the date is still legible, it just stops competing with the evenings that were actually held.
+   The badge keeps its own colour, so the row still says why it is dimmed. */
+.training-row.cancelled .training-date {
+    color: var(--ink-subtle);
+    font-weight: 500;
+}
+
+.training-row.cancelled .training-notes {
+    color: var(--ink-faint);
+}
+
+.training-notes {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.8rem;
+    color: var(--ink-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.training-actions {
+    display: flex;
+    gap: 2px;
+}
+
+/* A 2px gutter between two finger-sized targets swallows taps — see Games.razor.css. */
+@media (pointer: coarse) {
+    .training-actions {
+        gap: 0;
+    }
+}
+
+@media (max-width: 599.98px) {
+    .training-row {
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 14px 12px;
+    }
+
+    /* The note wraps to a line of its own rather than being clipped to nothing beside the date. */
+    .training-notes {
+        flex-basis: 100%;
+        white-space: normal;
+        order: 3;
+    }
+
+    .training-actions {
+        margin-left: auto;
+    }
+}

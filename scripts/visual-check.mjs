@@ -38,6 +38,8 @@ const SEED_PLAYERS = [
 ];
 
 const SEED_OPPONENT = 'SV Zwaluwen';
+const SEED_TRAINING_NOTE = 'Positiespel en afwerken';
+const SEED_CANCELLED_NOTE = 'Vorst — veld gesloten';
 
 // The third entry marks a page that renders no MudBlazor control, so there is nothing for goto to
 // wait on — see gotoRendered in blazor.mjs. It says nothing about whether the page has a circuit.
@@ -45,6 +47,7 @@ const PAGES = [
   ['home', '/', true],
   ['players', '/players'],
   ['games', '/games'],
+  ['trainings', '/trainings'],
   ['stats', '/stats', true],
   ['position-development', '/stats/positions', true],
   ['users', '/users'],
@@ -150,6 +153,29 @@ if (!(await page.getByText(SEED_OPPONENT).count())) {
   await clickFor(dialog.getByRole('button', { name: rx('opslaan', 'save') }),
     async () => await page.locator('.mud-dialog').count() === 0, { settle: 10_000 });
   console.log(`seeded a game vs ${SEED_OPPONENT}, today`);
+}
+
+// Two training sessions, for the same reason as the game above: an empty /trainings is a paragraph
+// of text, with no row to screenshot and no action buttons to measure. The dialog's date is already
+// usable — no training days are configured, so it proposes today and then the day after.
+//
+// The second is marked as one that did not go ahead, because the two row states look nothing alike
+// and a capture of only the ordinary one says nothing about the dimmed variant beside it.
+await goto(page, `${BASE}/trainings`);
+if (!(await page.locator('.training-row').count())) {
+  const dialog = page.locator('.mud-dialog');
+
+  for (const [note, cancelled] of [[SEED_TRAINING_NOTE, false], [SEED_CANCELLED_NOTE, true]]) {
+    await clickFor(page.getByRole('button', { name: rx('toevoegen', 'add') }).first(),
+      () => dialog.isVisible());
+    await dialog.locator('textarea').first().fill(note);
+    if (cancelled) {
+      await dialog.locator('.mud-switch').first().click();
+    }
+    await clickFor(dialog.getByRole('button', { name: rx('opslaan', 'save') }),
+      async () => await page.locator('.mud-dialog').count() === 0, { settle: 10_000 });
+  }
+  console.log('seeded two trainings, one of them cancelled');
 }
 
 for (const [name, path, bare] of PAGES) {
