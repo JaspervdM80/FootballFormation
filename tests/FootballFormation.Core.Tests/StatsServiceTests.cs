@@ -193,4 +193,38 @@ public class StatsServiceTests : ServiceTestBase
 
         Assert.Equal(7, after.Value!.Stats.GoalsFor);
     }
+
+    [Fact]
+    public async Task Attendance_reads_the_register_against_the_squad_of_the_season_it_belongs_to()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(2);
+        foreach (var player in players) await Squads.AddMemberAsync(season.Id, player.Id);
+
+        await Trainings.CreateAsync(new Training { SeasonId = season.Id, Date = Now.Date });
+        await Trainings.CreateAsync(new Training
+        {
+            SeasonId = season.Id,
+            Date = Now.Date.AddDays(2),
+            UnavailablePlayerIds = [players[0].Id]
+        });
+        await Trainings.CreateAsync(new Training
+        {
+            SeasonId = season.Id,
+            Date = Now.Date.AddDays(4),
+            DidNotTakePlace = true
+        });
+
+        var result = await Stats.GetTrainingAttendanceAsync(season.Id);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.Value!.Held);
+        Assert.Equal(1, result.Value.Cancelled);
+        Assert.Equal(75, result.Value.Percentage);
+
+        var perPlayer = await Stats.GetPlayerTrainingAttendanceAsync(players[0], season.Id);
+
+        Assert.Equal(2, perPlayer.Value!.Held);
+        Assert.Equal(1, perPlayer.Value.Missed);
+    }
 }

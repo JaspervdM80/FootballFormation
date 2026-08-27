@@ -1,4 +1,5 @@
 using System.Globalization;
+using FootballFormation.Core.Reporting;
 
 namespace FootballFormation.UI.Pages;
 
@@ -6,17 +7,24 @@ namespace FootballFormation.UI.Pages;
 public partial class Trainings
 {
     [Inject] private TrainingService TrainingService { get; set; } = null!;
+    [Inject] private StatsService StatsService { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private TimeProvider Time { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
     private List<Training>? _trainings;
+    private TrainingAttendance? _attendance;
 
     protected override async Task LoadAsync()
     {
         var result = await TrainingService.GetAllAsync(SeasonId, Cancellation);
         _trainings = Snackbar.ReportFailure(L, result) ? result.Value : [];
+
+        // A second read rather than the list already in hand: attendance is the squad minus the absentees, and the squad is not this
+        // page's to load. Every write here reloads, so the figure never lags the register.
+        var attendance = await StatsService.GetTrainingAttendanceAsync(SeasonId, Cancellation);
+        _attendance = Snackbar.ReportFailure(L, attendance) ? attendance.Value : TrainingAttendance.Empty;
     }
 
     private sealed record TrainingWeek(string Title, bool OpensThePast, List<Training> Trainings);

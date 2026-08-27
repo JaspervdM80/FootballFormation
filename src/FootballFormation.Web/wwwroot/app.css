@@ -1324,10 +1324,15 @@ html, body {
     gap: 12px;
 }
 
-/* A visitor's player page has no minutes tile. The track count is explicit rather than auto-fit
-   because auto-fit needs a definite minimum, and a px minimum would wrap the row on a phone. */
+/* A visitor's player page has no minutes tile; an admin's gains a trainings one once the season has
+   sessions on file. The track count is explicit rather than auto-fit because auto-fit needs a
+   definite minimum, and a px minimum would wrap the row on a phone. */
 .stat-tiles.stat-tiles-3 {
     grid-template-columns: repeat(3, 1fr);
+}
+
+.stat-tiles.stat-tiles-5 {
+    grid-template-columns: repeat(5, 1fr);
 }
 
 .stat-tile {
@@ -1404,10 +1409,11 @@ html, body {
 }
 
 @media (max-width: 760px) {
-    /* Both selectors, or the two-class .stat-tiles-3 rule outranks this one and stays three-across
-       on a phone. */
+    /* Every selector, or a two-class rule outranks this one and stays three- or five-across on a
+       phone. */
     .stat-tiles,
-    .stat-tiles.stat-tiles-3 {
+    .stat-tiles.stat-tiles-3,
+    .stat-tiles.stat-tiles-5 {
         grid-template-columns: repeat(2, 1fr);
     }
 

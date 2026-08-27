@@ -35,6 +35,13 @@ public class AuthorizationTests : ServiceTestBase
 
         Assert.True(result.IsFailure);
         Assert.Equal(ServiceOperation.NotAllowedKey, result.ErrorKey);
+
+        // And by way of the attendance figures built on top of it, which carry no guard of their own and must not gain a cache in
+        // front of the one that has it.
+        var attendance = await Stats.GetTrainingAttendanceAsync(season.Id);
+
+        Assert.True(attendance.IsFailure);
+        Assert.Equal(ServiceOperation.NotAllowedKey, attendance.ErrorKey);
     }
 
     [Fact]

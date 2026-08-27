@@ -39,6 +39,37 @@ names are one tap away in the dialog. Below 600px the note wraps to a line of it
 being clipped to nothing beside the date, and the actions keep the 44px floor `app.css` gives every
 `.action-btn` on a coarse pointer.
 
+## The attendance disclosure
+
+A `<details class="attendance">` above the weeks, holding the season's figure in its `<summary>` —
+`79%` and *"7 trainingen gehouden"* — and a row per full member behind it, best attendance first,
+each with `n / m`, a percentage and a `.position-track` bar. The rows link to
+`/players/{id}/stats`.
+
+**Collapsed by default**, because the register is what the page is for: a squad's worth of rows
+above it would push this week's session off a phone screen. A `<details>` rather than a bound panel,
+the same choice `SeasonPicker` makes — the browser brings the keyboard and screen-reader behaviour,
+and the summary needs no circuit even though this page has one. The chevron rotates off
+`.attendance[open]`, through `::deep`: `MudIcon`'s root carries no scope attribute, so without it
+that rule matches nothing. The summary keeps the 44px floor.
+
+**It lives here rather than on `/stats`.** The figure is close enough to the absence data that it
+belongs behind the same gate, and this page is already `[Authorize]`d in full — putting it on the
+public statistics page would have meant a third gated card there. The numbers themselves, and why
+guests and cancelled evenings are out of them, are in
+[models](../models/training.md#reading-the-register-back).
+
+**Sessions on their own are not enough to render it**, which is why the guard reads
+`{ Held: > 0, Players.Count: > 0 }` rather than counting evenings alone. Saving a training period
+writes the season's ninety sessions in one go, and a season rolled over that way has them before its
+squad is copied forward — so there is a real window with a register full of evenings and nobody to
+measure against them. The percentage divides by the player-sessions, which is zero there, and a bare
+`0%` over an empty panel reads as *"nobody came"* rather than as *"no answer yet"*.
+
+The page loads it with a second call, `StatsService.GetTrainingAttendanceAsync`, rather than
+building it from the list it already holds: attendance needs the squad, which is not this page's to
+load. Every write here reloads, so the figure never lags the register.
+
 ## The dialog
 
 `TrainingDialog` — date, unavailable players, note. No start time: a session had one on paper and

@@ -8,6 +8,7 @@ import { clickFor, confirmDialog, fillField, goto, openDialog, submitDialog } fr
 import { SQUAD } from '../global-setup.js';
 
 const ABSENTEE = `${SQUAD[0].firstName} ${SQUAD[0].surname}`;
+const PRESENT = `${SQUAD[1].firstName} ${SQUAD[1].surname}`;
 
 /** The card for one session, found by its note — the date is whatever today happens to be. */
 const trainingRow = (page, note) => page.locator('.training-row', { hasText: note }).first();
@@ -212,4 +213,68 @@ test('a session entered by mistake can be deleted', async ({ page }) => {
   await confirmDialog(page, 'Delete');
 
   await expect(page.locator('.training-row', { hasText: 'Ging niet door' })).toHaveCount(0);
+});
+
+/**
+ * The attendance disclosure above the weeks, opened.
+ *
+ * A <details> keeps its rows in the DOM while closed, so they have to be revealed before anything
+ * can be read off them. Not `clickFor`: a second click would close it again.
+ */
+async function openAttendance(page) {
+  const panel = page.locator('details.attendance');
+  await expect(panel).toBeVisible();
+
+  if (!(await panel.evaluate(details => details.open))) await panel.locator('summary').click();
+  await expect(panel.locator('.attendance-rows')).toBeVisible();
+  return panel;
+}
+
+/** "7 sessions held" → 7. */
+async function sessionsHeld(page) {
+  const summary = await page.locator('details.attendance .attendance-sub').innerText();
+  return Number(summary.match(/\d+/)[0]);
+}
+
+/** "6 / 7 · 86%" → { attended: 6, held: 7 }. */
+async function attendanceOf(page, playerName) {
+  const panel = await openAttendance(page);
+  const row = panel.locator('.attendance-row', { hasText: playerName }).first();
+  const [attended, held] = (await row.locator('.a-meta').innerText()).match(/\d+/g).map(Number);
+  return { attended, held };
+}
+
+// Every figure below is read as a difference rather than as a number: the specs share one database,
+// so the season already holds whatever the tests before this one entered.
+test('a session that did not take place is left out of the attendance', async ({ page }) => {
+  await addTraining(page, { note: 'Opkomst: gehouden' });
+  const before = await sessionsHeld(page);
+
+  await addTraining(page, { note: 'Opkomst: afgelast', cancelled: true });
+
+  // Counting it would punish the whole squad for an evening nobody had — and an empty absence list
+  // is all a cancelled session and a fully attended one have in common.
+  expect(await sessionsHeld(page), 'a cancelled evening moved the denominator').toBe(before);
+
+  await addTraining(page, { note: 'Opkomst: nog een' });
+  expect(await sessionsHeld(page)).toBe(before + 1);
+});
+
+test('a player marked unavailable loses that session from her attendance', async ({ page }) => {
+  await addTraining(page, { note: 'Opkomst: nulmeting' });
+  const absenteeBefore = await attendanceOf(page, ABSENTEE);
+  const presentBefore = await attendanceOf(page, PRESENT);
+
+  await addTraining(page, { note: 'Opkomst: eentje afwezig', absentee: ABSENTEE });
+
+  // Attendance is the squad minus the absentees, so the session counts for everyone and is attended
+  // by everyone the register did not name.
+  expect(await attendanceOf(page, ABSENTEE)).toEqual({
+    attended: absenteeBefore.attended,
+    held: absenteeBefore.held + 1,
+  });
+  expect(await attendanceOf(page, PRESENT)).toEqual({
+    attended: presentBefore.attended + 1,
+    held: presentBefore.held + 1,
+  });
 });
