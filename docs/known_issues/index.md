@@ -13,4 +13,4 @@ Avoid repeating these mistakes:
 - [CSS scoping](css-scoping.md) — a class with no owning `.razor.css` silently does nothing, including on a MudBlazor component's root.
 - [Live match](live-match.md) — swaps that write no row, the halves-only clock, and how a goal's minute is derived rather than stored.
 - [Authentication](authentication.md) — `IsPersistent` vs `ExpireTimeSpan`, `SameSite`, data-protection application name, and why `OnValidatePrincipal` doesn't revoke a circuit.
-- [General](general.md) — the published-app working-directory trap, `.count()` failing open in Playwright, dirty state after a CI retry, and path separators in the coverage report on Windows.
+- [General](general.md) — the published-app working-directory trap, `.count()` failing open in Playwright, dirty state after a CI retry, path separators in the coverage report on Windows, and the CRLF the Windows clipboard hands back.

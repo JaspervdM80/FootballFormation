@@ -104,7 +104,7 @@ else
                         }
                         else if (training.UnavailablePlayerIds.Count > 0)
                         {
-                            <span class="badge-unavailable">@L["{0} out", training.UnavailablePlayerIds.Count]</span>
+                            <span class="badge-unavailable" title="@UnavailableNames(training)">@L["{0} out", training.UnavailablePlayerIds.Count]</span>
                         }
                         <span class="training-notes">@training.Notes</span>
                         <div class="training-actions" @onclick:stopPropagation="true">

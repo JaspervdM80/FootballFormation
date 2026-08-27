@@ -164,12 +164,15 @@ test('a session is listed under the week it falls in', async ({ page }) => {
   await expect(week.locator('.card-label')).toContainText(/Week \d+/);
 });
 
-test('a player marked unavailable is counted on the row', async ({ page }) => {
+test('a player marked unavailable is counted on the row and named in its tooltip', async ({ page }) => {
   await addTraining(page, { note: 'Afwerken op doel', absentee: ABSENTEE });
 
-  // The row says how many were out, not who — the names are in the dialog, and a card listing four
-  // of them would be unreadable at a glance.
-  await expect(trainingRow(page, 'Afwerken op doel').locator('.badge-unavailable')).toHaveText('1 out');
+  // The row says how many were out, not who — a card listing four names would be unreadable at a
+  // glance — and the badge carries them in its tooltip, so who is one hover away rather than a
+  // dialog away.
+  const badge = trainingRow(page, 'Afwerken op doel').locator('.badge-unavailable');
+  await expect(badge).toHaveText('1 out');
+  await expect(badge).toHaveAttribute('title', ABSENTEE);
 });
 
 test('a note can be corrected afterwards', async ({ page }) => {

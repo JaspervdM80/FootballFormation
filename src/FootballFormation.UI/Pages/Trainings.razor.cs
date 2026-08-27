@@ -7,6 +7,7 @@ namespace FootballFormation.UI.Pages;
 public partial class Trainings
 {
     [Inject] private TrainingService TrainingService { get; set; } = null!;
+    [Inject] private PlayerService PlayerService { get; set; } = null!;
     [Inject] private StatsService StatsService { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
@@ -14,6 +15,7 @@ public partial class Trainings
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
     private List<Training>? _trainings;
+    private List<Player> _players = [];
     private TrainingAttendance? _attendance;
 
     protected override async Task LoadAsync()
@@ -25,7 +27,18 @@ public partial class Trainings
         // page's to load. Every write here reloads, so the figure never lags the register.
         var attendance = await StatsService.GetTrainingAttendanceAsync(SeasonId, Cancellation);
         _attendance = Snackbar.ReportFailure(L, attendance) ? attendance.Value : TrainingAttendance.Empty;
+
+        // The whole roster rather than the attendance rows: those are one season's full members with sessions already behind them, and
+        // a badge can sit on an evening still to come, on "All seasons", or on a player since archived.
+        var players = await PlayerService.GetAllAsync(Cancellation);
+        _players = Snackbar.ReportFailure(L, players) ? players.Value! : [];
     }
+
+    /// In the order PlayerService hands them over — shirt number, then name — so the same absences read the same way on every session.
+    private string UnavailableNames(Training training) =>
+        string.Join(", ", _players
+            .Where(player => training.UnavailablePlayerIds.Contains(player.Id))
+            .Select(player => player.DisplayName));
 
     private sealed record TrainingWeek(string Title, bool OpensThePast, List<Training> Trainings);
 

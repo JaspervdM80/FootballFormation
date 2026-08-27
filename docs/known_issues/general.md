@@ -52,3 +52,13 @@
   because that runs on Linux, where the two spellings happen to agree. Both the `sourceRoot` and the
   `filename` keys are normalised to `/` now. Any script that compares a path from a .NET tool with a
   path from git has this shape — normalise before comparing.
+- **The clipboard hands text back with the platform's line endings, not the app's.**
+  `MatchSummaryTextBuilder.Build` joins on `'\n'`, but on Windows the clipboard stores the text as
+  CRLF and `navigator.clipboard.readText()` returns what the platform stored. `match-summary.spec.js`
+  split the copied summary on `'\n'` and looked the half-time break up with an exact-match
+  `indexOf`, so every line carried a trailing `\r`, the break was on file as `'———————————\r'`, and
+  the search found nothing — a red run on a developer's Windows box against text that was correct,
+  green on the `ubuntu-latest` runner where the round-trip is LF in and LF out. The same `\r` also
+  defeated the `line.length > 0` filter, since a blank line arrives as `'\r'`. Split on `/\r?\n/`.
+  Substring assertions (`toContain`) are unaffected; only a line-by-line read of clipboard text has
+  this shape.

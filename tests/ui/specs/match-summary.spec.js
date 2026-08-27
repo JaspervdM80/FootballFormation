@@ -153,7 +153,8 @@ test('a goal in each half puts a dashed break between them in the copied text', 
   const clipboard = await page.evaluate(() => navigator.clipboard.readText());
   // Two goals, one in each half, so the break sits between them — never before the first or
   // after the last, and never doubled between goals that share a half.
-  const lines = clipboard.split('\n').filter(line => line.length > 0);
+  // Split on either ending: the app joins with \n, but the Windows clipboard hands the text back as CRLF.
+  const lines = clipboard.split(/\r?\n/).filter(line => line.length > 0);
   const goalLines = lines.filter(line => line.startsWith('⚽'));
   expect(goalLines).toHaveLength(2);
   const breakIndex = lines.indexOf('———————————');
