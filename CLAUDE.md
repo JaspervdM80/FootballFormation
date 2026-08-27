@@ -54,7 +54,8 @@ and breakpoints, localization, testing, UI testing, verifying a UI change, build
 the skill for the area you are touching before changing it**; each one ends with a pointer into
 `docs/` for the full story.
 **`comment-rule` applies to every change**, whatever else it touches: default to no comments, write
-one only for a non-obvious *why*, and never a paragraph.
+one only for a non-obvious *why*, and never a paragraph. The one in `.claude/skills/` is the rule
+here — a plugin or marketplace skill of the same name is not this repository's, so don't load it.
 
 `docs/` is the detailed reference and the incident record. `docs/known_issues/` in particular is
 not a changelog — it is a list of traps that already cost someone hours. Add to it when you find a
