@@ -223,7 +223,7 @@ export async function createMatch(page, { opponent, venue, matchType, split, pas
  * date)"), so a jump to a previous month could file the match under last season and take it out of
  * the list the test is about to look at.
  */
-export async function pickEarlierThisMonth(page, scope, daysAgo = 1) {
+export async function pickEarlierThisMonth(page, scope, daysAgo = 1, { allowUnchanged = false } = {}) {
   const popover = page.locator('.mud-picker-popover.mud-popover-open');
   const field = scope.getByLabel('Date', { exact: false }).first();
   const before = await field.inputValue();
@@ -261,7 +261,12 @@ export async function pickEarlierThisMonth(page, scope, daysAgo = 1) {
   // its old value would otherwise surface as a confusing failure two assertions later. The check is
   // "it changed" rather than "it reads 8", because the field's format follows the culture and a
   // day number is indistinguishable from a month number in most of them.
-  await expect(field).not.toHaveValue(before);
+  //
+  // `allowUnchanged` is for a dialog that does not pre-fill with today: the training one opens on
+  // GetNextTrainingDateAsync, which can already be the day being asked for, and clicking a day
+  // already selected changes nothing. Its callers have a stronger check downstream — a session that
+  // did not land in the past moves no attendance figure.
+  if (!allowUnchanged) await expect(field).not.toHaveValue(before);
 
   return day;
 }
