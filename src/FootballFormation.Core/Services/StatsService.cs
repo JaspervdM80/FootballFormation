@@ -11,6 +11,7 @@ public class StatsService(
     GameService games,
     SeasonSquadService squads,
     TrainingService trainings,
+    TimeProvider time,
     StatsCache cache,
     ILogger<StatsService> logger)
 {
@@ -76,7 +77,8 @@ public class StatsService(
             if (inputs.IsFailure) return inputs.To<TrainingAttendance>();
 
             var (allTrainings, allSquads) = inputs.Value!;
-            return Result.Success(TrainingAttendanceReport.Build(allTrainings, allSquads));
+            return Result.Success(
+                TrainingAttendanceReport.Build(allTrainings, allSquads, time.GetLocalNow().Date));
         });
 
     public Task<Result<PlayerTrainingAttendance>> GetPlayerTrainingAttendanceAsync(
@@ -87,7 +89,8 @@ public class StatsService(
             if (inputs.IsFailure) return inputs.To<PlayerTrainingAttendance>();
 
             var (allTrainings, allSquads) = inputs.Value!;
-            return Result.Success(TrainingAttendanceReport.BuildFor(player, allTrainings, allSquads));
+            return Result.Success(
+                TrainingAttendanceReport.BuildFor(player, allTrainings, allSquads, time.GetLocalNow().Date));
         });
 
     private async Task<Result<(List<Game> Games, SeasonSquads Squads)>> LoadAsync(
