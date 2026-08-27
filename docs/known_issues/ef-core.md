@@ -40,6 +40,20 @@
   chronological — the sort is on text by design, not by accident. (The name used to be a timestamp
   of the moment the copy was taken; it is the schema state now, so a crash loop cannot write five
   snapshots of the broken database and prune the only good one. See [deployment](../deployment.md).)
+- **Disposing a `SqliteConnection` does not close the file, and only Windows says so**:
+  Microsoft.Data.Sqlite pools connections by default, so `await using` returns the connection to the
+  pool with the underlying handle still open on the file. `DatabaseSafety` copies the database to
+  `<name>.db.tmp` and renames it into place — POSIX renames happily over an open file, so the Fly.io
+  container never noticed, but Windows refused the rename with `IOException: The process cannot
+  access the file because it is being used by another process`. That is not a local-only annoyance:
+  `Program.cs` treats a failed backup as fatal on purpose, so the app could not boot on Windows
+  whenever a migration was pending, and the six `DatabaseSafetyTests` that take a snapshot failed
+  there while staying green in CI. Both connection strings now carry `Pooling=False`, which is what
+  makes disposal actually release the handle; clearing the pool afterwards works too, but it is a
+  cleanup step a later edit can drop, and the connections are opened once at boot so pooling was
+  buying nothing. **Any code that copies, renames or deletes a SQLite file it has just opened needs
+  pooling off** — the temp-file-then-rename shape is deliberate and must stay, since a partial file
+  landing under the final name is the failure the whole guard exists to prevent.
 - **The scaffolder ordered a destructive migration wrongly**: `AddSeasonSquads` had to copy `Players.IsGuest` into a new table *and* drop the column; EF emitted the `DropColumn` first, which would have wiped the source before the backfill ran. Always read and reorder the generated `Up()`.
 - **The one migration on file carries an id older than the file**: `Migrations/` holds a single
   `20260322100416_InitialCreate` that the twenty real migrations were folded into, and it keeps

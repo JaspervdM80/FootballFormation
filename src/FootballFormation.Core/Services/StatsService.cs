@@ -10,6 +10,8 @@ public sealed record SeasonStatsView(SeasonStats Stats, SeasonSquads Squads);
 public class StatsService(
     GameService games,
     SeasonSquadService squads,
+    TrainingService trainings,
+    TimeProvider time,
     StatsCache cache,
     ILogger<StatsService> logger)
 {
@@ -65,6 +67,32 @@ public class StatsService(
             return Result.Success(stats);
         });
 
+    /// No admin guard of its own, and no cache entry: TrainingService.GetAllAsync is the guard, and caching the result here would hand
+    /// a later reader the attendance without passing it. Absences are the one read that is not public — see docs/models/training.md.
+    public Task<Result<TrainingAttendance>> GetTrainingAttendanceAsync(
+        int? seasonId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "load the training attendance", cancellationToken, async () =>
+        {
+            var inputs = await LoadTrainingsAsync(seasonId, cancellationToken);
+            if (inputs.IsFailure) return inputs.To<TrainingAttendance>();
+
+            var (allTrainings, allSquads) = inputs.Value!;
+            return Result.Success(
+                TrainingAttendanceReport.Build(allTrainings, allSquads, time.GetLocalNow().Date));
+        });
+
+    public Task<Result<PlayerTrainingAttendance>> GetPlayerTrainingAttendanceAsync(
+        Player player, int? seasonId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "load the training attendance", cancellationToken, async () =>
+        {
+            var inputs = await LoadTrainingsAsync(seasonId, cancellationToken);
+            if (inputs.IsFailure) return inputs.To<PlayerTrainingAttendance>();
+
+            var (allTrainings, allSquads) = inputs.Value!;
+            return Result.Success(
+                TrainingAttendanceReport.BuildFor(player, allTrainings, allSquads, time.GetLocalNow().Date));
+        });
+
     private async Task<Result<(List<Game> Games, SeasonSquads Squads)>> LoadAsync(
         int? seasonId, CancellationToken cancellationToken)
     {
@@ -75,5 +103,17 @@ public class StatsService(
         if (gamesResult.IsFailure) return gamesResult.To<(List<Game>, SeasonSquads)>();
 
         return Result.Success((gamesResult.Value!, squadsResult.Value!));
+    }
+
+    private async Task<Result<(List<Training> Trainings, SeasonSquads Squads)>> LoadTrainingsAsync(
+        int? seasonId, CancellationToken cancellationToken)
+    {
+        var trainingsResult = await trainings.GetAllAsync(seasonId, cancellationToken);
+        if (trainingsResult.IsFailure) return trainingsResult.To<(List<Training>, SeasonSquads)>();
+
+        var squadsResult = await squads.GetSquadsAsync(seasonId, cancellationToken);
+        if (squadsResult.IsFailure) return squadsResult.To<(List<Training>, SeasonSquads)>();
+
+        return Result.Success((trainingsResult.Value!, squadsResult.Value!));
     }
 }

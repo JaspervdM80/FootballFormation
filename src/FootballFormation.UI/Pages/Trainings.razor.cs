@@ -1,4 +1,5 @@
 using System.Globalization;
+using FootballFormation.Core.Reporting;
 
 namespace FootballFormation.UI.Pages;
 
@@ -7,6 +8,7 @@ public partial class Trainings
 {
     [Inject] private TrainingService TrainingService { get; set; } = null!;
     [Inject] private PlayerService PlayerService { get; set; } = null!;
+    [Inject] private StatsService StatsService { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private TimeProvider Time { get; set; } = null!;
@@ -14,14 +16,20 @@ public partial class Trainings
 
     private List<Training>? _trainings;
     private List<Player> _players = [];
+    private TrainingAttendance? _attendance;
 
     protected override async Task LoadAsync()
     {
         var result = await TrainingService.GetAllAsync(SeasonId, Cancellation);
         _trainings = Snackbar.ReportFailure(L, result) ? result.Value : [];
 
-        // The whole roster, not this season's squad: with "All seasons" picked the list spans them, and an absence recorded against a
-        // player since archived still has a name.
+        // A second read rather than the list already in hand: attendance is the squad minus the absentees, and the squad is not this
+        // page's to load. Every write here reloads, so the figure never lags the register.
+        var attendance = await StatsService.GetTrainingAttendanceAsync(SeasonId, Cancellation);
+        _attendance = Snackbar.ReportFailure(L, attendance) ? attendance.Value : TrainingAttendance.Empty;
+
+        // The whole roster rather than the attendance rows: those are one season's full members with sessions already behind them, and
+        // a badge can sit on an evening still to come, on "All seasons", or on a player since archived.
         var players = await PlayerService.GetAllAsync(Cancellation);
         _players = Snackbar.ReportFailure(L, players) ? players.Value! : [];
     }

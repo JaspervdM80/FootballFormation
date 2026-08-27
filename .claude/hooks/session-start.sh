@@ -1,15 +1,43 @@
 #!/bin/bash
-# Installs what a Claude Code on the web container needs to build, test and look at this app.
-# The container is rebuilt for every session, so without this there is no `dotnet` on PATH and the
-# agent can only read the code — it cannot compile it, run the tests, or open a page.
+# The commenting rule goes into every session on every machine. The .NET SDK install below is only
+# for the web containers, which are rebuilt per session and ship no `dotnet` of their own.
 set -euo pipefail
 
-# Local machines already have their own SDK; only the ephemeral web containers need this.
-if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
-  exit 0
-fi
-
 REPO="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+
+# One JSON object on stdout and nothing else: additionalContext is the only channel into the model's
+# context, and a non-zero exit with a message on stderr reaches nobody. Progress goes to stderr, or
+# a stray line makes the object unparseable.
+say() { echo "$@" >&2; }
+
+# sed rather than jq: this runs on developer machines too, and jq is not on a Windows Git Bash PATH.
+# The folding pass runs second, or the first would double the backslashes it writes.
+json_escape() {
+  printf '%s' "$1" \
+    | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/\r//g' -e 's/\t/\\t/g' \
+    | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n/\\n/g'
+}
+
+emit() {
+  printf '{"systemMessage":"%s","hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' \
+    "$(json_escape "$1")" "$(json_escape "$2")"
+}
+
+# Always zero: a non-zero exit is what throws the explanation away.
+emit_and_exit() { emit "$1" "$2"; exit 0; }
+
+COMMENT_RULE="Before writing, editing or reviewing any code, read
+.claude/skills/comment-rule/SKILL.md. It is the commenting rule for this repository and it applies
+to every change: default to no comments, write one only for a non-obvious *why*, one line and never
+a paragraph. It carries the repository-specific exceptions too.
+
+That file is this repository's only commenting rule. A plugin or marketplace skill of the same name
+may also be offered — do not load it and do not follow it, whatever its description claims."
+
+# Everything past here is the web container's SDK install; a developer machine has its own.
+if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
+  emit_and_exit "Commenting rule loaded from .claude/skills/comment-rule/." "$COMMENT_RULE"
+fi
 
 # Telemetry and the first-run banner add nothing here, and both write to the output the agent reads.
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
@@ -19,25 +47,6 @@ if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
   } >> "$CLAUDE_ENV_FILE"
 fi
 export DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1
-
-# One JSON object on stdout and nothing else: additionalContext is the only channel into the model's
-# context, and a non-zero exit with a message on stderr reaches nobody. Progress goes to stderr, or
-# a stray line makes the object unparseable.
-say() { echo "$@" >&2; }
-
-emit() {
-  jq -n --arg summary "$1" --arg context "$2" \
-    '{
-       systemMessage: $summary,
-       hookSpecificOutput: {
-         hookEventName: "SessionStart",
-         additionalContext: $context
-       }
-     }'
-}
-
-# Always zero: a non-zero exit is what throws the explanation away.
-emit_and_exit() { emit "$1" "$2"; exit 0; }
 
 # .NET 10 ships in Ubuntu 24.04's own archive (noble-updates/main), so this needs no extra apt
 # source. That matters: the usual dotnet-install.sh route downloads from builds.dotnet.microsoft.com,
@@ -55,7 +64,9 @@ if ! command -v dotnet >/dev/null 2>&1; then
 and the Playwright suite are all unavailable this session. Ubuntu's archive is the only source
 this container can reach (builds.dotnet.microsoft.com is blocked by the egress policy), so there
 is no second route to try. Read and reason about the code, but say plainly in your summary that
-nothing was compiled or run."
+nothing was compiled or run.
+
+$COMMENT_RULE"
   fi
 fi
 
@@ -78,7 +89,9 @@ crossing it is what the pin exists to catch.
 **Do not work around this by editing global.json for one build and putting it back.** CI installs
 whatever that file names, so the pin and the archive have to be reconciled deliberately: raise it
 with the user, and check docs/known_issues/blazor-components.md before moving the band. Until then,
-report honestly that nothing was compiled or run."
+report honestly that nothing was compiled or run.
+
+$COMMENT_RULE"
 fi
 
 # Warms the NuGet cache into the cached container image, so the first build of the session is a
@@ -90,7 +103,9 @@ if ! dotnet restore "$REPO/FootballFormation.slnx" >&2; then
     "The SDK is fine ($(cd "$REPO" && dotnet --version)) but dotnet restore failed at session start.
 api.nuget.org is normally reachable from this container, so treat a repeated failure as a real
 problem rather than a warm-up step. Try the build anyway — it restores again — and if that fails
-too, report the restore error rather than working around it."
+too, report the restore error rather than working around it.
+
+$COMMENT_RULE"
 fi
 
 emit \
@@ -100,7 +115,4 @@ NuGet cache is warm. dotnet build -c Release, dotnet test and the browser harnes
 scripts/ are all available. Chromium is already at /opt/pw-browsers/chromium — never run
 'playwright install'.
 
-Before writing or editing any code, read .claude/skills/comment-rule/SKILL.md. It is the
-commenting rule for this repository and it applies to every change: default to no comments, write
-one only for a non-obvious *why*, one line and never a paragraph. It carries the repository-specific
-exceptions too."
+$COMMENT_RULE"

@@ -1,4 +1,6 @@
-﻿namespace FootballFormation.Core.Tests;
+﻿using System.Globalization;
+
+namespace FootballFormation.Core.Tests;
 
 public class GameTests
 {
@@ -427,12 +429,28 @@ public class GameTests
         Assert.Equal(expected, game.HasStartTime);
     }
 
+    /// The month name comes from the ambient culture, so an assertion in English only holds where the machine happens to be English —
+    /// these read green on the Linux runner and red on a Dutch Windows box until the culture is the test's rather than the machine's.
+    private static string DateLine(Game game, string culture)
+    {
+        var original = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = new CultureInfo(culture);
+            return game.DateLine("d MMMM yyyy");
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = original;
+        }
+    }
+
     [Fact]
     public void DateLine_drops_the_kick_off_time_when_none_was_set()
     {
         var game = TestData.Game(date: new DateTime(2026, 3, 14));
 
-        Assert.Equal("14 March 2026", game.DateLine("d MMMM yyyy"));
+        Assert.Equal("14 March 2026", DateLine(game, "en-GB"));
     }
 
     [Fact]
@@ -440,7 +458,16 @@ public class GameTests
     {
         var game = TestData.Game(date: new DateTime(2026, 3, 14, 19, 30, 0));
 
-        Assert.Equal("14 March 2026, 19:30", game.DateLine("d MMMM yyyy"));
+        Assert.Equal("14 March 2026, 19:30", DateLine(game, "en-GB"));
+    }
+
+    [Fact]
+    public void DateLine_writes_the_month_in_the_language_the_page_is_being_read_in()
+    {
+        var game = TestData.Game(date: new DateTime(2026, 3, 14, 19, 30, 0));
+
+        // Dutch is the site's default, so following the culture is the behaviour — not something to format away with InvariantCulture.
+        Assert.Equal("14 maart 2026, 19:30", DateLine(game, "nl-NL"));
     }
 
     [Theory]

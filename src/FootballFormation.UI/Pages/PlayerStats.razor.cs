@@ -18,11 +18,14 @@ public partial class PlayerStats
     [Parameter] public int PlayerId { get; set; }
 
     private Core.Reporting.PlayerStats? _stats;
+    private PlayerTrainingAttendance? _attendance;
     private bool _loaded;
 
     // A flag rather than an AuthorizeView per gated spot: two of them set a class on a container so the grid loses a track along with
     // its cell, and nothing inside the rows can reach that far up.
     private bool _isAdmin;
+
+    private string TileColumns => !_isAdmin ? "stat-tiles-3" : _attendance is { Held: > 0 } ? "stat-tiles-5" : "";
 
     protected override async Task OnInitializedCoreAsync()
     {
@@ -52,6 +55,17 @@ public partial class PlayerStats
         _stats = _notice.ReportFailure(L, statsResult)
             ? statsResult.Value!
             : PlayerStatsReport.Build(playerResult.Value!, [], SeasonSquads.Empty);
+
+        // Only asked for as an admin: the register behind it is the one read that is not public, so a visitor would earn a refusal
+        // notice for a figure the page was never going to show them.
+        if (_isAdmin)
+        {
+            var attendanceResult = await StatsService.GetPlayerTrainingAttendanceAsync(
+                playerResult.Value!, SeasonId, Cancellation);
+            if (attendanceResult.IsCancelled) return;
+
+            if (_notice.ReportFailure(L, attendanceResult)) _attendance = attendanceResult.Value;
+        }
 
         _loaded = true;
     }

@@ -39,10 +39,48 @@ unreadable at a glance, so the count is what is rendered and the names go in the
 `title`, comma-separated in shirt-number order. A `title` is a pointer affordance and nothing on a
 phone, which is fine: the dialog is a tap away and is where they are edited anyway.
 `Trainings.razor.cs` resolves them through `PlayerService.GetAllAsync` — the whole roster rather than
-the season's squad, because "All seasons" spans seasons and an absence recorded against a player
-since archived still has a name. Below 600px the note wraps to a line of its own rather than
+the attendance rows below it, which are one season's full members with sessions already behind them:
+a badge can sit on an evening still to come, under "All seasons", or on a player since archived.
+Below 600px the note wraps to a line of its own rather than
 being clipped to nothing beside the date, and the actions keep the 44px floor `app.css` gives every
 `.action-btn` on a coarse pointer.
+
+## The attendance disclosure
+
+A `<details class="attendance">` above the weeks, holding the season's figure in its `<summary>` —
+`79%` and *"7 trainingen gehouden"* — and a row per full member behind it, best attendance first,
+each with `n / m`, a percentage and a `.position-track` bar. The rows link to
+`/players/{id}/stats`.
+
+**Collapsed by default**, because the register is what the page is for: a squad's worth of rows
+above it would push this week's session off a phone screen. A `<details>` rather than a bound panel,
+the same choice `SeasonPicker` makes — the browser brings the keyboard and screen-reader behaviour,
+and the summary needs no circuit even though this page has one. The chevron rotates off
+`.attendance[open]`, through `::deep`: `MudIcon`'s root carries no scope attribute, so without it
+that rule matches nothing. The summary keeps the 44px floor.
+
+**It lives here rather than on `/stats`.** The figure is close enough to the absence data that it
+belongs behind the same gate, and this page is already `[Authorize]`d in full — putting it on the
+public statistics page would have meant a third gated card there. The numbers themselves, and why
+guests and cancelled evenings are out of them, are in
+[models](../models/training.md#reading-the-register-back).
+
+**Sessions on their own are not enough to render it**, which is why the guard reads
+`{ Held: > 0, Players.Count: > 0 }` rather than counting evenings alone. Saving a training period
+writes the season's ninety sessions in one go, and a season rolled over that way has them before its
+squad is copied forward — so there is a real window with a register full of evenings and nobody to
+measure against them. The percentage divides by the player-sessions, which is zero there, and a bare
+`0%` over an empty panel reads as *"nobody came"* rather than as *"no answer yet"*.
+
+`Held` counts only the evenings that have **already been and gone**, so the panel stays away through
+the start of a season for a second reason as well: in August the ninety sessions are all still ahead,
+and none of them is anybody's attendance yet. It appears with the first session the team has actually
+had. The rule, and why a session dated today waits until tomorrow, is in
+[models](../models/training.md#reading-the-register-back).
+
+The page loads it with a second call, `StatsService.GetTrainingAttendanceAsync`, rather than
+building it from the list it already holds: attendance needs the squad, which is not this page's to
+load. Every write here reloads, so the figure never lags the register.
 
 ## The dialog
 
