@@ -18,7 +18,8 @@ Models/
   MatchPreferences.cs    — Per-season game defaults (duration, split, formation, match day, training days
                            and the training period the last of those is walked inside)
   Training.cs            — A training session: date, who was unavailable, whether it went ahead, one
-                           note. Plus TrainingOrdering
+                           note, and whether the schedule wrote it. Plus TrainingOrdering
+  TrainingSchedule.cs    — The dates a season's training period implies, as a pure function
   GameComment.cs         — An admin's note on a game: body, public/private, author, edited marker
   MatchType.cs           — MatchType enum (Competition / Cup / Practice) + DisplayName()
   AppUser.cs             — An account that can sign in: name, login, hash, role, security stamp
@@ -101,7 +102,9 @@ Services/
                             line-ups, via GameQueries) and the one "game not found" message
   LiveMatchNotifier.cs    — Singleton: fans live match changes out to every open circuit
   MatchPreferencesService.cs — Per-season prefs: GetAsync(seasonId)/SaveAsync,
-                            GetNextMatchDateAsync(seasonId)
+                            GetNextMatchDateAsync/GetNextTrainingDateAsync(seasonId). SaveAsync also
+                            writes the sessions the training period implies — see
+                            docs/models/training.md
   UserService.cs          — Accounts + credentials: CRUD returning Result<T>, plus
                             ValidateCredentialsAsync/FindForSessionAsync/ChangePasswordAsync, which
                             return raw values rather than Result so a failed login says nothing
@@ -118,7 +121,7 @@ Pages/
   SquadMemberDialog.razor(.cs)— Dialog: add someone already on file to this season's squad
   Games.razor(.cs)            — /games — Game list with formation builder link
   Trainings.razor(.cs)(.css)  — /trainings — Admin-only: the season's training sessions, grouped by ISO week
-  TrainingDialog.razor(.cs)   — Dialog: date, start time, unavailable players, note, did-not-take-place
+  TrainingDialog.razor(.cs)   — Dialog: date, unavailable players, note, did-not-take-place
   GameDialog.razor(.cs)       — Dialog: opponent, date, season, formation, split, duration, unavailable players
   FormationBuilder.razor(.cs) — /games/{id}/formation — Pitch + player list + subs + playing time overview
   SeasonStats.razor(.cs)(.css)— /stats — Season dashboard: record, goals, form, scorers, playing time

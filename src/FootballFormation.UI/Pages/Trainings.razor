@@ -49,7 +49,7 @@ else if (_trainings.Count == 0)
                 : L["No trainings yet. Add your first session!"])
         </MudText>
         <MudText Typo="Typo.caption" Class="mt-2 d-block" Style="color: var(--ink-faint);">
-            @L["Set which weekdays the team trains under Preferences, and the date fills itself in."]
+            @L["Set the training days and the first and last training under Preferences, and the sessions fill themselves in."]
         </MudText>
     </MudPaper>
 }
@@ -57,6 +57,10 @@ else
 {
     @foreach (var week in Weeks())
     {
+        @if (week.OpensThePast)
+        {
+            <div class="training-earlier">@L["Earlier"]</div>
+        }
         <div class="training-week">
             <div class="card-label">@week.Title</div>
             <div class="training-rows">
@@ -65,7 +69,7 @@ else
                     @* An evening that did not happen is dimmed rather than hidden: the week reads honestly, and the sessions that were
                        actually held still read first. *@
                     <div class="training-row @(training.DidNotTakePlace ? "cancelled" : "")" @onclick="() => OpenEditDialog(training)">
-                        <span class="training-date">@training.DateLine("ddd dd MMM")</span>
+                        <span class="training-date">@training.Date.ToString("ddd dd MMM")</span>
                         @if (training.DidNotTakePlace)
                         {
                             <span class="badge-warning">@L["Cancelled"]</span>

@@ -152,6 +152,50 @@ public class SeasonServiceTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task A_season_holding_nothing_but_its_generated_schedule_can_still_be_deleted()
+    {
+        var season = await SeedSeasonAsync(isCurrent: false);
+        await SaveTrainingPeriodAsync(season.Id, new DateTime(2026, 3, 2), new DateTime(2026, 3, 31));
+        Assert.NotEmpty(Read().Trainings);
+
+        var result = await Seasons.DeleteAsync(season.Id);
+
+        // Setting a training period must not be the thing that locks a season in place: those evenings carry nothing, so they are the
+        // schedule's rather than anybody's data, and they go with it.
+        Assert.True(result.IsSuccess);
+        Assert.Empty(Read().Seasons);
+        Assert.Empty(Read().Trainings);
+    }
+
+    [Fact]
+    public async Task A_generated_session_somebody_wrote_on_still_holds_its_season_back()
+    {
+        var season = await SeedSeasonAsync(isCurrent: false);
+        await SaveTrainingPeriodAsync(season.Id, new DateTime(2026, 3, 2), new DateTime(2026, 3, 31));
+
+        var noted = Read().Trainings.ToList().First();
+        noted.Notes = "Partijvorm";
+        await Trainings.UpdateAsync(noted);
+
+        var result = await Seasons.DeleteAsync(season.Id);
+
+        // One note is enough: the count in the message is of the evenings that carry something, not of the whole generated run.
+        Assert.True(result.IsFailure);
+        Assert.Equal("Season {0} still has {1} trainings", result.ErrorKey);
+        Assert.Single(Read().Seasons);
+    }
+
+    private async Task SaveTrainingPeriodAsync(int seasonId, DateTime first, DateTime last)
+    {
+        var prefs = (await Preferences.GetAsync(seasonId)).Value!;
+        prefs.TrainingDays = [DayOfWeek.Tuesday];
+        prefs.FirstTrainingDate = first;
+        prefs.LastTrainingDate = last;
+
+        Assert.True((await Preferences.SaveAsync(prefs)).IsSuccess);
+    }
+
+    [Fact]
     public async Task The_current_season_cannot_be_deleted()
     {
         var season = await SeedSeasonAsync(isCurrent: true);

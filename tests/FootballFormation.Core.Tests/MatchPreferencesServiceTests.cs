@@ -253,12 +253,14 @@ public class MatchPreferencesServiceTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync(covering: Saturday);
         await SetTrainingDaysAsync(season.Id, DayOfWeek.Tuesday);
+
+        // An extra evening outside the period is allowed on purpose, and it is still ahead of us. Without a floor at the opening day the
+        // answer follows it out of the period, which is the case the period exists to prevent.
+        await Trainings.CreateAsync(new Training { SeasonId = season.Id, Date = new DateTime(2026, 3, 20) });
         await SetTrainingPeriodAsync(season.Id, new DateTime(2026, 4, 1), new DateTime(2026, 5, 31));
 
-        // An extra evening outside the period is allowed on purpose, and it is still ahead of us — so it becomes the reference the next
-        // date steps off. Without a floor the answer follows it out of the period, which is the case the period exists to prevent.
-        await Trainings.CreateAsync(new Training { SeasonId = season.Id, Date = new DateTime(2026, 3, 20) });
-
+        // Every Tuesday in the period is generated, so none is free and the answer is the soonest one inside it — never the March
+        // evening, which is what the floor is for.
         Assert.Equal(new DateTime(2026, 4, 7), (await Preferences.GetNextTrainingDateAsync(season.Id)).Value);
     }
 
@@ -362,6 +364,160 @@ public class MatchPreferencesServiceTests : ServiceTestBase
         Assert.True(result.IsFailure);
         Assert.Equal("The training period must fall inside season {0}", result.ErrorKey);
         Assert.Null(Read().MatchPreferences.Single().LastTrainingDate);
+    }
+
+    [Fact]
+    public async Task Saving_a_training_period_creates_a_session_for_every_training_day_in_it()
+    {
+        var season = await SeedSeasonAsync(covering: Saturday);
+        await SetTrainingDaysAsync(season.Id, DayOfWeek.Tuesday, DayOfWeek.Thursday);
+
+        await SetTrainingPeriodAsync(season.Id, new DateTime(2026, 3, 2), new DateTime(2026, 3, 15));
+
+        var dates = Read().Trainings.Select(t => t.Date).ToList();
+        Assert.Equal(
+            [new(2026, 3, 3), new(2026, 3, 5), new(2026, 3, 10), new(2026, 3, 12)],
+            dates.Order());
+        Assert.All(Read().Trainings, t => Assert.True(t.FromSchedule));
+        Assert.All(Read().Trainings, t => Assert.Equal(season.Id, t.SeasonId));
+    }
+
+    [Fact]
+    public async Task Saving_the_same_period_again_creates_nothing_the_second_time()
+    {
+        var season = await SeedSeasonAsync(covering: Saturday);
+        await SetTrainingDaysAsync(season.Id, DayOfWeek.Tuesday);
+        await SetTrainingPeriodAsync(season.Id, new DateTime(2026, 3, 2), new DateTime(2026, 3, 15));
+
+        var prefs = (await Preferences.GetAsync(season.Id)).Value!;
+        var again = await Preferences.SaveAsync(prefs);
+
+        // Pressing Save twice is not a way to end up with every evening entered twice.
+        Assert.True(again.Value!.IsEmpty);
+        Assert.Equal(2, Read().Trainings.ToList().Count);
+    }
+
+    [Fact]
+    public async Task Narrowing_the_period_takes_the_empty_sessions_outside_it_back_out()
+    {
+        var season = await SeedSeasonAsync(covering: Saturday);
+        await SetTrainingDaysAsync(season.Id, DayOfWeek.Tuesday);
+        await SetTrainingPeriodAsync(season.Id, new DateTime(2026, 3, 2), new DateTime(2026, 3, 31));
+
+        await SetTrainingPeriodAsync(season.Id, new DateTime(2026, 3, 2), new DateTime(2026, 3, 15));
+
+        Assert.Equal(
+            [new(2026, 3, 3), new(2026, 3, 10)],
+            Read().Trainings.Select(t => t.Date).ToList().Order());
+    }
+
+    [Fact]
+    public async Task A_session_with_something_recorded_on_it_outlives_the_period_it_came_from()
+    {
+        var season = await SeedSeasonAsync(covering: Saturday);
+        await SetTrainingDaysAsync(season.Id, DayOfWeek.Tuesday);
+        await SetTrainingPeriodAsync(season.Id, new DateTime(2026, 3, 2), new DateTime(2026, 3, 31));
+
+        var noted = Read().Trainings.ToList().Single(t => t.Date == new DateTime(2026, 3, 24));
+        noted.Notes = "Partijvorm";
+        await Trainings.UpdateAsync(noted);
+
+        var absent = Read().Trainings.ToList().Single(t => t.Date == new DateTime(2026, 3, 31));
+        absent.UnavailablePlayerIds = [(await SeedPlayersAsync(1))[0].Id];
+        await Trainings.UpdateAsync(absent);
+
+        await SetTrainingPeriodAsync(season.Id, new DateTime(2026, 3, 2), new DateTime(2026, 3, 15));
+
+        // Deleting an evening somebody has written up is the admin's call, not a side effect of shortening the period.
+        Assert.Equal(
+            [new(2026, 3, 3), new(2026, 3, 10), new(2026, 3, 24), new(2026, 3, 31)],
+            Read().Trainings.Select(t => t.Date).ToList().Order());
+    }
+
+    [Fact]
+    public async Task An_extra_evening_entered_by_hand_is_not_the_schedules_to_remove()
+    {
+        var season = await SeedSeasonAsync(covering: Saturday);
+        await SetTrainingDaysAsync(season.Id, DayOfWeek.Tuesday);
+
+        // A Friday, on no training day at all, and with nothing recorded on it — the one case the emptiness check alone would sweep away.
+        await Trainings.CreateAsync(new Training { SeasonId = season.Id, Date = new DateTime(2026, 3, 20) });
+
+        await SetTrainingPeriodAsync(season.Id, new DateTime(2026, 3, 2), new DateTime(2026, 3, 15));
+
+        Assert.Contains(new DateTime(2026, 3, 20), Read().Trainings.Select(t => t.Date).ToList());
+    }
+
+    [Fact]
+    public async Task Clearing_the_period_takes_the_generated_sessions_with_it()
+    {
+        var season = await SeedSeasonAsync(covering: Saturday);
+        await SetTrainingDaysAsync(season.Id, DayOfWeek.Tuesday);
+        await SetTrainingPeriodAsync(season.Id, new DateTime(2026, 3, 2), new DateTime(2026, 3, 15));
+
+        await SetTrainingPeriodAsync(season.Id, null, null);
+
+        // The undo for an evening entered against the wrong window, and the reason an open end generates nothing in the first place.
+        Assert.Empty(Read().Trainings);
+    }
+
+    [Fact]
+    public async Task Training_days_on_their_own_generate_nothing()
+    {
+        var season = await SeedSeasonAsync(covering: Saturday);
+
+        await SetTrainingDaysAsync(season.Id, DayOfWeek.Tuesday, DayOfWeek.Thursday);
+
+        // Without both ends the window is the season's own, and forty weeks of evenings is not what ticking a weekday asks for.
+        Assert.Empty(Read().Trainings);
+    }
+
+    [Fact]
+    public async Task The_next_training_date_is_the_first_one_the_period_has_not_filled_in()
+    {
+        var season = await SeedSeasonAsync(covering: Saturday);
+        await SetTrainingDaysAsync(season.Id, DayOfWeek.Tuesday);
+        await SetTrainingPeriodAsync(season.Id, new DateTime(2026, 3, 2), new DateTime(2026, 3, 31));
+
+        var entered = Read().Trainings.ToList().Single(t => t.Date == new DateTime(2026, 3, 17));
+        await Trainings.DeleteAsync(entered.Id);
+
+        // Every Tuesday from the period is on file except that one, so the dialog opens on the gap rather than on the season's last
+        // evening — which is where "the day after the latest entered" would land now that the period is generated in full.
+        Assert.Equal(new DateTime(2026, 3, 17), (await Preferences.GetNextTrainingDateAsync(season.Id)).Value);
+    }
+
+    [Fact]
+    public async Task With_every_training_day_taken_the_next_date_is_the_soonest_of_them_rather_than_the_last()
+    {
+        var season = await SeedSeasonAsync(covering: Saturday);
+        await SetTrainingDaysAsync(season.Id, DayOfWeek.Tuesday);
+        await SetTrainingPeriodAsync(season.Id, new DateTime(2026, 3, 2), new DateTime(2026, 5, 31));
+
+        // The ordinary state once the period has generated them. Answering with the closing evening in May would put a date months out
+        // on the Preferences caption and pre-fill the dialog with a duplicate; the next Tuesday is the evening the team actually trains.
+        Assert.Equal(new DateTime(2026, 3, 17), (await Preferences.GetNextTrainingDateAsync(season.Id)).Value);
+    }
+
+    [Fact]
+    public async Task Saving_an_unrelated_preference_does_not_bring_a_deleted_session_back()
+    {
+        var season = await SeedSeasonAsync(covering: Saturday);
+        await SetTrainingDaysAsync(season.Id, DayOfWeek.Tuesday);
+        await SetTrainingPeriodAsync(season.Id, new DateTime(2026, 3, 2), new DateTime(2026, 3, 31));
+
+        var holiday = Read().Trainings.ToList().Single(t => t.Date == new DateTime(2026, 3, 24));
+        await Trainings.DeleteAsync(holiday.Id);
+
+        var prefs = (await Preferences.GetAsync(season.Id)).Value!;
+        prefs.GameDurationMinutes = 50;
+        var result = await Preferences.SaveAsync(prefs);
+
+        // The schedule did not move, so the diff does not run: an evening the admin deleted must not come back because the game length
+        // changed. Re-entering it is the dialog's job, and a week off is what "Did not take place" is for.
+        Assert.True(result.Value!.IsEmpty);
+        Assert.DoesNotContain(new DateTime(2026, 3, 24), Read().Trainings.Select(t => t.Date).ToList());
+        Assert.Equal(50, Read().MatchPreferences.Single().GameDurationMinutes);
     }
 
     private async Task SetTrainingDaysAsync(int seasonId, params DayOfWeek[] days)

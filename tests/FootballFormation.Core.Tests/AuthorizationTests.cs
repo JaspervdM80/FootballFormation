@@ -85,6 +85,26 @@ public class AuthorizationTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task An_anonymous_caller_cannot_write_a_season_full_of_trainings_through_the_preferences()
+    {
+        var season = await SeedSeasonAsync();
+        var prefs = (await Preferences.GetAsync(season.Id)).Value!;
+        prefs.TrainingDays = [DayOfWeek.Tuesday];
+        prefs.FirstTrainingDate = season.StartDate.Date;
+        prefs.LastTrainingDate = season.EndDate.Date;
+
+        CurrentUser.IsAdmin = false;
+
+        // Saving preferences now writes the sessions the period implies, so the guard on it is holding back a table's worth of rows
+        // rather than one settings row.
+        var result = await Preferences.SaveAsync(prefs);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ServiceOperation.NotAllowedKey, result.ErrorKey);
+        Assert.Empty(Read().Trainings);
+    }
+
+    [Fact]
     public async Task An_anonymous_caller_cannot_create_a_player()
     {
         CurrentUser.IsAdmin = false;

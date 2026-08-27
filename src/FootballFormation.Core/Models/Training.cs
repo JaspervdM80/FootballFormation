@@ -1,12 +1,15 @@
+using System.Globalization;
+
 namespace FootballFormation.Core.Models;
 
-/// A training session on one date. Which weekdays the team trains is a per-season setting
-/// (<see cref="MatchPreferences.TrainingDays"/>) that seeds the date; the row itself is always created by hand, so a week off is simply a
-/// session nobody entered.
+/// A training session on one date. Which weekdays the team trains, and between which dates, is a per-season setting
+/// (<see cref="MatchPreferences.TrainingDays"/> and the training period) that MatchPreferencesService turns into these rows on save; one
+/// entered by hand alongside them is an extra evening, and stays that way.
 public class Training
 {
     public int Id { get; set; }
 
+    /// Date only — a session has no start time, so anything in TimeOfDay is a value the app can neither show nor edit.
     public DateTime Date { get; set; }
 
     /// Derived from <see cref="Date"/> at creation (SeasonService.GetOrCreateForDateAsync), but reassignable afterwards. No navigation
@@ -23,18 +26,34 @@ public class Training
 
     public string? Notes { get; set; }
 
-    /// <see cref="Date"/> carries both parts, so midnight is how "no start time entered" is stored.
-    public bool HasStartTime => Date.TimeOfDay != TimeSpan.Zero;
+    /// Generated from the season's training period rather than entered by hand. False the moment the dialog saves it — a session the
+    /// coach has opened is the coach's, and rewriting the period must not take it away.
+    public bool FromSchedule { get; set; }
 
-    public string DateLine(string format) =>
-        HasStartTime ? $"{Date.ToString(format)}, {Date:HH:mm}" : Date.ToString(format);
+    /// The only session the scheduler may remove: nothing has been recorded against it, so deleting it loses nothing.
+    public bool IsUnusedSchedule =>
+        FromSchedule && !DidNotTakePlace && UnavailablePlayerIds.Count == 0 && string.IsNullOrWhiteSpace(Notes);
 }
 
 /// In memory, never in SQL — see QueryTags.ComparesDatesInSql. The tie-break is spelled out so two sessions on one day keep entry order.
-/// No OldestFirst alongside it, unlike GameOrdering: this list only ever runs newest-first, and an unused ordering is one more thing to
-/// keep honest.
 public static class TrainingOrdering
 {
-    public static List<Training> NewestFirst(this IEnumerable<Training> trainings) =>
-        [.. trainings.OrderByDescending(t => t.Date).ThenBy(t => t.Id)];
+    /// This week and the weeks ahead first, soonest first; the weeks already behind us below them, most recent first. Whole ISO weeks on
+    /// both counts, matching how the page groups them, so a week still running stays on top once its own sessions have been and gone.
+    public static List<Training> UpcomingFirst(this IEnumerable<Training> trainings, DateTime today)
+    {
+        var thisMonday = MondayOf(today);
+        var all = trainings.ToList();
+
+        return
+        [
+            .. all.Where(t => MondayOf(t.Date) >= thisMonday)
+                  .OrderBy(t => t.Date).ThenBy(t => t.Id),
+            .. all.Where(t => MondayOf(t.Date) < thisMonday)
+                  .OrderByDescending(t => MondayOf(t.Date)).ThenBy(t => t.Date).ThenBy(t => t.Id),
+        ];
+    }
+
+    public static DateTime MondayOf(DateTime date) =>
+        ISOWeek.ToDateTime(ISOWeek.GetYear(date), ISOWeek.GetWeekOfYear(date), DayOfWeek.Monday);
 }

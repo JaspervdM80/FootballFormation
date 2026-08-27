@@ -29,8 +29,9 @@ Game 1──* GameComment *──1 AppUser (author — SetNull)
 Cascading deletes throughout, **except Season → Game and Season → Training, which are `Restrict`**:
 deleting a season must never take a year of games, lineups, goals or training attendance with it.
 `SeasonService.DeleteAsync` refuses with a readable message when a season still has games or
-trainings, or when it is the current one, rather than letting the caller hit a raw
-`DbUpdateException`.
+trainings that record something, or when it is the current one, rather than letting the caller hit a
+raw `DbUpdateException`. Generated sessions nobody has written on go with the season — see
+[training](training.md#restrict-and-the-guard-in-front-of-it).
 
 `Training` names no players by foreign key at all — who was absent is a list of ids in a text column,
 like `Game.UnavailablePlayerIds`. See [training](training.md).

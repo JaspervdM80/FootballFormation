@@ -129,12 +129,14 @@ public class SeasonService(
                 return Result.Failure("Season {0} still has {1} games", season.Name, gameCount);
             }
 
-            var trainingCount = await db.Trainings.CountAsync(t => t.SeasonId == id, cancellationToken);
-            if (trainingCount > 0)
+            // Counted on the rows, not in SQL: IsUnusedSchedule is a computed property, and a season holds at most a few hundred.
+            var trainings = await db.Trainings.Where(t => t.SeasonId == id).ToListAsync(cancellationToken);
+            var recorded = trainings.Where(t => !t.IsUnusedSchedule).ToList();
+            if (recorded.Count > 0)
             {
                 logger.LogWarning("Cannot delete season {SeasonName}: {Count} trainings still assigned",
-                    season.Name, trainingCount);
-                return Result.Failure("Season {0} still has {1} trainings", season.Name, trainingCount);
+                    season.Name, recorded.Count);
+                return Result.Failure("Season {0} still has {1} trainings", season.Name, recorded.Count);
             }
 
             if (season.IsCurrent)
@@ -143,10 +145,14 @@ public class SeasonService(
                 return Result.Failure("Season {0} is the current season", season.Name);
             }
 
+            // The generated evenings nobody wrote anything on go with it. They are the schedule's rather than anybody's data, and
+            // leaving them to the Restrict FK would make saving a training period the thing that locked the season in place.
+            db.Trainings.RemoveRange(trainings);
             db.Seasons.Remove(season);
             await db.SaveChangesAsync(cancellationToken);
 
-            logger.LogInformation("Deleted season {SeasonName} (ID: {SeasonId})", season.Name, season.Id);
+            logger.LogInformation("Deleted season {SeasonName} (ID: {SeasonId}) and {Count} unused generated trainings",
+                season.Name, season.Id, trainings.Count);
             return Result.Success();
         });
 

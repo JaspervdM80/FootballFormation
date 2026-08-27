@@ -8,6 +8,7 @@ public partial class Trainings
     [Inject] private TrainingService TrainingService { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
+    [Inject] private TimeProvider Time { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
     private List<Training>? _trainings;
@@ -18,21 +19,27 @@ public partial class Trainings
         _trainings = Snackbar.ReportFailure(L, result) ? result.Value : [];
     }
 
-    private sealed record TrainingWeek(string Title, List<Training> Trainings);
+    private sealed record TrainingWeek(string Title, bool OpensThePast, List<Training> Trainings);
 
-    /// Grouped the way the team actually plans: by the week the session falls in, newest first, so this week is at the top. ISO weeks,
-    /// because a week here runs Monday to Sunday.
-    private IEnumerable<TrainingWeek> Weeks()
+    /// Grouped the way the team actually plans: by the week the session falls in, in the order TrainingService hands them over — this
+    /// week and the weeks ahead first, the weeks already over below them. ISO weeks, because a week here runs Monday to Sunday.
+    private List<TrainingWeek> Weeks()
     {
-        if (_trainings is null) yield break;
+        if (_trainings is null) return [];
 
-        foreach (var week in _trainings.GroupBy(t => (ISOWeek.GetYear(t.Date), ISOWeek.GetWeekOfYear(t.Date))))
-        {
-            var monday = ISOWeek.ToDateTime(week.Key.Item1, week.Key.Item2, DayOfWeek.Monday);
-            var title = $"{L["Week {0}", week.Key.Item2]} · {monday:dd MMM} – {monday.AddDays(6):dd MMM}";
+        var thisMonday = TrainingOrdering.MondayOf(Time.GetLocalNow().Date);
+        var weeks = _trainings
+            .GroupBy(t => TrainingOrdering.MondayOf(t.Date))
+            .Select(week => (Monday: week.Key, Trainings: week.ToList()))
+            .ToList();
 
-            yield return new TrainingWeek(title, [.. week]);
-        }
+        // No past week leaves this at MinValue, which no Monday matches — so the divider simply never renders.
+        var firstPast = weeks.FirstOrDefault(week => week.Monday < thisMonday).Monday;
+
+        return [.. weeks.Select(week => new TrainingWeek(
+            $"{L["Week {0}", ISOWeek.GetWeekOfYear(week.Monday)]} · {week.Monday:dd MMM} – {week.Monday.AddDays(6):dd MMM}",
+            week.Monday == firstPast,
+            week.Trainings))];
     }
 
     private async Task OpenAddDialog()

@@ -3,6 +3,7 @@ namespace FootballFormation.Core.Services;
 public class TrainingService(
     IDbContextFactory<AppDbContext> dbFactory,
     SeasonService seasons,
+    TimeProvider time,
     ICurrentUser currentUser,
     ILogger<TrainingService> logger)
 {
@@ -18,7 +19,7 @@ public class TrainingService(
                 .AsNoTracking()
                 .Where(t => seasonId == null || t.SeasonId == seasonId)
                 .ToListAsync(cancellationToken))
-                .NewestFirst();
+                .UpcomingFirst(time.GetLocalNow().Date);
 
             logger.LogDebug("Retrieved {Count} trainings for season {SeasonId}", trainings.Count, seasonId);
             return Result.Success(trainings);

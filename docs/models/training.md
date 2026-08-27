@@ -5,16 +5,19 @@ One session on one date, with the squad members who were not there and a note ab
 | Property | Type | Notes |
 |---|---|---|
 | Id | int | PK |
-| Date | DateTime | Carries a start time; midnight is how "no time entered" is stored (`HasStartTime`) |
+| Date | DateTime | Date only — a session has no start time, and the migration wiped the ones rows were carrying |
 | SeasonId | int | FK → Season, **Restrict** delete. Indexed, not unique. No navigation in either direction |
 | UnavailablePlayerIds | List\<int\> | Comma-separated text, like `Game.UnavailablePlayerIds`. Always empty when the session did not take place |
 | DidNotTakePlace | bool | The evening was cancelled — frost, a holiday, a hall double-booked |
+| FromSchedule | bool | Generated from the season's training period rather than entered by hand |
 | Notes | string(2000)? | Free text: what was trained, or why it did not go ahead |
 
-Helpers on the model: `HasStartTime`, `DateLine(format)`, and `TrainingOrdering.NewestFirst` at the
-bottom of the file — in memory, never in SQL, for the reason in
-[patterns](../patterns/ef-core.md). There is no `OldestFirst` beside it, unlike `GameOrdering`: this
-list only ever runs newest-first.
+Helpers on the model: `IsUnusedSchedule` — generated, not cancelled, nobody marked absent, no note —
+and `TrainingOrdering.UpcomingFirst(today)` / `MondayOf` at the bottom of the file, in memory and
+never in SQL, for the reason in [patterns](../patterns/ef-core.md). `UpcomingFirst` puts this week
+and the weeks ahead first, ascending, and the weeks already over below them, most recent first —
+whole ISO weeks on both counts, so a Tuesday session does not drop to the foot of the page on the
+Wednesday.
 
 `TrainingConfiguration` names the FK with `HasOne<Season>()` rather than a navigation, the way
 `GameInjury` does — nothing reads the season off a session, and a nav nobody includes is a null
@@ -59,6 +62,12 @@ season must never take a year of it away silently. `SeasonService.DeleteAsync` c
 beside games and refuses with a readable message, rather than letting the caller hit a raw
 `DbUpdateException`.
 
+**It counts the ones that record something.** `IsUnusedSchedule` evenings are removed along with the
+season instead of blocking it — in memory, since the property does not translate. Without that,
+saving a training period would be the thing that locked a season in place: ninety rows nobody had
+written on, and a refusal reading *"still has 90 trainings"* for a season that holds no attendance
+at all.
+
 ## The one read that is not public
 
 Everything else in this app is readable without signing in — the squad, the fixtures, the
@@ -72,13 +81,33 @@ the service is reached another way, which is the rule in
 The menu entry is `AdminOnly` for the same reason: a visitor offered a link that only bounces them
 to `/login` has been told the section exists and nothing else.
 
-## Which weekdays the team trains
+## The schedule writes the sessions
 
 `MatchPreferences.TrainingDays` — per season, beside `MatchDay` — bounded by
-`FirstTrainingDate`/`LastTrainingDate`, the season's **training period**. Together they **seed the
-date** and nothing else: a session is always a row somebody created, so a week off is simply a week
-nobody entered, and there is no generated calendar to keep in step with reality.
+`FirstTrainingDate`/`LastTrainingDate`, the season's **training period**. Saving those in
+`/settings` is what creates the rows: `MatchPreferencesService.SaveAsync` diffs the season's sessions
+against `TrainingSchedule.DatesIn(first, last, days)` in the same `SaveChanges` that writes the
+preferences, so ninety evenings stop being ninety trips through a dialog.
 
-The period is a bound on what gets *proposed*, not a rule about what may be *entered*: a one-off
-extra session in the summer saves without complaint. What is validated is the period itself — see
+**Both ends or no schedule.** An open end means "the season's own window" everywhere else, and a
+session for every training day until the end of June is not what ticking a weekday asks for — so
+`TrainingDays` on their own generate nothing, and clearing either end takes the generated evenings
+back out again. That is the undo for a period entered against the wrong dates.
+
+**Only when the schedule moved.** `SyncTrainingsAsync` compares the stored period and training days
+against the incoming ones first and does nothing when they match, so a save that changed the game
+length leaves the calendar alone. Without that gate, deleting an evening and later touching any
+unrelated preference would bring it straight back, since the diff has no memory of a row that is no
+longer there. **Deleting is for a session entered by mistake; a week off is what "Did not take place"
+is for** — that keeps the row, so the schedule cannot re-create it, and the week still reads
+honestly.
+
+What the diff may remove is only `IsUnusedSchedule`: generated, with nothing recorded against it. An
+evening carrying absences, a note or a cancellation outlives the window it was drawn from and is the
+admin's to delete. So does one entered by hand — `TrainingDialog.Submit` clears `FromSchedule` on
+every save, so a session the coach has opened is the coach's, and the extra Friday in the summer
+survives the next Save on Preferences.
+
+The period is still a bound on what gets *proposed* rather than a rule about what may be *entered*:
+a one-off outside it saves without complaint. What is validated is the period itself — see
 [settings](settings-and-users.md#matchpreferences-one-row-per-season).
