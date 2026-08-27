@@ -35,6 +35,34 @@
     </Actions>
 </PageHeader>
 
+@* Collapsed by default: the register is what the page is for, and a squad's worth of rows above it would push this week's session off
+   the screen. A <details> rather than a bound panel, the same as the season picker — the browser brings the keyboard behaviour. *@
+@* Sessions alone are not enough to report on: a season whose training period was saved before the squad was filled in has ninety
+   evenings and nobody to measure against them, and the percentage over an empty squad reads as 0% rather than as "no answer yet". *@
+@if (_attendance is { Held: > 0, Players.Count: > 0 })
+{
+    <details class="attendance mb-6">
+        <summary>
+            <span class="attendance-label">@L["Attendance"]</span>
+            <span class="attendance-figure">@_attendance.Percentage.ToString("0")%</span>
+            <span class="attendance-sub">@L["{0} sessions held", _attendance.Held]</span>
+            <MudIcon Icon="@Icons.Material.Filled.ExpandMore" Size="Size.Small" />
+        </summary>
+        <div class="attendance-rows">
+            @foreach (var row in _attendance.Players)
+            {
+                <a class="attendance-row" href="@AppRoutes.PlayerStats(row.Player.Id)">
+                    <span class="a-name"><PlayerLabel Player="row.Player" /></span>
+                    <span class="a-meta">@row.Attended / @row.Held · @(row.Percentage.ToString("0"))%</span>
+                    <div class="position-track">
+                        <div class="position-fill" style="width: @(row.Percentage.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
+                    </div>
+                </a>
+            }
+        </div>
+    </details>
+}
+
 @if (_trainings is null)
 {
     <MudProgressCircular Indeterminate="true" />
