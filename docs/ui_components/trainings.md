@@ -66,6 +66,12 @@ squad is copied forward — so there is a real window with a register full of ev
 measure against them. The percentage divides by the player-sessions, which is zero there, and a bare
 `0%` over an empty panel reads as *"nobody came"* rather than as *"no answer yet"*.
 
+`Held` counts only the evenings that have **already been and gone**, so the panel stays away through
+the start of a season for a second reason as well: in August the ninety sessions are all still ahead,
+and none of them is anybody's attendance yet. It appears with the first session the team has actually
+had. The rule, and why a session dated today waits until tomorrow, is in
+[models](../models/training.md#reading-the-register-back).
+
 The page loads it with a second call, `StatsService.GetTrainingAttendanceAsync`, rather than
 building it from the list it already holds: attendance needs the squad, which is not this page's to
 load. Every write here reloads, so the figure never lags the register.

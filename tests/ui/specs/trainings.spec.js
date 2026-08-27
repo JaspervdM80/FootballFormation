@@ -4,13 +4,13 @@
 // the note beside it usually says why. authorization.spec.js covers what a visitor is shown; this
 // covers what the coach does with it.
 import { test, expect } from '../fixtures.js';
-import { clickFor, confirmDialog, fillField, goto, openDialog, submitDialog } from '../helpers.js';
+import { clickFor, confirmDialog, fillField, goto, openDialog, pickEarlierThisMonth, submitDialog } from '../helpers.js';
 import { SQUAD } from '../global-setup.js';
 
 const ABSENTEE = `${SQUAD[0].firstName} ${SQUAD[0].surname}`;
 const PRESENT = `${SQUAD[1].firstName} ${SQUAD[1].surname}`;
 
-/** The card for one session, found by its note — the date is whatever today happens to be. */
+/** The card for one session, found by its note — the date is whatever the dialog offered. */
 const trainingRow = (page, note) => page.locator('.training-row', { hasText: note }).first();
 
 /**
@@ -33,13 +33,19 @@ async function markUnavailable(page, panel, playerName) {
 /** The switch is not a checkbox to Playwright — MudBlazor renders its own — so it is found by its label. */
 const cancelledSwitch = (panel) => panel.locator('.mud-switch', { hasText: 'Did not take place' }).first();
 
-/** Creates a session through the real dialog. The date comes pre-filled, so a note is all it needs. */
-async function addTraining(page, { note, absentee, cancelled } = {}) {
+/**
+ * Creates a session through the real dialog. The date comes pre-filled with the next training date,
+ * so a note is all it needs — except for the attendance tests, which pass `past` to put the session
+ * behind us, because only a session that has been and gone counts towards the figure.
+ */
+async function addTraining(page, { note, absentee, cancelled, past } = {}) {
   await goto(page, '/trainings');
   const panel = page.locator('.mud-dialog');
   await clickFor(page.getByRole('button', { name: 'Add' }).first(), () => expect(panel).toBeVisible());
 
   await openDialog(page);
+  // Before the absentees: changing the date reloads the season's squad behind the picker.
+  if (past) await pickEarlierThisMonth(page, panel, 1, { allowUnchanged: true });
   if (absentee) await markUnavailable(page, panel, absentee);
   if (note) await fillField(panel, 'Notes', note);
   if (cancelled) await cancelledSwitch(panel).click();
@@ -246,26 +252,40 @@ async function attendanceOf(page, playerName) {
 
 // Every figure below is read as a difference rather than as a number: the specs share one database,
 // so the season already holds whatever the tests before this one entered.
+//
+// Every session here is dated into the past. Only sessions that have already been held count, so one
+// added on today's date would move nothing — and `pickEarlierThisMonth` stays inside the current
+// month, because the season is derived from the date and a jump back could file it under last one.
+// On the 1st there is no earlier day in the month to use, which is what `noPastDayThisMonth` skips.
+//
+// The dialog does not open on today — it opens on the next training date, which is already yesterday
+// once a training period has been saved — so the pick is allowed to leave the field as it found it.
+const noPastDayThisMonth = () => new Date().getDate() === 1;
+
 test('a session that did not take place is left out of the attendance', async ({ page }) => {
-  await addTraining(page, { note: 'Opkomst: gehouden' });
+  test.skip(noPastDayThisMonth(), 'no earlier day this month to hold a session on');
+
+  await addTraining(page, { note: 'Opkomst: gehouden', past: true });
   const before = await sessionsHeld(page);
 
-  await addTraining(page, { note: 'Opkomst: afgelast', cancelled: true });
+  await addTraining(page, { note: 'Opkomst: afgelast', cancelled: true, past: true });
 
   // Counting it would punish the whole squad for an evening nobody had — and an empty absence list
   // is all a cancelled session and a fully attended one have in common.
   expect(await sessionsHeld(page), 'a cancelled evening moved the denominator').toBe(before);
 
-  await addTraining(page, { note: 'Opkomst: nog een' });
+  await addTraining(page, { note: 'Opkomst: nog een', past: true });
   expect(await sessionsHeld(page)).toBe(before + 1);
 });
 
 test('a player marked unavailable loses that session from her attendance', async ({ page }) => {
-  await addTraining(page, { note: 'Opkomst: nulmeting' });
+  test.skip(noPastDayThisMonth(), 'no earlier day this month to hold a session on');
+
+  await addTraining(page, { note: 'Opkomst: nulmeting', past: true });
   const absenteeBefore = await attendanceOf(page, ABSENTEE);
   const presentBefore = await attendanceOf(page, PRESENT);
 
-  await addTraining(page, { note: 'Opkomst: eentje afwezig', absentee: ABSENTEE });
+  await addTraining(page, { note: 'Opkomst: eentje afwezig', absentee: ABSENTEE, past: true });
 
   // Attendance is the squad minus the absentees, so the session counts for everyone and is attended
   // by everyone the register did not name.

@@ -4,6 +4,9 @@ namespace FootballFormation.Core.Tests;
 /// else. These pin which sessions count and for whom.
 public class TrainingAttendanceReportTests
 {
+    /// The sessions below are dated 2026-03-01 to 2026-03-09, so all of them are behind us unless a test says otherwise.
+    private static readonly DateTime Today = new(2026, 3, 14);
+
     private static readonly Player Ann = TestData.Player(1, "Ann", shirt: 7);
     private static readonly Player Bea = TestData.Player(2, "Bea", shirt: 9);
 
@@ -25,7 +28,7 @@ public class TrainingAttendanceReportTests
     {
         var attendance = TrainingAttendanceReport.Build(
             [Session(1), Session(2, absent: Ann.Id), Session(3)],
-            Squads(1, [Ann, Bea]));
+            Squads(1, [Ann, Bea]), Today);
 
         var ann = attendance.Players.Single(p => p.Player.Id == Ann.Id);
 
@@ -43,7 +46,7 @@ public class TrainingAttendanceReportTests
         // absence list, so counting it would quietly punish the squad for an evening that never happened.
         var attendance = TrainingAttendanceReport.Build(
             [Session(1), Session(2, cancelled: true), Session(3, absent: Ann.Id)],
-            Squads(1, [Ann]));
+            Squads(1, [Ann]), Today);
 
         Assert.Equal(2, attendance.Held);
         Assert.Equal(1, attendance.Cancelled);
@@ -61,7 +64,7 @@ public class TrainingAttendanceReportTests
 
         var attendance = TrainingAttendanceReport.Build(
             [Session(1), Session(2), Session(3, seasonId: 2, absent: Bea.Id)],
-            squads);
+            squads, Today);
 
         // Bea joined for the second season: the two evenings before that are not hers to have missed.
         Assert.Equal(1, attendance.Players.Single(p => p.Player.Id == Bea.Id).Held);
@@ -74,7 +77,7 @@ public class TrainingAttendanceReportTests
         // The register offers only full members, so a guest carries no absence and would otherwise read as a perfect attender.
         var attendance = TrainingAttendanceReport.Build(
             [Session(1), Session(2)],
-            Squads(1, [Ann, Bea], guestIds: [Bea.Id]));
+            Squads(1, [Ann, Bea], guestIds: [Bea.Id]), Today);
 
         Assert.Equal([Ann.Id], attendance.Players.Select(p => p.Player.Id));
     }
@@ -92,7 +95,7 @@ public class TrainingAttendanceReportTests
         // second answers "how full were the sessions".
         var attendance = TrainingAttendanceReport.Build(
             [Session(1), Session(2), Session(3, seasonId: 2, absent: Bea.Id)],
-            squads);
+            squads, Today);
 
         Assert.Equal(75, attendance.Percentage);
     }
@@ -104,7 +107,7 @@ public class TrainingAttendanceReportTests
 
         var attendance = TrainingAttendanceReport.Build(
             [Session(1, absent: Bea.Id), Session(2, absent: [Bea.Id, cal.Id])],
-            Squads(1, [Ann, Bea, cal]));
+            Squads(1, [Ann, Bea, cal]), Today);
 
         Assert.Equal([Ann.Id, cal.Id, Bea.Id], attendance.Players.Select(p => p.Player.Id));
     }
@@ -112,7 +115,7 @@ public class TrainingAttendanceReportTests
     [Fact]
     public void A_register_with_nothing_held_in_it_divides_by_nothing()
     {
-        var attendance = TrainingAttendanceReport.Build([Session(1, cancelled: true)], Squads(1, [Ann]));
+        var attendance = TrainingAttendanceReport.Build([Session(1, cancelled: true)], Squads(1, [Ann]), Today);
 
         Assert.Equal(0, attendance.Held);
         Assert.Equal(0, attendance.Percentage);
@@ -121,10 +124,43 @@ public class TrainingAttendanceReportTests
     }
 
     [Fact]
+    public void An_evening_still_to_come_is_nobodys_attendance_yet()
+    {
+        // A season's sessions are written the day its training period is saved, so most of a fresh season is still ahead. Each one
+        // carries an empty absence list, which is indistinguishable from a full squad turning up — Ann would read 67% for one she
+        // missed and two nobody has been to. A cancelled evening in the future is not on the books either.
+        var attendance = TrainingAttendanceReport.Build(
+            [Session(1, absent: Ann.Id), Session(20), Session(21, cancelled: true)],
+            Squads(1, [Ann]), Today);
+
+        Assert.Equal(1, attendance.Held);
+        Assert.Equal(0, attendance.Cancelled);
+        Assert.Equal(0, attendance.Percentage);
+    }
+
+    [Fact]
+    public void Tonights_session_only_counts_from_tomorrow()
+    {
+        // A session carries a date and no start time, so nothing here can tell an evening that is over from one that has not begun.
+        var attendance = TrainingAttendanceReport.Build([Session(14)], Squads(1, [Ann]), Today);
+
+        Assert.Equal(0, attendance.Held);
+    }
+
+    [Fact]
+    public void The_figure_on_a_players_own_page_stops_at_today_as_well()
+    {
+        var attendance = TrainingAttendanceReport.BuildFor(Ann, [Session(1), Session(20)], Squads(1, [Ann]), Today);
+
+        Assert.Equal(1, attendance.Held);
+        Assert.Equal(1, attendance.Attended);
+    }
+
+    [Fact]
     public void Someone_in_no_squad_of_the_scope_has_no_sessions_to_have_missed()
     {
         // The player page is reachable for anyone on file, squad member or not — so this is a real answer, not a guard.
-        var attendance = TrainingAttendanceReport.BuildFor(Bea, [Session(1), Session(2)], Squads(1, [Ann]));
+        var attendance = TrainingAttendanceReport.BuildFor(Bea, [Session(1), Session(2)], Squads(1, [Ann]), Today);
 
         Assert.Equal(0, attendance.Held);
         Assert.Equal(0, attendance.Attended);

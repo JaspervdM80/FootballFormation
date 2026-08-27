@@ -39,7 +39,7 @@ public abstract class ServiceTestBase : IDisposable
 
         Users = new UserService(DbFactory, CurrentUser, NullLogger<UserService>.Instance);
 
-        Stats = new StatsService(Games, Squads, Trainings, StatsCache, NullLogger<StatsService>.Instance);
+        Stats = new StatsService(Games, Squads, Trainings, Time, StatsCache, NullLogger<StatsService>.Instance);
     }
 
     /// An admin by default, so a test about something else does not have to say so.
