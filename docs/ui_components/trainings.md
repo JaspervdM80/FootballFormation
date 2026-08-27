@@ -34,8 +34,13 @@ rather than removed so the week still reads honestly: a fortnight with nothing i
 that was called off look nothing alike. The header subtitle appends "· {0} cancelled" when there are
 any, the way `/games` appends "{0} without lineup".
 
-**The row says how many were out, not who.** Four names on a card is unreadable at a glance, and the
-names are one tap away in the dialog. Below 600px the note wraps to a line of its own rather than
+**The row says how many were out, not who — the badge's tooltip says who.** Four names on a card is
+unreadable at a glance, so the count is what is rendered and the names go in the `.badge-unavailable`
+`title`, comma-separated in shirt-number order. A `title` is a pointer affordance and nothing on a
+phone, which is fine: the dialog is a tap away and is where they are edited anyway.
+`Trainings.razor.cs` resolves them through `PlayerService.GetAllAsync` — the whole roster rather than
+the season's squad, because "All seasons" spans seasons and an absence recorded against a player
+since archived still has a name. Below 600px the note wraps to a line of its own rather than
 being clipped to nothing beside the date, and the actions keep the 44px floor `app.css` gives every
 `.action-btn` on a coarse pointer.
 

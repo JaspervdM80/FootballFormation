@@ -6,18 +6,31 @@ namespace FootballFormation.UI.Pages;
 public partial class Trainings
 {
     [Inject] private TrainingService TrainingService { get; set; } = null!;
+    [Inject] private PlayerService PlayerService { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private TimeProvider Time { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
     private List<Training>? _trainings;
+    private List<Player> _players = [];
 
     protected override async Task LoadAsync()
     {
         var result = await TrainingService.GetAllAsync(SeasonId, Cancellation);
         _trainings = Snackbar.ReportFailure(L, result) ? result.Value : [];
+
+        // The whole roster, not this season's squad: with "All seasons" picked the list spans them, and an absence recorded against a
+        // player since archived still has a name.
+        var players = await PlayerService.GetAllAsync(Cancellation);
+        _players = Snackbar.ReportFailure(L, players) ? players.Value! : [];
     }
+
+    /// In the order PlayerService hands them over — shirt number, then name — so the same absences read the same way on every session.
+    private string UnavailableNames(Training training) =>
+        string.Join(", ", _players
+            .Where(player => training.UnavailablePlayerIds.Contains(player.Id))
+            .Select(player => player.DisplayName));
 
     private sealed record TrainingWeek(string Title, bool OpensThePast, List<Training> Trainings);
 
