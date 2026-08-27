@@ -1,3 +1,100 @@
+/* The season's attendance, read back off the register below it. Collapsed until asked for — see the disclosure in the markup. */
+.attendance {
+    background: var(--gradient-card);
+    border: 1px solid color-mix(in srgb, var(--club-accent) 12%, transparent);
+    border-radius: 12px;
+}
+
+.attendance > summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    /* 44px so a thumb finds it, the same floor as the season picker's summary. */
+    min-height: 44px;
+    padding: 8px 16px;
+    cursor: pointer;
+    list-style: none;
+}
+
+/* Safari draws its own triangle through a pseudo-element the standard property does not reach. */
+.attendance > summary::-webkit-details-marker {
+    display: none;
+}
+
+.attendance > summary:hover {
+    background: var(--surface-card-alt);
+    border-radius: 12px;
+}
+
+.attendance[open] > summary {
+    border-bottom: 1px solid color-mix(in srgb, var(--club-accent) 12%, transparent);
+    border-radius: 12px 12px 0 0;
+}
+
+.attendance-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+}
+
+.attendance-figure {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--club-primary-bright);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Gives way first, so the figure and the chevron keep their places on a phone. */
+.attendance-sub {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.7rem;
+    color: var(--ink-faint);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ::deep is required: MudIcon's root carries no scope attribute, so without it this selector matches nothing. */
+.attendance[open] > summary ::deep .mud-icon-root {
+    transform: rotate(180deg);
+}
+
+.attendance-rows {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 16px 14px;
+}
+
+.attendance-row {
+    display: block;
+    padding: 8px 0;
+    text-decoration: none;
+}
+
+.attendance-row + .attendance-row {
+    border-top: 1px solid color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+.a-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.a-meta {
+    float: right;
+    font-size: 0.7rem;
+    color: var(--ink-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.attendance-row .position-track {
+    margin-top: 6px;
+}
+
 /* One block per week — the gap between them is what makes the grouping readable. */
 .training-week + .training-week {
     margin-top: 28px;

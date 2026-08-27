@@ -154,6 +154,10 @@
   <data name="Training on {0} added" xml:space="preserve"><value>Training van {0} toegevoegd</value></data>
   <data name="Training on {0} updated" xml:space="preserve"><value>Training van {0} bijgewerkt</value></data>
   <data name="Training on {0} deleted" xml:space="preserve"><value>Training van {0} verwijderd</value></data>
+  <data name="Attendance" xml:space="preserve"><value>Opkomst</value></data>
+  <data name="{0} sessions held" xml:space="preserve"><value>{0} trainingen gehouden</value></data>
+  <data name="{0}% attended" xml:space="preserve"><value>{0}% aanwezig</value></data>
+  <data name="{0} missed" xml:space="preserve"><value>{0} gemist</value></data>
 
   <!-- Training dialog -->
   <data name="Notes" xml:space="preserve"><value>Notities</value></data>
@@ -599,6 +603,7 @@
   <data name="load the squad" xml:space="preserve"><value>selectie laden</value></data>
   <data name="load the squads" xml:space="preserve"><value>selecties laden</value></data>
   <data name="load the statistics" xml:space="preserve"><value>statistieken laden</value></data>
+  <data name="load the training attendance" xml:space="preserve"><value>trainingsopkomst laden</value></data>
   <data name="load the trainings" xml:space="preserve"><value>trainingen laden</value></data>
   <data name="load users" xml:space="preserve"><value>gebruikers laden</value></data>
   <data name="log the goal" xml:space="preserve"><value>doelpunt vastleggen</value></data>

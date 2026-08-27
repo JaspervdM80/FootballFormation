@@ -98,10 +98,13 @@ How each page implements it differs, and the difference is the point:
   `OnInitializedAsync` — `SeasonAwarePage` owns that). It has to: the per-game table is a CSS grid,
   and hiding its minutes cell means dropping a *track* as well, which is a class on the container
   that no `AuthorizeView` inside the rows could set. Hence `.game-list-no-minutes` and, for the same
-  reason one tile up, `.stat-tiles-3` — `.stat-tiles` is a fixed `repeat(4, 1fr)`, so three tiles
-  would otherwise leave a dead fourth column. Both variants live in `app.css` beside the base rule,
-  and `.stat-tiles-3` is repeated inside the `max-width: 760px` block because a two-class selector
-  outranks the one-class phone rule that would otherwise narrow it.
+  reason one tile up, `.stat-tiles-3` / `.stat-tiles-5` — `.stat-tiles` is a fixed `repeat(4, 1fr)`,
+  so a row of three would leave a dead fourth column and a row of five would wrap one tile onto a
+  line of its own. The `TileColumns` property in the code-behind picks between them: three for a
+  visitor, five for an admin looking at a season with training sessions on file, four otherwise. All
+  three variants live in `app.css` beside the base rule, and both two-class ones are repeated inside
+  the `max-width: 760px` block because a two-class selector outranks the one-class phone rule that
+  would otherwise narrow them to two.
 
 The two mechanisms are not quite equivalent, and the difference shows up exactly once: an
 `AuthorizeView` re-renders on `AuthenticationStateChanged`, while `_isAdmin` is read once in
@@ -118,6 +121,17 @@ being rotated fairly. `AvailableMinutes` already excludes matches a player was u
 someone who missed half the season is not punished for it. The inline `width:` needs
 `InvariantCulture`, like every other percentage in this app — a Dutch decimal comma kills the bar
 silently.
+
+**The fifth tile is training attendance**, `n/m` with the percentage and the number missed under
+it — admin-only, and present only once the season has held sessions, so a squad in July still reads
+as four tiles. It comes from `StatsService.GetPlayerTrainingAttendanceAsync`, which the page skips
+entirely when `_isAdmin` is false rather than letting the refusal surface as an error notice for a
+figure a visitor was never going to be shown. The rules behind the number are in
+[models](../models/training.md#reading-the-register-back).
+
+That tile is also why the page can now render with an *empty* per-game list, which it never could
+before: the empty state at the top gives way as soon as there is attendance to show, so the per-game
+card carries its own "no games yet" line instead of a column header row over nothing.
 
 **The Availability switch beside that card's label swaps in a second bar**, filled to
 `PlayerStats.MaximumMinutes` instead — every minute the season's completed matches offered. The two
