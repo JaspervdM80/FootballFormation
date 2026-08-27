@@ -51,7 +51,7 @@ function parseCobertura(path) {
     let totals = { covered: 0, valid: 0 };
 
     for (const block of xml.split(/<class\s/).slice(1)) {
-        const filename = (block.match(/filename="([^"]+)"/) ?? [])[1];
+        const filename = (block.match(/filename="([^"]+)"/) ?? [])[1]?.replaceAll('\\', '/');
         if (!filename) continue;
         const lines = files.get(filename) ?? new Map();
         for (const m of block.matchAll(/<line number="(\d+)" hits="(\d+)"/g)) {
@@ -109,7 +109,7 @@ if (reports.length === 0) {
 
 const { root, files, totals, branches } = parseCobertura(reports[0]);
 const { byFile, mergeBase } = addedLines(BASE);
-const sourceRoot = relative(REPO, root) + '/';   // e.g. src/FootballFormation.Core/
+const sourceRoot = relative(REPO, root).replaceAll('\\', '/') + '/';   // e.g. src/FootballFormation.Core/
 
 const measured = [];
 const unmeasured = [];

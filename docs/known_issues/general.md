@@ -42,3 +42,13 @@
   retry, be adding that player a second time — `playerRow(...).first()` may match the wrong row, and
   the report says `1 failed` rather than `1 flaky`. Read a two-attempt failure as "flaked, then hit
   dirty state", not as proof the behaviour is genuinely broken.
+- **`scripts/coverage.sh` passed on Windows no matter what the change did.** The Cobertura report
+  the collector writes carries Windows separators — `<source>D:\...\src\FootballFormation.Core\</source>`
+  and `filename="Services\GameService.cs"` — and `coverage.mjs` derived its `sourceRoot` from that
+  `<source>` with `path.relative`, which keeps them. The paths it compares against come from
+  `git diff`, which is always forward-slashed, so `path.startsWith(sourceRoot)` matched nothing:
+  every changed file fell into "Not measured here", the script printed *Changed lines: none
+  measurable in Core* and exited PASS. A green local run that judged nothing, and invisible in CI
+  because that runs on Linux, where the two spellings happen to agree. Both the `sourceRoot` and the
+  `filename` keys are normalised to `/` now. Any script that compares a path from a .NET tool with a
+  path from git has this shape — normalise before comparing.
