@@ -9,9 +9,9 @@
                      Class="@(ShowIcons ? null : "topbar-nav-link")"
                      Icon="@(ShowIcons ? item.Icon : null)">@L[item.LabelKey]</MudNavLink>;
 
-    if (item.AdminOnly)
+    if (item.RequiresRole is not null)
     {
-        <AuthorizeView Roles="@AppRoles.Admin">@link</AuthorizeView>
+        <AuthorizeView Roles="@item.RequiresRole">@link</AuthorizeView>
     }
     else
     {

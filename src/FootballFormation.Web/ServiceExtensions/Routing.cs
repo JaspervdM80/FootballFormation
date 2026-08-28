@@ -2,6 +2,9 @@ using System.Net;
 using System.Security.Claims;
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Reporting;
+using FootballFormation.UI;
+using FootballFormation.UI.State;
+using Microsoft.Extensions.Localization;
 
 namespace FootballFormation.Web.ServiceExtensions;
 
@@ -96,7 +99,7 @@ public static class Routing
 
                 // Deterministic on purpose: GetAllAsync orders by display name, so "first admin" would otherwise mean "whoever sorts
                 // first", and adding a user could silently change who this signs you in as.
-                var admins = usersResult.Value!.Where(u => u.Role == UserRole.Admin).ToList();
+                var admins = usersResult.Value!.Where(u => u.Role.GrantsAdmin()).ToList();
                 var admin = admins.FirstOrDefault(u => u.Username == "admin") ?? admins.OrderBy(u => u.Id).FirstOrDefault();
                 if (admin is null) return Results.NotFound();
 
@@ -107,6 +110,33 @@ public static class Routing
 
             Log.Warning("Dev login endpoint mapped at /dev/login (Development + loopback only)");
         }
+
+        // Generated rather than a file under wwwroot: the club and team are a database row now, and a static copy would be the one
+        // place a rename never reached — it is the app's name on a home screen. The icons stay files, so a crest swap is a file drop.
+        app.MapGet("/manifest.webmanifest", async (TeamState team, IStringLocalizer<Strings> localizer) =>
+        {
+            await team.EnsureLoadedAsync();
+            var name = team.DisplayName;
+
+            return Results.Json(new
+            {
+                name,
+                short_name = name,
+                description = localizer["Line-ups, squad and results for {0}.", name].Value,
+                start_url = "/",
+                scope = "/",
+                display = "standalone",
+                orientation = "portrait",
+                background_color = "#ffffff",
+                theme_color = "#ffffff",
+                icons = new[]
+                {
+                    new { src = "icons/icon-192.png", sizes = "192x192", type = "image/png", purpose = "any" },
+                    new { src = "icons/icon-512.png", sizes = "512x512", type = "image/png", purpose = "any" },
+                    new { src = "icons/icon-512-maskable.png", sizes = "512x512", type = "image/png", purpose = "maskable" }
+                }
+            }, contentType: "application/manifest+json");
+        }).AllowAnonymous();
 
         app.MapGet("/culture/set", (string culture, string redirectUri, HttpContext context) =>
         {
@@ -154,6 +184,10 @@ public static class Routing
         new(AppClaims.DisplayName, user.DisplayName),
         new(AppClaims.SecurityStamp, user.SecurityStamp)
     };
+
+        // The implication UserRole records: an application admin is an admin too, and every [Authorize(Roles = Admin)] reads the claims
+        // rather than the enum.
+        if (user.Role == UserRole.ApplicationAdmin) claims.Add(new Claim(ClaimTypes.Role, AppRoles.Admin));
 
         // Only when set, so the common case carries no extra claim at all.
         if (user.MustChangePassword) claims.Add(new Claim(AppClaims.MustChangePassword, "true"));

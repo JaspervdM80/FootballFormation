@@ -38,6 +38,7 @@ public abstract class ServiceTestBase : IDisposable
         Subs = new MatchSubstitutionService(DbFactory, Notifier, Time, CurrentUser, NullLogger<MatchSubstitutionService>.Instance);
 
         Users = new UserService(DbFactory, CurrentUser, NullLogger<UserService>.Instance);
+        TeamsAndClubs = new TeamService(DbFactory, CurrentUser, NullLogger<TeamService>.Instance);
 
         Stats = new StatsService(Games, Squads, Trainings, Time, StatsCache, NullLogger<StatsService>.Instance);
     }
@@ -70,6 +71,9 @@ public abstract class ServiceTestBase : IDisposable
     protected MatchGoalService Goals { get; }
     protected MatchSubstitutionService Subs { get; }
     protected UserService Users { get; }
+
+    /// Named for both, because the page and the service cover the club above the team as well.
+    protected TeamService TeamsAndClubs { get; }
 
     // StatsCache.Generation is how a test asks whether a write was noticed, without timing.
     protected StatsService Stats { get; }

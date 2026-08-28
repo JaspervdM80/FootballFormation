@@ -7,6 +7,7 @@ public partial class Home
     [Inject] private LiveMatchService Live { get; set; } = null!;
     [Inject] private LiveMatchNotifier Notifier { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
+    [Inject] private State.TeamState Team { get; set; } = null!;
 
     private Game? TodaysGame { get; set; }
 
@@ -32,6 +33,7 @@ public partial class Home
 
     protected override async Task OnInitializedAsync()
     {
+        await Team.EnsureLoadedAsync();
         await LoadTodaysGameAsync();
 
         // Any live-match change, not just this game's: the banner has no game of its own until it loads one, and a match starting is

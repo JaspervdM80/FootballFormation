@@ -1,10 +1,10 @@
 # Trainings (`/trainings`)
 
 Season-scoped and **admin-only** — `@attribute [Authorize(Roles = AppRoles.Admin)]` on the page,
-`AdminOnly: true` on the `AppNav.Menu` entry, and `RunAdminAsync` behind both. The reason the whole
+`RequiresRole: AppRoles.Admin` on the `AppNav.Menu` entry, and `RunAdminAsync` behind both. The reason the whole
 section is gated rather than just its buttons is in [models](../models/training.md#the-one-read-that-is-not-public).
 
-Interactive (`@rendermode InteractiveServer`), so it opens with `<InteractiveShell AdminOnly="true" />`
+Interactive (`@rendermode InteractiveServer`), so it opens with `<InteractiveShell RequiresRole="@AppRoles.Admin" />`
 and reports through `ISnackbar`: the page is a dialog and a confirm, which need a circuit.
 
 ## The list is grouped by week, not by month
@@ -138,6 +138,6 @@ format, not a string somebody translates.
 
 ## The way in
 
-`AppNav.Menu` (`AdminOnly: true`) and a tile on the homepage, inside the same `<AuthorizeView>` as
+`AppNav.Menu` (`RequiresRole: AppRoles.Admin`) and a tile on the homepage, inside the same `<AuthorizeView>` as
 the Preferences tile — `/trainings` is `[Authorize]`d, so a tile a visitor can see is a door that
 only ever opens onto the login screen.

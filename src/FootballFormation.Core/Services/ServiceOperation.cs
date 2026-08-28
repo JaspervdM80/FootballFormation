@@ -58,7 +58,7 @@ public static class ServiceOperation
         // Ahead of the authorization check, so an abandoned call is never logged as a refusal.
         if (cancellationToken.IsCancellationRequested) return Abandoned(logger, action);
 
-        if (!await IsAllowedAsync(currentUser, logger, action))
+        if (!await IsAllowedAsync(currentUser.IsAdminAsync, logger, action))
             return Result.Failure(NotAllowedKey, action);
 
         return await RunAsync(logger, action, cancellationToken, operation);
@@ -71,7 +71,34 @@ public static class ServiceOperation
     {
         if (cancellationToken.IsCancellationRequested) return Abandoned<T>(logger, action);
 
-        if (!await IsAllowedAsync(currentUser, logger, action))
+        if (!await IsAllowedAsync(currentUser.IsAdminAsync, logger, action))
+            return Result.Failure<T>(NotAllowedKey, action);
+
+        return await RunAsync(logger, action, cancellationToken, operation);
+    }
+
+    /// <summary>The same shape one rung up, for what only an application admin may change: the clubs and teams the app serves, and who
+    /// else may manage them.</summary>
+    internal static async Task<Result> RunApplicationAdminAsync(
+        ICurrentUser currentUser, ILogger logger, string action, CancellationToken cancellationToken,
+        Func<Task<Result>> operation)
+    {
+        if (cancellationToken.IsCancellationRequested) return Abandoned(logger, action);
+
+        if (!await IsAllowedAsync(currentUser.IsApplicationAdminAsync, logger, action))
+            return Result.Failure(NotAllowedKey, action);
+
+        return await RunAsync(logger, action, cancellationToken, operation);
+    }
+
+    /// <inheritdoc cref="RunApplicationAdminAsync(ICurrentUser, ILogger, string, CancellationToken, Func{Task{Result}})"/>
+    internal static async Task<Result<T>> RunApplicationAdminAsync<T>(
+        ICurrentUser currentUser, ILogger logger, string action, CancellationToken cancellationToken,
+        Func<Task<Result<T>>> operation)
+    {
+        if (cancellationToken.IsCancellationRequested) return Abandoned<T>(logger, action);
+
+        if (!await IsAllowedAsync(currentUser.IsApplicationAdminAsync, logger, action))
             return Result.Failure<T>(NotAllowedKey, action);
 
         return await RunAsync(logger, action, cancellationToken, operation);
@@ -91,12 +118,12 @@ public static class ServiceOperation
     }
 
     /// A principal that cannot be resolved at all is a refusal, not an error — the answer is still "no".
-    private static async Task<bool> IsAllowedAsync(ICurrentUser currentUser, ILogger logger, string action)
+    private static async Task<bool> IsAllowedAsync(Func<Task<bool>> authorize, ILogger logger, string action)
     {
         bool allowed;
         try
         {
-            allowed = await currentUser.IsAdminAsync();
+            allowed = await authorize();
         }
         catch (Exception ex)
         {

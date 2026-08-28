@@ -470,6 +470,7 @@
   <data name="You" xml:space="preserve"><value>JIJ</value></data>
   <!-- Role names. The key is the UserRole member name, so a new role needs an entry here. -->
   <data name="Admin" xml:space="preserve"><value>Beheerder</value></data>
+  <data name="ApplicationAdmin" xml:space="preserve"><value>Applicatiebeheerder</value></data>
   <data name="Confirm password" xml:space="preserve"><value>Wachtwoord bevestigen</value></data>
   <data name="At least {0} characters" xml:space="preserve"><value>Minimaal {0} tekens</value></data>
   <data name="Use Reset Password to give this account a new password." xml:space="preserve"><value>Gebruik Wachtwoord opnieuw instellen om dit account een nieuw wachtwoord te geven.</value></data>
@@ -488,9 +489,57 @@
   <data name="Username must be at most {0} characters" xml:space="preserve"><value>Gebruikersnaam mag maximaal {0} tekens lang zijn</value></data>
   <data name="A user with username {0} already exists" xml:space="preserve"><value>Er bestaat al een gebruiker met gebruikersnaam {0}</value></data>
   <data name="The last administrator cannot be removed or demoted" xml:space="preserve"><value>De laatste beheerder kan niet worden verwijderd of gedegradeerd</value></data>
+  <data name="The last application administrator cannot be removed or demoted" xml:space="preserve"><value>De laatste applicatiebeheerder kan niet worden verwijderd of gedegradeerd</value></data>
+  <data name="Only an application administrator can grant that role" xml:space="preserve"><value>Alleen een applicatiebeheerder kan die rol toekennen</value></data>
+  <data name="Only an application administrator can change this role." xml:space="preserve"><value>Alleen een applicatiebeheerder kan deze rol wijzigen.</value></data>
   <data name="The last training must not be before the first" xml:space="preserve"><value>De laatste training mag niet vóór de eerste liggen</value></data>
   <data name="The training period must fall inside season {0}" xml:space="preserve"><value>De trainingsperiode moet binnen seizoen {0} vallen</value></data>
   <data name="User with ID {0} not found" xml:space="preserve"><value>Gebruiker met ID {0} niet gevonden</value></data>
+
+  <!-- Clubs and teams -->
+  <data name="Teams" xml:space="preserve"><value>Teams</value></data>
+  <data name="The clubs and teams this app serves." xml:space="preserve"><value>De clubs en teams die deze app bedient.</value></data>
+  <data name="Club" xml:space="preserve"><value>Club</value></data>
+  <data name="Clubs" xml:space="preserve"><value>Clubs</value></data>
+  <data name="Team" xml:space="preserve"><value>Team</value></data>
+  <data name="Theme" xml:space="preserve"><value>Thema</value></data>
+  <data name="Logo" xml:space="preserve"><value>Logo</value></data>
+  <data name="Selected" xml:space="preserve"><value>GESELECTEERD</value></data>
+  <data name="Add Club" xml:space="preserve"><value>Club toevoegen</value></data>
+  <data name="Edit Club" xml:space="preserve"><value>Club bewerken</value></data>
+  <data name="Delete Club" xml:space="preserve"><value>Club verwijderen</value></data>
+  <data name="Add Team" xml:space="preserve"><value>Team toevoegen</value></data>
+  <data name="Edit Team" xml:space="preserve"><value>Team bewerken</value></data>
+  <data name="Delete Team" xml:space="preserve"><value>Team verwijderen</value></data>
+  <data name="Path to an image under wwwroot. Leave empty for the theme's own crest." xml:space="preserve"><value>Pad naar een afbeelding onder wwwroot. Laat leeg voor het logo van het thema zelf.</value></data>
+  <data name="The colours behind a theme are part of the app and cannot be edited here." xml:space="preserve"><value>De kleuren achter een thema horen bij de app en zijn hier niet te wijzigen.</value></data>
+  <data name="Club {0} created" xml:space="preserve"><value>Club {0} aangemaakt</value></data>
+  <data name="Club {0} updated" xml:space="preserve"><value>Club {0} bijgewerkt</value></data>
+  <data name="Club {0} deleted" xml:space="preserve"><value>Club {0} verwijderd</value></data>
+  <data name="Team {0} created" xml:space="preserve"><value>Team {0} aangemaakt</value></data>
+  <data name="Team {0} updated" xml:space="preserve"><value>Team {0} bijgewerkt</value></data>
+  <data name="Team {0} deleted" xml:space="preserve"><value>Team {0} verwijderd</value></data>
+  <data name="Are you sure you want to delete {0}?" xml:space="preserve"><value>Weet je zeker dat je {0} wilt verwijderen?</value></data>
+  <data name="Club name is required" xml:space="preserve"><value>Clubnaam is verplicht</value></data>
+  <data name="Team name is required" xml:space="preserve"><value>Teamnaam is verplicht</value></data>
+  <data name="Club name must be at most {0} characters" xml:space="preserve"><value>Clubnaam mag maximaal {0} tekens lang zijn</value></data>
+  <data name="Team name must be at most {0} characters" xml:space="preserve"><value>Teamnaam mag maximaal {0} tekens lang zijn</value></data>
+  <data name="A club named {0} already exists" xml:space="preserve"><value>Er bestaat al een club met de naam {0}</value></data>
+  <data name="{0} already has a team named {1}" xml:space="preserve"><value>{0} heeft al een team met de naam {1}</value></data>
+  <data name="Club {0} still has {1} teams" xml:space="preserve"><value>Club {0} heeft nog {1} teams</value></data>
+  <data name="{0} is the team the app is showing" xml:space="preserve"><value>{0} is het team dat de app laat zien</value></data>
+  <data name="The logo must be a path inside the app, like icons/icon-192.png" xml:space="preserve"><value>Het logo moet een pad binnen de app zijn, bijvoorbeeld icons/icon-192.png</value></data>
+  <data name="Club with ID {0} not found" xml:space="preserve"><value>Club met ID {0} niet gevonden</value></data>
+  <data name="Team with ID {0} not found" xml:space="preserve"><value>Team met ID {0} niet gevonden</value></data>
+  <data name="load clubs" xml:space="preserve"><value>clubs te laden</value></data>
+  <data name="load teams" xml:space="preserve"><value>teams te laden</value></data>
+  <data name="load the current team" xml:space="preserve"><value>het huidige team te laden</value></data>
+  <data name="create the club" xml:space="preserve"><value>de club aan te maken</value></data>
+  <data name="update the club" xml:space="preserve"><value>de club bij te werken</value></data>
+  <data name="delete the club" xml:space="preserve"><value>de club te verwijderen</value></data>
+  <data name="create the team" xml:space="preserve"><value>het team aan te maken</value></data>
+  <data name="update the team" xml:space="preserve"><value>het team bij te werken</value></data>
+  <data name="delete the team" xml:space="preserve"><value>het team te verwijderen</value></data>
 
   <!-- Login -->
   <data name="Login" xml:space="preserve"><value>Inloggen</value></data>
@@ -510,7 +559,8 @@
   <data name="Drag players here to add as subs" xml:space="preserve"><value>Sleep spelers hierheen om ze als wissel toe te voegen</value></data>
 
   <!-- Install banner -->
-  <data name="Install GJS meiden app" xml:space="preserve"><value>Installeer GJS meiden app</value></data>
+  <data name="Install the {0} app" xml:space="preserve"><value>Installeer de {0} app</value></data>
+  <data name="Line-ups, squad and results for {0}." xml:space="preserve"><value>Opstellingen, selectie en uitslagen van {0}.</value></data>
   <data name="Install" xml:space="preserve"><value>Installeren</value></data>
   <data name="Add the app to your home screen." xml:space="preserve"><value>Zet de app op je beginscherm.</value></data>
   <data name="Tap Share, then &quot;Add to Home Screen&quot;." xml:space="preserve"><value>Tik op 'Deel' en dan op 'Zet op beginscherm'.</value></data>

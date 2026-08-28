@@ -5,6 +5,9 @@ namespace FootballFormation.Core.Security;
 public static class AppRoles
 {
     public const string Admin = nameof(UserRole.Admin);
+
+    /// Whoever manages the clubs and teams the app serves, above the admin who runs one of them.
+    public const string ApplicationAdmin = nameof(UserRole.ApplicationAdmin);
 }
 
 /// Claim types this app mints beyond the standard <see cref="System.Security.Claims.ClaimTypes"/> ones.

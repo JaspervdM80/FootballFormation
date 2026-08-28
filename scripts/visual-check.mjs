@@ -51,6 +51,7 @@ const PAGES = [
   ['stats', '/stats', true],
   ['position-development', '/stats/positions', true],
   ['users', '/users'],
+  ['teams', '/teams'],
   ['settings', '/settings'],
 ];
 

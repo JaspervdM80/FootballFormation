@@ -27,7 +27,7 @@
   in the static router, so it is evaluated per request and hears nothing afterwards — where
   `RevalidatingUserAuthenticationStateProvider` goes on checking for as long as the circuit lives.
   Before the split, revoking an account booted the tab within the revalidation interval; after it,
-  nothing did. `<InteractiveShell AdminOnly="true" />` puts the same `NotAuthorized` branch inside
+  nothing did. `<InteractiveShell RequiresRole="@AppRoles.Admin" />` puts the same `NotAuthorized` branch inside
   the island on the admin-only pages, which is what `session.spec.js` pins. The public pages need no
   gate — losing the role there re-renders their `AuthorizeView` blocks into the visitor view, which
   is right, and redirecting a visitor who was never signed in would be plainly wrong.

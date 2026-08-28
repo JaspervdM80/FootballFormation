@@ -9,8 +9,11 @@
                               RequiredError="@L["Name is required"]" MaxLength="100" Class="mb-3" />
                 <MudTextField @bind-Value="Username" Label="@L["Username"]" Required="true"
                               RequiredError="@L["Username is required"]" MaxLength="50" Class="mb-3" />
-                <MudSelect @bind-Value="Role" Label="@L["Role"]" Class="mb-3">
-                    @foreach (var role in Enum.GetValues<UserRole>())
+                @* Locked rather than absent when the signed-in admin may not change this account's role: an empty select would
+                   read as a page that failed to load, and offering a role UserService will refuse is a dead end. *@
+                <MudSelect @bind-Value="Role" Label="@L["Role"]" Class="mb-3" Disabled="@RoleLocked"
+                           HelperText="@(RoleLocked ? L["Only an application administrator can change this role."].Value : null)">
+                    @foreach (var role in SelectableRoles)
                     {
                         <MudSelectItem Value="role">@L[role.ToString()]</MudSelectItem>
                     }

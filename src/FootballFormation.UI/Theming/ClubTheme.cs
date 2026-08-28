@@ -4,6 +4,8 @@ namespace FootballFormation.UI.Theming;
 /// for another club means editing <see cref="Gjs"/> and nothing else. Shades are mixed where used, not stored per alpha level.
 public sealed record ClubTheme
 {
+    /// What a <see cref="FootballFormation.Core.Models.Club"/> stores instead of the styles, which are not editable.
+    public required string Name { get; init; }
 
     /// Crest red.
     public required string Primary { get; init; }
@@ -23,7 +25,9 @@ public sealed record ClubTheme
 
     public required string AccentDeep { get; init; }
 
-    public required string LogoUrl { get; init; }
+    /// A bare path under wwwroot, not a CSS value: the app bar renders it as an <c>img</c> and ToCssVariables wraps it for the
+    /// custom property, so the two cannot name different files.
+    public required string LogoPath { get; init; }
 
     /// The chip behind the crest in the app bar.
     public required string LogoBackground { get; init; }
@@ -45,6 +49,7 @@ public sealed record ClubTheme
     /// The GJS Gorinchem light theme, taken from the club crest: red shield, green banner, white page, light-green sections.
     public static readonly ClubTheme Gjs = new()
     {
+        Name = Club.DefaultTheme,
         Primary = "#e11d24",
         PrimaryBright = "#c8151c",
         PrimaryDeep = "#a3141a",
@@ -53,7 +58,7 @@ public sealed record ClubTheme
         AccentBright = "#0c7a37",
         AccentDeep = "#076b2e",
 
-        LogoUrl = "url('icons/icon-192.png')",
+        LogoPath = "icons/icon-192.png",
         LogoBackground = "#ffffff",
 
         SurfacePage = "#ffffff",
@@ -68,6 +73,17 @@ public sealed record ClubTheme
 
     public static ClubTheme Current { get; } = Gjs;
 
+    /// Every theme a club can be put on. Adding one is a code change by design — see the type comment.
+    public static readonly IReadOnlyList<ClubTheme> All = [Gjs];
+
+    /// Falls back rather than throwing: a club naming a theme this build no longer has should render in the default one, not fail.
+    public static ClubTheme Named(string? name) =>
+        All.FirstOrDefault(t => string.Equals(t.Name, name, StringComparison.OrdinalIgnoreCase)) ?? Gjs;
+
+    /// The crest to draw for a club: its own if it has one, otherwise its theme's. The one place that fallback lives.
+    public static string LogoFor(Club? club) =>
+        club?.LogoUrl is { Length: > 0 } logo ? logo : Named(club?.ThemeName).LogoPath;
+
     /// Emitted into the document head, so the tokens exist before any stylesheet that reads them.
     public string ToCssVariables() =>
         $$"""
@@ -80,7 +96,6 @@ public sealed record ClubTheme
             --club-accent-bright: {{AccentBright}};
             --club-accent-deep: {{AccentDeep}};
 
-            --club-logo: {{LogoUrl}};
             --club-logo-bg: {{LogoBackground}};
 
             --surface-page: {{SurfacePage}};

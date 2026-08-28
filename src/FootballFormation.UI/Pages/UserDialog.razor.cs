@@ -12,6 +12,9 @@ public partial class UserDialog
     /// Reset-password mode: only the password fields, for an account that already exists.
     [Parameter] public bool PasswordOnly { get; set; }
 
+    /// Whether the signed-in admin holds the application-admin role themselves — the only ones who may hand it out or take it away.
+    [Parameter] public bool CanGrantApplicationAdmin { get; set; }
+
     private MudForm Form { get; set; } = null!;
 
     private string DisplayName { get; set; } = string.Empty;
@@ -22,6 +25,13 @@ public partial class UserDialog
 
     /// A new account needs a password; an existing one gets it from Reset Password instead.
     private bool ShowPasswordFields => PasswordOnly || User is null;
+
+    /// Editing an application admin without being one: UserService refuses either direction, so the field says so instead of offering it.
+    private bool RoleLocked => !CanGrantApplicationAdmin && User?.Role == UserRole.ApplicationAdmin;
+
+    private IEnumerable<UserRole> SelectableRoles => CanGrantApplicationAdmin || RoleLocked
+        ? Enum.GetValues<UserRole>()
+        : Enum.GetValues<UserRole>().Where(r => r != UserRole.ApplicationAdmin);
 
     protected override void OnParametersSet()
     {

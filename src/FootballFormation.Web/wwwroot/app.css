@@ -1438,15 +1438,14 @@ html, body {
     white-space: nowrap;
 }
 
+/* An img rather than the --club-logo background it used to be: the crest is the club's, and a club
+   is a database row now. The chip behind it stays a token, so a transparent crest keeps its plate. */
 .app-title-logo {
     width: 28px;
     height: 28px;
     border-radius: 6px;
     background-color: var(--club-logo-bg);
-    background-image: var(--club-logo);
-    background-size: contain;
-    background-position: center;
-    background-repeat: no-repeat;
+    object-fit: contain;
     flex: none;
 }
 
@@ -1644,23 +1643,42 @@ html, body {
 
 }
 
-/* --- Users table --- */
+/* --- Users and teams tables --- */
 
-.users-table .cell-right {
+.users-table .cell-right,
+.teams-table .cell-right {
     justify-content: flex-end;
 }
 
 /* Same baseline fix as the squad table: MudMenu's plain-div wrapper sits lower
    than the inline-flex icon buttons beside it unless the row is flex. */
-.users-table .row-actions {
+.users-table .row-actions,
+.teams-table .row-actions {
     display: inline-flex;
     align-items: center;
     gap: 2px;
 }
 
-.users-table .row-actions .mud-menu {
+.users-table .row-actions .mud-menu,
+.teams-table .row-actions .mud-menu {
     display: inline-flex;
     align-items: center;
+}
+
+/* The same 26px small-icon-button box the squad table sizes up — see .players-table .row-actions
+   .mud-icon-button above for why MudBlazor lands there and why this selector needs no !important. */
+.users-table .row-actions .mud-icon-button,
+.teams-table .row-actions .mud-icon-button {
+    width: var(--action-btn-size);
+    height: var(--action-btn-size);
+    padding: 0;
+}
+
+@media (pointer: coarse) {
+    .users-table .row-actions,
+    .teams-table .row-actions {
+        gap: 0;
+    }
 }
 
 /* 599.98px is MudBlazor's xs breakpoint, where it stacks a table into per-row cards. Its
@@ -1669,7 +1687,8 @@ html, body {
    Lay the row out as a grid instead: name + role on the first line, login on the second,
    the actions hugging the right edge. */
 @media (max-width: 599.98px) {
-    .users-table .mud-table-body .mud-table-row {
+    .users-table .mud-table-body .mud-table-row,
+.teams-table .mud-table-body .mud-table-row {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto auto;
         align-items: center;
@@ -1678,25 +1697,29 @@ html, body {
         padding: 10px 14px;
     }
 
-    .users-table .cell-name {
+    .users-table .cell-name,
+.teams-table .cell-name {
         min-width: 0;
     }
 
     /* The login goes under the name, leaving the role and actions on the first line */
-    .users-table .cell-user {
+    .users-table .cell-user,
+.teams-table .cell-user {
         grid-column: 1;
         grid-row: 2;
         min-width: 0;
     }
 
-    .users-table .cell-role {
+    .users-table .cell-role,
+.teams-table .cell-role {
         grid-column: 2;
         grid-row: 1;
         justify-content: flex-end;
     }
 
     /* Spans both rows at the right edge, so a card is two lines tall rather than three */
-    .users-table .cell-actions {
+    .users-table .cell-actions,
+.teams-table .cell-actions {
         grid-column: 3;
         grid-row: 1 / span 2;
         justify-content: flex-end;
@@ -2027,4 +2050,19 @@ html, body {
     border-radius: 6px;
     font-size: 0.875rem;
     cursor: pointer;
+}
+
+/* The crest sits on the club's name rather than in a column of its own: most clubs have none, and an empty column reads as a fault. */
+.club-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.club-crest {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    border-radius: 4px;
 }

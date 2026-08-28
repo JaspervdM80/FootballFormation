@@ -19,7 +19,7 @@ Today's split: `/`, `/games`, `/players`, `/games/{id}/formation`, `/games/{id}/
 cannot show "Reconnecting…", cannot force a reload, and survives a phone suspending the app.
 
 **A page that declares a render mode opens with `<InteractiveShell />`** (or
-`<InteractiveShell AdminOnly="true" />` where it also has `[Authorize(Roles = AppRoles.Admin)]`).
+`<InteractiveShell RequiresRole="@AppRoles.Admin" />` where it also has an `[Authorize(Roles = ...)]`).
 That carries the MudBlazor providers and the revocation gate, which the layout can no longer supply:
 `MainLayout` renders **statically for every page**, because `RouteView` applies it outside the
 island and a layout cannot carry a render mode at all.

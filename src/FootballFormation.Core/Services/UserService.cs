@@ -102,6 +102,9 @@ public class UserService(
             var validation = ValidateFields(displayName, username);
             if (validation.IsFailure) return validation.To<AppUser>();
 
+            var authority = await MayChangeAsync(role);
+            if (authority.IsFailure) return authority.To<AppUser>();
+
             if (password.Length < MinPasswordLength)
                 return Result.Failure<AppUser>(PasswordTooShortKey, MinPasswordLength);
 
@@ -141,13 +144,24 @@ public class UserService(
             var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
             if (user is null) return NotFound(id);
 
+            // Both sides: taking the role away is the same authority as handing it out, and only one of them used to be checked.
+            if (user.Role != role)
+            {
+                var authority = await MayChangeAsync(user.Role, role);
+                if (authority.IsFailure) return authority;
+            }
+
             username = username.Trim();
             if (await db.Users.AnyAsync(u => u.Username == username && u.Id != id, cancellationToken))
                 return Result.Failure(DuplicateLoginKey, username);
 
             // Demoting the last admin locks everyone out of the pages that create users, short of editing the database by hand.
-            if (user.Role == UserRole.Admin && role != UserRole.Admin && await IsLastAdminAsync(db, id, cancellationToken))
+            if (user.Role.GrantsAdmin() && !role.GrantsAdmin() && await IsLastAdminAsync(db, id, cancellationToken))
                 return Result.Failure(LastAdminKey);
+
+            if (user.Role == UserRole.ApplicationAdmin && role != UserRole.ApplicationAdmin
+                && await IsLastApplicationAdminAsync(db, id, cancellationToken))
+                return Result.Failure(LastApplicationAdminKey);
 
             user.DisplayName = displayName.Trim();
             user.Username = username;
@@ -194,8 +208,15 @@ public class UserService(
             var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
             if (user is null) return NotFound(id);
 
-            if (user.Role == UserRole.Admin && await IsLastAdminAsync(db, id, cancellationToken))
+            // Deleting an application admin revokes the role as surely as demoting one does.
+            var authority = await MayChangeAsync(user.Role);
+            if (authority.IsFailure) return authority;
+
+            if (user.Role.GrantsAdmin() && await IsLastAdminAsync(db, id, cancellationToken))
                 return Result.Failure(LastAdminKey);
+
+            if (user.Role == UserRole.ApplicationAdmin && await IsLastApplicationAdminAsync(db, id, cancellationToken))
+                return Result.Failure(LastApplicationAdminKey);
 
             db.Users.Remove(user);
             await db.SaveChangesAsync(cancellationToken);
@@ -215,7 +236,7 @@ public class UserService(
         {
             DisplayName = "Administrator",
             Username = "admin",
-            Role = UserRole.Admin,
+            Role = UserRole.ApplicationAdmin,
             SecurityStamp = NewStamp(),
             MustChangePassword = true
         };
@@ -254,7 +275,24 @@ public class UserService(
 
     private static Task<bool> IsLastAdminAsync(
         AppDbContext db, int excludingId, CancellationToken cancellationToken) =>
-        db.Users.AllAsync(u => u.Id == excludingId || u.Role != UserRole.Admin, cancellationToken);
+        db.Users.AllAsync(
+            u => u.Id == excludingId || (u.Role != UserRole.Admin && u.Role != UserRole.ApplicationAdmin),
+            cancellationToken);
+
+    private static Task<bool> IsLastApplicationAdminAsync(
+        AppDbContext db, int excludingId, CancellationToken cancellationToken) =>
+        db.Users.AllAsync(u => u.Id == excludingId || u.Role != UserRole.ApplicationAdmin, cancellationToken);
+
+    /// An ordinary admin passes RunAdminAsync, so /users would otherwise be a way to promote yourself — or to strip an application
+    /// admin of a role you could not hand back. Every role entering or leaving an account is passed through here.
+    private async Task<Result> MayChangeAsync(params UserRole[] roles)
+    {
+        if (!roles.Contains(UserRole.ApplicationAdmin)) return Result.Success();
+
+        return await currentUser.IsApplicationAdminAsync()
+            ? Result.Success()
+            : Result.Failure(NotApplicationAdminKey);
+    }
 
     private static Result ValidateFields(string displayName, string username)
     {
@@ -271,6 +309,8 @@ public class UserService(
 
     private const string DuplicateLoginKey = "A user with username {0} already exists";
     private const string LastAdminKey = "The last administrator cannot be removed or demoted";
+    private const string LastApplicationAdminKey = "The last application administrator cannot be removed or demoted";
+    private const string NotApplicationAdminKey = "Only an application administrator can grant that role";
     private const string PasswordTooShortKey = "Password must be at least {0} characters";
 
     public enum PasswordChangeResult

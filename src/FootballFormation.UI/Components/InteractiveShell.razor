@@ -11,9 +11,9 @@
 
 @* AuthorizeRouteView still guards the route, but it lives in the static router and is evaluated once per request — this is the same
    NotAuthorized branch inside the island, which goes on hearing the revalidating provider. *@
-@if (AdminOnly)
+@if (RequiresRole is not null)
 {
-    <AuthorizeView Roles="@AppRoles.Admin">
+    <AuthorizeView Roles="@RequiresRole">
         <NotAuthorized>
             <RedirectToLogin />
         </NotAuthorized>
@@ -21,7 +21,7 @@
 }
 
 @code {
-    /// Mirrors the page's own <c>[Authorize(Roles = AppRoles.Admin)]</c>: the attribute is read by the router, this inside the island,
-    /// and only the island is still listening once the page is up.
-    [Parameter] public bool AdminOnly { get; set; }
+    /// Mirrors the page's own <c>[Authorize(Roles = ...)]</c>: the attribute is read by the router, this inside the island, and only the
+    /// island is still listening once the page is up. Null on a page open to everyone.
+    [Parameter] public string? RequiresRole { get; set; }
 }

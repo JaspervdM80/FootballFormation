@@ -195,6 +195,49 @@ public class AuthorizationTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task The_clubs_and_teams_are_a_public_read()
+    {
+        await TeamsAndClubs.EnsureSeededAsync("GJS", "MO15-2");
+
+        CurrentUser.IsAdmin = false;
+        CurrentUser.IsApplicationAdmin = false;
+
+        Assert.True((await TeamsAndClubs.GetClubsAsync()).IsSuccess);
+        Assert.True((await TeamsAndClubs.GetTeamsAsync()).IsSuccess);
+        Assert.True((await TeamsAndClubs.GetCurrentAsync()).IsSuccess);
+    }
+
+    [Fact]
+    public async Task An_admin_who_is_not_an_application_admin_cannot_add_a_team()
+    {
+        var club = (await TeamsAndClubs.CreateClubAsync(new Club { Name = "GJS" })).Value!;
+
+        // The rung this role exists for: running a team is not the same authority as deciding which teams the app serves.
+        CurrentUser.IsApplicationAdmin = false;
+
+        var team = await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "MO15-2" });
+
+        Assert.True(team.IsFailure);
+        Assert.Equal(ServiceOperation.NotAllowedKey, team.ErrorKey);
+        Assert.Empty(Read().Teams);
+    }
+
+    [Fact]
+    public async Task An_admin_who_is_not_an_application_admin_cannot_add_or_delete_a_club()
+    {
+        var club = (await TeamsAndClubs.CreateClubAsync(new Club { Name = "GJS" })).Value!;
+
+        CurrentUser.IsApplicationAdmin = false;
+
+        var created = await TeamsAndClubs.CreateClubAsync(new Club { Name = "SV Zwaluwen" });
+        var deleted = await TeamsAndClubs.DeleteClubAsync(club.Id);
+
+        Assert.Equal(ServiceOperation.NotAllowedKey, created.ErrorKey);
+        Assert.Equal(ServiceOperation.NotAllowedKey, deleted.ErrorKey);
+        Assert.Single(Read().Clubs);
+    }
+
+    [Fact]
     public async Task An_anonymous_caller_cannot_write_a_comment()
     {
         var season = await SeedSeasonAsync();

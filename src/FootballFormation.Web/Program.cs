@@ -84,11 +84,13 @@ try
     builder.Services.AddScoped<MatchSubstitutionService>();
     builder.Services.AddScoped<MatchPreferencesService>();
     builder.Services.AddScoped<UserService>();
+    builder.Services.AddScoped<TeamService>();
     builder.Services.AddScoped<StatsService>();
 
     builder.Services.AddSingleton<LiveMatchNotifier>();
 
     builder.Services.AddScoped<SeasonState>();
+    builder.Services.AddScoped<TeamState>();
     builder.Services.AddScoped<NavigationTrail>();
 
     // A static render and a circuit are separate scopes, but the circuit is created during the /_blazor request, which carries the same
@@ -194,6 +196,10 @@ try
 
         var userService = scope.ServiceProvider.GetRequiredService<UserService>();
         await userService.EnsureAdminSeededAsync();
+
+        // The team this deployment has been serving since before there was anything above a season
+        var teamService = scope.ServiceProvider.GetRequiredService<TeamService>();
+        await teamService.EnsureSeededAsync("GJS", "MO15-2");
 
         // A fresh install has no games for the migration's backfill to derive seasons from
         var seasonService = scope.ServiceProvider.GetRequiredService<SeasonService>();

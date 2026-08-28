@@ -1,0 +1,20 @@
+@inject IStringLocalizer<Strings> L
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="Form">
+            <MudTextField @bind-Value="Name" Label="@L["Team"]" Required="true"
+                          RequiredError="@L["Team name is required"]" MaxLength="50" Class="mb-3" />
+            <MudSelect @bind-Value="ClubId" Label="@L["Club"]" T="int">
+                @foreach (var club in Clubs)
+                {
+                    <MudSelectItem Value="club.Id">@club.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">@L["Save"]</MudButton>
+    </DialogActions>
+</MudDialog>
