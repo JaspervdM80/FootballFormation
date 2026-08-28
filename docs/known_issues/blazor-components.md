@@ -35,6 +35,18 @@
   `: SeasonAwarePage` on the `public partial class` gives *CS0263: Partial declarations must not
   specify different base classes*, because the generated Razor partial already declares
   `: ComponentBase`. Use `@inherits SeasonAwarePage` in the markup file.
+- **Enhanced navigation sends the destination as the `Referer`, not the page being left.** Blazor
+  pushes the new URL into history *before* it fetches it, so the fetch's referrer is the document
+  URL it has already changed: request `/players/3/stats` from `/trainings` and the header reads
+  `/players/3/stats`. Every in-app link is an enhanced navigation, so **the whole of the back
+  arrow's trail was dead** — `NavigationTrail` compared the referrer against the current path, found
+  them equal, and fell through to the page's `Fallback` every time. It read as a wrong destination
+  rather than as no destination ("training → player → back went to the squad"), and it was invisible
+  wherever the fallback happened to be where the visitor came from. Only a link opting out with
+  `data-enhance-nav="false"` — or a bookmark, or a refresh — ever sent a true referrer, which is why
+  it looked like it worked. The trail is the `ff.trail` cookie now, written by a middleware in
+  `Program.cs`; see [patterns](../patterns/ui-state-and-navigation.md#ui-state-services). Anything
+  else reaching for `Referer` in this app is wrong for the same reason.
 - **A generic dialog result can't tell `default` from "cancelled"**: `PromptAsync<TDialog, TResult>`
   is constrained to `class` for that reason. A dialog closing with `0` is otherwise
   indistinguishable from the user pressing Cancel, so one returning a value type needs its own

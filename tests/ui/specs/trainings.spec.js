@@ -175,6 +175,16 @@ test('a player marked unavailable is counted on the row and named in its tooltip
   await expect(badge).toHaveAttribute('title', ABSENTEE);
 });
 
+test('the form names the absentees it is only able to count', async ({ page }) => {
+  await addTraining(page, { note: 'Wie was er niet', absentee: ABSENTEE });
+
+  // The picker itself shows "1 player(s) unavailable" and nothing else, so who was away was a
+  // dropdown away from a coach reading the evening back.
+  const panel = page.locator('.mud-dialog');
+  await clickFor(trainingRow(page, 'Wie was er niet').getByTitle('Edit'), () => expect(panel).toBeVisible());
+  await expect(panel.locator('.mud-typography-caption', { hasText: ABSENTEE })).toBeVisible();
+});
+
 test('a note can be corrected afterwards', async ({ page }) => {
   await addTraining(page, { note: 'Verkeerd genoteerd' });
 
@@ -279,6 +289,21 @@ test('a session that did not take place is left out of the attendance', async ({
 
   await addTraining(page, { note: 'Opkomst: nog een', past: true });
   expect(await sessionsHeld(page)).toBe(before + 1);
+});
+
+test('a player opened from the register comes back to the register', async ({ page }) => {
+  test.skip(noPastDayThisMonth(), 'no earlier day this month to hold a session on');
+
+  await addTraining(page, { note: 'Opkomst: en terug', past: true });
+  const panel = await openAttendance(page);
+  await panel.locator('.attendance-row', { hasText: PRESENT }).first().click();
+  await expect(page).toHaveURL(/\/players\/\d+\/stats/);
+
+  // /players is this page's fallback, so the squad is also the answer a trail that knows nothing
+  // gives — which is what it gave for every in-app link while the trail was read off the Referer.
+  const back = page.locator('a.back-button').first();
+  await expect(back).toHaveAttribute('href', '/trainings');
+  await expect(back).toHaveAttribute('title', 'Back to Trainings');
 });
 
 test('a player marked unavailable loses that session from her attendance', async ({ page }) => {

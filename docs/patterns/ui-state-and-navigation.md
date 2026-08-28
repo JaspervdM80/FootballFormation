@@ -59,21 +59,29 @@ the visitor has been. The pattern, taking `SeasonState` as the worked example:
 - The state holds a **view** choice and never writes shared data. The picker is reachable by
   anonymous visitors, so it must not touch `Season.IsCurrent`, which is admin-owned on `/settings`.
 
-`NavigationTrail` answers the same question from the other end: **the `Referer` header**, off
-`RequestContext`. It used to keep a list of the circuit's navigations, seeded by
-`MainLayout.OnInitialized` — which stopped working when the layout became static, and was in any
-case reconstructing something the browser was already sending. Reading the header instead survives
-a refresh, which the list never did.
+`NavigationTrail` answers the same question from the other end, and it is a cookie for the same
+reason: **`ff.trail`, the last two pages served, newest first**, written by a middleware in
+`Program.cs` on every 200 `text/html` GET and read back off `RequestContext`.
 
-One gap, and it is deliberate: **a circuit's scope has no referrer**, because that scope is created
-during the `/_blazor` request, which carries cookies but not a `Referer`. So a back arrow inside an
-interactive island always takes its `Fallback`. Every page in that position — the builder, the live
-screen, the match result — is reached from `/games`, which is what its fallback already says.
+**The browser's `Referer` cannot answer this, which is what the trail used to read.** Blazor's
+enhanced navigation pushes the destination into history *before* it fetches the page, so the header
+on that fetch names the page being loaded rather than the one being left — and every in-app link is
+an enhanced navigation. `NavigationTrail` saw the current path, took its "nothing behind us" branch,
+and every back arrow in the app silently fell through to its `Fallback`. See
+[known_issues](../known_issues/blazor-components.md).
+
+Two entries rather than one, because **a circuit's scope reads the cookie its own page already
+wrote**: the /_blazor request that creates that scope carries `ff.trail` with the current page at
+the front, so the page behind it is the second entry. `Previous` therefore skips any entry that is
+the current path or that `AppNav.PageNameKey` cannot name, and both scopes answer the same — which
+is what stops a back arrow flipping destination the moment the circuit connects.
 
 Two related rules for anything that navigates:
 
 - Build URLs from `AppRoutes` (`AppRoutes.PlayerStats(id)`), never an interpolated literal.
 - Redirect away from a page that failed to load with `Trail.Redirect(...)`, not `NavigateTo`. It
-  replaces the failed page in both the trail and browser history, so neither back button walks
-  straight back into it.
+  replaces the failed page in browser history, so the browser's own back button does not walk
+  straight back into it. The failed page has already written itself to `ff.trail` and stays there as
+  the second entry — harmless, because the page redirected *to* is then the first, and it is the one
+  a back arrow offers.
 

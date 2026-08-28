@@ -10,10 +10,8 @@ public partial class BackButton
     /// Only used when there is nothing behind us — a shared link opened cold, a bookmark, a refresh. On a normal visit the trail wins.
     [Parameter, EditorRequired] public string Fallback { get; set; } = null!;
 
-    /// Resolved in one place so the tooltip and the destination cannot disagree. A page the route table cannot name is not somewhere we
-    /// offer to go back to.
-    private string Target =>
-        Trail.Previous is { } previous && AppNav.PageNameKey(previous) is not null ? previous : Fallback;
+    /// Resolved in one place so the tooltip and the destination cannot disagree.
+    private string Target => Trail.Previous ?? Fallback;
 
     private string Label => L["Back to {0}", L[AppNav.PageNameKey(Target) ?? "Start"]];
 }

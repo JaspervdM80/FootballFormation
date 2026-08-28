@@ -35,6 +35,12 @@ public partial class TrainingDialog
     /// Injured players are left out — already out of the roster for every game, so offering them here says the same thing twice.
     private List<Player> SquadPlayers => [.. Squad.FullMembers.Where(p => !Squad.IsInjured(p.Id))];
 
+    /// Off the full squad rather than the picker's list, or a player marked injured since would be recorded as absent and go unnamed.
+    private string UnavailableNames =>
+        string.Join(", ", Squad.FullMembers
+            .Where(player => UnavailablePlayerIds.Contains(player.Id))
+            .Select(player => player.DisplayName));
+
     protected override async Task OnInitializedAsync()
     {
         await SeasonState.EnsureLoadedAsync();

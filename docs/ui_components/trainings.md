@@ -95,6 +95,11 @@ through.
 Injured players are left out of the picker, as in `GameDialog`: they are out of everything already,
 and offering them says the same thing twice.
 
+**The names of the absentees are listed under the picker**, because a multi-selection `MudSelect`
+shows a count and nothing else — so reading an evening back meant opening the dropdown to see who
+was away. That line reads the squad's full members rather than the picker's list, or a player marked
+injured since would be recorded as absent and go unnamed by the one thing naming them.
+
 The date arrives pre-filled from `MatchPreferencesService.GetNextTrainingDateAsync`: the soonest
 training day in the period with no session on it yet, and once every one is taken — the ordinary
 state after the period has generated them — the soonest that has one, i.e. the next evening the team

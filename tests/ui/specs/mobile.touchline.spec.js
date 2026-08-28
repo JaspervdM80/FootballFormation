@@ -59,6 +59,26 @@ test('the squad reads as cards rather than a table squeezed sideways', async ({ 
   expect(overflow, 'the page should not scroll horizontally on a phone').toBeLessThanOrEqual(1);
 });
 
+test('a tap beside the action buttons opens the match, rather than landing in nothing', async ({ page }) => {
+  await createMatch(page, { opponent: 'FC Duimbreedte' });
+
+  const row = gameRow(page, 'FC Duimbreedte');
+  const actions = row.locator('.game-actions');
+  // A tap is dispatched at viewport coordinates with none of a click's actionability checks, so the
+  // card has to be brought into the middle of the screen before anything is measured off it.
+  await row.evaluate(card => card.scrollIntoView({ block: 'center' }));
+  const strip = await actions.boundingBox();
+  const firstButton = await actions.locator('.action-btn').first().boundingBox();
+
+  // Below 600px that row is a line of its own at the full width of the card, so the stretch to the
+  // left of the buttons is most of it — and while the row stopped the click for all of them, every
+  // tap landing there was swallowed.
+  expect(firstButton.x - strip.x, 'no empty stretch left of the buttons to tap in').toBeGreaterThan(20);
+  await page.touchscreen.tap((strip.x + firstButton.x) / 2, strip.y + strip.height / 2);
+
+  await expect(page).toHaveURL(/\/games\/\d+\/formation/);
+});
+
 test('a match card says its venue in words, which the edge stripe alone never did', async ({ page }) => {
   await createMatch(page, { opponent: 'FC Thuisploeg', venue: 'Home' });
 

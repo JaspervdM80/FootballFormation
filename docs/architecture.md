@@ -169,6 +169,8 @@ State/
   SeasonState.cs              — Scoped: the selected season, shared by the layout and the pages
   SeasonPreference.cs         — That choice in a cookie for 8h, so a deploy's dropped circuit
                                 does not reset it. Writes it; App.razor/Routes read it
+  NavigationTrailCookie.cs    — The last two pages served, in a cookie because enhanced navigation
+                                sends the destination as the Referer. Program.cs writes it
 Helpers/
   PitchPositionHelper.cs      — Maps PlayerPosition → (left%, top%) coordinates
   UiFeedback.cs               — Snackbar.Report()/ReportFailure() over Result (translates the error,
@@ -183,7 +185,7 @@ Theming/
 Layout/
   MainLayout.razor(.cs)       — MudBlazor layout, club light theme, app-bar nav + drawer, providers.
                                 Both nav renderings are <NavItems />, so a menu change is one edit
-                                in AppNav.Menu. Also starts the NavigationTrail for the circuit.
+                                in AppNav.Menu.
 Security/
   CircuitCurrentUser.cs       — Core's ICurrentUser, answered from the circuit's auth state. The
                                 implementation every RunAdminAsync depends on; it answers false for

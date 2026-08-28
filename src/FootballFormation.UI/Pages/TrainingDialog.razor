@@ -28,6 +28,13 @@
                         </MudSelectItem>
                     }
                 </MudSelect>
+                @* The picker itself only ever shows a count, so who was away is otherwise a dropdown away. *@
+                @if (UnavailableNames is { Length: > 0 } names)
+                {
+                    <MudText Typo="Typo.caption" Class="d-block mb-3" Style="color: var(--ink-muted);">
+                        @names
+                    </MudText>
+                }
             }
             <MudTextField @bind-Value="Notes" Label="@L["Notes"]" Lines="3" MaxLength="2000"
                           Placeholder="@(DidNotTakePlace

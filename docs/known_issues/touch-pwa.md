@@ -67,6 +67,22 @@
   **The audit only ever sees six because `visual-check.mjs` seeds its game dated *today*.** Move
   that date and the widest row the app has quietly stops being measured, with nothing failing to
   say so.
+- **Splitting it onto its own line then made the whole line swallow taps.** Reported from a phone:
+  tapping a match card does nothing, "only when you tap directly on the name". The action row
+  carried one `@onclick:stopPropagation` for all its buttons, which is free while the row is only as
+  wide as they are — and below 600px it is the full width of the card. So every tap in the stretch
+  to the left of the buttons hit that div and was stopped there: a fifth of the card for an admin on
+  match day, and **most of it for a visitor**, who sees one button on a line 300px wide. Nothing is
+  measurable about it — `elementFromPoint` reports the row, the buttons all clear 44px, and the
+  screenshot shows empty space. Each button stops its own click now (`Games.razor`), so the empty
+  stretch belongs to the card again. `/trainings` never had it: its action row is content-sized and
+  right-aligned with `margin-left: auto`, and a margin is not part of the box that swallows a tap.
+- **iOS centres a time field's value where `text-align` cannot reach it.** "Aanvangst" reads centred
+  on a phone and left-aligned everywhere else, because WebKit draws the value inside
+  `::-webkit-date-and-time-value` and centres it there — the rule on the input styles a box whose
+  content it does not own. Chromium has no such pseudo-element, so the phone this was reported from
+  is the only place it shows and the desktop capture proves nothing. Both rules are in app.css: the
+  input's own for Firefox, the pseudo-element's for WebKit.
 - **A width-only media query does not cover a phone.** Turned sideways, a 390px-tall phone is 844px
   wide and every `max-width: 599.98px` rule stops applying — while the thumb does not change size.
   The picker block keys off `(max-width: 599.98px), (max-height: 559.98px)` for exactly this reason,
