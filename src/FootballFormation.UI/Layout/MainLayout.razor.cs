@@ -1,3 +1,4 @@
+using FootballFormation.UI.State;
 using FootballFormation.UI.Theming;
 using Microsoft.AspNetCore.Components.Authorization;
 
@@ -6,11 +7,14 @@ namespace FootballFormation.UI.Layout;
 public partial class MainLayout
 {
     [Inject] private NavigationManager Navigation { get; set; } = null!;
+    [Inject] private TeamState Team { get; set; } = null!;
 
     [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
+        await Team.EnsureLoadedAsync();
+
         if (AuthState is not null && (await AuthState).User.MustChangePassword())
             EnforcePasswordChange();
     }

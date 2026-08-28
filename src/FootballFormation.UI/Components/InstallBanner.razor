@@ -1,5 +1,7 @@
 @namespace FootballFormation.UI.Components
+@using FootballFormation.UI.State
 @inject IStringLocalizer<Strings> L
+@inject TeamState Team
 
 @* Rendered hidden and handed to js/pwa.js: everything the decision needs is known only to the browser, and this markup renders on pages
    with no circuit to ask it over. The strings stay localized here, because the resx is the server's. *@
@@ -13,7 +15,7 @@
     <div class="install-banner-body">
         <MudIcon Icon="@Icons.Material.Filled.InstallMobile" Color="Color.Primary" />
         <div style="min-width: 0;">
-            <MudText Typo="Typo.subtitle2">@L["Install GJS meiden app"]</MudText>
+            <MudText Typo="Typo.subtitle2">@L["Install the {0} app", Team.DisplayName]</MudText>
             <MudText Typo="Typo.caption" data-install-instruction>@L["Add the app to your home screen."]</MudText>
         </div>
     </div>

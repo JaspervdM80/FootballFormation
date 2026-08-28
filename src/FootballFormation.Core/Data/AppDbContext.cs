@@ -15,6 +15,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Training> Trainings => Set<Training>();
     public DbSet<MatchPreferences> MatchPreferences => Set<MatchPreferences>();
     public DbSet<AppUser> Users => Set<AppUser>();
+    public DbSet<Club> Clubs => Set<Club>();
+    public DbSet<Team> Teams => Set<Team>();
 
     /// Each entity's mapping lives beside it in Data/Configurations — the delete behaviours especially are reasoned per entity, and are
     /// far easier to review one aggregate at a time. See docs/models/enums-and-relationships.md.

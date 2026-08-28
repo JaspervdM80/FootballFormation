@@ -56,7 +56,7 @@ test.describe('an anonymous visitor', () => {
   });
 
   test('is sent to the login page by an admin-only route', async ({ page }) => {
-    for (const path of ['/settings', '/users', '/stats/positions', '/trainings']) {
+    for (const path of ['/settings', '/users', '/teams', '/stats/positions', '/trainings']) {
       await page.goto(path, { waitUntil: 'domcontentloaded' });
       await page.waitForURL(/\/login/, { timeout: 15_000 });
 
@@ -103,6 +103,7 @@ test.describe('an admin', () => {
     for (const [path, heading, open] of [
       ['/settings', 'Match Preferences', goto],
       ['/users', 'Users', goto],
+      ['/teams', 'Teams', goto],
       ['/stats/positions', 'Position Development', gotoRendered],
       ['/trainings', 'Trainings', goto],
     ]) {

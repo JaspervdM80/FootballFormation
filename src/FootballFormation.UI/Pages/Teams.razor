@@ -1,0 +1,100 @@
+@page "/teams"
+@using FootballFormation.UI.Theming
+@attribute [Authorize(Roles = AppRoles.ApplicationAdmin)]
+@inherits CancellableComponent
+@rendermode InteractiveServer
+
+@* See InteractiveShell: the providers and the session gate this page no longer inherits, because
+   the layout renders statically. *@
+<InteractiveShell RequiresRole="@AppRoles.ApplicationAdmin" />
+
+<PageTitle>@L["Teams"]</PageTitle>
+
+<PageHeader Class="mb-6" Title="@L["Teams"]"
+            Subtitle="@L["The clubs and teams this app serves."]">
+    <Actions>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Shield"
+                   OnClick="OpenAddClubDialog">
+            @L["Add Club"]
+        </MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.GroupAdd"
+                   Disabled="@(_clubs is null || _clubs.Count == 0)"
+                   OnClick="OpenAddTeamDialog">
+            @L["Add Team"]
+        </MudButton>
+    </Actions>
+</PageHeader>
+
+@if (_teams is null || _clubs is null)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+    return;
+}
+
+<MudTable Items="_teams" Hover="true" Dense="true" Elevation="2" T="Team"
+          Class="teams-table stacked-table" Style="border-radius: 16px;">
+    <HeaderContent>
+        <MudTh>@L["Team"]</MudTh>
+        <MudTh>@L["Club"]</MudTh>
+        <MudTh Class="cell-right"></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="@L["Team"]" Class="cell-name">
+            <span style="font-weight: 600; color: var(--ink);">@context.Name</span>
+            @if (context.Id == _currentTeamId)
+            {
+                <span class="badge-teal" style="margin-left: 6px;">@L["Selected"]</span>
+            }
+        </MudTd>
+        <MudTd DataLabel="@L["Club"]" Class="cell-user">
+            <span style="color: var(--ink-muted);">@context.Club?.Name</span>
+        </MudTd>
+        <MudTd Class="cell-right cell-actions">
+            <span class="row-actions">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                               Style="color: var(--club-primary-bright);"
+                               aria-label="@L["Edit Team"]"
+                               OnClick="() => OpenEditTeamDialog(context)" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                               Style="color: var(--ink-subtle);"
+                               aria-label="@L["Delete Team"]"
+                               OnClick="() => DeleteTeam(context)" />
+            </span>
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+<MudText Typo="Typo.h6" Class="mt-8 mb-3">@L["Clubs"]</MudText>
+
+<MudTable Items="_clubs" Hover="true" Dense="true" Elevation="2" T="Club"
+          Class="teams-table stacked-table" Style="border-radius: 16px;">
+    <HeaderContent>
+        <MudTh>@L["Club"]</MudTh>
+        <MudTh>@L["Theme"]</MudTh>
+        <MudTh Class="cell-right"></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="@L["Club"]" Class="cell-name">
+            <span class="club-name">
+                <img src="@ClubTheme.LogoFor(context)" alt="" class="club-crest" />
+                <span style="font-weight: 600; color: var(--ink);">@context.Name</span>
+            </span>
+        </MudTd>
+        <MudTd DataLabel="@L["Theme"]" Class="cell-role">
+            @* The styles behind a theme are compiled in, so this names one rather than describing it. *@
+            <span class="badge-gold">@context.ThemeName</span>
+        </MudTd>
+        <MudTd Class="cell-right cell-actions">
+            <span class="row-actions">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                               Style="color: var(--club-primary-bright);"
+                               aria-label="@L["Edit Club"]"
+                               OnClick="() => OpenEditClubDialog(context)" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                               Style="color: var(--ink-subtle);"
+                               aria-label="@L["Delete Club"]"
+                               OnClick="() => DeleteClub(context)" />
+            </span>
+        </MudTd>
+    </RowTemplate>
+</MudTable>

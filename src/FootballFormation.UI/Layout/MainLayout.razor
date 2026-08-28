@@ -16,8 +16,8 @@
         </label>
         @* The title is the home link — which is why the menu has no Start item, in either rendering *@
         <a href="@AppRoutes.Home" class="app-title-link ml-2 mr-8" aria-label="@L["Start"]">
-            <span class="app-title-logo" aria-hidden="true"></span>
-            <span class="app-title-text">GJS Meiden</span>
+            <img class="app-title-logo" src="@Team.LogoUrl" alt="" />
+            <span class="app-title-text">@Team.DisplayName</span>
         </a>
         <div class="d-flex gap-1 topbar-nav">
             <NavItems />
@@ -65,8 +65,8 @@
 
     <aside class="app-drawer" style="padding-top: env(safe-area-inset-top, 0px);">
         <a href="@AppRoutes.Home" class="app-title-link pa-4" aria-label="@L["Start"]">
-            <span class="app-title-logo" aria-hidden="true"></span>
-            <span class="app-title-text">GJS Meiden</span>
+            <img class="app-title-logo" src="@Team.LogoUrl" alt="" />
+            <span class="app-title-text">@Team.DisplayName</span>
         </a>
         <div class="drawer-season-picker">
             <SeasonPicker />

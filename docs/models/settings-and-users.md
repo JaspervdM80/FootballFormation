@@ -93,6 +93,14 @@ reach back into last season's row.
 Nothing an account owns can make it undeletable. The one reference to it — `GameComment.AuthorId` —
 is `SetNull`, so deleting a user leaves their comments in place, unattributed.
 
+**There are two rungs, and the upper one implies the lower.** `Admin` runs a team — the squad, the
+fixtures, the live match. `ApplicationAdmin` decides which clubs and teams the app serves at all, and
+is the only role that can grant itself to anyone else. `Role` stays a single column: `PrincipalFor`
+mints a second `Admin` role claim for an application admin, so every existing
+`[Authorize(Roles = AppRoles.Admin)]` keeps holding without knowing the new member exists. In C#,
+ask `role.GrantsAdmin()` rather than comparing with `UserRole.Admin`, which would read an application
+admin as not being an admin at all.
+
 **The role is the grant.** `[Authorize(Roles = AppRoles.Admin)]` and
 `<AuthorizeView Roles="@AppRoles.Admin">` match `Role.ToString()`, which `AppRoles` ties back to the
 enum member name — so renaming a `UserRole` member breaks the build rather than quietly
@@ -115,6 +123,49 @@ before the change kept its authority until someone reloaded — and because `Cir
 that same provider, so did the write guard on every service.
 
 `UserService.DeleteAsync` and `UpdateAsync` both refuse to remove or demote the **last** Admin —
-the one operation with no way back short of editing the database by hand. `EnsureAdminSeededAsync`
-runs on every startup and does nothing once any account exists, so a changed password survives.
+the one operation with no way back short of editing the database by hand. The same pair of rules
+applies again to the last **ApplicationAdmin**, for the same reason one rung up: nobody else can hand
+the role back.
+
+**Every role entering *or leaving* an account goes through `MayChangeAsync`**, which asks
+`ICurrentUser.IsApplicationAdminAsync()` rather than relying on `RunAdminAsync`. Both directions
+matter and it is easy to guard only one: without the *revoke* half, an ordinary admin could demote or
+delete an application admin — a role they could not hand back — simply because a second application
+admin existed and the last-of-their-kind rule therefore did not fire.
+`An_admin_cannot_demote_an_application_admin` and `An_admin_cannot_delete_an_application_admin` pin
+the two halves separately, because fixing one does not fix the other. `EnsureAdminSeededAsync` runs on every startup, does nothing once any account exists so a
+changed password survives, and seeds its account as an `ApplicationAdmin` — otherwise a fresh install
+would have nobody who could reach `/teams`.
+
+## Club and Team (tables `Clubs`, `Teams`)
+The first thing in this app that sits **above** a season. Nothing hangs off them yet: seasons, games
+and players still belong to the deployment, and `TeamService.GetCurrentAsync()` always answers with
+the first team there is. It exists as the seam a chosen team will come from — see
+[#108](https://github.com/JaspervdM80/FootballFormation/issues/108) for the fork that decides whether
+that ever becomes a real choice.
+
+| Property | Type | Notes |
+|---|---|---|
+| Club.Name | string(100) | **Unique index** |
+| Club.LogoUrl | string(255)? | A path under `wwwroot`. Null falls back to the theme's own crest |
+| Club.ThemeName | string(50) | Names a `ClubTheme` preset, not a set of colours — the styles are compiled in and not editable. `ClubTheme.Named` falls back to the default rather than throwing |
+| Team.ClubId | int | FK, **Restrict** |
+| Team.Name | string(50) | **Unique with ClubId** — two clubs may each have an MO15-2 |
+
+`TeamService` refuses to delete a club that still has teams, and refuses to delete **the team
+`GetCurrentAsync` answers with** — which, there being no picker, is the lowest-numbered one. That is
+stricter than a last-team rule and subsumes it: the only team is always the current one. Without it,
+deleting the current team beside another would silently move the app's title, crest and manifest onto
+a different team while every season, game and player stayed exactly where it was.
+
+`Club.LogoUrl` is validated as a **relative path**, refusing an absolute URL, a protocol-relative
+`//host/…` and a `javascript:` scheme alike — it renders into an `img` on every page for every
+anonymous visitor, and there is no Content-Security-Policy to catch it. Same two prefixes
+`Routing.IsLocalUrl` refuses, for the same reason. Every write on it goes through `ServiceOperation.RunApplicationAdminAsync`; the reads
+are public like every other read.
+
+`AddClubsAndTeams` creates both tables and promotes the deployment's lowest-numbered admin to
+`ApplicationAdmin`, rolling its security stamp so the next request mints a cookie carrying the new
+role. `TeamService.EnsureSeededAsync` then fills in GJS / MO15-2 on the next boot, and does nothing
+once any club exists.
 

@@ -17,10 +17,14 @@ public partial class Users
     /// Who is looking, so the list can mark their own row and hide its delete action.
     private int? _currentUserId;
 
+    /// The role dialog offers ApplicationAdmin only to someone who already holds it — UserService refuses the rest.
+    private bool _canGrantApplicationAdmin;
+
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateTask;
         _currentUserId = authState.User.UserId();
+        _canGrantApplicationAdmin = authState.User.IsApplicationAdmin();
 
         await LoadUsers();
     }
@@ -85,5 +89,6 @@ public partial class Users
         {
             if (user is not null) p.Add(x => x.User, user);
             p.Add(x => x.PasswordOnly, passwordOnly);
+            p.Add(x => x.CanGrantApplicationAdmin, _canGrantApplicationAdmin);
         });
 }

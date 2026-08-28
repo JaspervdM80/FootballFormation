@@ -6,4 +6,7 @@ public interface ICurrentUser
 {
     /// Async because a circuit resolves its principal through AuthenticationStateProvider, which is asynchronous.
     Task<bool> IsAdminAsync();
+
+    /// True implies <see cref="IsAdminAsync"/> is true as well.
+    Task<bool> IsApplicationAdminAsync();
 }

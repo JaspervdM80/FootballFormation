@@ -4,5 +4,5 @@
 - [Season and Squad](season-and-squad.md) — `Season`, `SeasonSquadMember`, `SeasonSquad`/`SeasonSquads`.
 - [Game](game.md) — `Game`, `GamePeriod`, `GamePlayerPosition`, `GameGoal`, `GameSubstitution`, `GameInjury`, `GameComment`.
 - [Training](training.md) — `Training`, and why it is the one thing in the app that is not a public read.
-- [Settings and Users](settings-and-users.md) — `MatchPreferences` (one row per season) and `AppUser`.
+- [Settings and Users](settings-and-users.md) — `MatchPreferences` (one row per season), `AppUser`, and the `Club`/`Team` pair above the season.
 - [Key Enums and Relationships](enums-and-relationships.md) — the enum reference and the cascade/relationship map.

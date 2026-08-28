@@ -9,6 +9,9 @@ public static class PrincipalExtensions
     public static bool IsAdmin(this ClaimsPrincipal? user) =>
         user?.IsInRole(AppRoles.Admin) == true;
 
+    public static bool IsApplicationAdmin(this ClaimsPrincipal? user) =>
+        user?.IsInRole(AppRoles.ApplicationAdmin) == true;
+
     /// Falls back to the login for cookies issued before display names existed.
     public static string? DisplayName(this ClaimsPrincipal? user) =>
         user?.FindFirst(AppClaims.DisplayName)?.Value is { Length: > 0 } name

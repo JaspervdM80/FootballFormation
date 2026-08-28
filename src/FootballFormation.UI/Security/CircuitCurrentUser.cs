@@ -13,4 +13,10 @@ public class CircuitCurrentUser(AuthenticationStateProvider authStateProvider) :
         var user = (await authStateProvider.GetAuthenticationStateAsync()).User;
         return user.IsAdmin() && !user.MustChangePassword();
     }
+
+    public async Task<bool> IsApplicationAdminAsync()
+    {
+        var user = (await authStateProvider.GetAuthenticationStateAsync()).User;
+        return user.IsApplicationAdmin() && !user.MustChangePassword();
+    }
 }

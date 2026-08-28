@@ -45,7 +45,7 @@ not be the one place a boolean argument is trusted. `AuthorizationTests` pins bo
 there is no public half of a session to hand back. Who missed a training, and the note usually
 saying why, is a personal fact rather than a team one — unlike the squad, the fixtures and the
 statistics, which exist to be shared with parents. `/trainings` carries
-`[Authorize(Roles = AppRoles.Admin)]` and the menu entry is `AdminOnly` on top of that, so nobody is
+`[Authorize(Roles = AppRoles.Admin)]` and the menu entry carries `RequiresRole` on top of that, so nobody is
 offered a link that only bounces them to `/login`. `Trainings_are_the_one_read_that_is_not_public`
 pins the service half; `authorization.spec.js` pins the route and the missing menu entry.
 
@@ -53,6 +53,26 @@ Everything else public stays genuinely public; if a third such read appears, it 
 
 `CircuitCurrentUser` answers false for an account still on its seeded password, so the first-login
 gate is a real restriction rather than a redirect that could be navigated around.
+
+## There are two rungs of authority, and the upper one is a second guard
+`ServiceOperation.RunApplicationAdminAsync` is `RunAdminAsync` asking a different question:
+`ICurrentUser.IsApplicationAdminAsync()` rather than `IsAdminAsync()`. Only `TeamService`'s writes
+and the role grant in `UserService` use it. The two are not independent — an `ApplicationAdmin` is
+minted an `Admin` role claim too (`Routing.PrincipalFor`), so every existing guard keeps holding
+unchanged and the new one is strictly narrower.
+
+The role itself is the part worth being careful about, and **it is two questions, not one**. An
+ordinary admin passes `RunAdminAsync`, so `UserService` routes every role entering *or leaving* an
+account through `MayChangeAsync`, which asks `IsApplicationAdminAsync()`:
+
+- **granting** — `CreateAsync`/`UpdateAsync` writing `UserRole.ApplicationAdmin`, or the role picker
+  on `/users` would be a self-promotion;
+- **revoking** — `UpdateAsync` replacing it and `DeleteAsync` removing the account. Guarding only the
+  grant leaves an ordinary admin able to demote or delete an application admin whenever a second one
+  exists, since the last-of-their-kind rule does not fire — and they could not hand the role back.
+
+`UserServiceTests` pins each of those separately; `AuthorizationTests` pins the service-boundary
+refusals on `TeamService`.
 
 ## The sign-in cookie has three settings that are easy to get wrong
 All three live in `Program.cs`, and each failed in a way that reads as "it logged me out again"

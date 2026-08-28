@@ -1,7 +1,8 @@
 # Key Enums and Relationships
 
 ## Key Enums
-- **UserRole** (1): Admin. See AppUser above — the member name *is* the claim value
+- **UserRole** (2): Admin, ApplicationAdmin. See AppUser above — the member name *is* the claim
+  value, and `ApplicationAdmin` implies `Admin` because `PrincipalFor` mints both claims
 - **MatchType** (3): Competition (0), Cup, Practice. Descriptive only — nothing in the reports
   branches on it. `DisplayName()` returns the English name, which is also the resx key
 - **PlayerPosition** (16 values): GK, LB, CB, RB, DEF, CDM, CM, LM, RM, CAM, MID, LW, RW, W, ST, ATT

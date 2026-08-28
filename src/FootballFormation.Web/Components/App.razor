@@ -1,5 +1,6 @@
 ﻿@using Microsoft.Extensions.Localization
 @inject IStringLocalizer<FootballFormation.UI.Strings> L
+@inject FootballFormation.UI.State.TeamState Team
 <!DOCTYPE html>
 <html lang="@System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
 
@@ -11,7 +12,7 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="GJS Meiden" />
+    <meta name="apple-mobile-web-app-title" content="@Team.DisplayName" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="icons/icon-180.png" />
     <ResourcePreloader />
@@ -67,3 +68,8 @@
 </body>
 
 </html>
+
+@code {
+    // The head renders before MainLayout, so this is what runs the one team query the whole request then shares.
+    protected override Task OnInitializedAsync() => Team.EnsureLoadedAsync();
+}

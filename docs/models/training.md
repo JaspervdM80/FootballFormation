@@ -114,7 +114,7 @@ saying why, is a personal fact rather than a team one — and the markup gate st
 the service is reached another way, which is the rule in
 [patterns](../patterns/authorization-and-auth.md#authorization-is-at-the-service-boundary-not-only-in-the-markup).
 
-The menu entry is `AdminOnly` for the same reason: a visitor offered a link that only bounces them
+The menu entry carries `RequiresRole` for the same reason: a visitor offered a link that only bounces them
 to `/login` has been told the section exists and nothing else.
 
 ## The schedule writes the sessions

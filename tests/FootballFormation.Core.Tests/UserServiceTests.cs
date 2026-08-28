@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using FootballFormation.Core.Security;
 
 namespace FootballFormation.Core.Tests;
@@ -89,12 +89,121 @@ public class UserServiceTests : ServiceTestBase
     {
         await Users.EnsureAdminSeededAsync();
         var seeded = (await Users.GetAllAsync()).Value!.Single();
-        await Users.CreateAsync("Jasper", "jasper", GoodPassword, UserRole.Admin);
+
+        // The seeded account is the application admin, so what replaces it has to be one too.
+        await Users.CreateAsync("Jasper", "jasper", GoodPassword, UserRole.ApplicationAdmin);
 
         var deleted = await Users.DeleteAsync(seeded.Id);
 
         Assert.True(deleted.IsSuccess);
         Assert.Single(await Read().Users.ToListAsync());
+    }
+
+    [Fact]
+    public async Task The_last_application_admin_cannot_be_deleted_however_many_admins_are_left()
+    {
+        await Users.EnsureAdminSeededAsync();
+        var seeded = (await Users.GetAllAsync()).Value!.Single();
+        await Users.CreateAsync("Jasper", "jasper", GoodPassword, UserRole.Admin);
+
+        // An ordinary admin cannot reach /teams and cannot grant the role back, so losing the last one is a lockout of its own.
+        var deleted = await Users.DeleteAsync(seeded.Id);
+
+        Assert.True(deleted.IsFailure);
+        Assert.Equal(2, await Read().Users.CountAsync());
+    }
+
+    [Fact]
+    public async Task The_last_application_admin_cannot_be_demoted()
+    {
+        await Users.EnsureAdminSeededAsync();
+        var seeded = (await Users.GetAllAsync()).Value!.Single();
+        await Users.CreateAsync("Jasper", "jasper", GoodPassword, UserRole.Admin);
+
+        var demoted = await Users.UpdateAsync(seeded.Id, seeded.DisplayName, seeded.Username, UserRole.Admin);
+
+        Assert.True(demoted.IsFailure);
+        Assert.Equal(UserRole.ApplicationAdmin, Read().Users.Single(u => u.Id == seeded.Id).Role);
+    }
+
+    [Fact]
+    public async Task An_admin_cannot_make_themselves_an_application_admin()
+    {
+        CurrentUser.IsApplicationAdmin = false;
+
+        var created = await Users.CreateAsync("Intruder", "intruder", GoodPassword, UserRole.ApplicationAdmin);
+
+        // RunAdminAsync lets an ordinary admin through, so without the second check the role picker on /users would be the promotion.
+        Assert.True(created.IsFailure);
+        Assert.Empty(Read().Users);
+    }
+
+    [Fact]
+    public async Task An_admin_cannot_promote_someone_else_to_application_admin()
+    {
+        var created = (await Users.CreateAsync("Jasper", "jasper", GoodPassword, UserRole.Admin)).Value!;
+
+        CurrentUser.IsApplicationAdmin = false;
+
+        var promoted = await Users.UpdateAsync(created.Id, "Jasper", "jasper", UserRole.ApplicationAdmin);
+
+        Assert.True(promoted.IsFailure);
+        Assert.Equal(UserRole.Admin, Read().Users.Single().Role);
+    }
+
+    [Fact]
+    public async Task An_admin_cannot_demote_an_application_admin()
+    {
+        await Users.EnsureAdminSeededAsync();
+        var seeded = (await Users.GetAllAsync()).Value!.Single();
+        await Users.CreateAsync("Second", "second", GoodPassword, UserRole.ApplicationAdmin);
+
+        CurrentUser.IsApplicationAdmin = false;
+
+        // Not covered by the last-application-admin rule: a second one exists, so only the authority check stands between an ordinary
+        // admin and a role they could never hand back.
+        var demoted = await Users.UpdateAsync(seeded.Id, seeded.DisplayName, seeded.Username, UserRole.Admin);
+
+        Assert.True(demoted.IsFailure);
+        Assert.Equal(UserRole.ApplicationAdmin, Read().Users.Single(u => u.Id == seeded.Id).Role);
+    }
+
+    [Fact]
+    public async Task An_admin_cannot_delete_an_application_admin()
+    {
+        await Users.EnsureAdminSeededAsync();
+        var seeded = (await Users.GetAllAsync()).Value!.Single();
+        await Users.CreateAsync("Second", "second", GoodPassword, UserRole.ApplicationAdmin);
+
+        CurrentUser.IsApplicationAdmin = false;
+
+        // Deleting the account revokes the role as surely as demoting it does, and this half had its own way through.
+        var deleted = await Users.DeleteAsync(seeded.Id);
+
+        Assert.True(deleted.IsFailure);
+        Assert.Equal(2, await Read().Users.CountAsync());
+    }
+
+    [Fact]
+    public async Task An_admin_can_still_manage_ordinary_admins()
+    {
+        await Users.EnsureAdminSeededAsync();
+        var ordinary = (await Users.CreateAsync("Coach", "coach", GoodPassword, UserRole.Admin)).Value!;
+
+        CurrentUser.IsApplicationAdmin = false;
+
+        // The guard is about the application-admin role, not about admins in general — an ordinary admin still runs the team.
+        Assert.True((await Users.UpdateAsync(ordinary.Id, "Coach K", "coach", UserRole.Admin)).IsSuccess);
+        Assert.True((await Users.DeleteAsync(ordinary.Id)).IsSuccess);
+    }
+
+    [Fact]
+    public async Task The_seeded_account_is_the_application_admin()
+    {
+        await Users.EnsureAdminSeededAsync();
+
+        // Nobody can grant the role, so a fresh install whose only account lacked it could never reach /teams at all.
+        Assert.Equal(UserRole.ApplicationAdmin, Read().Users.Single().Role);
     }
 
     [Fact]

@@ -149,7 +149,27 @@ Everything that knows a URL lives in `UI/Navigation/`. Three rules, and the whol
    app's routes (`/login`, `/not-found`), which is how the back arrow knows not to offer it.
 3. **The menu is `AppNav.Menu`**, rendered by `<NavItems />` in both the app bar and the drawer
    (`ShowIcons="true"` there). Adding an item is one line. There is deliberately **no Start item**:
-   the "GJS Meiden" title is already a home link in both places.
+   the club-and-team title is already a home link in both places.
+
+### The app's own name comes from the current team
+`TeamState` (scoped, memoized like `SeasonState`) reads `TeamService.GetCurrentAsync()` once per
+request and hands out two things: `DisplayName` — `Club.Name` + `Team.Name`, "GJS MO15-2" — and
+`LogoUrl`, the club's crest or its theme's when it has none (`ClubTheme.LogoFor`, the one place that
+fallback lives).
+
+Six places used to spell the name out and now read it from there: the app-bar title, the drawer
+title, `/`'s `<PageTitle>` and its `PageHeader`, the install banner, and
+`apple-mobile-web-app-title` in `App.razor`. The seventh, `manifest.webmanifest`, is no longer a
+file at all — `Routing.MapMinimalApi` generates it, because a static copy would be the one place a
+rename never reached and it is the name that ends up under the icon on a home screen. The icons in
+it stay files, so a crest swap is still a file drop.
+
+`App.razor` is what triggers the load: the head renders before `MainLayout`, and everything below
+awaits the same memoized task.
+
+The app-bar crest is an `<img>` now rather than the `--club-logo` background it was — the crest
+belongs to a club, and a club is a database row. `--club-logo-bg` still paints the chip behind it,
+so a transparent crest keeps its plate.
 
 ### PageHeader (`Components/PageHeader.razor`)
 Every page opens with one — heading, optional subtitle, optional back arrow, optional actions.

@@ -8,11 +8,12 @@ import { goto, gotoRendered } from '../helpers.js';
 // `bare` marks a page that renders no MudBlazor control, so there is nothing for `goto` to wait on
 // — see gotoRendered. It says nothing about whether the page has a circuit: / does, /stats does not.
 const PAGES = [
-  { path: '/', heading: 'GJS Meiden', bare: true },
+  { path: '/', heading: 'GJS MO15-2', bare: true },
   { path: '/players', heading: 'Squad' },
   { path: '/games', heading: 'Games' },
   { path: '/stats', heading: 'Statistics', bare: true },
   { path: '/users', heading: 'Users' },
+  { path: '/teams', heading: 'Teams' },
   { path: '/settings', heading: 'Match Preferences' },
   { path: '/stats/positions', heading: 'Position Development', bare: true },
 ];
@@ -30,7 +31,7 @@ for (const { path, heading, bare } of PAGES) {
 test('the app bar offers every section to an admin', async ({ page }) => {
   await gotoRendered(page, '/');
 
-  for (const section of ['Squad', 'Games', 'Season', 'Preferences', 'Users']) {
+  for (const section of ['Squad', 'Games', 'Season', 'Preferences', 'Users', 'Teams']) {
     await expect(page.locator('.mud-appbar').getByText(section, { exact: false }).first()).toBeVisible();
   }
 });

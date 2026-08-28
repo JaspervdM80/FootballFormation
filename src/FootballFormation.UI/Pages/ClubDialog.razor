@@ -1,0 +1,24 @@
+@using FootballFormation.UI.Theming
+@inject IStringLocalizer<Strings> L
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="Form">
+            <MudTextField @bind-Value="Name" Label="@L["Club"]" Required="true"
+                          RequiredError="@L["Club name is required"]" MaxLength="100" Class="mb-3" />
+            <MudTextField @bind-Value="LogoUrl" Label="@L["Logo"]" MaxLength="255" Class="mb-3"
+                          HelperText="@L["Path to an image under wwwroot. Leave empty for the theme's own crest."]" />
+            <MudSelect @bind-Value="ThemeName" Label="@L["Theme"]" T="string"
+                       HelperText="@L["The colours behind a theme are part of the app and cannot be edited here."]">
+                @foreach (var theme in ClubTheme.All)
+                {
+                    <MudSelectItem Value="theme.Name">@theme.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">@L["Save"]</MudButton>
+    </DialogActions>
+</MudDialog>
