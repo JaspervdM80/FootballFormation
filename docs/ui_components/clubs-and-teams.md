@@ -8,21 +8,30 @@ only bounces them to `/login`. `TeamService`'s writes go through
 `ServiceOperation.RunApplicationAdminAsync` underneath all three, which is the one that actually
 holds — see [authorization-and-auth](../patterns/authorization-and-auth.md).
 
-Interactive (`@rendermode InteractiveServer`), because both tables are driven by dialogs.
+Interactive (`@rendermode InteractiveServer`), because the picker and every row action are driven
+from the circuit.
 
-## Two tables, because a team is nothing without its club
+## One club at a time, because a team is nothing without its club
 
-Teams first — it is what the page is for — then the clubs beneath, since adding a club is something
-you do *in order to* add a team. **Add Team** is disabled while there are no clubs, rather than
-opening a dialog with an empty picker.
+The page is scoped to a club: a `MudSelect` picks one, the card under it shows that club, and the
+card below lists only its teams. Both cards carry a single icon button for adding — two full-width
+`MudButton`s in the `PageHeader` was the version before this one, and on a phone they overflowed the
+viewport with their labels clipped.
 
-The team currently selected carries a `Selected` badge and nothing else: there is no picker, and
-`TeamService.GetCurrentAsync()` always answers with the first team. The badge says which one the app
-would show, not which one you have chosen.
+**The picker scopes this page and nothing else.** It does not change which team the app is showing:
+`TeamService.GetCurrentAsync()` still always answers with the first team, and the `Selected` badge
+still says which one that is. `_selectedClubId` is page state, not the URL and not a cookie — this
+page is admin-only and nobody deep-links into it.
 
-Both tables reuse the `.users-table` layout in `app.css` (the selectors name both), including the
-grid it collapses into below 600px: name and badge on the first line, the secondary column on the
-second, the actions hugging the right edge across both.
+The selection is resolved rather than remembered: it survives a reload if the club is still there,
+falls back to the club of the team the app is showing, then to the first club. Adding a club selects
+it, which is what makes "add a club, then add its first team" one movement. Deleting the selected
+club drops the selection onto whatever is left.
+
+The rows are the `.season-row` shape from `/settings` rather than a `MudTable`: under a single club
+there is no second column to fill, and a flex row needs no stacked-table breakpoint to survive a
+phone. `Teams.razor.css` is scoped to this page; the `.action-btn` box and the `--action-btn-size`
+token it grows to on a touch screen stay in `app.css`.
 
 ## The theme is named, not edited
 

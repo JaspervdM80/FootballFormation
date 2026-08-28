@@ -10,6 +10,9 @@ public partial class TeamDialog
 
     [Parameter] public IReadOnlyList<Club> Clubs { get; set; } = [];
 
+    /// The club the page is scoped to, so adding a team lands in the one on screen rather than the first one.
+    [Parameter] public int DefaultClubId { get; set; }
+
     private MudForm Form { get; set; } = null!;
 
     private string Name { get; set; } = string.Empty;
@@ -24,7 +27,10 @@ public partial class TeamDialog
             return;
         }
 
-        if (ClubId == 0 && Clubs.Count > 0) ClubId = Clubs[0].Id;
+        if (ClubId != 0) return;
+
+        if (Clubs.Any(c => c.Id == DefaultClubId)) ClubId = DefaultClubId;
+        else if (Clubs.Count > 0) ClubId = Clubs[0].Id;
     }
 
     /// Duplicate names and the unknown-club case live in TeamService so they apply to every caller; this checks only what the form can.

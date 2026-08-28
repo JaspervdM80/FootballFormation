@@ -11,19 +11,7 @@
 <PageTitle>@L["Teams"]</PageTitle>
 
 <PageHeader Class="mb-6" Title="@L["Teams"]"
-            Subtitle="@L["The clubs and teams this app serves."]">
-    <Actions>
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Shield"
-                   OnClick="OpenAddClubDialog">
-            @L["Add Club"]
-        </MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.GroupAdd"
-                   Disabled="@(_clubs is null || _clubs.Count == 0)"
-                   OnClick="OpenAddTeamDialog">
-            @L["Add Team"]
-        </MudButton>
-    </Actions>
-</PageHeader>
+            Subtitle="@L["The clubs and teams this app serves."]" />
 
 @if (_teams is null || _clubs is null)
 {
@@ -31,70 +19,93 @@
     return;
 }
 
-<MudTable Items="_teams" Hover="true" Dense="true" Elevation="2" T="Team"
-          Class="teams-table stacked-table" Style="border-radius: 16px;">
-    <HeaderContent>
-        <MudTh>@L["Team"]</MudTh>
-        <MudTh>@L["Club"]</MudTh>
-        <MudTh Class="cell-right"></MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="@L["Team"]" Class="cell-name">
-            <span style="font-weight: 600; color: var(--ink);">@context.Name</span>
-            @if (context.Id == _currentTeamId)
-            {
-                <span class="badge-teal" style="margin-left: 6px;">@L["Selected"]</span>
-            }
-        </MudTd>
-        <MudTd DataLabel="@L["Club"]" Class="cell-user">
-            <span style="color: var(--ink-muted);">@context.Club?.Name</span>
-        </MudTd>
-        <MudTd Class="cell-right cell-actions">
-            <span class="row-actions">
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
-                               Style="color: var(--club-primary-bright);"
-                               aria-label="@L["Edit Team"]"
-                               OnClick="() => OpenEditTeamDialog(context)" />
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
-                               Style="color: var(--ink-subtle);"
-                               aria-label="@L["Delete Team"]"
-                               OnClick="() => DeleteTeam(context)" />
-            </span>
-        </MudTd>
-    </RowTemplate>
-</MudTable>
+<MudPaper Class="pa-6" MaxWidth="560px" Elevation="2" Style="border-radius: 16px;">
+    <div class="card-label">@L["Clubs"]</div>
 
-<MudText Typo="Typo.h6" Class="mt-8 mb-3">@L["Clubs"]</MudText>
+    <div class="club-picker">
+        <div class="club-picker-field">
+            <MudSelect T="int" Value="_selectedClubId" ValueChanged="SelectClub" Label="@L["Club"]"
+                       Disabled="@(_clubs.Count == 0)">
+                @foreach (var club in _clubs)
+                {
+                    <MudSelectItem Value="club.Id">@club.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </div>
+        <button class="action-btn action-add" title="@L["Add Club"]" aria-label="@L["Add Club"]"
+                @onclick="OpenAddClubDialog">
+            <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" />
+        </button>
+    </div>
 
-<MudTable Items="_clubs" Hover="true" Dense="true" Elevation="2" T="Club"
-          Class="teams-table stacked-table" Style="border-radius: 16px;">
-    <HeaderContent>
-        <MudTh>@L["Club"]</MudTh>
-        <MudTh>@L["Theme"]</MudTh>
-        <MudTh Class="cell-right"></MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="@L["Club"]" Class="cell-name">
-            <span class="club-name">
-                <img src="@ClubTheme.LogoFor(context)" alt="" class="club-crest" />
-                <span style="font-weight: 600; color: var(--ink);">@context.Name</span>
-            </span>
-        </MudTd>
-        <MudTd DataLabel="@L["Theme"]" Class="cell-role">
-            @* The styles behind a theme are compiled in, so this names one rather than describing it. *@
-            <span class="badge-gold">@context.ThemeName</span>
-        </MudTd>
-        <MudTd Class="cell-right cell-actions">
-            <span class="row-actions">
-                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
-                               Style="color: var(--club-primary-bright);"
-                               aria-label="@L["Edit Club"]"
-                               OnClick="() => OpenEditClubDialog(context)" />
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
-                               Style="color: var(--ink-subtle);"
-                               aria-label="@L["Delete Club"]"
-                               OnClick="() => DeleteClub(context)" />
-            </span>
-        </MudTd>
-    </RowTemplate>
-</MudTable>
+    @if (SelectedClub is not { } club)
+    {
+        <div class="teams-empty">@L["No clubs yet. Add one to get started."]</div>
+    }
+    else
+    {
+        <div class="club-summary">
+            <img src="@ClubTheme.LogoFor(club)" alt="" class="club-crest" />
+            <div class="club-summary-info">
+                <span class="club-summary-name">@club.Name</span>
+                @* The styles behind a theme are compiled in, so this names one rather than describing it. *@
+                <span class="club-summary-meta">@L["Theme {0}", club.ThemeName] · @TeamCount</span>
+            </div>
+            <div class="club-summary-actions">
+                <button class="action-btn" title="@L["Edit Club"]" aria-label="@L["Edit Club"]"
+                        @onclick="() => OpenEditClubDialog(club)">
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                </button>
+                <button class="action-btn action-delete" title="@L["Delete Club"]" aria-label="@L["Delete Club"]"
+                        @onclick="() => DeleteClub(club)">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                </button>
+            </div>
+        </div>
+    }
+</MudPaper>
+
+@if (SelectedClub is not null)
+{
+    <MudPaper Class="pa-6 mt-6" MaxWidth="560px" Elevation="2" Style="border-radius: 16px;">
+        <div class="teams-head">
+            <div class="card-label">@L["Teams"]</div>
+            <button class="action-btn action-add" title="@L["Add Team"]" aria-label="@L["Add Team"]"
+                    @onclick="OpenAddTeamDialog">
+                <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" />
+            </button>
+        </div>
+
+        @if (_clubTeams.Count == 0)
+        {
+            <div class="teams-empty">@L["No teams in this club yet."]</div>
+        }
+        else
+        {
+            <div class="team-rows">
+                @foreach (var team in _clubTeams)
+                {
+                    <div class="team-row">
+                        <span class="team-row-name">
+                            @team.Name
+                            @if (team.Id == _currentTeamId)
+                            {
+                                <span class="badge-teal">@L["Selected"]</span>
+                            }
+                        </span>
+                        <div class="team-row-actions">
+                            <button class="action-btn" title="@L["Edit Team"]" aria-label="@L["Edit Team"]"
+                                    @onclick="() => OpenEditTeamDialog(team)">
+                                <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                            </button>
+                            <button class="action-btn action-delete" title="@L["Delete Team"]" aria-label="@L["Delete Team"]"
+                                    @onclick="() => DeleteTeam(team)">
+                                <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </MudPaper>
+}

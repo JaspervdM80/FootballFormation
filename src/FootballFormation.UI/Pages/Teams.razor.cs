@@ -13,14 +13,23 @@ public partial class Teams
 
     private List<Team>? _teams;
     private List<Club>? _clubs;
+    private List<Team> _clubTeams = [];
 
     /// What the app bar was rendered with, so a rename here can tell whether it left the chrome behind.
     private string _renderedChrome = string.Empty;
 
-    /// The one the app is showing — there is no picker yet, so it marks a row rather than offering a choice.
+    /// The team the app is showing, which the picker below does not change — it scopes this page only.
     private int? _currentTeamId;
 
+    private int _selectedClubId;
+
     private string Chrome => $"{Team.DisplayName}|{Team.LogoUrl}";
+
+    private Club? SelectedClub => _clubs?.FirstOrDefault(c => c.Id == _selectedClubId);
+
+    private string TeamCount => _clubTeams.Count == 1
+        ? L["{0} team", _clubTeams.Count]
+        : L["{0} teams", _clubTeams.Count];
 
     protected override async Task OnInitializedAsync()
     {
@@ -39,6 +48,25 @@ public partial class Teams
         _clubs = Snackbar.ReportFailure(L, clubs) ? clubs.Value : [];
 
         _currentTeamId = Team.Current?.Id;
+
+        SelectClub(ResolveSelectedClub(_clubs ?? []));
+    }
+
+    private void SelectClub(int clubId)
+    {
+        _selectedClubId = clubId;
+        _clubTeams = _teams?.Where(t => t.ClubId == clubId).ToList() ?? [];
+    }
+
+    /// Keeps the club in view across a reload, falling back to the club of the team the app is showing.
+    private int ResolveSelectedClub(List<Club> clubs)
+    {
+        if (clubs.Any(c => c.Id == _selectedClubId)) return _selectedClubId;
+
+        var current = Team.Current?.ClubId;
+        if (current is int clubId && clubs.Any(c => c.Id == clubId)) return clubId;
+
+        return clubs.Count > 0 ? clubs[0].Id : 0;
     }
 
     /// MainLayout renders statically in the page-load request, so a rename made here never reaches the app bar on its own. Reloading is
@@ -94,7 +122,11 @@ public partial class Teams
         var result = await TeamService.CreateClubAsync(
             new Club { Name = edited.Name, LogoUrl = edited.LogoUrl, ThemeName = edited.ThemeName });
 
-        Snackbar.Report(L, result, L["Club {0} created", edited.Name]);
+        if (Snackbar.Report(L, result, L["Club {0} created", edited.Name]) && result.Value is { } created)
+        {
+            _selectedClubId = created.Id;
+        }
+
         await Reload();
     }
 
@@ -127,6 +159,7 @@ public partial class Teams
         DialogService.PromptAsync<TeamDialog, TeamDialog.Model>(title, p =>
         {
             p.Add(x => x.Clubs, _clubs ?? []);
+            p.Add(x => x.DefaultClubId, _selectedClubId);
             if (team is not null) p.Add(x => x.Team, team);
         });
 

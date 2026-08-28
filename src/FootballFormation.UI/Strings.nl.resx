@@ -503,8 +503,13 @@
   <data name="Clubs" xml:space="preserve"><value>Clubs</value></data>
   <data name="Team" xml:space="preserve"><value>Team</value></data>
   <data name="Theme" xml:space="preserve"><value>Thema</value></data>
+  <data name="Theme {0}" xml:space="preserve"><value>Thema {0}</value></data>
   <data name="Logo" xml:space="preserve"><value>Logo</value></data>
   <data name="Selected" xml:space="preserve"><value>GESELECTEERD</value></data>
+  <data name="{0} team" xml:space="preserve"><value>{0} team</value></data>
+  <data name="{0} teams" xml:space="preserve"><value>{0} teams</value></data>
+  <data name="No clubs yet. Add one to get started." xml:space="preserve"><value>Nog geen clubs. Voeg er een toe om te beginnen.</value></data>
+  <data name="No teams in this club yet." xml:space="preserve"><value>Nog geen teams bij deze club.</value></data>
   <data name="Add Club" xml:space="preserve"><value>Club toevoegen</value></data>
   <data name="Edit Club" xml:space="preserve"><value>Club bewerken</value></data>
   <data name="Delete Club" xml:space="preserve"><value>Club verwijderen</value></data>
