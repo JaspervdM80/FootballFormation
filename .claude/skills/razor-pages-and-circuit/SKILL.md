@@ -110,10 +110,15 @@ A circuit outlives a request and a singleton outlives the circuit.
 are `Scoped`, and since the render-mode split **a page has two scopes**: the static render of the
 chrome, and the circuit behind an interactive page's island.
 
-- Both read `RequestContext`, which the host fills in from the request that created the scope. That
-  works in either scope because a circuit is created *during* the `/_blazor` request, which carries
-  the same cookies. **It does not carry a `Referer`** — so a back arrow inside an island always
-  takes its `Fallback`.
+- Both read `RequestContext`, which the host fills in from the **cookies** on the request that
+  created the scope. That works in either scope for the season, because a circuit is created
+  *during* the `/_blazor` request, which carries the same ones. **Never reach for the `Referer`
+  header**: enhanced navigation pushes the destination into history before it fetches, so the
+  referrer names the page being loaded. The trail is the `ff.trail` cookie, written by a middleware.
+- **A circuit's `RequestContext` is a snapshot, and it does not move.** The scope is created once
+  and outlives every enhanced navigation through it, so anything on it that changes per page is
+  stale from the second navigation onwards — the season does not, the trail does. `BackButton`
+  consults the trail only where `AssignedRenderMode is null`; an island takes its `Fallback`.
 - Loading is a **memoized task** (`EnsureLoadedAsync() => _loading ??= LoadAsync()`), because a scoped
   service cannot load in its constructor and the layout and page both need the data during their own
   `OnInitializedAsync`.

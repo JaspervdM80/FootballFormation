@@ -2,24 +2,20 @@ using FootballFormation.UI.State;
 
 namespace FootballFormation.UI.Navigation;
 
-/// Read off the <c>Referer</c> header, which a circuit's own scope has none of (/_blazor) — so a back button inside an interactive
-/// island falls through to its <c>Fallback</c>.
+/// Read off the trail cookie the host writes for every page it serves — see <see cref="NavigationTrailCookie"/> for why the
+/// <c>Referer</c> header cannot answer this, and <see cref="Components.BackButton"/> for why an island never asks.
 public sealed class NavigationTrail(NavigationManager navigation, RequestContext request)
 {
-    /// Null when there is nothing usable behind: a shared link opened cold, a bookmark, or a referrer from somewhere else entirely.
+    /// Null when there is nothing usable behind: a shared link opened cold, a bookmark, or a trail of pages this app cannot name. The
+    /// page we are on is skipped rather than returned — on a refresh the cookie already carries it.
     public string? Previous
     {
         get
         {
-            if (request.Referer is not { Length: > 0 } referer) return null;
+            var current = "/" + navigation.ToBaseRelativePath(navigation.Uri);
 
-            // Same origin, and only a path this app can name: the arrow must never offer to leave the site or to go somewhere unlabelled.
-            if (!Uri.TryCreate(referer, UriKind.Absolute, out var uri)) return null;
-            if (!navigation.BaseUri.StartsWith($"{uri.Scheme}://{uri.Authority}/", StringComparison.OrdinalIgnoreCase))
-                return null;
-
-            var path = uri.PathAndQuery;
-            return path == "/" + navigation.ToBaseRelativePath(navigation.Uri) ? null : path;
+            return NavigationTrailCookie.Parse(request.TrailCookie)
+                .FirstOrDefault(path => path != current && AppNav.PageNameKey(path) is not null);
         }
     }
 

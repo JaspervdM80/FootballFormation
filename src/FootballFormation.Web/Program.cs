@@ -92,13 +92,13 @@ try
     builder.Services.AddScoped<NavigationTrail>();
 
     // A static render and a circuit are separate scopes, but the circuit is created during the /_blazor request, which carries the same
-    // cookies — so both resolve the same season without asking the browser. The referrer is what /_blazor lacks; see NavigationTrail.
+    // cookies — so both answer the same way without asking the browser. Which is why the trail is one too; see NavigationTrailCookie.
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped(sp =>
         sp.GetRequiredService<IHttpContextAccessor>().HttpContext is { } http
             ? new RequestContext(
                 http.Request.Cookies[SeasonPreference.CookieName],
-                http.Request.Headers.Referer.ToString())
+                http.Request.Cookies[NavigationTrailCookie.CookieName])
             : RequestContext.None);
 
     builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -237,6 +237,39 @@ try
     app.UseAuthorization();
     app.UseRateLimiter();
     app.UseAntiforgery();
+
+    // Where the visitor has been, for the back arrow. Recorded here rather than read off the Referer header, which enhanced navigation
+    // sends as the page being loaded — see NavigationTrailCookie.
+    app.Use(async (context, next) =>
+    {
+        var path = context.Request.Path + context.Request.QueryString;
+        var trail = NavigationTrailCookie.Parse(context.Request.Cookies[NavigationTrailCookie.CookieName]);
+
+        context.Response.OnStarting(() =>
+        {
+            // A page only: a redirect, an asset and /_blazor are all steps the visitor never stood on.
+            if (HttpMethods.IsGet(context.Request.Method)
+                && context.Response.StatusCode == StatusCodes.Status200OK
+                && context.Response.ContentType?.StartsWith("text/html", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                context.Response.Cookies.Append(
+                    NavigationTrailCookie.CookieName,
+                    NavigationTrailCookie.Format(path, trail),
+                    new CookieOptions
+                    {
+                        // No MaxAge: where a visit has been is over when the browser closes. Secure is left off for the same reason the
+                        // season cookie leaves it off — a local `dotnet run` serves plain http, and a path is not a credential.
+                        HttpOnly = true,
+                        SameSite = SameSiteMode.Lax,
+                        IsEssential = true,
+                    });
+            }
+
+            return Task.CompletedTask;
+        });
+
+        await next();
+    });
 
     app.MapMinimalApi();
 

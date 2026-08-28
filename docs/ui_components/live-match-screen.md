@@ -185,6 +185,10 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   with both the game's state and who is looking — see [known_issues](../known_issues/index.md). The
   card's horizontal padding drops to 12px there so the six still clear 44px on a 320px phone.
   `scripts/touch-targets.mjs` measures all of it — see [testing](../testing/visual-and-touch-checks.md#touch-targets).
+- **Each of those buttons stops its own click.** One `@onclick:stopPropagation` on the row around
+  them costs nothing while that row hugs its buttons — and at phone width it is the whole card, so
+  it swallowed every tap in the empty stretch beside them. The card's own click, which opens the
+  match, is what those taps were meant for. See [known_issues](../known_issues/touch-pwa.md).
 - **The venue is a word, at every width.** A `<VenueBadge Inline="true" />` trails the opponent's
   name and spells out *THUIS*/*UIT*, in the same green and blue the card's edge stripe uses. The
   stripe had been saying it alone, which is a convention nobody reads off a stripe; now the colour

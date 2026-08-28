@@ -59,21 +59,43 @@ the visitor has been. The pattern, taking `SeasonState` as the worked example:
 - The state holds a **view** choice and never writes shared data. The picker is reachable by
   anonymous visitors, so it must not touch `Season.IsCurrent`, which is admin-owned on `/settings`.
 
-`NavigationTrail` answers the same question from the other end: **the `Referer` header**, off
-`RequestContext`. It used to keep a list of the circuit's navigations, seeded by
-`MainLayout.OnInitialized` — which stopped working when the layout became static, and was in any
-case reconstructing something the browser was already sending. Reading the header instead survives
-a refresh, which the list never did.
+`NavigationTrail` answers the same question from the other end, and it is a cookie for the same
+reason: **`ff.trail`, the last two pages served, newest first**, written by a middleware in
+`Program.cs` on every 200 `text/html` GET and read back off `RequestContext`.
 
-One gap, and it is deliberate: **a circuit's scope has no referrer**, because that scope is created
-during the `/_blazor` request, which carries cookies but not a `Referer`. So a back arrow inside an
-interactive island always takes its `Fallback`. Every page in that position — the builder, the live
-screen, the match result — is reached from `/games`, which is what its fallback already says.
+**The browser's `Referer` cannot answer this, which is what the trail used to read.** Blazor's
+enhanced navigation pushes the destination into history *before* it fetches the page, so the header
+on that fetch names the page being loaded rather than the one being left — and every in-app link is
+an enhanced navigation. `NavigationTrail` saw the current path, took its "nothing behind us" branch,
+and every back arrow in the app silently fell through to its `Fallback`. See
+[known_issues](../known_issues/blazor-components.md).
+
+Two entries rather than one, for two cases that both put a useless page at the front: a **refresh**,
+whose request carries the cookie the page itself wrote, and a **`/login` or `/not-found`** the route
+table cannot name. `Previous` skips any entry that is the current path or that `AppNav.PageNameKey`
+cannot name, and takes the first that survives.
+
+**A circuit never asks.** Its scope is created once and outlives every enhanced navigation made
+through it, so the `RequestContext` it holds is the one the circuit *started* on — right for the
+first page and stale from the second onwards (`/players` → `/games` → a formation offers `/players`).
+So `BackButton` consults the trail only where `AssignedRenderMode is null`, and an island takes its
+`Fallback`. That is checked on the component rather than in `NavigationTrail` because only a
+component knows which of the two it is rendering in, and `AssignedRenderMode` reads the same in the
+prerender as in the circuit — so the arrow does not change destination under a thumb when the
+circuit connects. The three pages in that position — the builder, the live screen, the match result
+— are reached from `/games`, which is what their fallback already says.
+
+One thing a cookie cannot do that the header could: **it is one per browser, not one per tab.** Open
+a link in a second tab and the page it lands on rewrites the trail the first tab reads on its next
+navigation. Two entries and a single-page depth keep the damage to a back arrow offering a sibling
+page; nothing server-side can be per-tab, so this is accepted rather than solved.
 
 Two related rules for anything that navigates:
 
 - Build URLs from `AppRoutes` (`AppRoutes.PlayerStats(id)`), never an interpolated literal.
 - Redirect away from a page that failed to load with `Trail.Redirect(...)`, not `NavigateTo`. It
-  replaces the failed page in both the trail and browser history, so neither back button walks
-  straight back into it.
+  replaces the failed page in browser history, so the browser's own back button does not walk
+  straight back into it. The failed page has already written itself to `ff.trail` and stays there as
+  the second entry — harmless, because the page redirected *to* is then the first, and it is the one
+  a back arrow offers.
 

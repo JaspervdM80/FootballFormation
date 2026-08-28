@@ -102,19 +102,23 @@ else
                             var scoreClass = game.ScoreHome > game.ScoreAway ? "win" : game.ScoreHome < game.ScoreAway ? "loss" : "draw";
                             <span class="game-score @scoreClass">@game.ScoreboardOrder()</span>
                         }
-                        <div class="game-actions" @onclick:stopPropagation="true">
+                        @* Each button stops its own click, not the row for all of them: below 600px that row is the full width of the
+                           card, and stopping there swallowed every tap in the empty stretch beside the buttons. *@
+                        <div class="game-actions">
                             @* A match in progress is what everyone wants first, so it is not admin-gated and stays reachable whatever
                                the calendar says. Otherwise the live screen is a match-day tool, and a final score removes it entirely. *@
                             @if (game.MatchState == MatchState.InProgress)
                             {
-                                <button class="action-btn action-live action-live-now" title="@L["Live"]" @onclick="() => OpenLive(game.Id)">
+                                <button class="action-btn action-live action-live-now" title="@L["Live"]"
+                                        @onclick="() => OpenLive(game.Id)" @onclick:stopPropagation="true">
                                     <MudIcon Icon="@Icons.Material.Filled.Sensors" Size="Size.Small" />
                                 </button>
                             }
                             else if (IsMatchDay(game) && !game.HasFinalScore)
                             {
                                 <AuthorizeView Roles="@AppRoles.Admin">
-                                    <button class="action-btn action-live" title="@L["Live"]" @onclick="() => OpenLive(game.Id)">
+                                    <button class="action-btn action-live" title="@L["Live"]"
+                                            @onclick="() => OpenLive(game.Id)" @onclick:stopPropagation="true">
                                         <MudIcon Icon="@Icons.Material.Filled.Sensors" Size="Size.Small" />
                                     </button>
                                 </AuthorizeView>
@@ -124,25 +128,29 @@ else
                                    spots which cards need a lineup at a glance from the action row. *@
                                 <button class="action-btn @(IsIncomplete(game) ? "action-needs-lineup" : "")"
                                         title="@(IsIncomplete(game) ? L["Add lineup"] : L["Formation"])"
-                                        @onclick="() => OpenFormation(game.Id)">
+                                        @onclick="() => OpenFormation(game.Id)" @onclick:stopPropagation="true">
                                     <MudIcon Icon="@(IsIncomplete(game) ? Icons.Material.Outlined.GridView : Icons.Material.Filled.ViewModule)" Size="Size.Small" />
                                 </button>
                             </AuthorizeView>
-                            <button class="action-btn" title="@L["Overview"]" @onclick="() => OpenOverview(game.Id)">
+                            <button class="action-btn" title="@L["Overview"]"
+                                    @onclick="() => OpenOverview(game.Id)" @onclick:stopPropagation="true">
                                 <MudIcon Icon="@Icons.Material.Filled.Share" Size="Size.Small" />
                             </button>
                             @* A match still to be played has no result to look at and none to enter. *@
                             @if (!IsFuture(game))
                             {
-                                <button class="action-btn" title="@L["Result"]" @onclick="() => OpenResult(game.Id)">
+                                <button class="action-btn" title="@L["Result"]"
+                                        @onclick="() => OpenResult(game.Id)" @onclick:stopPropagation="true">
                                     <MudIcon Icon="@Icons.Material.Filled.Scoreboard" Size="Size.Small" />
                                 </button>
                             }
                             <AuthorizeView Roles="@AppRoles.Admin">
-                                <button class="action-btn" title="@L["Edit"]" @onclick="() => OpenEditDialog(game)">
+                                <button class="action-btn" title="@L["Edit"]"
+                                        @onclick="() => OpenEditDialog(game)" @onclick:stopPropagation="true">
                                     <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
                                 </button>
-                                <button class="action-btn action-delete" title="@L["Delete"]" @onclick="() => DeleteGame(game)">
+                                <button class="action-btn action-delete" title="@L["Delete"]"
+                                        @onclick="() => DeleteGame(game)" @onclick:stopPropagation="true">
                                     <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
                                 </button>
                             </AuthorizeView>
