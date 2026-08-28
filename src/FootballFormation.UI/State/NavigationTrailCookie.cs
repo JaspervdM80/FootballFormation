@@ -6,8 +6,8 @@ public static class NavigationTrailCookie
 {
     public const string CookieName = "ff.trail";
 
-    /// Two, because that is what the circuit's own scope needs: its /_blazor request carries the cookie the page already wrote, so the
-    /// page it came from is the second entry. One more would only be read after two pages the route table cannot name.
+    /// Two, so that a refresh — whose request carries the cookie the page itself wrote — still has the page behind it, and so that a
+    /// /login or a /not-found at the front does not take the answer with it. A third would only be read after two of those in a row.
     private const int Depth = 2;
 
     /// A hand-edited cookie is not worth an error, so anything that is not an in-app path is simply dropped.

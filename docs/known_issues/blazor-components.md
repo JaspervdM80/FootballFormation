@@ -47,6 +47,16 @@
   it looked like it worked. The trail is the `ff.trail` cookie now, written by a middleware in
   `Program.cs`; see [patterns](../patterns/ui-state-and-navigation.md#ui-state-services). Anything
   else reaching for `Referer` in this app is wrong for the same reason.
+- **A circuit's scoped services are a snapshot of the request that created it, and enhanced
+  navigation does not refresh them.** The same circuit serves every page navigated to through it, so
+  a scoped service holding something that changes per page is right for the first one and stale from
+  the second: `/players` → `/games` → a formation had the back arrow offering `/players`, from a
+  `RequestContext` captured at `/players` while the browser's own cookie was already correct. The
+  season on that same object is fine, because it does not change per page. What made this cost a
+  review rather than a bug report is that it looks right in the prerender — a fresh request scope —
+  and only the circuit's re-render is wrong, so the arrow *changes* after the page settles.
+  `AssignedRenderMode` is the test for "am I in an island", and it reads the same in both passes,
+  which `RendererInfo` does not (`Static`/false while prerendering, `Server`/true after).
 - **A generic dialog result can't tell `default` from "cancelled"**: `PromptAsync<TDialog, TResult>`
   is constrained to `class` for that reason. A dialog closing with `0` is otherwise
   indistinguishable from the user pressing Cancel, so one returning a value type needs its own

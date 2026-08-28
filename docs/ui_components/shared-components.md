@@ -180,14 +180,17 @@ it renders on pages that have no circuit to dispatch a click to. The rule lives 
 the element `MudIcon` renders is out of reach of a page's scoped stylesheet.
 
 `BackFallback` is used when there is nothing behind — a shared link, a bookmark, a page reached from
-one the route table cannot name. Pick the page someone landing cold most likely wants: `/players`
-for player stats, `/games` for the game screens, and for `/games/{id}/overview` the editor for an
-admin, `/games` for a visitor.
+one the route table cannot name — **and on every interactive page**, because a circuit's scope holds
+the trail it was created with however far the visitor has navigated through it since (see
+[patterns](../patterns/ui-state-and-navigation.md#ui-state-services)). Pick the page someone landing
+cold most likely wants: `/players` for player stats, `/games` for the game screens, and for
+`/games/{id}/overview` the editor for an admin, `/games` for a visitor.
 
-**It used to be the answer on every page, on every visit**, because the trail read the `Referer`
-header and Blazor's enhanced navigation sends the destination as the referrer — so a fallback that
-happened to be right was indistinguishable from a trail that worked. The trail is a cookie now (see
-[patterns](../patterns/ui-state-and-navigation.md#ui-state-services)); an assertion that a back arrow
-followed the visitor has to come from a page whose fallback is *not* where they came from.
+**It used to be the answer on the static pages too, on every visit**, because the trail read the
+`Referer` header and Blazor's enhanced navigation sends the destination as the referrer — so a
+fallback that happened to be right was indistinguishable from a trail that worked. An assertion that
+a back arrow followed the visitor therefore has to be made on a page with no circuit *and* whose
+fallback is not where they came from: `/players/{id}/stats` opened from `/trainings` is the one in
+`trainings.spec.js`.
 
 

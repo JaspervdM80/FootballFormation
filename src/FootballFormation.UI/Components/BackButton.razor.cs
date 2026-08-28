@@ -7,11 +7,13 @@ public partial class BackButton
     [Inject] private NavigationTrail Trail { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
-    /// Only used when there is nothing behind us — a shared link opened cold, a bookmark, a refresh. On a normal visit the trail wins.
+    /// Used when there is nothing behind us — a shared link opened cold, a bookmark — and on every interactive page. On a static page's
+    /// normal visit the trail wins.
     [Parameter, EditorRequired] public string Fallback { get; set; } = null!;
 
-    /// Resolved in one place so the tooltip and the destination cannot disagree.
-    private string Target => Trail.Previous ?? Fallback;
+    /// Resolved in one place so the tooltip and the destination cannot disagree. An island does not consult the trail at all: its circuit
+    /// holds the one its scope was created with, however far the visitor has navigated through it since.
+    private string Target => AssignedRenderMode is null ? Trail.Previous ?? Fallback : Fallback;
 
     private string Label => L["Back to {0}", L[AppNav.PageNameKey(Target) ?? "Start"]];
 }

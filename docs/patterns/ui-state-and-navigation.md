@@ -70,11 +70,25 @@ an enhanced navigation. `NavigationTrail` saw the current path, took its "nothin
 and every back arrow in the app silently fell through to its `Fallback`. See
 [known_issues](../known_issues/blazor-components.md).
 
-Two entries rather than one, because **a circuit's scope reads the cookie its own page already
-wrote**: the /_blazor request that creates that scope carries `ff.trail` with the current page at
-the front, so the page behind it is the second entry. `Previous` therefore skips any entry that is
-the current path or that `AppNav.PageNameKey` cannot name, and both scopes answer the same — which
-is what stops a back arrow flipping destination the moment the circuit connects.
+Two entries rather than one, for two cases that both put a useless page at the front: a **refresh**,
+whose request carries the cookie the page itself wrote, and a **`/login` or `/not-found`** the route
+table cannot name. `Previous` skips any entry that is the current path or that `AppNav.PageNameKey`
+cannot name, and takes the first that survives.
+
+**A circuit never asks.** Its scope is created once and outlives every enhanced navigation made
+through it, so the `RequestContext` it holds is the one the circuit *started* on — right for the
+first page and stale from the second onwards (`/players` → `/games` → a formation offers `/players`).
+So `BackButton` consults the trail only where `AssignedRenderMode is null`, and an island takes its
+`Fallback`. That is checked on the component rather than in `NavigationTrail` because only a
+component knows which of the two it is rendering in, and `AssignedRenderMode` reads the same in the
+prerender as in the circuit — so the arrow does not change destination under a thumb when the
+circuit connects. The three pages in that position — the builder, the live screen, the match result
+— are reached from `/games`, which is what their fallback already says.
+
+One thing a cookie cannot do that the header could: **it is one per browser, not one per tab.** Open
+a link in a second tab and the page it lands on rewrites the trail the first tab reads on its next
+navigation. Two entries and a single-page depth keep the damage to a back arrow offering a sibling
+page; nothing server-side can be per-tab, so this is accepted rather than solved.
 
 Two related rules for anything that navigates:
 
