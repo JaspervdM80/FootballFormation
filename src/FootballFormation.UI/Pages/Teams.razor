@@ -44,14 +44,14 @@
     }
     else
     {
-        <div class="club-summary">
+        <div class="list-row club-summary">
             <img src="@ClubTheme.LogoFor(club)" alt="" class="club-crest" />
-            <div class="club-summary-info">
-                <span class="club-summary-name">@club.Name</span>
+            <div class="list-row-info">
+                <span class="list-row-name">@club.Name</span>
                 @* The styles behind a theme are compiled in, so this names one rather than describing it. *@
-                <span class="club-summary-meta">@L["Theme {0}", club.ThemeName] · @TeamCount</span>
+                <span class="list-row-meta">@L["Theme {0}", club.ThemeName] · @TeamCount</span>
             </div>
-            <div class="club-summary-actions">
+            <div class="list-row-actions">
                 <button class="action-btn" title="@L["Edit Club"]" aria-label="@L["Edit Club"]"
                         @onclick="() => OpenEditClubDialog(club)">
                     <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
@@ -82,18 +82,18 @@
         }
         else
         {
-            <div class="team-rows">
+            <div class="list-rows">
                 @foreach (var team in _clubTeams)
                 {
-                    <div class="team-row">
-                        <span class="team-row-name">
+                    <div class="list-row">
+                        <span class="list-row-name">
                             @team.Name
                             @if (team.Id == _currentTeamId)
                             {
                                 <span class="badge-teal">@L["Selected"]</span>
                             }
                         </span>
-                        <div class="team-row-actions">
+                        <div class="list-row-actions">
                             <button class="action-btn" title="@L["Edit Team"]" aria-label="@L["Edit Team"]"
                                     @onclick="() => OpenEditTeamDialog(team)">
                                 <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />

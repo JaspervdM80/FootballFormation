@@ -476,7 +476,8 @@ html, body {
         background: color-mix(in srgb, var(--color-danger) 10%, transparent);
     }
 
-    .action-btn.action-live:hover {
+    .action-btn.action-live:hover,
+    .action-btn.action-add:hover {
         color: var(--club-on-primary);
         background: var(--club-primary-bright);
     }
@@ -493,6 +494,14 @@ html, body {
 .action-btn.action-live {
     color: var(--club-on-primary);
     background: var(--club-primary);
+}
+
+/* The add button heading a card on /teams, painted like the live button above: it leads the card
+   rather than sitting in a row of equals, and grey would leave nothing saying so. */
+.action-btn.action-add {
+    color: var(--club-on-primary);
+    background: var(--club-primary);
+    flex-shrink: 0;
 }
 
 /* A match actually under way pulses on top of that, which is what separates being played now from
@@ -656,14 +665,17 @@ html, body {
     min-width: 0;
 }
 
-/* --- Season list (settings) --- */
-.season-rows {
+/* --- List rows ---
+   The season list on /settings and the club and team rows on /teams. Global, not scoped, for the
+   same reason .action-btn is: a second page's copy of it compiles to .list-row[b-otherHash] and
+   renders as nothing. */
+.list-rows {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
-.season-row {
+.list-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -673,14 +685,17 @@ html, body {
     background: color-mix(in srgb, var(--ink) 3%, transparent);
 }
 
-.season-row-info {
+/* Grows, so a row carrying a leading crest keeps its name against it rather than letting
+   space-between push the two apart. */
+.list-row-info {
     display: flex;
     flex-direction: column;
     gap: 2px;
     min-width: 0;
+    flex: 1;
 }
 
-.season-row-name {
+.list-row-name {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -689,12 +704,12 @@ html, body {
     color: var(--ink);
 }
 
-.season-row-dates {
+.list-row-meta {
     font-size: 0.75rem;
     color: var(--ink-muted);
 }
 
-.season-row-actions {
+.list-row-actions {
     display: flex;
     align-items: center;
     gap: 2px;
@@ -704,10 +719,10 @@ html, body {
 /* Flush on a touch screen, for the same reason the game card's action row is: 2px between two
    targets is a dead gutter — too narrow to see or aim around, wide enough to swallow a tap, and
    handed by the browser to whichever neighbour has the larger contact area. A gap has to be
-   nothing or at least 8px. See scripts/touch-targets.mjs. (/settings is not in that audit's scope
+   nothing or at least 8px. See scripts/touch-targets.mjs. (Neither page is in that audit's scope
    yet — this row is the same three-button shape as the game card's, fixed with it.) */
 @media (pointer: coarse) {
-    .season-row-actions {
+    .list-row-actions {
         gap: 0;
     }
 }

@@ -9,31 +9,6 @@
     min-width: 0;
 }
 
-/* The lead action on each card, painted like the game card's live button rather than left as one
-   more grey glyph. */
-.action-add {
-    color: var(--club-on-primary);
-    background: var(--club-primary);
-    flex-shrink: 0;
-}
-
-@media (hover: hover) {
-    .action-add:hover {
-        color: var(--club-on-primary);
-        background: var(--club-primary-bright);
-    }
-}
-
-.club-summary {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 20px;
-    padding: 12px;
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--ink) 3%, transparent);
-}
-
 .club-crest {
     width: 40px;
     height: 40px;
@@ -42,39 +17,8 @@
     flex-shrink: 0;
 }
 
-.club-summary-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-    flex: 1;
-}
-
-.club-summary-name {
-    font-weight: 600;
-    font-size: 0.95rem;
-    color: var(--ink);
-}
-
-.club-summary-meta {
-    font-size: 0.75rem;
-    color: var(--ink-muted);
-}
-
-.club-summary-actions,
-.team-row-actions {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    flex-shrink: 0;
-}
-
-/* Flush on a touch screen: 2px between two targets is a dead gutter — see scripts/touch-targets.mjs. */
-@media (pointer: coarse) {
-    .club-summary-actions,
-    .team-row-actions {
-        gap: 0;
-    }
+.club-summary {
+    margin-top: 20px;
 }
 
 .teams-head {
@@ -85,34 +29,9 @@
     margin-bottom: 16px;
 }
 
+/* .card-label carries the 16px itself, so the row takes it over and the label gives it up. */
 .teams-head .card-label {
     margin-bottom: 0;
-}
-
-.team-rows {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.team-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--ink) 3%, transparent);
-}
-
-.team-row-name {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: var(--ink);
 }
 
 .teams-empty {

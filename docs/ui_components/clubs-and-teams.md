@@ -23,15 +23,19 @@ viewport with their labels clipped.
 still says which one that is. `_selectedClubId` is page state, not the URL and not a cookie — this
 page is admin-only and nobody deep-links into it.
 
-The selection is resolved rather than remembered: it survives a reload if the club is still there,
-falls back to the club of the team the app is showing, then to the first club. Adding a club selects
-it, which is what makes "add a club, then add its first team" one movement. Deleting the selected
-club drops the selection onto whatever is left.
+The selection is resolved, not stored: `_selectedClubId` is a component field, so it holds across the
+page's own `Reload()` after a write and is gone on a browser reload, which starts again from the club
+of the team the app is showing and then the first club. That is deliberate — a cookie or a route
+parameter is more machinery than a view choice on an admin-only page is worth.
 
-The rows are the `.season-row` shape from `/settings` rather than a `MudTable`: under a single club
-there is no second column to fill, and a flex row needs no stacked-table breakpoint to survive a
-phone. `Teams.razor.css` is scoped to this page; the `.action-btn` box and the `--action-btn-size`
-token it grows to on a touch screen stay in `app.css`.
+Every write follows its own result: adding a club selects it, so "add a club, then add its first
+team" is one movement, and a team saved into another club from the dialog moves the page to that club
+rather than disappearing off it. Deleting the selected club drops the selection onto whatever is left.
+
+The rows are `.list-row` in `app.css`, shared with the season list on `/settings`, rather than a
+`MudTable`: under a single club there is no second column to fill, and a flex row needs no
+stacked-table breakpoint to survive a phone. `Teams.razor.css` holds only what this page alone uses —
+the picker row, the crest and the empty states.
 
 ## The theme is named, not edited
 

@@ -86,7 +86,9 @@ public partial class Teams
 
         var result = await TeamService.CreateTeamAsync(new Team { ClubId = edited.ClubId, Name = edited.Name });
 
-        Snackbar.Report(L, result, L["Team {0} created", edited.Name]);
+        // The dialog can name another club, and a team saved outside the club on screen would otherwise land nowhere the page shows.
+        if (Snackbar.Report(L, result, L["Team {0} created", edited.Name])) _selectedClubId = edited.ClubId;
+
         await Reload();
     }
 
@@ -98,7 +100,8 @@ public partial class Teams
         var result = await TeamService.UpdateTeamAsync(
             new Team { Id = team.Id, ClubId = edited.ClubId, Name = edited.Name });
 
-        Snackbar.Report(L, result, L["Team {0} updated", edited.Name]);
+        if (Snackbar.Report(L, result, L["Team {0} updated", edited.Name])) _selectedClubId = edited.ClubId;
+
         await Reload();
     }
 
