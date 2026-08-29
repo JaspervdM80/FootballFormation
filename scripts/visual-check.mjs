@@ -141,10 +141,20 @@ if (!(await page.getByText(SEED_OPPONENT).count())) {
   await dialog.locator('input').first().fill(SEED_OPPONENT);
 
   // The dialog proposes the season's next match day, which is up to a week out. Walk the picker
-  // back to today instead: its cell is the one MudBlazor marks .mud-current, and it is either in
-  // the month the picker opened on or the one before it — never further, so one step back at most.
+  // back to today instead: its cell is either in the month the picker opened on or the one before
+  // it — never further, so one step back at most.
+  //
+  // MudBlazor marks today .mud-current, but **drops that class when today is also the selected
+  // day**, where the cell renders .mud-selected instead. Looking only for .mud-current therefore
+  // reads "today is not in this month" on a day it certainly is — which happens whenever the
+  // proposed match day falls on today — and walks the calendar backwards until it gives up. The
+  // selected cell wearing today's day-of-month is today: a proposal at most a week out cannot
+  // repeat today's number in another month.
   await clickFor(dialog.locator('.mud-input-adornment button').first(), () => popover.isVisible());
-  const todayCell = popover.locator('.mud-day.mud-current');
+  const dayNumber = new Date().getDate();
+  const todayCell = popover.locator('.mud-day.mud-current').or(
+    popover.locator('.mud-day.mud-selected:not(.mud-hidden)')
+      .filter({ hasText: new RegExp(`^${dayNumber}$`) }));
   if (!(await todayCell.count())) {
     await clickFor(popover.locator('.mud-picker-calendar-header-switch .mud-icon-button').first(),
       async () => await todayCell.count() > 0);
