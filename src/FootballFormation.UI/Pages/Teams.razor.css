@@ -1,0 +1,41 @@
+.club-picker {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.club-picker-field {
+    flex: 1;
+    min-width: 0;
+}
+
+.club-crest {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.club-summary {
+    margin-top: 20px;
+}
+
+.teams-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+/* .card-label carries the 16px itself, so the row takes it over and the label gives it up. */
+.teams-head .card-label {
+    margin-bottom: 0;
+}
+
+.teams-empty {
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+    padding: 12px 0;
+}

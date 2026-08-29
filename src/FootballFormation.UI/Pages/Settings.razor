@@ -126,23 +126,23 @@
     }
     else
     {
-        <div class="season-rows mb-4">
+        <div class="list-rows mb-4">
             @foreach (var season in _seasons)
             {
-                <div class="season-row">
-                    <div class="season-row-info">
-                        <span class="season-row-name">
+                <div class="list-row">
+                    <div class="list-row-info">
+                        <span class="list-row-name">
                             @season.Name
                             @if (season.IsCurrent)
                             {
                                 <span class="badge-teal">@L["Current"]</span>
                             }
                         </span>
-                        <span class="season-row-dates">
+                        <span class="list-row-meta">
                             @season.StartDate.ToString("MMM yyyy") – @season.EndDate.ToString("MMM yyyy")
                         </span>
                     </div>
-                    <div class="season-row-actions">
+                    <div class="list-row-actions">
                         @if (!season.IsCurrent)
                         {
                             <button class="action-btn" title="@L["Set as current"]"

@@ -72,6 +72,16 @@
   loaded CI runner only. Wait for the header text to *change* after each click before reading it
   again, and choose the direction from that settled value so an overshoot walks back instead of
   spiralling. Anything that steps a MudBlazor picker has this shape.
+- **The date picker drops `.mud-current` from today's cell when today is also the selected day**, and
+  renders it `.mud-selected mud-theme-primary` instead — so a harness that finds today by
+  `.mud-day.mud-current` finds nothing on the one day it is certainly looking at the right month.
+  `visual-check.mjs` seeds its game by walking the picker back to today from the proposed match day,
+  read "today is not in this month", and stepped backwards through the calendar until `clickFor` gave
+  up. It is **date-dependent** — it bites only when the proposal lands on today, which for a Saturday
+  match day means every Saturday — so it passes for six days and fails the Visual check on the
+  seventh. Today's cell is `.mud-current` **or** the selected cell wearing today's day-of-month; a
+  proposal at most a week out cannot repeat today's number in another month, which is what makes the
+  second half safe.
 - **A table's small-devices sort select only appears on the second render, so a phone gets an empty
   dropdown out of nowhere.** `MudTable` renders `.mud-table-smalldevices-sortselect` from the sort
   labels its header registered, and they register *during* the first render — so the select is
