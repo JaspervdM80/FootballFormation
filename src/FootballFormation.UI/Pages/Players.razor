@@ -18,7 +18,9 @@
                 var injuredCount = _squad.Injured.Count;
                 @(squadCount == 1 ? L["{0} player", squadCount] : L["{0} players", squadCount])
                 @(guestCount > 0 ? " · " + (guestCount == 1 ? L["{0} guest", guestCount] : L["{0} guests", guestCount]) : "")
-                @(injuredCount > 0 ? " · " + L["{0} injured", injuredCount] : "")
+                <AuthorizeView Roles="@AppRoles.Admin" Context="authInjuredCount">
+                    @(injuredCount > 0 ? " · " + L["{0} injured", injuredCount] : "")
+                </AuthorizeView>
                 <span> · @SeasonName</span>
             }
         </MudText>
@@ -127,11 +129,14 @@
                 {
                     <span class="shirt-inline">#@context.Player!.ShirtNumber</span>
                 }
-                @if (context.IsInjured)
-                {
-                    <MudIcon Class="injured-mark" Icon="@Icons.Material.Filled.MedicalServices"
-                             Size="Size.Small" Title="@L["Injured"]" />
-                }
+                @* Who is injured is a personal fact about a minor, not squad news — kept to admins, like the minute figures. *@
+                <AuthorizeView Roles="@AppRoles.Admin" Context="authInjury">
+                    @if (context.IsInjured)
+                    {
+                        <MudIcon Class="injured-mark" Icon="@Icons.Material.Filled.MedicalServices"
+                                 Size="Size.Small" Title="@L["Injured"]" />
+                    }
+                </AuthorizeView>
                 <span style="font-weight: 600; color: var(--ink);">@context.Player!.DisplayName</span>
                 @if (context.IsGuest)
                 {

@@ -7,7 +7,7 @@ public partial class UserDialog
     private IMudDialogInstance MudDialog { get; set; } = null!;
 
     /// Null when adding an account rather than editing one.
-    [Parameter] public AppUser? User { get; set; }
+    [Parameter] public UserSummary? User { get; set; }
 
     /// Reset-password mode: only the password fields, for an account that already exists.
     [Parameter] public bool PasswordOnly { get; set; }

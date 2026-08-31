@@ -93,6 +93,12 @@ reach back into last season's row.
 Nothing an account owns can make it undeletable. The one reference to it — `GameComment.AuthorId` —
 is `SetNull`, so deleting a user leaves their comments in place, unattributed.
 
+`UserService.GetAllAsync` reads a `UserSummary` projection (id, name, username, role), never the
+entity — the `/users` page and its dialog have no use for `PasswordHash` or `SecurityStamp`, and a
+read that returned them would put credential material one careless log line from disclosure.
+`/dev/login` is the exception that still needs the whole entity, for the stamp its cookie carries,
+so it has its own `FindDevLoginAdminAsync` rather than widening the list read.
+
 **There are two rungs, and the upper one implies the lower.** `Admin` runs a team — the squad, the
 fixtures, the live match. `ApplicationAdmin` decides which clubs and teams the app serves at all, and
 is the only role that can grant itself to anyone else. `Role` stays a single column: `PrincipalFor`

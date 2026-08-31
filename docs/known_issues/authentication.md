@@ -15,7 +15,19 @@
   site from WhatsApp, an email or a search result arrives anonymous and bounces to `/login`, and
   then a reload puts it right because that navigation is same-site. Coming back on its own is what
   makes it hard to report and easy to dismiss. `Lax` is the setting; it still withholds the cookie
-  on the cross-site POST that CSRF actually needs, and nothing here is reached by one.
+  on the cross-site POST that CSRF actually needs, so an *authenticated* action cannot be forged.
+- **`/auth/login` is the one POST `Lax` does not cover, because it mints a cookie rather than
+  needing one.** A forged cross-site POST to it would log a victim in as the attacker, so the
+  endpoint validates an antiforgery token (`IAntiforgery.ValidateRequestAsync`) — the sign-in form
+  renders `<AntiforgeryToken />`, and a request without a valid one is redirected to
+  `/login?error=true`. It reads the form itself, so nothing validated it until asked; `/dev/login`
+  is a GET and needs none. `/auth/logout` carries the token too, but there it is defence in depth —
+  `Lax` already keeps the auth cookie off a cross-site POST, so a forged logout signs out nobody.
+- **The login rate limiter and audit log key on `Fly-Client-IP`, not `RemoteIpAddress`.** fly-proxy
+  sets that header to the real client and overwrites any the client sent, so it holds where a
+  hand-rolled `X-Forwarded-For` does not — the 5-per-minute login throttle partitions on an address
+  the caller cannot spoof (`ClientIp.Of`), falling back to the connection address for a local run off
+  Fly.
 - **Persisting data-protection keys is only half of surviving a deploy.** The keys are on the
   volume, but the purpose they are derived for defaults to the content root path — `/app` only
   because the Dockerfile says `WORKDIR /app`. Keys present on disk and derived for a different

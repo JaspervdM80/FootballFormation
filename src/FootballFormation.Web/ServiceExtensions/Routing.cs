@@ -1,5 +1,6 @@
 using System.Net;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Antiforgery;
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Reporting;
 using FootballFormation.UI;
@@ -35,8 +36,10 @@ public static class Routing
             }
             catch (Exception ex)
             {
+                // The full exception goes to the logs; the public response carries only the category, since ex.Message can name a data
+                // path or an internal error and /health is anonymous.
                 Log.Error(ex, "Health check failed");
-                status = HealthReport.Unreachable(appVersion, ex.Message);
+                status = HealthReport.Unreachable(appVersion, "Database unreachable");
             }
 
             if (!status.IsHealthy)
@@ -50,14 +53,28 @@ public static class Routing
         app.MapPost("/auth/login", async (
             HttpContext context,
             UserService userService,
+            IAntiforgery antiforgery,
             ILoggerFactory loggerFactory) =>
         {
             var logger = loggerFactory.CreateLogger("Auth");
+            var ip = ClientIp.Of(context);
+
+            // A cross-site form cannot carry the token the sign-in page rendered, so this is what stops one logging a victim in as
+            // the attacker. The endpoint reads the form itself, so nothing validates it unless we ask.
+            try
+            {
+                await antiforgery.ValidateRequestAsync(context);
+            }
+            catch (AntiforgeryValidationException)
+            {
+                logger.LogWarning("Rejected a login POST with no valid antiforgery token from {Ip}", ip);
+                return Results.Redirect("/login?error=true");
+            }
+
             var form = await context.Request.ReadFormAsync();
             var username = form["username"].ToString();
             var password = form["password"].ToString();
             var returnUrl = form["returnUrl"].ToString();
-            var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
             var user = await userService.ValidateCredentialsAsync(username, password, context.RequestAborted);
             if (user is null)
@@ -75,14 +92,24 @@ public static class Routing
 
             return Results.Redirect(IsLocalUrl(returnUrl) ? returnUrl : "/");
         })
-        .DisableAntiforgery()
         .RequireRateLimiting("login");
 
-        app.MapPost("/auth/logout", async (HttpContext context) =>
+        app.MapPost("/auth/logout", async (HttpContext context, IAntiforgery antiforgery) =>
         {
+            // Defence in depth: SameSite=Lax already keeps the auth cookie off a cross-site POST, so a forged one signs out nobody — the
+            // token keeps this consistent with /auth/login and covers a same-site forgery Lax would not.
+            try
+            {
+                await antiforgery.ValidateRequestAsync(context);
+            }
+            catch (AntiforgeryValidationException)
+            {
+                return Results.Redirect("/");
+            }
+
             await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return Results.Redirect("/");
-        }).DisableAntiforgery();
+        });
 
         // An unauthenticated route to full admin rights, held back by two independent guards: not mapped outside Development, and
         // refuses non-loopback callers. Do NOT relax either. See docs/testing/ui-testing.md.
@@ -94,13 +121,7 @@ public static class Routing
                 if (remote is null || !IPAddress.IsLoopback(remote))
                     return Results.NotFound();
 
-                var usersResult = await userService.GetAllAsync(context.RequestAborted);
-                if (usersResult.IsFailure) return Results.NotFound();
-
-                // Deterministic on purpose: GetAllAsync orders by display name, so "first admin" would otherwise mean "whoever sorts
-                // first", and adding a user could silently change who this signs you in as.
-                var admins = usersResult.Value!.Where(u => u.Role.GrantsAdmin()).ToList();
-                var admin = admins.FirstOrDefault(u => u.Username == "admin") ?? admins.OrderBy(u => u.Id).FirstOrDefault();
+                var admin = await userService.FindDevLoginAdminAsync(context.RequestAborted);
                 if (admin is null) return Results.NotFound();
 
                 await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, PrincipalFor(admin), PersistentSession());

@@ -79,8 +79,8 @@ public class UserService(
         return PasswordChangeResult.Success;
     }
 
-    /// By name, because that is the column the user list is read down.
-    public Task<Result<List<AppUser>>> GetAllAsync(CancellationToken cancellationToken = default) =>
+    /// Projected to <see cref="UserSummary"/> so the hash and stamp never leave here, and ordered by name — the column the list is read down.
+    public Task<Result<List<UserSummary>>> GetAllAsync(CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "load users", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -88,11 +88,26 @@ public class UserService(
             var users = await db.Users
                 .AsNoTracking()
                 .OrderBy(u => u.DisplayName)
+                .Select(u => new UserSummary(u.Id, u.DisplayName, u.Username, u.Role))
                 .ToListAsync(cancellationToken);
 
             logger.LogDebug("Retrieved {Count} users", users.Count);
             return Result.Success(users);
         });
+
+    /// The account /dev/login signs in as — the seeded "admin" if present, otherwise the lowest-numbered admin, so adding a user never
+    /// changes who it picks. Hands back the whole entity, not the list projection, because the principal it mints carries the stamp.
+    public async Task<AppUser?> FindDevLoginAdminAsync(CancellationToken cancellationToken = default)
+    {
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+        var admins = await db.Users
+            .AsNoTracking()
+            .Where(u => u.Role == UserRole.Admin || u.Role == UserRole.ApplicationAdmin)
+            .ToListAsync(cancellationToken);
+
+        return admins.FirstOrDefault(u => u.Username == "admin") ?? admins.OrderBy(u => u.Id).FirstOrDefault();
+    }
 
     public Task<Result<AppUser>> CreateAsync(
         string displayName, string username, string password, UserRole role,

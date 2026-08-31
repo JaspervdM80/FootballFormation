@@ -160,9 +160,20 @@ try
     builder.Services.AddRateLimiter(options =>
     {
         options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+        // The limiter rejects before the endpoint runs, so a throttled sign-in POST would otherwise unwind into the /not-found
+        // re-execution as a POST and hand the visitor a blank page. Send them back to the form with a throttle notice instead.
+        options.OnRejected = (context, _) =>
+        {
+            context.HttpContext.Response.Headers.RetryAfter = "60";
+            if (HttpMethods.IsPost(context.HttpContext.Request.Method))
+                context.HttpContext.Response.Redirect("/login?error=throttled");
+            return ValueTask.CompletedTask;
+        };
+
         options.AddPolicy("login", httpContext =>
             RateLimitPartition.GetFixedWindowLimiter(
-                partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                partitionKey: ClientIp.Of(httpContext),
                 factory: _ => new FixedWindowRateLimiterOptions
                 {
                     PermitLimit = 5,

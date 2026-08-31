@@ -551,6 +551,7 @@
   <data name="Admin Login" xml:space="preserve"><value>Beheerder inloggen</value></data>
   <data name="Sign in to manage formations" xml:space="preserve"><value>Log in om opstellingen te beheren</value></data>
   <data name="Invalid username or password" xml:space="preserve"><value>Ongeldige gebruikersnaam of wachtwoord</value></data>
+  <data name="Too many sign-in attempts. Wait a minute and try again." xml:space="preserve"><value>Te veel aanmeldpogingen. Wacht een minuut en probeer het opnieuw.</value></data>
   <data name="Username" xml:space="preserve"><value>Gebruikersnaam</value></data>
   <data name="Password" xml:space="preserve"><value>Wachtwoord</value></data>
   <data name="Sign In" xml:space="preserve"><value>Inloggen</value></data>
