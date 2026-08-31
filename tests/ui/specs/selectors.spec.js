@@ -30,12 +30,18 @@ const SELECTORS = {
                      'badge-venue-inline', 'badge-venue-home', 'badge-venue-away',
                      'action-live', 'action-live-now'],
   'a match still missing its lineup': ['nolineup-icon', 'action-needs-lineup'],
-  'the formation builder': ['pitch', 'pitch-empty', 'pitch-player', 'draggable-player'],
+  'the formation builder': ['pitch', 'pitch-empty', 'pitch-player', 'pitch-number', 'draggable-player'],
   'the playing-time table': ['playtime-table', 'pt-total', 'playtime-note'],
   'the live screen': ['live-lineup', 'live-controls', 'live-score-value', 'live-score-away',
-                      'live-event', 'live-event-score', 'live-event-break', 'live-bench',
+                      'live-event', 'live-event-score', 'live-event-break', 'live-event-min',
+                      'live-bench', 'live-bench-number', 'live-clock', 'live-actions',
                       'live-timeline-toggle', 'live-timeline',
                       'live-minutes-card', 'card-label', 'planned-row'],
+  'the result page': ['result-comments', 'comment-entry', 'comment-visibility', 'comment-add-row',
+                      'goal-entry', 'own-goal', 'own-goal-tag', 'og-check', 'add-row',
+                      'btn-add-goal', 'score-big-input', 'score-away', 'stat-tile', 'stat-value'],
+  'season and squad management': ['list-row', 'list-row-meta', 'players-table', 'badge-guest',
+                                  'season-menu-item', 'training-row'],
   // The minutes checks are counts of zero against a signed-out visitor, so a rename here is exactly
   // the case this spec exists for: the assertions would keep passing with nothing left to hide.
   'the statistics screens': ['stat-label', 'stat-tiles', 'stat-tiles-3', 'game-head', 'g-num',
@@ -51,9 +57,9 @@ const SELECTORS = {
   'the chrome': ['app-drawer', 'nav-hamburger', 'season-picker', 'season-menu-all',
                  'season-picker-label', 'language-picker', 'language-picker-menu'],
   // The markup that replaced a handler with a link, or a snackbar with a line on the page.
-  'the pages without a circuit': ['inline-notice', 'home-tile-link', 'overview-capture',
+  'the pages without a circuit': ['inline-notice', 'home-tile-link', 'overview-capture', 'overview-period-card',
                                   'pd-name-cell', 'player-name-cell', 'rank-row', 'action-btn'],
-  'the squad': ['badge-archived'],
+  'the squad': ['badge-archived', 'injured-mark'],
 };
 
 /** Every .razor, .razor.css and .css file in the app, read once. */
