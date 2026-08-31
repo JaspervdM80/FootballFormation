@@ -104,5 +104,12 @@
   **A navigation to a circuit-less page belongs in an `<a href>`, not a handler** — `/players`,
   `/stats/positions` and `/stats` all link the player's name now. A handler that only navigates is
   a round trip that leaves a render behind it.
+- **`MudNavLink`'s `Class` lands on the wrapper too, and a touch floor put there does nothing.**
+  Same shape as the `MudMenu` entry below. `.topbar-nav-link { min-height: auto !important }` reads
+  as if it sizes the link; it sizes the `div` around it, and the `<a>` a thumb actually hits keeps
+  MudBlazor's own 2.4rem — 38.4px, under the 44px floor, which is how the app bar passed
+  `scripts/touch-targets.mjs` for as long as nothing measured it. Colour and font-size hid it by
+  inheriting down; geometry does not. Style `.<your-class> .mud-nav-link` for anything the target's
+  own box has to obey.
 - **`MudMenu`'s `Class` lands on the root wrapper, not the activator button**: `Class="btn-gold"` painted an invisible `div` while the button kept MudBlazor's default filled colours. There is no `ActivatorClass` parameter in 9.7 — style `.<your-class>.mud-menu .mud-button-root` instead (see `.btn-gold.mud-menu` in app.css, and `SeasonPicker`'s `.season-picker .mud-button-root`).
 

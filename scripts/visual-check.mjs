@@ -14,7 +14,7 @@
 import { chromium } from 'playwright';
 import { existsSync, mkdirSync } from 'node:fs';
 import { auditTouchTargets } from './touch-targets.mjs';
-import { clickFor, goto, gotoRendered } from './blazor.mjs';
+import { clickFor, goto, gotoRendered, waitUntil } from './blazor.mjs';
 
 const BASE = process.env.VISUAL_BASE_URL ?? 'http://127.0.0.1:5228';
 const OUT = process.env.VISUAL_OUT_DIR ?? 'artifacts/visual';
@@ -38,6 +38,7 @@ const SEED_PLAYERS = [
 ];
 
 const SEED_OPPONENT = 'SV Zwaluwen';
+const SEED_LIVE_OPPONENT = 'VV Kievit';
 const SEED_TRAINING_NOTE = 'Positiespel en afwerken';
 const SEED_CANCELLED_NOTE = 'Vorst — veld gesloten';
 
@@ -131,14 +132,16 @@ if (!(await page.getByText(SEED_PLAYERS[0][0]).count())) {
 // action row to measure — and the date is the whole point of which card it is: the Live button
 // appears only on the day of the match, so match day is the day the action row carries six
 // buttons instead of five. That is the row a coach uses, and the one worth holding a floor under.
-await goto(page, `${BASE}/games`);
-if (!(await page.getByText(SEED_OPPONENT).count())) {
+async function seedGameToday(opponent) {
+  await goto(page, `${BASE}/games`);
+  if (await page.getByText(opponent).count()) return;
+
   const dialog = page.locator('.mud-dialog');
   const popover = page.locator('.mud-picker-popover.mud-popover-open');
 
   await clickFor(page.getByRole('button', { name: rx('toevoegen', 'add') }).first(),
     () => dialog.isVisible());
-  await dialog.locator('input').first().fill(SEED_OPPONENT);
+  await dialog.locator('input').first().fill(opponent);
 
   // The dialog proposes the season's next match day, which is up to a week out. Walk the picker
   // back to today instead: its cell is either in the month the picker opened on or the one before
@@ -163,7 +166,41 @@ if (!(await page.getByText(SEED_OPPONENT).count())) {
 
   await clickFor(dialog.getByRole('button', { name: rx('opslaan', 'save') }),
     async () => await page.locator('.mud-dialog').count() === 0, { settle: 10_000 });
-  console.log(`seeded a game vs ${SEED_OPPONENT}, today`);
+  console.log(`seeded a game vs ${opponent}, today`);
+}
+
+await seedGameToday(SEED_OPPONENT);
+
+// A second one with a line-up on it and the clock running. The live screen is where a mis-tap costs
+// the most, and none of what a coach taps there exists until a match is actually under way — the
+// Goal buttons, the period control and the pitch chips a substitution starts from all arrive with
+// kick-off. Seeded from this desktop context because the line-up is built by dragging, and the
+// audit's own contexts are phones.
+await seedGameToday(SEED_LIVE_OPPONENT);
+await goto(page, `${BASE}/games`);
+const liveCard = page.locator('.game-row', { hasText: SEED_LIVE_OPPONENT }).first();
+// "Opstelling" or "Opstelling toevoegen", depending on whether it has a line-up yet.
+await liveCard.getByTitle(/opstelling|formation|add lineup/i).first().click();
+await page.waitForURL(/\/games\/\d+\/formation/);
+const LIVE_GAME = `/games/${page.url().match(/\/games\/(\d+)\//)[1]}/live`;
+
+const chips = page.locator('.pitch .pitch-player');
+if (!(await chips.count())) {
+  for (let i = 0; i < 3; i++) {
+    await page.locator('.draggable-player').first().dragTo(page.locator('.pitch .pitch-empty').first());
+    await waitUntil(page, async () => await chips.count() === i + 1, { what: `chip ${i + 1} on the pitch` });
+  }
+  await clickFor(page.getByRole('button', { name: /opslaan|save/i }).first(),
+    async () => await page.getByText(/opgeslagen|lineups saved/i).count() > 0,
+    { settle: 10_000 });
+}
+
+await goto(page, BASE + LIVE_GAME);
+const startMatch = page.getByRole('button', { name: rx('wedstrijd starten', 'start match') });
+if (await startMatch.count()) {
+  await clickFor(startMatch,
+    async () => await page.locator('.live-actions').count() > 0, { settle: 10_000 });
+  console.log(`seeded a match under way vs ${SEED_LIVE_OPPONENT}`);
 }
 
 // Two training sessions, for the same reason as the game above: an empty /trainings is a paragraph
@@ -201,7 +238,9 @@ for (const [name, path, bare] of PAGES) {
 }
 
 console.log('\nMeasuring touch targets...');
-const tooSmall = await auditTouchTargets({ browser, base: BASE, out: OUT, onError: e => errors.push(e) });
+const tooSmall = await auditTouchTargets({
+  browser, base: BASE, out: OUT, liveGame: LIVE_GAME, onError: e => errors.push(e),
+});
 
 await browser.close();
 

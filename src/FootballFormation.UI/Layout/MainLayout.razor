@@ -44,10 +44,7 @@
                     <MudText Typo="Typo.body2" Class="admin-name" Style="color: var(--ink-muted);">@context.User.DisplayName()</MudText>
                     <form method="post" action="/auth/logout" data-enhance="false" style="margin: 0;">
                         <AntiforgeryToken />
-                        <button type="submit"
-                                style="background: none; border: none; color: var(--ink-subtle); cursor: pointer; font-size: 0.875rem; padding: 4px 8px; text-transform: none;">
-                            @L["Logout"]
-                        </button>
+                        <button type="submit" class="logout-btn">@L["Logout"]</button>
                     </form>
                 </div>
             </Authorized>

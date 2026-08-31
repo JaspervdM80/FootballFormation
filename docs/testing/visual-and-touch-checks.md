@@ -33,9 +33,11 @@ so no password is typed into the login form.
 
 The same run then stops looking and starts measuring. `scripts/touch-targets.mjs` reopens the app
 in three phone-sized touch contexts — **320×568**, **360×640** and **844×390** landscape, the sizes
-[known_issues](../known_issues/index.md) argues from — and walks the games list, the new-match dialog and
-its date picker: `/games` as it renders, then the form at the top and scrolled to the bottom, then
-the picker's day, month and year views. Six screens per size, screenshotted into
+[known_issues](../known_issues/index.md) argues from — and walks every screen a thumb reaches: the games
+list, the new-match dialog at the top and scrolled to the bottom, the picker's day, month and year
+views, the trainings list and its dialog, the app bar, the drawer, `/players`, the formation builder
+and the live screen of a match under way. Thirteen screens per size — twelve in landscape, where the
+sections fit on the bar itself and there is no drawer to open — screenshotted into
 `artifacts/visual/touch/` with every measurement written to `report.md` beside them.
 
 It exists because `../known_issues/touch-pwa.md` is the longest section in `docs/known_issues/`, every
@@ -68,15 +70,21 @@ boundary.
 Adding a screen is a few lines in `auditTouchTargets`. The dialog and the picker were covered first
 because every entry in that doc section was found in one of them; `/games` came next because it is
 the page a phone opens most and the action row on a game card is the densest cluster of targets in
-the app. Everything else a thumb touches — the live screen, the formation builder, the app bar and
-drawer, `/players` — is still unmeasured, and is worth adding a scene at a time so each finding is
-argued on its own.
+the app. The last four cover what is left: the chrome every navigation goes through, the squad's own
+row geometry, and the two screens where the target is a **pitch chip** rather than a button — those
+are sized by a `clamp()` on container width instead of by `--action-btn-size`, so the narrowest
+phone is where they are smallest, and the live screen is the one tapped one-handed under time
+pressure. Neither a chip nor a draggable player in the list is a semantic control, so both are named
+outright in `CANDIDATES`; nothing else would have found them.
 
 A scene is only as good as what is on the page when it runs, and that is the seeding's job, not the
 audit's. The `/games` scene needs a game card to measure, so `visual-check.mjs` creates one through
 the dialog before the screenshots — **dated today**, because the Live button appears on match day
-only and that is the day the action row carries six buttons rather than five. Each scene is scoped
-to a root selector (`.app-main` for `/games`, the dialog and the popover for the rest), which is
-how a page's own targets are measured without the app bar and the install banner arriving with
-them.
+only and that is the day the action row carries six buttons rather than five. The live screen needs
+more than that: a second game, a line-up dragged onto its pitch and the clock actually started,
+because before kick-off none of the controls the scene exists to measure are on the page at all.
+That seeding runs in the desktop context, since a line-up is built by dragging and the audit's own
+contexts are phones. Each scene is scoped to a root selector (`.app-main` for a page, the dialog,
+the popover, the app bar or the drawer for the rest), which is how a page's own targets are measured
+without the chrome and the install banner arriving with them.
 

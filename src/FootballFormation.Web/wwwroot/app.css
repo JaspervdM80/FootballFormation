@@ -552,6 +552,15 @@ html, body {
     min-height: auto !important;
 }
 
+/* The min-height: auto above is what keeps five links on a dense app bar; on a touch screen the bar
+   is the wrong thing to save height on, so the floor comes back. On the anchor, not the element
+   carrying the class: MudNavLink puts Class on its wrapper, the same trap MudMenu has. */
+@media (pointer: coarse) {
+    .topbar-nav-link .mud-nav-link {
+        min-height: 44px !important;
+    }
+}
+
 .topbar-nav-link:hover {
     color: color-mix(in srgb, var(--ink) 80%, transparent) !important;
     background: color-mix(in srgb, var(--ink) 4%, transparent) !important;
@@ -1328,7 +1337,9 @@ html, body {
     .btn-gold.mud-button-root,
     .btn-gold .mud-button-root,
     .btn-compact.mud-button-root,
-    .btn-compact .mud-button-root {
+    .btn-compact .mud-button-root,
+    .btn-ghost.mud-button-root,
+    .btn-ghost .mud-button-root {
         min-height: 44px;
     }
 }
@@ -1444,6 +1455,26 @@ html, body {
 }
 
 /* --- App title / home link --- */
+
+/* Neither the title link nor a drawer entry takes --action-btn-size: both are sized by the text and
+   icon inside them, which lands under the touch floor on every phone width. */
+@media (pointer: coarse) {
+    .app-title-link,
+    .app-drawer .mud-nav-link,
+    .logout-btn {
+        min-height: 44px;
+    }
+}
+
+.logout-btn {
+    background: none;
+    border: none;
+    color: var(--ink-subtle);
+    cursor: pointer;
+    font-size: 0.875rem;
+    padding: 4px 8px;
+    text-transform: none;
+}
 
 .app-title-link {
     display: inline-flex;

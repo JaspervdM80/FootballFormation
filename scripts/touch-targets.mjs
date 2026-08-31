@@ -83,6 +83,10 @@ const CANDIDATES = [
   '.mud-day',
   '.mud-picker-month',
   '.mud-picker-year',
+  // Nothing semantic about either: a pitch chip is a div carrying @onclick, and a player in the
+  // list beside it is a div you drag. Both are tapped, and neither would be measured otherwise.
+  '.pitch-player',
+  '.draggable-player',
 ].join(',');
 
 /** Reads the geometry of every reachable target inside `rootSelector`. Runs in the browser. */
@@ -293,24 +297,33 @@ const table = (rows) => {
 // The three widths docs/known_issues/touch-pwa.md argues from. 320 is the narrowest phone the picker has to
 // fit, 360 is the common one, and landscape is short rather than narrow — a different failure, and
 // the reason app.css hides the picker's date line to buy the year button its 44px.
+// The one viewport wide enough for the sections to fit on the app bar itself, so the only one with
+// no drawer to open — which is what makes it a screen short of the others.
+const LANDSCAPE = '844x390';
+
 const VIEWPORTS = [
   { name: '320x568', width: 320, height: 568 },
   { name: '360x640', width: 360, height: 640 },
-  { name: '844x390', width: 844, height: 390 },
+  { name: LANDSCAPE, width: 844, height: 390 },
 ];
 
 const rx = (nl, en) => new RegExp(`${nl}|${en}`, 'i');
 
 /**
- * Walks /games, the new-match dialog and its date picker, then /trainings and its dialog, on a
- * phone-sized touch context, and audits each screen. The dialog and the picker came first because
- * every entry in the Touch / PWA section was found in one of them — the dialog is the app's longest
- * form and the only one filled in at a touchline, and the picker is inside it. The games list came
- * next because it is the page a phone opens most, and the row of icon buttons on every card is the
- * densest cluster of targets in the app. The trainings pair came last: a row of a different shape,
- * and the app's only switch.
+ * Walks the screens a thumb reaches on a phone-sized touch context and audits each one. The dialog
+ * and the picker came first because every entry in the Touch / PWA section was found in one of them
+ * — the dialog is the app's longest form and the only one filled in at a touchline, and the picker
+ * is inside it. The games list came next because it is the page a phone opens most, and the row of
+ * icon buttons on every card is the densest cluster of targets in the app. The trainings pair
+ * followed: a row of a different shape, and the app's only switch. The last four are the chrome
+ * every navigation goes through, the squad's own row geometry, and the two screens where the target
+ * is a pitch chip sized by a clamp() rather than a button sized by a token.
  */
-export async function auditTouchTargets({ browser, base, out, onError = () => {} }) {
+export async function auditTouchTargets({ browser, base, out, liveGame, onError = () => {} }) {
+  // Named rather than defaulted: a missing path would quietly drop the two scenes that need it, and
+  // an audit that silently measures less is the failure this whole harness exists to prevent.
+  if (!liveGame) throw new Error('auditTouchTargets needs liveGame — see visual-check.mjs');
+
   const dir = `${out}/touch`;
   mkdirSync(dir, { recursive: true });
 
@@ -332,7 +345,9 @@ export async function auditTouchTargets({ browser, base, out, onError = () => {}
     await gotoRendered(page, `${base}/dev/login`);
     await goto(page, `${base}/games`);
 
+    let scenes = 0;
     const audit = async (scene, root) => {
+      scenes++;
       const targets = await measureTargets(page, root);
       if (!targets) throw new Error(`${viewport.name}: nothing matched ${root} for "${scene}"`);
       const audited = auditScene({ viewport: viewport.name, scene, targets });
@@ -419,7 +434,59 @@ export async function auditTouchTargets({ browser, base, out, onError = () => {}
     await waitForStableBox(dialog);
     await audit('new training dialog', '.mud-dialog');
 
-    console.log(`${viewport.name.padEnd(8)} audited 8 screens`);
+    // The chrome, on its own rather than inside a page's scene: it is tapped on every navigation,
+    // and on a phone the hamburger is the only way to any section at all. The drawer is a checkbox
+    // with no circuit behind it, so the label is what a thumb hits.
+    await goto(page, `${base}/players`);
+    await audit('app bar', '.mud-appbar');
+
+    // The squad. Same --action-btn-size as the game cards, in a different row geometry — which is
+    // what makes the clearance rule the part worth measuring here rather than the size.
+    await waitUntil(page, async () =>
+      await page.locator('.players-table .row-actions .mud-icon-button').count() >= 2, {
+      what: 'the seeded squad rows — visual-check.mjs seeds four players, and a table with no row '
+        + 'in it measures the Add button, finds nothing wrong, and passes',
+    });
+    await audit('squad', '.app-main');
+
+    // The drawer last on this page, and closed by navigating away rather than by the hamburger: once
+    // it is open it covers the label that opened it, and the checkbox holding it open is page state
+    // a navigation discards anyway.
+    //
+    // The hamburger only exists below the width where the sections fit on the bar itself, which the
+    // landscape viewport is above — there the app-bar scene has already measured the same links.
+    const hamburger = page.locator('label.nav-hamburger');
+    if (await hamburger.isVisible()) {
+      // A closed drawer is not hidden — it is parked off the left of the screen, box and all — so
+      // "open" is where its box has got to rather than whether it has one.
+      const drawerLink = page.locator('.app-drawer a').first();
+      await clickFor(hamburger, async () => ((await drawerLink.boundingBox())?.x ?? -1) >= 0);
+      await waitForStableBox(page.locator('.app-drawer'));
+      await audit('drawer', '.app-drawer');
+    }
+
+    // The formation builder and the live screen, the two places a chip is the target. Both are
+    // sized by a clamp() on container width, so the narrowest phone is where they are smallest —
+    // and the live screen is the one tapped one-handed, under time pressure, sometimes in the rain.
+    await goto(page, `${base}${liveGame.replace('/live', '/formation')}`);
+    await waitUntil(page, async () => await page.locator('.pitch .pitch-player').count() > 0, {
+      what: "the seeded line-up's chips on the pitch",
+    });
+    await audit('formation builder', '.app-main');
+
+    await goto(page, `${base}${liveGame}`);
+    await waitUntil(page, async () => await page.locator('.live-actions').count() > 0, {
+      what: 'the live screen of a match under way — visual-check.mjs kicks one off, and before '
+        + 'kick-off none of the controls this scene exists to measure are on the page',
+    });
+    await audit('live match', '.app-main');
+
+    // Asserted, not logged: `isVisible()` on the hamburger fails open the way `.count()` does, so
+    // a renamed class would drop the drawer scene for good and say so only in a number nobody reads.
+    const expected = viewport.name === LANDSCAPE ? 12 : 13;
+    if (scenes !== expected)
+      throw new Error(`${viewport.name}: audited ${scenes} screens, expected ${expected}`);
+    console.log(`${viewport.name.padEnd(8)} audited ${scenes} screens`);
     await context.close();
   }
 

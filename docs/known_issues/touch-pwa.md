@@ -57,6 +57,16 @@
   actions on a line of their own, flush, at a fixed width and pushed to the card's right-hand edge
   (`Games.razor.css`). 44px each, which is why the card's horizontal padding drops from 16px to 12px
   there — 16px leaves 260px and six buttons need 264, while 12px leaves 268px.
+- **Widening it again — to the chrome, the squad, the formation builder and the live screen — found
+  nothing wrong with the parts that were designed for a thumb, and five things wrong with the parts
+  that were not.** The pitch chips and the squad's action rows both cleared 44px on every viewport,
+  which is `--action-btn-size` and the `clamp()` doing their jobs. What failed was everything sized
+  by its own content instead: the app-bar title link (28px), the drawer's nav entries (40.5px), the
+  sign-out button (28px, and styled inline so nothing could reach it), the top bar's own nav links
+  in landscape (38.4px), and `.btn-ghost`, which had been left out of the `min-height` rule its two
+  sibling button classes were already in. All five are `app.css` now. The pattern worth keeping: a
+  scene is worth adding **because** you expect it to be clean, since the finding is then in the part
+  nobody was thinking about.
 - **Splitting that row evenly made a button's width a function of the row's length.** It was
   `flex: 1` at first, so nothing was narrower than it had to be. But the row is four buttons on a
   fixture, five on a played match, six on match day and *one* on a card an anonymous visitor is
