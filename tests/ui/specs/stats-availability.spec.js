@@ -7,7 +7,7 @@
 // matching, the page would simply never switch.
 import { test, expect } from '../fixtures.js';
 import {
-  addPlayer, clickFor, createMatch, gameRow, goto, gotoRendered, openDialog, playerMenuItem,
+  addPlayer, fileScore, fillLineup, gotoRendered, matchWithId, openDialog, playerMenuItem,
   submitDialog,
 } from '../helpers.js';
 
@@ -52,31 +52,12 @@ test('a match missed injured is coloured injured once the result is in', async (
 
   // A match on paper: she is injured, so no line-up will offer her, and the typed score is what
   // settles it — which is where the squad's flag gets copied onto the match.
-  await createMatch(page, { opponent: 'FC Blessureseizoen', past: true });
-  await gameRow(page, 'FC Blessureseizoen').getByTitle(/Formation|Add lineup/).click();
-  await page.waitForURL(/\/games\/\d+\/formation/);
-  const id = Number(page.url().match(/\/games\/(\d+)\//)[1]);
-
-  const chips = page.locator('.pitch .pitch-player');
+  const id = await matchWithId(page, 'FC Blessureseizoen', { past: true });
   await expect(page.locator('.draggable-player').first()).toBeVisible();
   await expect(page.locator('.draggable-player', { hasText: 'Blessure Balk' })).toHaveCount(0);
-  for (let i = 0; i < 2; i++) {
-    await page.locator('.draggable-player').first().dragTo(page.locator('.pitch .pitch-empty').first());
-    await expect(chips).toHaveCount(i + 1);
-  }
-  await clickFor(
-    page.getByRole('button', { name: /^Save( All Lineups)?$/ }).first(),
-    () => expect(page.getByText('All lineups saved', { exact: false })).toBeVisible(),
-    { settle: 10_000 },
-  );
+  await fillLineup(page, 2);
 
-  await goto(page, `/games/${id}/result`);
-  await page.locator('.score-big-input').first().fill('2');
-  await page.locator('.score-big-input.score-away').fill('1');
-  await clickFor(
-    page.getByRole('button', { name: 'Save Score' }),
-    () => expect(page.getByText('saved', { exact: false }).first()).toBeVisible(),
-  );
+  await fileScore(page, id, 2, 1);
 
   await gotoRendered(page, '/stats');
   await page.locator('label.availability-switch').click();

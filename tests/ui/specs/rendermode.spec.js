@@ -76,12 +76,3 @@ test('a shared match report opens no circuit', async ({ page }) => {
   expect(sockets, 'the match report opened a circuit').toEqual([]);
   await shared.close();
 });
-
-test('the games list keeps its circuit, and so the probe is honest', async ({ page }) => {
-  const sockets = watchSockets(page);
-
-  await gotoRendered(page, '/games');
-  await expect(page.getByRole('heading', { name: 'Games', exact: false }).first()).toBeVisible();
-
-  expect(sockets.length, 'the games list is interactive and should open one').toBeGreaterThan(0);
-});

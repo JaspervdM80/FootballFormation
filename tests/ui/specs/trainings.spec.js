@@ -4,7 +4,10 @@
 // the note beside it usually says why. authorization.spec.js covers what a visitor is shown; this
 // covers what the coach does with it.
 import { test, expect } from '../fixtures.js';
-import { clickFor, confirmDialog, fillField, goto, openDialog, pickEarlierThisMonth, submitDialog } from '../helpers.js';
+import {
+  chooseSeasonNamed, clickFor, confirmDialog, currentSeasonName, fillField, goto, nextSeasonName,
+  openDialog, pickEarlierThisMonth, pickMidAugustNextYear, submitDialog,
+} from '../helpers.js';
 import { SQUAD } from '../global-setup.js';
 
 const ABSENTEE = `${SQUAD[0].firstName} ${SQUAD[0].surname}`;
@@ -58,56 +61,8 @@ async function addTraining(page, { note, absentee, cancelled, past } = {}) {
 const absenteeField = (page, panel) =>
   panel.locator('.mud-input-control', { has: page.getByText('Unavailable Players', { exact: false }) }).first();
 
-/**
- * Moves the open dialog's date to 15 August of next year, through the picker's year and month lists
- * rather than by walking twelve headers. The field itself is readonly, so the calendar is the only
- * way in.
- *
- * August of next year rather than any date a year out: a season runs 1 July – 30 June, so August is
- * always past the boundary and the date always lands in a season that is not today's, whatever month
- * the suite happens to run in.
- */
-async function pickMidAugustNextYear(page, panel) {
-  const popover = page.locator('.mud-picker-popover.mud-popover-open');
-  await clickFor(panel.locator('.mud-input-adornment button').first(), () => expect(popover).toBeVisible());
-
-  const nextYear = String(new Date().getFullYear() + 1);
-  await clickFor(popover.locator('.mud-picker-datepicker-toolbar .mud-button-root').first(),
-    () => expect(popover.locator('.mud-picker-year').first()).toBeVisible());
-  await popover.locator('.mud-picker-year').filter({ hasText: new RegExp(`^${nextYear}$`) }).first().click();
-
-  // The year list hands over to the month grid, and that to the days.
-  await expect(popover.locator('.mud-picker-month').first()).toBeVisible();
-  await popover.locator('.mud-picker-month').filter({ hasText: /^aug/i }).first().click();
-  await popover.locator('.mud-picker-calendar .mud-day:not(.mud-hidden)')
-    .filter({ hasText: /^15$/ }).first().click();
-  await expect(popover).toBeHidden();
-}
-
-/**
- * Switches the season picker to the season that is not the current one.
- *
- * Found by the absence of the "Current" badge rather than by name: the summary shows the short name
- * ("26/27") and the menu the full one ("2026/27"), so matching one against the other excludes both.
- */
-async function chooseSeason(page, { current }) {
-  // A page load first: the app bar renders statically, so a season created through the circuit is
-  // not in the picker the chrome around it is still showing.
-  await goto(page, '/trainings');
-  await page.locator('.season-picker > summary').first().click();
-
-  const badge = page.locator('.badge-teal');
-  const entries = page.locator('.season-picker .season-menu-item:not(.season-menu-all)');
-  const entry = (current ? entries.filter({ has: badge }) : entries.filter({ hasNot: badge })).first();
-  await expect(entry).toBeVisible();
-  await entry.click();
-
-  // A link, not a handler: choosing a season is a navigation through /season/set and back.
-  await page.waitForURL(url => !url.pathname.startsWith('/season/set'));
-}
-
-const chooseNonCurrentSeason = (page) => chooseSeason(page, { current: false });
-const chooseCurrentSeason = (page) => chooseSeason(page, { current: true });
+const chooseNextSeason = (page) => chooseSeasonNamed(page, '/trainings', nextSeasonName());
+const chooseThisSeason = (page) => chooseSeasonNamed(page, '/trainings', currentSeasonName());
 
 /** Opens a session for editing and reports the players its absentee picker offers, then closes it. */
 async function offeredAbsentees(page, note) {
@@ -138,14 +93,13 @@ test('editing a session offers the squad of its own season, not of today', async
   await fillField(panel, 'Notes', 'Volgend seizoen');
   await submitDialog(page);
 
-  await chooseNonCurrentSeason(page);
+  await chooseNextSeason(page);
   await expect(trainingRow(page, 'Volgend seizoen')).toBeVisible();
   const nextSeason = await offeredAbsentees(page, 'Volgend seizoen');
 
   // Both halves through the same helper, so the empty one cannot pass by a click that quietly missed:
   // this season's session has to offer somebody for next season's offering nobody to mean anything.
-  await goto(page, '/trainings');
-  await chooseCurrentSeason(page);
+  await chooseThisSeason(page);
   const thisSeason = await offeredAbsentees(page, 'Dit seizoen');
 
   expect(thisSeason.length, 'this season offered nobody — is the picker being opened at all?')

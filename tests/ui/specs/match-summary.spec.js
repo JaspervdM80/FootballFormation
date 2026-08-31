@@ -5,40 +5,19 @@
 import { test, expect } from '../fixtures.js';
 import { BASE_URL } from '../playwright.config.js';
 import {
-  chooseOption, clickFor, createMatch, fillField, gameAction, gameRow, goto, gotoRendered,
-  openDialog, submitDialog,
+  chooseOption, clickFor, createMatch, fileScore, fillField, fillLineup, finishMatch, gameAction,
+  goto, gotoRendered, matchWithId, openDialog, startMatch, submitDialog,
 } from '../helpers.js';
-
-/**
- * Creates a match dated in the past — a score can only be typed in on a fixture already played —
- * and returns its id and a fresh load of its result page. The id comes off a click-navigation, but
- * the actual page under test comes from a clean `goto()` rather than that navigation's own render:
- * a plain `<input @onchange>` never carries the `_bl_` marker `goto` waits for elsewhere (Blazor
- * delegates that particular kind of handler rather than attaching it per element), so filling one
- * right after a click-navigation risks landing in the still-inert prerender.
- */
-async function pastMatchWithId(page, opponent) {
-  await createMatch(page, { opponent, past: true });
-  await gameAction(page, opponent, 'Result');
-  await page.waitForURL(/\/games\/\d+\/result/);
-  const id = Number(page.url().match(/\/games\/(\d+)\//)[1]);
-  await goto(page, `/games/${id}/result`);
-  return id;
-}
 
 test('the result page copies a scoreline, a goal and a public comment to the clipboard', async ({ page, context }) => {
   test.skip(new Date().getDate() === 1, 'no earlier day in the current month to date a match to');
 
   await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE_URL });
 
-  const id = await pastMatchWithId(page, 'FC Samenvatting');
-
-  await page.locator('.score-big-input').first().fill('1');
-  await page.locator('.score-big-input.score-away').fill('0');
-  await clickFor(
-    page.getByRole('button', { name: 'Save Score' }),
-    () => expect(page.getByText('saved', { exact: false }).first()).toBeVisible(),
-  );
+  // The score can only be typed in on a fixture already played, and `fileScore` opens the result
+  // page cleanly rather than filling the render a click-navigation left behind.
+  const id = await matchWithId(page, 'FC Samenvatting', { past: true });
+  await fileScore(page, id, 1, 0);
 
   const addRow = page.locator('.add-row');
   await addRow.locator('input[type=number]').fill('12');
@@ -88,23 +67,11 @@ test('the result page copies a scoreline, a goal and a public comment to the cli
 test('a goal in each half puts a dashed break between them in the copied text', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE_URL });
 
-  await createMatch(page, { opponent: 'FC Rust Samenvatting' });
-  await gameRow(page, 'FC Rust Samenvatting').getByTitle(/Formation|Add lineup/).click();
-  await page.waitForURL(/\/games\/\d+\/formation/);
-  const id = Number(page.url().match(/\/games\/(\d+)\//)[1]);
-
-  await page.locator('.draggable-player').first().dragTo(page.locator('.pitch .pitch-empty').first());
-  await clickFor(
-    page.getByRole('button', { name: /^Save( All Lineups)?$/ }).first(),
-    () => expect(page.getByText('All lineups saved', { exact: false })).toBeVisible(),
-    { settle: 10_000 },
-  );
+  const id = await matchWithId(page, 'FC Rust Samenvatting');
+  await fillLineup(page, 1);
 
   await goto(page, `/games/${id}/live`);
-  await clickFor(
-    page.getByRole('button', { name: 'Start match' }),
-    () => expect(page.getByRole('button', { name: 'Finish match' })).toBeVisible(),
-  );
+  await startMatch(page);
 
   const ourScore = page.locator('.live-score-value:not(.live-score-away)');
   await clickFor(
@@ -135,11 +102,7 @@ test('a goal in each half puts a dashed break between them in the copied text', 
   await submitDialog(page, 'Add goal');
   await expect(ourScore).toHaveText('2');
 
-  await clickFor(
-    controls.getByRole('button', { name: 'Finish match' }),
-    () => expect(page.locator('.mud-dialog')).toBeVisible(),
-  );
-  await submitDialog(page, 'Finish match');
+  await finishMatch(page);
   await clickFor(
     page.getByRole('button', { name: 'Edit result' }),
     () => expect(page).toHaveURL(/\/games\/\d+\/result/),

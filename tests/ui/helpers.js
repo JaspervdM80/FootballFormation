@@ -280,3 +280,144 @@ export function gameRow(page, opponent) {
 export async function gameAction(page, opponent, title) {
   await gameRow(page, opponent).getByTitle(title, { exact: false }).click();
 }
+
+/**
+ * Moves the open dialog's date to 15 August of next year, through the picker's year and month lists.
+ * August because it is always past the 1 July boundary, so the date lands in a season that is not
+ * today's whatever month the suite runs in — and saving a record on it creates that season.
+ */
+export async function pickMidAugustNextYear(page, scope) {
+  const popover = page.locator('.mud-picker-popover.mud-popover-open');
+  await clickFor(scope.locator('.mud-input-adornment button').first(), () => expect(popover).toBeVisible());
+
+  const nextYear = String(new Date().getFullYear() + 1);
+  await clickFor(popover.locator('.mud-picker-datepicker-toolbar .mud-button-root').first(),
+    () => expect(popover.locator('.mud-picker-year').first()).toBeVisible());
+  await popover.locator('.mud-picker-year').filter({ hasText: new RegExp(`^${nextYear}$`) }).first().click();
+
+  // The year list hands over to the month grid, and that to the days.
+  await expect(popover.locator('.mud-picker-month').first()).toBeVisible();
+  await popover.locator('.mud-picker-month').filter({ hasText: /^aug/i }).first().click();
+  await popover.locator('.mud-picker-calendar .mud-day:not(.mud-hidden)')
+    .filter({ hasText: /^15$/ }).first().click();
+  await expect(popover).toBeHidden();
+}
+
+/** A season's name, the way Season.NameForStartYear writes it: "2026/27". */
+const seasonName = (startYear) => `${startYear}/${String((startYear + 1) % 100).padStart(2, '0')}`;
+
+/** The season today falls in. A season opens on 1 July, so the first half of the year is last one's. */
+export function currentSeasonName() {
+  const now = new Date();
+  return seasonName(now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1);
+}
+
+/** The season a date in August of next year falls in — the one `pickMidAugustNextYear` creates. */
+export const nextSeasonName = () => seasonName(new Date().getFullYear() + 1);
+
+/**
+ * Switches the app-bar picker to the season named `name`, landing back on `path`. By name rather
+ * than by position: the app creates a season as a side effect of dating a record into one, so how
+ * many there are is whatever the specs before this one needed. `path` is loaded first because the
+ * app bar renders statically — a season a circuit just created is not yet in the picker.
+ */
+export async function chooseSeasonNamed(page, path, name) {
+  await goto(page, path);
+  await page.locator('.season-picker > summary').first().click();
+
+  const entry = page.locator('.season-picker .season-menu-item:not(.season-menu-all)')
+    .filter({ has: page.getByText(name, { exact: true }) }).first();
+  await expect(entry, `the season picker offers no "${name}"`).toBeVisible();
+  await entry.click();
+
+  await page.waitForURL(url => !url.pathname.startsWith('/season/set'));
+}
+
+// --- match day ----------------------------------------------------------------------------------
+
+/** Creates a match and returns its id, read from the URL its own formation button navigates to. */
+export async function matchWithId(page, opponent, options = {}) {
+  await createMatch(page, { opponent, ...options });
+  await gameRow(page, opponent).getByTitle(/Formation|Add lineup/).click();
+  await page.waitForURL(/\/games\/\d+\/formation/);
+  return Number(page.url().match(/\/games\/(\d+)\//)[1]);
+}
+
+/**
+ * Drags players onto the pitch — an empty slot takes a drop, not a click — and saves, which is easy
+ * to miss: a drop only changes what is on screen. Returns how many were placed, which is fewer than
+ * the formation has slots and legitimately so.
+ */
+export async function fillLineup(page, limit = 4) {
+  const available = page.locator('.draggable-player');
+  const emptySlots = page.locator('.pitch .pitch-empty');
+  const chips = page.locator('.pitch .pitch-player');
+
+  await expect(available.first()).toBeVisible();
+  const squad = await available.count();
+  const placed = Math.min(limit, squad);
+
+  for (let i = 0; i < placed; i++) {
+    // Always the first of each: a placed player leaves the list, and a filled slot stops being empty.
+    await available.first().dragTo(emptySlots.first());
+    await expect(chips).toHaveCount(i + 1);
+  }
+
+  await saveLineup(page);
+  return { placed, squad };
+}
+
+/** Saves the formation builder. The button is "Save All Lineups" whenever the split has more than one. */
+export async function saveLineup(page) {
+  await clickFor(
+    page.getByRole('button', { name: /^Save( All Lineups)?$/ }).first(),
+    () => expect(page.getByText('All lineups saved', { exact: false })).toBeVisible(),
+    { settle: 10_000 },
+  );
+}
+
+/** Blows the kick-off whistle on an open live screen. */
+export async function startMatch(page) {
+  await clickFor(
+    page.getByRole('button', { name: 'Start match' }),
+    () => expect(page.getByRole('button', { name: 'Finish match' })).toBeVisible(),
+  );
+}
+
+/**
+ * Blows the final whistle. The confirming button carries the same words as the one that opened it,
+ * so the first click is scoped to the control panel or the locator matches both.
+ */
+export async function finishMatch(page) {
+  await clickFor(
+    page.locator('.live-controls').getByRole('button', { name: 'Finish match' }),
+    () => expect(page.locator('.mud-dialog')).toBeVisible(),
+  );
+  await submitDialog(page, 'Finish match');
+  await expect(page.getByRole('button', { name: 'Edit result' })).toBeVisible();
+}
+
+/** A match with a saved lineup, on its live screen, with the clock running. Returns its id. */
+export async function liveMatch(page, opponent, { placed = 2, ...options } = {}) {
+  const id = await matchWithId(page, opponent, options);
+  await fillLineup(page, placed);
+
+  await goto(page, `/games/${id}/live`);
+  await startMatch(page);
+  return id;
+}
+
+/**
+ * Files a score for a match already dated in the past, turning it from a fixture into a result.
+ * `us` and `them` in that order, whatever the venue does to the boxes: the scoreboard puts the home
+ * side first, so on an away match the *opponent's* box is the one that renders first.
+ */
+export async function fileScore(page, id, us, them) {
+  await goto(page, `/games/${id}/result`);
+  await page.locator('.score-big-input:not(.score-away)').fill(String(us));
+  await page.locator('.score-big-input.score-away').fill(String(them));
+  await clickFor(
+    page.getByRole('button', { name: 'Save Score' }),
+    () => expect(page.getByText('saved', { exact: false }).first()).toBeVisible(),
+  );
+}
