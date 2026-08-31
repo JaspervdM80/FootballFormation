@@ -127,6 +127,10 @@ gets checked.
 }
 ```
 
+`detail` names the category, never the underlying exception: `/health` is anonymous and public, so a
+database failure reports `"Database unreachable"` while the real message — which can carry a data path
+or an internal error — goes to the container log instead.
+
 **Why the commit is in there.** A 200 says *a* container is up, not that the one just built is
 answering. Fly can report a successful deploy while the previous machine carries on serving, and
 nothing about that looks wrong — the site is up, it is simply the old site. The commit comes from the

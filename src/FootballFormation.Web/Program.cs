@@ -173,7 +173,7 @@ try
 
         options.AddPolicy("login", httpContext =>
             RateLimitPartition.GetFixedWindowLimiter(
-                partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                partitionKey: ClientIp.Of(httpContext),
                 factory: _ => new FixedWindowRateLimiterOptions
                 {
                     PermitLimit = 5,

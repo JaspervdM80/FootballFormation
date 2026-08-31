@@ -36,8 +36,10 @@ public static class Routing
             }
             catch (Exception ex)
             {
+                // The full exception goes to the logs; the public response carries only the category, since ex.Message can name a data
+                // path or an internal error and /health is anonymous.
                 Log.Error(ex, "Health check failed");
-                status = HealthReport.Unreachable(appVersion, ex.Message);
+                status = HealthReport.Unreachable(appVersion, "Database unreachable");
             }
 
             if (!status.IsHealthy)
@@ -55,7 +57,7 @@ public static class Routing
             ILoggerFactory loggerFactory) =>
         {
             var logger = loggerFactory.CreateLogger("Auth");
-            var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var ip = ClientIp.Of(context);
 
             // A cross-site form cannot carry the token the sign-in page rendered, so this is what stops one logging a victim in as
             // the attacker. The endpoint reads the form itself, so nothing validates it unless we ask.
@@ -92,11 +94,22 @@ public static class Routing
         })
         .RequireRateLimiting("login");
 
-        app.MapPost("/auth/logout", async (HttpContext context) =>
+        app.MapPost("/auth/logout", async (HttpContext context, IAntiforgery antiforgery) =>
         {
+            // Defence in depth: SameSite=Lax already keeps the auth cookie off a cross-site POST, so a forged one signs out nobody — the
+            // token keeps this consistent with /auth/login and covers a same-site forgery Lax would not.
+            try
+            {
+                await antiforgery.ValidateRequestAsync(context);
+            }
+            catch (AntiforgeryValidationException)
+            {
+                return Results.Redirect("/");
+            }
+
             await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return Results.Redirect("/");
-        }).DisableAntiforgery();
+        });
 
         // An unauthenticated route to full admin rights, held back by two independent guards: not mapped outside Development, and
         // refuses non-loopback callers. Do NOT relax either. See docs/testing/ui-testing.md.

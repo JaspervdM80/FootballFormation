@@ -21,7 +21,13 @@
   endpoint validates an antiforgery token (`IAntiforgery.ValidateRequestAsync`) — the sign-in form
   renders `<AntiforgeryToken />`, and a request without a valid one is redirected to
   `/login?error=true`. It reads the form itself, so nothing validated it until asked; `/dev/login`
-  is a GET and needs none.
+  is a GET and needs none. `/auth/logout` carries the token too, but there it is defence in depth —
+  `Lax` already keeps the auth cookie off a cross-site POST, so a forged logout signs out nobody.
+- **The login rate limiter and audit log key on `Fly-Client-IP`, not `RemoteIpAddress`.** fly-proxy
+  sets that header to the real client and overwrites any the client sent, so it holds where a
+  hand-rolled `X-Forwarded-For` does not — the 5-per-minute login throttle partitions on an address
+  the caller cannot spoof (`ClientIp.Of`), falling back to the connection address for a local run off
+  Fly.
 - **Persisting data-protection keys is only half of surviving a deploy.** The keys are on the
   volume, but the purpose they are derived for defaults to the content root path — `/app` only
   because the Dockerfile says `WORKDIR /app`. Keys present on disk and derived for a different
