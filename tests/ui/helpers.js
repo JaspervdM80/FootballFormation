@@ -282,15 +282,16 @@ export async function gameAction(page, opponent, title) {
 }
 
 /**
- * Moves the open dialog's date to 15 August of next year, through the picker's year and month lists.
- * August because it is always past the 1 July boundary, so the date lands in a season that is not
- * today's whatever month the suite runs in — and saving a record on it creates that season.
+ * Moves the open dialog's date to 15 August of the season after this one, through the picker's year
+ * and month lists. August because it is always past the 1 July boundary — and the season *after*
+ * this one rather than "next calendar year", so the window it creates is contiguous with the current
+ * one whichever half of the year the suite runs in. Saving a record on it creates that season.
  */
-export async function pickMidAugustNextYear(page, scope) {
+export async function pickNextSeasonAugust(page, scope) {
   const popover = page.locator('.mud-picker-popover.mud-popover-open');
   await clickFor(scope.locator('.mud-input-adornment button').first(), () => expect(popover).toBeVisible());
 
-  const nextYear = String(new Date().getFullYear() + 1);
+  const nextYear = String(nextSeasonStartYear());
   await clickFor(popover.locator('.mud-picker-datepicker-toolbar .mud-button-root').first(),
     () => expect(popover.locator('.mud-picker-year').first()).toBeVisible());
   await popover.locator('.mud-picker-year').filter({ hasText: new RegExp(`^${nextYear}$`) }).first().click();
@@ -306,14 +307,18 @@ export async function pickMidAugustNextYear(page, scope) {
 /** A season's name, the way Season.NameForStartYear writes it: "2026/27". */
 const seasonName = (startYear) => `${startYear}/${String((startYear + 1) % 100).padStart(2, '0')}`;
 
-/** The season today falls in. A season opens on 1 July, so the first half of the year is last one's. */
-export function currentSeasonName() {
+/** The opening year of the season today falls in. A season opens on 1 July, so January is last one's. */
+function currentSeasonStartYear() {
   const now = new Date();
-  return seasonName(now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1);
+  return now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1;
 }
 
-/** The season a date in August of next year falls in — the one `pickMidAugustNextYear` creates. */
-export const nextSeasonName = () => seasonName(new Date().getFullYear() + 1);
+const nextSeasonStartYear = () => currentSeasonStartYear() + 1;
+
+export const currentSeasonName = () => seasonName(currentSeasonStartYear());
+
+/** The season immediately after this one — the one `pickNextSeasonAugust` creates. */
+export const nextSeasonName = () => seasonName(nextSeasonStartYear());
 
 /**
  * Switches the app-bar picker to the season named `name`, landing back on `path`. By name rather

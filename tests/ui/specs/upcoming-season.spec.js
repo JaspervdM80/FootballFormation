@@ -11,7 +11,7 @@
 import { test, expect } from '../fixtures.js';
 import {
   addPlayer, chooseSeasonNamed, clickFor, confirmDialog, currentSeasonName, fillField, goto,
-  nextSeasonName, openDialog, pickMidAugustNextYear, playerMenuItem, playerRow, submitDialog,
+  nextSeasonName, openDialog, pickNextSeasonAugust, playerMenuItem, playerRow, submitDialog,
 } from '../helpers.js';
 
 const RETIRED = 'Gestopte Speler';
@@ -22,9 +22,9 @@ const copyButton = (page) =>
   page.getByRole('button', { name: `Copy squad from ${currentSeasonName()}`, exact: false });
 
 /**
- * Makes sure the season August of next year falls in exists, by filing a training on that date —
- * TrainingService creates the season it lands in. Idempotent: the second call finds it rather than
- * making a second one.
+ * Brings the next season into being by filing a training in it — TrainingService creates the season
+ * a date lands in. Call it once: the season is found rather than duplicated on a second call, the
+ * training is not, and nothing stops two sessions sharing a date.
  */
 async function ensureNextSeason(page) {
   await goto(page, '/trainings');
@@ -32,7 +32,7 @@ async function ensureNextSeason(page) {
   await clickFor(page.getByRole('button', { name: 'Add' }).first(), () => expect(panel).toBeVisible());
 
   await openDialog(page);
-  await pickMidAugustNextYear(page, panel);
+  await pickNextSeasonAugust(page, panel);
   await fillField(panel, 'Notes', 'Startdatum volgend seizoen');
   await submitDialog(page);
 }
@@ -132,10 +132,15 @@ test('a season window that would leave a hole is refused, and the season keeps t
   // A season opens on the 1st, so any other day of the same month leaves the previous one ending a
   // fortnight before this one starts — and every date in between belonging to no season at all.
   const popover = page.locator('.mud-picker-popover.mud-popover-open');
+  const startDate = panel.getByLabel('Start date', { exact: false }).first();
+  const before = await startDate.inputValue();
   await clickFor(panel.locator('.mud-input-adornment button').first(), () => expect(popover).toBeVisible());
   await popover.locator('.mud-picker-calendar .mud-day:not(.mud-hidden)')
     .filter({ hasText: /^15$/ }).first().click();
   await expect(popover).toBeHidden();
+  // Proven before anything is submitted: a refusal is the whole assertion, and a picker that quietly
+  // kept its old value would earn one too from any neighbour this season already disagrees with.
+  await expect(startDate).not.toHaveValue(before);
   await submitDialog(page);
 
   // The service returns a Result failure and the page has to say so — a Result nobody reads looks

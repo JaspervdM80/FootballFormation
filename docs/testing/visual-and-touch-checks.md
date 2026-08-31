@@ -36,7 +36,7 @@ in three phone-sized touch contexts — **320×568**, **360×640** and **844×39
 [known_issues](../known_issues/index.md) argues from — and walks every screen a thumb reaches: the games
 list, the new-match dialog at the top and scrolled to the bottom, the picker's day, month and year
 views, the trainings list and its dialog, the app bar, the drawer, `/players`, the formation builder
-and the live screen of a match under way. Thirteen screens per size — twelve in landscape, where the
+and the live screen of a match under way. Fifteen screens per size — fourteen in landscape, where the
 sections fit on the bar itself and there is no drawer to open — screenshotted into
 `artifacts/visual/touch/` with every measurement written to `report.md` beside them.
 
@@ -77,8 +77,18 @@ phone is where they are smallest, and the live screen is the one tapped one-hand
 pressure. Neither a chip nor a draggable player in the list is a semantic control, so both are named
 outright in `CANDIDATES`; nothing else would have found them.
 
-A scene is only as good as what is on the page when it runs, and that is the seeding's job, not the
-audit's. The `/games` scene needs a game card to measure, so `visual-check.mjs` creates one through
+**A scene is only as good as what it can see, and by default it cannot see past the fold.** A target
+clipped out of the viewport is skipped, so a scene measures whatever happens to be above it. The
+formation builder and the live screen were both added to measure pitch chips and both shipped a first
+run measuring **none** — the pitch is below the fold on every phone — while printing a screen count
+that read as coverage. Two things came out of that, and both are worth copying into the next scene:
+pages whose subject sits low get **two passes**, scrolled to what each one is for, the way the match
+dialog is measured from both ends; and `audit()` takes a list of classes the scene must actually have
+measured, failing the run if the subject was not among them. That guard caught a second instance
+immediately — the live screen's Goal buttons are below the fold in landscape too.
+
+A scene is also only as good as what is on the page when it runs, and that is the seeding's job, not
+the audit's. The `/games` scene needs a game card to measure, so `visual-check.mjs` creates one through
 the dialog before the screenshots — **dated today**, because the Live button appears on match day
 only and that is the day the action row carries six buttons rather than five. The live screen needs
 more than that: a second game, a line-up dragged onto its pitch and the clock actually started,

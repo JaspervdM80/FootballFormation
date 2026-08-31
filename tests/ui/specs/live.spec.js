@@ -11,12 +11,15 @@ import { test, expect } from '../fixtures.js';
 import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
 import { chooseOption, clickFor, goto, gotoRendered, liveMatch, openDialog, submitDialog } from '../helpers.js';
 
-/** The shirt numbers on the pitch, and on the bench beside it — the one thing the two chips share. */
-const onPitch = (page) => page.locator('.live-lineup .pitch-player .pitch-number');
-const onBench = (page) => page.locator('.live-bench .live-bench-number');
+// Shirt *and* short name, because a shirt number is not unique — nothing stops two players in a
+// squad wearing the same one, and this file's arithmetic would then credit a substitution to the
+// wrong chip. Both renderings carry both, the bench with a "#" the pitch leaves off.
+const onPitch = (page) => page.locator('.live-lineup .pitch-player');
+const onBench = (page) => page.locator('.live-bench .live-bench-chip');
 
-const shirts = async (locator) =>
-  (await locator.allInnerTexts()).map(text => text.replace('#', '').trim()).sort();
+const players = async (locator) => (await locator.allInnerTexts())
+  .map(text => text.replace('#', '').replace(/\s+/g, ' ').trim())
+  .sort();
 
 /** "12:34" → 754. The reading is the whole assertion, so a format change should fail rather than pass. */
 async function clockSeconds(page) {
@@ -28,10 +31,10 @@ async function clockSeconds(page) {
 test('a substitution swaps the two chips over, and undoing it puts them back', async ({ page }) => {
   await liveMatch(page, 'FC Wisselbank');
 
-  const pitchBefore = await shirts(onPitch(page));
+  const pitchBefore = await players(onPitch(page));
   // Empty to start with: a line-up saved without anyone dragged onto the substitutes' bench has
   // none, and "Comes on" then offers the rest of the roster instead — which is the ordinary case.
-  expect(await shirts(onBench(page))).toEqual([]);
+  expect(await players(onBench(page))).toEqual([]);
 
   await clickFor(page.locator('.live-lineup .pitch-player').first(),
     () => expect(page.locator('.mud-dialog')).toBeVisible());
@@ -46,20 +49,20 @@ test('a substitution swaps the two chips over, and undoing it puts them back', a
 
   // As many on the pitch as before, one of them somebody else, and the shirt that left it now on the
   // bench — the half of a substitution that a chip appearing on the pitch does not prove.
-  const pitchAfter = await shirts(onPitch(page));
-  const cameOn = pitchAfter.filter(shirt => !pitchBefore.includes(shirt));
-  const wentOff = pitchBefore.filter(shirt => !pitchAfter.includes(shirt));
+  const pitchAfter = await players(onPitch(page));
+  const cameOn = pitchAfter.filter(player => !pitchBefore.includes(player));
+  const wentOff = pitchBefore.filter(player => !pitchAfter.includes(player));
   expect(pitchAfter).toHaveLength(pitchBefore.length);
   expect(cameOn, 'nobody actually came on').toHaveLength(1);
-  expect(await shirts(onBench(page))).toEqual(wentOff);
+  expect(await players(onBench(page))).toEqual(wentOff);
 
   await clickFor(event.getByRole('button'), () => expect(page.locator('.live-event')).toHaveCount(0));
 
   // Undo is the coach's answer to a mis-tap under time pressure, so it has to be the whole way back
   // and not merely the timeline entry going away. The two swap over rather than the incoming player
   // leaving the squad sheet — she is on the bench now, which is where a substitute belongs.
-  expect(await shirts(onPitch(page))).toEqual(pitchBefore);
-  expect(await shirts(onBench(page))).toEqual(cameOn);
+  expect(await players(onPitch(page))).toEqual(pitchBefore);
+  expect(await players(onBench(page))).toEqual(cameOn);
 });
 
 test('the clock stops at half time and the second half picks up from the banked total', async ({ page }) => {

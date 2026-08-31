@@ -6,7 +6,7 @@
 import { test, expect } from '../fixtures.js';
 import {
   chooseSeasonNamed, clickFor, confirmDialog, currentSeasonName, fillField, goto, nextSeasonName,
-  openDialog, pickEarlierThisMonth, pickMidAugustNextYear, submitDialog,
+  openDialog, pickEarlierThisMonth, pickNextSeasonAugust, submitDialog,
 } from '../helpers.js';
 import { SQUAD } from '../global-setup.js';
 
@@ -84,12 +84,12 @@ async function offeredAbsentees(page, note) {
 test('editing a session offers the squad of its own season, not of today', async ({ page }) => {
   await addTraining(page, { note: 'Dit seizoen' });
 
-  // A date past the next season boundary lands in a season that does not exist yet, so
+  // A date past this season's boundary lands in the next one, which does not exist yet, so
   // TrainingService creates it — and a brand new season starts with an empty squad, which is what
   // makes the two answers tell apart.
   const panel = page.locator('.mud-dialog');
   await clickFor(page.getByRole('button', { name: 'Add' }).first(), () => expect(panel).toBeVisible());
-  await pickMidAugustNextYear(page, panel);
+  await pickNextSeasonAugust(page, panel);
   await fillField(panel, 'Notes', 'Volgend seizoen');
   await submitDialog(page);
 

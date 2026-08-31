@@ -65,6 +65,30 @@ export const RECORDED_FLOORS = [
       + 'rather than making the month scroll. See docs/known_issues/touch-pwa.md, "The picker\'s flow is '
       + 'year -> month -> day".',
   },
+  {
+    viewport: '844x390',
+    match: 'pitch-player',
+    floor: 28,
+    why: 'A landscape phone sizes the pitch by height: .pitch-constrained caps it at 65dvh, which '
+      + 'on a 390px-tall viewport is a 190px-wide pitch, and five chips across a back line at 44px '
+      + 'would need 220px. --chip-size lands on the 28px clamp minimum .pitch-compact declares.',
+  },
+  {
+    viewport: '320x568',
+    match: 'pitch-player',
+    floor: 34,
+    why: 'The chip is 13-15cqw of the pitch, and the live screen draws its pitch inside a card '
+      + '(~227px on a 320px phone), where that percentage falls below the clamp minimum and the '
+      + 'chip sits on it. Raising the minimum instead would overlap the wide positions, which are '
+      + 'placed by percentage and already reach left: 8%.',
+  },
+  {
+    viewport: '360x640',
+    match: 'pitch-player',
+    floor: 38,
+    why: 'Same clamp on a wider card: 13cqw of a ~293px pitch. It scales with the phone, so every '
+      + 'width above this one is closer to the floor rather than further from it.',
+  },
 ];
 
 // MudBlazor's real targets are rarely the semantic element: a day is a button, but a select's hit
@@ -346,14 +370,31 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     await goto(page, `${base}/games`);
 
     let scenes = 0;
-    const audit = async (scene, root) => {
+
+    /**
+     * `required` names classes the scene has to have actually measured. A target scrolled out of the
+     * viewport is skipped rather than reported, so without this a scene passes while measuring
+     * nothing it was added for — which is how the pitch scenes below shipped measuring no chip.
+     */
+    const audit = async (scene, root, required = []) => {
       scenes++;
       const targets = await measureTargets(page, root);
       if (!targets) throw new Error(`${viewport.name}: nothing matched ${root} for "${scene}"`);
+      for (const name of required) {
+        if (!targets.some(t => t.classes.includes(name)))
+          throw new Error(`${viewport.name}: "${scene}" measured no .${name}`);
+      }
       const audited = auditScene({ viewport: viewport.name, scene, targets });
       findings.push(...audited.findings);
       report.push(`## ${viewport.name} — ${scene}`, '', table(audited.rows), '');
       await page.screenshot({ path: `${dir}/${viewport.name}-${scene.replace(/[ ,]+/g, '-')}.png` });
+    };
+
+    /** Brings an element to the middle of the viewport, and waits for the scroll to stop. */
+    const scrollTo = async (selector) => {
+      const target = page.locator(selector).first();
+      await target.evaluate(el => el.scrollIntoView({ block: 'center' }));
+      await waitForStableBox(target);
     };
 
     // The page itself, before anything is opened on top of it: the header's Add button and the
@@ -437,8 +478,13 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     // The chrome, on its own rather than inside a page's scene: it is tapped on every navigation,
     // and on a phone the hamburger is the only way to any section at all. The drawer is a checkbox
     // with no circuit behind it, so the label is what a thumb hits.
+    //
+    // Below 700px this measures the hamburger and the title link and nothing else: the bar overflows
+    // at those widths and pushes the pickers and the sign-out button off the right-hand edge, where
+    // they are clipped out of the measurement entirely (issue #137). The drawer scene below carries
+    // the pickers; the sign-out button is app-bar only and is measured at the landscape width alone.
     await goto(page, `${base}/players`);
-    await audit('app bar', '.mud-appbar');
+    await audit('app bar', '.mud-appbar', ['app-title-link']);
 
     // The squad. Same --action-btn-size as the game cards, in a different row geometry — which is
     // what makes the clearance rule the part worth measuring here rather than the size.
@@ -447,7 +493,7 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
       what: 'the seeded squad rows — visual-check.mjs seeds four players, and a table with no row '
         + 'in it measures the Add button, finds nothing wrong, and passes',
     });
-    await audit('squad', '.app-main');
+    await audit('squad', '.app-main', ['player-name-cell']);
 
     // The drawer last on this page, and closed by navigating away rather than by the hamburger: once
     // it is open it covers the label that opened it, and the checkbox holding it open is page state
@@ -462,28 +508,39 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
       const drawerLink = page.locator('.app-drawer a').first();
       await clickFor(hamburger, async () => ((await drawerLink.boundingBox())?.x ?? -1) >= 0);
       await waitForStableBox(page.locator('.app-drawer'));
-      await audit('drawer', '.app-drawer');
+      await audit('drawer', '.app-drawer', ['mud-nav-link']);
     }
 
     // The formation builder and the live screen, the two places a chip is the target. Both are
     // sized by a clamp() on container width, so the narrowest phone is where they are smallest —
     // and the live screen is the one tapped one-handed, under time pressure, sometimes in the rain.
+    //
+    // Two passes each, for the same reason the match dialog gets two: the pitch is below the fold on
+    // every one of these viewports, and a target clipped out of view is skipped. Measured from the
+    // top alone, both scenes passed while measuring no chip at all.
     await goto(page, `${base}${liveGame.replace('/live', '/formation')}`);
     await waitUntil(page, async () => await page.locator('.pitch .pitch-player').count() > 0, {
       what: "the seeded line-up's chips on the pitch",
     });
-    await audit('formation builder', '.app-main');
+    await audit('formation builder', '.app-main', ['draggable-player']);
+    await scrollTo('.pitch');
+    await audit('formation builder, pitch', '.app-main', ['pitch-player']);
 
     await goto(page, `${base}${liveGame}`);
     await waitUntil(page, async () => await page.locator('.live-actions').count() > 0, {
       what: 'the live screen of a match under way — visual-check.mjs kicks one off, and before '
         + 'kick-off none of the controls this scene exists to measure are on the page',
     });
-    await audit('live match', '.app-main');
+    // Scrolled to for the same reason the line-up is: a 390px-tall landscape viewport is filled by
+    // the scoreboard alone, so the two buttons a goal is logged with start below the fold there.
+    await scrollTo('.live-actions');
+    await audit('live match, controls', '.app-main', ['live-action-btn']);
+    await scrollTo('.live-lineup .pitch');
+    await audit('live match, line-up', '.app-main', ['pitch-player']);
 
     // Asserted, not logged: `isVisible()` on the hamburger fails open the way `.count()` does, so
     // a renamed class would drop the drawer scene for good and say so only in a number nobody reads.
-    const expected = viewport.name === LANDSCAPE ? 12 : 13;
+    const expected = viewport.name === LANDSCAPE ? 14 : 15;
     if (scenes !== expected)
       throw new Error(`${viewport.name}: audited ${scenes} screens, expected ${expected}`);
     console.log(`${viewport.name.padEnd(8)} audited ${scenes} screens`);

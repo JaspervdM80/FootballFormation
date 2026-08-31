@@ -29,8 +29,14 @@ const scorerOptions = (page) => addGoalRow(page).locator('select').first().locat
 /** "#92 Fixture Midfielder" → "Fixture Midfielder", which is how the fairness table lists her. */
 const nameOf = (label) => label.replace(/^\s*#\S+/, '').trim();
 
-/** Indexes into that list. The assist select drops whoever was picked as scorer, so its index 1 is
- *  the next player along rather than the same one. */
+/**
+ * `scorer` and `assist` are indexes into that list; the assist select drops whoever was picked as the
+ * scorer, so its index 1 is the next player along rather than the same one.
+ *
+ * The retry checks for *this* goal rather than the snackbar: MudBlazor suppresses a duplicate
+ * message, so a second "Goal added!" is the first one still on screen — which would report a
+ * swallowed click as a success, and, once it expired, retry a write that is not idempotent.
+ */
 async function addGoal(page, { minute, scorer, assist, ownGoal = false }) {
   const row = addGoalRow(page);
   await row.locator('input[type=number]').fill(String(minute));
@@ -40,11 +46,14 @@ async function addGoal(page, { minute, scorer, assist, ownGoal = false }) {
 
   await clickFor(
     row.locator('.btn-add-goal'),
-    () => expect(page.getByText('Goal added', { exact: false })).toBeVisible(),
+    () => expect(page.locator('.goal-entry', { hasText: `${minute}'` })).toHaveCount(1),
   );
 }
 
-/** Writes a comment. The switch is off by default, because publishing is always a deliberate act. */
+/**
+ * Writes a comment. The switch is off by default, because publishing is always a deliberate act.
+ * The retry checks for this comment's own body, not the snackbar — see addGoal.
+ */
 async function addComment(page, body, { isPublic = false } = {}) {
   await fillField(page, 'Add comment', body);
   const visible = page.locator('.comment-add-row input[type=checkbox]');
@@ -52,7 +61,7 @@ async function addComment(page, body, { isPublic = false } = {}) {
 
   await clickFor(
     page.locator('.result-comments .btn-add-goal'),
-    () => expect(page.getByText('Comment added', { exact: false })).toBeVisible(),
+    () => expect(page.locator('.comment-entry', { hasText: body })).toHaveCount(1),
   );
 }
 
