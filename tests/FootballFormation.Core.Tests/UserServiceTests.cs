@@ -315,6 +315,30 @@ public class UserServiceTests : ServiceTestBase
         Assert.Equal(["Anna", "Mila", "Zoe"], all.Value!.Select(u => u.DisplayName));
     }
 
+    [Fact]
+    public async Task Dev_login_prefers_the_seeded_admin_account()
+    {
+        await Users.EnsureAdminSeededAsync();
+        await Users.CreateAsync("Coach", "coach", GoodPassword, UserRole.Admin);
+
+        var picked = await Users.FindDevLoginAdminAsync();
+
+        Assert.Equal("admin", picked?.Username);
+        // The full entity, not the list projection: the principal /dev/login mints carries the stamp.
+        Assert.NotEmpty(picked!.SecurityStamp);
+    }
+
+    [Fact]
+    public async Task Dev_login_falls_back_to_the_lowest_numbered_admin_without_an_admin_username()
+    {
+        var first = await Users.CreateAsync("Coach", "coach", GoodPassword, UserRole.Admin);
+        await Users.CreateAsync("Assistant", "assistant", GoodPassword, UserRole.Admin);
+
+        var picked = await Users.FindDevLoginAdminAsync();
+
+        Assert.Equal(first.Value!.Id, picked?.Id);
+    }
+
     // The cookie handler and the circuit's revalidation loop both ask "is this session still good" from a ClaimsPrincipal, and share
     // this overload so they cannot answer it differently.
 

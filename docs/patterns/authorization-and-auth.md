@@ -32,6 +32,13 @@ completes a match and then reads the player page twice, once as an admin and onc
 context, because proving an absence is only worth anything next to the presence it is measured
 against.
 
+**Squad injury status is admin-only on `/players`, for the same reason.** Whether a named child is
+injured is a personal fact, not squad news, so the row's medical marker and the "{0} injured" count
+in the header both sit behind `<AuthorizeView Roles="@AppRoles.Admin">` — a visitor sees the player
+and the squad total, not who is hurt. `injury.spec.js` pins the pair: an admin sees the mark, a
+visitor on the same page does not. (The mid-match "off injured" event on `/games/{id}/live` is a
+separate, deliberately public part of the match narrative and is not covered by this.)
+
 **One read is not open, and it is the exception worth knowing.**
 `GameService.GetCommentsAsync(gameId, includePrivate)` takes a flag saying whether to include
 admin-only comments — and then confirms it against `ICurrentUser` rather than believing it, so a

@@ -12,7 +12,7 @@ public partial class Users
     [CascadingParameter]
     private Task<AuthenticationState> AuthStateTask { get; set; } = null!;
 
-    private List<AppUser>? _users;
+    private List<UserSummary>? _users;
 
     /// Who is looking, so the list can mark their own row and hide its delete action.
     private int? _currentUserId;
@@ -47,7 +47,7 @@ public partial class Users
         await LoadUsers();
     }
 
-    private async Task OpenEditDialog(AppUser user)
+    private async Task OpenEditDialog(UserSummary user)
     {
         var edited = await ShowUserDialogAsync(L["Edit User"], user);
         if (edited is null) return;
@@ -60,7 +60,7 @@ public partial class Users
     }
 
     /// Signs that user out of every session they had open, because the security stamp changes — which is the point.
-    private async Task ResetPassword(AppUser user)
+    private async Task ResetPassword(UserSummary user)
     {
         var edited = await ShowUserDialogAsync(L["Reset Password"], user, passwordOnly: true);
         if (edited is null) return;
@@ -70,7 +70,7 @@ public partial class Users
         await LoadUsers();
     }
 
-    private async Task DeleteUser(AppUser user)
+    private async Task DeleteUser(UserSummary user)
     {
         var confirmed = await DialogService.ConfirmDeleteAsync(
             L["Delete User"],
@@ -84,7 +84,7 @@ public partial class Users
 
     /// Null when the dialog was cancelled.
     private Task<UserDialog.Model?> ShowUserDialogAsync(
-        string title, AppUser? user = null, bool passwordOnly = false) =>
+        string title, UserSummary? user = null, bool passwordOnly = false) =>
         DialogService.PromptAsync<UserDialog, UserDialog.Model>(title, p =>
         {
             if (user is not null) p.Add(x => x.User, user);

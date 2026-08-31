@@ -1,5 +1,6 @@
 using System.Net;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Antiforgery;
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Reporting;
 using FootballFormation.UI;
@@ -50,14 +51,28 @@ public static class Routing
         app.MapPost("/auth/login", async (
             HttpContext context,
             UserService userService,
+            IAntiforgery antiforgery,
             ILoggerFactory loggerFactory) =>
         {
             var logger = loggerFactory.CreateLogger("Auth");
+            var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+            // A cross-site form cannot carry the token the sign-in page rendered, so this is what stops one logging a victim in as
+            // the attacker. The endpoint reads the form itself, so nothing validates it unless we ask.
+            try
+            {
+                await antiforgery.ValidateRequestAsync(context);
+            }
+            catch (AntiforgeryValidationException)
+            {
+                logger.LogWarning("Rejected a login POST with no valid antiforgery token from {Ip}", ip);
+                return Results.Redirect("/login?error=true");
+            }
+
             var form = await context.Request.ReadFormAsync();
             var username = form["username"].ToString();
             var password = form["password"].ToString();
             var returnUrl = form["returnUrl"].ToString();
-            var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
             var user = await userService.ValidateCredentialsAsync(username, password, context.RequestAborted);
             if (user is null)
@@ -75,7 +90,6 @@ public static class Routing
 
             return Results.Redirect(IsLocalUrl(returnUrl) ? returnUrl : "/");
         })
-        .DisableAntiforgery()
         .RequireRateLimiting("login");
 
         app.MapPost("/auth/logout", async (HttpContext context) =>
@@ -94,13 +108,7 @@ public static class Routing
                 if (remote is null || !IPAddress.IsLoopback(remote))
                     return Results.NotFound();
 
-                var usersResult = await userService.GetAllAsync(context.RequestAborted);
-                if (usersResult.IsFailure) return Results.NotFound();
-
-                // Deterministic on purpose: GetAllAsync orders by display name, so "first admin" would otherwise mean "whoever sorts
-                // first", and adding a user could silently change who this signs you in as.
-                var admins = usersResult.Value!.Where(u => u.Role.GrantsAdmin()).ToList();
-                var admin = admins.FirstOrDefault(u => u.Username == "admin") ?? admins.OrderBy(u => u.Id).FirstOrDefault();
+                var admin = await userService.FindDevLoginAdminAsync(context.RequestAborted);
                 if (admin is null) return Results.NotFound();
 
                 await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, PrincipalFor(admin), PersistentSession());
