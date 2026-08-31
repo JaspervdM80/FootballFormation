@@ -261,6 +261,11 @@ public partial class LiveMatch
     private async Task<bool> ReloadAsync()
     {
         var result = await Live.GetLiveAsync(GameId, Cancellation);
+
+        // ReportFailure answers false for a cancelled read as well as a failed one, and a visitor who
+        // has already left is one Trail.Redirect would leave no way back from.
+        if (result.IsCancelled) return false;
+
         if (!Snackbar.ReportFailure(L, result))
         {
             Trail.Redirect(AppRoutes.Games);
