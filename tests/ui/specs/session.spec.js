@@ -7,7 +7,9 @@
 import { test, expect } from '../fixtures.js';
 import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
 import { ADMIN_PASSWORD, ADMIN_USERNAME } from '../global-setup.js';
-import { clickFor, confirmDialog, fillField, goto, gotoRendered, openDialog, submitDialog } from '../helpers.js';
+import {
+  clickFor, confirmDialog, fillField, goto, gotoRendered, openDialog, submitDialog, waitForHandlers,
+} from '../helpers.js';
 
 const AUTH_COOKIE = 'ff.auth';
 
@@ -90,6 +92,30 @@ test.describe('an admin who is already signed in', () => {
   });
 });
 
+/** Creates an admin account through the real dialog and returns what it can sign in with. */
+async function addAdmin(page, name) {
+  // Named per attempt, not per test: Playwright's CI retry re-runs this against the database the
+  // failed attempt left behind, and a username is unique — a fixed one would fail the retry on
+  // "already exists" rather than on whatever went wrong. See docs/known_issues/authentication.md.
+  const username = `${name}-${Date.now()}`;
+  const password = `${name}-admin-1`;
+
+  await goto(page, '/users');
+  await clickFor(
+    page.getByRole('button', { name: 'Add User' }),
+    () => expect(page.locator('.mud-dialog')).toBeVisible());
+
+  const dialog = await openDialog(page);
+  await fillField(dialog, 'Name', `${name} admin`);
+  await fillField(dialog, 'Username', username);
+  await dialog.getByLabel('Password', { exact: false }).first().fill(password);
+  await dialog.getByLabel('Confirm password', { exact: false }).first().fill(password);
+  await submitDialog(page);
+  await expect(userRow(page, username)).toBeVisible();
+
+  return { username, password };
+}
+
 // The circuit half of revocation. A Blazor Server tab makes almost no HTTP requests after its first
 // page load, so `OnValidatePrincipal` — which runs per request — is not what takes authority away
 // from someone already looking at the app. That is the revalidation loop, and this is the only place
@@ -97,24 +123,7 @@ test.describe('an admin who is already signed in', () => {
 // production (see playwright.config.js).
 test.describe('an account revoked while its owner is looking at the app', () => {
   test('loses its authority without anyone reloading anything', async ({ page, browser }) => {
-    // Named per attempt, not per test: Playwright's CI retry re-runs this against the database the
-    // failed attempt left behind, and a username is unique — a fixed one would fail the retry on
-    // "already exists" rather than on whatever went wrong. See docs/known_issues/authentication.md.
-    const username = `revoked-${Date.now()}`;
-    const password = 'revoked-admin-1';
-
-    await goto(page, '/users');
-    await clickFor(
-      page.getByRole('button', { name: 'Add User' }),
-      () => expect(page.locator('.mud-dialog')).toBeVisible());
-
-    const dialog = await openDialog(page);
-    await fillField(dialog, 'Name', 'Revoked Admin');
-    await fillField(dialog, 'Username', username);
-    await dialog.getByLabel('Password', { exact: false }).first().fill(password);
-    await dialog.getByLabel('Confirm password', { exact: false }).first().fill(password);
-    await submitDialog(page);
-    await expect(userRow(page, username)).toBeVisible();
+    const { username, password } = await addAdmin(page, 'revoked');
 
     // A second browser, signed in as that account and sitting on an admin page.
     const theirContext = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
@@ -138,6 +147,46 @@ test.describe('an account revoked while its owner is looking at the app', () => 
       // The circuit notices on its own and RedirectToLogin force-loads — which is also the request
       // that finally clears the cookie, since a circuit has no response to clear it on.
       await theirPage.waitForURL(/\/login/, { timeout: 30_000 });
+    } finally {
+      await theirContext.close();
+    }
+  });
+});
+
+// global-setup.js leans on this to get the suite started at all: it changes the seeded admin's
+// password and has to sign in again afterwards, or the state it saves is an anonymous one. Asserted
+// here on purpose, because a regression would otherwise surface as every spec in the directory going
+// red at once with a message about none of this.
+test.describe('an admin who changes their own password', () => {
+  test('is signed out of the session that changed it, and back in with the new one', async ({ page, browser }) => {
+    const { username, password } = await addAdmin(page, 'rotated');
+    const replacement = `${password}-2`;
+
+    const theirContext = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
+    try {
+      const theirPage = await theirContext.newPage();
+      await signInThroughTheForm(theirPage, username, password);
+      await goto(theirPage, '/settings');
+
+      // The only password inputs on the page, and the one place in this suite that has to prove its
+      // handlers are attached before typing — see waitForHandlers.
+      const fields = theirPage.locator('input[type="password"]');
+      await waitForHandlers(fields.first());
+      await fields.nth(0).fill(password);
+      await fields.nth(1).fill(replacement);
+      await fields.nth(2).fill(replacement);
+
+      // Clicked exactly once, deliberately: a second attempt would be made with a password that is
+      // no longer the current one. And waited on the navigation rather than on the form clearing —
+      // the re-render lands before the cookie is dropped, and signing in on that signal starts a
+      // navigation while the circuit's own is still in flight.
+      await theirPage.getByRole('button', { name: 'Change password', exact: false }).click();
+      await theirPage.waitForURL(/\/login/, { timeout: 30_000 });
+
+      await signInThroughTheForm(theirPage, username, replacement);
+      await goto(theirPage, '/settings');
+      await expect(theirPage.getByRole('heading', { name: 'Match Preferences', exact: false }).first())
+        .toBeVisible();
     } finally {
       await theirContext.close();
     }

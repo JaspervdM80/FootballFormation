@@ -23,10 +23,14 @@ real SignalR circuit.
 | `squad.spec.js` | Adding, editing and archiving a player; a nameless player is refused and told why |
 | `games.spec.js` | Creating, editing and deleting a match; season defaults filling the form; the missing-lineup warning appearing only for a match already played |
 | `match-day.spec.js` | The journey the app exists for: drag a lineup onto the pitch, save it, run the match live, log goals, blow the whistle, and find the scoreline on the games list — plus the playing-time table dropping its `~` estimate for the match clock once that has happened |
+| `trainings.spec.js` | Registering a session and who was not at it, the attendance register behind it, and a session offering the squad of its own season rather than of today |
 | `localization.spec.js` | Dutch by default, the switcher moving the whole app to English, and the choice surviving a navigation |
 | `mobile.touchline.spec.js` | The phone layout — the drawer, the full-screen match sheet, the stacked squad — in the `mobile` project on a Pixel 7 |
 | `reconnect.spec.js` | Losing the circuit and getting it back: the retry schedule a suspended phone rejoins on, and the rejoined page still being interactive |
-| `session.spec.js` | Staying signed in: the auth cookie carrying a real expiry rather than being a session cookie, surviving a link followed in from another site, and a deleted account losing its authority on an open circuit without anyone reloading |
+| `session.spec.js` | Staying signed in: the auth cookie carrying a real expiry rather than being a session cookie, surviving a link followed in from another site, a deleted account losing its authority on an open circuit without anyone reloading, and an admin who changes their own password being signed out and back in |
+| `live.spec.js` | The live screen past kick-off: a substitution swapping the pitch chip for a bench one and undoing back, the clock stopping at half time and the second half resuming from the banked total, and a spectator's inert pitch |
+| `result.spec.js` | The result page: the private/public comment split a visitor must not see through, an own goal counting for the opponent, a scorer and assister reaching their own statistics, and the scoreline printed in venue order |
+| `upcoming-season.spec.js` | The season ahead: copying last season's squad forward once and never twice, the archived left behind, a member removed and re-added as a guest, and a season window that would leave a gap being refused |
 | `selectors.spec.js` | A test for the tests — see below |
 
 ### The test that guards the tests

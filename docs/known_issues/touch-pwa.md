@@ -57,6 +57,33 @@
   actions on a line of their own, flush, at a fixed width and pushed to the card's right-hand edge
   (`Games.razor.css`). 44px each, which is why the card's horizontal padding drops from 16px to 12px
   there — 16px leaves 260px and six buttons need 264, while 12px leaves 268px.
+- **Widening it again — to the chrome, the squad, the formation builder and the live screen — found
+  five things sized by their own content rather than by `--action-btn-size`:** the app-bar title link
+  (28px), the drawer's nav entries (40.5px), the sign-out button (28px, and styled inline so nothing
+  could reach it), the top bar's own nav links in landscape (38.4px), and `.btn-ghost`, left out of
+  the `min-height` rule its two sibling button classes were already in. All five are `app.css` now.
+  The squad's action rows were the one part that was already right, which is `--action-btn-size`
+  doing its job.
+- **The scenes added for the pitch chips measured no pitch chip, and passed.** Both new scenes were
+  written to measure `.pitch-player`, and `grep -c pitch-player` on the first report they produced
+  was **zero**: the pitch is below the fold on all three viewports, and a target clipped out of the
+  viewport is skipped rather than reported. Four targets per scene were measured — a back button, a
+  button or two, an input control — the run printed "audited 13 screens", and the summary written off
+  the back of it said the chips cleared 44px everywhere. They do not. Two fixes, and the second is
+  the one that generalises: audit those pages from **both ends** the way the match dialog already
+  was, and let `audit()` take the classes a scene must actually have measured, so a scene that
+  measures nothing it exists for fails instead of passing. That guard immediately earned itself —
+  it caught the live screen's Goal buttons sitting below the fold in landscape too.
+- **The chips themselves are 28–41px, and that is geometry rather than an oversight.** Once measured:
+  40.9px on the builder at 320, 34px on the live screen at 320, 38.1px at 360, and 28px in landscape,
+  where `.pitch-constrained` caps the pitch at `65dvh` — a 190px-wide pitch, in which five chips
+  across a back line at 44px would need 220px. `--chip-size` is `clamp(34px, 13cqw, 52px)` on a
+  regular pitch and `clamp(28px, 15cqw, 44px)` on a compact one, and the positions are placed by
+  percentage with the widest already at `left: 8%`, so raising the minimum overlaps them. Recorded
+  floors, one per viewport, with those numbers — **and a recorded floor is still a floor**, so the
+  run now fails if a chip drops below what the geometry achieves today. Whether the live screen
+  should give up something else to make its chips thumb-sized is a design question this harness can
+  now put numbers behind, which it could not before.
 - **Splitting that row evenly made a button's width a function of the row's length.** It was
   `flex: 1` at first, so nothing was narrower than it had to be. But the row is four buttons on a
   fixture, five on a played match, six on match day and *one* on a card an anonymous visitor is

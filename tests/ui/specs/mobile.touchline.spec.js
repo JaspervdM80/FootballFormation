@@ -78,12 +78,3 @@ test('a tap beside the action buttons opens the match, rather than landing in no
 
   await expect(page).toHaveURL(/\/games\/\d+\/formation/);
 });
-
-test('a match card says its venue in words, which the edge stripe alone never did', async ({ page }) => {
-  await createMatch(page, { opponent: 'FC Thuisploeg', venue: 'Home' });
-
-  const row = gameRow(page, 'FC Thuisploeg');
-  const badge = row.locator('.badge-venue');
-  await expect(badge).toHaveText('HOME');
-  await expect(badge).toHaveClass(/badge-venue-home/);
-});

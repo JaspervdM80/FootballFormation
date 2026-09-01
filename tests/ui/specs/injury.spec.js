@@ -4,7 +4,8 @@
 import { test, expect } from '../fixtures.js';
 import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
 import {
-  addPlayer, clickFor, createMatch, gameRow, goto, gotoRendered, openDialog, playerMenuItem, playerRow, submitDialog,
+  addPlayer, clickFor, createMatch, gameRow, gotoRendered, liveMatch, openDialog, playerMenuItem,
+  playerRow, submitDialog,
 } from '../helpers.js';
 
 /** Toggles the Injured switch in the open Edit Player dialog and saves. */
@@ -88,36 +89,8 @@ test('the unavailable-players picker leaves an injured player out, and says why'
   await panel.getByRole('button', { name: 'Cancel' }).click();
 });
 
-/** A match with a lineup and the clock running — the only state an injury can be recorded from. */
-async function liveMatchWithLineup(page, opponent) {
-  await createMatch(page, { opponent });
-  await gameRow(page, opponent).getByTitle(/Formation|Add lineup/).click();
-  await page.waitForURL(/\/games\/\d+\/formation/);
-  const id = Number(page.url().match(/\/games\/(\d+)\//)[1]);
-
-  const available = page.locator('.draggable-player');
-  const chips = page.locator('.pitch .pitch-player');
-  await expect(available.first()).toBeVisible();
-  for (let i = 0; i < 2; i++) {
-    await available.first().dragTo(page.locator('.pitch .pitch-empty').first());
-    await expect(chips).toHaveCount(i + 1);
-  }
-  await clickFor(
-    page.getByRole('button', { name: /^Save( All Lineups)?$/ }).first(),
-    () => expect(page.getByText('All lineups saved', { exact: false })).toBeVisible(),
-    { settle: 10_000 },
-  );
-
-  await goto(page, `/games/${id}/live`);
-  await clickFor(
-    page.getByRole('button', { name: 'Start match' }),
-    () => expect(page.getByRole('button', { name: 'Finish match' })).toBeVisible(),
-  );
-  return id;
-}
-
 test('a player marked injured mid-match leaves the pitch and can be put back', async ({ page }) => {
-  await liveMatchWithLineup(page, 'FC Blessurewissel');
+  await liveMatch(page, 'FC Blessurewissel');
 
   const chips = page.locator('.live-lineup .pitch-player');
   await expect(chips).toHaveCount(2);

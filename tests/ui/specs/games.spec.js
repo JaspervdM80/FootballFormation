@@ -2,39 +2,27 @@
 // at a touchline.
 import { test, expect } from '../fixtures.js';
 import {
-  clickFor, confirmDialog, createMatch, fillField, gameRow, goto, openDialog, submitDialog,
+  clickFor, confirmDialog, createMatch, fileScore, fillField, gameRow, goto, matchWithId,
+  openDialog, submitDialog,
 } from '../helpers.js';
-
-/** Creates a match and returns its id, read from the URL its own formation button navigates to. */
-async function matchWithId(page, opponent, options = {}) {
-  await createMatch(page, { opponent, ...options });
-  await gameRow(page, opponent).getByTitle(/Formation|Add lineup/).click();
-  await page.waitForURL(/\/games\/\d+\/formation/);
-  return Number(page.url().match(/\/games\/(\d+)\//)[1]);
-}
-
-/** Files a score for a match already dated in the past, turning it from a fixture into a result. */
-async function fileScore(page, id, home, away) {
-  await goto(page, `/games/${id}/result`);
-  await page.locator('.score-big-input').first().fill(String(home));
-  await page.locator('.score-big-input.score-away').fill(String(away));
-  await clickFor(
-    page.getByRole('button', { name: 'Save Score' }),
-    () => expect(page.getByText('saved', { exact: false }).first()).toBeVisible(),
-  );
-}
 
 test('a new match appears under Fixtures with its venue and formation', async ({ page }) => {
   await createMatch(page, { opponent: 'FC Nieuwkomer', venue: 'Away' });
+  await createMatch(page, { opponent: 'FC Thuisploeg', venue: 'Home' });
 
   const row = gameRow(page, 'FC Nieuwkomer');
   await expect(row).toBeVisible();
   // The venue is a badge trailing the opponent's name, at every width, and it carries the venue in
   // its class as well as its text — the colour is half of what it says, and a badge that read
-  // "AWAY" in the home green would be worse than no badge.
+  // "AWAY" in the home green would be worse than no badge. Both readings, because a badge stuck on
+  // one of them says the right thing half the time and would pass either check alone.
   const badge = row.locator('.badge-venue');
   await expect(badge).toHaveText('AWAY');
   await expect(badge).toHaveClass(/badge-venue-away/);
+
+  const home = gameRow(page, 'FC Thuisploeg').locator('.badge-venue');
+  await expect(home).toHaveText('HOME');
+  await expect(home).toHaveClass(/badge-venue-home/);
 
   // A match with no score yet belongs to Fixtures, not Results.
   const fixtures = page.locator('.game-section', { hasText: 'Fixtures' });

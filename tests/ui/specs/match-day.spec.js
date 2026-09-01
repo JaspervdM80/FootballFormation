@@ -6,47 +6,10 @@
 // built in the formation builder has to be the lineup the live screen substitutes from.
 import { test, expect } from '../fixtures.js';
 import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
-import { chooseOption, clickFor, createMatch, gameRow, goto, gotoRendered, openDialog, submitDialog } from '../helpers.js';
-
-/** Creates a match and returns its id, read from the URL its own formation button navigates to. */
-async function matchWithId(page, opponent, options = {}) {
-  await createMatch(page, { opponent, ...options });
-  await gameRow(page, opponent).getByTitle(/Formation|Add lineup/).click();
-  await page.waitForURL(/\/games\/\d+\/formation/);
-  return Number(page.url().match(/\/games\/(\d+)\//)[1]);
-}
-
-/**
- * Puts the available players onto the pitch by dragging them, which is the only way the builder
- * offers — an empty slot takes a drop, not a click — and then saves.
- *
- * The save is explicit and easy to miss: dropping a player only changes what is on screen, and
- * navigating away without pressing Save loses the lot. Returns how many were placed. The formation
- * has more slots than this squad has players, which is fine and realistic: a lineup does not have
- * to be complete for the match to be run.
- */
-async function fillLineup(page, limit = 4) {
-  const available = page.locator('.draggable-player');
-  const emptySlots = page.locator('.pitch .pitch-empty');
-  const chips = page.locator('.pitch .pitch-player');
-
-  await expect(available.first()).toBeVisible();
-  const squad = await available.count();
-  const placed = Math.min(limit, squad);
-
-  for (let i = 0; i < placed; i++) {
-    // Always the first of each: a placed player leaves the list, and a filled slot stops being empty.
-    await available.first().dragTo(emptySlots.first());
-    await expect(chips).toHaveCount(i + 1);
-  }
-
-  await clickFor(
-    page.getByRole('button', { name: /^Save( All Lineups)?$/ }).first(),
-    () => expect(page.getByText('All lineups saved', { exact: false })).toBeVisible(),
-    { settle: 10_000 },
-  );
-  return { placed, squad };
-}
+import {
+  chooseOption, clickFor, fillLineup, finishMatch, gameRow, goto, gotoRendered, liveMatch,
+  matchWithId, openDialog, saveLineup, startMatch, submitDialog,
+} from '../helpers.js';
 
 test('a lineup dragged onto the pitch is still there after a reload', async ({ page }) => {
   const id = await matchWithId(page, 'FC Wedstrijddag');
@@ -72,10 +35,7 @@ test('a match is run from the live screen and its score reaches the result', asy
   const ourScore = page.locator('.live-score-value:not(.live-score-away)');
   const theirScore = page.locator('.live-score-value.live-score-away');
 
-  await clickFor(
-    page.getByRole('button', { name: 'Start match' }),
-    () => expect(page.getByRole('button', { name: 'Finish match' })).toBeVisible(),
-  );
+  await startMatch(page);
 
   // The lineup only appears once there is a period being played — before kick-off there is nothing
   // to substitute from.
@@ -101,14 +61,7 @@ test('a match is run from the live screen and its score reaches the result', asy
   // that runs backwards.
   await expect(page.locator('.live-event .live-event-score')).toHaveText(['1–1', '1–0']);
 
-  // The final whistle asks first, and its confirming button carries the same words as the one that
-  // opened it — so the click has to be scoped to the control panel, or the locator matches both.
-  await clickFor(
-    page.locator('.live-controls').getByRole('button', { name: 'Finish match' }),
-    () => expect(page.locator('.mud-dialog')).toBeVisible(),
-  );
-  await submitDialog(page, 'Finish match');
-  await expect(page.getByRole('button', { name: 'Edit result' })).toBeVisible();
+  await finishMatch(page);
 
   // The scoreline follows the match to the list and to the report.
   await goto(page, '/games');
@@ -118,14 +71,7 @@ test('a match is run from the live screen and its score reaches the result', asy
 });
 
 test('a match being played leads its card, in a colour nothing else there uses', async ({ page }) => {
-  const id = await matchWithId(page, 'FC Bezig');
-  await fillLineup(page, 2);
-
-  await goto(page, `/games/${id}/live`);
-  await clickFor(
-    page.getByRole('button', { name: 'Start match' }),
-    () => expect(page.getByRole('button', { name: 'Finish match' })).toBeVisible(),
-  );
+  await liveMatch(page, 'FC Bezig');
 
   await goto(page, '/games');
   const row = gameRow(page, 'FC Bezig');
@@ -150,14 +96,7 @@ test('a match being played leads its card, in a colour nothing else there uses',
 });
 
 test('tapping a player on the pitch offers a substitution and a position swap', async ({ page }) => {
-  const id = await matchWithId(page, 'FC Wisselen');
-  await fillLineup(page, 2);
-
-  await goto(page, `/games/${id}/live`);
-  await clickFor(
-    page.getByRole('button', { name: 'Start match' }),
-    () => expect(page.getByRole('button', { name: 'Finish match' })).toBeVisible(),
-  );
+  await liveMatch(page, 'FC Wisselen');
 
   const chips = page.locator('.live-lineup .pitch-player');
   const first = chips.first();
@@ -199,11 +138,7 @@ test('a quarters half keeps its changes in a pop-up and is run as one half', asy
     await available.last().dragTo(emptySlots.first());
     await expect(chips).toHaveCount(i + 1);
   }
-  await clickFor(
-    page.getByRole('button', { name: /^Save( All Lineups)?$/ }).first(),
-    () => expect(page.getByText('All lineups saved', { exact: false })).toBeVisible(),
-    { settle: 10_000 },
-  );
+  await saveLineup(page);
 
   await goto(page, `/games/${id}/live`);
 
@@ -222,10 +157,7 @@ test('a quarters half keeps its changes in a pop-up and is run as one half', asy
     () => expect(page.locator('.mud-dialog')).toHaveCount(0),
   );
 
-  await clickFor(
-    page.getByRole('button', { name: 'Start match' }),
-    () => expect(page.getByRole('button', { name: 'Finish match' })).toBeVisible(),
-  );
+  await startMatch(page);
 
   // The clock runs in halves however the line-ups were planned, so the control on offer during the
   // first quarter is already half time — the second quarter is never a period the clock stops for.
@@ -238,14 +170,7 @@ test('a quarters half keeps its changes in a pop-up and is run as one half', asy
 });
 
 test('the timeline can be narrowed to the goals', async ({ page }) => {
-  const id = await matchWithId(page, 'FC Tijdlijn');
-  await fillLineup(page, 2);
-
-  await goto(page, `/games/${id}/live`);
-  await clickFor(
-    page.getByRole('button', { name: 'Start match' }),
-    () => expect(page.getByRole('button', { name: 'Finish match' })).toBeVisible(),
-  );
+  await liveMatch(page, 'FC Tijdlijn');
 
   const events = page.locator('.live-event');
 
@@ -273,14 +198,7 @@ test('the timeline can be narrowed to the goals', async ({ page }) => {
 });
 
 test('the timeline draws half time between the two halves', async ({ page }) => {
-  const id = await matchWithId(page, 'FC Rust');
-  await fillLineup(page, 2);
-
-  await goto(page, `/games/${id}/live`);
-  await clickFor(
-    page.getByRole('button', { name: 'Start match' }),
-    () => expect(page.getByRole('button', { name: 'Finish match' })).toBeVisible(),
-  );
+  await liveMatch(page, 'FC Rust');
 
   const events = page.locator('.live-event');
   const halfTime = page.locator('.live-event-break');
@@ -326,33 +244,16 @@ test('the playing-time table drops its estimate once the match has been run', as
   const minutesLabel = page.locator('.live-minutes-card .card-label');
   await expect(minutesLabel).toHaveText('Planned minutes');
 
-  await clickFor(
-    page.getByRole('button', { name: 'Start match' }),
-    () => expect(page.getByRole('button', { name: 'Finish match' })).toBeVisible(),
-  );
+  await startMatch(page);
   await expect(minutesLabel).toHaveText('Minutes played');
 
-  await clickFor(
-    page.locator('.live-controls').getByRole('button', { name: 'Finish match' }),
-    () => expect(page.locator('.mud-dialog')).toBeVisible(),
-  );
-  await submitDialog(page, 'Finish match');
-  await expect(page.getByRole('button', { name: 'Edit result' })).toBeVisible();
+  await finishMatch(page);
 
   // The same table now reads the match clock instead — whistled off within seconds of kick-off, so
   // the honest answer is nought minutes rather than the half the lineup was planned for.
   await goto(page, `/games/${id}/formation`);
   await expect(totals.first()).not.toContainText('~');
   await expect(page.locator('.playtime-note')).toHaveCount(0);
-});
-
-test('minutes played show up in the statistics once a match is complete', async ({ page }) => {
-  await gotoRendered(page, '/stats');
-
-  // The seeded squad is on the page whether or not anyone has played yet; the point of the check is
-  // that the report renders against real games rather than throwing on an empty one.
-  await expect(page.getByRole('heading', { name: 'Statistics', exact: false }).first()).toBeVisible();
-  await expect(page.getByText('Fixture', { exact: false }).first()).toBeVisible();
 });
 
 /** The grid's actual track count, which is the half of a hidden column that markup cannot show. */

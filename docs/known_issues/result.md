@@ -16,8 +16,11 @@
 - **A cancelled load must not redirect.** The pages that treat "not found" as a reason to
   `Trail.Redirect(...)` have to check `result.IsCancelled` first, or abandoning the load throws the
   visitor off whatever page they actually navigated to — a navigation that fights the one they
-  just made. `MatchResult`, `FormationBuilder`, `FormationOverview` and `PlayerStats` all carry
-  that check.
+  just made. `MatchResult`, `FormationBuilder`, `FormationOverview`, `PlayerStats` and `LiveMatch`
+  all carry that check. `LiveMatch` was the one that did not, and it was the likeliest to reach it:
+  `ReloadAsync` runs on every `LiveMatchNotifier` fan-out as well as at init, so a visitor leaving
+  the live screen just as someone logged a goal disposed the page mid-reload and was navigated to
+  `/games` instead of where they were going (#69).
 - **Reading `Result<T>.Value` on a failure throws**: it used to return `default`, so a caller that
   skipped the success check got a null three frames away instead of an error where the mistake was.
   Check `IsSuccess` (or let `Snackbar.ReportFailure` do it — it returns a bool for exactly this).
