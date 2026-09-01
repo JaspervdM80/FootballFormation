@@ -320,15 +320,32 @@ public class AuthorizationTests : ServiceTestBase
 
         await Users.CreateAsync("Theirs", "theirs", "long-enough-password", UserRole.Admin, theirs.Id);
 
-        // The cookie is a view choice anyone can make, so it must not be what decides who sees a list of names and logins.
+        // The cookie is a view choice anyone can make, so it must not be what decides who sees a list of names and logins — the read
+        // asks the same question the writes do.
         CurrentUser.IsApplicationAdmin = false;
         CurrentUser.AdminTeamId = mine.Id;
         CurrentTeam.Id = theirs.Id;
 
         var users = await Users.GetAllAsync();
 
-        Assert.True(users.IsSuccess);
-        Assert.Empty(users.Value!);
+        Assert.True(users.IsFailure);
+        Assert.Equal(ServiceOperation.NotAllowedKey, users.ErrorKey);
+    }
+
+    [Fact]
+    public async Task The_account_list_is_not_one_of_the_public_reads()
+    {
+        SeedTeam();
+
+        CurrentUser.IsAdmin = false;
+        CurrentUser.IsApplicationAdmin = false;
+
+        // Unlike the squad, the fixtures and the statistics: this one is names and logins, so it is guarded at the service boundary
+        // rather than only by the page's [Authorize].
+        var users = await Users.GetAllAsync();
+
+        Assert.True(users.IsFailure);
+        Assert.Equal(ServiceOperation.NotAllowedKey, users.ErrorKey);
     }
 
     [Fact]

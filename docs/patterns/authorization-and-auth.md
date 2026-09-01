@@ -47,6 +47,13 @@ not be the one place a boolean argument is trusted. `AuthorizationTests` pins bo
 `An_anonymous_caller_asking_for_private_comments_gets_only_the_public_ones` alongside
 `Reads_stay_open_to_everyone`.
 
+**The third is the account list.** `UserService.GetAllAsync` is `RunAdminAsync` rather than a public
+read: it is display names and **logins**, and the team it is scoped to comes from the `ff.team`
+cookie, which anyone can point anywhere. A read scoped by something the visitor sets has to ask the
+same question the writes do, or an admin of one team reads every other team's accounts by editing a
+cookie. `The_account_list_is_not_one_of_the_public_reads` and
+`Pointing_the_team_cookie_at_another_team_does_not_list_its_accounts` pin both halves.
+
 **The second such read is the training register**, and it goes further: `TrainingService`'s
 `GetAllAsync` is `RunAdminAsync` outright rather than a filtered read, because
 there is no public half of a session to hand back. Who missed a training, and the note usually
@@ -56,7 +63,7 @@ statistics, which exist to be shared with parents. `/trainings` carries
 offered a link that only bounces them to `/login`. `Trainings_are_the_one_read_that_is_not_public`
 pins the service half; `authorization.spec.js` pins the route and the missing menu entry.
 
-Everything else public stays genuinely public; if a third such read appears, it belongs here too.
+Everything else public stays genuinely public; if a fourth such read appears, it belongs here too.
 
 `CircuitCurrentUser` answers false for an account still on its seeded password, so the first-login
 gate is a real restriction rather than a redirect that could be navigated around.
@@ -71,6 +78,9 @@ Three pieces carry it:
 
 - **`AppUser.TeamId`**, minted into the cookie as the `team_id` claim by `Routing.PrincipalFor`, and
   absent on an application admin — so a missing claim reads as "every team" in one place only.
+  **Signing in also writes `ff.team` from it** (`Routing.SelectOwnTeam`, on both sign-in routes), or
+  an admin of any team but the lowest-numbered one would land on a team they cannot change — every
+  button rendered, every write refused — with no way back, since `/teams` is a rung above them.
 - **`ICurrentTeam`**, the team the request is about. `CurrentTeam` (Core/Security) resolves the
   `ff.team` cookie while it still names a team, and otherwise the first team in the database.
   Registered by hand in `Program.cs` because the cookie is the host's to read; it takes the id, so

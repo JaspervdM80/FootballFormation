@@ -219,6 +219,9 @@ try
         var teamService = scope.ServiceProvider.GetRequiredService<TeamService>();
         await teamService.EnsureSeededAsync("GJS", "MO15-2");
 
+        // Repairs a database old enough that the migration's backfill found no team to put its admins on
+        await teamService.EnsureAdminsHaveTeamAsync();
+
         // A fresh install has no games for the migration's backfill to derive seasons from
         var seasonService = scope.ServiceProvider.GetRequiredService<SeasonService>();
         await seasonService.EnsureCurrentSeasonAsync();
@@ -295,30 +298,24 @@ try
         await next();
     });
 
-    // Which team the visit was about, so the next one opens on it rather than on whichever team comes first in the database. Resolved
-    // up front, from the same memoized answer the page itself reads, because the cookie has to be appended before the response starts.
+    // Which team the visit was about, so the next one opens on it rather than on whichever team comes first in the database.
     app.Use(async (context, next) =>
     {
-        var path = context.Request.Path;
-
-        if (HttpMethods.IsGet(context.Request.Method)
-            && !path.StartsWithSegments("/_blazor")
-            && !Path.HasExtension(path.Value)
-            && await context.RequestServices.GetRequiredService<ICurrentTeam>().GetIdAsync() is { } teamId)
+        context.Response.OnStarting(async () =>
         {
-            context.Response.OnStarting(() =>
-            {
-                // A page only, as with the trail above: a redirect and a JSON endpoint are not a team the visitor looked at.
-                if (context.Response.StatusCode == StatusCodes.Status200OK
-                    && context.Response.ContentType?.StartsWith("text/html", StringComparison.OrdinalIgnoreCase) == true)
-                {
-                    context.Response.Cookies.Append(
-                        TeamPreference.CookieName, TeamPreference.Format(teamId), Routing.TeamCookie());
-                }
+            // A page only, as with the trail above: a redirect, an asset and a JSON endpoint are not a team anyone looked at. Asked
+            // here rather than before the response, so nothing but a page pays for the answer — and a page has already asked for it,
+            // so by now CurrentTeam has one memoized.
+            if (context.Response.StatusCode != StatusCodes.Status200OK
+                || context.Response.ContentType?.StartsWith("text/html", StringComparison.OrdinalIgnoreCase) != true)
+                return;
 
-                return Task.CompletedTask;
-            });
-        }
+            if (await context.RequestServices.GetRequiredService<ICurrentTeam>().GetIdAsync() is { } teamId)
+            {
+                context.Response.Cookies.Append(
+                    TeamPreference.CookieName, TeamPreference.Format(teamId), Routing.TeamCookie());
+            }
+        });
 
         await next();
     });

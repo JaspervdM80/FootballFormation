@@ -2,8 +2,10 @@ using FootballFormation.Core.Security;
 
 namespace FootballFormation.Core.Tests;
 
-/// Admin unless a test says otherwise, so the tests about something else read as though authorization were not there.
-public sealed class FakeCurrentUser : ICurrentUser
+/// Admin unless a test says otherwise, so the tests about something else read as though authorization were not there. Takes the team in
+/// scope for the same reason CircuitCurrentUser does: "am I an admin" is a question about one team, and a fake that forgot which would
+/// pass the tests that exist to catch that.
+public sealed class FakeCurrentUser(FakeCurrentTeam currentTeam) : ICurrentUser
 {
     public bool IsAdmin { get; set; } = true;
 
@@ -13,7 +15,7 @@ public sealed class FakeCurrentUser : ICurrentUser
     /// Which team the admin runs. Null means every team, which is what a test about something other than team scoping wants.
     public int? AdminTeamId { get; set; }
 
-    public Task<bool> IsAdminAsync() => IsAdminOfAsync(AdminTeamId);
+    public Task<bool> IsAdminAsync() => IsAdminOfAsync(currentTeam.Id);
 
     public Task<bool> IsAdminOfAsync(int? teamId) =>
         Task.FromResult(IsAdmin && (AdminTeamId is null || AdminTeamId == teamId));

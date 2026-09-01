@@ -209,6 +209,30 @@ public class TeamService(
         logger.LogInformation("Seeded club {ClubName} with team {TeamName}", clubName, teamName);
     }
 
+    /// Repairs a database whose admins predate team-scoped authority. The migration backfills them, but only where a team already
+    /// existed — a database restored from before clubs and teams migrates the whole chain in one boot, with the table still empty at
+    /// that point, and every admin comes back running nothing. Runs after <see cref="EnsureSeededAsync"/>, which is where a team
+    /// first exists.
+    public async Task EnsureAdminsHaveTeamAsync(CancellationToken cancellationToken = default)
+    {
+        await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+        var orphans = await db.Users
+            .Where(u => u.Role == UserRole.Admin && u.TeamId == null)
+            .ToListAsync(cancellationToken);
+
+        if (orphans.Count == 0) return;
+
+        var fallback = await db.Teams.OrderBy(t => t.Id).FirstOrDefaultAsync(cancellationToken);
+        if (fallback is null) return;
+
+        foreach (var orphan in orphans) orphan.TeamId = fallback.Id;
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        logger.LogWarning("Put {Count} admin account(s) with no team onto {TeamName}", orphans.Count, fallback.Name);
+    }
+
     private async Task<Result> ValidateClubAsync(AppDbContext db, Club club, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(club.Name))

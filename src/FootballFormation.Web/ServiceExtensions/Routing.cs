@@ -90,6 +90,8 @@ public static class Routing
                 PrincipalFor(user),
                 PersistentSession());
 
+            SelectOwnTeam(context, user);
+
             return Results.Redirect(IsLocalUrl(returnUrl) ? returnUrl : "/");
         })
         .RequireRateLimiting("login");
@@ -125,6 +127,8 @@ public static class Routing
                 if (admin is null) return Results.NotFound();
 
                 await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, PrincipalFor(admin), PersistentSession());
+
+                SelectOwnTeam(context, admin);
 
                 return Results.Redirect("/");
             });
@@ -199,6 +203,15 @@ public static class Routing
 
             return Results.LocalRedirect($"~/{redirectUri.TrimStart('/')}");
         });
+    }
+
+    /// Signing in puts you on the team you run, or an admin of any team but the lowest-numbered one would land on a team they cannot
+    /// change — every button rendered, every write refused — with no way back: /teams, which is where a team is picked, is above them.
+    /// An application admin runs all of them and keeps whichever team they were last looking at.
+    static void SelectOwnTeam(HttpContext context, AppUser user)
+    {
+        if (user.TeamId is { } teamId)
+            context.Response.Cookies.Append(TeamPreference.CookieName, TeamPreference.Format(teamId), TeamCookie());
     }
 
     /// Secure is left off so this works over the plain http:// of a local `dotnet run` — a team id is not a credential.

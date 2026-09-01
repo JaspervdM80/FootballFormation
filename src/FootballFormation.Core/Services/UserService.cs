@@ -81,16 +81,15 @@ public class UserService(
     }
 
     /// Projected to <see cref="UserSummary"/> so the hash and stamp never leave here, and ordered by name — the column the list is read
-    /// down. Everyone for an application admin; otherwise only the accounts on the team in scope, which are the ones a caller can act on.
+    /// down. Everyone for an application admin; otherwise the accounts on the team in scope.
+    ///
+    /// Guarded rather than public, unlike the squad and the fixtures: this is names and logins, and anyone can point the ff.team cookie
+    /// at any team, so the read has to ask the same question the writes do rather than trust where the cookie points.
     public Task<Result<List<UserSummary>>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        ServiceOperation.RunAsync(logger, "load users", cancellationToken, async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "load users", cancellationToken, async () =>
         {
             var everyTeam = await currentUser.IsApplicationAdminAsync();
             var teamId = everyTeam ? null : await currentTeam.GetIdAsync();
-
-            // Anyone can point the ff.team cookie at any team, and this list is names and logins — so it is scoped to the team in
-            // scope *and* withheld from someone who does not run it.
-            if (!everyTeam && !await currentUser.IsAdminOfAsync(teamId)) return Result.Success<List<UserSummary>>([]);
 
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 

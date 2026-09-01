@@ -283,6 +283,39 @@ public class TeamServiceTests : ServiceTestBase
         Assert.Empty(Read().Teams);
     }
 
+    [Fact]
+    public async Task An_admin_left_with_no_team_by_the_migration_is_put_onto_the_seeded_one()
+    {
+        // The state a database old enough to predate clubs and teams boots in: the migration's backfill ran with the table still
+        // empty, so it had no team to name, and every admin came back running nothing.
+        Db.Users.Add(new AppUser { DisplayName = "Coach", Username = "coach", PasswordHash = "h", Role = UserRole.Admin });
+        Db.Users.Add(new AppUser { DisplayName = "App", Username = "app", PasswordHash = "h", Role = UserRole.ApplicationAdmin });
+        await Db.SaveChangesAsync();
+
+        await TeamsAndClubs.EnsureSeededAsync("GJS", "MO15-2");
+        await TeamsAndClubs.EnsureAdminsHaveTeamAsync();
+
+        var seeded = Read().Teams.Single();
+        Assert.Equal(seeded.Id, Read().Users.Single(u => u.Username == "coach").TeamId);
+
+        // An application admin runs every team, so naming one would be a lie about what the account may change.
+        Assert.Null(Read().Users.Single(u => u.Username == "app").TeamId);
+    }
+
+    [Fact]
+    public async Task The_repair_leaves_an_admin_who_already_has_a_team_alone()
+    {
+        var first = SeedTeam("GJS", "MO15-2");
+        var second = SeedTeam("GJS", "MO17-1");
+        CurrentTeam.Id = first.Id;
+
+        await Users.CreateAsync("Coach", "coach", "correct-horse", UserRole.Admin, second.Id);
+
+        await TeamsAndClubs.EnsureAdminsHaveTeamAsync();
+
+        Assert.Equal(second.Id, Read().Users.Single().TeamId);
+    }
+
     private async Task SeedTeamAsync()
     {
         await TeamsAndClubs.EnsureSeededAsync("GJS", "MO15-2");

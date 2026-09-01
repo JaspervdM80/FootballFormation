@@ -94,8 +94,9 @@ reach back into last season's row.
 Nothing an account owns can make it undeletable. The one reference to it — `GameComment.AuthorId` —
 is `SetNull`, so deleting a user leaves their comments in place, unattributed.
 
-`UserService.GetAllAsync` reads a `UserSummary` projection (id, name, username, role, team), never
-the entity — the `/users` page and its dialog have no use for `PasswordHash` or `SecurityStamp`, and a
+`UserService.GetAllAsync` is `RunAdminAsync`, not a public read — see
+[authorization-and-auth](../patterns/authorization-and-auth.md) — and reads a `UserSummary`
+projection (id, name, username, role, team), never the entity — the `/users` page and its dialog have no use for `PasswordHash` or `SecurityStamp`, and a
 read that returned them would put credential material one careless log line from disclosure.
 `/dev/login` is the exception that still needs the whole entity, for the stamp its cookie carries,
 so it has its own `FindDevLoginAdminAsync` rather than widening the list read.
@@ -176,4 +177,11 @@ are public like every other read.
 `ApplicationAdmin`, rolling its security stamp so the next request mints a cookie carrying the new
 role. `TeamService.EnsureSeededAsync` then fills in GJS / MO15-2 on the next boot, and does nothing
 once any club exists.
+
+`ScopeAdminsToTeams` backfills every `Admin` onto the lowest-numbered team, or they would come back
+running nothing. **It can only do that where a team already exists** — a database old enough to
+predate clubs and teams migrates the whole chain in one boot with the table still empty. So
+`TeamService.EnsureAdminsHaveTeamAsync` is an idempotent startup repair on top of it, in the same
+spirit as `CloseSeasonGapsAsync`, and it runs immediately after the seeding that first creates a
+team. Without it that database boots with every admin locked out and no way to fix it in the app.
 

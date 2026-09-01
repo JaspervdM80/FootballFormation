@@ -17,6 +17,10 @@ public abstract class ServiceTestBase : IDisposable
         _connection = new SqliteConnection("Filename=:memory:");
         _connection.Open();
 
+        // Before the services: the write guard asks the one about the other, as it does in the app.
+        CurrentTeam = new FakeCurrentTeam();
+        CurrentUser = new FakeCurrentUser(CurrentTeam);
+
         StatsCache = new StatsCache(new MemoryCache(new MemoryCacheOptions()));
 
         DbFactory = new TestDbContextFactory(_connection, new StatsCacheInvalidator(StatsCache));
@@ -44,10 +48,11 @@ public abstract class ServiceTestBase : IDisposable
     }
 
     /// An admin by default, so a test about something else does not have to say so.
-    protected FakeCurrentUser CurrentUser { get; } = new();
+    protected FakeCurrentUser CurrentUser { get; }
 
-    /// The team in scope. <see cref="SeedTeamAsync"/> points it at what it seeded; a test about something else leaves it unset.
-    protected FakeCurrentTeam CurrentTeam { get; } = new();
+    /// The team in scope. <see cref="SeedTeam"/> points it at what it seeded; a test about something else leaves it unset, which the
+    /// fake reads as "every team".
+    protected FakeCurrentTeam CurrentTeam { get; }
 
     /// For arranging and asserting. The services use their own, as in production.
     protected AppDbContext Db { get; }

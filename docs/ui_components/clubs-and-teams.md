@@ -34,9 +34,11 @@ app is currently showing wears the `Selected` badge and offers no button.
 team id. `TeamService.GetCurrentAsync()`, `TeamState` and the write guard all read that one answer,
 memoized per scope.
 
-`ff.team` is written two ways — by `/team/set` when someone picks a team, and by a middleware in
-`Program.cs` that stamps the resolved team onto every HTML page response, so "the last team you
-looked at" is remembered without anyone having to choose. A year, not the season cookie's eight
+`ff.team` is written three ways — at sign-in from the account's own team, by `/team/set` when
+someone picks one, and by a middleware in `Program.cs` that stamps the resolved team onto every HTML
+page response, so "the last team you looked at" is remembered without anyone having to choose. The
+sign-in one is what stops an admin of any team but the first landing somewhere they cannot change
+anything: this page, where a team is picked, is a rung of authority above them. A year, not the season cookie's eight
 hours: which team you follow is not a match-day choice. Nothing validates the value on the way in,
 because it is a view choice and not authority — what an account may *change* comes from its own
 `team_id` claim, never from this cookie. See
