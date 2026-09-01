@@ -54,9 +54,17 @@ async function pickThisMonth(page, label, day) {
   await expect(popover).toBeHidden();
 }
 
-/** "Mon 06 Apr" — the format the list prints, in the English the suite is pinned to. */
-const rowDate = (date) =>
-  date.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' });
+/**
+ * "Mon 06 Apr" — the format the list prints, in the English the suite is pinned to.
+ *
+ * Built from parts rather than one en-GB call: the app formats under the neutral `en`, whose short
+ * September is "Sep", where en-GB alone prints "Sept" and reddens this spec for the whole of September.
+ */
+const rowDate = (date) => {
+  const part = (options) => date.toLocaleDateString('en-US', options);
+
+  return `${part({ weekday: 'short' })} ${String(date.getDate()).padStart(2, '0')} ${part({ month: 'short' })}`;
+};
 
 /** The first or last date this month falling on `weekday` (1 = Monday), inside the 1–28 window. */
 function mondayThisMonth({ last = false } = {}) {
