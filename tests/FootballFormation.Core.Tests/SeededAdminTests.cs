@@ -17,6 +17,7 @@ public class SeededAdminTests : ServiceTestBase
     [Fact]
     public async Task Seeding_does_nothing_once_any_account_exists()
     {
+        SeedTeam();
         await Users.CreateAsync("Jasper", "jasper", "correct-horse", Core.Models.UserRole.Admin);
 
         await Users.EnsureAdminSeededAsync();

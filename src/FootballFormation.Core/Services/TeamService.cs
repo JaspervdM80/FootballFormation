@@ -5,6 +5,7 @@ namespace FootballFormation.Core.Services;
 public class TeamService(
     IDbContextFactory<AppDbContext> dbFactory,
     ICurrentUser currentUser,
+    ICurrentTeam currentTeam,
     ILogger<TeamService> logger)
 {
     public Task<Result<List<Club>>> GetClubsAsync(CancellationToken cancellationToken = default) =>
@@ -37,18 +38,19 @@ public class TeamService(
             return Result.Success(teams);
         });
 
-    /// The team the app is showing. There is no picker and no per-visitor choice yet: one team is seeded and this always answers with
-    /// it, so the call sites that will need a chosen team already read from the seam that will hold one. Null before seeding.
+    /// The team the app is showing this visitor: what they last looked at, or the first team there is. Null before seeding.
     public Task<Result<Team?>> GetCurrentAsync(CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "load the current team", cancellationToken, async () =>
         {
+            var currentId = await currentTeam.GetIdAsync();
+            if (currentId is null) return Result.Success<Team?>(null);
+
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var team = await db.Teams
                 .AsNoTracking()
                 .Include(t => t.Club)
-                .OrderBy(t => t.Id)
-                .FirstOrDefaultAsync(cancellationToken);
+                .FirstOrDefaultAsync(t => t.Id == currentId, cancellationToken);
 
             return Result.Success(team);
         });
@@ -165,14 +167,22 @@ public class TeamService(
             var team = await db.Teams.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
             if (team is null) return TeamNotFound(id);
 
-            // Not merely the last team: GetCurrentAsync answers with the lowest id, so removing the one it names would silently move
-            // the whole app — its title, its crest and its manifest — onto a different team while every season and game stayed put.
-            // The only team is always the current one, so this covers that case too.
-            var current = await db.Teams.OrderBy(t => t.Id).FirstOrDefaultAsync(cancellationToken);
-            if (current?.Id == id)
+            // Not merely the last team: a visitor who has chosen none falls back to the lowest id, so removing the one it names would
+            // silently move the app — its title, its crest and its manifest — onto a different team while every season and game stayed
+            // put. The only team is always that fallback, so this covers that case too.
+            var fallback = await db.Teams.OrderBy(t => t.Id).FirstOrDefaultAsync(cancellationToken);
+            if (fallback?.Id == id)
             {
-                logger.LogWarning("Cannot delete team {TeamName}: it is the team the app is showing", team.Name);
+                logger.LogWarning("Cannot delete team {TeamName}: it is the team the app falls back to", team.Name);
                 return Result.Failure("{0} is the team the app is showing", team.Name);
+            }
+
+            // The FK is Restrict, so refuse here rather than letting the caller hit a raw DbUpdateException.
+            var admins = await db.Users.CountAsync(u => u.TeamId == id, cancellationToken);
+            if (admins > 0)
+            {
+                logger.LogWarning("Cannot delete team {TeamName}: {Count} accounts still run it", team.Name, admins);
+                return Result.Failure("Team {0} still has {1} accounts", team.Name, admins);
             }
 
             db.Teams.Remove(team);

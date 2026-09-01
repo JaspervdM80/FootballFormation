@@ -137,6 +137,7 @@ public class GameCommentTests : ServiceTestBase
     [Fact]
     public async Task A_comment_outlives_the_account_that_wrote_it()
     {
+        SeedTeam();
         var game = await SeedGameAsync();
         var author = await Users.CreateAsync("Jasper", "jasper", "correct-horse", UserRole.Admin);
         // A second admin, so deleting the first is not blocked by the last-admin rule.

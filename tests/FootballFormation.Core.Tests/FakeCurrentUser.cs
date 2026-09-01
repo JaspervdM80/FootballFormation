@@ -10,7 +10,21 @@ public sealed class FakeCurrentUser : ICurrentUser
     /// Follows <see cref="IsAdmin"/> unless a test separates them, which is the whole point of the pair.
     public bool IsApplicationAdmin { get; set; } = true;
 
-    public Task<bool> IsAdminAsync() => Task.FromResult(IsAdmin);
+    /// Which team the admin runs. Null means every team, which is what a test about something other than team scoping wants.
+    public int? AdminTeamId { get; set; }
+
+    public Task<bool> IsAdminAsync() => IsAdminOfAsync(AdminTeamId);
+
+    public Task<bool> IsAdminOfAsync(int? teamId) =>
+        Task.FromResult(IsAdmin && (AdminTeamId is null || AdminTeamId == teamId));
 
     public Task<bool> IsApplicationAdminAsync() => Task.FromResult(IsApplicationAdmin);
+}
+
+/// The team a test's calls are about. Null before anything is seeded, exactly as <see cref="CurrentTeam"/> answers then.
+public sealed class FakeCurrentTeam : ICurrentTeam
+{
+    public int? Id { get; set; }
+
+    public Task<int?> GetIdAsync() => Task.FromResult(Id);
 }

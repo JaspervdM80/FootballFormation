@@ -449,6 +449,12 @@ html, body {
     --action-btn-size: 32px;
 }
 
+/* Switching team on /teams is a link rather than a handler, because the team is read off the request
+   that creates a scope — so one action in that row is an <a> wearing the same clothes. */
+a.action-btn {
+    text-decoration: none;
+}
+
 .action-btn {
     width: var(--action-btn-size);
     height: var(--action-btn-size);
@@ -1752,6 +1758,22 @@ html, body {
         grid-column: 2;
         grid-row: 1;
         justify-content: flex-end;
+    }
+
+    /* Under the role badge it belongs with. Capped and truncated because this column is sized by its
+       content: a club-and-team name long enough would otherwise take the width off the account name,
+       which is the one thing on the card that has to stay readable. */
+    .users-table .cell-team {
+        grid-column: 2;
+        grid-row: 2;
+        justify-content: flex-end;
+        max-width: 45vw;
+    }
+
+    .users-table .cell-team span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     /* Spans both rows at the right edge, so a card is two lines tall rather than three */

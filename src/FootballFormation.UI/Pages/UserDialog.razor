@@ -18,6 +18,16 @@
                         <MudSelectItem Value="role">@L[role.ToString()]</MudSelectItem>
                     }
                 </MudSelect>
+                @if (ShowTeam)
+                {
+                    <MudSelect T="int?" @bind-Value="TeamId" Label="@L["Team"]" Class="mb-3" Required="true"
+                               RequiredError="@L["An administrator needs a team"]">
+                        @foreach (var team in Teams)
+                        {
+                            <MudSelectItem T="int?" Value="team.Id">@team.FullName</MudSelectItem>
+                        }
+                    </MudSelect>
+                }
             }
 
             @if (ShowPasswordFields)

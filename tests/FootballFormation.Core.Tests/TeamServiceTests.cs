@@ -196,6 +196,7 @@ public class TeamServiceTests : ServiceTestBase
         var club = (await TeamsAndClubs.CreateClubAsync(new Club { Name = "GJS" })).Value!;
         var first = (await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "MO15-2" })).Value!;
         await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "MO17-1" });
+        CurrentTeam.Id = first.Id;
 
         // Without this the app would silently rebrand: the title, the crest and the manifest would move to MO17-1 while every season
         // and game stayed exactly where it was.
@@ -209,13 +210,32 @@ public class TeamServiceTests : ServiceTestBase
     public async Task A_team_the_app_is_not_showing_can_be_deleted()
     {
         var club = (await TeamsAndClubs.CreateClubAsync(new Club { Name = "GJS" })).Value!;
-        await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "MO15-2" });
+        var first = (await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "MO15-2" })).Value!;
         var second = (await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "MO17-1" })).Value!;
+        CurrentTeam.Id = first.Id;
 
         var deleted = await TeamsAndClubs.DeleteTeamAsync(second.Id);
 
         Assert.True(deleted.IsSuccess);
         Assert.Equal("GJS MO15-2", (await TeamsAndClubs.GetCurrentAsync()).Value!.FullName);
+    }
+
+    [Fact]
+    public async Task A_team_with_accounts_on_it_is_refused_rather_than_left_to_the_foreign_key()
+    {
+        var club = (await TeamsAndClubs.CreateClubAsync(new Club { Name = "GJS" })).Value!;
+        var first = (await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "MO15-2" })).Value!;
+        var second = (await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "MO17-1" })).Value!;
+        CurrentTeam.Id = first.Id;
+
+        await Users.CreateAsync("Coach", "coach", "correct-horse", UserRole.Admin, second.Id);
+
+        // Letting the delete through would revoke an admin without passing the last-admin rule, and the FK would only ever have said
+        // so as a raw DbUpdateException.
+        var deleted = await TeamsAndClubs.DeleteTeamAsync(second.Id);
+
+        Assert.True(deleted.IsFailure);
+        Assert.Equal(2, Read().Teams.Count());
     }
 
     [Fact]
@@ -237,7 +257,7 @@ public class TeamServiceTests : ServiceTestBase
 
         var current = await TeamsAndClubs.GetCurrentAsync();
 
-        // There is no picker yet, so this always answers with the seeded team — and with its club, which the app bar will need.
+        // The only team there is, so it is what a visitor who has chosen none gets — and it comes with its club, which the app bar needs.
         Assert.Equal("MO15-2", current.Value!.Name);
         Assert.Equal("GJS", current.Value!.Club!.Name);
     }
@@ -263,5 +283,9 @@ public class TeamServiceTests : ServiceTestBase
         Assert.Empty(Read().Teams);
     }
 
-    private Task SeedTeamAsync() => TeamsAndClubs.EnsureSeededAsync("GJS", "MO15-2");
+    private async Task SeedTeamAsync()
+    {
+        await TeamsAndClubs.EnsureSeededAsync("GJS", "MO15-2");
+        CurrentTeam.Id = Read().Teams.Single().Id;
+    }
 }

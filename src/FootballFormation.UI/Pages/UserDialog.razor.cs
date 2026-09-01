@@ -15,13 +15,23 @@ public partial class UserDialog
     /// Whether the signed-in admin holds the application-admin role themselves — the only ones who may hand it out or take it away.
     [Parameter] public bool CanGrantApplicationAdmin { get; set; }
 
+    /// The teams the signed-in admin may put an account on: all of them for an application admin, otherwise only their own.
+    [Parameter] public List<Team> Teams { get; set; } = [];
+
+    /// What a new account starts on — the team the app is showing.
+    [Parameter] public int? DefaultTeamId { get; set; }
+
     private MudForm Form { get; set; } = null!;
 
     private string DisplayName { get; set; } = string.Empty;
     private string Username { get; set; } = string.Empty;
     private UserRole Role { get; set; } = UserRole.Admin;
+    private int? TeamId { get; set; }
     private string Password { get; set; } = string.Empty;
     private string ConfirmPassword { get; set; } = string.Empty;
+
+    /// An application admin runs every team, so there is nothing to pick.
+    private bool ShowTeam => Role != UserRole.ApplicationAdmin;
 
     /// A new account needs a password; an existing one gets it from Reset Password instead.
     private bool ShowPasswordFields => PasswordOnly || User is null;
@@ -35,11 +45,16 @@ public partial class UserDialog
 
     protected override void OnParametersSet()
     {
-        if (User is null) return;
+        if (User is null)
+        {
+            TeamId = DefaultTeamId;
+            return;
+        }
 
         DisplayName = User.DisplayName;
         Username = User.Username;
         Role = User.Role;
+        TeamId = User.TeamId ?? DefaultTeamId;
     }
 
     private string? ValidatePassword(string password)
@@ -66,6 +81,7 @@ public partial class UserDialog
             DisplayName = DisplayName,
             Username = Username,
             Role = Role,
+            TeamId = ShowTeam ? TeamId : null,
             Password = Password
         }));
     }
@@ -78,6 +94,7 @@ public partial class UserDialog
         public string DisplayName { get; init; } = string.Empty;
         public string Username { get; init; } = string.Empty;
         public UserRole Role { get; init; }
+        public int? TeamId { get; init; }
         public string Password { get; init; } = string.Empty;
     }
 }

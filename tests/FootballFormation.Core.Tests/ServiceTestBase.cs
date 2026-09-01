@@ -37,14 +37,17 @@ public abstract class ServiceTestBase : IDisposable
         Goals = new MatchGoalService(DbFactory, Games, Notifier, Time, CurrentUser, NullLogger<MatchGoalService>.Instance);
         Subs = new MatchSubstitutionService(DbFactory, Notifier, Time, CurrentUser, NullLogger<MatchSubstitutionService>.Instance);
 
-        Users = new UserService(DbFactory, CurrentUser, NullLogger<UserService>.Instance);
-        TeamsAndClubs = new TeamService(DbFactory, CurrentUser, NullLogger<TeamService>.Instance);
+        Users = new UserService(DbFactory, CurrentUser, CurrentTeam, NullLogger<UserService>.Instance);
+        TeamsAndClubs = new TeamService(DbFactory, CurrentUser, CurrentTeam, NullLogger<TeamService>.Instance);
 
         Stats = new StatsService(Games, Squads, Trainings, Time, StatsCache, NullLogger<StatsService>.Instance);
     }
 
     /// An admin by default, so a test about something else does not have to say so.
     protected FakeCurrentUser CurrentUser { get; } = new();
+
+    /// The team in scope. <see cref="SeedTeamAsync"/> points it at what it seeded; a test about something else leaves it unset.
+    protected FakeCurrentTeam CurrentTeam { get; } = new();
 
     /// For arranging and asserting. The services use their own, as in production.
     protected AppDbContext Db { get; }
@@ -90,6 +93,22 @@ public abstract class ServiceTestBase : IDisposable
         Db.Seasons.Add(season);
         await Db.SaveChangesAsync();
         return season;
+    }
+
+    /// A club with one team, put in scope — the shape every deployment boots into. Synchronous so a test class can seed one in its
+    /// constructor, which is where "every test here needs a team" belongs.
+    protected Team SeedTeam(string clubName = "GJS", string teamName = "MO15-2")
+    {
+        // Reused rather than added, so a second team under the same club does not trip the unique name.
+        var club = Db.Clubs.FirstOrDefault(c => c.Name == clubName) ?? Db.Clubs.Add(new Club { Name = clubName }).Entity;
+
+        var team = new Team { Name = teamName, Club = club };
+        club.Teams.Add(team);
+
+        Db.SaveChanges();
+
+        CurrentTeam.Id = team.Id;
+        return team;
     }
 
     protected async Task<List<Player>> SeedPlayersAsync(int count)

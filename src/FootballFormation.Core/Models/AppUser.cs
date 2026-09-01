@@ -14,6 +14,10 @@ public class AppUser
 
     public UserRole Role { get; set; } = UserRole.Admin;
 
+    /// Which team the <see cref="UserRole.Admin"/> role runs. Null on an application admin, who runs all of them — see
+    /// <see cref="Security.TeamAuthority"/>.
+    public int? TeamId { get; set; }
+
     /// Changes whenever the account's authority does. Copied into the cookie at login and re-checked per request, so a cookie minted
     /// before the change stops working rather than staying valid for the rest of its fortnight.
     public string SecurityStamp { get; set; } = Guid.NewGuid().ToString("N");

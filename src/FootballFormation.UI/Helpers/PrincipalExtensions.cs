@@ -18,6 +18,10 @@ public static class PrincipalExtensions
             ? name
             : user?.Identity?.Name;
 
+    /// The team this account administers. Null on an application admin, who administers every team — see <see cref="TeamAuthority"/>.
+    public static int? AdminTeamId(this ClaimsPrincipal? user) =>
+        int.TryParse(user?.FindFirst(AppClaims.TeamId)?.Value, out var id) ? id : null;
+
     /// Null when nobody is signed in.
     public static int? UserId(this ClaimsPrincipal? user) =>
         int.TryParse(user?.FindFirst(AppClaims.UserId)?.Value, out var id) ? id : null;

@@ -73,6 +73,12 @@ try
 
     builder.Services.AddScoped<ICurrentUser, CircuitCurrentUser>();
 
+    // The team the write guard asks about, resolved from the cookie once per scope. Registered by hand rather than by type because the
+    // cookie is the host's to read — Core takes the id, not an HTTP dependency.
+    builder.Services.AddScoped<ICurrentTeam>(sp => new CurrentTeam(
+        sp.GetRequiredService<IDbContextFactory<AppDbContext>>(),
+        TeamPreference.Parse(sp.GetRequiredService<RequestContext>().TeamCookie)));
+
     builder.Services.AddScoped<PlayerService>();
     builder.Services.AddScoped<SeasonService>();
     builder.Services.AddScoped<SeasonSquadService>();
@@ -100,7 +106,8 @@ try
         sp.GetRequiredService<IHttpContextAccessor>().HttpContext is { } http
             ? new RequestContext(
                 http.Request.Cookies[SeasonPreference.CookieName],
-                http.Request.Cookies[NavigationTrailCookie.CookieName])
+                http.Request.Cookies[NavigationTrailCookie.CookieName],
+                http.Request.Cookies[TeamPreference.CookieName])
             : RequestContext.None);
 
     builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -284,6 +291,34 @@ try
 
             return Task.CompletedTask;
         });
+
+        await next();
+    });
+
+    // Which team the visit was about, so the next one opens on it rather than on whichever team comes first in the database. Resolved
+    // up front, from the same memoized answer the page itself reads, because the cookie has to be appended before the response starts.
+    app.Use(async (context, next) =>
+    {
+        var path = context.Request.Path;
+
+        if (HttpMethods.IsGet(context.Request.Method)
+            && !path.StartsWithSegments("/_blazor")
+            && !Path.HasExtension(path.Value)
+            && await context.RequestServices.GetRequiredService<ICurrentTeam>().GetIdAsync() is { } teamId)
+        {
+            context.Response.OnStarting(() =>
+            {
+                // A page only, as with the trail above: a redirect and a JSON endpoint are not a team the visitor looked at.
+                if (context.Response.StatusCode == StatusCodes.Status200OK
+                    && context.Response.ContentType?.StartsWith("text/html", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    context.Response.Cookies.Append(
+                        TeamPreference.CookieName, TeamPreference.Format(teamId), Routing.TeamCookie());
+                }
+
+                return Task.CompletedTask;
+            });
+        }
 
         await next();
     });

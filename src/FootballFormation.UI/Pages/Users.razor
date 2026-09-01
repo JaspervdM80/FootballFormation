@@ -31,6 +31,7 @@
         <MudTh>@L["Name"]</MudTh>
         <MudTh>@L["Username"]</MudTh>
         <MudTh>@L["Role"]</MudTh>
+        <MudTh>@L["Team"]</MudTh>
         <MudTh Class="cell-right"></MudTh>
     </HeaderContent>
     <RowTemplate>
@@ -46,6 +47,10 @@
         </MudTd>
         <MudTd DataLabel="@L["Role"]" Class="cell-role">
             <span class="badge-gold">@L[context.Role.ToString()]</span>
+        </MudTd>
+        <MudTd DataLabel="@L["Team"]" Class="cell-team">
+            @* An application admin runs every team, so naming one would be a lie about what the account may change. *@
+            <span style="color: var(--ink-muted);">@(context.TeamId is null ? L["All teams"] : TeamName(context.TeamId))</span>
         </MudTd>
         <MudTd Class="cell-right cell-actions">
             <span class="row-actions">

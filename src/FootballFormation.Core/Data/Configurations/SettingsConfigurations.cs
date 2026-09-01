@@ -39,5 +39,13 @@ internal sealed class AppUserConfiguration : IEntityTypeConfiguration<AppUser>
         // Two accounts sharing a login would make the credential check ambiguous — it takes the
         // first match. UserService checks for a duplicate before writing; this is the net under it.
         entity.HasIndex(u => u.Username).IsUnique();
+
+        // No navigation on either side: nothing loads a team through an account, and the /users page names teams from the list it
+        // already has. Restrict, as Club -> Team: deleting a team must never quietly take the accounts that run it, which would be a
+        // way to remove an admin without passing the last-admin rule. TeamService refuses with a readable message instead.
+        entity.HasOne<Team>()
+            .WithMany()
+            .HasForeignKey(u => u.TeamId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

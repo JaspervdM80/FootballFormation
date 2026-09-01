@@ -4,6 +4,8 @@ namespace FootballFormation.Core.Tests;
 /// when the markup stops, and a silent regression in it would look like nothing at all.
 public class AuthorizationTests : ServiceTestBase
 {
+    private const string NotThisTeam = "You can only manage accounts for your own team";
+
     [Fact]
     public async Task Reads_stay_open_to_everyone()
     {
@@ -235,6 +237,98 @@ public class AuthorizationTests : ServiceTestBase
         Assert.Equal(ServiceOperation.NotAllowedKey, created.ErrorKey);
         Assert.Equal(ServiceOperation.NotAllowedKey, deleted.ErrorKey);
         Assert.Single(Read().Clubs);
+    }
+
+    [Fact]
+    public async Task An_admin_cannot_touch_an_account_on_another_team()
+    {
+        var mine = SeedTeam("GJS", "MO15-2");
+        var theirs = SeedTeam("SV Zwaluwen", "MO15-1");
+
+        var intruder = (await Users.CreateAsync("Coach", "coach", "long-enough-password", UserRole.Admin, theirs.Id)).Value!;
+
+        // An admin of one team passes RunAdminAsync for their own, and /users would otherwise be the way from there to every other
+        // team's accounts — reset a password, keep the account.
+        CurrentUser.IsApplicationAdmin = false;
+        CurrentUser.AdminTeamId = mine.Id;
+        CurrentTeam.Id = mine.Id;
+
+        var renamed = await Users.UpdateAsync(intruder.Id, "Taken over", "coach", UserRole.Admin, mine.Id);
+        var reset = await Users.SetPasswordAsync(intruder.Id, "another-long-password");
+        var deleted = await Users.DeleteAsync(intruder.Id);
+
+        Assert.Equal(NotThisTeam, renamed.ErrorKey);
+        Assert.Equal(NotThisTeam, reset.ErrorKey);
+        Assert.Equal(NotThisTeam, deleted.ErrorKey);
+        Assert.Equal("Coach", Read().Users.Single(u => u.Id == intruder.Id).DisplayName);
+    }
+
+    [Fact]
+    public async Task An_admin_cannot_hand_an_account_to_another_team()
+    {
+        var mine = SeedTeam("GJS", "MO15-2");
+        var theirs = SeedTeam("SV Zwaluwen", "MO15-1");
+
+        var user = (await Users.CreateAsync("Coach", "coach", "long-enough-password", UserRole.Admin, mine.Id)).Value!;
+
+        CurrentUser.IsApplicationAdmin = false;
+        CurrentUser.AdminTeamId = mine.Id;
+        CurrentTeam.Id = mine.Id;
+
+        // The other direction of the same authority: giving an account away is granting a team you do not run.
+        var moved = await Users.UpdateAsync(user.Id, "Coach", "coach", UserRole.Admin, theirs.Id);
+
+        Assert.Equal(NotThisTeam, moved.ErrorKey);
+        Assert.Equal(mine.Id, Read().Users.Single(u => u.Id == user.Id).TeamId);
+    }
+
+    [Fact]
+    public async Task An_application_admin_manages_every_team()
+    {
+        SeedTeam("GJS", "MO15-2");
+        var theirs = SeedTeam("SV Zwaluwen", "MO15-1");
+
+        var user = (await Users.CreateAsync("Coach", "coach", "long-enough-password", UserRole.Admin, theirs.Id)).Value!;
+
+        Assert.True((await Users.UpdateAsync(user.Id, "Renamed", "coach", UserRole.Admin, theirs.Id)).IsSuccess);
+        Assert.True((await Users.SetPasswordAsync(user.Id, "another-long-password")).IsSuccess);
+    }
+
+    [Fact]
+    public async Task An_admin_sees_only_the_accounts_on_the_team_in_scope()
+    {
+        var mine = SeedTeam("GJS", "MO15-2");
+        var theirs = SeedTeam("SV Zwaluwen", "MO15-1");
+
+        await Users.CreateAsync("Mine", "mine", "long-enough-password", UserRole.Admin, mine.Id);
+        await Users.CreateAsync("Theirs", "theirs", "long-enough-password", UserRole.Admin, theirs.Id);
+
+        CurrentUser.IsApplicationAdmin = false;
+        CurrentUser.AdminTeamId = mine.Id;
+        CurrentTeam.Id = mine.Id;
+
+        var users = await Users.GetAllAsync();
+
+        Assert.Equal("Mine", Assert.Single(users.Value!).DisplayName);
+    }
+
+    [Fact]
+    public async Task Pointing_the_team_cookie_at_another_team_does_not_list_its_accounts()
+    {
+        var mine = SeedTeam("GJS", "MO15-2");
+        var theirs = SeedTeam("SV Zwaluwen", "MO15-1");
+
+        await Users.CreateAsync("Theirs", "theirs", "long-enough-password", UserRole.Admin, theirs.Id);
+
+        // The cookie is a view choice anyone can make, so it must not be what decides who sees a list of names and logins.
+        CurrentUser.IsApplicationAdmin = false;
+        CurrentUser.AdminTeamId = mine.Id;
+        CurrentTeam.Id = theirs.Id;
+
+        var users = await Users.GetAllAsync();
+
+        Assert.True(users.IsSuccess);
+        Assert.Empty(users.Value!);
     }
 
     [Fact]

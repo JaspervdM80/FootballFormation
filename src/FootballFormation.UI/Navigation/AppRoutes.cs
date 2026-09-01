@@ -32,4 +32,7 @@ public static class AppRoutes
     public static string SetCulture(string culture, string returnUrl) => $"/culture/set?culture={culture}&redirectUri={Uri.EscapeDataString(returnUrl)}";
 
     public static string SetSeason(int? seasonId, string returnUrl) => $"/season/set?season={SeasonPreference.Format(seasonId)}&redirectUri={Uri.EscapeDataString(returnUrl)}";
+
+    /// <inheritdoc cref="SetSeason"/>
+    public static string SetTeam(int teamId, string returnUrl) => $"/team/set?team={TeamPreference.Format(teamId)}&redirectUri={Uri.EscapeDataString(returnUrl)}";
 }

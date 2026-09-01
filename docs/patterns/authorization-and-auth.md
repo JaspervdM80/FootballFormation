@@ -61,6 +61,37 @@ Everything else public stays genuinely public; if a third such read appears, it 
 `CircuitCurrentUser` answers false for an account still on its seeded password, so the first-login
 gate is a real restriction rather than a redirect that could be navigated around.
 
+## Admin authority names a team, and the guard asks about the team in scope
+
+`Admin` is not "may change data" any more — it is "may change *this* team's data". The question is
+still asked in exactly one place, so no call site had to change: `ICurrentUser.IsAdminAsync()` now
+means *admin of the team the request is about*, and every `RunAdminAsync` reads the same way it did.
+
+Three pieces carry it:
+
+- **`AppUser.TeamId`**, minted into the cookie as the `team_id` claim by `Routing.PrincipalFor`, and
+  absent on an application admin — so a missing claim reads as "every team" in one place only.
+- **`ICurrentTeam`**, the team the request is about. `CurrentTeam` (Core/Security) resolves the
+  `ff.team` cookie while it still names a team, and otherwise the first team in the database.
+  Registered by hand in `Program.cs` because the cookie is the host's to read; it takes the id, so
+  `Core` gains no HTTP dependency. It depends on nothing but the context factory, which is what keeps
+  it out of the `UserService → ICurrentUser → AuthenticationStateProvider` loop described below.
+- **`TeamAuthority.GrantsAdminOf`**, the whole rule as one function: an application admin, or the
+  account's team and the team in question being the same, non-null team. `TeamAuthorityTests` pins
+  it structurally, including the two nulls that must not read as a match.
+
+**Where the write's subject is not the team in scope, the call site says which team it is.**
+`ICurrentUser.IsAdminOfAsync(teamId)` is that overload, and `UserService` is its only caller: an
+account being edited may belong to another team, so `MayManageAsync` passes every team the change
+touches — the one it is on and the one it is moving to — through the same question. Without it,
+`/users` would be the way from running one team to resetting the password of an admin of every other.
+`AuthorizationTests` pins both directions.
+
+**The data below a season is not team-scoped yet, so this isolates accounts and nothing else.**
+`Season`, `Game` and the squad still have no team, which means an admin of a second team would pass
+the guard for their own team and then edit the one set of games there is. That is the next step, not
+a gap in the guard: the guard is shaped to hold the moment the data carries a team.
+
 ## There are two rungs of authority, and the upper one is a second guard
 `ServiceOperation.RunApplicationAdminAsync` is `RunAdminAsync` asking a different question:
 `ICurrentUser.IsApplicationAdminAsync()` rather than `IsAdminAsync()`. Only `TeamService`'s writes

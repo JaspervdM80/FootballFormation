@@ -91,6 +91,7 @@ public class StatsServiceTests : ServiceTestBase
 
         // Nothing to do with anyone's minutes, and still counts: the alternative is a list of
         // which writes matter, and being wrong about it is a stale figure nobody can explain.
+        SeedTeam();
         Assert.True((await Users.CreateAsync("Nieuw", "nieuw", "x!Password1", UserRole.Admin)).IsSuccess);
 
         Assert.NotEqual(generation, StatsCache.Generation);
