@@ -491,6 +491,9 @@
   <data name="The last administrator cannot be removed or demoted" xml:space="preserve"><value>De laatste beheerder kan niet worden verwijderd of gedegradeerd</value></data>
   <data name="The last application administrator cannot be removed or demoted" xml:space="preserve"><value>De laatste applicatiebeheerder kan niet worden verwijderd of gedegradeerd</value></data>
   <data name="Only an application administrator can grant that role" xml:space="preserve"><value>Alleen een applicatiebeheerder kan die rol toekennen</value></data>
+  <data name="You can only manage accounts for your own team" xml:space="preserve"><value>Je kunt alleen accounts van je eigen team beheren</value></data>
+  <data name="An administrator needs a team" xml:space="preserve"><value>Een beheerder heeft een team nodig</value></data>
+  <data name="All teams" xml:space="preserve"><value>Alle teams</value></data>
   <data name="Only an application administrator can change this role." xml:space="preserve"><value>Alleen een applicatiebeheerder kan deze rol wijzigen.</value></data>
   <data name="The last training must not be before the first" xml:space="preserve"><value>De laatste training mag niet vóór de eerste liggen</value></data>
   <data name="The training period must fall inside season {0}" xml:space="preserve"><value>De trainingsperiode moet binnen seizoen {0} vallen</value></data>
@@ -506,6 +509,7 @@
   <data name="Theme {0}" xml:space="preserve"><value>Thema {0}</value></data>
   <data name="Logo" xml:space="preserve"><value>Logo</value></data>
   <data name="Selected" xml:space="preserve"><value>GESELECTEERD</value></data>
+  <data name="Show this team" xml:space="preserve"><value>Dit team tonen</value></data>
   <data name="{0} team" xml:space="preserve"><value>{0} team</value></data>
   <data name="{0} teams" xml:space="preserve"><value>{0} teams</value></data>
   <data name="No clubs yet. Add one to get started." xml:space="preserve"><value>Nog geen clubs. Voeg er een toe om te beginnen.</value></data>
@@ -532,6 +536,7 @@
   <data name="A club named {0} already exists" xml:space="preserve"><value>Er bestaat al een club met de naam {0}</value></data>
   <data name="{0} already has a team named {1}" xml:space="preserve"><value>{0} heeft al een team met de naam {1}</value></data>
   <data name="Club {0} still has {1} teams" xml:space="preserve"><value>Club {0} heeft nog {1} teams</value></data>
+  <data name="Team {0} still has {1} accounts" xml:space="preserve"><value>Team {0} heeft nog {1} accounts</value></data>
   <data name="{0} is the team the app is showing" xml:space="preserve"><value>{0} is het team dat de app laat zien</value></data>
   <data name="The logo must be a path inside the app, like icons/icon-192.png" xml:space="preserve"><value>Het logo moet een pad binnen de app zijn, bijvoorbeeld icons/icon-192.png</value></data>
   <data name="Club with ID {0} not found" xml:space="preserve"><value>Club met ID {0} niet gevonden</value></data>

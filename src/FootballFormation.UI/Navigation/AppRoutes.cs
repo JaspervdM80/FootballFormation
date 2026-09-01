@@ -27,9 +27,11 @@ public static class AppRoutes
 
     public static string Result(int gameId) => $"/games/{gameId}/result";
 
-    /// Endpoints, not pages: both settings are fixed for the lifetime of a render — the circuit's culture at startup, the season off the
-    /// request — so each writes a cookie and sends the visitor back where they were.
+    /// Endpoints, not pages: the culture, the season and the team are all fixed for the lifetime of a render — the circuit's culture at
+    /// startup, the other two off the request — so each writes a cookie and sends the visitor back where they were.
     public static string SetCulture(string culture, string returnUrl) => $"/culture/set?culture={culture}&redirectUri={Uri.EscapeDataString(returnUrl)}";
 
     public static string SetSeason(int? seasonId, string returnUrl) => $"/season/set?season={SeasonPreference.Format(seasonId)}&redirectUri={Uri.EscapeDataString(returnUrl)}";
+
+    public static string SetTeam(int teamId, string returnUrl) => $"/team/set?team={TeamPreference.Format(teamId)}&redirectUri={Uri.EscapeDataString(returnUrl)}";
 }

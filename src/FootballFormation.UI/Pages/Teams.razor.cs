@@ -18,7 +18,8 @@ public partial class Teams
     /// What the app bar was rendered with, so a rename here can tell whether it left the chrome behind.
     private string _renderedChrome = string.Empty;
 
-    /// The team the app is showing, which the picker below does not change — it scopes this page only.
+    /// The team the app is showing, which the club picker does not change — that one scopes this page only. Switching the app onto a
+    /// team is the row's own link to /team/set.
     private int? _currentTeamId;
 
     private int _selectedClubId;

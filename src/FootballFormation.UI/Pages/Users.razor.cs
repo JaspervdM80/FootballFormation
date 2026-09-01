@@ -1,3 +1,4 @@
+using FootballFormation.UI.State;
 using Microsoft.AspNetCore.Components.Authorization;
 
 namespace FootballFormation.UI.Pages;
@@ -5,6 +6,8 @@ namespace FootballFormation.UI.Pages;
 public partial class Users
 {
     [Inject] private UserService UserService { get; set; } = null!;
+    [Inject] private TeamService TeamService { get; set; } = null!;
+    [Inject] private TeamState Team { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
@@ -20,14 +23,32 @@ public partial class Users
     /// The role dialog offers ApplicationAdmin only to someone who already holds it — UserService refuses the rest.
     private bool _canGrantApplicationAdmin;
 
+    /// Named on every row and picked in the dialog, so the same list serves both.
+    private List<Team> _teams = [];
+
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateTask;
         _currentUserId = authState.User.UserId();
         _canGrantApplicationAdmin = authState.User.IsApplicationAdmin();
 
+        await Team.EnsureLoadedAsync();
+        await LoadTeams(authState.User.AdminTeamId());
         await LoadUsers();
     }
+
+    /// An ordinary admin may only put an account on the team they run, so the picker never offers one UserService would refuse.
+    private async Task LoadTeams(int? adminTeamId)
+    {
+        var result = await TeamService.GetTeamsAsync(Cancellation);
+        if (!Snackbar.ReportFailure(L, result)) return;
+
+        _teams = _canGrantApplicationAdmin
+            ? result.Value!
+            : result.Value!.Where(t => t.Id == adminTeamId).ToList();
+    }
+
+    private string TeamName(int? teamId) => _teams.FirstOrDefault(t => t.Id == teamId)?.FullName ?? string.Empty;
 
     private async Task LoadUsers()
     {
@@ -41,7 +62,7 @@ public partial class Users
         if (edited is null) return;
 
         var result = await UserService.CreateAsync(
-            edited.DisplayName, edited.Username, edited.Password, edited.Role);
+            edited.DisplayName, edited.Username, edited.Password, edited.Role, edited.TeamId);
 
         Snackbar.Report(L, result, L["User {0} created", edited.DisplayName]);
         await LoadUsers();
@@ -53,7 +74,7 @@ public partial class Users
         if (edited is null) return;
 
         var result = await UserService.UpdateAsync(
-            user.Id, edited.DisplayName, edited.Username, edited.Role);
+            user.Id, edited.DisplayName, edited.Username, edited.Role, edited.TeamId);
 
         Snackbar.Report(L, result, L["User {0} updated", edited.DisplayName]);
         await LoadUsers();
@@ -90,5 +111,7 @@ public partial class Users
             if (user is not null) p.Add(x => x.User, user);
             p.Add(x => x.PasswordOnly, passwordOnly);
             p.Add(x => x.CanGrantApplicationAdmin, _canGrantApplicationAdmin);
+            p.Add(x => x.Teams, _teams);
+            p.Add(x => x.DefaultTeamId, Team.Current?.Id);
         });
 }

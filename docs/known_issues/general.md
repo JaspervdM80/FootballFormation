@@ -62,3 +62,16 @@
   defeated the `line.length > 0` filter, since a blank line arrives as `'\r'`. Split on `/\r?\n/`.
   Substring assertions (`toContain`) are unaffected; only a line-by-line read of clipboard text has
   this shape.
+- **JavaScript's `en-GB` and .NET's neutral `en` disagree about exactly one month.**
+  `training-schedule.spec.js` built the row label it searched for with
+  `toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' })`, while
+  `/trainings` renders `Date.ToString("ddd dd MMM")` under `en` — the culture the suite pins. The two
+  agree for eleven months and part company in September, which CLDR's en-GB abbreviates to the
+  four-letter **`Sept`** where .NET's `en` prints **`Sep`**: the spec waited for `Mon 07 Sept`, the
+  page said `Mon 07 Sep`, and the locator resolved to zero elements. It passes all year, reddens for
+  the whole of September and repairs itself on 1 October, so it reads as a flake rather than a bug —
+  and the CI retry disguises it further, because the second attempt re-saves a period that has not
+  changed, the diff writes no sessions, and the failure moves to a missing "N trainings created"
+  snackbar. Compose the expected string from `en-US` parts, which match .NET's `en` for all twelve
+  months. Any test that rebuilds a server-rendered date in JavaScript has this shape: the two
+  runtimes carry different locale data, and only a calendar decides when that matters.

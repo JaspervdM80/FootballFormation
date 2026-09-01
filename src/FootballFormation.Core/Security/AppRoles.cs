@@ -22,6 +22,10 @@ public static class AppClaims
     /// <see cref="AppUser.SecurityStamp"/> as it was when the cookie was issued.
     public const string SecurityStamp = "security_stamp";
 
+    /// <see cref="AppUser.TeamId"/>, absent on an application admin. Reassigning a team rolls the security stamp, so this claim cannot
+    /// outlive the assignment it describes.
+    public const string TeamId = "team_id";
+
     /// Changing the password rolls the security stamp, which invalidates the cookie carrying this claim — so it cannot outlive the
     /// condition it describes.
     public const string MustChangePassword = "must_change_password";

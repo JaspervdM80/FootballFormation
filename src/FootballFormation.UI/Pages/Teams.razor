@@ -94,6 +94,15 @@
                             }
                         </span>
                         <div class="list-row-actions">
+                            @if (team.Id != _currentTeamId)
+                            {
+                                @* A link and a real page load, like the season picker: the team is read off the request that creates a
+                                   scope, so the chrome and the page would otherwise disagree until the next navigation. *@
+                                <a class="action-btn" href="@AppRoutes.SetTeam(team.Id, AppRoutes.Teams)"
+                                   data-enhance-nav="false" title="@L["Show this team"]" aria-label="@L["Show this team"]">
+                                    <MudIcon Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" />
+                                </a>
+                            }
                             <button class="action-btn" title="@L["Edit Team"]" aria-label="@L["Edit Team"]"
                                     @onclick="() => OpenEditTeamDialog(team)">
                                 <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />

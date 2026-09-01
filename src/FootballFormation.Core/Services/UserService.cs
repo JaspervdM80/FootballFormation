@@ -8,6 +8,7 @@ namespace FootballFormation.Core.Services;
 public class UserService(
     IDbContextFactory<AppDbContext> dbFactory,
     ICurrentUser currentUser,
+    ICurrentTeam currentTeam,
     ILogger<UserService> logger)
 {
     public const int MinPasswordLength = 8;
@@ -79,16 +80,24 @@ public class UserService(
         return PasswordChangeResult.Success;
     }
 
-    /// Projected to <see cref="UserSummary"/> so the hash and stamp never leave here, and ordered by name — the column the list is read down.
+    /// Projected to <see cref="UserSummary"/> so the hash and stamp never leave here, and ordered by name — the column the list is read
+    /// down. Everyone for an application admin; otherwise the accounts on the team in scope.
+    ///
+    /// Guarded rather than public, unlike the squad and the fixtures: this is names and logins, and anyone can point the ff.team cookie
+    /// at any team, so the read has to ask the same question the writes do rather than trust where the cookie points.
     public Task<Result<List<UserSummary>>> GetAllAsync(CancellationToken cancellationToken = default) =>
-        ServiceOperation.RunAsync(logger, "load users", cancellationToken, async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "load users", cancellationToken, async () =>
         {
+            var everyTeam = await currentUser.IsApplicationAdminAsync();
+            var teamId = everyTeam ? null : await currentTeam.GetIdAsync();
+
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var users = await db.Users
                 .AsNoTracking()
+                .Where(u => everyTeam || (u.TeamId != null && u.TeamId == teamId))
                 .OrderBy(u => u.DisplayName)
-                .Select(u => new UserSummary(u.Id, u.DisplayName, u.Username, u.Role))
+                .Select(u => new UserSummary(u.Id, u.DisplayName, u.Username, u.Role, u.TeamId))
                 .ToListAsync(cancellationToken);
 
             logger.LogDebug("Retrieved {Count} users", users.Count);
@@ -109,8 +118,10 @@ public class UserService(
         return admins.FirstOrDefault(u => u.Username == "admin") ?? admins.OrderBy(u => u.Id).FirstOrDefault();
     }
 
+    /// A null <paramref name="teamId"/> means the team in scope — the one /users is looking at, and the only one an ordinary admin
+    /// could name anyway.
     public Task<Result<AppUser>> CreateAsync(
-        string displayName, string username, string password, UserRole role,
+        string displayName, string username, string password, UserRole role, int? teamId = null,
         CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAdminAsync(currentUser, logger, "create the user", cancellationToken, async () =>
         {
@@ -120,10 +131,18 @@ public class UserService(
             var authority = await MayChangeAsync(role);
             if (authority.IsFailure) return authority.To<AppUser>();
 
+            teamId = role == UserRole.ApplicationAdmin ? null : teamId ?? await currentTeam.GetIdAsync();
+
+            var manage = await MayManageAsync(teamId);
+            if (manage.IsFailure) return manage.To<AppUser>();
+
             if (password.Length < MinPasswordLength)
                 return Result.Failure<AppUser>(PasswordTooShortKey, MinPasswordLength);
 
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            var team = await ValidateTeamAsync(db, role, teamId, cancellationToken);
+            if (team.IsFailure) return team.To<AppUser>();
 
             username = username.Trim();
             if (await db.Users.AnyAsync(u => u.Username == username, cancellationToken))
@@ -134,6 +153,7 @@ public class UserService(
                 DisplayName = displayName.Trim(),
                 Username = username,
                 Role = role,
+                TeamId = teamId,
                 SecurityStamp = NewStamp()
             };
             user.PasswordHash = Hasher.HashPassword(user, password);
@@ -141,13 +161,15 @@ public class UserService(
             db.Users.Add(user);
             await db.SaveChangesAsync(cancellationToken);
 
-            logger.LogInformation("Created user {Username} ({UserId}) with role {Role}", user.Username, user.Id, role);
+            logger.LogInformation("Created user {Username} ({UserId}) with role {Role} on team {TeamId}",
+                user.Username, user.Id, role, teamId);
             return Result.Success(user);
         });
 
     /// No password here on purpose: changing one has to invalidate sessions, so it is its own action (<see cref="SetPasswordAsync"/>).
+    /// A null <paramref name="teamId"/> leaves the account on the team it is already on.
     public Task<Result> UpdateAsync(
-        int id, string displayName, string username, UserRole role,
+        int id, string displayName, string username, UserRole role, int? teamId = null,
         CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAdminAsync(currentUser, logger, "update the user", cancellationToken, async () =>
         {
@@ -159,12 +181,20 @@ public class UserService(
             var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
             if (user is null) return NotFound(id);
 
-            // Both sides: taking the role away is the same authority as handing it out, and only one of them used to be checked.
+            teamId = role == UserRole.ApplicationAdmin ? null : teamId ?? user.TeamId;
+
+            // Both sides of both moves: taking a role or a team away is the same authority as handing it out.
             if (user.Role != role)
             {
                 var authority = await MayChangeAsync(user.Role, role);
                 if (authority.IsFailure) return authority;
             }
+
+            var manage = await MayManageAsync(user.TeamId, teamId);
+            if (manage.IsFailure) return manage;
+
+            var team = await ValidateTeamAsync(db, role, teamId, cancellationToken);
+            if (team.IsFailure) return team;
 
             username = username.Trim();
             if (await db.Users.AnyAsync(u => u.Username == username && u.Id != id, cancellationToken))
@@ -181,16 +211,19 @@ public class UserService(
             user.DisplayName = displayName.Trim();
             user.Username = username;
 
-            // Only when the authority actually changed: a rename should not sign the user out.
-            if (user.Role != role)
+            // Only when the authority actually changed: a rename should not sign the user out. The team is part of that authority now,
+            // so a move between teams rolls the stamp as surely as a role change does.
+            if (user.Role != role || user.TeamId != teamId)
             {
                 user.Role = role;
+                user.TeamId = teamId;
                 user.SecurityStamp = NewStamp();
             }
 
             await db.SaveChangesAsync(cancellationToken);
 
-            logger.LogInformation("Updated user {Username} ({UserId}) to role {Role}", user.Username, id, role);
+            logger.LogInformation("Updated user {Username} ({UserId}) to role {Role} on team {TeamId}",
+                user.Username, id, role, teamId);
             return Result.Success();
         });
 
@@ -206,6 +239,10 @@ public class UserService(
 
             var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
             if (user is null) return NotFound(id);
+
+            // Handing out a password is handing out the account, so it asks the same question deleting one does.
+            var manage = await MayManageAsync(user.TeamId);
+            if (manage.IsFailure) return manage;
 
             user.PasswordHash = Hasher.HashPassword(user, newPassword);
             user.SecurityStamp = NewStamp();
@@ -226,6 +263,9 @@ public class UserService(
             // Deleting an application admin revokes the role as surely as demoting one does.
             var authority = await MayChangeAsync(user.Role);
             if (authority.IsFailure) return authority;
+
+            var manage = await MayManageAsync(user.TeamId);
+            if (manage.IsFailure) return manage;
 
             if (user.Role.GrantsAdmin() && await IsLastAdminAsync(db, id, cancellationToken))
                 return Result.Failure(LastAdminKey);
@@ -298,6 +338,34 @@ public class UserService(
         AppDbContext db, int excludingId, CancellationToken cancellationToken) =>
         db.Users.AllAsync(u => u.Id == excludingId || u.Role != UserRole.ApplicationAdmin, cancellationToken);
 
+    /// RunAdminAsync only asks about the team in scope, and an account may be on another one — so every team an account is on, before
+    /// and after the change, is passed through here. An application admin answers true to all of them.
+    private async Task<Result> MayManageAsync(params int?[] teamIds)
+    {
+        foreach (var teamId in teamIds)
+        {
+            if (!await currentUser.IsAdminOfAsync(teamId)) return Result.Failure(NotThisTeamKey);
+        }
+
+        return Result.Success();
+    }
+
+    private async Task<Result> ValidateTeamAsync(
+        AppDbContext db, UserRole role, int? teamId, CancellationToken cancellationToken)
+    {
+        if (role == UserRole.ApplicationAdmin) return Result.Success();
+
+        if (teamId is null)
+        {
+            logger.LogWarning("Rejected an account with role {Role} and no team", role);
+            return Result.Failure(TeamRequiredKey);
+        }
+
+        return await db.Teams.AnyAsync(t => t.Id == teamId, cancellationToken)
+            ? Result.Success()
+            : Result.Failure("Team with ID {0} not found", teamId);
+    }
+
     /// An ordinary admin passes RunAdminAsync, so /users would otherwise be a way to promote yourself — or to strip an application
     /// admin of a role you could not hand back. Every role entering or leaving an account is passed through here.
     private async Task<Result> MayChangeAsync(params UserRole[] roles)
@@ -326,6 +394,8 @@ public class UserService(
     private const string LastAdminKey = "The last administrator cannot be removed or demoted";
     private const string LastApplicationAdminKey = "The last application administrator cannot be removed or demoted";
     private const string NotApplicationAdminKey = "Only an application administrator can grant that role";
+    private const string NotThisTeamKey = "You can only manage accounts for your own team";
+    private const string TeamRequiredKey = "An administrator needs a team";
     private const string PasswordTooShortKey = "Password must be at least {0} characters";
 
     public enum PasswordChangeResult

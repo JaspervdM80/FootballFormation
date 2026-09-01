@@ -90,6 +90,8 @@ public static class Routing
                 PrincipalFor(user),
                 PersistentSession());
 
+            SelectOwnTeam(context, user);
+
             return Results.Redirect(IsLocalUrl(returnUrl) ? returnUrl : "/");
         })
         .RequireRateLimiting("login");
@@ -125,6 +127,8 @@ public static class Routing
                 if (admin is null) return Results.NotFound();
 
                 await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, PrincipalFor(admin), PersistentSession());
+
+                SelectOwnTeam(context, admin);
 
                 return Results.Redirect("/");
             });
@@ -190,7 +194,33 @@ public static class Routing
 
             return Results.LocalRedirect($"~/{redirectUri.TrimStart('/')}");
         });
+
+        // Nothing is validated here: a team id that names no team falls back to the first one on the next read, and the cookie is a view
+        // choice rather than authority — what an account may change comes from its own claim. See CurrentTeam.
+        app.MapGet("/team/set", (int team, string redirectUri, HttpContext context) =>
+        {
+            if (team > 0) context.Response.Cookies.Append(TeamPreference.CookieName, TeamPreference.Format(team), TeamCookie());
+
+            return Results.LocalRedirect($"~/{redirectUri.TrimStart('/')}");
+        });
     }
+
+    /// Signing in puts you on the team you run, or an admin of any team but the lowest-numbered one would land on a team they cannot
+    /// change — every button rendered, every write refused — with no way back: /teams, which is where a team is picked, is above them.
+    /// An application admin runs all of them and keeps whichever team they were last looking at.
+    static void SelectOwnTeam(HttpContext context, AppUser user)
+    {
+        if (user.TeamId is { } teamId)
+            context.Response.Cookies.Append(TeamPreference.CookieName, TeamPreference.Format(teamId), TeamCookie());
+    }
+
+    /// Secure is left off so this works over the plain http:// of a local `dotnet run` — a team id is not a credential.
+    public static CookieOptions TeamCookie() => new()
+    {
+        MaxAge = TeamPreference.Lifetime,
+        SameSite = SameSiteMode.Lax,
+        IsEssential = true,
+    };
 
     /// The one place claims are built, so /auth/login and /dev/login cannot drift — a claim missing from the dev principal would mean
     /// the dev route exercises a different authorization path than the real one.
@@ -209,6 +239,9 @@ public static class Routing
         // The implication UserRole records: an application admin is an admin too, and every [Authorize(Roles = Admin)] reads the claims
         // rather than the enum.
         if (user.Role == UserRole.ApplicationAdmin) claims.Add(new Claim(ClaimTypes.Role, AppRoles.Admin));
+
+        // Absent rather than empty on an application admin, so a missing claim reads as "every team" in one place only.
+        if (user.TeamId is { } teamId) claims.Add(new Claim(AppClaims.TeamId, teamId.ToString()));
 
         // Only when set, so the common case carries no extra claim at all.
         if (user.MustChangePassword) claims.Add(new Claim(AppClaims.MustChangePassword, "true"));

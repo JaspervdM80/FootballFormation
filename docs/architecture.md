@@ -23,14 +23,17 @@ Models/
   GameComment.cs         — An admin's note on a game: body, public/private, author, edited marker
   MatchType.cs           — MatchType enum (Competition / Cup / Practice) + DisplayName()
   AppUser.cs             — An account that can sign in: name, login, hash, role, security stamp
-  UserRole.cs            — UserRole enum (Admin only today); the member name is the role claim value
+  UserRole.cs            — UserRole enum (Admin, ApplicationAdmin); the member name is the role claim value
   FormationSlots.cs      — Formation slots and lineup→slot assignment, shared by every pitch
 Security/
-  AppRoles.cs            — AppRoles.Admin (role claim constant) and AppClaims (uid, display_name,
-                           security_stamp, must_change_password) — the claim names Program.cs mints
-                           and the UI reads
+  AppRoles.cs            — AppRoles.Admin/ApplicationAdmin (role claim constants) and AppClaims (uid,
+                           display_name, security_stamp, team_id, must_change_password) — the claim
+                           names Program.cs mints and the UI reads
   ICurrentUser.cs        — Who is asking, as far as a Core service is concerned. The seam that lets
                            every write path refuse a non-admin (ServiceOperation.RunAdminAsync)
+  ICurrentTeam.cs        — Which team is being asked about, which is the other half of that question
+  CurrentTeam.cs         — Answers it: the ff.team cookie while it names a team, else the first team
+  TeamAuthority.cs       — The rule itself, as one testable function
 Data/
   AppDbContext.cs         — EF Core context; DbSets only, mapping lives in Configurations/
   Configurations/         — One IEntityTypeConfiguration per entity, applied by assembly scan
@@ -169,6 +172,11 @@ State/
   SeasonState.cs              — Scoped: the selected season, shared by the layout and the pages
   SeasonPreference.cs         — That choice in a cookie for 8h, so a deploy's dropped circuit
                                 does not reset it. Writes it; App.razor/Routes read it
+  TeamState.cs                — Scoped: the club and team the app says it is, for the chrome
+  TeamPreference.cs           — The team in a cookie for a year. /team/set writes it on a choice;
+                                Program.cs stamps the resolved team on every page served
+  RequestContext.cs           — The three cookies a scope was created with, so the static render and
+                                the circuit cannot disagree about them
   NavigationTrailCookie.cs    — The last two pages served, in a cookie because enhanced navigation
                                 sends the destination as the Referer. Program.cs writes it
 Helpers/
@@ -178,8 +186,8 @@ Helpers/
   DialogPrompts.cs            — ConfirmAsync()/ConfirmDeleteAsync(), and PromptAsync() for an
                                 editing dialog that returns a value
   LineupDragState.cs          — In-flight drag on the formation builder
-  PrincipalExtensions.cs      — ClaimsPrincipal.IsAdmin()/DisplayName()/UserId(). Use IsAdmin(), never
-                                Identity.IsAuthenticated — the two only agree while Admin is the one role
+  PrincipalExtensions.cs      — ClaimsPrincipal.IsAdmin()/DisplayName()/UserId()/AdminTeamId(). Use
+                                IsAdmin(), never Identity.IsAuthenticated — being signed in is not a role
 Theming/
   ClubTheme.cs                — The club palette: emits the CSS custom properties AND the MudTheme
 Layout/
@@ -187,9 +195,9 @@ Layout/
                                 Both nav renderings are <NavItems />, so a menu change is one edit
                                 in AppNav.Menu.
 Security/
-  CircuitCurrentUser.cs       — Core's ICurrentUser, answered from the circuit's auth state. The
-                                implementation every RunAdminAsync depends on; it answers false for
-                                an account still on its seeded password
+  CircuitCurrentUser.cs       — Core's ICurrentUser, answered from the circuit's auth state and the
+                                team in scope. The implementation every RunAdminAsync depends on; it
+                                answers false for an account still on its seeded password
 Strings.cs                    — Marker type for IStringLocalizer<Strings>. No English resx: the
                                 English text is the key
 Strings.nl.resx               — The Dutch translations, the app's default culture

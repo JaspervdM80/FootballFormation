@@ -87,21 +87,23 @@ reach back into last season's row.
 | Username | string(50) | The login. **Unique index** |
 | PasswordHash | string | PBKDF2, via `PasswordHasher<AppUser>` — never a plaintext column |
 | Role | UserRole | Stored as int. Written into the auth cookie as `Role.ToString()` |
+| TeamId | int? | The team an `Admin` runs, as the `team_id` claim. Null on an `ApplicationAdmin`, who runs every team. **FK is `Restrict`** — `TeamService` refuses to delete a team accounts are still on |
 | SecurityStamp | string(64) | Guid "N". Changes whenever the account's authority does |
 | MustChangePassword | bool | Set on the account a fresh install seeds, whose password is public knowledge. While true the session can sign in and nothing else — every route sends it to `/settings`, and `ICurrentUser.IsAdminAsync()` answers false, so the services refuse it too. Cleared by `ChangePasswordAsync` |
 
 Nothing an account owns can make it undeletable. The one reference to it — `GameComment.AuthorId` —
 is `SetNull`, so deleting a user leaves their comments in place, unattributed.
 
-`UserService.GetAllAsync` reads a `UserSummary` projection (id, name, username, role), never the
-entity — the `/users` page and its dialog have no use for `PasswordHash` or `SecurityStamp`, and a
+`UserService.GetAllAsync` is `RunAdminAsync`, not a public read — see
+[authorization-and-auth](../patterns/authorization-and-auth.md) — and reads a `UserSummary`
+projection (id, name, username, role, team), never the entity — the `/users` page and its dialog have no use for `PasswordHash` or `SecurityStamp`, and a
 read that returned them would put credential material one careless log line from disclosure.
 `/dev/login` is the exception that still needs the whole entity, for the stamp its cookie carries,
 so it has its own `FindDevLoginAdminAsync` rather than widening the list read.
 
-**There are two rungs, and the upper one implies the lower.** `Admin` runs a team — the squad, the
-fixtures, the live match. `ApplicationAdmin` decides which clubs and teams the app serves at all, and
-is the only role that can grant itself to anyone else. `Role` stays a single column: `PrincipalFor`
+**There are two rungs, and the upper one implies the lower.** `Admin` runs **one** team — the team in
+`TeamId`, and its squad, fixtures and live match. `ApplicationAdmin` decides which clubs and teams the
+app serves at all, runs all of them, and is the only role that can grant itself to anyone else. `Role` stays a single column: `PrincipalFor`
 mints a second `Admin` role claim for an application admin, so every existing
 `[Authorize(Roles = AppRoles.Admin)]` keeps holding without knowing the new member exists. In C#,
 ask `role.GrantsAdmin()` rather than comparing with `UserRole.Admin`, which would read an application
@@ -116,8 +118,9 @@ unauthorizing everyone. Anonymous (not signed in) is not a role and needs no mem
 sliding, so without it, deleting an account or changing its role would leave the old session working
 until it lapsed. The stamp is copied into the cookie at sign-in and re-checked on every authenticated
 request by `OnValidatePrincipal` (Program.cs) via `UserService.FindForSessionAsync`; a mismatch
-rejects the principal and signs the browser out. `UserService` regenerates it on password change and
-role change — but deliberately **not** on a rename, which changes nothing about what the account may
+rejects the principal and signs the browser out. `UserService` regenerates it on password change, role
+change and **team change** — the team is part of what the cookie asserts now — but deliberately **not**
+on a rename, which changes nothing about what the account may
 do.
 
 A live Blazor circuit is still not re-validated per SignalR message — that would be a database read
@@ -174,4 +177,11 @@ are public like every other read.
 `ApplicationAdmin`, rolling its security stamp so the next request mints a cookie carrying the new
 role. `TeamService.EnsureSeededAsync` then fills in GJS / MO15-2 on the next boot, and does nothing
 once any club exists.
+
+`ScopeAdminsToTeams` backfills every `Admin` onto the lowest-numbered team, or they would come back
+running nothing. **It can only do that where a team already exists** — a database old enough to
+predate clubs and teams migrates the whole chain in one boot with the table still empty. So
+`TeamService.EnsureAdminsHaveTeamAsync` is an idempotent startup repair on top of it, in the same
+spirit as `CloseSeasonGapsAsync`, and it runs immediately after the seeding that first creates a
+team. Without it that database boots with every admin locked out and no way to fix it in the app.
 

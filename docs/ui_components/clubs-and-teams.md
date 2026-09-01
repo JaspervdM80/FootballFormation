@@ -18,10 +18,35 @@ card below lists only its teams. Both cards carry a single icon button for addin
 `MudButton`s in the `PageHeader` was the version before this one, and on a phone they overflowed the
 viewport with their labels clipped.
 
-**The picker scopes this page and nothing else.** It does not change which team the app is showing:
-`TeamService.GetCurrentAsync()` still always answers with the first team, and the `Selected` badge
-still says which one that is. `_selectedClubId` is page state, not the URL and not a cookie — this
-page is admin-only and nobody deep-links into it.
+**The club picker scopes this page and nothing else** — it does not change which team the app is
+showing. `_selectedClubId` is page state, not the URL and not a cookie: this page is admin-only and
+nobody deep-links into it.
+
+**Switching the app onto a team is the eye button on a team row**, and it is the only thing that
+does. It is an `<a href>` to `/team/set` with `data-enhance-nav="false"`, exactly as the season
+picker links to `/season/set` and for the same reason: the team is read off the request that creates
+a scope, so an island already up would keep the old one while the chrome showed the new. The row the
+app is currently showing wears the `Selected` badge and offers no button.
+
+## The team the app is showing is a cookie, and the first team when there is none
+
+`ICurrentTeam` resolves it: the id in `ff.team` while it still names a team, and otherwise the lowest
+team id. `TeamService.GetCurrentAsync()`, `TeamState` and the write guard all read that one answer,
+memoized per scope.
+
+`ff.team` is written three ways — at sign-in from the account's own team, by `/team/set` when
+someone picks one, and by a middleware in `Program.cs` that stamps the resolved team onto every HTML
+page response, so "the last team you looked at" is remembered without anyone having to choose. The
+sign-in one is what stops an admin of any team but the first landing somewhere they cannot change
+anything: this page, where a team is picked, is a rung of authority above them. A year, not the season cookie's eight
+hours: which team you follow is not a match-day choice. Nothing validates the value on the way in,
+because it is a view choice and not authority — what an account may *change* comes from its own
+`team_id` claim, never from this cookie. See
+[authorization-and-auth](../patterns/authorization-and-auth.md).
+
+`DeleteTeamAsync` still refuses the lowest-id team, because that is what every visitor who has chosen
+nothing falls back to — and it refuses a team accounts are still on, which the `Restrict` FK would
+otherwise report as a raw `DbUpdateException`.
 
 The selection is resolved, not stored: `_selectedClubId` is a component field, so it holds across the
 page's own `Reload()` after a write and is gone on a browser reload, which starts again from the club

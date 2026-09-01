@@ -9,6 +9,11 @@ public class UserServiceTests : ServiceTestBase
 {
     private const string GoodPassword = "correct-horse";
 
+    /// Every account here is an admin, and an admin runs a team — the shape a deployment boots into.
+    private readonly Team _team;
+
+    public UserServiceTests() => _team = SeedTeam();
+
     [Fact]
     public async Task A_created_user_can_sign_in_with_their_password_but_not_a_wrong_one()
     {
@@ -195,6 +200,72 @@ public class UserServiceTests : ServiceTestBase
         // The guard is about the application-admin role, not about admins in general — an ordinary admin still runs the team.
         Assert.True((await Users.UpdateAsync(ordinary.Id, "Coach K", "coach", UserRole.Admin)).IsSuccess);
         Assert.True((await Users.DeleteAsync(ordinary.Id)).IsSuccess);
+    }
+
+    [Fact]
+    public async Task An_admin_lands_on_the_team_in_scope_when_none_is_named()
+    {
+        var created = await Users.CreateAsync("Coach", "coach", GoodPassword, UserRole.Admin);
+
+        Assert.Equal(_team.Id, created.Value!.TeamId);
+    }
+
+    [Fact]
+    public async Task An_application_admin_is_on_no_team_even_when_one_is_named()
+    {
+        // Null is what the write guard reads as "every team", so a team here would be a lie about what the account may change.
+        var created = await Users.CreateAsync("App", "app", GoodPassword, UserRole.ApplicationAdmin, _team.Id);
+
+        Assert.Null(created.Value!.TeamId);
+    }
+
+    [Fact]
+    public async Task An_admin_cannot_be_created_without_a_team()
+    {
+        CurrentTeam.Id = null;
+
+        var created = await Users.CreateAsync("Coach", "coach", GoodPassword, UserRole.Admin);
+
+        Assert.True(created.IsFailure);
+        Assert.Empty(Read().Users);
+    }
+
+    [Fact]
+    public async Task An_admin_cannot_be_put_on_a_team_that_does_not_exist()
+    {
+        var created = await Users.CreateAsync("Coach", "coach", GoodPassword, UserRole.Admin, 404);
+
+        Assert.True(created.IsFailure);
+        Assert.Empty(Read().Users);
+    }
+
+    [Fact]
+    public async Task Moving_an_account_to_another_team_signs_its_sessions_out()
+    {
+        var other = SeedTeam("SV Zwaluwen", "MO15-1");
+        CurrentTeam.Id = _team.Id;
+
+        var user = (await Users.CreateAsync("Coach", "coach", GoodPassword, UserRole.Admin, _team.Id)).Value!;
+        var stampAtLogin = user.SecurityStamp;
+
+        await Users.UpdateAsync(user.Id, "Coach", "coach", UserRole.Admin, other.Id);
+
+        // The team is part of what the cookie asserts now, so a cookie minted for the old one must stop working — the same rule a role
+        // change has always followed.
+        Assert.Null(await Users.FindForSessionAsync(user.Id, stampAtLogin));
+        Assert.Equal(other.Id, Read().Users.Single(u => u.Id == user.Id).TeamId);
+    }
+
+    [Fact]
+    public async Task A_rename_leaves_the_team_and_the_session_alone()
+    {
+        var user = (await Users.CreateAsync("Coach", "coach", GoodPassword, UserRole.Admin, _team.Id)).Value!;
+        var stampAtLogin = user.SecurityStamp;
+
+        await Users.UpdateAsync(user.Id, "Coach K", "coach", UserRole.Admin);
+
+        Assert.NotNull(await Users.FindForSessionAsync(user.Id, stampAtLogin));
+        Assert.Equal(_team.Id, Read().Users.Single(u => u.Id == user.Id).TeamId);
     }
 
     [Fact]

@@ -73,6 +73,12 @@ try
 
     builder.Services.AddScoped<ICurrentUser, CircuitCurrentUser>();
 
+    // The team the write guard asks about, resolved from the cookie once per scope. Registered by hand rather than by type because the
+    // cookie is the host's to read — Core takes the id, not an HTTP dependency.
+    builder.Services.AddScoped<ICurrentTeam>(sp => new CurrentTeam(
+        sp.GetRequiredService<IDbContextFactory<AppDbContext>>(),
+        TeamPreference.Parse(sp.GetRequiredService<RequestContext>().TeamCookie)));
+
     builder.Services.AddScoped<PlayerService>();
     builder.Services.AddScoped<SeasonService>();
     builder.Services.AddScoped<SeasonSquadService>();
@@ -100,7 +106,8 @@ try
         sp.GetRequiredService<IHttpContextAccessor>().HttpContext is { } http
             ? new RequestContext(
                 http.Request.Cookies[SeasonPreference.CookieName],
-                http.Request.Cookies[NavigationTrailCookie.CookieName])
+                http.Request.Cookies[NavigationTrailCookie.CookieName],
+                http.Request.Cookies[TeamPreference.CookieName])
             : RequestContext.None);
 
     builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -212,6 +219,9 @@ try
         var teamService = scope.ServiceProvider.GetRequiredService<TeamService>();
         await teamService.EnsureSeededAsync("GJS", "MO15-2");
 
+        // Repairs a database old enough that the migration's backfill found no team to put its admins on
+        await teamService.EnsureAdminsHaveTeamAsync();
+
         // A fresh install has no games for the migration's backfill to derive seasons from
         var seasonService = scope.ServiceProvider.GetRequiredService<SeasonService>();
         await seasonService.EnsureCurrentSeasonAsync();
@@ -283,6 +293,28 @@ try
             }
 
             return Task.CompletedTask;
+        });
+
+        await next();
+    });
+
+    // Which team the visit was about, so the next one opens on it rather than on whichever team comes first in the database.
+    app.Use(async (context, next) =>
+    {
+        context.Response.OnStarting(async () =>
+        {
+            // A page only, as with the trail above: a redirect, an asset and a JSON endpoint are not a team anyone looked at. Asked
+            // here rather than before the response, so nothing but a page pays for the answer — and a page has already asked for it,
+            // so by now CurrentTeam has one memoized.
+            if (context.Response.StatusCode != StatusCodes.Status200OK
+                || context.Response.ContentType?.StartsWith("text/html", StringComparison.OrdinalIgnoreCase) != true)
+                return;
+
+            if (await context.RequestServices.GetRequiredService<ICurrentTeam>().GetIdAsync() is { } teamId)
+            {
+                context.Response.Cookies.Append(
+                    TeamPreference.CookieName, TeamPreference.Format(teamId), Routing.TeamCookie());
+            }
         });
 
         await next();
