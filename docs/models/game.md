@@ -111,7 +111,7 @@ to the other.
 | Id | int | PK |
 | GameId | int | FK → Game (cascade delete) |
 | PeriodType | PeriodType | FirstHalf, SecondHalf, FirstQuarter..FourthQuarter |
-| FormationTypeOverride | FormationType? | Null = use game's formation |
+| FormationTypeOverride | FormationType? | Null = use game's formation. Nothing in the UI sets one, and changing the game's formation clears them all |
 | StartedAtSeconds | int? | Match-clock second the half this opens kicked off. Null unless run live, and always null for a plan for the middle of a half |
 | EndedAtSeconds | int? | Match-clock second that half was whistled off |
 | PlayerPositions | List\<GamePlayerPosition\> | |

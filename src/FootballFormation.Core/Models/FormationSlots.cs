@@ -46,6 +46,22 @@ public static class FormationSlots
         FormationType formation, IEnumerable<GamePlayerPosition> lineup) =>
         Assign(For(formation), lineup);
 
+    /// Moves a line-up from one shape into another: everyone keeps the slot she was standing in, and her recorded position follows that
+    /// slot. The pitch reads the slot, but the playing-time table and the position statistics read what is stored on the entry.
+    public static void Reshape(
+        IEnumerable<GamePlayerPosition> lineup, PlayerPosition[] from, PlayerPosition[] to)
+    {
+        var standing = Assign(from, lineup);
+
+        for (var slot = 0; slot < standing.Length && slot < to.Length; slot++)
+        {
+            if (standing[slot] is not { } entry) continue;
+
+            entry.SlotIndex = slot;
+            entry.Position = to[slot];
+        }
+    }
+
     /// The pitch spreads duplicates — two centre-backs, three midfielders — across fixed coordinates, so it needs the ordinal as well as
     /// the position.
     public static (int Index, int Count) OrdinalOf(PlayerPosition[] slots, int slotIndex)

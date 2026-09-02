@@ -44,6 +44,37 @@ public class FormationSlotsTests
     }
 
     [Fact]
+    public void Reshaping_keeps_every_starter_in_her_slot_and_gives_her_that_slots_new_position()
+    {
+        var lineup = new List<GamePlayerPosition>
+        {
+            new() { PlayerId = 1, Position = PlayerPosition.LM, SlotIndex = 5 },
+            new() { PlayerId = 2, Position = PlayerPosition.RM, SlotIndex = 8 },
+            new() { PlayerId = 3, Position = PlayerPosition.CM, IsSubstitute = true }
+        };
+
+        FormationSlots.Reshape(lineup, FormationSlots.For(FormationType.F442), FormationSlots.For(FormationType.F433));
+
+        // 4-3-3 fields a midfielder where 4-4-2 had a left midfielder, and a winger where it had a right one.
+        Assert.Equal((PlayerPosition.CM, 5), (lineup[0].Position, lineup[0].SlotIndex));
+        Assert.Equal((PlayerPosition.LW, 8), (lineup[1].Position, lineup[1].SlotIndex));
+
+        // A substitute stands nowhere, so the shape does not move her.
+        Assert.Equal((PlayerPosition.CM, (int?)null, true), (lineup[2].Position, lineup[2].SlotIndex, lineup[2].IsSubstitute));
+    }
+
+    [Fact]
+    public void Reshaping_settles_a_legacy_entry_into_the_slot_it_was_being_drawn_in()
+    {
+        // No slot recorded, so 4-4-2 was drawing her in the left midfielder's — slot 5, which 4-3-3 fields a central midfielder in.
+        var lineup = new List<GamePlayerPosition> { new() { PlayerId = 1, Position = PlayerPosition.LM } };
+
+        FormationSlots.Reshape(lineup, FormationSlots.For(FormationType.F442), FormationSlots.For(FormationType.F433));
+
+        Assert.Equal((PlayerPosition.CM, 5), (lineup[0].Position, lineup[0].SlotIndex));
+    }
+
+    [Fact]
     public void A_legacy_entry_never_steals_a_slot_an_explicit_one_is_entitled_to()
     {
         var slots = FormationSlots.For(FormationType.F442);

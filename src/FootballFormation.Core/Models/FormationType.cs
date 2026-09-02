@@ -19,6 +19,11 @@ public enum FormationType
 
 public static class FormationTypeExtensions
 {
+    /// Every picker offers the shapes in this order — the enum's own order is the order they were added, which is no order at all to
+    /// hunt through.
+    public static IReadOnlyList<FormationType> Alphabetical { get; } =
+        [.. Enum.GetValues<FormationType>().OrderBy(f => f.DisplayName(), StringComparer.Ordinal)];
+
     public static string DisplayName(this FormationType formation) => formation switch
     {
         FormationType.F442 => "4-4-2",

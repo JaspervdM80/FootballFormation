@@ -57,6 +57,15 @@ public class FormationTypeTests
         Assert.Equal(2, positions.Count(p => p == PlayerPosition.ST));
     }
 
+    [Fact]
+    public void Every_formation_is_offered_once_in_the_order_its_name_reads()
+    {
+        var names = FormationTypeExtensions.Alphabetical.Select(f => f.DisplayName()).ToList();
+
+        Assert.Equal(Enum.GetValues<FormationType>().Length, FormationTypeExtensions.Alphabetical.Distinct().Count());
+        Assert.Equal([.. names.Order(StringComparer.Ordinal)], names);
+    }
+
     [Theory]
     [InlineData(PlayerPosition.GK, PositionCategory.Goalkeeper)]
     [InlineData(PlayerPosition.CB, PositionCategory.Defender)]

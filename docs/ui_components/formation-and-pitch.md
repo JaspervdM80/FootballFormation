@@ -8,6 +8,19 @@
   position matching is the fallback for legacy rows (see `BuildSlotAssignments`)
 - Page requires the Admin role (`[Authorize(Roles = AppRoles.Admin)]`); anonymous visitors get the
   read-only overview
+- The formation is chosen on this page and belongs to the whole game: a labelled `Formation:`
+  dropdown beside the tab strip on a desktop, and its own field above the period select on a phone.
+  Picking one calls `GameService.SaveFormationAsync`, which in **one** transaction sets the game's
+  shape, clears every `GamePeriod.FormationTypeOverride` and moves each period's line-up into the
+  new shape through `FormationSlots.Reshape` — everyone keeps her slot and her stored `Position`
+  follows that slot, which the pitch would not show but the playing-time table and the position
+  statistics would. The rows are edited **in place**, never taken from the page and re-inserted, so
+  a half already played keeps the line-up the touchline recorded (and its row ids) even if the
+  builder has been sitting open since before kick-off. The page reshapes its own cached copy the
+  same way, so a drag not yet saved survives the switch
+- Every picker lists the shapes through `FormationTypeExtensions.Alphabetical` — by display name,
+  not by the order they were added to the enum. The builder, the match dialog and the season
+  preferences all read that one list
 - Actions: Save All, Copy to Next Period
 - Playing time table is built by `PlayingTimeReport.Build(...)`, not by the page; it renders
   whenever there are players (it does not wait for every period to be filled)

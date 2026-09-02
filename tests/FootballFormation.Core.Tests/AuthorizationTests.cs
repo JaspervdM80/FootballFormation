@@ -170,6 +170,21 @@ public class AuthorizationTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task An_anonymous_caller_cannot_change_a_games_formation()
+    {
+        var season = await SeedSeasonAsync();
+        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
+
+        CurrentUser.IsAdmin = false;
+
+        var result = await Games.SaveFormationAsync(game.Id, FormationType.F433);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ServiceOperation.NotAllowedKey, result.ErrorKey);
+        Assert.Equal(game.FormationType, Read().Games.Single().FormationType);
+    }
+
+    [Fact]
     public async Task An_anonymous_caller_cannot_drive_a_live_match()
     {
         var season = await SeedSeasonAsync();
