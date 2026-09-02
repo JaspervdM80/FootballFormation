@@ -22,6 +22,14 @@
   not by the order they were added to the enum. The builder, the match dialog and the season
   preferences all read that one list
 - Actions: Save All, Copy to Next Period
+- **A period whose `StartedAtSeconds` is set is shown as a record, not a plan.** The pitch, the
+  bench and the player list all render with their drag turned off, an inline notice says why, Copy
+  to Next Period is withheld when the period it would copy *into* has kicked off, and every editing
+  handler stops on `HasBeenPlayed` — the page's guard against piling up changes the save would
+  drop. Save All skips those periods, naming them in an information snackbar, and takes the list
+  from a **fresh read** rather than from its own cached game: a builder left open since before
+  kick-off still has every half down as a plan, and would otherwise be refused one period at a time
+  by `GameService.SavePeriodLineupAsync`
 - Playing time table is built by `PlayingTimeReport.Build(...)`, not by the page; it renders
   whenever there are players (it does not wait for every period to be filled)
 - Its totals read the match clock once the game has been run live, and are the planned

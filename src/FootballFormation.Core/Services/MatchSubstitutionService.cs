@@ -200,8 +200,7 @@ public class MatchSubstitutionService(
                     .Where(pp => pp.GamePeriodId == injury.GamePeriodId)
                     .ToListAsync(cancellationToken);
 
-                // Nothing on this screen takes an empty slot over, but the formation screen can:
-                // saving a line-up there is delete-and-reinsert, mid-match included.
+                // Belt and braces: nothing takes the freed slot now that SavePeriodLineupAsync refuses a half already played.
                 if (positions.Any(pp => !pp.IsSubstitute && pp.SlotIndex == injury.SlotIndex))
                     return Result.Failure<int>("Somebody else is in that place now");
 

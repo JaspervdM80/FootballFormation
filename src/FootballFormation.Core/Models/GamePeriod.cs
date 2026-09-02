@@ -13,6 +13,9 @@ public class GamePeriod
     /// Null for a line-up never run live — a mid-half plan, or a game never played from the touchline.
     public int? StartedAtSeconds { get; set; }
 
+    /// Past this point the touchline owns the line-up: GameService.SavePeriodLineupAsync refuses to replace it.
+    public bool HasKickedOff => StartedAtSeconds is not null;
+
     /// Null while the half is still running.
     public int? EndedAtSeconds { get; set; }
 

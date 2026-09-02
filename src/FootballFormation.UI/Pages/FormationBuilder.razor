@@ -20,6 +20,7 @@
     var activeIndex = Math.Clamp(ActivePeriodIndex, 0, orderedPeriods.Count - 1);
     var activePeriod = orderedPeriods[activeIndex];
     var periodFormation = activePeriod.FormationTypeOverride ?? GameData.FormationType;
+    var activePeriodPlayed = activePeriod.HasKickedOff;
 }
 
 <div class="builder-desktop">
@@ -90,9 +91,17 @@
     </MudSelect>
 </div>
 
+@if (activePeriodPlayed)
+{
+    <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2">
+        @L["This half was played from the touchline, so its line-up is the record of who was on the pitch and is no longer edited here."]
+    </MudAlert>
+}
+
 <div class="formation-layout mt-2">
     <div class="player-list-panel">
         <PlayerList Players="GetAvailablePlayers(activePeriod.Id)"
+                    ReadOnly="activePeriodPlayed"
                     OnDragStart="OnPlayerDragStart" />
         @if (UnavailablePlayers.Count > 0)
         {
@@ -134,7 +143,7 @@
                Positions="PeriodLineups[activePeriod.Id]"
                Size="PitchSize.Compact"
                ConstrainHeight="true"
-               Draggable="true"
+               Draggable="@(!activePeriodPlayed)"
                DraggedPlayerId="Drag.PlayerId"
                OnPlayerDropped="(slot) => OnPlayerDropped(activePeriod.Id, slot)"
                OnPlayerRemoved="(slot) => OnPlayerRemoved(activePeriod.Id, slot)"
@@ -149,6 +158,7 @@
     </div>
     <div class="subs-panel">
         <SubstituteBench Lineup="PeriodLineups[activePeriod.Id]"
+                         ReadOnly="activePeriodPlayed"
                          DraggedPlayerId="Drag.PlayerId"
                          OnSubRemoved="(pp) => RemoveSub(activePeriod.Id, pp)"
                          OnPlayerDroppedToSub="() => OnPlayerDroppedToSub(activePeriod.Id)"
@@ -164,7 +174,7 @@
             @L["Save All Lineups"]
         </MudButton>
 
-        @if (!IsLastPeriodSelected)
+        @if (CanCopyToNextPeriod)
         {
             <MudButton Variant="Variant.Outlined" Class="btn-ghost"
                        StartIcon="@Icons.Material.Filled.ContentCopy"
@@ -185,7 +195,7 @@
 
         <MudSpacer />
 
-        @if (!IsLastPeriodSelected)
+        @if (CanCopyToNextPeriod)
         {
             <MudButton Variant="Variant.Outlined" Class="btn-ghost"
                        StartIcon="@Icons.Material.Filled.ContentCopy"

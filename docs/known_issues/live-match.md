@@ -43,4 +43,15 @@
   drawn on the wrong side of the half-time rule. `MatchClockReport.ElapsedOf` is the conversion,
   and it is the only thing that should produce an ordering key for a goal. It cost a review round
   on the change that introduced it.
-
+- **The formation builder could overwrite the line-up a half was played with, from a tab nobody
+  had touched since before kick-off.** `SavePeriodLineupAsync` is delete-then-insert from whatever
+  the caller hands it, and the builder's `PeriodLineups` is filled once in `OnInitializedAsync` and
+  never resubscribed — the page does not listen to `LiveMatchNotifier`. So a coach who opened
+  `/games/{id}/formation` before the match, ran it from `/games/{id}/live` in another tab, and then
+  went back and pressed Save All wrote the pre-kick-off plan over the first half: both substitutions
+  gone from the line-up, every row handed a new id, and `GameMinutesReport` crediting minutes to the
+  players who had been taken off. Nothing looked wrong — the pitch reads the slot. The fix is that a
+  period which `HasKickedOff` belongs to the touchline: the service refuses it whoever asks, the
+  builder renders it read-only, and Save All skips it on the strength of a fresh read rather than of
+  its own cached game. The same shape had already been fixed once for the formation picker (#147,
+  #148); Save All was the half of it left open, and it was reachable on `main` the whole time.

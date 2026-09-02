@@ -85,6 +85,11 @@ public partial class FormationBuilder
     private bool IsInjured(int playerId) =>
         Squad.IsInjured(playerId) || (GameData?.InjuredPlayerIds.Contains(playerId) ?? false);
 
+    /// Every editing handler below stops here rather than piling up changes the save would drop — the touchline owns a half once it
+    /// has kicked off, and GameService.SavePeriodLineupAsync refuses one.
+    private bool HasBeenPlayed(int periodId) =>
+        GameData!.Periods.First(p => p.Id == periodId).HasKickedOff;
+
     private List<Player> GetAvailablePlayers(int periodId)
     {
         var usedIds = PeriodLineups.TryGetValue(periodId, out var lineup)
@@ -110,6 +115,8 @@ public partial class FormationBuilder
 
     private void OnPitchPlayerDragStart(int periodId, int slotIndex)
     {
+        if (HasBeenPlayed(periodId)) return;
+
         var existing = BuildSlotAssignments(periodId)[slotIndex];
         if (existing is null) return;
 
@@ -118,7 +125,7 @@ public partial class FormationBuilder
 
     private void OnPlayerDropped(int periodId, int slotIndex)
     {
-        if (Drag.PlayerId is null || AllPlayers is null) return;
+        if (Drag.PlayerId is null || AllPlayers is null || HasBeenPlayed(periodId)) return;
 
         var slots = GetAllSlots(periodId);
         var position = slots[slotIndex];
@@ -170,7 +177,7 @@ public partial class FormationBuilder
 
     private void OnPlayerDroppedToSub(int periodId)
     {
-        if (Drag.PlayerId is null || AllPlayers is null) return;
+        if (Drag.PlayerId is null || AllPlayers is null || HasBeenPlayed(periodId)) return;
 
         if (AllPlayers.FirstOrDefault(p => p.Id == Drag.PlayerId) is { } player)
         {
@@ -186,7 +193,7 @@ public partial class FormationBuilder
     /// Drop of a dragged starter onto a bench player: the two trade places.
     private void OnSwapFieldPlayerWithSub(int periodId, int subPlayerId)
     {
-        if (Drag.PlayerId is null || Drag.PlayerId == subPlayerId) return;
+        if (Drag.PlayerId is null || Drag.PlayerId == subPlayerId || HasBeenPlayed(periodId)) return;
         if (Drag.FromSlotIndex is not { } slotIndex) return;
 
         var lineup = PeriodLineups[periodId];
@@ -208,13 +215,20 @@ public partial class FormationBuilder
 
     private void OnPlayerRemoved(int periodId, int slotIndex)
     {
+        if (HasBeenPlayed(periodId)) return;
+
         var existing = BuildSlotAssignments(periodId)[slotIndex];
         if (existing is not null)
             PeriodLineups[periodId].Remove(existing);
         StateHasChanged();
     }
 
-    private void RemoveSub(int periodId, GamePlayerPosition sub) => PeriodLineups[periodId].Remove(sub);
+    private void RemoveSub(int periodId, GamePlayerPosition sub)
+    {
+        if (HasBeenPlayed(periodId)) return;
+
+        PeriodLineups[periodId].Remove(sub);
+    }
 
     private static void SendToBench(GamePlayerPosition entry)
     {
@@ -264,11 +278,15 @@ public partial class FormationBuilder
     private bool IsLastPeriodSelected =>
         GameData is not null && ActivePeriodIndex >= GameData.Periods.Count - 1;
 
+    private bool CanCopyToNextPeriod =>
+        GameData is not null && !IsLastPeriodSelected
+        && !HasBeenPlayed(GameData.Periods.OrderBy(p => p.PeriodType).ToList()[ActivePeriodIndex + 1].Id);
+
     private void CopyToNextPeriod()
     {
-        if (GameData is null || IsLastPeriodSelected) return;
+        if (!CanCopyToNextPeriod) return;
 
-        var orderedPeriods = GameData.Periods.OrderBy(p => p.PeriodType).ToList();
+        var orderedPeriods = GameData!.Periods.OrderBy(p => p.PeriodType).ToList();
         var sourcePeriod = orderedPeriods[ActivePeriodIndex];
         var nextPeriod = orderedPeriods[ActivePeriodIndex + 1];
 
@@ -293,18 +311,34 @@ public partial class FormationBuilder
 
     private async Task SaveAll()
     {
+        // Re-read rather than believed from the cached game: this page may have been open since before kick-off, in which case its own
+        // copy still has every half down as a plan and the save would be refused one period at a time.
+        var currentResult = await GameService.GetByIdAsync(GameId, Cancellation);
+        if (!Snackbar.ReportFailure(L, currentResult)) return;
+
+        var played = currentResult.Value!.Periods.Where(p => p.HasKickedOff).OrderBy(p => p.PeriodType).ToList();
+        var playedIds = played.Select(p => p.Id).ToHashSet();
+
         var failures = new List<string>();
 
-        foreach (var (periodId, lineup) in PeriodLineups)
+        foreach (var (periodId, lineup) in PeriodLineups.Where(entry => !playedIds.Contains(entry.Key)))
         {
             var result = await GameService.SavePeriodLineupAsync(periodId, lineup);
-            if (result.IsFailure) failures.Add(result.Error!);
+            if (result.IsFailure) failures.Add(UiFeedback.Translate(L, result));
         }
 
         if (failures.Count > 0)
         {
             Snackbar.Add(L["Save failed: {0}", string.Join("; ", failures)], Severity.Error);
             return;
+        }
+
+        if (played.Count > 0)
+        {
+            Snackbar.Add(
+                L["Left as the touchline recorded it: {0}",
+                    string.Join(", ", played.Select(p => L[p.PeriodType.DisplayName()].Value))],
+                Severity.Info);
         }
 
         Snackbar.Add(L["All lineups saved!"], Severity.Success);

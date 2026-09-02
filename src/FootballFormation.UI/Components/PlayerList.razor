@@ -11,7 +11,7 @@
     @foreach (var player in Players)
     {
         <div class="draggable-player"
-             draggable="true"
+             draggable="@((!ReadOnly).ToString().ToLowerInvariant())"
              @ondragstart="() => OnDragStart.InvokeAsync(player.Id)">
             <span class="player-shirt">@(player.ShirtNumber?.ToString() ?? "-")</span>
             <div class="player-info">
