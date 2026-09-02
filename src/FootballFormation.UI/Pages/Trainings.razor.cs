@@ -34,6 +34,8 @@ public partial class Trainings
         _players = Snackbar.ReportFailure(L, players) ? players.Value! : [];
     }
 
+    private DateTime Today => Time.GetLocalNow().Date;
+
     /// In the order PlayerService hands them over — shirt number, then name — so the same absences read the same way on every session.
     private string UnavailableNames(Training training) =>
         string.Join(", ", _players
@@ -48,7 +50,7 @@ public partial class Trainings
     {
         if (_trainings is null) return [];
 
-        var thisMonday = TrainingOrdering.MondayOf(Time.GetLocalNow().Date);
+        var thisMonday = TrainingOrdering.MondayOf(Today);
         var weeks = _trainings
             .GroupBy(t => TrainingOrdering.MondayOf(t.Date))
             .Select(week => (Monday: week.Key, Trainings: week.ToList()))

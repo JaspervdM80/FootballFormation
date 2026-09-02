@@ -63,6 +63,18 @@ public class TrainingTests
     }
 
     [Fact]
+    public void Only_an_evening_that_is_behind_us_and_went_ahead_counts_as_held()
+    {
+        Assert.True(new Training { Date = Today.AddDays(-1) }.HasBeenHeld(Today));
+
+        // Today's evening is still to come as far as the register is concerned: its absences can be entered up to the whistle, so a
+        // badge or a percentage read off it now would move again this evening.
+        Assert.False(new Training { Date = Today }.HasBeenHeld(Today));
+        Assert.False(new Training { Date = Today.AddDays(1) }.HasBeenHeld(Today));
+        Assert.False(new Training { Date = Today.AddDays(-1), DidNotTakePlace = true }.HasBeenHeld(Today));
+    }
+
+    [Fact]
     public void A_generated_session_with_nothing_recorded_against_it_is_the_only_one_the_schedule_may_remove()
     {
         var scheduled = new Training { FromSchedule = true };

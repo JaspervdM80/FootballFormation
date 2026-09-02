@@ -27,6 +27,15 @@ Date, a `.badge-unavailable` count when anyone was out, the note, then the edit/
 pair. All four of those classes are `app.css`'s; only the row, the week block and the *Earlier* rule
 are scoped in `Trainings.razor.css`.
 
+**An evening the whole squad made says so, in green.** `.badge-present` renders the same *"{0} out"*
+string at zero — *"0 afwezig"* — because no badge at all is not the same claim: it reads as a session
+nobody has written up yet. The branch is gated on `Training.HasBeenHeld(today)` rather than on an empty
+absence list, and that member is the one `TrainingAttendanceReport` counts by, so the badge and the
+percentage above it can never disagree — a session still to come, today's included, carries an empty
+register only because nobody has said otherwise yet. Its green is `--color-success-deep`, not the
+`-bright` tone beside it: over the badge's own 10% fill that one measures 3.7:1, under AA for text this
+small, the same trap `.badge-venue-home` documents in `app.css`.
+
 **A session that did not take place is dimmed, not hidden.** It carries a `cancelled` class that
 mutes the date and note, and shows `.badge-warning` **"Cancelled"** *instead of* the absence count —
 the two are mutually exclusive, because a cancelled evening is not one everybody missed. Dimmed

@@ -106,6 +106,12 @@ else
                         {
                             <span class="badge-unavailable" title="@UnavailableNames(training)">@L["{0} out", training.UnavailablePlayerIds.Count]</span>
                         }
+                        else if (training.HasBeenHeld(Today))
+                        {
+                            @* Held, not merely absence-free: an empty register on an evening still to come means nobody has said
+                               otherwise yet, not that the whole squad turned up. *@
+                            <span class="badge-present">@L["{0} out", 0]</span>
+                        }
                         <span class="training-notes">@training.Notes</span>
                         <div class="training-actions" @onclick:stopPropagation="true">
                             <button class="action-btn" title="@L["Edit"]" @onclick="() => OpenEditDialog(training)">
