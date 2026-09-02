@@ -896,6 +896,18 @@ a.action-btn {
     border: 1px solid color-mix(in srgb, var(--color-danger) 15%, transparent);
 }
 
+/* The counterpart to .badge-unavailable, on a session the whole squad turned up to — the register is only worth reading when it
+   also says when nobody was missing. */
+.badge-present {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--color-success-bright) 10%, transparent);
+    color: var(--color-success-deep);
+    border: 1px solid color-mix(in srgb, var(--color-success-bright) 20%, transparent);
+}
+
 /* Amber, not red: worth a look, not an alarm. */
 .badge-warning {
     font-size: 0.65rem;

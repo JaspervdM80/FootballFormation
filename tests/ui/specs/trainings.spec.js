@@ -158,6 +158,8 @@ test('a session that did not go ahead is marked, not deleted', async ({ page }) 
   await expect(row.locator('.badge-warning')).toHaveText('Cancelled');
   // The absence count is what the badge replaces: a cancelled evening is not one everybody missed.
   await expect(row.locator('.badge-unavailable')).toHaveCount(0);
+  // Nor one everybody made — an empty register is all a cancelled session and a full turnout have in common.
+  await expect(row.locator('.badge-present')).toHaveCount(0);
 
   // Re-opened, the form offers no absentees to pick — there is nobody to be absent from a training nobody had.
   const panel = page.locator('.mud-dialog');
@@ -243,6 +245,16 @@ test('a session that did not take place is left out of the attendance', async ({
 
   await addTraining(page, { note: 'Opkomst: nog een', past: true });
   expect(await sessionsHeld(page)).toBe(before + 1);
+});
+
+test('a session the whole squad turned up to says so', async ({ page }) => {
+  test.skip(noPastDayThisMonth(), 'no earlier day this month to hold a session on');
+
+  await addTraining(page, { note: 'Opkomst: iedereen er', past: true });
+
+  // No absence badge is not the same as reading that there were none: a coach scanning the weeks has
+  // to be able to tell a full turnout from an evening still to be written up.
+  await expect(trainingRow(page, 'Opkomst: iedereen er').locator('.badge-present')).toHaveText('0 out');
 });
 
 test('a player opened from the register comes back to the register', async ({ page }) => {

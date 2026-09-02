@@ -36,6 +36,8 @@
     --color-danger: #ef4444;
     --color-danger-bright: #dc2626;
     --color-success-bright: #15803d;
+    /* For success text on a tint of itself: the -bright green measures 3.7:1 over the badge fill, under AA. */
+    --color-success-deep: #14532d;
     --color-warning: #f59e0b;
     --color-warning-bright: #b45309;
     /* Away-game accent; home uses the club green. The -bright pair is the readable one, like every

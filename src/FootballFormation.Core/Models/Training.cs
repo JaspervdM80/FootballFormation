@@ -30,6 +30,9 @@ public class Training
     /// coach has opened is the coach's, and rewriting the period must not take it away.
     public bool FromSchedule { get; set; }
 
+    /// Been and gone, and it went ahead. Today's evening does not count yet: its register can still change before the whistle.
+    public bool HasBeenHeld(DateTime today) => Date.Date < today.Date && !DidNotTakePlace;
+
     /// The only session the scheduler may remove: nothing has been recorded against it, so deleting it loses nothing.
     public bool IsUnusedSchedule =>
         FromSchedule && !DidNotTakePlace && UnavailablePlayerIds.Count == 0 && string.IsNullOrWhiteSpace(Notes);
