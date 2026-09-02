@@ -135,6 +135,9 @@
   <data name="Cup" xml:space="preserve"><value>Beker</value></data>
   <data name="Practice" xml:space="preserve"><value>Oefenwedstrijd</value></data>
 
+  <!-- Formations. The key is FormationType.DisplayName(); only the shapes carrying a word need an entry. -->
+  <data name="4-4-2 diamond" xml:space="preserve"><value>4-4-2 ruit</value></data>
+
   <!-- Trainings. "Trainings" is the section; the lowercase "the training" phrases below are service actions and must stay apart from
        these labels, since resx keys are case-insensitive. -->
   <data name="Trainings" xml:space="preserve"><value>Trainingen</value></data>

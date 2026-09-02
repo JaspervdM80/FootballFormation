@@ -28,7 +28,7 @@
         <Meta>
             <VenueBadge IsHome="GameData.IsHomeGame" />
             <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">@GameData.DateLine("dd MMM yyyy")</MudText>
-            <span class="badge-gold">@GameData.FormationType.DisplayName()</span>
+            <span class="badge-gold">@L[GameData.FormationType.DisplayName()]</span>
         </Meta>
         <Actions>
             <MudButton Variant="Variant.Outlined" Size="Size.Small"
@@ -56,7 +56,7 @@
         </Meta>
     </PageHeader>
     <div class="d-flex align-center gap-2 mb-2">
-        <span class="badge-gold">@GameData.FormationType.DisplayName()</span>
+        <span class="badge-gold">@L[GameData.FormationType.DisplayName()]</span>
         <MudSpacer />
         <MudButton Variant="Variant.Outlined" Size="Size.Small"
                    StartIcon="@Icons.Material.Filled.Share" Class="btn-ghost"

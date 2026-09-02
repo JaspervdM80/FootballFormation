@@ -53,7 +53,7 @@ correctly in each.
 
 ## Enums
 
-`PlayerPosition` (16), `FormationType` (12), `MatchType` (3, descriptive only — nothing in the reports
+`PlayerPosition` (16), `FormationType` (13), `MatchType` (3, descriptive only — nothing in the reports
 branches on it), `MatchState`, `GameSplitType`, `PeriodType`, `UserRole`.
 
 **Duplicate positions in a formation are the design.** `F442.DefaultPositions()` returns two CBs and
