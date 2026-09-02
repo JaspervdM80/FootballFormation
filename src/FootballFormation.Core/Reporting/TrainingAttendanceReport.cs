@@ -52,7 +52,7 @@ public static class TrainingAttendanceReport
         // A season's evenings are all written the day the training period is saved, so most of them are still ahead. One nobody could
         // have missed yet carries an empty absence list, which reads as a full squad present and pulls every figure up towards 100%.
         var past = trainings.Where(t => t.Date.Date < today.Date).ToList();
-        var held = past.Where(t => !t.DidNotTakePlace).ToList();
+        var held = trainings.Where(t => t.HasBeenHeld(today)).ToList();
 
         var expected = held
             .SelectMany(t => squads.For(t.SeasonId).FullMembers)
@@ -83,7 +83,7 @@ public static class TrainingAttendanceReport
         foreach (var training in trainings)
         {
             // An evening still ahead is nobody's yet and a cancelled one is nobody's absence; a guest was never expected at either.
-            if (training.Date.Date >= today.Date || training.DidNotTakePlace) continue;
+            if (!training.HasBeenHeld(today)) continue;
             if (!squads.For(training.SeasonId).IsFullMember(player.Id)) continue;
 
             held++;

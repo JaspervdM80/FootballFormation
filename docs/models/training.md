@@ -75,7 +75,9 @@ joined this year is not charged for the year before she was here — the same pr
   by whole percent as the calendar passed each session. A session dated *today* waits until tomorrow:
   a row carries a date and no start time, so nothing can tell this evening's training from one that
   is over. Sessions ahead are left out of `Cancelled` for the same reason, or a fresh season would
-  read *"2 held, 40 cancelled"*.
+  read *"2 held, 40 cancelled"*. The test lives on the entity as `Training.HasBeenHeld(today)` — been and
+  gone, and it went ahead — because `/trainings` needs the same answer for its green *"0 afwezig"* badge,
+  and a second copy of the rule there would let the badge and the percentage above it drift apart.
 - **Guests are left out entirely.** The dialog offers only full members, so a guest carries no
   absence and would otherwise read as a perfect attender.
 - **The squad figure weighs player-sessions, not players** — `Attended` summed over `Held` summed,
