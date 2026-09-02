@@ -1212,9 +1212,10 @@ a.action-btn {
     white-space: nowrap;
 }
 
-/* Hamburger only on small screens; inline nav links only on larger ones */
+/* On every width, because above the breakpoint the bar now drops the nav links it cannot fit and the
+   drawer is where those stay reachable — see the .topbar-nav block below. */
 .nav-hamburger {
-    display: none;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 44px;
@@ -1266,15 +1267,6 @@ a.action-btn {
     pointer-events: auto;
 }
 
-/* The drawer is only reachable behind the hamburger, so above that breakpoint it must not be able
-   to open at all — a checkbox left checked on a resize would otherwise slide it back in. */
-@media (min-width: 701px) {
-    .app-drawer,
-    .drawer-scrim {
-        display: none;
-    }
-}
-
 @media (prefers-reduced-motion: reduce) {
     .app-drawer,
     .drawer-scrim {
@@ -1282,16 +1274,48 @@ a.action-btn {
     }
 }
 
-/* 700px is content-driven, not a layout tier: it is the width at which the five nav links, the
-   season picker and the admin block stop fitting on one bar. Deliberately not MudBlazor's md —
-   that would put a hamburger on every tablet with room to spare. See docs/theming.md. */
+/* How many links fit is the bar's own arithmetic rather than a number kept in step by hand. The nav
+   is the only item allowed to give way: what it cannot fit wraps onto a second row that max-height
+   clips, and the drawer carries the whole menu at every width, so a dropped link is one tap away.
+   #137 is what the hand-kept number cost — 700px was derived for five links, and there are seven,
+   which put the season picker, the language picker and sign out off the right-hand edge entirely. */
+.topbar-nav {
+    min-width: 0;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    max-height: calc(2.4rem + 12px);
+    overflow: hidden;
+}
+
+/* One row exactly: MudBlazor's 2.4rem nav link plus the 6px .topbar-nav-link pads it with, and here
+   the 44px touch floor standing in for the 2.4rem. A hair short cuts the row the clip is there to
+   keep, and the touch audit stops measuring a link it can only see part of. */
+@media (pointer: coarse) {
+    .topbar-nav {
+        max-height: calc(44px + 12px);
+    }
+}
+
+/* MudNavLink's wrapper is a full-width row — which nowrap was quietly shrinking back. Once the nav
+   wraps, that width is taken literally and every link lands on a line of its own. */
+.topbar-nav > * {
+    flex: none;
+    width: auto;
+}
+
+/* Only where there is a nav to give way: below the breakpoint it is hidden, and the phone bar is
+   already tight enough to need whatever room its own items can spare. */
+@media (min-width: 701px) {
+    .mud-appbar .mud-toolbar > *:not(.topbar-nav) {
+        flex-shrink: 0;
+    }
+}
+
+/* A design tier now, not arithmetic: a phone bar is the hamburger, the crest and who is signed in,
+   and the sections live in the drawer whether or not one or two of them would have fitted. */
 @media (max-width: 700px) {
     .topbar-nav {
         display: none !important;
-    }
-
-    .nav-hamburger {
-        display: inline-flex;
     }
 
     /* The title link. Was selected as .ml-2.mr-8 — by the MudBlazor spacing utilities it happens
@@ -1734,17 +1758,34 @@ a.action-btn {
    Lay the row out as a grid instead: name + role on the first line, login on the second,
    the actions hugging the right edge. */
 @media (max-width: 599.98px) {
+    /* Column two is sized by its content but never past a share of the card. An `auto` track took
+       whatever the role badge asked for — 120px for ApplicationAdmin — and the 1fr track beside it
+       gave up all of its width to pay for that, which left the name and the "You" badge rendering
+       over the role. */
     .users-table .mud-table-body .mud-table-row {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto auto;
+        grid-template-columns: minmax(0, 1fr) fit-content(30%) auto;
         align-items: center;
         column-gap: 8px;
         row-gap: 4px;
         padding: 10px 14px;
     }
 
+    /* The "You" badge stays whole and the name is the half that shortens — but only once the cap
+       above has taken back everything the role column was holding. */
     .users-table .cell-name {
         min-width: 0;
+    }
+
+    .users-table .cell-name > span:first-child {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .users-table .cell-name .badge-teal {
+        flex: none;
     }
 
     /* The login goes under the name, leaving the role and actions on the first line */
@@ -1758,19 +1799,23 @@ a.action-btn {
         grid-column: 2;
         grid-row: 1;
         justify-content: flex-end;
+        min-width: 0;
     }
 
-    /* Under the role badge it belongs with. Capped and truncated because this column is sized by its
-       content: a club-and-team name long enough would otherwise take the width off the account name,
-       which is the one thing on the card that has to stay readable. */
+    /* Under the role badge it belongs with */
     .users-table .cell-team {
         grid-column: 2;
         grid-row: 2;
         justify-content: flex-end;
-        max-width: 45vw;
+        min-width: 0;
     }
 
+    /* Both run longer than the cap allows — "Applicatiebeheerder", a club-and-team name — and a cap
+       holds only while nothing under it insists on its own width. Without min-width: 0 on the cells
+       above, the badge's own minimum is the track's minimum and fit-content has nothing to cap. */
+    .users-table .cell-role span,
     .users-table .cell-team span {
+        min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;

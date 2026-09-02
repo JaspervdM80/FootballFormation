@@ -86,8 +86,9 @@ drifted once.
 
 
 ## The drawer is a checkbox (`Layout/MainLayout.razor`)
-Below 700px the app-bar sections move into a drawer, and its open state is an
-`<input type="checkbox" id="nav-drawer">` at the top of `MudLayout`, not a bool on a component.
+The app-bar sections are also a drawer — the only navigation below 700px, and the overflow above it
+— and its open state is an `<input type="checkbox" id="nav-drawer">` at the top of `MudLayout`, not
+a bool on a component.
 
 - **No circuit and no script.** The layout is statically rendered on every page, so there is nothing
   to hold a `bool` or handle an `OnClick`; and a drawer that depended on a script would fail exactly
@@ -96,8 +97,9 @@ Below 700px the app-bar sections move into a drawer, and its open state is an
 - The checkbox is **visually hidden but still focusable** (`clip-path`, not `display: none`): it is
   the control a keyboard or screen reader gets, and it carries the "Menu" label. The hamburger and
   the scrim are `<label for="nav-drawer">` — affordances with no semantics of their own.
-- Above the breakpoint the drawer and scrim are `display: none`, so a checkbox left checked before a
-  resize cannot slide it back in.
+- **The hamburger and the drawer are on every width**, not only below 700px: above the breakpoint the
+  bar shows the nav links that fit and clips the rest, so the drawer is the one place the whole menu
+  is always reachable. See [../theming.md](../theming.md), "The app bar sizes its own nav".
 - **The one thing JS still does**: enhanced navigation patches the DOM rather than replacing it, so
   the checkbox survives a navigation with `checked` still set and the drawer would stay open over
   the new page. `js/pwa.js` unchecks it on Blazor's `enhancedload`. If that never runs the only cost

@@ -78,15 +78,51 @@ public class UserServiceTests : ServiceTestBase
     }
 
     [Fact]
-    public async Task The_last_admin_cannot_be_deleted()
+    public async Task The_last_admin_of_a_team_cannot_be_deleted_however_many_other_teams_have_one()
+    {
+        var other = SeedTeam("SV Zwaluwen", "MO15-1");
+        var coach = (await Users.CreateAsync("Coach", "coach", GoodPassword, UserRole.Admin, _team.Id)).Value!;
+        await Users.CreateAsync("Theirs", "theirs", GoodPassword, UserRole.Admin, other.Id);
+
+        var deleted = await Users.DeleteAsync(coach.Id);
+
+        // Counting admins app-wide would read the other team's as cover for this one, and leave nobody running MO15-2.
+        Assert.True(deleted.IsFailure);
+        Assert.Contains(_team.Name, deleted.Error);
+        Assert.Equal(2, await Read().Users.CountAsync());
+    }
+
+    [Fact]
+    public async Task An_application_admin_does_not_count_as_a_teams_admin()
     {
         await Users.EnsureAdminSeededAsync();
-        var admin = (await Users.GetAllAsync()).Value!.Single();
+        var coach = (await Users.CreateAsync("Coach", "coach", GoodPassword, UserRole.Admin, _team.Id)).Value!;
 
-        var deleted = await Users.DeleteAsync(admin.Id);
+        // They can change the team's data, but they are not running it — the rule is about the accounts that are.
+        Assert.True((await Users.DeleteAsync(coach.Id)).IsFailure);
+    }
 
-        Assert.True(deleted.IsFailure);
-        Assert.Single(await Read().Users.ToListAsync());
+    [Fact]
+    public async Task An_admin_can_be_deleted_once_their_own_team_has_another()
+    {
+        var coach = (await Users.CreateAsync("Coach", "coach", GoodPassword, UserRole.Admin, _team.Id)).Value!;
+        await Users.CreateAsync("Assistant", "assistant", GoodPassword, UserRole.Admin, _team.Id);
+
+        Assert.True((await Users.DeleteAsync(coach.Id)).IsSuccess);
+    }
+
+    [Fact]
+    public async Task The_last_admin_of_a_team_cannot_be_handed_to_another_one()
+    {
+        var other = SeedTeam("SV Zwaluwen", "MO15-1");
+        CurrentTeam.Id = _team.Id;
+        var coach = (await Users.CreateAsync("Coach", "coach", GoodPassword, UserRole.Admin, _team.Id)).Value!;
+
+        // The move empties MO15-2 as surely as the delete does, and only the delete was ever guarded.
+        var moved = await Users.UpdateAsync(coach.Id, "Coach", "coach", UserRole.Admin, other.Id);
+
+        Assert.True(moved.IsFailure);
+        Assert.Equal(_team.Id, Read().Users.Single(u => u.Id == coach.Id).TeamId);
     }
 
     [Fact]
@@ -194,6 +230,8 @@ public class UserServiceTests : ServiceTestBase
     {
         await Users.EnsureAdminSeededAsync();
         var ordinary = (await Users.CreateAsync("Coach", "coach", GoodPassword, UserRole.Admin)).Value!;
+        // A second admin on the team, so what the delete below meets is the guard under test and not the one about an empty team.
+        await Users.CreateAsync("Assistant", "assistant", GoodPassword, UserRole.Admin);
 
         CurrentUser.IsApplicationAdmin = false;
 
@@ -246,6 +284,7 @@ public class UserServiceTests : ServiceTestBase
         CurrentTeam.Id = _team.Id;
 
         var user = (await Users.CreateAsync("Coach", "coach", GoodPassword, UserRole.Admin, _team.Id)).Value!;
+        await Users.CreateAsync("Assistant", "assistant", GoodPassword, UserRole.Admin, _team.Id);
         var stampAtLogin = user.SecurityStamp;
 
         await Users.UpdateAsync(user.Id, "Coach", "coach", UserRole.Admin, other.Id);
@@ -324,6 +363,7 @@ public class UserServiceTests : ServiceTestBase
         await Users.EnsureAdminSeededAsync();
         var created = await Users.CreateAsync("Jasper", "jasper", GoodPassword, UserRole.Admin);
         var user = created.Value!;
+        await Users.CreateAsync("Coach", "coach", GoodPassword, UserRole.Admin);
 
         await Users.DeleteAsync(user.Id);
 

@@ -69,9 +69,10 @@ The ladder, deliberately:
 
 - **959.98px** — MudBlazor's `md`. The formation builder stacks its three panels and the overview
   drops to one pitch column here.
-- **700px** — content-driven, *not* a MudBlazor tier: it is where the nav links, season picker and
-  admin block stop fitting on one bar. Drawer replaces the top nav; `.mud-appbar .season-picker`
-  hides; `btn-compact` drops button labels; `.squad-actions` stacks.
+- **700px** — a design tier, *not* a MudBlazor one: the inline nav goes away entirely;
+  `.mud-appbar .season-picker` hides; `btn-compact` drops button labels; `.squad-actions` stacks.
+  How many nav links show *above* it is not this number — the bar shows what fits and the drawer,
+  which is on every width, carries the rest.
 - **760px** — the two statistics pages drop from four stat tiles to two.
 - **599.98px** — MudBlazor's `xs`, where it stacks a table into per-row cards. `.stacked-table`
   takes over there for the squad, users and playing-time tables. Always `599.98`, never `599` or

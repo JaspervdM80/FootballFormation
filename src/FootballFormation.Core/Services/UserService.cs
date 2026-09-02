@@ -200,9 +200,10 @@ public class UserService(
             if (await db.Users.AnyAsync(u => u.Username == username && u.Id != id, cancellationToken))
                 return Result.Failure(DuplicateLoginKey, username);
 
-            // Demoting the last admin locks everyone out of the pages that create users, short of editing the database by hand.
-            if (user.Role.GrantsAdmin() && !role.GrantsAdmin() && await IsLastAdminAsync(db, id, cancellationToken))
-                return Result.Failure(LastAdminKey);
+            // Promoting the account out of the role and handing it to another team leave this one as unrun as deleting it would.
+            if (user.Role == UserRole.Admin && (role != UserRole.Admin || teamId != user.TeamId)
+                && await IsLastAdminOfTeamAsync(db, id, user.TeamId, cancellationToken))
+                return await LastTeamAdminFailureAsync(db, user.TeamId, cancellationToken);
 
             if (user.Role == UserRole.ApplicationAdmin && role != UserRole.ApplicationAdmin
                 && await IsLastApplicationAdminAsync(db, id, cancellationToken))
@@ -267,8 +268,8 @@ public class UserService(
             var manage = await MayManageAsync(user.TeamId);
             if (manage.IsFailure) return manage;
 
-            if (user.Role.GrantsAdmin() && await IsLastAdminAsync(db, id, cancellationToken))
-                return Result.Failure(LastAdminKey);
+            if (user.Role == UserRole.Admin && await IsLastAdminOfTeamAsync(db, id, user.TeamId, cancellationToken))
+                return await LastTeamAdminFailureAsync(db, user.TeamId, cancellationToken);
 
             if (user.Role == UserRole.ApplicationAdmin && await IsLastApplicationAdminAsync(db, id, cancellationToken))
                 return Result.Failure(LastApplicationAdminKey);
@@ -328,11 +329,23 @@ public class UserService(
         return user;
     }
 
-    private static Task<bool> IsLastAdminAsync(
-        AppDbContext db, int excludingId, CancellationToken cancellationToken) =>
+    /// Compares with <see cref="UserRole.Admin"/> rather than asking <see cref="UserRoleExtensions.GrantsAdmin"/>, against the usual
+    /// rule: an application admin may change every team but runs none, so counting one here would leave a team with nobody running it.
+    private static Task<bool> IsLastAdminOfTeamAsync(
+        AppDbContext db, int excludingId, int? teamId, CancellationToken cancellationToken) =>
         db.Users.AllAsync(
-            u => u.Id == excludingId || (u.Role != UserRole.Admin && u.Role != UserRole.ApplicationAdmin),
+            u => u.Id == excludingId || u.TeamId != teamId || u.Role != UserRole.Admin,
             cancellationToken);
+
+    private static async Task<Result> LastTeamAdminFailureAsync(
+        AppDbContext db, int? teamId, CancellationToken cancellationToken)
+    {
+        var team = await db.Teams
+            .Include(t => t.Club)
+            .FirstOrDefaultAsync(t => t.Id == teamId, cancellationToken);
+
+        return Result.Failure(LastTeamAdminKey, team?.FullName ?? string.Empty);
+    }
 
     private static Task<bool> IsLastApplicationAdminAsync(
         AppDbContext db, int excludingId, CancellationToken cancellationToken) =>
@@ -391,7 +404,7 @@ public class UserService(
     private static string NewStamp() => Guid.NewGuid().ToString("N");
 
     private const string DuplicateLoginKey = "A user with username {0} already exists";
-    private const string LastAdminKey = "The last administrator cannot be removed or demoted";
+    private const string LastTeamAdminKey = "{0} would be left without an administrator";
     private const string LastApplicationAdminKey = "The last application administrator cannot be removed or demoted";
     private const string NotApplicationAdminKey = "Only an application administrator can grant that role";
     private const string NotThisTeamKey = "You can only manage accounts for your own team";

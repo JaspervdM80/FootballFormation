@@ -11,12 +11,21 @@ description: Anything that a thumb touches or that changes at a breakpoint — t
 |---|---|
 | **959.98px** | MudBlazor's `md`. Formation builder stacks its panels; the overview drops to one pitch column |
 | **760px** | The two statistics pages go from four stat tiles to two |
-| **700px** | *Content-driven*: where the nav links, season picker and admin block stop fitting on one bar. Drawer replaces the top nav |
+| **700px** | *A design tier*: below it the bar keeps only the hamburger, the crest and who is signed in, and the sections live in the drawer. It is **not** the answer to "does the nav fit" — see below |
 | **599.98px** | MudBlazor's `xs`, where it stacks a table into per-row cards. `.stacked-table` takes over |
 
 **Always `599.98`, never `599` or `600`.** `600` fires *at* the boundary MudBlazor is switching on;
 `599` leaves a fractional gap reachable by browser zoom where half the page has restacked and half has
 not. Both have been real bugs here.
+
+## Do not add a section to the app bar and expect a number to keep up
+
+`.topbar-nav` is the only toolbar item allowed to shrink; it wraps what will not fit and a
+`max-height` of one row's height clips that row, and the hamburger and drawer are on **every** width
+so the links it drops stay one tap away. Nothing to recompute when a section is added. That is the
+fix for [#137](https://github.com/JaspervdM80/FootballFormation/issues/137), where the 700px had
+been derived for five nav links, the menu grew to seven, and everything past the overflow point —
+the season picker, the language picker, sign out — was simply off-screen with no way to reach it.
 
 ## A width-only media query does not cover a phone in landscape
 

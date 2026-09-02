@@ -131,10 +131,17 @@ minutes by default, `Auth:RevalidationIntervalSeconds` to change it. Without it 
 before the change kept its authority until someone reloaded — and because `CircuitCurrentUser` reads
 that same provider, so did the write guard on every service.
 
-`UserService.DeleteAsync` and `UpdateAsync` both refuse to remove or demote the **last** Admin —
-the one operation with no way back short of editing the database by hand. The same pair of rules
-applies again to the last **ApplicationAdmin**, for the same reason one rung up: nobody else can hand
-the role back.
+`UserService.DeleteAsync` and `UpdateAsync` both refuse to leave a **team** without an `Admin` —
+deleting its last one, promoting them out of the role, or handing them to another team. The count is
+scoped the way the authority is (`IsLastAdminOfTeamAsync`): an app-wide count would read team B's
+admin as cover for team A and leave A with nobody running it, which is
+[#140](https://github.com/JaspervdM80/FootballFormation/issues/140). An `ApplicationAdmin`
+deliberately does **not** count towards a team's admins — they can change every team's data but run
+none, and counting them would make the rule vacuous, since the last one can never be removed. The
+cost is that a team's only admin has to be joined by a second before they can be moved or deleted.
+
+The same pair of rules applies again to the last **ApplicationAdmin**, app-wide this time and for the
+reason one rung up: nobody else can hand the role back.
 
 **Every role entering *or leaving* an account goes through `MayChangeAsync`**, which asks
 `ICurrentUser.IsApplicationAdminAsync()` rather than relying on `RunAdminAsync`. Both directions

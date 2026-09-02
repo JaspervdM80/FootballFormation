@@ -197,7 +197,8 @@ formation builder is supported via a built-in shim (`js/drag-drop-touch.js`).
 ## Design
 
 A light theme in the club's red and green, sampled from the GJS crest, with card-based layouts.
-Navigation is a top bar on desktop and a drawer below 700px. The whole palette comes from one
+Navigation is a top bar on desktop and a drawer below 700px — and the drawer is reachable at every
+width, because the bar shows only the sections that fit on it. The whole palette comes from one
 record — `ClubTheme` — which emits the CSS custom properties *and* builds MudBlazor's palette, so
 re-skinning for another club is one file. See [docs/theming.md](docs/theming.md).
 
