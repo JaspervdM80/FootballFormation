@@ -497,8 +497,8 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     // it is open it covers the label that opened it, and the checkbox holding it open is page state
     // a navigation discards anyway.
     //
-    // A closed drawer is not hidden — it is parked off the left of the screen, box and all — so
-    // "open" is where its box has got to rather than whether it has one.
+    // A closed drawer is parked off the left of the screen and hidden with visibility, so it has no
+    // box to read until it opens — which makes the box itself the signal that it has.
     const drawerLink = page.locator('.app-drawer a').first();
     await clickFor(page.locator('label.nav-hamburger'),
       async () => ((await drawerLink.boundingBox())?.x ?? -1) >= 0);

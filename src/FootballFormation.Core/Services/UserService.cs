@@ -329,8 +329,8 @@ public class UserService(
         return user;
     }
 
-    /// Compares with <see cref="UserRole.Admin"/> rather than asking <see cref="UserRoleExtensions.GrantsAdmin"/>, against the usual
-    /// rule: an application admin may change every team but runs none, so counting one here would leave a team with nobody running it.
+    /// The accounts that run the team, which is why the role is compared rather than asked whether it grants admin: an application admin
+    /// may change every team but runs none, so counting one would leave a team with nobody running it.
     private static Task<bool> IsLastAdminOfTeamAsync(
         AppDbContext db, int excludingId, int? teamId, CancellationToken cancellationToken) =>
         db.Users.AllAsync(

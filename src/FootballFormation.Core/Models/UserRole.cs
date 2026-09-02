@@ -10,10 +10,3 @@ public enum UserRole
     /// admin check as well as the ones only it passes.
     ApplicationAdmin = 2
 }
-
-public static class UserRoleExtensions
-{
-    /// What every write guard asks. Never compare with <see cref="UserRole.Admin"/> directly — that would read an application admin as
-    /// not being an admin at all.
-    public static bool GrantsAdmin(this UserRole role) => role is UserRole.Admin or UserRole.ApplicationAdmin;
-}

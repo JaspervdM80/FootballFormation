@@ -97,6 +97,10 @@ a bool on a component.
 - The checkbox is **visually hidden but still focusable** (`clip-path`, not `display: none`): it is
   the control a keyboard or screen reader gets, and it carries the "Menu" label. The hamburger and
   the scrim are `<label for="nav-drawer">` — affordances with no semantics of their own.
+- **The closed drawer is `visibility: hidden`**, delayed to the end of the slide so the transform
+  still animates out. Parked off-screen hides it from the eye and from nothing else: without this it
+  is a run of tab stops nobody can see, and a second reading of the whole menu to a screen reader —
+  on every width, now that the drawer is on every width.
 - **The hamburger and the drawer are on every width**, not only below 700px: above the breakpoint the
   bar shows the nav links that fit and clips the rest, so the drawer is the one place the whole menu
   is always reachable. See [../theming.md](../theming.md), "The app bar sizes its own nav".

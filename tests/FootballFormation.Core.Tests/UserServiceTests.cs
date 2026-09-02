@@ -93,12 +93,12 @@ public class UserServiceTests : ServiceTestBase
     }
 
     [Fact]
-    public async Task An_application_admin_does_not_count_as_a_teams_admin()
+    public async Task A_teamless_application_admin_is_not_cover_for_a_teams_last_admin()
     {
         await Users.EnsureAdminSeededAsync();
         var coach = (await Users.CreateAsync("Coach", "coach", GoodPassword, UserRole.Admin, _team.Id)).Value!;
 
-        // They can change the team's data, but they are not running it — the rule is about the accounts that are.
+        // The seeded account can change this team's data and still does not count: it is on no team, which is what running none means.
         Assert.True((await Users.DeleteAsync(coach.Id)).IsFailure);
     }
 

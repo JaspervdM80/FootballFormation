@@ -102,6 +102,12 @@ link plus the 6px `.topbar-nav-link` pads it with, and the 44px floor in place o
 touch screen). Shorter cuts into the row it is keeping — which also makes `touch-targets.mjs` skip
 that link, because it only measures a target it can see whole.
 
+`overflow` is `clip`, not `hidden`, because `hidden` makes a scroll container: tabbing to a link on
+the clipped row would scroll the visible row out of the bar to reach it. What is left is that a
+dropped link is still a tab stop nobody can see — the drawer's copy of it is the one to reach, and
+CSS cannot take a wrapped flex item out of the tab order. `tests/ui/specs/app-bar.spec.js` pins the
+part that can be measured: the bar does not overflow, and what it drops is in the drawer.
+
 That replaces a number kept in step by hand, which is what
 [#137](https://github.com/JaspervdM80/FootballFormation/issues/137) cost: 700px had been derived
 when the menu had five entries, it grew to seven, and an admin on a landscape phone or a 1280px

@@ -106,8 +106,13 @@ so it has its own `FindDevLoginAdminAsync` rather than widening the list read.
 app serves at all, runs all of them, and is the only role that can grant itself to anyone else. `Role` stays a single column: `PrincipalFor`
 mints a second `Admin` role claim for an application admin, so every existing
 `[Authorize(Roles = AppRoles.Admin)]` keeps holding without knowing the new member exists. In C#,
-ask `role.GrantsAdmin()` rather than comparing with `UserRole.Admin`, which would read an application
-admin as not being an admin at all.
+which question you are asking decides how you ask it: **"may this account write here"** goes through
+`ICurrentUser.IsAdminOfAsync` / `TeamAuthority.GrantsAdminOf`, where an application admin answers yes
+for every team; **"who runs this team"** compares with `UserRole.Admin` directly, because an
+application admin runs none — that is `IsLastAdminOfTeamAsync`, and reading it the other way is
+[#140](https://github.com/JaspervdM80/FootballFormation/issues/140) again. A `UserRoleExtensions.GrantsAdmin`
+helper used to answer the first question here and was retired when the guards moved to
+`TeamAuthority`; git has it if a third question ever needs it.
 
 **The role is the grant.** `[Authorize(Roles = AppRoles.Admin)]` and
 `<AuthorizeView Roles="@AppRoles.Admin">` match `Role.ToString()`, which `AppRoles` ties back to the
