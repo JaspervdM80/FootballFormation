@@ -234,6 +234,33 @@ public partial class FormationBuilder
             IsSubstitute = isSubstitute
         };
 
+    /// The shape belongs to the game, so it saves on the spot. The service reshapes the line-ups it holds; the same is done here to the
+    /// copy on the page, so a drag not yet saved survives the switch instead of being reloaded away.
+    private async Task OnFormationChanged(FormationType formation)
+    {
+        if (GameData is null || formation == GameData.FormationType) return;
+
+        var result = await GameService.SaveFormationAsync(GameId, formation);
+        if (!Snackbar.ReportFailure(L, result)) return;
+
+        ReshapeCachedLineups(formation);
+        Snackbar.Add(L["Formation changed to {0}", L[formation.DisplayName()].Value], Severity.Success);
+    }
+
+    private void ReshapeCachedLineups(FormationType formation)
+    {
+        var slots = FormationSlots.For(formation);
+
+        foreach (var period in GameData!.Periods)
+        {
+            FormationSlots.Reshape(PeriodLineups[period.Id], GetAllSlots(period.Id), slots);
+            period.FormationTypeOverride = null;
+        }
+
+        // Last: GetAllSlots above falls back to it for the shape being left.
+        GameData.FormationType = formation;
+    }
+
     private bool IsLastPeriodSelected =>
         GameData is not null && ActivePeriodIndex >= GameData.Periods.Count - 1;
 

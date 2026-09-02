@@ -28,7 +28,6 @@
         <Meta>
             <VenueBadge IsHome="GameData.IsHomeGame" />
             <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">@GameData.DateLine("dd MMM yyyy")</MudText>
-            <span class="badge-gold">@L[GameData.FormationType.DisplayName()]</span>
         </Meta>
         <Actions>
             <MudButton Variant="Variant.Outlined" Size="Size.Small"
@@ -38,6 +37,16 @@
             </MudButton>
         </Actions>
     </PageHeader>
+    <div class="formation-picker mb-2">
+        <span class="formation-picker-label">@L["Formation"]:</span>
+        <MudSelect T="FormationType" Value="GameData.FormationType" ValueChanged="OnFormationChanged"
+                   Dense="true" Variant="Variant.Outlined" Class="formation-select">
+            @foreach (var formation in FormationTypeExtensions.Alphabetical)
+            {
+                <MudSelectItem Value="formation">@L[formation.DisplayName()]</MudSelectItem>
+            }
+        </MudSelect>
+    </div>
     <MudTabs @bind-ActivePanelIndex="ActivePeriodIndex" Elevation="0" Rounded="true"
              ApplyEffectsToContainer="true" Class="mb-2 builder-desktop-tabs">
         @foreach (var period in orderedPeriods)
@@ -56,7 +65,6 @@
         </Meta>
     </PageHeader>
     <div class="d-flex align-center gap-2 mb-2">
-        <span class="badge-gold">@L[GameData.FormationType.DisplayName()]</span>
         <MudSpacer />
         <MudButton Variant="Variant.Outlined" Size="Size.Small"
                    StartIcon="@Icons.Material.Filled.Share" Class="btn-ghost"
@@ -64,6 +72,13 @@
             @L["Overview"]
         </MudButton>
     </div>
+    <MudSelect T="FormationType" Value="GameData.FormationType" ValueChanged="OnFormationChanged"
+               Dense="true" Variant="Variant.Outlined" Label="@L["Formation"]" Class="formation-select mb-3">
+        @foreach (var formation in FormationTypeExtensions.Alphabetical)
+        {
+            <MudSelectItem Value="formation">@L[formation.DisplayName()]</MudSelectItem>
+        }
+    </MudSelect>
     <MudSelect T="int" @bind-Value="ActivePeriodIndex" Dense="true" Variant="Variant.Outlined"
                Label="@L[GameData.SplitType.PeriodLabel()]" Class="period-select mb-3">
         @for (var i = 0; i < orderedPeriods.Count; i++)

@@ -66,6 +66,86 @@ public class GameServiceTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task Changing_the_formation_moves_each_starter_to_the_position_her_slot_is_now()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(3);
+        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
+        var period = Read().GamePeriods.First(p => p.GameId == game.Id);
+        await Games.SavePeriodLineupAsync(period.Id, [
+            TestData.Starter(players[0].Id, PlayerPosition.LM, slot: 5),
+            TestData.Starter(players[1].Id, PlayerPosition.RM, slot: 8),
+            TestData.Sub(players[2].Id)
+        ]);
+
+        var result = await Games.SaveFormationAsync(game.Id, FormationType.F433);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(FormationType.F433, Read().Games.Single().FormationType);
+
+        // The pitch would draw the new shape either way; these are what the playing-time table and the position statistics read.
+        var lineup = Read().GamePlayerPositions.OrderBy(pp => pp.Id).ToList();
+        Assert.Equal((PlayerPosition.CM, 5), (lineup[0].Position, lineup[0].SlotIndex));
+        Assert.Equal((PlayerPosition.LW, 8), (lineup[1].Position, lineup[1].SlotIndex));
+        Assert.Equal((PlayerPosition.CM, null, true), (lineup[2].Position, lineup[2].SlotIndex, lineup[2].IsSubstitute));
+    }
+
+    [Fact]
+    public async Task Changing_the_formation_keeps_the_lineup_a_half_was_actually_played_with()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(2);
+        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
+
+        var period = Db.GamePeriods.First(p => p.GameId == game.Id);
+        period.StartedAtSeconds = 0;
+        await Db.SaveChangesAsync();
+        await Games.SavePeriodLineupAsync(period.Id, [
+            TestData.Starter(players[0].Id, PlayerPosition.LM, slot: 5),
+            TestData.Sub(players[1].Id)
+        ]);
+
+        var before = Read().GamePlayerPositions.OrderBy(pp => pp.Id).Select(pp => new { pp.Id, pp.PlayerId }).ToList();
+
+        await Games.SaveFormationAsync(game.Id, FormationType.F433);
+
+        // Rewritten in place rather than replaced: a half run live is the record of who was on the pitch, and re-inserting it would
+        // throw away the rows the touchline wrote and hand out new ids.
+        Assert.Equal(before, Read().GamePlayerPositions.OrderBy(pp => pp.Id).Select(pp => new { pp.Id, pp.PlayerId }).ToList());
+    }
+
+    [Fact]
+    public async Task Changing_the_formation_clears_a_shape_a_period_had_of_its_own()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(1);
+        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
+
+        var period = Db.GamePeriods.First(p => p.GameId == game.Id);
+        period.FormationTypeOverride = FormationType.F532;
+        await Db.SaveChangesAsync();
+
+        // Slot 5 is the first central midfielder in 5-3-2 and a left midfielder in the game's own 4-4-2 — the override is the shape she
+        // was standing in, so it is the one she has to be moved out of.
+        await Games.SavePeriodLineupAsync(period.Id, [TestData.Starter(players[0].Id, PlayerPosition.CM, slot: 5)]);
+
+        await Games.SaveFormationAsync(game.Id, FormationType.F433);
+
+        // The builder offers one shape for the whole game, and an override outranks it — so it would read as the change not taking.
+        Assert.All(Read().GamePeriods.Where(p => p.GameId == game.Id), p => Assert.Null(p.FormationTypeOverride));
+        Assert.Equal(PlayerPosition.CM, Read().GamePlayerPositions.Single().Position);
+    }
+
+    [Fact]
+    public async Task Changing_the_formation_of_a_game_that_is_gone_fails()
+    {
+        var result = await Games.SaveFormationAsync(404, FormationType.F433);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Game not found", result.ErrorKey);
+    }
+
+    [Fact]
     public async Task Saving_a_lineup_replaces_the_previous_one_wholesale()
     {
         var season = await SeedSeasonAsync();

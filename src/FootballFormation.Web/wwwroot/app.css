@@ -1069,6 +1069,25 @@ a.action-btn {
     font-weight: 500;
 }
 
+/* Formation builder: "Formation: [dropdown]" on a desktop, where the select is a MudBlazor
+   component whose own elements a scoped rule cannot reach. On a phone the select carries its own
+   floating label and stands on its own line, so only the desktop row is written here. */
+.formation-picker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.formation-picker-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink-muted);
+}
+
+.formation-picker .formation-select {
+    width: 180px;
+}
+
 /* Formation builder: the opponent has to give way to the badges beside it on a narrow screen. */
 .builder-opponent {
     min-width: 0;

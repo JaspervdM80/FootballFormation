@@ -323,6 +323,48 @@ public class GameService(
             return Result.Success();
         });
 
+    /// Everyone keeps the slot she was standing in, and her recorded position follows that slot into the new shape — the pitch reads the
+    /// slot, but the playing-time table and the position statistics read what is stored on the entry. The line-ups are edited in place
+    /// rather than taken from the caller, so a half already played keeps what the touchline recorded.
+    public Task<Result> SaveFormationAsync(
+        int gameId, FormationType formation, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "change the formation", cancellationToken, async () =>
+        {
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            var game = await db.Games
+                .Include(g => g.Periods)
+                .ThenInclude(p => p.PlayerPositions)
+                .FirstOrDefaultAsync(g => g.Id == gameId, cancellationToken);
+
+            if (game is null)
+            {
+                logger.LogWarning("Cannot change formation for game {GameId}: not found", gameId);
+                return Result.Failure("Game not found");
+            }
+
+            var slots = FormationSlots.For(formation);
+
+            foreach (var period in game.Periods)
+            {
+                FormationSlots.Reshape(
+                    period.PlayerPositions,
+                    FormationSlots.For(period.FormationTypeOverride ?? game.FormationType),
+                    slots);
+
+                // The shape belongs to the whole game, so an override left on a period would quietly outrank the one just picked.
+                period.FormationTypeOverride = null;
+            }
+
+            // Last: every line above reads it as the shape being left.
+            game.FormationType = formation;
+
+            await db.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation("Changed formation to {Formation} for game {GameId}", formation, gameId);
+            return Result.Success();
+        });
+
     public Task<Result> SavePeriodLineupAsync(
         int periodId, List<GamePlayerPosition> positions, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAdminAsync(currentUser, logger, "save lineup", cancellationToken, async () =>

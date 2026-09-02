@@ -39,7 +39,7 @@
                 }
             </MudSelect>
             <MudSelect T="FormationType" @bind-Value="SelectedFormationType" Label="@L["Formation"]" Class="mb-3">
-                @foreach (var f in Enum.GetValues<FormationType>())
+                @foreach (var f in FormationTypeExtensions.Alphabetical)
                 {
                     <MudSelectItem Value="f">@L[f.DisplayName()]</MudSelectItem>
                 }

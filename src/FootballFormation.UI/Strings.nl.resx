@@ -189,6 +189,7 @@
   <data name="Save failed: {0}" xml:space="preserve"><value>Opslaan mislukt: {0}</value></data>
   <data name="All lineups saved!" xml:space="preserve"><value>Alle opstellingen opgeslagen!</value></data>
   <data name="Lineup copied to {0}" xml:space="preserve"><value>Opstelling gekopieerd naar {0}</value></data>
+  <data name="Formation changed to {0}" xml:space="preserve"><value>Opstelling gewijzigd naar {0}</value></data>
 
   <!-- Match result -->
   <data name="Match Result" xml:space="preserve"><value>Uitslag</value></data>
@@ -633,6 +634,7 @@
   <data name="archive the player" xml:space="preserve"><value>speler archiveren</value></data>
   <data name="calculate next match date" xml:space="preserve"><value>volgende wedstrijddatum berekenen</value></data>
   <data name="calculate the next training date" xml:space="preserve"><value>volgende trainingsdatum berekenen</value></data>
+  <data name="change the formation" xml:space="preserve"><value>opstelling wijzigen</value></data>
   <data name="change the squad status" xml:space="preserve"><value>selectiestatus wijzigen</value></data>
   <data name="close season gaps" xml:space="preserve"><value>gaten tussen seizoenen sluiten</value></data>
   <data name="copy the squad" xml:space="preserve"><value>selectie kopiëren</value></data>
