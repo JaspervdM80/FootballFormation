@@ -488,7 +488,7 @@
   <data name="Name must be at most {0} characters" xml:space="preserve"><value>Naam mag maximaal {0} tekens lang zijn</value></data>
   <data name="Username must be at most {0} characters" xml:space="preserve"><value>Gebruikersnaam mag maximaal {0} tekens lang zijn</value></data>
   <data name="A user with username {0} already exists" xml:space="preserve"><value>Er bestaat al een gebruiker met gebruikersnaam {0}</value></data>
-  <data name="The last administrator cannot be removed or demoted" xml:space="preserve"><value>De laatste beheerder kan niet worden verwijderd of gedegradeerd</value></data>
+  <data name="{0} would be left without an administrator" xml:space="preserve"><value>{0} zou zonder beheerder achterblijven</value></data>
   <data name="The last application administrator cannot be removed or demoted" xml:space="preserve"><value>De laatste applicatiebeheerder kan niet worden verwijderd of gedegradeerd</value></data>
   <data name="Only an application administrator can grant that role" xml:space="preserve"><value>Alleen een applicatiebeheerder kan die rol toekennen</value></data>
   <data name="You can only manage accounts for your own team" xml:space="preserve"><value>Je kunt alleen accounts van je eigen team beheren</value></data>

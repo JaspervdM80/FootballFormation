@@ -82,12 +82,48 @@ grid. The ladder, deliberately:
 |---|---|
 | **959.98px** | MudBlazor's `md`. Formation builder stacks its panels; the overview drops to one pitch column |
 | **760px** | The two statistics pages go from four stat tiles to two |
-| **700px** | *Content-driven, not a MudBlazor tier*: where the nav links, season picker and admin block stop fitting on one bar. Drawer replaces the top nav |
+| **700px** | *A design tier, not a MudBlazor one*: below it the bar is the hamburger, the crest and who is signed in, and the sections live in the drawer. It no longer answers "does the nav fit" — the bar does that itself, at every width (see below) |
 | **599.98px** | MudBlazor's `xs`, where it stacks a table into per-row cards. `.stacked-table` takes over there |
 
 Always `599.98`, never `599` or `600`. `600` fires *at* the boundary MudBlazor is switching on, and
 `599` leaves a fractional gap reachable by browser zoom where half the page has restacked and half
 has not — both have been real bugs here.
+
+## The app bar sizes its own nav
+
+Above 700px the bar lays the sections out inline, and how many of them show is its own arithmetic:
+`.topbar-nav` is the only toolbar item that may shrink, it wraps what it cannot fit onto a second
+row, and a `max-height` of exactly one row's height clips that row away. The hamburger and the
+drawer are on **every** width, so a section the bar drops is one tap away rather than off the edge of
+the screen.
+
+The `max-height` is the fiddly part: it has to be the row's own height (MudBlazor's `2.4rem` nav
+link plus the 6px `.topbar-nav-link` pads it with, and the 44px floor in place of the `2.4rem` on a
+touch screen). Shorter cuts into the row it is keeping — which also makes `touch-targets.mjs` skip
+that link, because it only measures a target it can see whole.
+
+`overflow` is `clip`, not `hidden`, because `hidden` makes a scroll container: tabbing to a link on
+the clipped row would scroll the visible row out of the bar to reach it. What is left is that a
+dropped link is still a tab stop nobody can see — the drawer's copy of it is the one to reach, and
+CSS cannot take a wrapped flex item out of the tab order. `tests/ui/specs/app-bar.spec.js` pins the
+part that can be measured: the bar does not overflow, and what it drops is in the drawer.
+
+That replaces a number kept in step by hand, which is what
+[#137](https://github.com/JaspervdM80/FootballFormation/issues/137) cost: 700px had been derived
+when the menu had five entries, it grew to seven, and an admin on a landscape phone or a 1280px
+laptop lost the season picker, the language picker and sign out entirely — with no scroll and no
+drawer to reach them from.
+
+## A capped grid track is only capped if what sits in it can be shortened
+
+`fit-content(30%)` on the role column of the `/users` phone card did nothing at first: a grid item's
+automatic minimum is its content's minimum, and a `white-space: nowrap` badge has a min-content size
+of the whole word — so the track's floor was 132px and the cap had nothing left to cap. It takes
+three things together, and any one of them alone reads as "the cap doesn't work": `min-width: 0` on
+the **cell**, `overflow: hidden` + `text-overflow: ellipsis` on what is **inside** it, and the cap on
+the track. That was [#141](https://github.com/JaspervdM80/FootballFormation/issues/141), where an
+`auto` track sized to `ApplicationAdmin` took the account name's width and the "You" badge rendered
+on top of the role.
 
 ## Touch states come in pairs
 

@@ -14,8 +14,8 @@ test('the sections are behind the drawer, not the app bar', async ({ page }) => 
   // The horizontal nav is hidden at this width; the hamburger is the way through.
   await expect(page.locator('.topbar-nav')).toBeHidden();
 
-  // A closed drawer is not hidden — it is parked off the side of the screen, with a bounding box
-  // and everything — so "closed" means out of the viewport, not out of the DOM.
+  // A closed drawer is still in the DOM — parked off the side of the screen and taken out of the
+  // tab order with visibility — so "closed" means out of the viewport, not out of the page.
   const gamesLink = page.locator('.app-drawer').getByText('Games', { exact: false }).first();
   await expect(gamesLink).not.toBeInViewport();
 

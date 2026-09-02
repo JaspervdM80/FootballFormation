@@ -36,7 +36,7 @@
     </HeaderContent>
     <RowTemplate>
         <MudTd DataLabel="@L["Name"]" Class="cell-name">
-            <span style="font-weight: 600; color: var(--ink);">@context.DisplayName</span>
+            <span class="cell-name-text" style="font-weight: 600; color: var(--ink);">@context.DisplayName</span>
             @if (context.Id == _currentUserId)
             {
                 <span class="badge-teal" style="margin-left: 6px;">@L["You"]</span>

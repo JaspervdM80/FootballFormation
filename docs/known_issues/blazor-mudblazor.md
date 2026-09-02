@@ -111,5 +111,11 @@
   `scripts/touch-targets.mjs` for as long as nothing measured it. Colour and font-size hid it by
   inheriting down; geometry does not. Style `.<your-class> .mud-nav-link` for anything the target's
   own box has to obey.
+- **That same wrapper is a full-width row, which `flex-wrap: nowrap` had been quietly shrinking
+  back.** It is a menu item, so its natural width is the menu's. The app bar had it in a `nowrap`
+  flex row, where flex shrank every wrapper to its content and nobody noticed; the moment the row
+  was allowed to wrap (#137), that full width was taken literally and each link landed on a line of
+  its own — one visible link and six clipped out of sight, on a bar with 900px to spare. Any nav
+  link outside a vertical menu wants `flex: none; width: auto` on the wrapper, not on the `<a>`.
 - **`MudMenu`'s `Class` lands on the root wrapper, not the activator button**: `Class="btn-gold"` painted an invisible `div` while the button kept MudBlazor's default filled colours. There is no `ActivatorClass` parameter in 9.7 — style `.<your-class>.mud-menu .mud-button-root` instead (see `.btn-gold.mud-menu` in app.css, and `SeasonPicker`'s `.season-picker .mud-button-root`).
 

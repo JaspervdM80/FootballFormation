@@ -111,7 +111,7 @@ Services/
   UserService.cs          — Accounts + credentials: CRUD returning Result<T>, plus
                             ValidateCredentialsAsync/FindForSessionAsync/ChangePasswordAsync, which
                             return raw values rather than Result so a failed login says nothing
-                            about why. Refuses to remove or demote the last admin.
+                            about why. Refuses to leave a team without an admin.
 Result.cs                — Result and Result<T>: success/failure with a translatable error key, plus
                            IsCancelled — a failure carrying no message, for a caller who went away
 ```

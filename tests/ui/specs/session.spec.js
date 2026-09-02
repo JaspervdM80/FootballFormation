@@ -124,6 +124,8 @@ async function addAdmin(page, name) {
 test.describe('an account revoked while its owner is looking at the app', () => {
   test('loses its authority without anyone reloading anything', async ({ page, browser }) => {
     const { username, password } = await addAdmin(page, 'revoked');
+    // A second admin on the team, or the delete below is refused for leaving the team without one.
+    await addAdmin(page, 'stays');
 
     // A second browser, signed in as that account and sitting on an admin page.
     const theirContext = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });

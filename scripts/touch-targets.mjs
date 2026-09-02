@@ -321,14 +321,12 @@ const table = (rows) => {
 // The three widths docs/known_issues/touch-pwa.md argues from. 320 is the narrowest phone the picker has to
 // fit, 360 is the common one, and landscape is short rather than narrow — a different failure, and
 // the reason app.css hides the picker's date line to buy the year button its 44px.
-// The one viewport wide enough for the sections to fit on the app bar itself, so the only one with
-// no drawer to open — which is what makes it a screen short of the others.
-const LANDSCAPE = '844x390';
-
 const VIEWPORTS = [
   { name: '320x568', width: 320, height: 568 },
   { name: '360x640', width: 360, height: 640 },
-  { name: LANDSCAPE, width: 844, height: 390 },
+  // Wide enough to lay the sections out on the bar itself, and the one viewport where the pickers
+  // and sign out are on it — so the app-bar scene measures something there that it cannot elsewhere.
+  { name: '844x390', width: 844, height: 390 },
 ];
 
 const rx = (nl, en) => new RegExp(`${nl}|${en}`, 'i');
@@ -479,10 +477,10 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     // and on a phone the hamburger is the only way to any section at all. The drawer is a checkbox
     // with no circuit behind it, so the label is what a thumb hits.
     //
-    // Below 700px this measures the hamburger and the title link and nothing else: the bar overflows
-    // at those widths and pushes the pickers and the sign-out button off the right-hand edge, where
-    // they are clipped out of the measurement entirely (issue #137). The drawer scene below carries
-    // the pickers; the sign-out button is app-bar only and is measured at the landscape width alone.
+    // Below 700px this measures the hamburger and the title link and nothing else: the bar hides the
+    // season picker there and its own overflow clips whatever is left past the right-hand edge. The
+    // drawer scene below carries the pickers; the sign-out button is app-bar only and is measured at
+    // the landscape width, where the bar keeps every item it started with (issue #137).
     await goto(page, `${base}/players`);
     await audit('app bar', '.mud-appbar', ['app-title-link']);
 
@@ -499,17 +497,13 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     // it is open it covers the label that opened it, and the checkbox holding it open is page state
     // a navigation discards anyway.
     //
-    // The hamburger only exists below the width where the sections fit on the bar itself, which the
-    // landscape viewport is above — there the app-bar scene has already measured the same links.
-    const hamburger = page.locator('label.nav-hamburger');
-    if (await hamburger.isVisible()) {
-      // A closed drawer is not hidden — it is parked off the left of the screen, box and all — so
-      // "open" is where its box has got to rather than whether it has one.
-      const drawerLink = page.locator('.app-drawer a').first();
-      await clickFor(hamburger, async () => ((await drawerLink.boundingBox())?.x ?? -1) >= 0);
-      await waitForStableBox(page.locator('.app-drawer'));
-      await audit('drawer', '.app-drawer', ['mud-nav-link']);
-    }
+    // A closed drawer is parked off the left of the screen and hidden with visibility, so it has no
+    // box to read until it opens — which makes the box itself the signal that it has.
+    const drawerLink = page.locator('.app-drawer a').first();
+    await clickFor(page.locator('label.nav-hamburger'),
+      async () => ((await drawerLink.boundingBox())?.x ?? -1) >= 0);
+    await waitForStableBox(page.locator('.app-drawer'));
+    await audit('drawer', '.app-drawer', ['mud-nav-link']);
 
     // The formation builder and the live screen, the two places a chip is the target. Both are
     // sized by a clamp() on container width, so the narrowest phone is where they are smallest —
@@ -538,11 +532,10 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     await scrollTo('.live-lineup .pitch');
     await audit('live match, line-up', '.app-main', ['pitch-player']);
 
-    // Asserted, not logged: `isVisible()` on the hamburger fails open the way `.count()` does, so
-    // a renamed class would drop the drawer scene for good and say so only in a number nobody reads.
-    const expected = viewport.name === LANDSCAPE ? 14 : 15;
-    if (scenes !== expected)
-      throw new Error(`${viewport.name}: audited ${scenes} screens, expected ${expected}`);
+    // Asserted, not logged: a scene that stopped running would otherwise say so only in a number
+    // nobody reads. The drawer is on every viewport now, so every viewport audits the same fifteen.
+    if (scenes !== 15)
+      throw new Error(`${viewport.name}: audited ${scenes} screens, expected 15`);
     console.log(`${viewport.name.padEnd(8)} audited ${scenes} screens`);
     await context.close();
   }
