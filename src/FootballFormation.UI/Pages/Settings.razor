@@ -51,7 +51,7 @@
                    Label="@L["Default Formation"]" Class="mb-4">
             @foreach (var f in Enum.GetValues<FormationType>())
             {
-                <MudSelectItem Value="f">@f.DisplayName()</MudSelectItem>
+                <MudSelectItem Value="f">@L[f.DisplayName()]</MudSelectItem>
             }
         </MudSelect>
 

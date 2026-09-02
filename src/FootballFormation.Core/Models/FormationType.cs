@@ -13,7 +13,8 @@ public enum FormationType
     F541,
     F4321,
     F3421,
-    F3511
+    F3511,
+    F442Diamond
 }
 
 public static class FormationTypeExtensions
@@ -32,6 +33,7 @@ public static class FormationTypeExtensions
         FormationType.F4321 => "4-3-2-1",
         FormationType.F3421 => "3-4-2-1",
         FormationType.F3511 => "3-5-1-1",
+        FormationType.F442Diamond => "4-4-2 diamond",
         _ => formation.ToString()
     };
 
@@ -49,6 +51,7 @@ public static class FormationTypeExtensions
         FormationType.F4321 => [PlayerPosition.LB, PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.RB, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.LW, PlayerPosition.RW, PlayerPosition.ST],
         FormationType.F3421 => [PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.LM, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.RM, PlayerPosition.LW, PlayerPosition.RW, PlayerPosition.ST],
         FormationType.F3511 => [PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.LM, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.RM, PlayerPosition.CAM, PlayerPosition.ST],
+        FormationType.F442Diamond => [PlayerPosition.LB, PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.RB, PlayerPosition.CDM, PlayerPosition.LM, PlayerPosition.RM, PlayerPosition.CAM, PlayerPosition.ST, PlayerPosition.ST],
         _ => []
     };
 }

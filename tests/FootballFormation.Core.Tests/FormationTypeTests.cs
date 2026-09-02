@@ -32,8 +32,8 @@ public class FormationTypeTests
     [MemberData(nameof(AllFormations))]
     public void The_display_name_adds_up_to_ten_outfield_players(FormationType formation)
     {
-        // "4-2-3-1" describes ten players; a typo in the label would misname the shape.
-        var total = formation.DisplayName().Split('-').Sum(int.Parse);
+        // "4-2-3-1" describes ten players; a qualifier like "4-4-2 diamond" is not part of the count.
+        var total = formation.DisplayName().Split(' ')[0].Split('-').Sum(int.Parse);
 
         Assert.Equal(10, total);
     }
@@ -44,6 +44,17 @@ public class FormationTypeTests
         Assert.Equal(4, FormationType.F442.DefaultPositions().Count(p => p.Category() == PositionCategory.Defender));
         Assert.Equal(3, FormationType.F352.DefaultPositions().Count(p => p.Category() == PositionCategory.Defender));
         Assert.Equal(5, FormationType.F532.DefaultPositions().Count(p => p.Category() == PositionCategory.Defender));
+    }
+
+    [Fact]
+    public void The_diamond_hangs_a_holding_and_an_attacking_midfielder_off_a_flat_four()
+    {
+        var positions = FormationType.F442Diamond.DefaultPositions();
+
+        Assert.Equal(4, positions.Count(p => p.Category() == PositionCategory.Defender));
+        Assert.Equal(1, positions.Count(p => p == PlayerPosition.CDM));
+        Assert.Equal(1, positions.Count(p => p == PlayerPosition.CAM));
+        Assert.Equal(2, positions.Count(p => p == PlayerPosition.ST));
     }
 
     [Theory]

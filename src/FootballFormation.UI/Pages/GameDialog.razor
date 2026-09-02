@@ -41,7 +41,7 @@
             <MudSelect T="FormationType" @bind-Value="SelectedFormationType" Label="@L["Formation"]" Class="mb-3">
                 @foreach (var f in Enum.GetValues<FormationType>())
                 {
-                    <MudSelectItem Value="f">@f.DisplayName()</MudSelectItem>
+                    <MudSelectItem Value="f">@L[f.DisplayName()]</MudSelectItem>
                 }
             </MudSelect>
             <MudNumericField T="int" @bind-Value="GameDurationMinutes"

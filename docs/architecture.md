@@ -5,7 +5,7 @@
 Models/
   Player.cs              — Player entity (FirstName, Surname, ShirtNumber, PreferredPosition, AlternativePositions)
   Position.cs            — PlayerPosition enum (16 values), PositionCategory enum, extensions
-  FormationType.cs       — FormationType enum (12 formations), DisplayName(), DefaultPositions()
+  FormationType.cs       — FormationType enum (13 formations), DisplayName(), DefaultPositions()
   Season.cs              — Season entity (1 Jul – 30 Jun windows), Contains/ShortName/CreateFor helpers
   SeasonSquadMember.cs   — Per-season squad membership, with the per-season IsGuest flag
   SeasonSquad.cs         — SeasonSquad + SeasonSquads value objects (immutable membership lookups)

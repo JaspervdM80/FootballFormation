@@ -6,7 +6,8 @@
 - **MatchType** (3): Competition (0), Cup, Practice. Descriptive only — nothing in the reports
   branches on it. `DisplayName()` returns the English name, which is also the resx key
 - **PlayerPosition** (16 values): GK, LB, CB, RB, DEF, CDM, CM, LM, RM, CAM, MID, LW, RW, W, ST, ATT
-- **FormationType** (12): F442, F433, F4231, F352, F343, F4141, F4411, F532, F541, F4321, F3421, F3511
+- **FormationType** (13): F442, F433, F4231, F352, F343, F4141, F4411, F532, F541, F4321, F3421, F3511,
+  F442Diamond ("4-4-2 diamond", the only shape whose label is localized — "4-4-2 ruit")
 - **Duplicate positions in a formation are normal.** `F442.DefaultPositions()` returns two CBs and
   two STs, and that is fine: which slot a player occupies comes from
   `GamePlayerPosition.SlotIndex` (ordered by `FormationSlots.OrdinalOf`), not from the enum member.
