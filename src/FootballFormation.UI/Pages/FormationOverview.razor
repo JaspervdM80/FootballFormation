@@ -78,7 +78,7 @@
 @* A plain onclick into js/screenshot.js, not a Blazor handler: this page renders without a circuit to dispatch one to, and the script
    already takes an element id, does the download and reports its own failure. *@
 <div class="overview-actions">
-    <button type="button" class="btn-gold overview-capture"
+    <button type="button" class="btn-gold overview-btn"
             onclick="captureFormationOverview('formation-overview', 'screenshot-error')">
         <MudIcon Icon="@Icons.Material.Filled.CameraAlt" Size="Size.Small" />
         @L["Save as image"]
@@ -86,7 +86,7 @@
     @* Same shape as the screenshot button above. *@
     @if (SummaryText is not null)
     {
-        <button type="button" class="btn-gold overview-capture"
+        <button type="button" class="btn-gold overview-btn"
                 onclick="copyElementText('match-summary-text', 'copy-success', 'copy-error')">
             <MudIcon Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small" />
             @L["Copy match result"]

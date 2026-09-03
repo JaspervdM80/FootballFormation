@@ -21,6 +21,12 @@ The tell is that the *container* is styled and the *children* are not.
 `Web/wwwroot/app.css`.** `.action-btn`, `.badge-*`, `.stat-tile*`, `.stacked-table`,
 `.live-scoreboard` and `.live-action-btn` are all there for this reason.
 
+**It cuts the other way too: a class in `app.css` is global.** `.overview-capture` named both the
+block being screenshotted on `/games/{id}/overview` and, in `app.css`, the buttons under it — so the
+button rule's `display: inline-flex` laid the capture block out as a row, and the page's own scoped
+rule could not win because it never declared `display`. Check the page's `.razor.css` before reusing
+a name.
+
 ## Colours come from tokens
 
 `ClubTheme.Gjs` is the single palette for both styling systems — the MudBlazor palette it builds and

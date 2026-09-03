@@ -2181,9 +2181,9 @@ a.action-btn {
     display: none;
 }
 
-/* The screenshot button on /games/{id}/overview is a plain <button> with an inline onclick, so it
-   has none of MudButton's own layout to inherit — .btn-gold only supplies the paint. */
-.overview-capture {
+/* Plain <button>s with an inline onclick on /games/{id}/overview, so there is no MudButton layout to
+   inherit — .btn-gold only paints. Not .overview-capture: that name belongs to the captured block. */
+.overview-btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;

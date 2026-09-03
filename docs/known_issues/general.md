@@ -75,3 +75,13 @@
   snackbar. Compose the expected string from `en-US` parts, which match .NET's `en` for all twelve
   months. Any test that rebuilds a server-rendered date in JavaScript has this shape: the two
   runtimes carry different locale data, and only a calendar decides when that matters.
+- **html2canvas 1.4.1 throws on `color-mix()`, so one derived shade fails the whole export.**
+  Chrome resolves a mix to `color(srgb r g b / a)`, and the parser rejects a colour function it does
+  not know rather than skipping the value — `Attempting to parse an unsupported color function
+  "color"`. "Save as image" on `/games/{id}/overview` had stopped working entirely by the time
+  anyone noticed, because the light theme put a mix under nearly every element the capture covers
+  and the page reports its own failure quietly. `js/screenshot.js` flattens those to `rgba()` from
+  **`onclone`**, which html2canvas awaits before it parses anything: doing it on the live page works
+  too, but cannot reach a `::before` — in the clone the pseudo-element is a real node carrying its
+  own styles, and on the page there is nothing to set an inline style on. The vendored copy is the
+  last release, from 2022, so this will keep happening as CSS colour gains functions.
