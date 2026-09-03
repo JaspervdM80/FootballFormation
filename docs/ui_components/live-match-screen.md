@@ -226,10 +226,19 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   is seeded. Same hidden `<pre>` plus `js/clipboard.js` mechanism as the summary, and public for the
   same reason — the arrangements are for whoever is coming to the match.
 - **A kick-off time is optional and lives in `Date`'s time component**, not a separate column —
-  `Game.HasStartTime` is the test, `GameDialog`'s "Kick-off Time" field (a `MudTextField` with
-  `InputType.Time`, not a picker — see the responsive-and-touch skill on `MudDatePicker`'s popover
-  traps) is how it is set, and `Game.DateLine(format)` is the one place the result page, the
-  overview and the copyable summary compose the date-plus-time line.
+  `Game.HasStartTime` is the test, `GameDialog`'s "Kick-off Time" field is how it is set, and
+  `Game.DateLine(format)` is the one place the result page, the overview and the copyable summary
+  compose the date-plus-time line.
+- **All three time fields are plain `MudTextField`s on a 24-hour clock**, and neither a picker nor an
+  `InputType.Time`. Not a picker for the reason the date one nearly was not — see the
+  responsive-and-touch skill on `MudDatePicker`'s popover traps. Not a native time input because the
+  browser draws that one in **the browser's own UI language**, not the page's: the `lang` attribute
+  and the app's culture are both ignored, so a club member on an English phone got "10:45 AM" out of
+  a Dutch app. Owning the format means owning the parsing too: `GameDialog.NormalizeTime` settles the
+  text on blur (`1045` and `10:45` both land on `10:45`), `ParseTime` reads it back with
+  `TimeOnly.TryParseExact` so `25:00` is refused rather than taken as a duration the way
+  `TimeSpan.TryParse` would, and text neither can read is left as typed for the field's validation to
+  report. `InputMode.numeric` is what puts a keypad under a thumb now that the native widget is gone.
 
 ## Live banner on the home page
 `Home.razor` calls `LiveMatchService.GetTodaysMatchAsync`, which returns a match in progress if

@@ -113,6 +113,9 @@
   <data name="Date" xml:space="preserve"><value>Datum</value></data>
   <!-- Optional — left blank the game shows no kick-off time anywhere, see Game.HasStartTime -->
   <data name="Kick-off Time" xml:space="preserve"><value>Aanvangstijd</value></data>
+  <!-- Shared by all three time fields, which are masked rather than native so the clock reads 24-hour
+       whatever language the browser itself is in -->
+  <data name="Enter a time on a 24-hour clock, e.g. {0}" xml:space="preserve"><value>Vul een tijd in op een 24-uursklok, bijv. {0}</value></data>
   <data name="Venue" xml:space="preserve"><value>Locatie</value></data>
   <data name="Home" xml:space="preserve"><value>Thuis</value></data>
   <data name="Away" xml:space="preserve"><value>Uit</value></data>

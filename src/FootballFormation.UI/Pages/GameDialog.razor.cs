@@ -1,9 +1,13 @@
+using System.Globalization;
 using FootballFormation.UI.State;
 
 namespace FootballFormation.UI.Pages;
 
 public partial class GameDialog
 {
+    private const string TimeFormat = "HH:mm";
+    private const string TimePlaceholder = "13:45";
+
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = null!;
 
@@ -167,7 +171,7 @@ public partial class GameDialog
     {
         Opponent = game.Opponent;
         Date = game.Date;
-        StartTimeText = game.HasStartTime ? game.Date.ToString("HH:mm") : null;
+        StartTimeText = game.HasStartTime ? game.Date.ToString(TimeFormat) : null;
         SelectedFormationType = game.FormationType;
         SplitType = game.SplitType;
         SelectedMatchType = game.MatchType;
@@ -194,8 +198,7 @@ public partial class GameDialog
 
         var game = Game ?? new Game { Opponent = Opponent };
         game.Opponent = Opponent;
-        var startTime = TimeSpan.TryParse(StartTimeText, out var parsed) ? parsed : TimeSpan.Zero;
-        game.Date = (Date ?? DateTime.Today).Date + startTime;
+        game.Date = (Date ?? DateTime.Today).Date + (ParseTime(StartTimeText) ?? TimeSpan.Zero);
         game.FormationType = SelectedFormationType;
         game.SplitType = SplitType;
         game.MatchType = SelectedMatchType;
@@ -219,8 +222,39 @@ public partial class GameDialog
 
     private static string? TimeText(TimeSpan? time) => time?.ToString(@"hh\:mm");
 
+    /// <see cref="TimeOnly"/> rather than <see cref="TimeSpan"/>, which would take 25:00 as a duration: these fields are clock times, and
+    /// a half-typed 10:4 is no time at all.
     private static TimeSpan? ParseTime(string? text) =>
-        TimeSpan.TryParse(text, out var parsed) ? parsed : null;
+        TimeOnly.TryParseExact(text, TimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out var time)
+            ? time.ToTimeSpan()
+            : null;
+
+    /// Takes what a thumb actually types on a numeric keypad — 1045 as readily as 10:45 — and settles the field on the 24-hour form.
+    /// Text it cannot read is handed back untouched, so <see cref="ValidateTime"/> reports it rather than the field rewriting it.
+    private static string? NormalizeTime(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return null;
+
+        var digits = new string([.. text.Where(char.IsAsciiDigit)]);
+        var candidate = digits.Length switch
+        {
+            4 => $"{digits[..2]}:{digits[2..]}",
+            3 => $"0{digits[0]}:{digits[1..]}",
+            _ => text.Trim()
+        };
+
+        return ParseTime(candidate) is { } time ? TimeText(time) : text.Trim();
+    }
+
+    /// MudBlazor takes `Validation` as `object`, so the delegate type has to be spelled out somewhere — a method group alone is CS8974.
+    private Func<string?, IEnumerable<string>> TimeValidation => ValidateTime;
+
+    /// Runs before <see cref="NormalizeTime"/> has been applied, so it judges what that would make of the text rather than the text.
+    private IEnumerable<string> ValidateTime(string? text)
+    {
+        if (!string.IsNullOrWhiteSpace(text) && ParseTime(NormalizeTime(text)) is null)
+            yield return L["Enter a time on a 24-hour clock, e.g. {0}", TimePlaceholder];
+    }
 
     /// A field cleared to whitespace must come back as null, or the message would print an emoji with nothing after it.
     private static string? Trimmed(string? value) =>

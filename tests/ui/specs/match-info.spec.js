@@ -57,6 +57,50 @@ test('the match-day arrangements typed into the game dialog become a copyable me
   expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('Sportpark De Watertoren');
 });
 
+test('the time fields settle on a 24-hour clock, whatever language the browser is in', async ({ page }) => {
+  await createMatch(page, { opponent: 'FC Klok' });
+
+  await gameAction(page, 'FC Klok', 'Edit');
+  const panel = await openDialog(page);
+
+  // A native time input would be drawn in the browser's own UI language — en-US here, so "12:00 PM".
+  const kickOff = panel.getByLabel('Kick-off Time', { exact: true });
+  expect(await kickOff.getAttribute('type')).not.toBe('time');
+
+  // Bare digits, the way a numeric keypad hands them over; the colon arrives on blur.
+  await kickOff.fill('1200');
+  await kickOff.blur();
+  await expect(kickOff).toHaveValue('12:00');
+
+  const assemble = panel.getByLabel('Assemble time', { exact: true });
+  await assemble.fill('0930');
+  await assemble.blur();
+  await expect(assemble).toHaveValue('09:30');
+  await submitDialog(page);
+
+  await gameAction(page, 'FC Klok', 'Edit');
+  const reopened = await openDialog(page);
+  await expect(reopened.getByLabel('Kick-off Time', { exact: true })).toHaveValue('12:00');
+  await expect(reopened.getByLabel('Assemble time', { exact: true })).toHaveValue('09:30');
+
+  // 25:00 is a real TimeSpan and not a real time of day, so the strict parse has to refuse it.
+  const bad = reopened.getByLabel('Warm-up time', { exact: true });
+  await bad.fill('2500');
+  await bad.blur();
+  await expect(reopened.getByText('24-hour clock', { exact: false })).toBeVisible();
+  await submitDialog(page, 'Cancel');
+
+  await gameAction(page, 'FC Klok', 'Overview');
+  await page.waitForURL(/\/games\/(\d+)\/overview/);
+  const id = Number(page.url().match(/\/games\/(\d+)\//)[1]);
+
+  await gotoRendered(page, `/games/${id}/overview`);
+  const message = await page.locator('#match-info-text').textContent();
+  expect(message).toContain('09:30 assemble');
+  expect(message).toContain('12:00 kick-off');
+  expect(message).not.toMatch(/\bAM\b|\bPM\b/);
+});
+
 test('a fixture with no arrangements filled in still offers the message, without empty lines', async ({ page }) => {
   await createMatch(page, { opponent: 'FC Kaal' });
 
