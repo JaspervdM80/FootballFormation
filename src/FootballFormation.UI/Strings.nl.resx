@@ -116,6 +116,7 @@
   <!-- Shared by all three time fields, which are masked rather than native so the clock reads 24-hour
        whatever language the browser itself is in -->
   <data name="Enter a time on a 24-hour clock, e.g. {0}" xml:space="preserve"><value>Vul een tijd in op een 24-uursklok, bijv. {0}</value></data>
+  <data name="Check the fields marked in red" xml:space="preserve"><value>Controleer de rood gemarkeerde velden</value></data>
   <data name="Venue" xml:space="preserve"><value>Locatie</value></data>
   <data name="Home" xml:space="preserve"><value>Thuis</value></data>
   <data name="Away" xml:space="preserve"><value>Uit</value></data>
@@ -234,6 +235,7 @@
        an emoji, so they read lowercase; "dressing room {0}" carries its placeholder rather than
        being cased down from the field label above, which resx would read as the same key. -->
   <data name="Copy match info" xml:space="preserve"><value>Wedstrijdinfo kopiëren</value></data>
+  <data name="{0} vs {1}" xml:space="preserve"><value>{0} vs {1}</value></data>
   <data name="assemble" xml:space="preserve"><value>verzamelen</value></data>
   <data name="depart" xml:space="preserve"><value>vertrek</value></data>
   <data name="briefing/warm-up" xml:space="preserve"><value>bespreking/warming-up</value></data>

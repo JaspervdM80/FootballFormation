@@ -8,6 +8,9 @@ public partial class GameDialog
     private const string TimeFormat = "HH:mm";
     private const string TimePlaceholder = "13:45";
 
+    /// Read in either shape so "9:30" is a time and not a typo; written back in the first, so the field always settles on it.
+    private static readonly string[] TimeFormats = [TimeFormat, "H:mm"];
+
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = null!;
 
@@ -15,6 +18,7 @@ public partial class GameDialog
     [Inject] private SeasonService SeasonService { get; set; } = null!;
     [Inject] private MatchPreferencesService PreferencesService { get; set; } = null!;
     [Inject] private SeasonState SeasonState { get; set; } = null!;
+    [Inject] private ISnackbar Snackbar { get; set; } = null!;
 
     [Parameter]
     public Game? Game { get; set; }
@@ -194,7 +198,14 @@ public partial class GameDialog
     private async Task Submit()
     {
         await Form.ValidateAsync();
-        if (!Form.IsValid) return;
+
+        // Says so rather than returning quietly: the form is long enough that the field at fault is usually scrolled out of sight from
+        // Save, and a button that looks dead is the report we would otherwise get.
+        if (!Form.IsValid)
+        {
+            Snackbar.Add(Form.Errors.FirstOrDefault() ?? L["Check the fields marked in red"], Severity.Error);
+            return;
+        }
 
         var game = Game ?? new Game { Opponent = Opponent };
         game.Opponent = Opponent;
@@ -222,29 +233,31 @@ public partial class GameDialog
 
     private static string? TimeText(TimeSpan? time) => time?.ToString(@"hh\:mm");
 
-    /// <see cref="TimeOnly"/> rather than <see cref="TimeSpan"/>, which would take 25:00 as a duration: these fields are clock times, and
-    /// a half-typed 10:4 is no time at all.
+    /// <see cref="TimeOnly"/> rather than <see cref="TimeSpan"/>, which would take 25:00 as a duration: these fields are clock times.
     private static TimeSpan? ParseTime(string? text) =>
-        TimeOnly.TryParseExact(text, TimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out var time)
+        TimeOnly.TryParseExact(text, TimeFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var time)
             ? time.ToTimeSpan()
             : null;
 
-    /// Takes what a thumb actually types on a numeric keypad — 1045 as readily as 10:45 — and settles the field on the 24-hour form.
-    /// Text it cannot read is handed back untouched, so <see cref="ValidateTime"/> reports it rather than the field rewriting it.
+    /// Takes what a thumb actually types on a numeric keypad — 1045 and 930 as readily as 10:45 — and settles the field on the 24-hour
+    /// form. Text it cannot read is handed back untouched, so <see cref="ValidateTime"/> reports it rather than the field rewriting it.
     private static string? NormalizeTime(string? text)
     {
         if (string.IsNullOrWhiteSpace(text)) return null;
 
-        var digits = new string([.. text.Where(char.IsAsciiDigit)]);
-        var candidate = digits.Length switch
-        {
-            4 => $"{digits[..2]}:{digits[2..]}",
-            3 => $"0{digits[0]}:{digits[1..]}",
-            _ => text.Trim()
-        };
-
-        return ParseTime(candidate) is { } time ? TimeText(time) : text.Trim();
+        var typed = text.Trim();
+        return ParseTime(WithSeparator(typed)) is { } time ? TimeText(time) : typed;
     }
+
+    /// Only a run of bare digits is reshaped. A half-typed "10:4" already carries its separator, and reading a shape off its digits alone
+    /// would settle it on 01:04 — a different time, quietly, where the reader wanted the validation error.
+    private static string WithSeparator(string typed) =>
+        !typed.All(char.IsAsciiDigit) ? typed : typed.Length switch
+        {
+            4 => $"{typed[..2]}:{typed[2..]}",
+            3 => $"0{typed[0]}:{typed[1..]}",
+            _ => typed
+        };
 
     /// MudBlazor takes `Validation` as `object`, so the delegate type has to be spelled out somewhere — a method group alone is CS8974.
     private Func<string?, IEnumerable<string>> TimeValidation => ValidateTime;

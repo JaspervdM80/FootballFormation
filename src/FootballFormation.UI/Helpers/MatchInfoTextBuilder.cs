@@ -13,7 +13,7 @@ public static class MatchInfoTextBuilder
 
         var lines = new List<string>
         {
-            $"⚽ {homeName} vs {awayName}",
+            $"⚽ {L["{0} vs {1}", homeName, awayName]}",
             "",
             $"📅 {game.Date:dd-MM-yyyy}"
         };

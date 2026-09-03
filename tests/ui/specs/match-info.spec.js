@@ -88,6 +88,18 @@ test('the time fields settle on a 24-hour clock, whatever language the browser i
   await bad.fill('2500');
   await bad.blur();
   await expect(reopened.getByText('24-hour clock', { exact: false })).toBeVisible();
+
+  // Half-typed, and it carries its own separator: reading a shape off "104" would settle this
+  // silently on 01:04 rather than saying it is not a time yet.
+  await bad.fill('10:4');
+  await bad.blur();
+  await expect(bad).toHaveValue('10:4');
+  await expect(reopened.getByText('24-hour clock', { exact: false })).toBeVisible();
+
+  // A long form scrolls the field at fault out of sight, so Save has to say why it did nothing.
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('24-hour clock', { exact: false }).last()).toBeVisible();
+  await expect(page.locator('.mud-dialog')).toBeVisible();
   await submitDialog(page, 'Cancel');
 
   await gameAction(page, 'FC Klok', 'Overview');

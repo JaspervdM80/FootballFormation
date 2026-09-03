@@ -235,10 +235,15 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   browser draws that one in **the browser's own UI language**, not the page's: the `lang` attribute
   and the app's culture are both ignored, so a club member on an English phone got "10:45 AM" out of
   a Dutch app. Owning the format means owning the parsing too: `GameDialog.NormalizeTime` settles the
-  text on blur (`1045` and `10:45` both land on `10:45`), `ParseTime` reads it back with
-  `TimeOnly.TryParseExact` so `25:00` is refused rather than taken as a duration the way
-  `TimeSpan.TryParse` would, and text neither can read is left as typed for the field's validation to
-  report. `InputMode.numeric` is what puts a keypad under a thumb now that the native widget is gone.
+  text on blur — `1045`, `930`, `9:30` and `10:45` all land on the `HH:mm` form — and `ParseTime`
+  reads it back with `TimeOnly.TryParseExact`, so `25:00` is refused rather than taken as a duration
+  the way `TimeSpan.TryParse` would. Text neither can read is left exactly as typed, for the field's
+  validation to report. **Only a run of bare digits is reshaped** (`WithSeparator`): a half-typed
+  `10:4` already carries its separator, and reading a shape off its digits alone would settle it
+  silently on `01:04` — a different time, where what the reader wanted was the error.
+  `InputMode.numeric` is what puts a keypad under a thumb now that the native widget is gone, and an
+  invalid field reports through the snackbar on Save as well as inline, because on a phone the field
+  at fault is usually scrolled well out of sight from the button.
 
 ## Live banner on the home page
 `Home.razor` calls `LiveMatchService.GetTodaysMatchAsync`, which returns a match in progress if
