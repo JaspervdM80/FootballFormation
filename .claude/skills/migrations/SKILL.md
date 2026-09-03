@@ -87,7 +87,10 @@ survived.
 `DatabasePathHelper.GetDatabasePath()` resolves in order: `APP_DATA_DIR`, then `WEBSITE_INSTANCE_ID`
 (`/home/data`), then `%LOCALAPPDATA%\FootballFormation\`. In production that is the Fly.io volume;
 locally it is `%LOCALAPPDATA%\FootballFormation\footballformation.db` — one file shared by every
-branch, so a local *"no such column"* means the database is ahead of the code, not corrupt.
+branch, so a local *"no such column"* means the database and the code disagree, not that the file
+is corrupt. It can be either way round: **ahead**, from a branch that added the column and was then
+left behind, or **behind**, when the history records a squashed migration the file never actually
+received. `scripts/dev-db.sh` replaces the local file with a copy of the live one.
 
 ## Rehearse anything destructive on a copy
 
@@ -100,6 +103,11 @@ Startup copies the database to `/data/backups/pre-migration-<last applied>.db` w
 migrations are pending, keeping the newest 5, then migrates, then runs `PRAGMA integrity_check` and
 `PRAGMA foreign_key_check`. The snapshot is named for the *schema state*, not the attempt, so a crash
 loop cannot prune the only good copy. A failed backup aborts the migration on purpose.
+
+It then compares every table and column the model maps against `pragma_table_info` and refuses to
+serve on a mismatch. Migrating can report success and change nothing — `__EFMigrationsHistory`
+alone decides what runs — and neither pragma notices a database that is incomplete rather than
+damaged.
 
 Detail: [docs/patterns/](../../../docs/patterns/ef-core.md#migrations-are-one-file) ·
 [docs/deployment.md](../../../docs/deployment.md) ·

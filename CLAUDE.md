@@ -22,6 +22,7 @@ dotnet test                    # xUnit v3, real SQLite
 cd src/FootballFormation.Web && dotnet run     # http://localhost:5228
 cd tests/ui && npm test        # Playwright, ~1 min (npm install first)
 scripts/visual-check.sh        # screenshots every page, then measures every touch target
+scripts/dev-db.sh              # replace the local database with a copy of the live one
 scripts/coverage.sh            # coverage of the lines this branch changed, 80% floor
 ```
 

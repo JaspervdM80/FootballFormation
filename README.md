@@ -100,6 +100,18 @@ Logs are written to:
 %LOCALAPPDATA%\FootballFormation\logs\
 ```
 
+A copy of the live database is one command away, and it is the quickest way to a local
+install with a season in it:
+
+```bash
+scripts/dev-db.sh
+```
+
+Needs `flyctl` signed in to the production app, and the copy carries real player names. It
+keeps whatever was there under `backups/`. The app refuses to boot on a database whose schema
+does not match the model, so a file left behind by an older branch says so on startup rather
+than failing one page at a time.
+
 ### First sign-in
 
 An install with no accounts seeds `admin` / `admin` and flags it: the account can sign in and

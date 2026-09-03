@@ -63,6 +63,19 @@
   schema pending against a database that has it all, and the boot would `CREATE TABLE` over a season
   of results and fail. Restore the id by hand in both file names and the `[Migration]` attribute —
   see [patterns](../patterns/ef-core.md#migrations-are-one-file).
+- **A history that claims more than the file holds, and migrating says it is fine**: the development
+  database still listed all 25 pre-squash migration ids, so the folded `20260322100416_InitialCreate`
+  counted as applied and never ran — and the columns the fold moved into it were simply absent.
+  `MigrateAsync` found nothing pending, logged success and changed nothing;
+  `PRAGMA integrity_check` passed, because the file was not damaged, only incomplete. What surfaced
+  instead was `SQLite Error 1: 'no such column: g2.AtSeconds'` from `/games` and `'no such column:
+  p.IsArchived'` from `GameService.GetByIdAsync` — and that second one turns into a `Result` failure
+  that `FormationOverview` reads as "game not found", so `/games/{id}/overview`, `/result` and
+  `/live` all redirected to `/games` with only the log saying why. **`DatabaseSafety.VerifySchemaAsync`
+  now compares the model's tables and columns against `pragma_table_info` after migrating and
+  refuses to serve on a mismatch**, naming each one. That guard is not only for a laptop: the live
+  volume is migrated by the same code on the same "recorded as applied" logic. The local file was
+  replaced with a copy of the live one (`scripts/dev-db.sh`) rather than patched column by column.
 - **A transaction cannot span two `AppDbContext` instances, and nothing warns you**: each operation
   opens its own context from the factory, so calling another *service's* write from inside your own
   gives two transactions with a gap between them — even though the code reads like one operation and

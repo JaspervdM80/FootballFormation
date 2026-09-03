@@ -19,7 +19,7 @@ Every test class, so a gap here is visible rather than assumed:
 | Match preferences | `MatchPreferencesServiceTests` | Per-season inheritance, and next-match dates staying inside the window |
 | **Authorization** | `AuthorizationTests` | That every write refuses a non-admin *at the service*, not only in the markup — the guard the whole write path rests on |
 | Accounts | `UserServiceTests`, `SeededAdminTests` | Credentials, security stamps, the last-admin guard, and the seeded account being no working login |
-| Boot safety | `DatabaseSafetyTests`, `HealthReportTests` | The pre-migration snapshot and what `/health` is allowed to call healthy |
+| Boot safety | `DatabaseSafetyTests`, `HealthReportTests` | The pre-migration snapshot, the schema check against the model, and what `/health` is allowed to call healthy |
 | Service lifetime | `ServiceLifetimeTests` | Concurrent reads, and detached entities round-tripping through update |
 | `Result` | `ResultTests` | Error keys, arguments, the guard on reading a failed value, and that a cancellation stays one when carried between types |
 | Cancellation | `CancellationTests` | That a caller going away is an ordinary outcome and not a logged error — including that an `OperationCanceledException` nobody asked for still is one |

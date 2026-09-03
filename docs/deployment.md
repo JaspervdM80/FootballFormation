@@ -160,7 +160,7 @@ smoke check is a loud red deploy that a person then decides about.
 
 ## The database is snapshotted before every migration
 
-Startup does three things in order, in `Program.cs` (see `Core/Data/DatabaseSafety.cs`):
+Startup does four things in order, in `Program.cs` (see `Core/Data/DatabaseSafety.cs`):
 
 1. **If — and only if — migrations are pending**, copy the database to
    `/data/backups/pre-migration-<last applied migration>.db`, keeping the newest 5. The copy uses
@@ -171,6 +171,10 @@ Startup does three things in order, in `Program.cs` (see `Core/Data/DatabaseSafe
 2. Apply the migrations.
 3. `PRAGMA integrity_check` and `PRAGMA foreign_key_check`. Either failing throws, so a damaged
    database stops the boot loudly instead of serving wrong answers.
+4. Compare every table and column the model maps against `pragma_table_info`, and throw naming what
+   is missing. Step 2 can report success and change nothing — `__EFMigrationsHistory` decides what
+   runs, and a database whose history claims a migration it never actually received is invisible to
+   it. See [known issues](known_issues/ef-core.md).
 
 **One snapshot per schema state, not per attempt.** The name is the migration the database is sitting
 on, so a state is backed up once however many times the app tries to migrate away from it. That is
@@ -224,7 +228,7 @@ undo a schema change, the Fly snapshot the only thing that survives losing the v
 fly logs                 # live server logs (Serilog console output)
 fly status               # machine state (suspended = idle, normal)
 fly ssh console          # shell inside the container
-fly ssh sftp get /data/footballformation.db backup.db   # DB backup
+scripts/dev-db.sh                                       # copy the live DB over the local one
 curl https://gjs-meiden.nl/health                       # does it serve? ("healthy")
 ```
 
@@ -233,7 +237,7 @@ curl https://gjs-meiden.nl/health                       # does it serve? ("healt
 - `auto_stop_machines = "suspend"` + `min_machines_running = 0`: the VM goes idle when no one is
   connected and comes back on the next request. **Suspend, not stop** — it saves the machine's
   memory to disk and resumes from it rather than cold-booting, which matters twice here. Boot is
-  expensive (a pre-migration backup, the migration, an integrity check), and circuits retained for
+  expensive (a pre-migration backup, the migration, an integrity and a schema check), and circuits retained for
   `DisconnectedCircuitRetentionPeriod` exist only in memory, so a resumed machine can still hand a
   returning phone its circuit back where a stopped one never could.
 - The idle period before that fires is about five minutes and Fly does not expose it, so it cannot
