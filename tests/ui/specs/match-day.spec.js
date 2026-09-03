@@ -334,3 +334,26 @@ test('the statistics give an admin the minutes and a visitor only the split', as
     await visitor.close();
   }
 });
+
+test('a half already played is no longer edited in the builder', async ({ page }) => {
+  const id = await matchWithId(page, 'FC Gespeelde Helft');
+  const { placed } = await fillLineup(page);
+
+  await goto(page, `/games/${id}/live`);
+  await startMatch(page);
+
+  // The builder tab a coach left open before kick-off: it still holds the pre-kick-off plan, and
+  // saving that would write it over the line-up the touchline recorded.
+  await goto(page, `/games/${id}/formation`);
+  await expect(page.getByText('This half was played from the touchline', { exact: false })).toBeVisible();
+
+  // Still shown — it is the record of who was on the pitch — but nothing on it can be picked up.
+  await expect(page.locator('.pitch .pitch-player')).toHaveCount(placed);
+  await expect(page.locator('.pitch .pitch-player[draggable="true"]')).toHaveCount(0);
+
+  // The second half is a plan, not a record, so it takes a drop as it always did.
+  const notice = page.getByText('This half was played from the touchline', { exact: false });
+  await clickFor(page.getByRole('tab').nth(1), () => expect(notice).toHaveCount(0));
+  await page.locator('.draggable-player').first().dragTo(page.locator('.pitch .pitch-empty').first());
+  await expect(page.locator('.pitch .pitch-player')).toHaveCount(1);
+});

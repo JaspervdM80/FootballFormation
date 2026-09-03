@@ -7,4 +7,7 @@ public partial class PlayerList
 
     [Parameter]
     public EventCallback<int> OnDragStart { get; set; }
+
+    [Parameter]
+    public bool ReadOnly { get; set; }
 }

@@ -98,12 +98,14 @@ public class GameServiceTests : ServiceTestBase
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
 
         var period = Db.GamePeriods.First(p => p.GameId == game.Id);
-        period.StartedAtSeconds = 0;
-        await Db.SaveChangesAsync();
         await Games.SavePeriodLineupAsync(period.Id, [
             TestData.Starter(players[0].Id, PlayerPosition.LM, slot: 5),
             TestData.Sub(players[1].Id)
         ]);
+
+        // Kicked off only once the line-up is in: SavePeriodLineupAsync refuses a half already played.
+        period.StartedAtSeconds = 0;
+        await Db.SaveChangesAsync();
 
         var before = Read().GamePlayerPositions.OrderBy(pp => pp.Id).Select(pp => new { pp.Id, pp.PlayerId }).ToList();
 
@@ -143,6 +145,34 @@ public class GameServiceTests : ServiceTestBase
 
         Assert.True(result.IsFailure);
         Assert.Equal("Game not found", result.ErrorKey);
+    }
+
+    [Fact]
+    public async Task Saving_a_lineup_over_a_half_already_played_is_refused()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(2);
+        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
+
+        var period = Db.GamePeriods.First(p => p.GameId == game.Id);
+        await Games.SavePeriodLineupAsync(period.Id, [TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0)]);
+        period.StartedAtSeconds = 0;
+        await Db.SaveChangesAsync();
+
+        // A builder tab left open across the match still holds the pre-kick-off plan, and Save All would write it over what was played.
+        var result = await Games.SavePeriodLineupAsync(period.Id, [TestData.Starter(players[1].Id, PlayerPosition.ST, slot: 0)]);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(players[0].Id, Read().GamePlayerPositions.Single(pp => pp.GamePeriodId == period.Id).PlayerId);
+    }
+
+    [Fact]
+    public async Task Saving_a_lineup_for_a_period_that_is_gone_fails()
+    {
+        var result = await Games.SavePeriodLineupAsync(404, []);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Period not found", result.ErrorKey);
     }
 
     [Fact]

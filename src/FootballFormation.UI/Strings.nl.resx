@@ -595,6 +595,10 @@
   <data name="Game not found" xml:space="preserve"><value>Wedstrijd niet gevonden</value></data>
   <data name="Game with ID {0} not found" xml:space="preserve"><value>Wedstrijd met ID {0} niet gevonden</value></data>
   <data name="Goal not found" xml:space="preserve"><value>Doelpunt niet gevonden</value></data>
+  <data name="Period not found" xml:space="preserve"><value>Speelperiode niet gevonden</value></data>
+  <data name="This half has already been played, so its line-up is no longer the builder's to change" xml:space="preserve"><value>Deze helft is al gespeeld, dus de opstelling ervan wordt niet meer vanuit de opstellingsbouwer gewijzigd</value></data>
+  <data name="This half was played from the touchline, so its line-up is the record of who was on the pitch and is no longer edited here." xml:space="preserve"><value>Deze helft is vanaf de lijn gespeeld, dus de opstelling is de vastlegging van wie er op het veld stond en wordt hier niet meer gewijzigd.</value></data>
+  <data name="Left as the touchline recorded it: {0}" xml:space="preserve"><value>Gelaten zoals vanaf de lijn vastgelegd: {0}</value></data>
   <data name="Injury not found" xml:space="preserve"><value>Blessure niet gevonden</value></data>
   <data name="No half is being played" xml:space="preserve"><value>Er wordt op dit moment geen helft gespeeld</value></data>
   <data name="No season selected" xml:space="preserve"><value>Geen seizoen geselecteerd</value></data>

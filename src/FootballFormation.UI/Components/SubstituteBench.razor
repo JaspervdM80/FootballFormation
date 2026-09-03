@@ -5,7 +5,7 @@
           @ondrop="() => OnPlayerDroppedToSub.InvokeAsync()">
     <MudText Typo="Typo.subtitle2" GutterBottom="true">@L["Substitutes"]</MudText>
 
-    @if (DraggedPlayerId is not null)
+    @if (DraggedPlayerId is not null && !ReadOnly)
     {
         <div class="sub-drop-zone">
             <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Size="Size.Small" />
@@ -23,13 +23,13 @@
             @foreach (var sub in subs)
             {
                 <div class="sub-item d-flex align-center justify-space-between"
-                     draggable="true"
+                     draggable="@((!ReadOnly).ToString().ToLowerInvariant())"
                      @ondragstart="() => OnSubDragStart.InvokeAsync(sub.PlayerId)"
                      @ondragstart:stopPropagation="true"
                      @ondragover:preventDefault="true"
                      @ondrop="() => OnSwapWithSub.InvokeAsync(sub.PlayerId)"
                      @ondrop:stopPropagation="true"
-                     style="cursor: grab; padding: 4px 8px;">
+                     style="cursor: @(ReadOnly ? "default" : "grab"); padding: 4px 8px;">
                     <div>
                         <MudText Typo="Typo.body2">
                             <PlayerLabel Player="sub.Player" />
@@ -38,13 +38,16 @@
                             @sub.Position.ToString()
                         </MudText>
                     </div>
-                    <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small"
-                                   OnClick="() => OnSubRemoved.InvokeAsync(sub)" />
+                    @if (!ReadOnly)
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small"
+                                       OnClick="() => OnSubRemoved.InvokeAsync(sub)" />
+                    }
                 </div>
             }
         </div>
     }
-    else if (DraggedPlayerId is null)
+    else if (DraggedPlayerId is null && !ReadOnly)
     {
         <MudText Typo="Typo.caption" Color="Color.Tertiary">@L["Drag players here to add as subs"]</MudText>
     }

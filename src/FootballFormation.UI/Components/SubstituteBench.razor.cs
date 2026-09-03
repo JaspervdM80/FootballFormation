@@ -12,6 +12,9 @@ public partial class SubstituteBench
     public int? DraggedPlayerId { get; set; }
 
     [Parameter]
+    public bool ReadOnly { get; set; }
+
+    [Parameter]
     public EventCallback OnPlayerDroppedToSub { get; set; }
 
     [Parameter]

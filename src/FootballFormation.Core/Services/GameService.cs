@@ -365,11 +365,26 @@ public class GameService(
             return Result.Success();
         });
 
+    /// The builder plans and the touchline records, so a half already played is not the builder's to replace: its page cache can be an
+    /// hour stale, and the delete-then-insert below would drop the rows a substitution rewrote and hand out new ids.
     public Task<Result> SavePeriodLineupAsync(
         int periodId, List<GamePlayerPosition> positions, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAdminAsync(currentUser, logger, "save lineup", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            var period = await db.GamePeriods.FindAsync([periodId], cancellationToken);
+            if (period is null)
+            {
+                logger.LogWarning("Cannot save lineup for period {PeriodId}: not found", periodId);
+                return Result.Failure("Period not found");
+            }
+
+            if (period.HasKickedOff)
+            {
+                logger.LogWarning("Cannot save lineup for period {PeriodId}: it has already been played", periodId);
+                return Result.Failure("This half has already been played, so its line-up is no longer the builder's to change");
+            }
 
             // Delete-then-insert needs both halves or neither, or a failed insert leaves the period with no line-up at all.
             await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
