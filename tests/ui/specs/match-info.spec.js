@@ -37,7 +37,9 @@ test('the match-day arrangements typed into the game dialog become a copyable me
   // element and copied from a plain onclick — same shape as the match summary.
   await gotoRendered(page, `/games/${id}/overview`);
   const message = await page.locator('#match-info-text').textContent();
-  expect(message).toContain('FC Wedstrijdinfo');
+  // Our own side is named from TeamState, which is the club the app was seeded with — an away game,
+  // so the opponent leads and we follow.
+  expect(message).toContain('FC Wedstrijdinfo vs GJS MO15-2');
   expect(message).toContain('10:45 depart');
   expect(message).toContain('11:15 briefing/warm-up');
   expect(message).toContain('12:00 kick-off');
