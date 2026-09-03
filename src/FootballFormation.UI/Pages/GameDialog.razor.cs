@@ -1,16 +1,9 @@
-using System.Globalization;
 using FootballFormation.UI.State;
 
 namespace FootballFormation.UI.Pages;
 
 public partial class GameDialog
 {
-    private const string TimeFormat = "HH:mm";
-    private const string TimePlaceholder = "13:45";
-
-    /// Read in either shape so "9:30" is a time and not a typo; written back in the first, so the field always settles on it.
-    private static readonly string[] TimeFormats = [TimeFormat, "H:mm"];
-
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = null!;
 
@@ -175,14 +168,14 @@ public partial class GameDialog
     {
         Opponent = game.Opponent;
         Date = game.Date;
-        StartTimeText = game.HasStartTime ? game.Date.ToString(TimeFormat) : null;
+        StartTimeText = game.HasStartTime ? game.Date.ToString(ClockText.Format) : null;
         SelectedFormationType = game.FormationType;
         SplitType = game.SplitType;
         SelectedMatchType = game.MatchType;
         GameDurationMinutes = game.GameDurationMinutes;
         IsHomeGame = game.IsHomeGame;
-        MeetTimeText = TimeText(game.MeetTime);
-        WarmUpTimeText = TimeText(game.WarmUpTime);
+        MeetTimeText = ClockText.Of(game.MeetTime);
+        WarmUpTimeText = ClockText.Of(game.WarmUpTime);
         DressingRoom = game.DressingRoom;
         FieldName = game.FieldName;
         SportsPark = game.SportsPark;
@@ -209,14 +202,14 @@ public partial class GameDialog
 
         var game = Game ?? new Game { Opponent = Opponent };
         game.Opponent = Opponent;
-        game.Date = (Date ?? DateTime.Today).Date + (ParseTime(StartTimeText) ?? TimeSpan.Zero);
+        game.Date = (Date ?? DateTime.Today).Date + (ClockText.Parse(StartTimeText) ?? TimeSpan.Zero);
         game.FormationType = SelectedFormationType;
         game.SplitType = SplitType;
         game.MatchType = SelectedMatchType;
         game.GameDurationMinutes = GameDurationMinutes;
         game.IsHomeGame = IsHomeGame;
-        game.MeetTime = ParseTime(MeetTimeText);
-        game.WarmUpTime = ParseTime(WarmUpTimeText);
+        game.MeetTime = ClockText.Parse(MeetTimeText);
+        game.WarmUpTime = ClockText.Parse(WarmUpTimeText);
         game.DressingRoom = Trimmed(DressingRoom);
         game.FieldName = Trimmed(FieldName);
         game.SportsPark = Trimmed(SportsPark);
@@ -231,45 +224,17 @@ public partial class GameDialog
         MudDialog.Close(DialogResult.Ok(game));
     }
 
-    private static string? TimeText(TimeSpan? time) => time?.ToString(@"hh\:mm");
-
-    /// <see cref="TimeOnly"/> rather than <see cref="TimeSpan"/>, which would take 25:00 as a duration: these fields are clock times.
-    private static TimeSpan? ParseTime(string? text) =>
-        TimeOnly.TryParseExact(text, TimeFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var time)
-            ? time.ToTimeSpan()
-            : null;
-
-    /// Takes what a thumb actually types on a numeric keypad — 1045 and 930 as readily as 10:45 — and settles the field on the 24-hour
-    /// form. Text it cannot read is handed back untouched, so <see cref="ValidateTime"/> reports it rather than the field rewriting it.
-    private static string? NormalizeTime(string? text)
-    {
-        if (string.IsNullOrWhiteSpace(text)) return null;
-
-        var typed = text.Trim();
-        return ParseTime(WithSeparator(typed)) is { } time ? TimeText(time) : typed;
-    }
-
-    /// Only a run of bare digits is reshaped. A half-typed "10:4" already carries its separator, and reading a shape off its digits alone
-    /// would settle it on 01:04 — a different time, quietly, where the reader wanted the validation error.
-    private static string WithSeparator(string typed) =>
-        !typed.All(char.IsAsciiDigit) ? typed : typed.Length switch
-        {
-            4 => $"{typed[..2]}:{typed[2..]}",
-            3 => $"0{typed[0]}:{typed[1..]}",
-            _ => typed
-        };
-
     /// MudBlazor takes `Validation` as `object`, so the delegate type has to be spelled out somewhere — a method group alone is CS8974.
     private Func<string?, IEnumerable<string>> TimeValidation => ValidateTime;
 
-    /// Runs before <see cref="NormalizeTime"/> has been applied, so it judges what that would make of the text rather than the text.
+    /// MudBlazor hands this the raw text, before ValueChanged has normalized it, so it judges what ClockText will make of it.
     private IEnumerable<string> ValidateTime(string? text)
     {
-        if (!string.IsNullOrWhiteSpace(text) && ParseTime(NormalizeTime(text)) is null)
-            yield return L["Enter a time on a 24-hour clock, e.g. {0}", TimePlaceholder];
+        if (!string.IsNullOrWhiteSpace(text) && ClockText.Parse(ClockText.Normalize(text)) is null)
+            yield return L["Enter a time on a 24-hour clock, e.g. {0}", ClockText.Example];
     }
 
-    /// A field cleared to whitespace must come back as null, or the message would print an emoji with nothing after it.
+    /// Whitespace is stored as null, so "blank" means the same thing in the database as in the dialog.
     private static string? Trimmed(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 

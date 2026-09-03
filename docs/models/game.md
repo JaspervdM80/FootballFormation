@@ -12,8 +12,8 @@
 | SplitType | GameSplitType | Halves or Quarters |
 | GameDurationMinutes | int | Default 60 |
 | IsHomeGame | bool | Default true. Venue only — score fields are unaffected |
-| MeetTime | TimeSpan? | When to be at the club (home) or when the convoy leaves (away). The label flips on `IsHomeGame`, the column does not |
-| WarmUpTime | TimeSpan? | Briefing and warm-up |
+| MeetTime | TimeSpan? | When to be at the club (home) or when the convoy leaves (away). The label flips on `IsHomeGame`, the column does not. Read and written through `ClockText` |
+| WarmUpTime | TimeSpan? | Briefing and warm-up. `ClockText`, as above |
 | DressingRoom | string? | Max 50 |
 | FieldName | string? | Max 50, e.g. "Veld 3" |
 | SportsPark | string? | Max 100 |

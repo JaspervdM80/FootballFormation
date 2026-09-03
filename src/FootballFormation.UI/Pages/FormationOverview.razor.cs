@@ -1,4 +1,5 @@
 ﻿using FootballFormation.Core.Reporting;
+using FootballFormation.UI.State;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -7,7 +8,7 @@ namespace FootballFormation.UI.Pages;
 public partial class FormationOverview
 {
     [Inject] private GameService GameService { get; set; } = null!;
-    [Inject] private TeamService TeamService { get; set; } = null!;
+    [Inject] private TeamState Team { get; set; } = null!;
     [Inject] private NavigationTrail Trail { get; set; } = null!;
     [Inject] private ILogger<FormationOverview> Logger { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
@@ -57,10 +58,10 @@ public partial class FormationOverview
 
         if (!GameData.HasFinalScore)
         {
-            var teamResult = await TeamService.GetCurrentAsync(Cancellation);
-            if (teamResult.IsCancelled) return;
-
-            MatchInfoText = MatchInfoTextBuilder.Build(GameData, teamResult.Value?.FullName ?? L["Us"], L);
+            // TeamState rather than TeamService: the chrome on this page has already loaded it in this scope, and it is the one place a
+            // failure to name our own side is swallowed — reading Result.Value here would throw the whole public page away instead.
+            await Team.EnsureLoadedAsync();
+            MatchInfoText = MatchInfoTextBuilder.Build(GameData, Team.Current?.FullName ?? L["Us"], L);
         }
         else
         {
