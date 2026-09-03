@@ -13,4 +13,15 @@
   to be. The tell: the *container* is styled and the *children* are not. Anything selecting past a
   MudBlazor component's root goes in `app.css`, next to `.live-scoreboard` and `.live-action-btn`,
   which are there for the same reason.
-
+- **A global rule and a page's own class sharing a name is the same silence from the other side.**
+  `.overview-capture` named both the block being screenshotted on `/games/{id}/overview` and, in
+  `app.css`, the plain `<button>`s under it — so the button rule's `display: inline-flex` landed on
+  the capture block too and laid its header out *beside* the pitches instead of above them. The
+  scoped rule could not win: it never declared `display` at all. A class in `app.css` is global;
+  read it as one before reusing a name a page already uses.
+- **html2canvas 1.4.1 throws on `color-mix()`.** Chrome resolves a mix to `color(srgb r g b / a)`,
+  and the parser rejects any colour function it does not know rather than skipping the value — so
+  one derived shade anywhere under the captured element is enough to fail the whole export, which
+  is what "save as image" stopped doing when the light theme spread `color-mix` across the app.
+  `js/screenshot.js` flattens those to `rgba()` on the live DOM before the capture and puts the
+  styles back afterwards; the clone html2canvas offers is built too late to fix them in.
