@@ -9,6 +9,14 @@ internal sealed class GameConfiguration : IEntityTypeConfiguration<Game>
         entity.HasKey(g => g.Id);
         entity.Property(g => g.Opponent).IsRequired().HasMaxLength(100);
 
+        entity.Property(g => g.DressingRoom).HasMaxLength(50);
+        entity.Property(g => g.FieldName).HasMaxLength(50);
+        entity.Property(g => g.SportsPark).HasMaxLength(100);
+        entity.Property(g => g.City).HasMaxLength(100);
+        entity.Property(g => g.DressingRoomDuty).HasMaxLength(100);
+        entity.Property(g => g.FlagDuty).HasMaxLength(100);
+        entity.Property(g => g.WashDuty).HasMaxLength(100);
+
         entity.Property(g => g.UnavailablePlayerIds).HasCsvListConversion();
         entity.Property(g => g.InjuredPlayerIds).HasCsvListConversion();
         entity.Property(g => g.GuestPlayerIds).HasCsvListConversion();

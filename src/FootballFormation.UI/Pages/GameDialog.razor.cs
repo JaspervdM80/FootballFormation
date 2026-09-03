@@ -26,6 +26,18 @@ public partial class GameDialog
     private MatchType SelectedMatchType { get; set; } = MatchType.Competition;
     private int GameDurationMinutes { get; set; } = 60;
     private bool IsHomeGame { get; set; } = true;
+
+    /// Kept as text for the same reason <see cref="StartTimeText"/> is: a blank field has to round-trip as no time at all.
+    private string? MeetTimeText { get; set; }
+    private string? WarmUpTimeText { get; set; }
+    private string? DressingRoom { get; set; }
+    private string? FieldName { get; set; }
+    private string? SportsPark { get; set; }
+    private string? City { get; set; }
+    private string? DressingRoomDuty { get; set; }
+    private string? FlagDuty { get; set; }
+    private string? WashDuty { get; set; }
+
     private IReadOnlyCollection<int> UnavailablePlayerIds { get; set; } = [];
     private IReadOnlyCollection<int> GuestPlayerIds { get; set; } = [];
 
@@ -161,6 +173,15 @@ public partial class GameDialog
         SelectedMatchType = game.MatchType;
         GameDurationMinutes = game.GameDurationMinutes;
         IsHomeGame = game.IsHomeGame;
+        MeetTimeText = TimeText(game.MeetTime);
+        WarmUpTimeText = TimeText(game.WarmUpTime);
+        DressingRoom = game.DressingRoom;
+        FieldName = game.FieldName;
+        SportsPark = game.SportsPark;
+        City = game.City;
+        DressingRoomDuty = game.DressingRoomDuty;
+        FlagDuty = game.FlagDuty;
+        WashDuty = game.WashDuty;
         SelectedSeasonId = game.SeasonId;
         UnavailablePlayerIds = game.UnavailablePlayerIds.ToList();
         GuestPlayerIds = game.GuestPlayerIds.ToList();
@@ -180,12 +201,30 @@ public partial class GameDialog
         game.MatchType = SelectedMatchType;
         game.GameDurationMinutes = GameDurationMinutes;
         game.IsHomeGame = IsHomeGame;
+        game.MeetTime = ParseTime(MeetTimeText);
+        game.WarmUpTime = ParseTime(WarmUpTimeText);
+        game.DressingRoom = Trimmed(DressingRoom);
+        game.FieldName = Trimmed(FieldName);
+        game.SportsPark = Trimmed(SportsPark);
+        game.City = Trimmed(City);
+        game.DressingRoomDuty = Trimmed(DressingRoomDuty);
+        game.FlagDuty = Trimmed(FlagDuty);
+        game.WashDuty = Trimmed(WashDuty);
         game.SeasonId = SelectedSeasonId;
         game.UnavailablePlayerIds = UnavailablePlayerIds.ToList();
         game.GuestPlayerIds = GuestPlayerIds.ToList();
 
         MudDialog.Close(DialogResult.Ok(game));
     }
+
+    private static string? TimeText(TimeSpan? time) => time?.ToString(@"hh\:mm");
+
+    private static TimeSpan? ParseTime(string? text) =>
+        TimeSpan.TryParse(text, out var parsed) ? parsed : null;
+
+    /// A field cleared to whitespace must come back as null, or the message would print an emoji with nothing after it.
+    private static string? Trimmed(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private void Cancel() => MudDialog.Cancel();
 }

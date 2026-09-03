@@ -89,6 +89,21 @@
                     }
                 </MudSelect>
             }
+            @* Everything below is the match-day message and nothing else reads it, which is what the divider says. Each field is
+               optional: left blank it is left out of the message rather than shown empty. *@
+            <MudDivider Class="my-3" />
+            <MudTextField @bind-Value="MeetTimeText" InputType="InputType.Time"
+                          Label="@(IsHomeGame ? L["Assemble time"] : L["Departure time"])"
+                          Class="mb-3 start-time-field" />
+            <MudTextField @bind-Value="WarmUpTimeText" InputType="InputType.Time"
+                          Label="@L["Warm-up time"]" Class="mb-3 start-time-field" />
+            <MudTextField @bind-Value="FieldName" Label="@L["Field"]" MaxLength="50" Class="mb-3" />
+            <MudTextField @bind-Value="DressingRoom" Label="@L["Dressing room"]" MaxLength="50" Class="mb-3" />
+            <MudTextField @bind-Value="SportsPark" Label="@L["Sports park"]" MaxLength="100" Class="mb-3" />
+            <MudTextField @bind-Value="City" Label="@L["City"]" MaxLength="100" Class="mb-3" />
+            <MudTextField @bind-Value="DressingRoomDuty" Label="@L["Dressing room duty"]" MaxLength="100" Class="mb-3" />
+            <MudTextField @bind-Value="FlagDuty" Label="@L["Flag duty"]" MaxLength="100" Class="mb-3" />
+            <MudTextField @bind-Value="WashDuty" Label="@L["Kit wash duty"]" MaxLength="100" Class="mb-3" />
         </MudForm>
     </DialogContent>
     <DialogActions>

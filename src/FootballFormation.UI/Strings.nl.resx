@@ -129,6 +129,19 @@
   <data name="Guest Players" xml:space="preserve"><value>Gastspelers</value></data>
   <data name="{0} guest(s) added" xml:space="preserve"><value>{0} gast(en) toegevoegd</value></data>
 
+  <!-- Match-day arrangements. All optional, and read by nothing but MatchInfoTextBuilder — a field
+       left blank is left out of the message. The first label flips with the venue. -->
+  <data name="Assemble time" xml:space="preserve"><value>Verzameltijd</value></data>
+  <data name="Departure time" xml:space="preserve"><value>Vertrektijd</value></data>
+  <data name="Warm-up time" xml:space="preserve"><value>Warming-uptijd</value></data>
+  <data name="Field" xml:space="preserve"><value>Veld</value></data>
+  <data name="Dressing room" xml:space="preserve"><value>Kleedkamer</value></data>
+  <data name="Sports park" xml:space="preserve"><value>Sportpark</value></data>
+  <data name="City" xml:space="preserve"><value>Plaats</value></data>
+  <data name="Dressing room duty" xml:space="preserve"><value>Kleedkamerdienst</value></data>
+  <data name="Flag duty" xml:space="preserve"><value>Vlaggendienst</value></data>
+  <data name="Kit wash duty" xml:space="preserve"><value>Wastasdienst</value></data>
+
   <!-- Match types. The key is MatchType.DisplayName(), so a new type needs an entry here. -->
   <data name="Match Type" xml:space="preserve"><value>Type wedstrijd</value></data>
   <data name="Competition" xml:space="preserve"><value>Competitie</value></data>
@@ -214,6 +227,18 @@
        formation overview's share button. -->
   <data name="Copy match result" xml:space="preserve"><value>Uitslag kopiëren</value></data>
   <data name="Copied to clipboard" xml:space="preserve"><value>Gekopieerd naar klembord</value></data>
+  <!-- The copyable match-day message — MatchInfoTextBuilder. Its labels run mid-line after a time or
+       an emoji, so they read lowercase; "dressing room {0}" carries its placeholder rather than
+       being cased down from the field label above, which resx would read as the same key. -->
+  <data name="Copy match info" xml:space="preserve"><value>Wedstrijdinfo kopiëren</value></data>
+  <data name="assemble" xml:space="preserve"><value>verzamelen</value></data>
+  <data name="depart" xml:space="preserve"><value>vertrek</value></data>
+  <data name="briefing/warm-up" xml:space="preserve"><value>bespreking/warming-up</value></data>
+  <data name="kick-off" xml:space="preserve"><value>aftrap</value></data>
+  <data name="dressing room {0}" xml:space="preserve"><value>kleedkamer {0}</value></data>
+  <data name="Duties" xml:space="preserve"><value>Taken</value></data>
+  <data name="Flags" xml:space="preserve"><value>Vlaggen</value></data>
+  <data name="Kit wash" xml:space="preserve"><value>Wastas</value></data>
   <data name="Couldn't copy — try again" xml:space="preserve"><value>Kopiëren mislukt — probeer opnieuw</value></data>
 
   <!-- Match comments. Private unless published, so the wording has to leave no doubt which is which. -->

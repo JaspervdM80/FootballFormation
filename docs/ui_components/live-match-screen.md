@@ -214,6 +214,17 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   rather than a Blazor click handler, even on `/result` which has a circuit:
   `navigator.clipboard.writeText` only runs inside the task the user's click gesture produced, and a
   round trip through server interop loses that gesture on iOS Safari and Firefox.
+- **The copyable match-day message** (`MatchInfoTextBuilder` in `UI/Helpers`) is the other half of
+  that button, and the two never appear together: `/overview` offers this one while
+  `game.HasFinalScore` is false and the summary above once it is true — before the match what the
+  group chat needs is where to be, afterwards it is the score. It composes the fixture, a 📅 date, the
+  meet/warm-up/kick-off times, the field, dressing room, sports park and town, and a **Duties:** block
+  naming who has the dressing room, the flags and the kit wash. Every one of those is optional, and
+  `AddGroup` drops a whole group's blank separator with it when nothing in it was filled in, so a
+  fixture carrying only a departure time is three lines rather than a form with holes in it. Our own
+  side is named from `TeamService.GetCurrentAsync().FullName`, falling back to `L["Us"]` before a club
+  is seeded. Same hidden `<pre>` plus `js/clipboard.js` mechanism as the summary, and public for the
+  same reason — the arrangements are for whoever is coming to the match.
 - **A kick-off time is optional and lives in `Date`'s time component**, not a separate column —
   `Game.HasStartTime` is the test, `GameDialog`'s "Kick-off Time" field (a `MudTextField` with
   `InputType.Time`, not a picker — see the responsive-and-touch skill on `MudDatePicker`'s popover

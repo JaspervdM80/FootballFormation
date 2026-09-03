@@ -7,6 +7,7 @@ namespace FootballFormation.UI.Pages;
 public partial class FormationOverview
 {
     [Inject] private GameService GameService { get; set; } = null!;
+    [Inject] private TeamService TeamService { get; set; } = null!;
     [Inject] private NavigationTrail Trail { get; set; } = null!;
     [Inject] private ILogger<FormationOverview> Logger { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
@@ -24,6 +25,10 @@ public partial class FormationOverview
     /// This page has no circuit to hand a string to a script through, so the composed text goes into a hidden element for clipboard.js.
     /// Null before the game loads, or for a fixture with no score to report.
     private string? SummaryText { get; set; }
+
+    /// The same hidden-element trick as <see cref="SummaryText"/>. Null once the match has been played — by then the result is what gets
+    /// shared, not the arrangements for getting there.
+    private string? MatchInfoText { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -50,7 +55,14 @@ public partial class FormationOverview
             PeriodLineups[period.Id] = period.PlayerPositions.ToList();
         }
 
-        if (GameData.HasFinalScore)
+        if (!GameData.HasFinalScore)
+        {
+            var teamResult = await TeamService.GetCurrentAsync(Cancellation);
+            if (teamResult.IsCancelled) return;
+
+            MatchInfoText = MatchInfoTextBuilder.Build(GameData, teamResult.Value?.FullName ?? L["Us"], L);
+        }
+        else
         {
             // Always false: the summary is for sharing, so it is never built from private notes, whoever is looking at this page.
             var commentsResult = await GameService.GetCommentsAsync(GameId, includePrivate: false, Cancellation);

@@ -12,6 +12,13 @@
 | SplitType | GameSplitType | Halves or Quarters |
 | GameDurationMinutes | int | Default 60 |
 | IsHomeGame | bool | Default true. Venue only — score fields are unaffected |
+| MeetTime | TimeSpan? | When to be at the club (home) or when the convoy leaves (away). The label flips on `IsHomeGame`, the column does not |
+| WarmUpTime | TimeSpan? | Briefing and warm-up |
+| DressingRoom | string? | Max 50 |
+| FieldName | string? | Max 50, e.g. "Veld 3" |
+| SportsPark | string? | Max 100 |
+| City | string? | Max 100 |
+| DressingRoomDuty / FlagDuty / WashDuty | string? | Max 100 each. Who is down for the job, written as a name — not a `Player` reference, because it is usually a parent |
 | ScoreHome / ScoreAway | int? | **Our** score / **opponent** score, regardless of venue |
 | Periods | List\<GamePeriod\> | Auto-created on game creation |
 | Goals | List\<GameGoal\> | Cascade delete |
@@ -25,6 +32,12 @@
 | Substitutions | List\<GameSubstitution\> | Cascade delete |
 | Injuries | List\<GameInjury\> | Cascade delete. Players hurt during this match |
 | Comments | List\<GameComment\> | Cascade delete. Never eager-loaded — see GameComment |
+
+The nine **match-day** columns exist for one reader, `MatchInfoTextBuilder`, and every one of them is
+optional: a field left blank is left out of the message rather than printed empty, which is what lets
+one shape serve a club that fills in everything and a coach who only ever types a departure time.
+`GameDialog` writes whitespace back as null for the same reason. They carry no `Player` reference —
+the flags and the kit wash are a parent's job, and the app has no row for a parent.
 
 The match clock is stored as an **anchor plus a banked total**, never as a ticking value:
 `ElapsedSecondsAt(utcNow)` adds the time since `ClockRunningSince` to `ClockAccumulatedSeconds`.
