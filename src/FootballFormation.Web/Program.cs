@@ -208,6 +208,7 @@ try
         Log.Information("Database migrated successfully at {DbPath}", dbPath);
 
         await DatabaseSafety.VerifyIntegrityAsync(db, dbLogger);
+        await DatabaseSafety.VerifySchemaAsync(db, dbLogger);
 
         if (backupPath is not null)
             Log.Information("Pre-migration backup retained at {BackupPath}", backupPath);

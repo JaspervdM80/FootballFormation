@@ -2,7 +2,7 @@
 
 Avoid repeating these mistakes:
 
-- [EF Core](ef-core.md) — UNIQUE constraints on save, value converters, the DateInSqlInterceptor, migration ordering and the folded `InitialCreate`, connection pooling holding a file handle open, cross-context transactions.
+- [EF Core](ef-core.md) — UNIQUE constraints on save, value converters, the DateInSqlInterceptor, migration ordering and the folded `InitialCreate`, a migration history that claims more than the file holds, connection pooling holding a file handle open, cross-context transactions.
 - [Data / domain](domain.md) — archiving instead of deleting, the substitution tie-break, period length in seconds, why `PlayerService.GetAllAsync` still returns archived players.
 - [Blazor / MudBlazor 9.x](blazor-mudblazor.md) — the per-page render mode and static layout, `InteractiveShell`, dialogs/popovers/snackbar providers, and a run of MudBlazor-specific traps.
 - [Touch / PWA](touch-pwa.md) — touch-target sizing, the date picker on a phone, dialog sheets, a card's action row swallowing taps, a time field WebKit centres, drag-and-drop shims, and circuit reconnection after backgrounding.

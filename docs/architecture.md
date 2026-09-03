@@ -40,8 +40,9 @@ Data/
     CsvListConverters.cs  — List<int>/List<TEnum> ↔ comma-separated text, with the ValueComparer
   DatabasePathHelper.cs   — Resolves the SQLite path: APP_DATA_DIR, then WEBSITE_INSTANCE_ID, then LOCALAPPDATA
   DatabaseSafety.cs       — What runs around MigrateAsync on boot: the pre-migration snapshot (one
-                           per schema state, newest 5 kept) and the post-migration integrity and
-                           foreign-key checks. See deployment.md
+                           per schema state, newest 5 kept), the post-migration integrity and
+                           foreign-key checks, and the schema check against the model.
+                           See deployment.md
   DesignTimeDbContextFactory.cs — Lets dotnet-ef build the context from Core alone, so migration
                            commands need no --startup-project
   GameQueries.cs          — The include chains a Game is loaded with, named once as IQueryable

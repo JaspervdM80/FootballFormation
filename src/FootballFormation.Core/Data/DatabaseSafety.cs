@@ -1,3 +1,4 @@
+using System.Data.Common;
 using Microsoft.Data.Sqlite;
 
 namespace FootballFormation.Core.Data;
@@ -107,6 +108,60 @@ public static class DatabaseSafety
         }
 
         logger.LogInformation("Database integrity verified");
+    }
+
+    /// Migrating can report success and change nothing: __EFMigrationsHistory alone decides what runs, so a migration it records but
+    /// the file never received leaves the columns absent, and neither pragma above calls an incomplete database damaged.
+    public static async Task VerifySchemaAsync(AppDbContext db, ILogger logger)
+    {
+        var connection = db.Database.GetDbConnection();
+        if (connection.State != System.Data.ConnectionState.Open)
+            await connection.OpenAsync();
+
+        var problems = new List<string>();
+
+        foreach (var table in db.Model.GetRelationalModel().Tables)
+        {
+            var actual = await ReadColumnsAsync(connection, table.Name);
+            if (actual.Count == 0)
+            {
+                problems.Add($"{table.Name} does not exist");
+                continue;
+            }
+
+            var missing = table.Columns.Select(c => c.Name).Where(n => !actual.Contains(n)).ToList();
+            if (missing.Count > 0)
+                problems.Add($"{table.Name} is missing {string.Join(", ", missing)}");
+        }
+
+        if (problems.Count > 0)
+        {
+            var detail = string.Join("; ", problems);
+            logger.LogCritical("Schema does not match the model: {Problems}", detail);
+            throw new InvalidOperationException(
+                $"Schema does not match the model: {detail}. Either the model changed with no migration scaffolded for it, " +
+                "or __EFMigrationsHistory records work this database never had — see docs/known_issues/ef-core.md.");
+        }
+
+        logger.LogInformation("Schema matches the model");
+    }
+
+    /// Empty for a table that does not exist, which is what makes the two cases one query.
+    private static async Task<HashSet<string>> ReadColumnsAsync(DbConnection connection, string table)
+    {
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = "SELECT name FROM pragma_table_info($table)";
+        var parameter = cmd.CreateParameter();
+        parameter.ParameterName = "$table";
+        parameter.Value = table;
+        cmd.Parameters.Add(parameter);
+
+        var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+            columns.Add(reader.GetString(0));
+
+        return columns;
     }
 
     /// Newest by name is newest by schema state, since a migration id begins with the timestamp it was scaffolded at. A pruning failure

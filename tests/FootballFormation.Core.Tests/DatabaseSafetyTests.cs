@@ -205,6 +205,53 @@ public class DatabaseSafetyTests : IDisposable
         Assert.Contains("Foreign key", ex.Message);
     }
 
+    [Fact]
+    public async Task A_migrated_database_matches_the_model()
+    {
+        await using var db = Open();
+        await db.Database.MigrateAsync();
+
+        await DatabaseSafety.VerifySchemaAsync(db, NullLogger.Instance);
+    }
+
+    [Fact]
+    public async Task A_column_the_migration_history_claims_was_applied_is_reported_by_name()
+    {
+        // What a database written before the migrations were squashed looks like: the fold reads as applied, its columns absent.
+        await using var db = Open();
+        await db.Database.MigrateAsync();
+        await db.Database.ExecuteSqlRawAsync("ALTER TABLE Players DROP COLUMN IsArchived");
+
+        Assert.Empty(await db.Database.GetPendingMigrationsAsync());
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => DatabaseSafety.VerifySchemaAsync(db, NullLogger.Instance));
+        Assert.Contains("Players is missing IsArchived", ex.Message);
+    }
+
+    [Fact]
+    public async Task A_table_the_model_expects_and_the_database_lacks_is_reported()
+    {
+        await using var db = Open();
+        await db.Database.MigrateAsync();
+        await db.Database.ExecuteSqlRawAsync("DROP TABLE GameComments");
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => DatabaseSafety.VerifySchemaAsync(db, NullLogger.Instance));
+        Assert.Contains("GameComments does not exist", ex.Message);
+    }
+
+    [Fact]
+    public async Task A_column_the_model_does_not_map_is_left_alone()
+    {
+        // A branch that added a column and was then left behind is the everyday local drift, and EF simply ignores the leftover.
+        await using var db = Open();
+        await db.Database.MigrateAsync();
+        await db.Database.ExecuteSqlRawAsync("ALTER TABLE Players ADD COLUMN Trialist INTEGER NOT NULL DEFAULT 0");
+
+        await DatabaseSafety.VerifySchemaAsync(db, NullLogger.Instance);
+    }
+
     public void Dispose()
     {
         SqliteConnection.ClearAllPools();
