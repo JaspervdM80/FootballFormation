@@ -19,9 +19,3 @@
   the capture block too and laid its header out *beside* the pitches instead of above them. The
   scoped rule could not win: it never declared `display` at all. A class in `app.css` is global;
   read it as one before reusing a name a page already uses.
-- **html2canvas 1.4.1 throws on `color-mix()`.** Chrome resolves a mix to `color(srgb r g b / a)`,
-  and the parser rejects any colour function it does not know rather than skipping the value — so
-  one derived shade anywhere under the captured element is enough to fail the whole export, which
-  is what "save as image" stopped doing when the light theme spread `color-mix` across the app.
-  `js/screenshot.js` flattens those to `rgba()` on the live DOM before the capture and puts the
-  styles back afterwards; the clone html2canvas offers is built too late to fix them in.

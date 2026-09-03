@@ -2182,8 +2182,7 @@ a.action-btn {
 }
 
 /* Plain <button>s with an inline onclick on /games/{id}/overview, so there is no MudButton layout to
-   inherit — .btn-gold only paints. Not .overview-capture: that class is on the block being captured,
-   and this display laid its header out beside the pitches. */
+   inherit — .btn-gold only paints. Not .overview-capture: that name belongs to the captured block. */
 .overview-btn {
     display: inline-flex;
     align-items: center;

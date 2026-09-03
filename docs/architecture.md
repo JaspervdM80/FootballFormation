@@ -252,7 +252,8 @@ wwwroot/
   app.css                 — Global styles: MudBlazor overrides, badges, .action-btn, .stacked-table,
                             the responsive table layouts and the nav breakpoints
   fonts/                  — Self-hosted DM Sans (no render-blocking Google Fonts request)
-  js/screenshot.js        — Renders the overview to a PNG via the bundled html2canvas
+  js/screenshot.js        — Renders the overview to a PNG via the bundled html2canvas, flattening
+                            color-mix() in the clone first (see docs/known_issues/general.md)
   js/vendor/html2canvas.min.js
   manifest.webmanifest    — PWA manifest (installable on iOS/Android via Add to Home Screen)
   service-worker.js       — Caches assets the server marks `immutable`; never markup (no offline mode)
