@@ -108,8 +108,13 @@
   on a phone and left-aligned everywhere else, because WebKit draws the value inside
   `::-webkit-date-and-time-value` and centres it there — the rule on the input styles a box whose
   content it does not own. Chromium has no such pseudo-element, so the phone this was reported from
-  is the only place it shows and the desktop capture proves nothing. Both rules are in app.css: the
-  input's own for Firefox, the pseudo-element's for WebKit.
+  is the only place it shows and the desktop capture proves nothing. **Closed, and the two rules are
+  gone with it:** the three time fields are plain `MudTextField`s now, drawing their own text, after
+  the *other* half of owning a native time input turned out to be unfixable — the browser formats it
+  in its own UI language, so an English phone showed "10:45 AM" out of a Dutch app whatever the page
+  or the culture said. See `docs/ui_components/live-match-screen.md`. Worth keeping because the shape
+  outlives the input: a value WebKit draws inside a shadow pseudo-element is one no rule on the host
+  reaches, and a desktop capture will not show you that.
 - **A width-only media query does not cover a phone.** Turned sideways, a 390px-tall phone is 844px
   wide and every `max-width: 599.98px` rule stops applying — while the thumb does not change size.
   The picker block keys off `(max-width: 599.98px), (max-height: 559.98px)` for exactly this reason,

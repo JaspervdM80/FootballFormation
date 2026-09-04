@@ -11,6 +11,7 @@ public partial class GameDialog
     [Inject] private SeasonService SeasonService { get; set; } = null!;
     [Inject] private MatchPreferencesService PreferencesService { get; set; } = null!;
     [Inject] private SeasonState SeasonState { get; set; } = null!;
+    [Inject] private ISnackbar Snackbar { get; set; } = null!;
 
     [Parameter]
     public Game? Game { get; set; }
@@ -26,6 +27,18 @@ public partial class GameDialog
     private MatchType SelectedMatchType { get; set; } = MatchType.Competition;
     private int GameDurationMinutes { get; set; } = 60;
     private bool IsHomeGame { get; set; } = true;
+
+    /// Kept as text for the same reason <see cref="StartTimeText"/> is: a blank field has to round-trip as no time at all.
+    private string? MeetTimeText { get; set; }
+    private string? WarmUpTimeText { get; set; }
+    private string? DressingRoom { get; set; }
+    private string? FieldName { get; set; }
+    private string? SportsPark { get; set; }
+    private string? City { get; set; }
+    private string? DressingRoomDuty { get; set; }
+    private string? FlagDuty { get; set; }
+    private string? WashDuty { get; set; }
+
     private IReadOnlyCollection<int> UnavailablePlayerIds { get; set; } = [];
     private IReadOnlyCollection<int> GuestPlayerIds { get; set; } = [];
 
@@ -155,12 +168,21 @@ public partial class GameDialog
     {
         Opponent = game.Opponent;
         Date = game.Date;
-        StartTimeText = game.HasStartTime ? game.Date.ToString("HH:mm") : null;
+        StartTimeText = game.HasStartTime ? game.Date.ToString(ClockText.Format) : null;
         SelectedFormationType = game.FormationType;
         SplitType = game.SplitType;
         SelectedMatchType = game.MatchType;
         GameDurationMinutes = game.GameDurationMinutes;
         IsHomeGame = game.IsHomeGame;
+        MeetTimeText = ClockText.Of(game.MeetTime);
+        WarmUpTimeText = ClockText.Of(game.WarmUpTime);
+        DressingRoom = game.DressingRoom;
+        FieldName = game.FieldName;
+        SportsPark = game.SportsPark;
+        City = game.City;
+        DressingRoomDuty = game.DressingRoomDuty;
+        FlagDuty = game.FlagDuty;
+        WashDuty = game.WashDuty;
         SelectedSeasonId = game.SeasonId;
         UnavailablePlayerIds = game.UnavailablePlayerIds.ToList();
         GuestPlayerIds = game.GuestPlayerIds.ToList();
@@ -169,23 +191,52 @@ public partial class GameDialog
     private async Task Submit()
     {
         await Form.ValidateAsync();
-        if (!Form.IsValid) return;
+
+        // Says so rather than returning quietly: the form is long enough that the field at fault is usually scrolled out of sight from
+        // Save, and a button that looks dead is the report we would otherwise get.
+        if (!Form.IsValid)
+        {
+            Snackbar.Add(Form.Errors.FirstOrDefault() ?? L["Check the fields marked in red"], Severity.Error);
+            return;
+        }
 
         var game = Game ?? new Game { Opponent = Opponent };
         game.Opponent = Opponent;
-        var startTime = TimeSpan.TryParse(StartTimeText, out var parsed) ? parsed : TimeSpan.Zero;
-        game.Date = (Date ?? DateTime.Today).Date + startTime;
+        game.Date = (Date ?? DateTime.Today).Date + (ClockText.Parse(StartTimeText) ?? TimeSpan.Zero);
         game.FormationType = SelectedFormationType;
         game.SplitType = SplitType;
         game.MatchType = SelectedMatchType;
         game.GameDurationMinutes = GameDurationMinutes;
         game.IsHomeGame = IsHomeGame;
+        game.MeetTime = ClockText.Parse(MeetTimeText);
+        game.WarmUpTime = ClockText.Parse(WarmUpTimeText);
+        game.DressingRoom = Trimmed(DressingRoom);
+        game.FieldName = Trimmed(FieldName);
+        game.SportsPark = Trimmed(SportsPark);
+        game.City = Trimmed(City);
+        game.DressingRoomDuty = Trimmed(DressingRoomDuty);
+        game.FlagDuty = Trimmed(FlagDuty);
+        game.WashDuty = Trimmed(WashDuty);
         game.SeasonId = SelectedSeasonId;
         game.UnavailablePlayerIds = UnavailablePlayerIds.ToList();
         game.GuestPlayerIds = GuestPlayerIds.ToList();
 
         MudDialog.Close(DialogResult.Ok(game));
     }
+
+    /// MudBlazor takes `Validation` as `object`, so the delegate type has to be spelled out somewhere — a method group alone is CS8974.
+    private Func<string?, IEnumerable<string>> TimeValidation => ValidateTime;
+
+    /// MudBlazor hands this the raw text, before ValueChanged has normalized it, so it judges what ClockText will make of it.
+    private IEnumerable<string> ValidateTime(string? text)
+    {
+        if (!string.IsNullOrWhiteSpace(text) && ClockText.Parse(ClockText.Normalize(text)) is null)
+            yield return L["Enter a time on a 24-hour clock, e.g. {0}", ClockText.Example];
+    }
+
+    /// Whitespace is stored as null, so "blank" means the same thing in the database as in the dialog.
+    private static string? Trimmed(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private void Cancel() => MudDialog.Cancel();
 }

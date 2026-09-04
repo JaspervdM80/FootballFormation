@@ -214,11 +214,38 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   rather than a Blazor click handler, even on `/result` which has a circuit:
   `navigator.clipboard.writeText` only runs inside the task the user's click gesture produced, and a
   round trip through server interop loses that gesture on iOS Safari and Firefox.
+- **The copyable match-day message** (`MatchInfoTextBuilder` in `UI/Helpers`) is the other half of
+  that button, and the two never appear together: `/overview` offers this one while
+  `game.HasFinalScore` is false and the summary above once it is true — before the match what the
+  group chat needs is where to be, afterwards it is the score. It composes the fixture, a 📅 date, the
+  meet/warm-up/kick-off times, the field, dressing room, sports park and town, and a **Duties:** block
+  naming who has the dressing room, the flags and the kit wash. Every one of those is optional, and
+  `AddGroup` drops a whole group's blank separator with it when nothing in it was filled in, so a
+  fixture carrying only a departure time is three lines rather than a form with holes in it. Our own
+  side is named from `TeamService.GetCurrentAsync().FullName`, falling back to `L["Us"]` before a club
+  is seeded. Same hidden `<pre>` plus `js/clipboard.js` mechanism as the summary, and public for the
+  same reason — the arrangements are for whoever is coming to the match.
 - **A kick-off time is optional and lives in `Date`'s time component**, not a separate column —
-  `Game.HasStartTime` is the test, `GameDialog`'s "Kick-off Time" field (a `MudTextField` with
-  `InputType.Time`, not a picker — see the responsive-and-touch skill on `MudDatePicker`'s popover
-  traps) is how it is set, and `Game.DateLine(format)` is the one place the result page, the
-  overview and the copyable summary compose the date-plus-time line.
+  `Game.HasStartTime` is the test, `GameDialog`'s "Kick-off Time" field is how it is set, and
+  `Game.DateLine(format)` is the one place the result page, the overview and the copyable summary
+  compose the date-plus-time line.
+- **All three time fields are plain `MudTextField`s on a 24-hour clock**, and neither a picker nor an
+  `InputType.Time`. Not a picker for the reason the date one nearly was not — see the
+  responsive-and-touch skill on `MudDatePicker`'s popover traps. Not a native time input because the
+  browser draws that one in **the browser's own UI language**, not the page's: the `lang` attribute
+  and the app's culture are both ignored, so a club member on an English phone got "10:45 AM" out of
+  a Dutch app. Owning the format means owning the parsing too, and that lives in **`ClockText`, in
+  `Core/Models`** rather than in the dialog — it is pure string logic, the Razor project is not
+  measured by `scripts/coverage.sh`, and this is the code that shipped the `01:04` bug below.
+  `Normalize` settles the text on blur (`1045`, `930`, `9:30` and `10:45` all land on the `HH:mm`
+  form), `Parse` reads it back with `TimeOnly.TryParseExact` so `25:00` is refused rather than taken
+  as a duration the way `TimeSpan.TryParse` would, and text neither can read is left exactly as
+  typed for the field's validation to report. **Only a run of bare digits is reshaped**: a half-typed
+  `10:4` already carries its separator, and reading a shape off its digits alone would settle it
+  silently on `01:04` — a different time, where what the reader wanted was the error.
+  `InputMode.numeric` is what puts a keypad under a thumb now that the native widget is gone, and an
+  invalid field reports through the snackbar on Save as well as inline, because on a phone the field
+  at fault is usually scrolled well out of sight from the button.
 
 ## Live banner on the home page
 `Home.razor` calls `LiveMatchService.GetTodaysMatchAsync`, which returns a match in progress if

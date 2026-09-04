@@ -11,9 +11,11 @@
             @* Explicit change handlers, not @bind: both fields decide which season's squad the
                player pickers below should offer, so each change has to reload it. *@
             <MudDatePicker Date="Date" DateChanged="OnDateChanged" Label="@L["Date"]" Class="mb-3" />
-            @* Optional — a blank field keeps the game with no kick-off time, see Game.HasStartTime. *@
-            <MudTextField @bind-Value="StartTimeText" InputType="InputType.Time"
-                          Label="@L["Kick-off Time"]" Class="mb-3 start-time-field" />
+            @* Optional, see Game.HasStartTime. Not InputType.Time: the browser draws that one in its
+               *own* UI language, so an English phone shows "10:45 AM" — ClockText owns the format. *@
+            <MudTextField T="string" Value="StartTimeText" ValueChanged="v => StartTimeText = ClockText.Normalize(v)"
+                          Validation="TimeValidation" InputMode="InputMode.numeric" MaxLength="5"
+                          Placeholder="@ClockText.Example" Label="@L["Kick-off Time"]" Class="mb-3" />
             <MudSelect T="int" Value="SelectedSeasonId" ValueChanged="OnSeasonSelected"
                        Label="@L["Season"]" Class="mb-3">
                 <MudSelectItem T="int" Value="0">@L["Auto (by date)"]</MudSelectItem>
@@ -89,6 +91,22 @@
                     }
                 </MudSelect>
             }
+            @* Below the divider nothing but the match-day message reads these, and a blank one is left out of it. *@
+            <MudDivider Class="my-3" />
+            <MudTextField T="string" Value="MeetTimeText" ValueChanged="v => MeetTimeText = ClockText.Normalize(v)"
+                          Validation="TimeValidation" InputMode="InputMode.numeric" MaxLength="5"
+                          Placeholder="@ClockText.Example" Class="mb-3"
+                          Label="@(IsHomeGame ? L["Assemble time"] : L["Departure time"])" />
+            <MudTextField T="string" Value="WarmUpTimeText" ValueChanged="v => WarmUpTimeText = ClockText.Normalize(v)"
+                          Validation="TimeValidation" InputMode="InputMode.numeric" MaxLength="5"
+                          Placeholder="@ClockText.Example" Label="@L["Warm-up time"]" Class="mb-3" />
+            <MudTextField @bind-Value="FieldName" Label="@L["Field"]" MaxLength="50" Class="mb-3" />
+            <MudTextField @bind-Value="DressingRoom" Label="@L["Dressing room"]" MaxLength="50" Class="mb-3" />
+            <MudTextField @bind-Value="SportsPark" Label="@L["Sports park"]" MaxLength="100" Class="mb-3" />
+            <MudTextField @bind-Value="City" Label="@L["City"]" MaxLength="100" Class="mb-3" />
+            <MudTextField @bind-Value="DressingRoomDuty" Label="@L["Dressing room duty"]" MaxLength="100" Class="mb-3" />
+            <MudTextField @bind-Value="FlagDuty" Label="@L["Flag duty"]" MaxLength="100" Class="mb-3" />
+            <MudTextField @bind-Value="WashDuty" Label="@L["Kit wash duty"]" MaxLength="100" Class="mb-3" />
         </MudForm>
     </DialogContent>
     <DialogActions>

@@ -233,18 +233,6 @@ html, body {
     }
 }
 
-/* Firefox centres a native time input's value by default; every other field in the form reads
-   from the left, so force this one to match. */
-.start-time-field input[type="time"] {
-    text-align: left;
-}
-
-/* WebKit draws the value in a shadow element of its own that the input's text-align never reaches,
-   and centres it there — which is what a phone actually shows. */
-.start-time-field input[type="time"]::-webkit-date-and-time-value {
-    text-align: left;
-}
-
 /* --- Date pickers on a phone ---
    Both dialogs that carry a MudDatePicker (new/edit match, and the season editor on /settings) are
    smaller than the picker itself on a phone: MudBlazor's popover is 310x410 and anchored to the

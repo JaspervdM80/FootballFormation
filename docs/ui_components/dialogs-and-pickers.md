@@ -4,7 +4,9 @@
 Every dialog goes through `DialogPrompts` with `UiFeedback.LockedDialog` (no backdrop-click close).
 A **long form** additionally carries `Class="dialog-sheet"` on its `MudDialog` — currently only
 `GameDialog`, the new/edit match form, which is the app's longest and is filled in at a touchline
-on a phone in portrait.
+on a phone in portrait. A `MudDivider` marks off its last block — the match-day arrangements, which
+nothing but the copyable message reads — so the fields that decide the match itself stay at the top
+where they were.
 
 The class does nothing above 600px; the rules are in `app.css` behind a media query. Below it the
 dialog becomes a full-screen sheet:

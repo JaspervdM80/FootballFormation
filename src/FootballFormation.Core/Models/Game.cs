@@ -19,6 +19,26 @@ public class Game
 
     public bool IsHomeGame { get; set; } = true;
 
+    /// The match-day practicalities, every one optional: <see cref="MeetTime"/> is when to be at the club for a home game and when the
+    /// convoy leaves for an away one, and anything left unset is dropped from the shared message rather than shown blank.
+    public TimeSpan? MeetTime { get; set; }
+
+    public TimeSpan? WarmUpTime { get; set; }
+
+    public string? DressingRoom { get; set; }
+
+    public string? FieldName { get; set; }
+
+    public string? SportsPark { get; set; }
+
+    public string? City { get; set; }
+
+    public string? DressingRoomDuty { get; set; }
+
+    public string? FlagDuty { get; set; }
+
+    public string? WashDuty { get; set; }
+
     /// Home/Away name the sides, not the venue: ScoreHome is always ours. <see cref="InVenueOrder"/> does the flip for display.
     public int? ScoreHome { get; set; }
 

@@ -83,13 +83,22 @@
         <MudIcon Icon="@Icons.Material.Filled.CameraAlt" Size="Size.Small" />
         @L["Save as image"]
     </button>
-    @* Same shape as the screenshot button above. *@
+    @* Same shape as the screenshot button above. A fixture has one of these and a played match the
+       other, never both — the result replaces the arrangements once it exists. *@
     @if (SummaryText is not null)
     {
         <button type="button" class="btn-gold overview-btn"
                 onclick="copyElementText('match-summary-text', 'copy-success', 'copy-error')">
             <MudIcon Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small" />
             @L["Copy match result"]
+        </button>
+    }
+    @if (MatchInfoText is not null)
+    {
+        <button type="button" class="btn-gold overview-btn"
+                onclick="copyElementText('match-info-text', 'copy-success', 'copy-error')">
+            <MudIcon Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small" />
+            @L["Copy match info"]
         </button>
     }
 </div>
@@ -101,6 +110,13 @@
 @if (SummaryText is not null)
 {
     <pre id="match-summary-text" hidden>@SummaryText</pre>
+}
+@if (MatchInfoText is not null)
+{
+    <pre id="match-info-text" hidden>@MatchInfoText</pre>
+}
+@if (SummaryText is not null || MatchInfoText is not null)
+{
     <div id="copy-success" class="inline-notice inline-notice-success" role="status" hidden>
         @L["Copied to clipboard"]
     </div>

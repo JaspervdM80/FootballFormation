@@ -66,6 +66,54 @@ public class GameServiceTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task A_games_match_day_arrangements_survive_a_round_trip()
+    {
+        var season = await SeedSeasonAsync();
+        var game = TestData.Game(id: 0, seasonId: season.Id);
+        game.MeetTime = new TimeSpan(10, 45, 0);
+        game.WarmUpTime = new TimeSpan(11, 15, 0);
+        game.DressingRoom = "12";
+        game.FieldName = "Veld 3";
+        game.SportsPark = "Sportpark De Watertoren";
+        game.City = "Zaltbommel";
+        game.DressingRoomDuty = "moeder van Fleur";
+        game.FlagDuty = "vader van Niels";
+        game.WashDuty = "ouder van Seb";
+
+        await Games.CreateAsync(game);
+        var loaded = Read().Games.Single();
+
+        Assert.Equal(new TimeSpan(10, 45, 0), loaded.MeetTime);
+        Assert.Equal(new TimeSpan(11, 15, 0), loaded.WarmUpTime);
+        Assert.Equal("12", loaded.DressingRoom);
+        Assert.Equal("Veld 3", loaded.FieldName);
+        Assert.Equal("Sportpark De Watertoren", loaded.SportsPark);
+        Assert.Equal("Zaltbommel", loaded.City);
+        Assert.Equal("moeder van Fleur", loaded.DressingRoomDuty);
+        Assert.Equal("vader van Niels", loaded.FlagDuty);
+        Assert.Equal("ouder van Seb", loaded.WashDuty);
+    }
+
+    [Fact]
+    public async Task A_game_created_without_match_day_arrangements_keeps_every_one_of_them_unset()
+    {
+        var season = await SeedSeasonAsync();
+
+        await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id));
+        var loaded = Read().Games.Single();
+
+        Assert.Null(loaded.MeetTime);
+        Assert.Null(loaded.WarmUpTime);
+        Assert.Null(loaded.DressingRoom);
+        Assert.Null(loaded.FieldName);
+        Assert.Null(loaded.SportsPark);
+        Assert.Null(loaded.City);
+        Assert.Null(loaded.DressingRoomDuty);
+        Assert.Null(loaded.FlagDuty);
+        Assert.Null(loaded.WashDuty);
+    }
+
+    [Fact]
     public async Task Changing_the_formation_moves_each_starter_to_the_position_her_slot_is_now()
     {
         var season = await SeedSeasonAsync();
