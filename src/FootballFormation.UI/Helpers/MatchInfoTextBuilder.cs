@@ -24,27 +24,27 @@ public static class MatchInfoTextBuilder
             game.HasStartTime ? $"⚽ {game.Date:HH:mm} {L["kick-off"]}" : null]);
 
         AddGroup(lines, [
-            DetailLine("⚽", game.FieldName),
-            DressingRoomLine(game.DressingRoom, L),
+            NamedLine("⚽", game.FieldName, field => L["field {0}", field]),
+            NamedLine("🏠", game.DressingRoom, room => L["dressing room {0}", room]),
             DetailLine("🏟️", game.SportsPark),
             DetailLine("📍", game.City)]);
 
         AddGroup(lines, [
-            DutyLine(L["Dressing room"], game.DressingRoomDuty),
-            DutyLine(L["Flags"], game.FlagDuty),
-            DutyLine(L["Kit wash"], game.WashDuty)], heading: $"{L["Duties"]}:");
+            DutyLine("🧹", L["Dressing room"], game.DressingRoomDuty),
+            DutyLine("🚩", L["Flags"], game.FlagDuty),
+            DutyLine("🧺", L["Kit wash"], game.WashDuty)], heading: $"{L["Duties"]}:");
 
         return string.Join('\n', lines);
     }
 
-    private static string? DressingRoomLine(string? room, IStringLocalizer<Strings> L) =>
-        string.IsNullOrWhiteSpace(room) ? null : $"🏠 {L["dressing room {0}", room.Trim()]}";
+    private static string? NamedLine(string emoji, string? value, Func<string, string> name) =>
+        string.IsNullOrWhiteSpace(value) ? null : $"{emoji} {name(value.Trim())}";
 
     private static string? DetailLine(string emoji, string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : $"{emoji} {value.Trim()}";
 
-    private static string? DutyLine(string label, string? value) =>
-        string.IsNullOrWhiteSpace(value) ? null : $"{label}: {value.Trim()}";
+    private static string? DutyLine(string emoji, string label, string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : $"{emoji} {label}: {value.Trim()}";
 
     private static string? TimeLine(string emoji, TimeSpan? time, string label) =>
         time is null ? null : $"{emoji} {time.Value:hh\\:mm} {label}";

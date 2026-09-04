@@ -21,7 +21,7 @@ test('the match-day arrangements typed into the game dialog become a copyable me
   await fill(panel, 'Kick-off Time', '12:00');
   await fill(panel, 'Departure time', '10:45');
   await fill(panel, 'Warm-up time', '11:15');
-  await fill(panel, 'Field', 'Veld 3');
+  await fill(panel, 'Field', '3');
   await fill(panel, 'Dressing room', '12');
   await fill(panel, 'Sports park', 'Sportpark De Watertoren');
   await fill(panel, 'City', 'Zaltbommel');
@@ -43,12 +43,12 @@ test('the match-day arrangements typed into the game dialog become a copyable me
   expect(message).toContain('10:45 depart');
   expect(message).toContain('11:15 briefing/warm-up');
   expect(message).toContain('12:00 kick-off');
-  expect(message).toContain('Veld 3');
+  expect(message).toContain('field 3');
   expect(message).toContain('dressing room 12');
   expect(message).toContain('Sportpark De Watertoren');
   expect(message).toContain('Zaltbommel');
-  expect(message).toContain('Flags: Vader van Niels');
-  expect(message).toContain('Kit wash: Ouder van Seb');
+  expect(message).toContain('🚩 Flags: Vader van Niels');
+  expect(message).toContain('🧺 Kit wash: Ouder van Seb');
   // Nobody was given it, so the line is left out rather than left blank.
   expect(message).not.toContain('Dressing room:');
 
@@ -68,6 +68,8 @@ test('the time fields settle on a 24-hour clock, whatever language the browser i
   // A native time input would be drawn in the browser's own UI language — en-US here, so "12:00 PM".
   const kickOff = panel.getByLabel('Kick-off Time', { exact: true });
   expect(await kickOff.getAttribute('type')).not.toBe('time');
+  // Reads as an example rather than as a time already filled in.
+  await expect(kickOff).toHaveAttribute('placeholder', 'e.g. 13:45');
 
   // Bare digits, the way a numeric keypad hands them over; the colon arrives on blur.
   await kickOff.fill('1200');
