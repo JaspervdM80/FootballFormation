@@ -224,6 +224,9 @@ public partial class GameDialog
         MudDialog.Close(DialogResult.Ok(game));
     }
 
+    /// A grey "13:45" alone reads as a time already filled in rather than as an example.
+    private string TimeHint => L["e.g. {0}", ClockText.Example];
+
     /// MudBlazor takes `Validation` as `object`, so the delegate type has to be spelled out somewhere — a method group alone is CS8974.
     private Func<string?, IEnumerable<string>> TimeValidation => ValidateTime;
 

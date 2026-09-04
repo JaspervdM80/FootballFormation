@@ -14,8 +14,8 @@
 | IsHomeGame | bool | Default true. Venue only — score fields are unaffected |
 | MeetTime | TimeSpan? | When to be at the club (home) or when the convoy leaves (away). The label flips on `IsHomeGame`, the column does not. Read and written through `ClockText` |
 | WarmUpTime | TimeSpan? | Briefing and warm-up. `ClockText`, as above |
-| DressingRoom | string? | Max 50 |
-| FieldName | string? | Max 50, e.g. "Veld 3" |
+| DressingRoom | string? | Max 50. The number alone, as with FieldName |
+| FieldName | string? | Max 50. The designation alone, e.g. "3" — the message writes the word in front of it |
 | SportsPark | string? | Max 100 |
 | City | string? | Max 100 |
 | DressingRoomDuty / FlagDuty / WashDuty | string? | Max 100 each. Who is down for the job, written as a name — not a `Player` reference, because it is usually a parent |

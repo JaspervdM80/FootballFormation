@@ -219,12 +219,19 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   `game.HasFinalScore` is false and the summary above once it is true — before the match what the
   group chat needs is where to be, afterwards it is the score. It composes the fixture, a 📅 date, the
   meet/warm-up/kick-off times, the field, dressing room, sports park and town, and a **Duties:** block
-  naming who has the dressing room, the flags and the kit wash. Every one of those is optional, and
-  `AddGroup` drops a whole group's blank separator with it when nothing in it was filled in, so a
-  fixture carrying only a departure time is three lines rather than a form with holes in it. Our own
-  side is named from `TeamService.GetCurrentAsync().FullName`, falling back to `L["Us"]` before a club
-  is seeded. Same hidden `<pre>` plus `js/clipboard.js` mechanism as the summary, and public for the
-  same reason — the arrangements are for whoever is coming to the match.
+  naming who has the dressing room (🧹), the flags (🚩) and the kit wash (🧺). Every one of those is
+  optional, and `AddGroup` drops a whole group's blank separator with it when nothing in it was filled
+  in, so a fixture carrying only a departure time is three lines rather than a form with holes in it.
+  **The field and the dressing room are stored as the designation alone** and the message writes the
+  word in front — `L["field {0}"]` and `L["dressing room {0}"]` — because the dialog already labels
+  both, and a coach typing "Veld 3" under a field marked *Veld* got it twice. The dialog's
+  placeholders are what ask for the designation alone; a row filled in before they existed reads
+  "veld Veld 3" until someone retypes it. Our own side is named from `TeamState.Current?.FullName`,
+  falling back to `L["Us"]` before a club is seeded — `TeamState` because the chrome on this page has
+  already loaded it in this scope, and it is the one place a failure to name our own side is
+  swallowed rather than read off `Result.Value`, which throws. Same hidden `<pre>` plus
+  `js/clipboard.js` mechanism as the summary, and public for the same reason — the arrangements are
+  for whoever is coming to the match.
 - **A kick-off time is optional and lives in `Date`'s time component**, not a separate column —
   `Game.HasStartTime` is the test, `GameDialog`'s "Kick-off Time" field is how it is set, and
   `Game.DateLine(format)` is the one place the result page, the overview and the copyable summary
@@ -243,6 +250,8 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   typed for the field's validation to report. **Only a run of bare digits is reshaped**: a half-typed
   `10:4` already carries its separator, and reading a shape off its digits alone would settle it
   silently on `01:04` — a different time, where what the reader wanted was the error.
+  The placeholder reads `L["e.g. {0}"]` around `ClockText.Example` rather than the bare example: a
+  grey `13:45` sitting in an empty field reads as a time already filled in.
   `InputMode.numeric` is what puts a keypad under a thumb now that the native widget is gone, and an
   invalid field reports through the snackbar on Save as well as inline, because on a phone the field
   at fault is usually scrolled well out of sight from the button.

@@ -138,6 +138,7 @@
   <data name="Assemble time" xml:space="preserve"><value>Verzameltijd</value></data>
   <data name="Departure time" xml:space="preserve"><value>Vertrektijd</value></data>
   <data name="Warm-up time" xml:space="preserve"><value>Warming-uptijd</value></data>
+  <data name="e.g. {0}" xml:space="preserve"><value>bijv. {0}</value></data>
   <data name="Field" xml:space="preserve"><value>Veld</value></data>
   <data name="Dressing room" xml:space="preserve"><value>Kleedkamer</value></data>
   <data name="Sports park" xml:space="preserve"><value>Sportpark</value></data>
@@ -232,14 +233,15 @@
   <data name="Copy match result" xml:space="preserve"><value>Uitslag kopiëren</value></data>
   <data name="Copied to clipboard" xml:space="preserve"><value>Gekopieerd naar klembord</value></data>
   <!-- The copyable match-day message — MatchInfoTextBuilder. Its labels run mid-line after a time or
-       an emoji, so they read lowercase; "dressing room {0}" carries its placeholder rather than
-       being cased down from the field label above, which resx would read as the same key. -->
+       an emoji, so they read lowercase; the two carrying a placeholder are written that way rather
+       than cased down from the field labels above, which resx would read as the same keys. -->
   <data name="Copy match info" xml:space="preserve"><value>Wedstrijdinfo kopiëren</value></data>
   <data name="{0} vs {1}" xml:space="preserve"><value>{0} vs {1}</value></data>
   <data name="assemble" xml:space="preserve"><value>verzamelen</value></data>
   <data name="depart" xml:space="preserve"><value>vertrek</value></data>
   <data name="briefing/warm-up" xml:space="preserve"><value>bespreking/warming-up</value></data>
   <data name="kick-off" xml:space="preserve"><value>aftrap</value></data>
+  <data name="field {0}" xml:space="preserve"><value>veld {0}</value></data>
   <data name="dressing room {0}" xml:space="preserve"><value>kleedkamer {0}</value></data>
   <data name="Duties" xml:space="preserve"><value>Taken</value></data>
   <data name="Flags" xml:space="preserve"><value>Vlaggen</value></data>
