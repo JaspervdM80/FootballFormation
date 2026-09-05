@@ -305,4 +305,20 @@ public class MatchSubstitutionServiceTests : LiveMatchTestBase
         Assert.True(result.IsFailure);
         Assert.Equal("Substitution not found", result.Error);
     }
+
+    [Fact]
+    public async Task Undoing_an_injury_recorded_by_another_team_is_refused()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+        var injury = (await Subs.MarkInjuredAsync(game.Id, players[0].Id)).Value!;
+
+        // FindAsync would fetch the injury regardless of team; the game-in-scope gate is what turns another team's id into "not found".
+        SeedTeam("Other Club", "MO17-1");
+        var result = await Subs.RemoveInjuryAsync(injury.Id);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Injury not found", result.Error);
+    }
 }
