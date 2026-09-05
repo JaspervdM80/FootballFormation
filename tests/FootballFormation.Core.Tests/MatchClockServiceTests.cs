@@ -35,11 +35,13 @@ public class MatchClockServiceTests : LiveMatchTestBase
     [Fact]
     public async Task A_game_with_no_line_up_at_all_cannot_kick_off()
     {
+        var teamId = EnsureScopedTeam();
         var season = Season.CreateFor(KickOff);
+        season.TeamId = teamId;
         Db.Seasons.Add(season);
         await Db.SaveChangesAsync();
 
-        var game = new Game { Opponent = "X", Date = KickOff.Date, SeasonId = season.Id };
+        var game = new Game { Opponent = "X", Date = KickOff.Date, TeamId = teamId, SeasonId = season.Id };
         Db.Games.Add(game);
         await Db.SaveChangesAsync();
 

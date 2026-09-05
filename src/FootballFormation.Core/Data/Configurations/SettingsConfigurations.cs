@@ -17,6 +17,13 @@ internal sealed class MatchPreferencesConfiguration : IEntityTypeConfiguration<M
             .HasForeignKey(m => m.SeasonId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // Restrict, as Season -> Game: the denormalised team FK must not give a team delete a silent path. The season FK above is what
+        // cascades a preferences row away.
+        entity.HasOne<Team>()
+            .WithMany()
+            .HasForeignKey(m => m.TeamId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // One row per season. MatchPreferencesService creates it on first read; this is the
         // net underneath two circuits reading the same season at once.
         entity.HasIndex(m => m.SeasonId).IsUnique();

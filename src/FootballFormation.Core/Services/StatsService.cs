@@ -11,6 +11,7 @@ public class StatsService(
     GameService games,
     SeasonSquadService squads,
     TrainingService trainings,
+    ICurrentTeam currentTeam,
     TimeProvider time,
     StatsCache cache,
     ILogger<StatsService> logger)
@@ -20,8 +21,9 @@ public class StatsService(
         int? seasonId, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "load the statistics", cancellationToken, async () =>
         {
-            // Before the load, never after — see StatsCache.KeyFor.
-            var key = cache.KeyFor($"season:{seasonId}");
+            // Before the load, never after — see StatsCache.KeyFor. Keyed by team as well as season, or the "all seasons" view (a null
+            // id) and a player who moved teams would collide across teams on one key. See docs/patterns/authorization-and-auth.md.
+            var key = cache.KeyFor($"t{await currentTeam.GetIdAsync()}:season:{seasonId}");
 
             if (cache.TryGet<SeasonStatsView>(key, out var hit)) return Result.Success(hit);
 
@@ -52,8 +54,8 @@ public class StatsService(
             var existing = seasonResult.Value!.Stats.Players.FirstOrDefault(p => p.Player.Id == player.Id);
             if (existing is not null) return Result.Success(existing);
 
-            // In no squad of this season, but the page is reachable for anyone on file.
-            var key = cache.KeyFor($"player:{player.Id}:{seasonId}");
+            // In no squad of this season, but the page is reachable for anyone on file. Keyed by team too — see GetSeasonAsync.
+            var key = cache.KeyFor($"t{await currentTeam.GetIdAsync()}:player:{player.Id}:{seasonId}");
 
             if (cache.TryGet<PlayerStats>(key, out var hit)) return Result.Success(hit);
 

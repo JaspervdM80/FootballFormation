@@ -45,4 +45,10 @@ internal static class GameQueries
                 .ThenInclude(s => s.PlayerOff)
             .Include(g => g.Substitutions)
                 .ThenInclude(s => s.PlayerOn);
+
+    /// The team gate for a write that reaches a game's child by the child's own id — a goal, a comment, an injury. The child rows carry
+    /// no query filter, so this asks the filtered Games set whether the game is the scope's, turning another team's id into "not found".
+    internal static Task<bool> GameInScopeAsync(
+        this AppDbContext db, int gameId, CancellationToken cancellationToken) =>
+        db.Games.AnyAsync(g => g.Id == gameId, cancellationToken);
 }

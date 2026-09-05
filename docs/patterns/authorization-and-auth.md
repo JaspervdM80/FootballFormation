@@ -97,10 +97,27 @@ touches — the one it is on and the one it is moving to — through the same qu
 `/users` would be the way from running one team to resetting the password of an admin of every other.
 `AuthorizationTests` pins both directions.
 
-**The data below a season is not team-scoped yet, so this isolates accounts and nothing else.**
-`Season`, `Game` and the squad still have no team, which means an admin of a second team would pass
-the guard for their own team and then edit the one set of games there is. That is the next step, not
-a gap in the guard: the guard is shaped to hold the moment the data carries a team.
+**The data below a season now carries a team, so the guard finally bites on it.** `Season` holds a
+`TeamId`, and `Game`, `Training`, `MatchPreferences` and `SeasonSquadMember` each carry a copy of it
+denormalised from the season they hang off, so a filter can read one column without a join.
+`Player` is the exception: it belongs to the *club* (a `ClubId`), because a season's squad draws from
+the club pool and a girl who moves between the club's teams must keep one history.
+
+**The read side is scoped by default, not per query.** `AppDbContext` applies a global
+`HasQueryFilter` to each of those entities reading its own `CurrentTeamId`/`CurrentClubId`, and
+`TeamScopedDbContextFactory` — the `IDbContextFactory<AppDbContext>` every service receives — stamps
+those from `ICurrentTeam` before handing a context over. So a query that forgets to mention the team
+still returns only the team in scope, and one that somehow escapes the factory (a null stamp) returns
+*nothing* rather than another team's rows. The raw factory that makes an unstamped context is taken
+by exactly two things: `CurrentTeam`, which must resolve the team without asking a context which team
+it is, and `SeasonService`'s boot loops, which stamp each team by hand to walk them all.
+
+**The one trap the filter does not cover is `FindAsync`, which bypasses global query filters.** A
+`db.Games.FindAsync(id)` returns another team's game; the scoped services use
+`FirstOrDefaultAsync(x => x.Id == id)` on the filtered set instead, and a write reaching a game's
+child by the child's own id (a goal, a comment) gates on `AppDbContext.GameInScopeAsync` first.
+`TeamDataScopingTests` is the read-side counterpart to `AuthorizationTests`: it seeds two teams and
+asserts every public read returns only the team in scope, so a forgotten filter fails there.
 
 ## There are two rungs of authority, and the upper one is a second guard
 `ServiceOperation.RunApplicationAdminAsync` is `RunAdminAsync` asking a different question:

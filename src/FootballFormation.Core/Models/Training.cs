@@ -12,6 +12,9 @@ public class Training
     /// Date only — a session has no start time, so anything in TimeOfDay is a value the app can neither show nor edit.
     public DateTime Date { get; set; }
 
+    /// Denormalised from the season so the team query filter reads one column, never a join. Set from the season at creation. See Season.TeamId.
+    public int TeamId { get; set; }
+
     /// Derived from <see cref="Date"/> at creation (SeasonService.GetOrCreateForDateAsync), but reassignable afterwards. No navigation
     /// back, like GameInjury: nothing reads the season off a session, and a nav nobody includes is a null waiting to be trusted.
     public int SeasonId { get; set; }

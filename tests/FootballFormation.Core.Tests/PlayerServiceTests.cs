@@ -7,6 +7,7 @@ public class PlayerServiceTests : ServiceTestBase
     [Fact]
     public async Task A_player_who_has_never_played_can_still_be_deleted()
     {
+        SeedTeam();
         // The case delete is actually for: a name typed wrong a minute ago, with nothing behind it.
         var player = (await Players.CreateAsync(new Player { FirstName = "Typo" })).Value!;
 

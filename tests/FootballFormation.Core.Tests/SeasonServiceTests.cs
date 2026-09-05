@@ -215,6 +215,7 @@ public class SeasonServiceTests : ServiceTestBase
         Db.Seasons.Add(new Season
         {
             Name = "Gapped",
+            TeamId = first.TeamId,
             StartDate = first.EndDate.AddDays(30),
             EndDate = first.EndDate.AddYears(1),
             IsCurrent = true
@@ -246,6 +247,8 @@ public class SeasonServiceTests : ServiceTestBase
     [Fact]
     public async Task An_empty_database_gets_a_current_season()
     {
+        // Empty of seasons, not of teams: a deployment always has a team by the time this boot step runs.
+        SeedTeam();
         var season = await Seasons.EnsureCurrentSeasonAsync();
 
         Assert.True(season.IsSuccess);
@@ -259,6 +262,7 @@ public class SeasonServiceTests : ServiceTestBase
         Db.Seasons.Add(new Season
         {
             Name = "Newer",
+            TeamId = older.TeamId,
             StartDate = older.EndDate.AddDays(1),
             EndDate = older.EndDate.AddYears(1),
             IsCurrent = false
@@ -269,5 +273,64 @@ public class SeasonServiceTests : ServiceTestBase
 
         Assert.Equal("Newer", season.Value!.Name);
         Assert.Single(Read().Seasons.ToList(), s => s.IsCurrent);
+    }
+
+    [Fact]
+    public async Task Every_team_gets_its_own_current_season_on_boot()
+    {
+        // The boot form loops all teams, not only the one an absent cookie resolves — a fresh install with two teams must leave each
+        // with a season to fall back on.
+        var a = SeedTeam("Club A", "MO15-2");
+        var b = SeedTeam("Club B", "MO17-1");
+
+        Assert.True((await Seasons.EnsureEveryTeamHasCurrentSeasonAsync()).IsSuccess);
+
+        var current = await Read().Seasons.IgnoreQueryFilters().Where(s => s.IsCurrent).ToListAsync();
+        Assert.Equal(2, current.Count);
+        Assert.Contains(current, s => s.TeamId == a.Id);
+        Assert.Contains(current, s => s.TeamId == b.Id);
+    }
+
+    [Fact]
+    public async Task Closing_gaps_for_every_team_repairs_each_team_within_its_own_chain()
+    {
+        var a = SeedTeam("Club A", "MO15-2");
+        var first = await SeedSeasonAsync(isCurrent: false);
+        Db.Seasons.Add(new Season
+        {
+            Name = "Gapped",
+            TeamId = a.Id,
+            StartDate = first.EndDate.AddDays(30),
+            EndDate = first.EndDate.AddYears(1),
+            IsCurrent = true
+        });
+        // A second team with a single, gapless season — its lone window must not be read against the other team's.
+        SeedTeam("Club B", "MO17-1");
+        await SeedSeasonAsync();
+        await Db.SaveChangesAsync();
+
+        var closed = await Seasons.CloseSeasonGapsForEveryTeamAsync();
+
+        Assert.Equal(1, closed.Value);
+    }
+
+    [Fact]
+    public async Task Updating_a_season_that_belongs_to_another_team_is_refused()
+    {
+        var a = SeedTeam("Club A", "MO15-2");
+        var aSeason = await SeedSeasonAsync();
+
+        // Now looking at another team; the detached Update must not reach across to team A's season by id.
+        var b = SeedTeam("Club B", "MO17-1");
+        var result = await Seasons.UpdateAsync(new Season
+        {
+            Id = aSeason.Id, Name = "Hijacked", TeamId = b.Id,
+            StartDate = aSeason.StartDate, EndDate = aSeason.EndDate
+        });
+
+        Assert.True(result.IsFailure);
+        var stored = await Read().Seasons.IgnoreQueryFilters().FirstAsync(s => s.Id == aSeason.Id);
+        Assert.NotEqual("Hijacked", stored.Name);
+        Assert.Equal(a.Id, stored.TeamId);
     }
 }

@@ -17,7 +17,7 @@
 
 ## Relationships
 ```
-Season 1──* Game 1──* GamePeriod 1──* GamePlayerPosition *──1 Player
+Team 1──* Season 1──* Game 1──* GamePeriod 1──* GamePlayerPosition *──1 Player *──1 Club
 Season 1──* SeasonSquadMember *──1 Player
 Season 1──* Training (Restrict — no navigation in either direction)
 Game 1──* GameGoal *──1 Player (scorer, assister — both SetNull)
@@ -28,6 +28,16 @@ GamePeriod 1──* GameInjury (the half it happened in — cascade)
 Game 1──* GameInjury *──1 Player (Restrict; unique on GameId + PlayerId)
 Game 1──* GameComment *──1 AppUser (author — SetNull)
 ```
+
+**Everything under a season carries a `TeamId`, and a `Player` a `ClubId`** (id-only FKs, all
+`Restrict`, like `Club → Team` and `Team → Users`). `Season` is the source of truth; `Game`,
+`Training`, `MatchPreferences` and `SeasonSquadMember` hold a denormalised copy set from the season
+at creation, so `AppDbContext`'s global query filters scope a read by one column without a join. A
+player belongs to the club rather than a team, so a season's squad draws from the club pool and a
+move between the club's teams keeps one history. **`Season.IsCurrent` is now one row per team**, and
+the season gap/overlap rules in `SeasonService` run within a team. See
+[authorization-and-auth](../patterns/authorization-and-auth.md) for the read-side scoping and the
+`FindAsync` trap.
 Cascading deletes throughout, **except Season → Game and Season → Training, which are `Restrict`**:
 deleting a season must never take a year of games, lineups, goals or training attendance with it.
 `SeasonService.DeleteAsync` refuses with a readable message when a season still has games or

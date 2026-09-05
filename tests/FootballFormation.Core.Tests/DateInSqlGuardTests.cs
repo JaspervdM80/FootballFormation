@@ -53,7 +53,7 @@ public class DateInSqlGuardTests : ServiceTestBase
         // LiveMatchService keeps this one comparison in SQL on purpose and tags it. That the call
         // returns at all is the assertion: without the tag the interceptor would refuse it.
         var season = await SeedSeasonAsync();
-        Db.Games.Add(new Game { SeasonId = season.Id, Opponent = "Today", Date = Now });
+        Db.Games.Add(new Game { SeasonId = season.Id, TeamId = season.TeamId, Opponent = "Today", Date = Now });
         await Db.SaveChangesAsync();
 
         var game = await Live.GetTodaysMatchAsync();

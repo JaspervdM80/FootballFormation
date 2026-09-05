@@ -5,6 +5,9 @@ public class SeasonSquadMember
 {
     public int Id { get; set; }
 
+    /// Denormalised from the season so the team query filter reads one column, never a join. Set from the season at creation. See Season.TeamId.
+    public int TeamId { get; set; }
+
     public int SeasonId { get; set; }
     public Season? Season { get; set; }
 

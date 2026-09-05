@@ -25,7 +25,13 @@ public class MatchPreferencesService(
             var prefs = await db.MatchPreferences.FirstOrDefaultAsync(p => p.SeasonId == seasonId, cancellationToken);
             if (prefs is not null) return Result.Success(prefs);
 
-            prefs = await SeedForAsync(db, seasonId, cancellationToken);
+            // No row yet, so the season is what says which team to seed one for — and confirms it is the scope's, since seeding a row for
+            // another team's season would both leak it and trip the one-per-season index against that team's existing row.
+            var teamId = await db.Seasons.Where(s => s.Id == seasonId).Select(s => (int?)s.TeamId).FirstOrDefaultAsync(cancellationToken);
+            if (teamId is null)
+                return Result.Failure<MatchPreferences>("Season not found");
+
+            prefs = await SeedForAsync(db, seasonId, teamId.Value, cancellationToken);
             db.MatchPreferences.Add(prefs);
 
             // The one read in the app that writes, so the save deliberately drops the page's token: everything above gives up having
@@ -93,7 +99,7 @@ public class MatchPreferencesService(
         var alreadyEntered = existing.Select(t => t.Date.Date).ToHashSet();
         var created = scheduled
             .Where(date => !alreadyEntered.Contains(date))
-            .Select(date => new Training { Date = date, SeasonId = prefs.SeasonId, FromSchedule = true })
+            .Select(date => new Training { Date = date, SeasonId = prefs.SeasonId, TeamId = prefs.TeamId, FromSchedule = true })
             .ToList();
 
         // An evening with absences, a note or a cancellation on it outlives the window it was drawn from, and is the admin's to delete.
@@ -271,7 +277,7 @@ public class MatchPreferencesService(
 
     /// Copied from the newest season before this one that has a row; then any season's newest; then the model's own defaults.
     private static async Task<MatchPreferences> SeedForAsync(
-        AppDbContext db, int seasonId, CancellationToken cancellationToken)
+        AppDbContext db, int seasonId, int teamId, CancellationToken cancellationToken)
     {
         var startDate = await db.Seasons
             .Where(s => s.Id == seasonId)
@@ -292,7 +298,7 @@ public class MatchPreferencesService(
             .FirstOrDefault(p => startDate is not null && p.Season!.StartDate.Date < startDate.Value.Date)
             ?? byNewestSeason.FirstOrDefault();
 
-        return source?.CopyFor(seasonId) ?? new MatchPreferences { SeasonId = seasonId };
+        return source?.CopyFor(seasonId, teamId) ?? new MatchPreferences { SeasonId = seasonId, TeamId = teamId };
     }
 
     /// <paramref name="stepPastReference"/> is true when the reference is a match already scheduled, since two games must not land on the

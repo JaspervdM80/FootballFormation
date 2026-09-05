@@ -185,7 +185,8 @@ public class MatchSubstitutionService(
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var injury = await db.GameInjuries.FindAsync([injuryId], cancellationToken);
-            if (injury is null) return Result.Failure<int>("Injury not found");
+            if (injury is null || !await db.GameInScopeAsync(injury.GameId, cancellationToken))
+                return Result.Failure<int>("Injury not found");
 
             // The pairing Game.WasReplaced spells out: same half, same player, same second.
             var replaced = await db.GameSubstitutions.AnyAsync(
@@ -228,7 +229,8 @@ public class MatchSubstitutionService(
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var sub = await db.GameSubstitutions.FindAsync([subId], cancellationToken);
-            if (sub is null) return Result.Failure<int>("Substitution not found");
+            if (sub is null || !await db.GameInScopeAsync(sub.GameId, cancellationToken))
+                return Result.Failure<int>("Substitution not found");
 
             // AtSeconds is whole seconds and a double substitution is two taps in a row, so both routinely pass for "most recent" —
             // the id settles which came second, and undoing the earlier one would leave two players in the same slot.

@@ -1,5 +1,20 @@
 # EF Core
 
+- **`FindAsync` bypasses global query filters** — the team scope in `AppDbContext` (`HasQueryFilter`
+  on `Season`, `Game`, `Training`, `MatchPreferences`, `SeasonSquadMember` and `Player`) is applied to
+  LINQ queries, not to `Find`/`FindAsync`, which go straight to the primary key. So
+  `db.Games.FindAsync(id)` returns another team's game and a write against it leaks across the scope.
+  Use `FirstOrDefaultAsync(x => x.Id == id, ct)` on the filtered set instead; the season-scoped
+  services all do. A write reaching a game's **child** by the child's own id (a goal, a comment, an
+  injury — the children carry no filter) gates on `AppDbContext.GameInScopeAsync(gameId)` first.
+  `TeamDataScopingTests` pins the read side, seeding two teams and asserting every public read is
+  scoped. See [authorization-and-auth](../patterns/authorization-and-auth.md).
+- **The team query filter reads a context instance member, so an unstamped context sees nothing** —
+  the filter is `e.TeamId == CurrentTeamId`, and `CurrentTeamId` is null on any context the
+  `TeamScopedDbContextFactory` did not stamp (fail closed, never open). `CurrentTeam` and the season
+  boot loops therefore take the *raw* factory, not the scoped one: the scoped factory resolves the
+  team by awaiting `ICurrentTeam`, so if `CurrentTeam` itself used it, resolving the team would ask
+  the context being built which team it is — a re-entrant wait on its own memoised task.
 - **UNIQUE constraint on save**: When re-saving `GamePlayerPosition` entities, always create NEW entities with `Id = 0`. Never re-add tracked entities with existing IDs — EF tries INSERT with the old PK.
 - **List value converters need ValueComparer**: Without it, EF won't detect changes to `List<PlayerPosition>` or `List<int>` properties.
 - **DB path must be absolute** — a relative path resolves against the working directory, which

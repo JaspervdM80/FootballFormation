@@ -177,6 +177,7 @@ public class StandingInjuryTests : LiveMatchTestBase
         Db.SeasonSquadMembers.AddRange(players.Select(p => new SeasonSquadMember
         {
             SeasonId = seasonId,
+            TeamId = CurrentTeam.Id!.Value,
             PlayerId = p.Id
         }));
         await Db.SaveChangesAsync();

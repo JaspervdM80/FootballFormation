@@ -4,16 +4,24 @@
 | Property | Type | Notes |
 |---|---|---|
 | Id | int | PK |
+| TeamId | int | FK → Team, `Restrict`. The team this season belongs to; the root every season-scoped row reaches its team through |
 | Name | string | Required, max 20. e.g. "2025/26". Editable |
-| StartDate | DateTime | Unique index |
+| StartDate | DateTime | Unique per team — `(TeamId, StartDate)` |
 | EndDate | DateTime | |
-| IsCurrent | bool | Exactly one row. `SeasonService.SetCurrentAsync` owns the invariant |
+| IsCurrent | bool | Exactly one row **per team**. `SeasonService.SetCurrentAsync` owns the invariant |
 | Games | List\<Game\> | |
 | SquadMembers | List\<SeasonSquadMember\> | This season's squad |
 
+Seasons belong to a **team** (`TeamId`), and everything under a season — games, trainings,
+preferences, the squad — carries a denormalised copy so a read scopes by one column. The gapless-
+window and current-season rules below all run **within a team**; two teams may share a 2025/26
+window, and each has its own current season. See
+[enums-and-relationships](enums-and-relationships.md) and
+[authorization-and-auth](../patterns/authorization-and-auth.md).
+
 Seasons run **1 July – 30 June** (`Season.StartMonth = 7`), matching the KNVB amateur season.
-The windows are deliberately **gapless** — every date maps to exactly one season, which is what
-lets `Game.SeasonId` be required and `GetOrCreateForDateAsync` always resolve. An Aug–Jun window
+The windows are deliberately **gapless** — every date maps to exactly one of the team's seasons,
+which is what lets `Game.SeasonId` be required and `GetOrCreateForDateAsync` always resolve. An Aug–Jun window
 would orphan July fixtures and force an "unassigned" branch into every filter and list.
 
 That was documented but unenforced, and it bit: a hand-entered 2026/27 starting 1 August left all

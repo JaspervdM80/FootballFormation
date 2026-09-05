@@ -23,10 +23,15 @@ public sealed class FakeCurrentUser(FakeCurrentTeam currentTeam) : ICurrentUser
     public Task<bool> IsApplicationAdminAsync() => Task.FromResult(IsApplicationAdmin);
 }
 
-/// The team a test's calls are about. Null before anything is seeded, exactly as <see cref="CurrentTeam"/> answers then.
+/// The team a test's calls are about, and the club it belongs to. Null before anything is seeded, exactly as <see cref="CurrentTeam"/>
+/// answers then. <see cref="ServiceTestBase.SeedTeam"/> points both at what it seeded.
 public sealed class FakeCurrentTeam : ICurrentTeam
 {
     public int? Id { get; set; }
 
+    public int? ClubId { get; set; }
+
     public Task<int?> GetIdAsync() => Task.FromResult(Id);
+
+    public Task<int?> GetClubIdAsync() => Task.FromResult(ClubId);
 }

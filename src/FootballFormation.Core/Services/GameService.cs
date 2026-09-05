@@ -85,6 +85,15 @@ public class GameService(
                 game.SeasonId = seasonResult.Value!.Id;
             }
 
+            // Denormalised from the season the game hangs off, read through the filter — so a season from another team is refused rather
+            // than producing a game whose TeamId and season disagree.
+            var teamId = await db.Seasons
+                .Where(s => s.Id == game.SeasonId)
+                .Select(s => (int?)s.TeamId)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (teamId is null) return Result.Failure<Game>("Season not found");
+            game.TeamId = teamId.Value;
+
             foreach (var periodType in PeriodTypeExtensions.ForSplitType(game.SplitType))
             {
                 game.Periods.Add(new GamePeriod { PeriodType = periodType });
@@ -103,6 +112,12 @@ public class GameService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
+            // A detached write goes by key and never consults the query filter, so confirm the game is the scope's first.
+            if (!await db.GameInScopeAsync(game.Id, cancellationToken))
+                return GameNotInScope(game.Id);
+
+            game.TeamId = db.CurrentTeamId!.Value;
+
             // Never DbSet.Update here: it walks the whole loaded graph and marks every row Modified, so renaming an opponent would
             // rewrite the match's entire lineup history. Setting State attaches the root alone.
             db.Entry(game).State = EntityState.Modified;
@@ -118,7 +133,8 @@ public class GameService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var game = await db.Games.FindAsync([id], cancellationToken);
+            // FirstOrDefault, not Find: Find bypasses the query filter, so it would fetch another team's game by id.
+            var game = await db.Games.FirstOrDefaultAsync(g => g.Id == id, cancellationToken);
             if (game is null)
             {
                 logger.LogWarning("Cannot delete game {GameId}: not found", id);
@@ -138,7 +154,7 @@ public class GameService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var game = await db.Games.FindAsync([gameId], cancellationToken);
+            var game = await db.Games.FirstOrDefaultAsync(g => g.Id == gameId, cancellationToken);
             if (game is null)
             {
                 logger.LogWarning("Cannot save score for game {GameId}: not found", gameId);
@@ -166,6 +182,9 @@ public class GameService(
         ServiceOperation.RunAdminAsync(currentUser, logger, "add the goal", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            if (!await db.GameInScopeAsync(goal.GameId, cancellationToken))
+                return GameNotInScope<GameGoal>(goal.GameId);
 
             // The service's clock, not the entity initializer's wall clock, or a live match driven by a fake clock would still record
             // real timestamps. The initializer stays as the default for a goal built outside a service.
@@ -199,7 +218,7 @@ public class GameService(
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var goal = await db.GameGoals.FindAsync([goalId], cancellationToken);
-            if (goal is null)
+            if (goal is null || !await db.GameInScopeAsync(goal.GameId, cancellationToken))
             {
                 logger.LogWarning("Cannot remove goal {GoalId}: not found", goalId);
                 return Result.Failure("Goal not found");
@@ -242,6 +261,10 @@ public class GameService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
+            // Comments carry no filter of their own; gate the read on the game being the scope's so another team's feed is never read by id.
+            if (!await db.GameInScopeAsync(gameId, cancellationToken))
+                return Result.Success(new List<GameComment>());
+
             includePrivate = includePrivate && await currentUser.IsAdminAsync();
 
             // The tie-break runs the other way to a fixture list's: two comments written in the same instant are a feed, newest on top.
@@ -263,6 +286,9 @@ public class GameService(
         ServiceOperation.RunAdminAsync(currentUser, logger, "add the comment", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            if (!await db.GameInScopeAsync(comment.GameId, cancellationToken))
+                return GameNotInScope<GameComment>(comment.GameId);
 
             // The service's clock, not the entity initializer's — see AddGoalAsync.
             comment.CreatedAt = UtcNow;
@@ -286,7 +312,7 @@ public class GameService(
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var comment = await db.GameComments.FindAsync([commentId], cancellationToken);
-            if (comment is null)
+            if (comment is null || !await db.GameInScopeAsync(comment.GameId, cancellationToken))
             {
                 logger.LogWarning("Cannot update comment {CommentId}: not found", commentId);
                 return Result.Failure("Comment not found");
@@ -310,7 +336,7 @@ public class GameService(
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var comment = await db.GameComments.FindAsync([commentId], cancellationToken);
-            if (comment is null)
+            if (comment is null || !await db.GameInScopeAsync(comment.GameId, cancellationToken))
             {
                 logger.LogWarning("Cannot remove comment {CommentId}: not found", commentId);
                 return Result.Failure("Comment not found");
@@ -374,7 +400,7 @@ public class GameService(
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var period = await db.GamePeriods.FindAsync([periodId], cancellationToken);
-            if (period is null)
+            if (period is null || !await db.GameInScopeAsync(period.GameId, cancellationToken))
             {
                 logger.LogWarning("Cannot save lineup for period {PeriodId}: not found", periodId);
                 return Result.Failure("Period not found");
@@ -416,4 +442,17 @@ public class GameService(
                 periodId, positions.Count);
             return Result.Success();
         });
+
+    // "Game not found", not "not in your team": a write against another team's id should read exactly as one against an id that never was.
+    private Result GameNotInScope(int gameId)
+    {
+        logger.LogWarning("Game {GameId} is not in the team in scope", gameId);
+        return Result.Failure("Game not found");
+    }
+
+    private Result<T> GameNotInScope<T>(int gameId)
+    {
+        logger.LogWarning("Game {GameId} is not in the team in scope", gameId);
+        return Result.Failure<T>("Game not found");
+    }
 }

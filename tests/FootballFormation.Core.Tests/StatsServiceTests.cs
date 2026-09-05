@@ -107,7 +107,7 @@ public class StatsServiceTests : ServiceTestBase
 
         // Nothing writes synchronously today; the day something does is not the day to find out.
         var db = Read();
-        db.Players.Add(new Player { FirstName = "Synchroon", PreferredPosition = PlayerPosition.CB });
+        db.Players.Add(new Player { FirstName = "Synchroon", ClubId = CurrentTeam.ClubId!.Value, PreferredPosition = PlayerPosition.CB });
         db.SaveChanges();
 
         Assert.NotEqual(generation, StatsCache.Generation);

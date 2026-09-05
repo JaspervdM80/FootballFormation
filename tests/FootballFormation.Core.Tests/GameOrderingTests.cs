@@ -95,7 +95,7 @@ public class GameOrderingTests : ServiceTestBase
         int seasonId, params (string Opponent, DateTime Date)[] fixtures)
     {
         var games = fixtures
-            .Select(f => new Game { SeasonId = seasonId, Opponent = f.Opponent, Date = f.Date })
+            .Select(f => new Game { SeasonId = seasonId, TeamId = CurrentTeam.Id!.Value, Opponent = f.Opponent, Date = f.Date })
             .ToList();
 
         Db.Games.AddRange(games);
