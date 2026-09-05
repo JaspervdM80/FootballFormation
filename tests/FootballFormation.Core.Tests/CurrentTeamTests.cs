@@ -43,12 +43,12 @@ public class CurrentTeamTests : ServiceTestBase
     public async Task The_answer_is_resolved_once_and_shared()
     {
         var first = SeedTeam("GJS", "MO15-2");
-        var currentTeam = new CurrentTeam(DbFactory, null);
+        var currentTeam = new CurrentTeam(RawDbFactory, null);
 
         var answers = await Task.WhenAll(Enumerable.Range(0, 10).Select(_ => currentTeam.GetIdAsync()));
 
         Assert.All(answers, id => Assert.Equal(first.Id, id));
     }
 
-    private Task<int?> Resolve(int? storedTeamId) => new CurrentTeam(DbFactory, storedTeamId).GetIdAsync();
+    private Task<int?> Resolve(int? storedTeamId) => new CurrentTeam(RawDbFactory, storedTeamId).GetIdAsync();
 }

@@ -28,7 +28,8 @@ public class PlayerService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var player = await db.Players.FindAsync([id], cancellationToken);
+            // FirstOrDefault, not Find: Find bypasses the query filter, so it would fetch a player from another club by id.
+            var player = await db.Players.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
             if (player is null)
             {
                 logger.LogWarning("Player {PlayerId} not found", id);
@@ -43,6 +44,9 @@ public class PlayerService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
+            // The club the team in scope belongs to: a player joins the pool a season's squad draws from, not a team.
+            player.ClubId = db.CurrentClubId!.Value;
+
             db.Players.Add(player);
             await db.SaveChangesAsync(cancellationToken);
 
@@ -54,6 +58,15 @@ public class PlayerService(
         ServiceOperation.RunAdminAsync(currentUser, logger, "update player", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            // A detached Update goes by key and never consults the query filter, so confirm the player is the club's before re-stamping.
+            if (!await db.Players.AnyAsync(p => p.Id == player.Id, cancellationToken))
+            {
+                logger.LogWarning("Cannot update player {PlayerId}: not in scope", player.Id);
+                return Result.Failure("Player not found");
+            }
+
+            player.ClubId = db.CurrentClubId!.Value;
 
             db.Players.Update(player);
             await db.SaveChangesAsync(cancellationToken);
@@ -70,7 +83,7 @@ public class PlayerService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var player = await db.Players.FindAsync([id], cancellationToken);
+            var player = await db.Players.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
             if (player is null)
             {
                 logger.LogWarning("Cannot archive player {PlayerId}: not found", id);
@@ -92,7 +105,7 @@ public class PlayerService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var player = await db.Players.FindAsync([id], cancellationToken);
+            var player = await db.Players.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
             if (player is null)
             {
                 logger.LogWarning("Cannot delete player {PlayerId}: not found", id);

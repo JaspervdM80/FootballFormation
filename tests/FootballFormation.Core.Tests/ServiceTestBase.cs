@@ -23,14 +23,16 @@ public abstract class ServiceTestBase : IDisposable
 
         StatsCache = new StatsCache(new MemoryCache(new MemoryCacheOptions()));
 
-        DbFactory = new TestDbContextFactory(_connection, new StatsCacheInvalidator(StatsCache));
+        var factory = new TestDbContextFactory(_connection, new StatsCacheInvalidator(StatsCache), CurrentTeam);
+        DbFactory = factory;
+        RawDbFactory = factory;
         Db = DbFactory.CreateDbContext();
         Db.Database.EnsureCreated();
 
         Time = new FakeTimeProvider(Now);
 
         Players = new PlayerService(DbFactory, CurrentUser, NullLogger<PlayerService>.Instance);
-        Seasons = new SeasonService(DbFactory, Time, CurrentUser, NullLogger<SeasonService>.Instance);
+        Seasons = new SeasonService(DbFactory, factory, Time, CurrentUser, NullLogger<SeasonService>.Instance);
         Squads = new SeasonSquadService(DbFactory, CurrentUser, NullLogger<SeasonSquadService>.Instance);
         Games = new GameService(DbFactory, Seasons, CurrentUser, Time, NullLogger<GameService>.Instance);
         Trainings = new TrainingService(DbFactory, Seasons, Time, CurrentUser, NullLogger<TrainingService>.Instance);
@@ -44,7 +46,7 @@ public abstract class ServiceTestBase : IDisposable
         Users = new UserService(DbFactory, CurrentUser, CurrentTeam, NullLogger<UserService>.Instance);
         TeamsAndClubs = new TeamService(DbFactory, CurrentUser, CurrentTeam, NullLogger<TeamService>.Instance);
 
-        Stats = new StatsService(Games, Squads, Trainings, Time, StatsCache, NullLogger<StatsService>.Instance);
+        Stats = new StatsService(Games, Squads, Trainings, CurrentTeam, Time, StatsCache, NullLogger<StatsService>.Instance);
     }
 
     /// An admin by default, so a test about something else does not have to say so.
@@ -58,6 +60,10 @@ public abstract class ServiceTestBase : IDisposable
     protected AppDbContext Db { get; }
 
     protected IDbContextFactory<AppDbContext> DbFactory { get; }
+
+    /// The unstamped factory CurrentTeam and the season boot loops take — see TeamScopedDbContextFactory.
+    protected IRawDbContextFactory RawDbFactory { get; }
+
     protected FakeTimeProvider Time { get; }
 
     protected PlayerService Players { get; }
@@ -92,7 +98,10 @@ public abstract class ServiceTestBase : IDisposable
 
     protected async Task<Season> SeedSeasonAsync(DateTime? covering = null, bool isCurrent = true)
     {
+        var team = EnsureScopedTeam();
+
         var season = Season.CreateFor(covering ?? Now);
+        season.TeamId = team;
         season.IsCurrent = isCurrent;
 
         Db.Seasons.Add(season);
@@ -104,7 +113,16 @@ public abstract class ServiceTestBase : IDisposable
     /// constructor, which is where "every test here needs a team" belongs.
     protected Team SeedTeam(string clubName = "GJS", string teamName = "MO15-2")
     {
-        // Reused rather than added, so a second team under the same club does not trip the unique name.
+        // Idempotent by name: a test that names this team after a helper already seeded the default reuses it rather than tripping the
+        // unique (club, name). A second, differently named team is a genuinely new one.
+        var existing = Db.Teams.Include(t => t.Club).FirstOrDefault(t => t.Club!.Name == clubName && t.Name == teamName);
+        if (existing is not null)
+        {
+            CurrentTeam.Id = existing.Id;
+            CurrentTeam.ClubId = existing.ClubId;
+            return existing;
+        }
+
         var club = Db.Clubs.FirstOrDefault(c => c.Name == clubName) ?? Db.Clubs.Add(new Club { Name = clubName }).Entity;
 
         var team = new Team { Name = teamName, Club = club };
@@ -113,15 +131,27 @@ public abstract class ServiceTestBase : IDisposable
         Db.SaveChanges();
 
         CurrentTeam.Id = team.Id;
+        CurrentTeam.ClubId = club.Id;
         return team;
+    }
+
+    /// The team the seed helpers hang their data off. A test that never named one still needs a real team now that the data carries it,
+    /// so seed the default and put it in scope; a test that already did keeps its own.
+    protected int EnsureScopedTeam()
+    {
+        if (CurrentTeam.Id is null) SeedTeam();
+        return CurrentTeam.Id!.Value;
     }
 
     protected async Task<List<Player>> SeedPlayersAsync(int count)
     {
+        EnsureScopedTeam();
+
         var players = Enumerable.Range(1, count)
             .Select(i => new Player
             {
                 FirstName = $"P{i}",
+                ClubId = CurrentTeam.ClubId!.Value,
                 ShirtNumber = i,
                 PreferredPosition = PlayerPosition.CM
             })
@@ -139,9 +169,38 @@ public abstract class ServiceTestBase : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    /// A new context over the one open connection, which is what keeps the in-memory database alive between them.
-    private sealed class TestDbContextFactory(SqliteConnection connection, StatsCacheInvalidator invalidator) : IDbContextFactory<AppDbContext>
+    /// A new context over the one open connection, which is what keeps the in-memory database alive between them. Serves the team-scoped
+    /// contexts everything takes and the raw ones SeasonService's boot loops stamp by hand — the two roles the app splits between the
+    /// scoped factory and the raw one.
+    private sealed class TestDbContextFactory(
+        SqliteConnection connection, StatsCacheInvalidator invalidator, FakeCurrentTeam currentTeam)
+        : IDbContextFactory<AppDbContext>, IRawDbContextFactory
     {
-        public AppDbContext CreateDbContext() => new(new DbContextOptionsBuilder<AppDbContext>().UseSqlite(connection).AddInterceptors(new DateInSqlInterceptor(), invalidator).Options);
+        private DbContextOptions<AppDbContext> Options() =>
+            new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite(connection)
+                .AddInterceptors(new DateInSqlInterceptor(), invalidator)
+                .Options;
+
+        AppDbContext IDbContextFactory<AppDbContext>.CreateDbContext() => new ScopedTestDbContext(Options(), currentTeam);
+
+        AppDbContext IRawDbContextFactory.CreateDbContext() => new(Options());
+    }
+
+    /// Tracks the fake team in scope live, so switching CurrentTeam mid-test scopes every context at once and the long-lived arranging
+    /// context sees the same team the services do — the query filters read these two members per query.
+    private sealed class ScopedTestDbContext(DbContextOptions<AppDbContext> options, FakeCurrentTeam currentTeam) : AppDbContext(options)
+    {
+        public override int? CurrentTeamId
+        {
+            get => currentTeam.Id;
+            set { }
+        }
+
+        public override int? CurrentClubId
+        {
+            get => currentTeam.ClubId;
+            set { }
+        }
     }
 }

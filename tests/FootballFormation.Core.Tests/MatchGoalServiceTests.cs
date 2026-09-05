@@ -122,7 +122,7 @@ public class MatchGoalServiceTests : LiveMatchTestBase
         await MatchClock.StartMatchAsync(game.Id);
         var players = await PlayersAsync();
 
-        var commits = new CommitCountingDbContextFactory(Db.Database.GetDbConnection());
+        var commits = new CommitCountingDbContextFactory(Db.Database.GetDbConnection(), CurrentTeam.Id, CurrentTeam.ClubId);
 
         var goal = await GoalsOver(commits).LogGoalAsync(game.Id, players[1].Id, null, false, false);
 
@@ -140,7 +140,7 @@ public class MatchGoalServiceTests : LiveMatchTestBase
         var players = await PlayersAsync();
         var goal = await Goals.LogGoalAsync(game.Id, players[1].Id, null, false, false);
 
-        var commits = new CommitCountingDbContextFactory(Db.Database.GetDbConnection());
+        var commits = new CommitCountingDbContextFactory(Db.Database.GetDbConnection(), CurrentTeam.Id, CurrentTeam.ClubId);
 
         var removed = await GoalsOver(commits).RemoveGoalAsync(game.Id, goal.Value!.Id);
 
@@ -175,7 +175,7 @@ public class MatchGoalServiceTests : LiveMatchTestBase
 
     /// EF raises this for the transaction it opens around a lone SaveChanges as well as for an explicit one, so two saves that commit
     /// once count once.
-    private sealed class CommitCountingDbContextFactory(DbConnection connection)
+    private sealed class CommitCountingDbContextFactory(DbConnection connection, int? teamId, int? clubId)
         : IDbContextFactory<AppDbContext>
     {
         private readonly CommitCounter _counter = new();
@@ -186,7 +186,8 @@ public class MatchGoalServiceTests : LiveMatchTestBase
             new(new DbContextOptionsBuilder<AppDbContext>()
                 .UseSqlite(connection)
                 .AddInterceptors(new DateInSqlInterceptor(), _counter)
-                .Options);
+                .Options)
+            { CurrentTeamId = teamId, CurrentClubId = clubId };
 
         public Task<AppDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(CreateDbContext());

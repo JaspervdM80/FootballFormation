@@ -35,6 +35,7 @@ public class ServiceLifetimeTests : ServiceTestBase
     [Fact]
     public async Task A_write_is_visible_to_the_next_read_on_a_different_context()
     {
+        SeedTeam();
         // Each operation gets its own context, so nothing is served from a stale change tracker.
         var created = await Players.CreateAsync(new Player { FirstName = "Nieuw", PreferredPosition = PlayerPosition.ST });
         Assert.True(created.IsSuccess);
@@ -47,6 +48,7 @@ public class ServiceLifetimeTests : ServiceTestBase
     [Fact]
     public async Task A_reload_after_an_update_returns_the_new_values_not_the_cached_ones()
     {
+        SeedTeam();
         var created = await Players.CreateAsync(new Player { FirstName = "Oud", PreferredPosition = PlayerPosition.CM });
         var player = created.Value!;
 
@@ -91,6 +93,7 @@ public class ServiceLifetimeTests : ServiceTestBase
     [Fact]
     public async Task Creating_a_game_across_two_services_still_resolves_its_season()
     {
+        SeedTeam();
         // GameService delegates to SeasonService, which now opens its own context. The game must
         // still come back with the season that call created.
         var created = await Games.CreateAsync(new Game

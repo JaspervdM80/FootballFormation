@@ -20,6 +20,12 @@ internal sealed class TrainingConfiguration : IEntityTypeConfiguration<Training>
             .HasForeignKey(t => t.SeasonId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Restrict, as Season -> Training: the denormalised team FK must not give a team delete a silent path through the register.
+        entity.HasOne<Team>()
+            .WithMany()
+            .HasForeignKey(t => t.TeamId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Not unique on (SeasonId, Date): two sessions on one day is an ordinary week.
         entity.HasIndex(t => t.SeasonId);
     }

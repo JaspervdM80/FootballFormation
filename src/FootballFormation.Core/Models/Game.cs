@@ -6,6 +6,10 @@ public class Game
     public required string Opponent { get; set; }
     public DateTime Date { get; set; }
 
+    /// Denormalised from <see cref="Season"/> so the team query filter reads one column, never a join. Set from the season at creation
+    /// and moves with a reassignment. See Season.TeamId.
+    public int TeamId { get; set; }
+
     /// Derived from <see cref="Date"/> at creation (SeasonService.GetOrCreateForDateAsync), but reassignable afterwards.
     public int SeasonId { get; set; }
     public Season? Season { get; set; }

@@ -51,16 +51,19 @@ public class SeasonOrderingTests : ServiceTestBase
     [Fact]
     public async Task A_season_created_for_a_date_in_a_gap_is_clamped_to_its_neighbours()
     {
+        var teamId = EnsureScopedTeam();
         Db.Seasons.AddRange(
             new Season
             {
                 Name = "Before",
+                TeamId = teamId,
                 StartDate = new DateTime(2025, 7, 1),
                 EndDate = new DateTime(2026, 4, 30)
             },
             new Season
             {
                 Name = "After",
+                TeamId = teamId,
                 StartDate = new DateTime(2026, 7, 1),
                 EndDate = new DateTime(2027, 6, 30)
             });
@@ -96,8 +99,14 @@ public class SeasonOrderingTests : ServiceTestBase
     /// Straight to the database: going through CreateAsync would enforce the gapless rule, which is not what these tests are about.
     private async Task<Dictionary<int, Season>> SeedSeasonsAsync(params int[] startYears)
     {
+        var teamId = EnsureScopedTeam();
         var seasons = startYears
-            .Select(year => Season.CreateFor(new DateTime(year, Season.StartMonth, 1)))
+            .Select(year =>
+            {
+                var season = Season.CreateFor(new DateTime(year, Season.StartMonth, 1));
+                season.TeamId = teamId;
+                return season;
+            })
             .ToList();
 
         Db.Seasons.AddRange(seasons);

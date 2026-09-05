@@ -8,11 +8,15 @@ public abstract class LiveMatchTestBase : ServiceTestBase
     /// A 60-minute game in halves with both periods laid out and a line-up on the pitch.
     protected async Task<Game> SeedGameAsync(GameSplitType split = GameSplitType.Halves)
     {
+        var teamId = EnsureScopedTeam();
+        var clubId = CurrentTeam.ClubId!.Value;
+
         var season = Season.CreateFor(KickOff);
+        season.TeamId = teamId;
         Db.Seasons.Add(season);
 
         var players = Enumerable.Range(1, 4)
-            .Select(i => new Player { FirstName = $"P{i}", ShirtNumber = i, PreferredPosition = PlayerPosition.CM })
+            .Select(i => new Player { FirstName = $"P{i}", ClubId = clubId, ShirtNumber = i, PreferredPosition = PlayerPosition.CM })
             .ToList();
         Db.Players.AddRange(players);
         await Db.SaveChangesAsync();
@@ -21,6 +25,7 @@ public abstract class LiveMatchTestBase : ServiceTestBase
         {
             Opponent = "Opponent",
             Date = KickOff.Date,
+            TeamId = teamId,
             SeasonId = season.Id,
             SplitType = split,
             GameDurationMinutes = 60

@@ -21,6 +21,13 @@ internal sealed class GameConfiguration : IEntityTypeConfiguration<Game>
         entity.Property(g => g.InjuredPlayerIds).HasCsvListConversion();
         entity.Property(g => g.GuestPlayerIds).HasCsvListConversion();
 
+        // Restrict, as Season -> Game: the denormalised team FK must not give a team delete a second, silent path through the season's
+        // games. Id only, no navigation, like AppUser -> Team.
+        entity.HasOne<Team>()
+            .WithMany()
+            .HasForeignKey(g => g.TeamId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         entity.HasMany(g => g.Periods)
             .WithOne(p => p.Game)
             .HasForeignKey(p => p.GameId)

@@ -46,7 +46,9 @@ public class DatabaseSafetyTests : IDisposable
         await using (var db = Open())
         {
             await db.Database.MigrateAsync();
-            db.Players.Add(new Core.Models.Player { FirstName = "Backed up", ShirtNumber = 7 });
+            var club = db.Clubs.Add(new Core.Models.Club { Name = "GJS" }).Entity;
+            await db.SaveChangesAsync();
+            db.Players.Add(new Core.Models.Player { FirstName = "Backed up", ClubId = club.Id, ShirtNumber = 7 });
             await db.SaveChangesAsync();
         }
         await using (var db = Open())
@@ -135,7 +137,9 @@ public class DatabaseSafetyTests : IDisposable
         await using (var db = Open())
         {
             await db.Database.MigrateAsync();
-            db.Players.Add(new Core.Models.Player { FirstName = "Survives", ShirtNumber = 9 });
+            var club = db.Clubs.Add(new Core.Models.Club { Name = "GJS" }).Entity;
+            await db.SaveChangesAsync();
+            db.Players.Add(new Core.Models.Player { FirstName = "Survives", ClubId = club.Id, ShirtNumber = 9 });
             await db.SaveChangesAsync();
         }
         await using (var db = Open())

@@ -65,6 +65,13 @@ try
                 x => x.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery))
             .AddInterceptors(sp.GetRequiredService<StatsCacheInvalidator>()));
 
+    // The scoped factory stamps the team and club in scope onto every context it makes, so AppDbContext's query filters scope every read
+    // by default — a new query is team-safe without remembering to say so. The raw factory makes an unstamped context; only CurrentTeam
+    // (which must resolve the team without asking itself) and the per-team boot steps take it. Registered after the line above so the
+    // scoped one wins for IDbContextFactory<AppDbContext>.
+    builder.Services.AddSingleton<IRawDbContextFactory, RawDbContextFactory>();
+    builder.Services.AddScoped<IDbContextFactory<AppDbContext>, TeamScopedDbContextFactory>();
+
     builder.Services.AddSingleton(TimeProvider.System);
 
     builder.Services.AddMemoryCache();
@@ -76,7 +83,7 @@ try
     // The team the write guard asks about, resolved from the cookie once per scope. Registered by hand rather than by type because the
     // cookie is the host's to read — Core takes the id, not an HTTP dependency.
     builder.Services.AddScoped<ICurrentTeam>(sp => new CurrentTeam(
-        sp.GetRequiredService<IDbContextFactory<AppDbContext>>(),
+        sp.GetRequiredService<IRawDbContextFactory>(),
         TeamPreference.Parse(sp.GetRequiredService<RequestContext>().TeamCookie)));
 
     builder.Services.AddScoped<PlayerService>();
@@ -193,8 +200,9 @@ try
 
     using (var scope = app.Services.CreateScope())
     {
-        var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>();
-        await using var db = await dbFactory.CreateDbContextAsync();
+        // The raw factory, not the team-scoped one: this context runs before MigrateAsync creates the Teams table, and the scoped factory
+        // resolves a team by querying Teams — which would throw "no such table" on a fresh database's first boot.
+        await using var db = scope.ServiceProvider.GetRequiredService<IRawDbContextFactory>().CreateDbContext();
 
         // Snapshot first and refuse to migrate if that fails: these migrations run unattended and some are one-way, so a container that
         // will not start beats a season of lineups rewritten with no way back. See docs/deployment.md.
@@ -223,13 +231,14 @@ try
         // Repairs a database old enough that the migration's backfill found no team to put its admins on
         await teamService.EnsureAdminsHaveTeamAsync();
 
-        // A fresh install has no games for the migration's backfill to derive seasons from
+        // A fresh install has no games for the migration's backfill to derive seasons from, and every team needs one — not only the one
+        // the boot scope resolves from an absent cookie
         var seasonService = scope.ServiceProvider.GetRequiredService<SeasonService>();
-        await seasonService.EnsureCurrentSeasonAsync();
+        await seasonService.EnsureEveryTeamHasCurrentSeasonAsync();
 
         // Repairs databases written before gaps were rejected — a hole between two seasons leaves
         // every date inside it belonging to no season at all
-        await seasonService.CloseSeasonGapsAsync();
+        await seasonService.CloseSeasonGapsForEveryTeamAsync();
     }
 
     // /health is excluded because a self-ping that reset its own clock would keep the machine awake forever. See KeepAlivePingService.

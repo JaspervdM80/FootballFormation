@@ -20,6 +20,13 @@ internal sealed class SeasonSquadMemberConfiguration : IEntityTypeConfiguration<
             .HasForeignKey(m => m.PlayerId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // Restrict, unlike the two cascades above: those follow a season or a person being removed, but the denormalised team FK must not
+        // give a team delete a silent third path.
+        entity.HasOne<Team>()
+            .WithMany()
+            .HasForeignKey(m => m.TeamId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // One row per player per season. SeasonSquadService refuses duplicates with a readable
         // message; this is the net underneath it.
         entity.HasIndex(m => new { m.SeasonId, m.PlayerId }).IsUnique();

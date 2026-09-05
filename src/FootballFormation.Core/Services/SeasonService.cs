@@ -2,11 +2,13 @@ namespace FootballFormation.Core.Services;
 
 public class SeasonService(
     IDbContextFactory<AppDbContext> dbFactory,
+    IRawDbContextFactory rawDbFactory,
     TimeProvider time,
     ICurrentUser currentUser,
     ILogger<SeasonService> logger)
 {
-    /// Newest first — the season picker and the current-season fallbacks rely on it.
+    /// Newest first, and only the team in scope — the query filter does the scoping, and the season picker and the current-season
+    /// fallbacks rely on the order.
     public Task<Result<List<Season>>> GetAllAsync(CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "load seasons", cancellationToken, async () =>
         {
@@ -51,9 +53,10 @@ public class SeasonService(
             if (lookup.Value is not null) return Result.Success(lookup.Value);
 
             var season = Season.CreateFor(day);
+            season.TeamId = db.CurrentTeamId!.Value;
 
             // CreateFor always returns a full July–June window, so a date in a narrower gap would overlap its neighbours. Clamping means
-            // auto-creation can only ever fill a hole, never straddle one.
+            // auto-creation can only ever fill a hole, never straddle one. The neighbours are this team's — the filter scopes them.
             var existing = (await db.Seasons.AsNoTracking().ToListAsync(cancellationToken)).OldestFirst();
 
             var previous = existing.Where(s => s.EndDate.Date < day).MaxBy(s => s.EndDate.Date);
@@ -79,6 +82,9 @@ public class SeasonService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
+            // The team in scope, not the caller's word for it: a season the admin cannot then see would be one they created for another team.
+            season.TeamId = db.CurrentTeamId!.Value;
+
             var validation = await ValidateAsync(db, season, cancellationToken);
             if (validation.IsFailure) return validation.To<Season>();
 
@@ -95,6 +101,13 @@ public class SeasonService(
         ServiceOperation.RunAdminAsync(currentUser, logger, "update season", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            // A detached Update writes by key and never consults the query filter, so confirm the season is the scope's before it can
+            // rewrite another team's dates. Setting TeamId back keeps the row on its team whatever the caller sent.
+            if (!await db.Seasons.AnyAsync(s => s.Id == season.Id, cancellationToken))
+                return SeasonNotInScope(season.Id);
+
+            season.TeamId = db.CurrentTeamId!.Value;
 
             var validation = await ValidateAsync(db, season, cancellationToken);
             if (validation.IsFailure) return validation;
@@ -113,7 +126,8 @@ public class SeasonService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var season = await db.Seasons.FindAsync([id], cancellationToken);
+            // FirstOrDefault, not Find: Find bypasses the query filter, so it would fetch another team's season by id.
+            var season = await db.Seasons.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
             if (season is null)
             {
                 logger.LogWarning("Cannot delete season {SeasonId}: not found", id);
@@ -161,6 +175,7 @@ public class SeasonService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
+            // Only this team's seasons — the filter scopes the list, so the current-season flag is one row per team, not one per app.
             var seasons = await db.Seasons.ToListAsync(cancellationToken);
             var target = seasons.FirstOrDefault(s => s.Id == id);
 
@@ -179,64 +194,122 @@ public class SeasonService(
         });
 
     /// A repair for databases written before ValidateAsync checked for gaps, not a rule: it only ever moves a start date earlier, and
-    /// never changes which season a game belongs to, since <see cref="Game.SeasonId"/> lives on the game.
+    /// never changes which season a game belongs to, since <see cref="Game.SeasonId"/> lives on the game. Scoped to the team in scope.
     public Task<Result<int>> CloseSeasonGapsAsync(CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "close season gaps", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+            return Result.Success(await CloseGapsInAsync(db, cancellationToken));
+        });
 
-            var seasons = (await db.Seasons.ToListAsync(cancellationToken)).OldestFirst();
+    /// The boot form: every team's gaps, each closed within its own chain of seasons. Two teams sharing a calendar is fine; two teams
+    /// with different windows must not have the space between them read as one team's gap.
+    public Task<Result<int>> CloseSeasonGapsForEveryTeamAsync(CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "close season gaps", cancellationToken, async () =>
+        {
             var closed = 0;
-
-            for (int i = 1; i < seasons.Count; i++)
+            foreach (var teamId in await AllTeamIdsAsync(cancellationToken))
             {
-                var previous = seasons[i - 1];
-                var season = seasons[i];
-                var expectedStart = previous.EndDate.Date.AddDays(1);
-
-                // Only a genuine gap. An overlap is a different problem and is left well alone.
-                if (season.StartDate.Date <= expectedStart) continue;
-
-                logger.LogWarning(
-                    "Closing gap before season {SeasonName}: start moved from {Old} to {New}",
-                    season.Name, season.StartDate.ToString("yyyy-MM-dd"), expectedStart.ToString("yyyy-MM-dd"));
-
-                season.StartDate = expectedStart;
-                closed++;
+                await using var db = StampedContextFor(teamId);
+                closed += await CloseGapsInAsync(db, cancellationToken);
             }
 
-            if (closed > 0) await db.SaveChangesAsync(cancellationToken);
             return Result.Success(closed);
         });
 
-    /// Runs every boot so a fresh install — whose migration backfill found no games to derive seasons from — still has one to fall back on.
+    /// Runs every boot so a fresh install — whose migration backfill found no games to derive seasons from — still has one to fall back
+    /// on, for every team, not only the one the boot scope happens to resolve.
+    public Task<Result<int>> EnsureEveryTeamHasCurrentSeasonAsync(CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "prepare seasons", cancellationToken, async () =>
+        {
+            var teamIds = await AllTeamIdsAsync(cancellationToken);
+            foreach (var teamId in teamIds)
+            {
+                await using var db = StampedContextFor(teamId);
+                await EnsureCurrentInAsync(db, cancellationToken);
+            }
+
+            return Result.Success(teamIds.Count);
+        });
+
+    /// The team-in-scope form, for tests and any caller that already has one team's context.
     public Task<Result<Season>> EnsureCurrentSeasonAsync(CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "prepare seasons", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+            return Result.Success(await EnsureCurrentInAsync(db, cancellationToken));
+        });
 
-            var current = await db.Seasons.FirstOrDefaultAsync(s => s.IsCurrent, cancellationToken);
-            if (current is not null) return Result.Success(current);
+    private async Task<int> CloseGapsInAsync(AppDbContext db, CancellationToken cancellationToken)
+    {
+        var seasons = (await db.Seasons.ToListAsync(cancellationToken)).OldestFirst();
+        var closed = 0;
 
-            var newest = (await db.Seasons.ToListAsync(cancellationToken)).NewestFirst().FirstOrDefault();
-            if (newest is not null)
-            {
-                newest.IsCurrent = true;
-                await db.SaveChangesAsync(cancellationToken);
+        for (int i = 1; i < seasons.Count; i++)
+        {
+            var previous = seasons[i - 1];
+            var season = seasons[i];
+            var expectedStart = previous.EndDate.Date.AddDays(1);
 
-                logger.LogInformation("Marked season {SeasonName} as current (ID: {SeasonId})",
-                    newest.Name, newest.Id);
-                return Result.Success(newest);
-            }
+            // Only a genuine gap. An overlap is a different problem and is left well alone.
+            if (season.StartDate.Date <= expectedStart) continue;
 
-            var season = Season.CreateFor(time.GetLocalNow().Date);
-            season.IsCurrent = true;
-            db.Seasons.Add(season);
+            logger.LogWarning(
+                "Closing gap before season {SeasonName}: start moved from {Old} to {New}",
+                season.Name, season.StartDate.ToString("yyyy-MM-dd"), expectedStart.ToString("yyyy-MM-dd"));
+
+            season.StartDate = expectedStart;
+            closed++;
+        }
+
+        if (closed > 0) await db.SaveChangesAsync(cancellationToken);
+        return closed;
+    }
+
+    private async Task<Season> EnsureCurrentInAsync(AppDbContext db, CancellationToken cancellationToken)
+    {
+        var current = await db.Seasons.FirstOrDefaultAsync(s => s.IsCurrent, cancellationToken);
+        if (current is not null) return current;
+
+        var newest = (await db.Seasons.ToListAsync(cancellationToken)).NewestFirst().FirstOrDefault();
+        if (newest is not null)
+        {
+            newest.IsCurrent = true;
             await db.SaveChangesAsync(cancellationToken);
 
-            logger.LogInformation("Seeded first season {SeasonName} (ID: {SeasonId})", season.Name, season.Id);
-            return Result.Success(season);
-        });
+            logger.LogInformation("Marked season {SeasonName} as current (ID: {SeasonId})", newest.Name, newest.Id);
+            return newest;
+        }
+
+        var season = Season.CreateFor(time.GetLocalNow().Date);
+        season.TeamId = db.CurrentTeamId!.Value;
+        season.IsCurrent = true;
+        db.Seasons.Add(season);
+        await db.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Seeded first season {SeasonName} (ID: {SeasonId})", season.Name, season.Id);
+        return season;
+    }
+
+    /// A raw context stamped to one team by hand — the boot loops have no cookie to resolve a current team from, so they name each one.
+    private AppDbContext StampedContextFor(int teamId)
+    {
+        var db = rawDbFactory.CreateDbContext();
+        db.CurrentTeamId = teamId;
+        return db;
+    }
+
+    private async Task<List<int>> AllTeamIdsAsync(CancellationToken cancellationToken)
+    {
+        await using var db = rawDbFactory.CreateDbContext();
+        return await db.Teams.AsNoTracking().OrderBy(t => t.Id).Select(t => t.Id).ToListAsync(cancellationToken);
+    }
+
+    private Result SeasonNotInScope(int id)
+    {
+        logger.LogWarning("Cannot update season {SeasonId}: not in scope", id);
+        return Result.Failure("Season not found");
+    }
 
     /// Rules the dialog deliberately does not enforce, so any caller gets them.
     private async Task<Result> ValidateAsync(AppDbContext db, Season season, CancellationToken cancellationToken)
@@ -254,7 +327,7 @@ public class SeasonService(
         }
 
         // AsNoTracking so validating a season the caller is about to Update() cannot pull a second instance of the row into the change
-        // tracker. Compared in memory — see SeasonOrdering.
+        // tracker. Compared in memory — see SeasonOrdering. The filter scopes it to this team's other seasons.
         var others = (await db.Seasons
             .AsNoTracking()
             .Where(s => s.Id != season.Id)

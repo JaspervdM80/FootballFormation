@@ -3,6 +3,11 @@ namespace FootballFormation.Core.Models;
 public class Player
 {
     public int Id { get; set; }
+
+    /// A player belongs to the club, not a team: a season's squad draws from this pool, so a girl who moves between the club's teams keeps
+    /// one history. The club query filter reads this column. See SeasonSquadMember.
+    public int ClubId { get; set; }
+
     public required string FirstName { get; set; }
     public string? Surname { get; set; }
     public int? ShirtNumber { get; set; }

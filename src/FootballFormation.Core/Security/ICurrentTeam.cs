@@ -6,4 +6,8 @@ public interface ICurrentTeam
 {
     /// Null only while no team exists at all, which is true of a database that has not been seeded yet.
     Task<int?> GetIdAsync();
+
+    /// The club the team in scope belongs to — the pool a season's squad draws from, and what the player query filter reads. Null on the
+    /// same unseeded database <see cref="GetIdAsync"/> answers null for.
+    Task<int?> GetClubIdAsync();
 }

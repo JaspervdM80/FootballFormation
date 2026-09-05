@@ -6,6 +6,9 @@ public class MatchPreferences
 {
     public int Id { get; set; }
 
+    /// Denormalised from the season so the team query filter reads one column, never a join. Set from the season at creation. See Season.TeamId.
+    public int TeamId { get; set; }
+
     /// Unique: exactly one row per season, created on first read by MatchPreferencesService.GetAsync.
     public int SeasonId { get; set; }
     public Season? Season { get; set; }
@@ -25,9 +28,10 @@ public class MatchPreferences
     /// How a season without a row of its own is seeded, so it inherits last year's settings instead of the hardcoded ones. The training
     /// period is deliberately left behind, unlike the training days: a date belongs to one season, and last year's opening night is not
     /// a sensible guess at this year's.
-    public MatchPreferences CopyFor(int seasonId) => new()
+    public MatchPreferences CopyFor(int seasonId, int teamId) => new()
     {
         SeasonId = seasonId,
+        TeamId = teamId,
         GameDurationMinutes = GameDurationMinutes,
         DefaultSplitType = DefaultSplitType,
         DefaultFormation = DefaultFormation,

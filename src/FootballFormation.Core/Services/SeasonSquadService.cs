@@ -67,14 +67,16 @@ public class SeasonSquadService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var season = await db.Seasons.FindAsync([seasonId], cancellationToken);
+            // FirstOrDefault, not Find, on both: Find bypasses the query filter, so it would reach another team's season or another
+            // club's player by id.
+            var season = await db.Seasons.FirstOrDefaultAsync(s => s.Id == seasonId, cancellationToken);
             if (season is null)
             {
                 logger.LogWarning("Cannot add player {PlayerId}: season {SeasonId} not found", playerId, seasonId);
                 return Result.Failure<SeasonSquadMember>("Season not found");
             }
 
-            var player = await db.Players.FindAsync([playerId], cancellationToken);
+            var player = await db.Players.FirstOrDefaultAsync(p => p.Id == playerId, cancellationToken);
             if (player is null)
             {
                 logger.LogWarning("Cannot add player {PlayerId} to season {SeasonName}: player not found",
@@ -94,7 +96,7 @@ public class SeasonSquadService(
 
             var member = new SeasonSquadMember
             {
-                SeasonId = seasonId, PlayerId = playerId, IsGuest = isGuest, IsInjured = isInjured
+                SeasonId = seasonId, TeamId = season.TeamId, PlayerId = playerId, IsGuest = isGuest, IsInjured = isInjured
             };
             db.SeasonSquadMembers.Add(member);
             await db.SaveChangesAsync(cancellationToken);
@@ -205,8 +207,9 @@ public class SeasonSquadService(
                 return Result.Failure<int>("Cannot copy a squad onto itself");
             }
 
-            var source = await db.Seasons.FindAsync([fromSeasonId], cancellationToken);
-            var target = await db.Seasons.FindAsync([toSeasonId], cancellationToken);
+            // FirstOrDefault, not Find: Find bypasses the query filter, so copying to or from another team's season stays impossible.
+            var source = await db.Seasons.FirstOrDefaultAsync(s => s.Id == fromSeasonId, cancellationToken);
+            var target = await db.Seasons.FirstOrDefaultAsync(s => s.Id == toSeasonId, cancellationToken);
             if (source is null || target is null)
             {
                 logger.LogWarning("Cannot copy squad {From} -> {To}: season not found", fromSeasonId, toSeasonId);
@@ -240,6 +243,7 @@ public class SeasonSquadService(
                 .Select(m => new SeasonSquadMember
                 {
                     SeasonId = toSeasonId,
+                    TeamId = target.TeamId,
                     PlayerId = m.PlayerId,
                     IsGuest = m.IsGuest
                 })
@@ -261,7 +265,7 @@ public class SeasonSquadService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var season = await db.Seasons.FindAsync([seasonId], cancellationToken);
+            var season = await db.Seasons.FirstOrDefaultAsync(s => s.Id == seasonId, cancellationToken);
             if (season is null)
             {
                 logger.LogWarning("Cannot find the previous season: season {SeasonId} not found", seasonId);

@@ -39,6 +39,15 @@ public class TrainingService(
                 training.SeasonId = seasonResult.Value!.Id;
             }
 
+            // Denormalised from the season the session hangs off, read through the filter — so another team's season is refused rather
+            // than producing a training whose TeamId and season disagree.
+            var teamId = await db.Seasons
+                .Where(s => s.Id == training.SeasonId)
+                .Select(s => (int?)s.TeamId)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (teamId is null) return Result.Failure<Training>("Season not found");
+            training.TeamId = teamId.Value;
+
             ClearAbsencesIfCancelled(training);
 
             db.Trainings.Add(training);
@@ -53,6 +62,15 @@ public class TrainingService(
         ServiceOperation.RunAdminAsync(currentUser, logger, "update the training", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            // A detached write goes by key and never consults the query filter, so confirm the session is the scope's first.
+            if (!await db.Trainings.AnyAsync(t => t.Id == training.Id, cancellationToken))
+            {
+                logger.LogWarning("Cannot update training {TrainingId}: not in scope", training.Id);
+                return Result.Failure("Training not found");
+            }
+
+            training.TeamId = db.CurrentTeamId!.Value;
 
             ClearAbsencesIfCancelled(training);
 
@@ -70,7 +88,8 @@ public class TrainingService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var training = await db.Trainings.FindAsync([id], cancellationToken);
+            // FirstOrDefault, not Find: Find bypasses the query filter, so it would fetch another team's session by id.
+            var training = await db.Trainings.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
             if (training is null)
             {
                 logger.LogWarning("Cannot delete training {TrainingId}: not found", id);

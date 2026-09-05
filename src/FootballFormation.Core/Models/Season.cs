@@ -2,11 +2,15 @@ namespace FootballFormation.Core.Models;
 
 public class Season
 {
-    /// The KNVB amateur season, 1 July – 30 June. Gapless windows are what let <see cref="Game.SeasonId"/> be required: every date maps
-    /// to exactly one season, so a game can never end up orphaned.
+    /// The KNVB amateur season, 1 July – 30 June. Gapless windows within a team are what let <see cref="Game.SeasonId"/> be required:
+    /// every date maps to exactly one of that team's seasons, so a game can never end up orphaned.
     public const int StartMonth = 7;
 
     public int Id { get; set; }
+
+    /// The team this season belongs to, and the root every piece of season-scoped data reaches its team through — Game, Training,
+    /// MatchPreferences and the squad each carry a copy so the team query filter can read one column without a join back to here.
+    public int TeamId { get; set; }
 
     /// Derived by <see cref="NameForStartYear"/> at creation but editable, so a club can write "2025/26 (najaar)".
     public required string Name { get; set; }
@@ -14,7 +18,7 @@ public class Season
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
 
-    /// Exactly one row carries this, and SeasonService.SetCurrentAsync owns that invariant.
+    /// Exactly one row per team carries this, and SeasonService.SetCurrentAsync owns that invariant.
     public bool IsCurrent { get; set; }
 
     public List<Game> Games { get; set; } = [];

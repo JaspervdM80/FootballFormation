@@ -215,6 +215,7 @@ public class SeasonServiceTests : ServiceTestBase
         Db.Seasons.Add(new Season
         {
             Name = "Gapped",
+            TeamId = first.TeamId,
             StartDate = first.EndDate.AddDays(30),
             EndDate = first.EndDate.AddYears(1),
             IsCurrent = true
@@ -246,6 +247,8 @@ public class SeasonServiceTests : ServiceTestBase
     [Fact]
     public async Task An_empty_database_gets_a_current_season()
     {
+        // Empty of seasons, not of teams: a deployment always has a team by the time this boot step runs.
+        SeedTeam();
         var season = await Seasons.EnsureCurrentSeasonAsync();
 
         Assert.True(season.IsSuccess);
@@ -259,6 +262,7 @@ public class SeasonServiceTests : ServiceTestBase
         Db.Seasons.Add(new Season
         {
             Name = "Newer",
+            TeamId = older.TeamId,
             StartDate = older.EndDate.AddDays(1),
             EndDate = older.EndDate.AddYears(1),
             IsCurrent = false
