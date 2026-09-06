@@ -126,6 +126,19 @@
                     {
                         <button class="goal-remove" title="@L["Remove"]" @onclick="() => RemoveGoal(goalToRemove)">×</button>
                     }
+                    else if (entry.Substitution is { } subToRemove)
+                    {
+                        @* This also drops any injury recorded with it — one tap made both. *@
+                        <MudIconButton Icon="@Icons.Material.Filled.Undo" Size="Size.Small"
+                                       title="@L["Undo"]"
+                                       OnClick="() => RemoveSubstitution(subToRemove)" />
+                    }
+                    else if (entry.Injury is { } injuryToRemove)
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.Undo" Size="Size.Small"
+                                       title="@L["Undo"]"
+                                       OnClick="() => RemoveInjury(injuryToRemove)" />
+                    }
                 </AdminActions>
             </MatchTimeline>
         }
