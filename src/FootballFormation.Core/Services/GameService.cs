@@ -59,6 +59,8 @@ public class GameService(
                 .AsNoTracking()
                 .WithNamedLineups()
                 .WithGoalsAndScorers()
+                .WithSubstitutions()
+                .WithInjuries()
                 .FirstOrDefaultAsync(g => g.Id == id, cancellationToken);
 
             if (game is null)

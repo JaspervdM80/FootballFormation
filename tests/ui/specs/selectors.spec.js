@@ -38,7 +38,7 @@ const SELECTORS = {
                       'live-timeline-toggle', 'live-timeline',
                       'live-minutes-card', 'card-label', 'planned-row'],
   'the result page': ['result-comments', 'comment-entry', 'comment-visibility', 'comment-add-row',
-                      'goal-entry', 'own-goal', 'own-goal-tag', 'og-check', 'add-row',
+                      'live-event', 'live-event-against', 'live-event-tag', 'og-check', 'add-row',
                       'btn-add-goal', 'score-big-input', 'score-away', 'stat-tile', 'stat-value'],
   'season and squad management': ['list-row', 'list-row-meta', 'players-table', 'badge-guest',
                                   'season-menu-item', 'training-row'],

@@ -1,4 +1,4 @@
-﻿@page "/stats"
+@page "/stats"
 @inherits SeasonAwarePage
 
 <PageTitle>@L["Season statistics"]</PageTitle>
@@ -83,7 +83,7 @@
                             }
                             @p.Player.DisplayName
                         </span>
-                        <span class="g-num g-hit">@p.Goals</span>
+                        <span class="g-num @(p.Goals > 0 ? "g-hit" : "")">@p.Goals</span>
                         <span class="g-num @(p.Assists > 0 ? "g-hit" : "")">@p.Assists</span>
                     </a>
                 }

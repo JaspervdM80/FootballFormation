@@ -93,86 +93,7 @@
     padding-top: 24px;
 }
 
-/* Goal timeline */
-.goal-timeline {
-    position: relative;
-    padding-left: 24px;
-    margin-bottom: 8px;
-}
-
-.goal-timeline::before {
-    content: '';
-    position: absolute;
-    left: 8px;
-    top: 4px;
-    bottom: 4px;
-    width: 1px;
-    background: color-mix(in srgb, var(--club-primary-bright) 15%, transparent);
-}
-
-.goal-entry {
-    position: relative;
-    padding: 10px 12px 10px 16px;
-    margin-bottom: 8px;
-    border-radius: 10px;
-    background: color-mix(in srgb, var(--ink) 2%, transparent);
-    transition: background 0.15s;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.goal-entry:hover {
-    background: color-mix(in srgb, var(--ink) 4%, transparent);
-}
-
-.goal-entry::before {
-    content: '';
-    position: absolute;
-    left: -20px;
-    top: 50%;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--club-primary-deep);
-    border: 2px solid var(--surface-page);
-    transform: translateY(-50%);
-}
-
-.goal-entry.own-goal::before {
-    background: var(--color-danger);
-}
-
-.goal-time {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: var(--club-primary-bright);
-    min-width: 28px;
-}
-
-.goal-info {
-    flex: 1;
-}
-
-.goal-player {
-    font-weight: 600;
-    font-size: 0.85rem;
-    color: var(--ink);
-}
-
-.goal-assist {
-    font-size: 0.7rem;
-    color: var(--ink-subtle);
-    margin-top: 2px;
-}
-
-.own-goal-tag {
-    color: var(--color-danger);
-    font-size: 0.7rem;
-    font-weight: 600;
-    margin-left: 4px;
-}
-
+/* The goal rows moved to the shared MatchTimeline component; .goal-remove stays for the × on a goal row and on a comment. */
 .goal-remove {
     width: 32px;
     height: 32px;
@@ -295,10 +216,7 @@
 
 /* Comments */
 
-/* Full width on its own row: comment bodies are prose, and 260px is a column for a scoreboard. */
-.result-comments {
-    grid-column: 1 / -1;
-}
+/* .result-comments (its full-width span) is in app.css: it lands on a MudPaper, whose root carries no scope attribute for this file. */
 
 .comment-list {
     display: flex;

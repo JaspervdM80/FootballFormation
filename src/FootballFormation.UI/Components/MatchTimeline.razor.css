@@ -1,0 +1,85 @@
+/* The card heading this list sits under, and the "show substitutions" toggle in it, are laid out by the host page in app.css: the toggle
+   is a MudBlazor component, and scoped CSS never reaches a child component's root element. */
+.live-timeline {
+    display: flex;
+    flex-direction: column;
+}
+
+.live-event {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.live-event:last-child {
+    border-bottom: none;
+}
+
+/* Half time: a dashed rule with the words sitting in it, so the two halves read apart at a glance without the break looking like another
+   event. The row above it keeps its own solid rule, which is why nothing here draws a top border. */
+.live-event-break {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+}
+
+.live-event-break::before,
+.live-event-break::after {
+    content: "";
+    flex: 1;
+    border-top: 1px dashed color-mix(in srgb, var(--ink) 25%, transparent);
+}
+
+.live-event-min {
+    min-width: 34px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-muted);
+}
+
+.live-event-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.live-event-main {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--ink);
+}
+
+.live-event-sub {
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+}
+
+/* The scoreline a goal produced, parked on the right where every row lines its digits up. */
+.live-event-score {
+    flex: none;
+    font-size: 0.85rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-muted);
+}
+
+.live-event-tag {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--color-danger);
+}
+
+/* .live-event-injury is in app.css, not here: it paints a MudIcon, whose root element carries no scope attribute for this file to match. */
+
+/* Anything that put the ball in our net reads in the opponent's colour. */
+.live-event-against .live-event-main {
+    color: var(--color-away);
+}

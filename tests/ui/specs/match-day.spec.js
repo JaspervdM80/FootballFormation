@@ -197,6 +197,43 @@ test('the timeline can be narrowed to the goals', async ({ page }) => {
   await expect(page.locator('.live-bench')).toBeVisible();
 });
 
+test('a substitution and an injury reach the result page, where the toggle folds only the sub away', async ({ page }) => {
+  const id = await liveMatch(page, 'FC Naspel');
+
+  const chips = page.locator('.live-lineup .pitch-player');
+
+  // A substitution — somebody off the roster comes on for a player on the pitch.
+  await clickFor(chips.first(), () => expect(page.locator('.mud-dialog')).toBeVisible());
+  let dialog = await openDialog(page);
+  await chooseOption(page, dialog, 'Comes on', '#');
+  await submitDialog(page, 'Make substitution');
+  await expect(page.locator('.live-event')).toHaveCount(1);
+
+  // And an injury nobody came on for — the switch alone, no replacement, so it stands as its own row.
+  await clickFor(chips.first(), () => expect(page.locator('.mud-dialog')).toBeVisible());
+  dialog = await openDialog(page);
+  await dialog.locator('label.mud-switch', { hasText: 'Injured' }).click();
+  await submitDialog(page, 'Off injured');
+  await expect(page.locator('.live-event', { hasText: 'not replaced' })).toHaveCount(1);
+
+  await finishMatch(page);
+
+  // The finished match reads back the touchline's own list — kick-off first, and the page a parent
+  // opens to see what happened — so both the substitution and the injury have to be on it.
+  await gotoRendered(page, `/games/${id}/result`);
+  const events = page.locator('.live-event');
+  await expect(events).toHaveCount(2);
+  const injuryRow = events.filter({ hasText: 'not replaced' });
+  await expect(injuryRow.locator('.live-event-injury')).toBeVisible();
+
+  // The toggle folds the substitution away and leaves the injury — the one change nobody came on for.
+  await clickFor(
+    page.locator('.live-timeline-toggle input[type=checkbox]'),
+    () => expect(events).toHaveCount(1),
+  );
+  await expect(injuryRow).toHaveCount(1);
+});
+
 test('the timeline draws half time between the two halves', async ({ page }) => {
   await liveMatch(page, 'FC Rust');
 

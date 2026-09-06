@@ -4,13 +4,6 @@ using Microsoft.AspNetCore.Components.Authorization;
 
 namespace FootballFormation.UI.Pages;
 
-/// Sorted on <paramref name="AtSeconds"/> first: the elapsed clock runs on across the break, so a first-half stoppage entry stays above
-/// the restart without comparing scoreboard readings. <paramref name="Minute"/> is that scoreboard reading, display only.
-public record MatchEvent(
-    int AtSeconds, MatchMinute? Minute, PeriodType Half, DateTime RecordedAt, int Id,
-    GameGoal? Goal, GameSubstitution? Substitution, GameInjury? Injury = null,
-    MatchScore? Score = null, bool HalfTimeAbove = false);
-
 /// One URL for everyone: an admin runs the clock, everyone else sees the same page read-only and updating live.
 public partial class LiveMatch
 {
@@ -167,56 +160,9 @@ public partial class LiveMatch
     /// Counts only the two kinds <see cref="ShowSubstitutions"/> can hide, so an empty timeline can be told apart from a filtered one.
     private bool HasEvents => GameData is { } game && (game.Goals.Count > 0 || game.Substitutions.Count > 0);
 
-    /// Substitutions can be filtered out because heavy rotation buries the goals among them; an injury is never folded away.
-    private List<MatchEvent> Timeline
-    {
-        get
-        {
-            if (GameData is null) return [];
-
-            // Counted forwards over the whole match, then looked up per goal — this list runs newest first, so accumulating while
-            // rendering it would count down.
-            var progression = ScoreProgressionReport.Build(GameData);
-
-            var goals = GameData.Goals.Select(g =>
-            {
-                var at = MatchClockReport.ElapsedOf(GameData, g);
-                return new MatchEvent(
-                    at,
-                    MatchClockReport.MinuteOf(GameData, g),
-                    MatchClockReport.HalfOf(GameData, g.GamePeriodId, at),
-                    g.RecordedAt, g.Id, g, null, Score: progression[g.Id]);
-            });
-            IEnumerable<MatchEvent> subs = ShowSubstitutions
-                ? GameData.Substitutions.Select(s => new MatchEvent(
-                    s.AtSeconds,
-                    MatchClockReport.MinuteOf(GameData, s),
-                    MatchClockReport.HalfOf(GameData, s.GamePeriodId, s.AtSeconds),
-                    s.RecordedAt, s.Id, null, s, GameData.InjuryFor(s)))
-                : [];
-
-            // Only the injuries nobody came on for; the rest are on their substitution's line.
-            var injuries = GameData.Injuries
-                .Where(i => !GameData.WasReplaced(i))
-                .Select(i => new MatchEvent(
-                    i.AtSeconds,
-                    MatchClockReport.MinuteOf(GameData, i),
-                    MatchClockReport.HalfOf(GameData, i.GamePeriodId, i.AtSeconds),
-                    i.RecordedAt, i.Id, null, null, i));
-
-            // A goal and the sub that followed it commonly share a second, so the entry time orders them as they happened. The id then
-            // settles a double substitution, keeping the top entry the one RemoveSubstitutionAsync will undo.
-            var ordered = goals.Concat(subs).Concat(injuries)
-                .OrderByDescending(e => e.AtSeconds)
-                .ThenByDescending(e => e.RecordedAt)
-                .ThenByDescending(e => e.Id)
-                .ToList();
-
-            // Marked here rather than in the markup, which renders one entry at a time and cannot see the one above it.
-            return [.. ordered.Select((e, i) =>
-                i > 0 && ordered[i - 1].Half != e.Half ? e with { HalfTimeAbove = true } : e)];
-        }
-    }
+    /// Newest first, the way the live screen reads. Substitutions can be filtered out because heavy rotation buries the goals among them.
+    private List<MatchEvent> Timeline =>
+        GameData is null ? [] : MatchTimelineReport.Build(GameData, ShowSubstitutions, newestFirst: true);
 
     protected override async Task OnInitializedAsync()
     {
@@ -332,14 +278,6 @@ public partial class LiveMatch
         Snackbar.Report(L, await SubService.RemoveInjuryAsync(injury.Id),
             L["Injury undone"], Severity.Warning);
 
-    /// The cross wins over the swap arrows on a substitution made for an injury: what happened there was the injury.
-    private static string EventIcon(MatchEvent entry) => entry switch
-    {
-        { Goal: not null } => Icons.Material.Filled.SportsSoccer,
-        { Injury: not null } => Icons.Material.Filled.MedicalServices,
-        _ => Icons.Material.Filled.SwapHoriz
-    };
-
     private async Task OpenSubDialog(int playerId)
     {
         if (!CanSubstitute) return;
@@ -385,11 +323,6 @@ public partial class LiveMatch
             .Select(p => (Entry: p, Player: FindPlayer(p.PlayerId)))
             .Where(x => x.Player is not null)
             .Select(x => new PitchPlayer(x.Player!, x.Entry.Position))];
-
-    /// <see cref="MatchScore"/> is always ours first, so it needs the same venue flip the scoreboard above the timeline uses.
-    private string ScoreText(MatchScore score) => GameData?.IsHomeGame == false
-        ? $"{score.Them}–{score.Us}"
-        : $"{score.Us}–{score.Them}";
 
     private Player? FindPlayer(int playerId) => AllPlayers.FirstOrDefault(p => p.Id == playerId);
 

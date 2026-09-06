@@ -19,6 +19,9 @@ const PRIVATE_NOTE = 'Intern: opstelling volgende keer omgooien';
 /** The row under the goal list. It is only offered while our scoreline still has a goal unaccounted for. */
 const addGoalRow = (page) => page.locator('.add-row');
 
+/** Timeline rows that are goals: substitutions share the .live-event class, but only a goal carries a running scoreline. */
+const goalEvents = (page) => page.locator('.live-event', { has: page.locator('.live-event-score') });
+
 /**
  * The players the form will accept a goal from, in the order it lists them: MatchResult narrows the
  * squad to whoever the line-up actually involved, so who those are is a fact about the match this
@@ -46,7 +49,7 @@ async function addGoal(page, { minute, scorer, assist, ownGoal = false }) {
 
   await clickFor(
     row.locator('.btn-add-goal'),
-    () => expect(page.locator('.goal-entry', { hasText: `${minute}'` })).toHaveCount(1),
+    () => expect(page.locator('.live-event', { hasText: `${minute}'` })).toHaveCount(1),
   );
 }
 
@@ -139,16 +142,16 @@ test('an own goal is the opponent\'s, and does not tick one of ours off the list
   const [ourScorer, theirGift] = (await scorerOptions(page).allInnerTexts()).slice(1);
   await addGoal(page, { minute: 20, scorer: 2, ownGoal: true });
 
-  const own = page.locator('.goal-entry', { hasText: nameOf(theirGift) });
-  await expect(own).toHaveClass(/own-goal/);
-  await expect(own.locator('.own-goal-tag')).toHaveText('(OG)');
+  const own = page.locator('.live-event', { hasText: nameOf(theirGift) });
+  await expect(own).toHaveClass(/live-event-against/);
+  await expect(own.locator('.live-event-tag')).toHaveText('(OG)');
 
   // The form is still asking, because our one goal is still unattributed — an own goal counted for
   // us would close it here and leave a scorer nobody could name.
   await expect(addGoalRow(page)).toBeVisible();
 
   await addGoal(page, { minute: 30, scorer: 1 });
-  await expect(page.locator('.goal-entry')).toHaveCount(2);
+  await expect(goalEvents(page)).toHaveCount(2);
   await expect(addGoalRow(page)).toHaveCount(0);
 
   // And the summary shared into the group chat lists ours only: the own goal is already in the

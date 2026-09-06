@@ -104,39 +104,30 @@
     </MudPaper>
 
     <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">
-        <div class="card-label">@L["Goals"] (@GameData.Goals.Count)</div>
+        @* The goals, and the substitutions and injuries alongside them — the same list the live screen shows, read kick-off first here. *@
+        <div class="live-card-head">
+            <div class="card-label">@L["Timeline"]</div>
+            @if (HasSubstitutions)
+            {
+                <div class="live-timeline-toggle">
+                    <MudCheckBox T="bool" @bind-Value="ShowSubstitutions" Dense="true" Size="Size.Small" Color="Color.Primary">
+                        @L["Show substitutions"]
+                    </MudCheckBox>
+                </div>
+            }
+        </div>
 
-        @if (GameData.Goals.Count > 0)
+        @if (Timeline.Count > 0)
         {
-            <div class="goal-timeline">
-                @* Ordered on the elapsed match clock, which runs on across the break, so a goal in first-half stoppage keeps its place
-                   above the restart. A minute typed in here is a scoreboard reading, converted by MatchClockReport.ElapsedOf. *@
-                @foreach (var goal in GameData.Goals.OrderBy(g => MatchClockReport.ElapsedOf(GameData, g)))
-                {
-                    @* Own goals and opponent goals both count against us, so they share the styling. *@
-                    <div class="goal-entry @(goal.IsOwnGoal || goal.IsOpponentGoal ? "own-goal" : "")">
-                        <span class="goal-time">
-                            @(MatchClockReport.MinuteOf(GameData, goal) is { } at ? $"{at}'" : "—")
-                        </span>
-                        <div class="goal-info">
-                            <div class="goal-player">
-                                @(goal.Scorer?.DisplayName ?? GameData.Opponent)
-                                @if (goal.IsOwnGoal)
-                                {
-                                    <span class="own-goal-tag">(@L["OG"])</span>
-                                }
-                            </div>
-                            @if (goal.Assister is not null)
-                            {
-                                <div class="goal-assist">↳ @goal.Assister.DisplayName</div>
-                            }
-                        </div>
-                        <AuthorizeView Roles="@AppRoles.Admin">
-                            <button class="goal-remove" @onclick="() => RemoveGoal(goal)">×</button>
-                        </AuthorizeView>
-                    </div>
-                }
-            </div>
+            <MatchTimeline Events="Timeline" Opponent="@GameData.Opponent" IsHomeGame="GameData.IsHomeGame"
+                           ResolveName="PlayerName" ShowScore="true">
+                <AdminActions Context="entry">
+                    @if (entry.Goal is { } goalToRemove)
+                    {
+                        <button class="goal-remove" title="@L["Remove"]" @onclick="() => RemoveGoal(goalToRemove)">×</button>
+                    }
+                </AdminActions>
+            </MatchTimeline>
         }
         else
         {

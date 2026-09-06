@@ -68,6 +68,19 @@ public partial class MatchResult
         }
     }
 
+    /// Default on: the coach opening a finished match wants the changes in view. Per page and not stored — a glance-vs-detail choice.
+    private bool ShowSubstitutions { get; set; } = true;
+
+    /// The toggle only earns its place when there is something for it to hide; an unreplaced injury shows either way.
+    private bool HasSubstitutions => GameData?.Substitutions.Count > 0;
+
+    /// Kick-off first here, the way a finished match reads back — the opposite of the live screen.
+    private List<MatchEvent> Timeline =>
+        GameData is null ? [] : MatchTimelineReport.Build(GameData, ShowSubstitutions, newestFirst: false);
+
+    private string PlayerName(int playerId) =>
+        AllPlayers?.FirstOrDefault(p => p.Id == playerId)?.ShortName ?? L["Player {0}", playerId].Value;
+
     private List<Player> SquadPlayers
     {
         get
