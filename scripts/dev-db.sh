@@ -23,6 +23,8 @@ else
   DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/FootballFormation"
 fi
 
+echo "Using $DATA_DIR for the development database."
+
 DB="$DATA_DIR/footballformation.db"
 BACKUPS="$DATA_DIR/backups"
 mkdir -p "$BACKUPS"
