@@ -51,9 +51,16 @@ public partial class LiveMatch
 
     private string AdditionalDisplay => Mmss(Clock.AdditionalSeconds);
 
-    private GamePeriod? DisplayHalf => GameData?.CurrentOrLastHalf();
+    /// At the break the pitch shows the half about to be played, so it is the one set up here; everywhere else it is whatever is on the
+    /// pitch now or was on it last.
+    private GamePeriod? DisplayHalf => IsAtBreak ? NextHalf : GameData?.CurrentOrLastHalf();
 
     private bool IsHalfInPlay => GameData?.LivePeriodId is not null;
+
+    /// A half has been played, none is live, and one is still to come: the moment the next half's line-up is set, where a change to it is a
+    /// half-time substitution the restart will record.
+    private bool IsAtBreak =>
+        GameData is { MatchState: MatchState.InProgress } && !IsHalfInPlay && NextHalf is not null;
 
     private List<GamePlayerPosition> DisplayLineup => DisplayHalf?.PlayerPositions ?? [];
 
@@ -69,7 +76,7 @@ public partial class LiveMatch
     private FormationType DisplayFormation =>
         DisplayHalf?.FormationTypeOverride ?? GameData?.FormationType ?? FormationType.F442;
 
-    private bool CanSubstitute => _isAdmin && IsHalfInPlay;
+    private bool CanSubstitute => _isAdmin && (IsHalfInPlay || IsAtBreak);
 
     private GamePeriod? NextHalf => GameData?.NextHalf();
 
@@ -93,6 +100,25 @@ public partial class LiveMatch
 
     private int PlannedChangeCount =>
         PlannedChanges.Substitutions.Count + PlannedChanges.Moves.Count;
+
+    /// Exactly what the restart will record, off the same diff <c>StartNextHalfAsync</c> uses — so the preview never lists a position move
+    /// or an injured player's swap that will not reach the timeline.
+    private PlannedChanges HalfTimeChanges
+    {
+        get
+        {
+            if (!IsAtBreak || GameData is not { } game
+                || game.CurrentOrLastHalf() is not { } previous || NextHalf is not { } upcoming)
+                return PlannedChanges.None;
+
+            var injured = game.Injuries.Select(i => i.PlayerId).ToHashSet();
+            var subs = LineupDiff.Swaps(previous, upcoming, injured)
+                .Select(s => new PlannedSubstitution(FindPlayer(s.PlayerOffId), FindPlayer(s.PlayerOnId), s.Position))
+                .ToList();
+
+            return new PlannedChanges(subs, []);
+        }
+    }
 
     private string StatusLabel => GameData?.MatchState switch
     {
@@ -292,9 +318,19 @@ public partial class LiveMatch
                 p.Add(x => x.Player, player);
                 p.Add(x => x.Position, tapped.Position);
                 p.Add(x => x.Bench, SubCandidates);
-                p.Add(x => x.OnPitch, SwapCandidates(playerId));
+                p.Add(x => x.OnPitch, IsAtBreak ? [] : SwapCandidates(playerId));
+                p.Add(x => x.AllowSwapAndInjury, !IsAtBreak);
             });
         if (choice is null) return;
+
+        // At the break the dialog offers only who comes on, so the choice is always a straight change to the next half's line-up — recorded
+        // as a substitution when the half kicks off, not now.
+        if (IsAtBreak)
+        {
+            var planned = await SubService.PlanBreakSubstitutionAsync(GameId, playerId, choice.PlayerId!.Value);
+            Snackbar.Report(L, planned, L["Half-time change made"]);
+            return;
+        }
 
         if (choice.IsPositionSwap)
         {

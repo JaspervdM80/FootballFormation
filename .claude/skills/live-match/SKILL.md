@@ -89,6 +89,16 @@ and handing the recorded slot back would seat two players in it.
 
 Two substitutions in the same second settle by **id**, not just the clock.
 
+**Half-time changes are substitutions too, recorded when the next half kicks off.** At the break the
+pitch shows the *upcoming* half and is tappable; a tap only edits that line-up
+(`PlanBreakSubstitutionAsync` writes no row, offers who comes on and nothing else). `StartNextHalfAsync`
+then diffs the half just finished against the one starting (`LineupDiff.Swaps`, injured excluded) and
+writes a `GameSubstitution` per paired change at the restart second. Minutes are untouched: each sits
+at `AtSeconds == start`, so the next half rewinds it back to its starter and credits the leaver no
+second-half time. A next half never planned is **carried over** from whoever finished the last one
+(`EndHalfAsync`), so the break is never an empty pitch. This is why between-half changes are no longer
+just a silent line-up difference.
+
 ## An injury is a substitution that also stops the clock on her availability
 
 `MarkInjuredAsync` lives in the same service because it is the same write: it takes her off the

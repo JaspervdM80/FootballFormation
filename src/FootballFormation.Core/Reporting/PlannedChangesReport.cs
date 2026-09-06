@@ -27,8 +27,8 @@ public static class PlannedChangesReport
         Func<int, Player?> findPlayer,
         IEnumerable<GameSubstitution> liveChanges)
     {
-        var before = StartersBySlot(half);
-        var after = StartersBySlot(plan);
+        var before = LineupDiff.StartersBySlot(half);
+        var after = LineupDiff.StartersBySlot(plan);
 
         return new PlannedChanges(
             [.. PairUp(before, after, KickOffStarters(before.Values, liveChanges))
@@ -65,41 +65,14 @@ public static class PlannedChangesReport
         return starters;
     }
 
-    /// An arrival pairs with whoever held the slot she is taking, which is the swap a coach would call out; when that player is staying
-    /// on — a shuffle rather than a straight swap — the next unpaired departure is used instead.
+    /// The slot pairing is <see cref="LineupDiff"/>'s; here it is narrowed to the swaps still worth showing — see <see cref="IsStillViable"/>.
     private static List<PlannedSwap> PairUp(
         Dictionary<int, GamePlayerPosition> before,
         Dictionary<int, GamePlayerPosition> after,
-        HashSet<int> kickOffStarters)
-    {
-        var beforeIds = before.Values.Select(p => p.PlayerId).ToHashSet();
-        var afterIds = after.Values.Select(p => p.PlayerId).ToHashSet();
-
-        // Slot order, so the list reads like a team sheet rather than in whatever order the line-up rows were stored.
-        var leaving = before.OrderBy(e => e.Key).Select(e => e.Value)
-            .Where(p => !afterIds.Contains(p.PlayerId)).ToList();
-        var arriving = after.OrderBy(e => e.Key).Select(e => e.Value)
-            .Where(p => !beforeIds.Contains(p.PlayerId)).ToList();
-
-        var unpaired = new List<GamePlayerPosition>(leaving);
-        var swaps = new List<PlannedSwap>();
-
-        foreach (var on in arriving)
-        {
-            var predecessor = before.GetValueOrDefault(on.SlotIndex!.Value);
-            var off = unpaired.FirstOrDefault(p => p.PlayerId == predecessor?.PlayerId)
-                ?? unpaired.FirstOrDefault();
-
-            if (off is not null) unpaired.Remove(off);
-
-            swaps.Add(new PlannedSwap(off, on));
-        }
-
-        // Anyone left over comes off with nobody named to replace them.
-        swaps.AddRange(unpaired.Select(off => new PlannedSwap(off, null)));
-
-        return [.. swaps.Where(swap => IsStillViable(swap, kickOffStarters))];
-    }
+        HashSet<int> kickOffStarters) =>
+        [.. LineupDiff.Pairs(before, after)
+            .Select(pair => new PlannedSwap(pair.Off, pair.On))
+            .Where(swap => IsStillViable(swap, kickOffStarters))];
 
     private static List<PlannedMove> Moves(
         Dictionary<int, GamePlayerPosition> before,
@@ -114,17 +87,5 @@ public static class PlannedChangesReport
             .Select(x => (x.On, x.Off, Player: findPlayer(x.On.PlayerId)))
             .Where(x => x.Player is not null)
             .Select(x => new PlannedMove(x.Player!, x.Off!.Position, x.On.Position))];
-    }
-
-    /// TryAdd rather than Add: a slot can only be held once, but a line-up saved by an older build is not guaranteed to honour that, and
-    /// throwing on data already stored helps nobody.
-    private static Dictionary<int, GamePlayerPosition> StartersBySlot(GamePeriod lineup)
-    {
-        var bySlot = new Dictionary<int, GamePlayerPosition>();
-
-        foreach (var position in lineup.PlayerPositions.Where(p => !p.IsSubstitute && p.SlotIndex is not null))
-            bySlot.TryAdd(position.SlotIndex!.Value, position);
-
-        return bySlot;
     }
 }

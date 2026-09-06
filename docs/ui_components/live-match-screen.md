@@ -55,9 +55,9 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
 - **The scoring buttons show only while the match is in progress.** Nothing is scored before kick-off
   or after the final whistle; a goal missed at the time is added back on `/result`, which is where a
   finished match is corrected and where the "Edit result" button leads.
-- The pitch shows the half being played; at half time and after full time the last one played, and
-  before kick-off the half the match opens with — so it is never blank when a lineup exists. The
-  bench strip under it is always drawn.
+- The pitch shows the half being played; **at the break the half about to be played**, so the coach
+  sets it up there; after full time the last one played, and before kick-off the half the match opens
+  with — so it is never blank when a lineup exists. The bench strip under it is always drawn.
 - **Tapping a player offers two changes, one dropdown each** (`LiveSubDialog`): someone comes on for
   them (`SubstituteAsync`), or they trade positions with a team-mate who stays on
   (`SwapPositionsAsync`). Choosing in either list clears the other, so the single action button
@@ -129,6 +129,17 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   been taken off is dropped: the difference between the line-ups still names their slot, but it now
   proposes withdrawing whoever came on for them, which nobody planned. An injury replacement
   therefore stays on for the rest of the half rather than being listed to come straight back off.
+- **Half-time changes become substitutions when the next half kicks off.** The break shows the
+  upcoming half on the pitch, tappable like a live one, but a tap only edits that line-up — the
+  dialog offers who comes on and nothing else (`LiveSubDialog.AllowSwapAndInjury` off), since a half
+  not yet played has no clock for an injury and a swap is plain line-up editing
+  (`MatchSubstitutionService.PlanBreakSubstitutionAsync` writes no row). `StartNextHalfAsync` then
+  diffs the half just finished against the one starting (`LineupDiff.Swaps`, injured players left
+  out) and writes a `GameSubstitution` per paired change at the restart second — so the swaps read on
+  the timeline and rewind out of the next half's minutes to exactly the totals the two independent
+  line-ups already gave. A next half never planned is carried over from whoever finished the last one
+  (`EndHalfAsync`), so the break opens on the same eleven; the pending changes are read back under
+  the bench (`.live-halftime-plan`, `PlannedChangesList`).
 - **No line-up means no line-up card and no minutes card.** Both are left out entirely rather than
   headed over an empty pitch or an empty table — a match nobody has been picked for is sent to the
   formation screens by the buttons on `/games`, and two cards repeating "build one first" only push

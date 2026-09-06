@@ -64,6 +64,45 @@ public class MatchSubstitutionService(
             return Result.Success(sub);
         });
 
+    /// The break's substitution: the next half is being set up, not played, so this edits its line-up and records nothing — the change
+    /// becomes a real <see cref="GameSubstitution"/> only when <c>StartNextHalfAsync</c> materialises the difference from the half just
+    /// finished. Refused once that half has kicked off, when a change is a recorded substitution again.
+    public Task<Result> PlanBreakSubstitutionAsync(
+        int gameId, int playerOffId, int playerOnId, CancellationToken cancellationToken = default) =>
+        LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "change the half-time line-up",
+            cancellationToken, async () =>
+        {
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            if (playerOffId == playerOnId)
+                return Result.Failure<int>("A player cannot be substituted for themselves");
+
+            var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
+            if (game is null) return LiveMatchQueries.GameNotFound<int>(gameId);
+
+            if (game.LiveHalf() is not null)
+                return Result.Failure<int>("End the current half first");
+
+            var next = game.NextHalf();
+            if (next is null)
+                return Result.Failure<int>("No half is waiting to be set up");
+
+            await db.Entry(next).Collection(p => p.PlayerPositions).LoadAsync(cancellationToken);
+
+            var taken = TakeOffThePitch(next, playerOffId);
+            if (taken.IsFailure) return taken.To<int>();
+
+            var brought = BringOnThePitch(next, playerOnId, taken.Value);
+            if (brought.IsFailure) return brought.To<int>();
+
+            await db.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation("Game {GameId}: planned {On} on for {Off} in the {Half}",
+                gameId, playerOnId, playerOffId, next.PeriodType.Half());
+
+            return Result.Success(gameId);
+        });
+
     /// Writes no <see cref="GameSubstitution"/> — nobody enters or leaves. The cost is that GameMinutesReport rewinds substitutions
     /// only, so after a swap each player is credited the position she moved into for the whole half. Totals are unaffected.
     public Task<Result> SwapPositionsAsync(

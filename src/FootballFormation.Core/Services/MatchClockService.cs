@@ -1,3 +1,5 @@
+using FootballFormation.Core.Reporting;
+
 namespace FootballFormation.Core.Services;
 
 /// Half time is the only stoppage: a line-up planned for the middle of a half never reaches this service, and there is deliberately no
@@ -58,11 +60,36 @@ public class MatchClockService(
             current.EndedAtSeconds = game.ClockAccumulatedSeconds;
             game.LivePeriodId = null;
 
+            await CarryLineupToNextHalfAsync(db, game, current, cancellationToken);
+
             await db.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Ended the {Half} of game {GameId} at {Seconds}s",
                 current.PeriodType.Half(), gameId, current.EndedAtSeconds);
             return Result.Success(game);
         });
+
+    /// A next half never planned defaults to whoever finished this one, so the break opens on the same eleven for the coach to adjust
+    /// rather than an empty pitch. Only when it is empty: a distinct half planned in the builder is left as it stands.
+    private static async Task CarryLineupToNextHalfAsync(
+        AppDbContext db, Game game, GamePeriod ended, CancellationToken cancellationToken)
+    {
+        var next = game.NextHalf();
+        if (next is null) return;
+
+        await db.Entry(next).Collection(p => p.PlayerPositions).LoadAsync(cancellationToken);
+        if (next.PlayerPositions.Count > 0) return;
+
+        await db.Entry(ended).Collection(p => p.PlayerPositions).LoadAsync(cancellationToken);
+        foreach (var pos in ended.PlayerPositions)
+            next.PlayerPositions.Add(new GamePlayerPosition
+            {
+                GamePeriodId = next.Id,
+                PlayerId = pos.PlayerId,
+                Position = pos.Position,
+                SlotIndex = pos.SlotIndex,
+                IsSubstitute = pos.IsSubstitute
+            });
+    }
 
     /// <see cref="Game.NextHalf"/> decides which line-up opens it, skipping any planned for the middle of the half just played.
     public Task<Result<Game>> StartNextHalfAsync(int gameId, CancellationToken cancellationToken = default) =>
@@ -83,17 +110,54 @@ public class MatchClockService(
             if (next is null)
                 return Result.Failure<Game>("Both halves have been played — finish the match instead");
 
+            // Read before the clock moves on and the next half becomes the last-played one: this is the half just finished, whose final
+            // pitch the next half's line-up is a change from.
+            var previous = game.CurrentOrLastHalf();
+
             BankClock(game);
             next.StartedAtSeconds = game.ClockAccumulatedSeconds;
             next.EndedAtSeconds = null;
             game.LivePeriodId = next.Id;
             game.ClockRunningSince = UtcNow;
 
+            await RecordHalfTimeChangesAsync(db, game, previous, next, cancellationToken);
+
             await db.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Started the {Half} of game {GameId} at {Seconds}s",
                 next.PeriodType.Half(), gameId, next.StartedAtSeconds);
             return Result.Success(game);
         });
+
+    /// Recorded at the restart second so the timeline shows the half-time swaps; minutes are unaffected because the next half rewinds each
+    /// sub back to its starter, crediting the leaver no second-half time. An injured player is already off, so she is left out.
+    private async Task RecordHalfTimeChangesAsync(
+        AppDbContext db, Game game, GamePeriod? previous, GamePeriod next, CancellationToken cancellationToken)
+    {
+        if (previous is null) return;
+
+        await db.Entry(previous).Collection(p => p.PlayerPositions).LoadAsync(cancellationToken);
+        await db.Entry(next).Collection(p => p.PlayerPositions).LoadAsync(cancellationToken);
+
+        var injured = (await db.GameInjuries
+            .Where(i => i.GameId == game.Id)
+            .Select(i => i.PlayerId)
+            .ToListAsync(cancellationToken)).ToHashSet();
+
+        foreach (var swap in LineupDiff.Swaps(previous, next, injured))
+        {
+            db.GameSubstitutions.Add(new GameSubstitution
+            {
+                GameId = game.Id,
+                GamePeriodId = next.Id,
+                PlayerOffId = swap.PlayerOffId,
+                PlayerOnId = swap.PlayerOnId,
+                AtSeconds = next.StartedAtSeconds!.Value,
+                RecordedAt = UtcNow,
+                SlotIndex = swap.SlotIndex,
+                Position = swap.Position
+            });
+        }
+    }
 
     public Task<Result<Game>> FinishMatchAsync(int gameId, CancellationToken cancellationToken = default) =>
         LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "finish the match",

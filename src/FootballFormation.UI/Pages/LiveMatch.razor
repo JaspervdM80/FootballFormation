@@ -93,11 +93,14 @@
             @if (CanSubstitute)
             {
                 <MudText Typo="Typo.caption" Class="live-pitch-hint">
-                    @L["Tap a player to substitute them, change their position, or mark them injured."]
+                    @(IsAtBreak
+                        ? L["Tap a player to change who starts the next half."]
+                        : L["Tap a player to substitute them, change their position, or mark them injured."])
                 </MudText>
             }
 
-            @* OnPlayerClicked is left unset for spectators and at half time, which keeps the pitch inert. *@
+            @* At the break the pitch is the next half's, so a tap sets it up rather than being left inert; otherwise it is unset for
+               spectators and while no half is being played. *@
             <Pitch Formation="DisplayFormation" Positions="OnPitch"
                    HidePositionFit="!_isAdmin"
                    OnPlayerClicked="@(CanSubstitute ? EventCallback.Factory.Create<int>(this, OpenSubDialog) : default)" />
@@ -122,6 +125,15 @@
                     }
                 }
             </div>
+
+            @* What kicking off will record — the difference from the half just played — so the coach reads it back before starting. *@
+            @if (IsAtBreak && !HalfTimeChanges.IsEmpty)
+            {
+                <div class="live-halftime-plan">
+                    <div class="card-label">@L["Recorded at kick-off"]</div>
+                    <PlannedChangesList Changes="HalfTimeChanges" />
+                </div>
+            }
         </MudPaper>
     }
 
