@@ -28,7 +28,8 @@ test('the result page copies a scoreline, a goal and a public comment to the cli
     addRow.locator('.btn-add-goal'),
     () => expect(page.getByText('Goal added', { exact: false })).toBeVisible(),
   );
-  await expect(page.locator('.goal-entry')).toHaveCount(1);
+  // Scoped to a goal row — a substitution shares .live-event, but only a goal carries a running scoreline.
+  await expect(page.locator('.live-event', { has: page.locator('.live-event-score') })).toHaveCount(1);
 
   await fillField(page, 'Add comment', 'Great team performance');
   await page.locator('.comment-add-row input[type=checkbox]').check();

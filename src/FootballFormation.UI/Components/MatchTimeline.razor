@@ -1,0 +1,92 @@
+@* The goals, substitutions and injuries of a match on one clock — shared by the live screen and the finished-match result page so the two
+   read identically. The order and whether substitutions are in the list are decided by the caller through MatchTimelineReport.Build. *@
+
+<div class="live-timeline">
+    @foreach (var entry in Events)
+    {
+        @* HalfTimeAbove is the report's call — it can see the row before this one, which a foreach cannot; here it only draws the divider. *@
+        @if (entry.HalfTimeAbove)
+        {
+            <div class="live-event-break">@L["Half time"]</div>
+        }
+
+        var against = entry.Goal is { } g && (g.IsOwnGoal || g.IsOpponentGoal);
+        <div class="live-event @(against ? "live-event-against" : "")">
+            <span class="live-event-min">@(entry.Minute is { } at ? $"{at}'" : "—")</span>
+            <MudIcon Size="Size.Small" Icon="@EventIcon(entry)"
+                     Class="@(entry.Injury is not null ? "live-event-injury" : null)"
+                     Title="@(entry.Injury is not null ? L["Injured"].Value : null)" />
+            <div class="live-event-body">
+                @if (entry.Goal is { } goal)
+                {
+                    <div class="live-event-main">
+                        @(goal.Scorer?.DisplayName ?? Opponent)
+                        @if (goal.IsOwnGoal)
+                        {
+                            <span class="live-event-tag">(@L["OG"])</span>
+                        }
+                    </div>
+                    @if (goal.Assister is not null)
+                    {
+                        <div class="live-event-sub">↳ @goal.Assister.DisplayName</div>
+                    }
+                }
+                else if (entry.Substitution is { } sub)
+                {
+                    <div class="live-event-main">@ResolveName(sub.PlayerOnId)</div>
+                    <div class="live-event-sub">↔ @ResolveName(sub.PlayerOffId)</div>
+                }
+                else if (entry.Injury is { } injury)
+                {
+                    @* Only ever an injury nobody came on for. *@
+                    <div class="live-event-main">@ResolveName(injury.PlayerId)</div>
+                    <div class="live-event-sub">@L["Off injured, not replaced"]</div>
+                }
+            </div>
+            @* The score the goal made it, in the scoreboard's order. *@
+            @if (ShowScore && entry.Score is { } score)
+            {
+                <span class="live-event-score">@ScoreText(score)</span>
+            }
+            @if (AdminActions is not null)
+            {
+                <AuthorizeView Roles="@AppRoles.Admin" Context="auth">
+                    @AdminActions(entry)
+                </AuthorizeView>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
+
+    [Parameter, EditorRequired] public IReadOnlyList<MatchEvent> Events { get; set; } = [];
+
+    /// The scorer of an opponent's goal is never one of ours, so the name falls back to the opponent.
+    [Parameter, EditorRequired] public string Opponent { get; set; } = "";
+
+    /// A substitution and an unreplaced injury carry ids only; the caller holds the player pool that names them.
+    [Parameter, EditorRequired] public Func<int, string> ResolveName { get; set; } = id => id.ToString();
+
+    /// MatchScore is always ours first, so the venue decides whether the home side reads on the left.
+    [Parameter] public bool IsHomeGame { get; set; } = true;
+
+    /// The running scoreline after each goal, parked on the right. Off by default; the caller turns it on.
+    [Parameter] public bool ShowScore { get; set; }
+
+    /// Per-entry admin controls (remove a goal, undo a substitution). Rendered inside an admin gate, so a visitor never sees them.
+    [Parameter] public RenderFragment<MatchEvent>? AdminActions { get; set; }
+
+    /// The cross wins over the swap arrows on a substitution made for an injury: what happened there was the injury.
+    private static string EventIcon(MatchEvent entry) => entry switch
+    {
+        { Goal: not null } => Icons.Material.Filled.SportsSoccer,
+        { Injury: not null } => Icons.Material.Filled.MedicalServices,
+        _ => Icons.Material.Filled.SwapHoriz
+    };
+
+    private string ScoreText(MatchScore score) => IsHomeGame
+        ? $"{score.Us}–{score.Them}"
+        : $"{score.Them}–{score.Us}";
+}
