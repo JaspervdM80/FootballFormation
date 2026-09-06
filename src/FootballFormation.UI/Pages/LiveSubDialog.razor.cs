@@ -30,6 +30,10 @@ public partial class LiveSubDialog
     [Parameter, EditorRequired]
     public List<PitchPlayer> OnPitch { get; set; } = [];
 
+    /// Off at the break: the next half is being set up, not played, so there is no clock for an injury to stop and a position swap is just
+    /// line-up editing — only who comes on for whom applies.
+    [Parameter] public bool AllowSwapAndInjury { get; set; } = true;
+
     private int? _playerOnId;
     private int? _swapWithId;
     private bool _injured;

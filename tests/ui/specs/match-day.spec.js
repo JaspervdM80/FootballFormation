@@ -299,6 +299,41 @@ test('the timeline draws half time between the two halves', async ({ page }) => 
   await expect(page.locator('.live-timeline > *').nth(1)).toHaveClass(/live-event-break/);
 });
 
+test('a half-time change is set on the pitch at the break and recorded when the half kicks off', async ({ page }) => {
+  await liveMatch(page, 'FC Rustwissel');
+
+  const controls = page.locator('.live-controls');
+  const events = page.locator('.live-event');
+
+  // End the first half — the break opens on the second half, carried over from whoever just finished.
+  await clickFor(
+    controls.getByRole('button', { name: 'Half time' }),
+    () => expect(controls.getByRole('button', { name: 'Start 2nd Half' })).toBeVisible(),
+  );
+
+  // A tap at the break offers only who comes on: the half is not being played, so there is no position swap or injury to make.
+  await clickFor(
+    page.locator('.live-lineup .pitch-player').first(),
+    () => expect(page.locator('.mud-dialog')).toBeVisible(),
+  );
+  const dialog = await openDialog(page);
+  await expect(dialog.getByText('Swaps position with')).toHaveCount(0);
+  await expect(dialog.locator('label.mud-switch', { hasText: 'Injured' })).toHaveCount(0);
+  await chooseOption(page, dialog, 'Comes on', '#');
+  await submitDialog(page, 'Make substitution');
+  await expect(page.getByText('Half-time change made', { exact: false })).toBeVisible();
+
+  // A plan until the half starts: nothing on the timeline yet, but listed as what kick-off will record.
+  await expect(events).toHaveCount(0);
+  await expect(page.locator('.live-halftime-plan .planned-row')).toHaveCount(1);
+
+  // Kicking off the second half turns the change into a real substitution on the timeline.
+  await clickFor(
+    controls.getByRole('button', { name: 'Start 2nd Half' }),
+    () => expect(events).toHaveCount(1),
+  );
+});
+
 test('the playing-time table drops its estimate once the match has been run', async ({ page }) => {
   const id = await matchWithId(page, 'FC Speeltijd');
   await fillLineup(page, 2);

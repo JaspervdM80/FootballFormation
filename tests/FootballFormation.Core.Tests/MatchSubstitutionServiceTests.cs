@@ -321,4 +321,61 @@ public class MatchSubstitutionServiceTests : LiveMatchTestBase
         Assert.True(result.IsFailure);
         Assert.Equal("Injury not found", result.Error);
     }
+
+    [Fact]
+    public async Task A_break_substitution_changes_the_next_half_and_records_nothing_yet()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        Time.Advance(TimeSpan.FromMinutes(30));
+        await MatchClock.EndHalfAsync(game.Id);
+        var players = await PlayersAsync();
+
+        // players[1] starts the second half, players[2] is on its bench — swap them before it kicks off.
+        var result = await Subs.PlanBreakSubstitutionAsync(game.Id, players[1].Id, players[2].Id);
+        Assert.True(result.IsSuccess);
+
+        Db.ChangeTracker.Clear();
+        var second = await Db.GamePeriods
+            .Include(p => p.PlayerPositions)
+            .FirstAsync(p => p.GameId == game.Id && p.PeriodType == PeriodType.SecondHalf);
+        Assert.True(second.PlayerPositions.Single(p => p.PlayerId == players[1].Id).IsSubstitute);
+        var on = second.PlayerPositions.Single(p => p.PlayerId == players[2].Id);
+        Assert.False(on.IsSubstitute);
+        Assert.Equal(5, on.SlotIndex);
+
+        // The change is a plan until the half kicks off — StartNextHalfAsync is what turns it into a substitution.
+        Assert.Empty(await Db.GameSubstitutions.Where(s => s.GameId == game.Id).ToListAsync());
+    }
+
+    [Fact]
+    public async Task A_break_substitution_is_refused_while_a_half_is_being_played()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        var result = await Subs.PlanBreakSubstitutionAsync(game.Id, players[1].Id, players[2].Id);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("End the current half first", result.Error);
+    }
+
+    [Fact]
+    public async Task A_break_substitution_is_refused_when_no_half_is_left_to_set_up()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        Time.Advance(TimeSpan.FromMinutes(30));
+        await MatchClock.EndHalfAsync(game.Id);
+        await MatchClock.StartNextHalfAsync(game.Id);
+        Time.Advance(TimeSpan.FromMinutes(30));
+        await MatchClock.EndHalfAsync(game.Id);
+        var players = await PlayersAsync();
+
+        var result = await Subs.PlanBreakSubstitutionAsync(game.Id, players[1].Id, players[2].Id);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("No half is waiting to be set up", result.Error);
+    }
 }

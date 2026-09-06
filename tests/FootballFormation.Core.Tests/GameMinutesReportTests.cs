@@ -289,4 +289,45 @@ public class GameMinutesReportTests
         Assert.Equal(0, minutes.SecondsFor(999));
         Assert.Empty(minutes.PositionsFor(999));
     }
+
+    /// The half-time change PR2 writes as a substitution at the restart second must credit exactly what the two independent line-ups gave
+    /// on their own — the arrival is a second-half starter either way, so recording it takes no time off her and adds none to the player
+    /// she came on for.
+    [Fact]
+    public void A_half_time_substitution_leaves_the_minutes_the_two_line_ups_already_gave()
+    {
+        static Game Build(bool recordTheChange)
+        {
+            var game = TestData.Game(durationMinutes: 60);      // 2 × 30 min
+            var first = game.AddPeriod(PeriodType.FirstHalf,
+                TestData.Starter(1, PlayerPosition.GK, 0),
+                TestData.Starter(2, PlayerPosition.CM, 5),
+                TestData.Sub(3));
+            first.StartedAtSeconds = 0;
+            first.EndedAtSeconds = 1800;
+
+            // Player 3 starts the second half in player 2's slot — the between-halves change.
+            var second = game.AddPeriod(PeriodType.SecondHalf,
+                TestData.Starter(1, PlayerPosition.GK, 0),
+                TestData.Starter(3, PlayerPosition.CM, 5),
+                TestData.Sub(2));
+            second.StartedAtSeconds = 1800;
+            second.EndedAtSeconds = 3600;
+
+            if (recordTheChange)
+                TestData.Substitution(game, second, offId: 2, onId: 3, atSeconds: 1800, position: PlayerPosition.CM, slot: 5);
+
+            return game;
+        }
+
+        var planned = GameMinutesReport.Build(Build(recordTheChange: false));
+        var recorded = GameMinutesReport.Build(Build(recordTheChange: true));
+
+        foreach (var id in new[] { 1, 2, 3 })
+            Assert.Equal(planned.SecondsFor(id), recorded.SecondsFor(id));
+
+        Assert.Equal(3600, recorded.SecondsFor(1));   // both halves
+        Assert.Equal(1800, recorded.SecondsFor(2));   // first half, off at the break
+        Assert.Equal(1800, recorded.SecondsFor(3));   // on at the break, second half
+    }
 }

@@ -282,6 +282,10 @@
   <data name="Edit result" xml:space="preserve"><value>Uitslag aanpassen</value></data>
   <data name="Line-up" xml:space="preserve"><value>Opstelling</value></data>
   <data name="Tap a player to substitute them, change their position, or mark them injured." xml:space="preserve"><value>Tik op een speler om te wisselen, van positie te veranderen of haar geblesseerd te melden.</value></data>
+  <data name="Tap a player to change who starts the next half." xml:space="preserve"><value>Tik op een speler om te wijzigen wie de volgende helft begint.</value></data>
+  <data name="Recorded at kick-off" xml:space="preserve"><value>Vastgelegd bij aftrap</value></data>
+  <data name="Half-time change made" xml:space="preserve"><value>Rustwissel gemaakt</value></data>
+  <data name="No half is waiting to be set up" xml:space="preserve"><value>Er staat geen helft klaar om in te stellen</value></data>
   <data name="Goal against" xml:space="preserve"><value>Tegen doelpunt</value></data>
   <data name="Timeline" xml:space="preserve"><value>Tijdlijn</value></data>
   <data name="Nothing has happened yet" xml:space="preserve"><value>Er is nog niets gebeurd</value></data>
@@ -671,6 +675,7 @@
   <data name="calculate next match date" xml:space="preserve"><value>volgende wedstrijddatum berekenen</value></data>
   <data name="calculate the next training date" xml:space="preserve"><value>volgende trainingsdatum berekenen</value></data>
   <data name="change the formation" xml:space="preserve"><value>opstelling wijzigen</value></data>
+  <data name="change the half-time line-up" xml:space="preserve"><value>rustopstelling wijzigen</value></data>
   <data name="change the squad status" xml:space="preserve"><value>selectiestatus wijzigen</value></data>
   <data name="close season gaps" xml:space="preserve"><value>gaten tussen seizoenen sluiten</value></data>
   <data name="copy the squad" xml:space="preserve"><value>selectie kopiëren</value></data>

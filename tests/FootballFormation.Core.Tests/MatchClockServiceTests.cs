@@ -199,4 +199,117 @@ public class MatchClockServiceTests : LiveMatchTestBase
         Assert.True(result.IsFailure);
         Assert.Equal("This match has not been started", result.Error);
     }
+
+    [Fact]
+    public async Task Starting_the_second_half_records_the_planned_change_as_a_substitution()
+    {
+        var game = await SeedGameAsync();
+        var players = await PlayersAsync();
+
+        // The second half is planned differently from the first: the bench player takes the starter's slot.
+        await BenchForSecondHalfAsync(game.Id, starterOffId: players[1].Id, subOnId: players[2].Id);
+
+        await MatchClock.StartMatchAsync(game.Id);
+        Time.Advance(TimeSpan.FromMinutes(30));
+        await MatchClock.EndHalfAsync(game.Id);
+        Assert.True((await MatchClock.StartNextHalfAsync(game.Id)).IsSuccess);
+
+        Db.ChangeTracker.Clear();
+        var sub = Assert.Single(await Db.GameSubstitutions.Where(s => s.GameId == game.Id).ToListAsync());
+        Assert.Equal(players[1].Id, sub.PlayerOffId);
+        Assert.Equal(players[2].Id, sub.PlayerOnId);
+
+        // Stamped at the restart, and against the half it opens — which is what puts it after the half-time line on the timeline and
+        // rewinds it out of the second half's minutes.
+        var second = await Db.GamePeriods.FirstAsync(p => p.GameId == game.Id && p.PeriodType == PeriodType.SecondHalf);
+        Assert.Equal(1800, sub.AtSeconds);
+        Assert.Equal(second.Id, sub.GamePeriodId);
+    }
+
+    [Fact]
+    public async Task Starting_the_second_half_unchanged_records_no_substitution()
+    {
+        // SeedGameAsync lays the two halves out identically, so nothing changed at the break.
+        var game = await SeedGameAsync();
+
+        await MatchClock.StartMatchAsync(game.Id);
+        Time.Advance(TimeSpan.FromMinutes(30));
+        await MatchClock.EndHalfAsync(game.Id);
+        await MatchClock.StartNextHalfAsync(game.Id);
+
+        Db.ChangeTracker.Clear();
+        Assert.Empty(await Db.GameSubstitutions.Where(s => s.GameId == game.Id).ToListAsync());
+    }
+
+    [Fact]
+    public async Task Ending_a_half_carries_the_line_up_into_an_unplanned_next_half()
+    {
+        var game = await SeedGameAsync();
+        await ClearSecondHalfLineupAsync(game.Id);
+
+        await MatchClock.StartMatchAsync(game.Id);
+        Time.Advance(TimeSpan.FromMinutes(30));
+        await MatchClock.EndHalfAsync(game.Id);
+
+        Db.ChangeTracker.Clear();
+        var first = await SecondHalfLineupAsync(game.Id, PeriodType.FirstHalf);
+        var second = await SecondHalfLineupAsync(game.Id, PeriodType.SecondHalf);
+
+        // The same eleven continue, standing where they finished, ready for the coach to change at the break.
+        Assert.Equal(
+            first.Select(p => (p.PlayerId, p.SlotIndex, p.IsSubstitute)).OrderBy(x => x.PlayerId),
+            second.Select(p => (p.PlayerId, p.SlotIndex, p.IsSubstitute)).OrderBy(x => x.PlayerId));
+    }
+
+    [Fact]
+    public async Task Ending_a_half_leaves_a_planned_next_half_as_it_stands()
+    {
+        var game = await SeedGameAsync();
+        var players = await PlayersAsync();
+        await BenchForSecondHalfAsync(game.Id, starterOffId: players[1].Id, subOnId: players[2].Id);
+
+        await MatchClock.StartMatchAsync(game.Id);
+        Time.Advance(TimeSpan.FromMinutes(30));
+        await MatchClock.EndHalfAsync(game.Id);
+
+        Db.ChangeTracker.Clear();
+        var second = await SecondHalfLineupAsync(game.Id, PeriodType.SecondHalf);
+
+        // The planned swap is untouched: the incoming player still starts, the outgoing one is still benched.
+        Assert.False(second.First(p => p.PlayerId == players[2].Id).IsSubstitute);
+        Assert.True(second.First(p => p.PlayerId == players[1].Id).IsSubstitute);
+    }
+
+    private Task<List<GamePlayerPosition>> SecondHalfLineupAsync(int gameId, PeriodType type) =>
+        Db.GamePlayerPositions
+            .Where(pp => pp.GamePeriod.GameId == gameId && pp.GamePeriod.PeriodType == type)
+            .ToListAsync();
+
+    private async Task ClearSecondHalfLineupAsync(int gameId)
+    {
+        var positions = await Db.GamePlayerPositions
+            .Where(pp => pp.GamePeriod.GameId == gameId && pp.GamePeriod.PeriodType == PeriodType.SecondHalf)
+            .ToListAsync();
+        Db.GamePlayerPositions.RemoveRange(positions);
+        await Db.SaveChangesAsync();
+        Db.ChangeTracker.Clear();
+    }
+
+    /// Rewrites the second half so a bench player starts in a first-half starter's slot — the between-halves change the touchline never
+    /// entered as a substitution, which is exactly what kicking off the half now records.
+    private async Task BenchForSecondHalfAsync(int gameId, int starterOffId, int subOnId)
+    {
+        var second = await Db.GamePeriods
+            .Include(p => p.PlayerPositions)
+            .FirstAsync(p => p.GameId == gameId && p.PeriodType == PeriodType.SecondHalf);
+
+        var off = second.PlayerPositions.First(pp => pp.PlayerId == starterOffId && !pp.IsSubstitute);
+        var on = second.PlayerPositions.First(pp => pp.PlayerId == subOnId && pp.IsSubstitute);
+
+        (on.SlotIndex, on.Position, on.IsSubstitute) = (off.SlotIndex, off.Position, false);
+        (off.SlotIndex, off.IsSubstitute) = (null, true);
+
+        await Db.SaveChangesAsync();
+        Db.ChangeTracker.Clear();
+    }
 }
