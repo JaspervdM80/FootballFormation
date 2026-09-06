@@ -234,6 +234,40 @@ test('a substitution and an injury reach the result page, where the toggle folds
   await expect(injuryRow).toHaveCount(1);
 });
 
+test('a substitution and an injury entered wrong are undone from the result page', async ({ page }) => {
+  const id = await liveMatch(page, 'FC Foutje');
+  const chips = page.locator('.live-lineup .pitch-player');
+
+  // A substitution and an injury nobody came on for, both entered live — the two to be undone later.
+  await clickFor(chips.first(), () => expect(page.locator('.mud-dialog')).toBeVisible());
+  let dialog = await openDialog(page);
+  await chooseOption(page, dialog, 'Comes on', '#');
+  await submitDialog(page, 'Make substitution');
+  await expect(page.locator('.live-event')).toHaveCount(1);
+
+  await clickFor(chips.first(), () => expect(page.locator('.mud-dialog')).toBeVisible());
+  dialog = await openDialog(page);
+  await dialog.locator('label.mud-switch', { hasText: 'Injured' }).click();
+  await submitDialog(page, 'Off injured');
+  await expect(page.locator('.live-event', { hasText: 'not replaced' })).toHaveCount(1);
+
+  await finishMatch(page);
+
+  // The result page is where a finished match is corrected, so the undo the live screen offers has
+  // to be here too — a goal carries the × it always did, a change carries an undo.
+  await gotoRendered(page, `/games/${id}/result`);
+  const events = page.locator('.live-event');
+  await expect(events).toHaveCount(2);
+  await expect(page.locator('.live-event .mud-icon-button')).toHaveCount(2);
+
+  // The injury goes on its own; the substitution is untouched by it.
+  const injuryRow = events.filter({ hasText: 'not replaced' });
+  await clickFor(injuryRow.locator('.mud-icon-button'), () => expect(events).toHaveCount(1));
+
+  // And the substitution, the last thing left, goes too.
+  await clickFor(events.locator('.mud-icon-button'), () => expect(events).toHaveCount(0));
+});
+
 test('the timeline draws half time between the two halves', async ({ page }) => {
   await liveMatch(page, 'FC Rust');
 

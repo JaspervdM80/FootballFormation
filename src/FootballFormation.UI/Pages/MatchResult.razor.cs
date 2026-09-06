@@ -6,6 +6,7 @@ namespace FootballFormation.UI.Pages;
 public partial class MatchResult
 {
     [Inject] private GameService GameService { get; set; } = null!;
+    [Inject] private MatchSubstitutionService SubService { get; set; } = null!;
     [Inject] private PlayerService PlayerService { get; set; } = null!;
     [Inject] private SeasonSquadService SquadService { get; set; } = null!;
     [Inject] private NavigationTrail Trail { get; set; } = null!;
@@ -185,6 +186,22 @@ public partial class MatchResult
     {
         var result = await GameService.RemoveGoalAsync(goal.Id);
         if (!Snackbar.Report(L, result, L["Goal removed"], Severity.Warning)) return;
+
+        await ReloadGame();
+    }
+
+    private async Task RemoveSubstitution(GameSubstitution sub)
+    {
+        var result = await SubService.RemoveSubstitutionAsync(sub.Id);
+        if (!Snackbar.Report(L, result, L["Substitution undone"], Severity.Warning)) return;
+
+        await ReloadGame();
+    }
+
+    private async Task RemoveInjury(GameInjury injury)
+    {
+        var result = await SubService.RemoveInjuryAsync(injury.Id);
+        if (!Snackbar.Report(L, result, L["Injury undone"], Severity.Warning)) return;
 
         await ReloadGame();
     }
