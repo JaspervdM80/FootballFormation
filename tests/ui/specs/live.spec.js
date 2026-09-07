@@ -56,7 +56,9 @@ test('a substitution swaps the two chips over, and undoing it puts them back', a
   expect(cameOn, 'nobody actually came on').toHaveLength(1);
   expect(await players(onBench(page))).toEqual(wentOff);
 
-  await clickFor(event.getByRole('button'), () => expect(page.locator('.live-event')).toHaveCount(0));
+  // Named, because a substitution now carries an edit beside its undo.
+  await clickFor(event.getByRole('button', { name: 'Undo' }),
+    () => expect(page.locator('.live-event')).toHaveCount(0));
 
   // Undo is the coach's answer to a mis-tap under time pressure, so it has to be the whole way back
   // and not merely the timeline entry going away. The two swap over rather than the incoming player
