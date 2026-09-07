@@ -157,22 +157,25 @@ public partial class LiveMatch
         }
     }
 
-    /// Includes roster players with no line-up entry at all, so a late arrival is not locked out of a match already under way. The two
-    /// exclusions on top of <see cref="Game.SelectRoster"/> are a standing injury and one picked up in this match.
-    private List<Player> SubCandidates
+    private List<Player> SubCandidates => CandidatesFor(DisplayHalf);
+
+    /// Who could come on in a given half. Taken per half rather than from whatever the screen is showing, because correcting an earlier
+    /// substitution has to be judged against the half it belongs to. Includes roster players with no line-up entry there, so a late arrival
+    /// is not locked out of a match already under way; the two exclusions on top of <see cref="Game.SelectRoster"/> are a standing injury
+    /// and one picked up in this match.
+    private List<Player> CandidatesFor(GamePeriod? half)
     {
-        get
-        {
-            if (GameData is null) return [];
+        if (GameData is null) return [];
 
-            var hurt = GameData.Injuries.Select(i => i.PlayerId).ToHashSet();
-            var inLineup = DisplayLineup.Select(p => p.PlayerId).ToHashSet();
-            var bench = OnBench.Select(p => FindPlayer(p.PlayerId)).OfType<Player>();
-            var unlisted = GameData.SelectRoster(AllPlayers, Squad)
-                .Where(p => !inLineup.Contains(p.Id) && !Squad.IsInjured(p.Id));
+        var lineup = half?.PlayerPositions ?? [];
+        var hurt = GameData.Injuries.Select(i => i.PlayerId).ToHashSet();
+        var inLineup = lineup.Select(p => p.PlayerId).ToHashSet();
+        var bench = lineup.Where(p => p.IsSubstitute && IsInRoster(p.PlayerId))
+            .Select(p => FindPlayer(p.PlayerId)).OfType<Player>();
+        var unlisted = GameData.SelectRoster(AllPlayers, Squad)
+            .Where(p => !inLineup.Contains(p.Id) && !Squad.IsInjured(p.Id));
 
-            return [.. bench.Concat(unlisted).Where(p => !hurt.Contains(p.Id))];
-        }
+        return [.. bench.Concat(unlisted).Where(p => !hurt.Contains(p.Id))];
     }
 
     /// Recomputed on every render, which is what keeps a playing total climbing with the clock.
@@ -304,9 +307,11 @@ public partial class LiveMatch
     {
         if (GameData is null || FindPlayer(sub.PlayerOffId) is not { } offPlayer) return;
 
-        var candidates = SubCandidates;
+        var candidates = CandidatesFor(GameData.Periods.FirstOrDefault(p => p.Id == sub.GamePeriodId));
         if (FindPlayer(sub.PlayerOnId) is { } on && candidates.All(p => p.Id != on.Id))
             candidates = [on, .. candidates];
+
+        var shownMinute = MatchClockReport.MinuteOf(GameData, sub).Minute;
 
         var choice = await DialogService.PromptAsync<EditSubDialog, EditSubChoice>(
             L["Edit substitution"],
@@ -315,14 +320,15 @@ public partial class LiveMatch
                 p.Add(x => x.PlayerOff, offPlayer);
                 p.Add(x => x.Candidates, candidates);
                 p.Add(x => x.PlayerOnId, sub.PlayerOnId);
-                p.Add(x => x.Minute, MatchClockReport.MinuteOf(GameData, sub).Minute);
+                p.Add(x => x.Minute, shownMinute);
                 p.Add(x => x.MaxMinute, GameData.GameDurationMinutes);
             });
         if (choice is null) return;
 
-        var atSeconds = MatchClockReport.ElapsedForMinute(GameData, choice.Minute);
         Snackbar.Report(L,
-            await SubService.EditSubstitutionAsync(sub.Id, sub.PlayerOffId, choice.PlayerOnId, atSeconds),
+            await SubService.EditSubstitutionAsync(
+                sub.Id, sub.PlayerOffId, choice.PlayerOnId,
+                MatchClockReport.ElapsedForEditedMinute(GameData, sub, shownMinute, choice.Minute)),
             L["Substitution updated"]);
     }
 

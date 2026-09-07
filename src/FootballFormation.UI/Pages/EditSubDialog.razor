@@ -19,7 +19,7 @@
             }
         </MudSelect>
 
-        <MudNumericField T="int" @bind-Value="SelectedMinute" Label="@L["Minute"]" Min="1" Max="MaxMinute"
+        <MudNumericField T="int" @bind-Value="SelectedMinute" Label="@L["Minute"]" Min="1" Max="Ceiling"
                          Immediate="true" Class="mt-4" />
     </DialogContent>
     <DialogActions>

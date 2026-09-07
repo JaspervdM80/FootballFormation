@@ -287,6 +287,34 @@ public class MatchClockReportTests
         }
     }
 
+    /// The shown minute is only the whole part, so converting an untouched one back would throw a played-out half's stoppage time away and
+    /// move the change earlier — handing the wrong player the difference on a report nobody would think to check.
+    [Fact]
+    public void Correcting_a_substitution_keeps_its_clock_unless_the_minute_was_actually_changed()
+    {
+        var game = TestData.Game(durationMinutes: 60);
+        game.AddPeriod(PeriodType.FirstHalf);
+        game.AddPeriod(PeriodType.SecondHalf);
+        var first = Period(game, PeriodType.FirstHalf);
+        first.Id = 7;
+        first.StartedAtSeconds = 0;
+        first.EndedAtSeconds = 1980;
+
+        // Three minutes into a played-out 30-minute half: the timeline reads 30+3, so the dialog opens on 30.
+        var stoppage = new GameSubstitution { GamePeriodId = 7, AtSeconds = 1920 };
+        Assert.Equal(new MatchMinute(30, 3), MatchClockReport.MinuteOf(game, stoppage));
+
+        // Left alone, it keeps the reading it was recorded at rather than sliding back to the top of the 30th.
+        Assert.Equal(1920, MatchClockReport.ElapsedForEditedMinute(game, stoppage, shownMinute: 30, chosenMinute: 30));
+
+        // Changed on purpose, it moves — that is the whole point of the field.
+        Assert.Equal(600, MatchClockReport.ElapsedForEditedMinute(game, stoppage, shownMinute: 30, chosenMinute: 11));
+
+        // The same holds for a change made partway through a minute: 12:45 stays 12:45 until someone retypes it.
+        var midMinute = new GameSubstitution { GamePeriodId = 7, AtSeconds = 765 };
+        Assert.Equal(765, MatchClockReport.ElapsedForEditedMinute(game, midMinute, shownMinute: 13, chosenMinute: 13));
+    }
+
     /// A match nobody ran from the touchline has no timings to convert through, so the typed minutes keep the only order they have.
     [Fact]
     public void Typed_in_minutes_stand_on_their_own_when_no_half_was_ever_kicked_off()

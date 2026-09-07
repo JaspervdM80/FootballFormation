@@ -38,10 +38,13 @@ public partial class EditSubDialog
 
     private bool HasChoice => SelectedOnId is not null && SelectedMinute >= 1;
 
+    /// Math.Clamp throws when its bounds cross, and a game with no duration on file leaves MaxMinute at zero.
+    private int Ceiling => Math.Max(1, MaxMinute);
+
     private void Submit()
     {
         if (SelectedOnId is { } onId)
-            MudDialog.Close(DialogResult.Ok(new EditSubChoice(onId, Math.Clamp(SelectedMinute, 1, MaxMinute))));
+            MudDialog.Close(DialogResult.Ok(new EditSubChoice(onId, Math.Clamp(SelectedMinute, 1, Ceiling))));
     }
 
     private void Cancel() => MudDialog.Cancel();

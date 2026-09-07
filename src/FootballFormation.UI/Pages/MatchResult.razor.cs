@@ -203,6 +203,8 @@ public partial class MatchResult
         if (GameData is null || AllPlayers is null) return;
         if (AllPlayers.FirstOrDefault(p => p.Id == sub.PlayerOffId) is not { } offPlayer) return;
 
+        var shownMinute = MatchClockReport.MinuteOf(GameData, sub).Minute;
+
         var choice = await DialogService.PromptAsync<EditSubDialog, EditSubChoice>(
             L["Edit substitution"],
             p =>
@@ -210,12 +212,12 @@ public partial class MatchResult
                 p.Add(x => x.PlayerOff, offPlayer);
                 p.Add(x => x.Candidates, EditCandidates(sub));
                 p.Add(x => x.PlayerOnId, sub.PlayerOnId);
-                p.Add(x => x.Minute, MatchClockReport.MinuteOf(GameData, sub).Minute);
+                p.Add(x => x.Minute, shownMinute);
                 p.Add(x => x.MaxMinute, GameData.GameDurationMinutes);
             });
         if (choice is null) return;
 
-        var atSeconds = MatchClockReport.ElapsedForMinute(GameData, choice.Minute);
+        var atSeconds = MatchClockReport.ElapsedForEditedMinute(GameData, sub, shownMinute, choice.Minute);
         var result = await SubService.EditSubstitutionAsync(sub.Id, sub.PlayerOffId, choice.PlayerOnId, atSeconds);
         if (!Snackbar.Report(L, result, L["Substitution updated"])) return;
 
@@ -223,16 +225,19 @@ public partial class MatchResult
     }
 
     /// The whole roster, not only who happened to appear, so a change can be corrected to a player who never otherwise made the timeline —
-    /// the same pool the live screen substitutes from. The player already on stays selectable, since keeping her is a valid edit.
+    /// the same pool the live screen substitutes from, and with the same exclusions: on the pitch in that half, a standing injury, or one
+    /// picked up in this match, which would otherwise let a substitution bring on somebody the game has already recorded as leaving hurt.
+    /// The player already on stays selectable, since keeping her is a valid edit.
     private List<Player> EditCandidates(GameSubstitution sub)
     {
         if (GameData is null || AllPlayers is null) return [];
 
         var onPitch = GameData.Periods.FirstOrDefault(p => p.Id == sub.GamePeriodId)?.PlayerPositions
             .Where(pp => !pp.IsSubstitute).Select(pp => pp.PlayerId).ToHashSet() ?? [];
+        var hurt = GameData.Injuries.Select(i => i.PlayerId).ToHashSet();
 
         var candidates = GameData.SelectRoster(AllPlayers, Squad)
-            .Where(p => !onPitch.Contains(p.Id) && !Squad.IsInjured(p.Id)).ToList();
+            .Where(p => !onPitch.Contains(p.Id) && !Squad.IsInjured(p.Id) && !hurt.Contains(p.Id)).ToList();
         if (AllPlayers.FirstOrDefault(p => p.Id == sub.PlayerOnId) is { } on && candidates.All(p => p.Id != on.Id))
             candidates.Insert(0, on);
 

@@ -70,6 +70,12 @@ public static class MatchClockReport
         return ElapsedForMinute(game, minute);
     }
 
+    /// The clock a corrected substitution should carry. A minute left as it was shown keeps the reading already stored, because the shown
+    /// minute is only the whole part — 30+3 reads as 30, and a played-out half's stoppage time would be thrown away by converting it back,
+    /// moving the change minutes earlier and handing the wrong player the difference. Only a minute the coach actually changed is converted.
+    public static int ElapsedForEditedMinute(Game game, GameSubstitution substitution, int shownMinute, int chosenMinute) =>
+        chosenMinute == shownMinute ? substitution.AtSeconds : ElapsedForMinute(game, chosenMinute);
+
     /// A scoreboard minute back to the elapsed clock a substitution stores, so an edited minute lands where the same reading would show it.
     /// The minute alone decides the half, exactly as <see cref="ElapsedOf"/> reads a typed goal — a caller correcting a change keeps the
     /// substitution in its own half by bounding the minute to it.

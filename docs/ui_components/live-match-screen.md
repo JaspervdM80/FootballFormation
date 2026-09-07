@@ -84,7 +84,13 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   changes who came on and the minute: it reverses the line-up change and lays the new one over it with
   the same `TakeOffThePitch`/`BringOnThePitch` primitives a live substitution uses, so the slot rules
   and the minutes stay consistent. The minute is a scoreboard reading turned back into elapsed seconds
-  through the half (`MatchClockReport.ElapsedForMinute`) and kept inside the half it belongs to. A
+  through the half (`MatchClockReport.ElapsedForMinute`), kept inside the half it belongs to, and never
+  past the whistle or the live clock. **A minute left as it was shown keeps the reading already stored**
+  (`ElapsedForEditedMinute`): the shown minute is only the whole part, so a substitution made in
+  stoppage time reads 30+3 and converting an untouched 30 back would move it minutes earlier and hand
+  the wrong player the difference. Only a minute someone actually retyped is converted. The candidate
+  list is taken from **the substitution's own half**, not whichever half the screen happens to show, and
+  excludes anyone already on the pitch there, carrying a standing injury, or hurt in this match. A
   substitution made for an injury is not editable here — its leaver is fixed by the injury.
 - **Every goal on the timeline carries the score it made it** (`ScoreProgressionReport`), in the
   scoreboard's order — home side first. It is counted forwards over the whole match and looked up
