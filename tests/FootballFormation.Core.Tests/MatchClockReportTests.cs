@@ -268,6 +268,25 @@ public class MatchClockReportTests
         Assert.Equal(0, MatchClockReport.ElapsedOf(game, new GameGoal()));
     }
 
+    /// Editing a substitution's minute converts it back to the elapsed clock through the same half arithmetic that shows it, so the reading
+    /// it lands on is the one that was typed.
+    [Fact]
+    public void An_edited_minute_round_trips_through_the_clock_it_will_be_shown_on()
+    {
+        var game = QuartersGame();
+        Period(game, PeriodType.FirstQuarter).StartedAtSeconds = 0;
+        var secondHalf = Period(game, PeriodType.ThirdQuarter);
+        secondHalf.Id = 7;
+        secondHalf.StartedAtSeconds = 33 * 60;
+
+        foreach (var (periodId, minute) in new[] { (1, 21), (7, 31), (7, 40) })
+        {
+            var at = MatchClockReport.ElapsedForMinute(game, minute);
+            var shown = MatchClockReport.MinuteOf(game, new GameSubstitution { GamePeriodId = periodId, AtSeconds = at });
+            Assert.Equal(new MatchMinute(minute, 0), shown);
+        }
+    }
+
     /// A match nobody ran from the touchline has no timings to convert through, so the typed minutes keep the only order they have.
     [Fact]
     public void Typed_in_minutes_stand_on_their_own_when_no_half_was_ever_kicked_off()

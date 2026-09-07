@@ -198,6 +198,47 @@ public partial class MatchResult
         await ReloadGame();
     }
 
+    private async Task EditSubstitution(GameSubstitution sub)
+    {
+        if (GameData is null || AllPlayers is null) return;
+        if (AllPlayers.FirstOrDefault(p => p.Id == sub.PlayerOffId) is not { } offPlayer) return;
+
+        var choice = await DialogService.PromptAsync<EditSubDialog, EditSubChoice>(
+            L["Edit substitution"],
+            p =>
+            {
+                p.Add(x => x.PlayerOff, offPlayer);
+                p.Add(x => x.Candidates, EditCandidates(sub));
+                p.Add(x => x.PlayerOnId, sub.PlayerOnId);
+                p.Add(x => x.Minute, MatchClockReport.MinuteOf(GameData, sub).Minute);
+                p.Add(x => x.MaxMinute, GameData.GameDurationMinutes);
+            });
+        if (choice is null) return;
+
+        var atSeconds = MatchClockReport.ElapsedForMinute(GameData, choice.Minute);
+        var result = await SubService.EditSubstitutionAsync(sub.Id, sub.PlayerOffId, choice.PlayerOnId, atSeconds);
+        if (!Snackbar.Report(L, result, L["Substitution updated"])) return;
+
+        await ReloadGame();
+    }
+
+    /// The whole roster, not only who happened to appear, so a change can be corrected to a player who never otherwise made the timeline —
+    /// the same pool the live screen substitutes from. The player already on stays selectable, since keeping her is a valid edit.
+    private List<Player> EditCandidates(GameSubstitution sub)
+    {
+        if (GameData is null || AllPlayers is null) return [];
+
+        var onPitch = GameData.Periods.FirstOrDefault(p => p.Id == sub.GamePeriodId)?.PlayerPositions
+            .Where(pp => !pp.IsSubstitute).Select(pp => pp.PlayerId).ToHashSet() ?? [];
+
+        var candidates = GameData.SelectRoster(AllPlayers, Squad)
+            .Where(p => !onPitch.Contains(p.Id) && !Squad.IsInjured(p.Id)).ToList();
+        if (AllPlayers.FirstOrDefault(p => p.Id == sub.PlayerOnId) is { } on && candidates.All(p => p.Id != on.Id))
+            candidates.Insert(0, on);
+
+        return candidates;
+    }
+
     private async Task RemoveInjury(GameInjury injury)
     {
         var result = await SubService.RemoveInjuryAsync(injury.Id);

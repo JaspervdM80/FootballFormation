@@ -300,6 +300,32 @@ public partial class LiveMatch
         Snackbar.Report(L, await SubService.RemoveSubstitutionAsync(sub.Id),
             L["Substitution undone"], Severity.Warning);
 
+    private async Task EditSubstitution(GameSubstitution sub)
+    {
+        if (GameData is null || FindPlayer(sub.PlayerOffId) is not { } offPlayer) return;
+
+        var candidates = SubCandidates;
+        if (FindPlayer(sub.PlayerOnId) is { } on && candidates.All(p => p.Id != on.Id))
+            candidates = [on, .. candidates];
+
+        var choice = await DialogService.PromptAsync<EditSubDialog, EditSubChoice>(
+            L["Edit substitution"],
+            p =>
+            {
+                p.Add(x => x.PlayerOff, offPlayer);
+                p.Add(x => x.Candidates, candidates);
+                p.Add(x => x.PlayerOnId, sub.PlayerOnId);
+                p.Add(x => x.Minute, MatchClockReport.MinuteOf(GameData, sub).Minute);
+                p.Add(x => x.MaxMinute, GameData.GameDurationMinutes);
+            });
+        if (choice is null) return;
+
+        var atSeconds = MatchClockReport.ElapsedForMinute(GameData, choice.Minute);
+        Snackbar.Report(L,
+            await SubService.EditSubstitutionAsync(sub.Id, sub.PlayerOffId, choice.PlayerOnId, atSeconds),
+            L["Substitution updated"]);
+    }
+
     private async Task RemoveInjury(GameInjury injury) =>
         Snackbar.Report(L, await SubService.RemoveInjuryAsync(injury.Id),
             L["Injury undone"], Severity.Warning);
