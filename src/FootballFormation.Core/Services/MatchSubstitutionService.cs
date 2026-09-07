@@ -259,8 +259,10 @@ public class MatchSubstitutionService(
             return Result.Success(injury.GameId);
         });
 
-    /// Only the most recent substitution of a half can go, because reversing an older one would fight every change made on that slot since.
-    /// An injury recorded for the same player at the same second goes with it — one tap wrote both.
+    /// Any substitution can go, so long as the player it brought on is still on the pitch: while she is, undoing follows her to wherever she
+    /// stands now and hands that slot back, no matter how many other changes came after on other slots. Once a later change has taken her
+    /// off again, that later one has to be undone first, or the rewind would fight it. An injury recorded for the same player at the same
+    /// second goes with the substitution — one tap wrote both.
     public Task<Result> RemoveSubstitutionAsync(int subId, CancellationToken cancellationToken = default) =>
         LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "undo the substitution",
             cancellationToken, async () =>
@@ -271,40 +273,13 @@ public class MatchSubstitutionService(
             if (sub is null || !await db.GameInScopeAsync(sub.GameId, cancellationToken))
                 return Result.Failure<int>("Substitution not found");
 
-            // AtSeconds is whole seconds and a double substitution is two taps in a row, so both routinely pass for "most recent" —
-            // the id settles which came second, and undoing the earlier one would leave two players in the same slot.
-            var isNewest = !await db.GameSubstitutions
-                .AnyAsync(s => s.GamePeriodId == sub.GamePeriodId
-                               && (s.AtSeconds > sub.AtSeconds
-                                   || (s.AtSeconds == sub.AtSeconds && s.Id > sub.Id)),
-                          cancellationToken);
-            if (!isNewest)
-                return Result.Failure<int>("Only the most recent substitution of a half can be undone");
+            var half = await db.GamePeriods
+                .Include(p => p.PlayerPositions)
+                .FirstOrDefaultAsync(p => p.Id == sub.GamePeriodId, cancellationToken);
+            if (half is null) return Result.Failure<int>("Substitution not found");
 
-            var positions = await db.GamePlayerPositions
-                .Where(pp => pp.GamePeriodId == sub.GamePeriodId)
-                .ToListAsync(cancellationToken);
-
-            var on = positions.FirstOrDefault(pp => pp.PlayerId == sub.PlayerOnId);
-            var off = positions.FirstOrDefault(pp => pp.PlayerId == sub.PlayerOffId);
-
-            // Where the incoming player stands now, not where she came on: a position swap moves a slot without writing a row here, so
-            // handing back the recorded slot could put two players in it. That slot is only the fallback for a missing row.
-            var slot = on?.SlotIndex ?? sub.SlotIndex;
-            var position = on is { IsSubstitute: false } ? on.Position : sub.Position;
-
-            if (on is not null)
-            {
-                on.SlotIndex = null;
-                on.IsSubstitute = true;
-            }
-
-            if (off is not null)
-            {
-                off.SlotIndex = slot;
-                off.Position = position;
-                off.IsSubstitute = false;
-            }
+            var reversed = ReverseLineup(half, sub);
+            if (reversed.IsFailure) return reversed.To<int>();
 
             var injury = await db.GameInjuries.FirstOrDefaultAsync(
                 i => i.GamePeriodId == sub.GamePeriodId
@@ -319,6 +294,95 @@ public class MatchSubstitutionService(
             logger.LogInformation("Undid substitution {SubId} in game {GameId}", subId, sub.GameId);
             return Result.Success(sub.GameId);
         });
+
+    /// Corrects a substitution entered wrong: a different player coming on, or a different minute. It reverses the line-up change and lays
+    /// the new one over it with the same primitives a live substitution uses, so the same slot rules apply and the line-up stays consistent
+    /// for GameMinutesReport to rewind. Editable on the same terms undo is — the incoming player must still be on the pitch — and refused on
+    /// a substitution made for an injury, whose leaver is fixed by the injury.
+    public Task<Result> EditSubstitutionAsync(
+        int subId, int playerOffId, int playerOnId, int atSeconds, CancellationToken cancellationToken = default) =>
+        LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "edit the substitution",
+            cancellationToken, async () =>
+        {
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            if (playerOffId == playerOnId)
+                return Result.Failure<int>("A player cannot be substituted for themselves");
+
+            var sub = await db.GameSubstitutions.FindAsync([subId], cancellationToken);
+            if (sub is null || !await db.GameInScopeAsync(sub.GameId, cancellationToken))
+                return Result.Failure<int>("Substitution not found");
+
+            if (await db.GameInjuries.AnyAsync(
+                    i => i.GamePeriodId == sub.GamePeriodId
+                         && i.PlayerId == sub.PlayerOffId
+                         && i.AtSeconds == sub.AtSeconds,
+                    cancellationToken))
+                return Result.Failure<int>("A substitution made for an injury can't be edited");
+
+            var game = await db.LoadWithPeriodsAsync(sub.GameId, cancellationToken);
+            if (game is null) return LiveMatchQueries.GameNotFound<int>(sub.GameId);
+
+            var half = game.Periods.FirstOrDefault(p => p.Id == sub.GamePeriodId);
+            if (half is null) return Result.Failure<int>("Substitution not found");
+
+            await db.Entry(half).Collection(p => p.PlayerPositions).LoadAsync(cancellationToken);
+
+            var reversed = ReverseLineup(half, sub);
+            if (reversed.IsFailure) return reversed.To<int>();
+
+            var taken = TakeOffThePitch(half, playerOffId);
+            if (taken.IsFailure) return taken.To<int>();
+
+            var slot = taken.Value;
+            var brought = BringOnThePitch(half, playerOnId, slot);
+            if (brought.IsFailure) return brought.To<int>();
+
+            // Kept inside its own half: an edited minute past the end of the period — the whistle, or the live clock — would credit playing
+            // time that was never on it, and reads on the timeline as a change to a half it was never part of.
+            var start = half.StartedAtSeconds ?? 0;
+            var end = half.EndedAtSeconds ?? game.ElapsedSecondsAt(UtcNow);
+            sub.AtSeconds = Math.Clamp(atSeconds, start, Math.Max(start, end));
+            sub.PlayerOffId = playerOffId;
+            sub.PlayerOnId = playerOnId;
+            sub.SlotIndex = slot.Index;
+            sub.Position = slot.Position;
+
+            await db.SaveChangesAsync(cancellationToken);
+
+            await db.Entry(sub).Reference(s => s.PlayerOff).LoadAsync(cancellationToken);
+            await db.Entry(sub).Reference(s => s.PlayerOn).LoadAsync(cancellationToken);
+
+            logger.LogInformation("Edited substitution {SubId} in game {GameId}: {Off} off, {On} on at {Seconds}s",
+                subId, sub.GameId, playerOffId, playerOnId, sub.AtSeconds);
+            return Result.Success(sub.GameId);
+        });
+
+    /// Puts the line-up back to before a substitution: benches whoever came on, from wherever she now stands — a later position swap can
+    /// have moved her, and the slot she holds now is the one to hand back — and restores the player who came off to it. Refused unless both
+    /// still stand where this substitution left them — she on the pitch, he off it — because otherwise a later change moved one of them and
+    /// reversing this one would relocate her, or seat two players in one slot.
+    private static Result ReverseLineup(GamePeriod half, GameSubstitution sub)
+    {
+        var on = half.PlayerPositions.FirstOrDefault(pp => pp.PlayerId == sub.PlayerOnId);
+        var off = half.PlayerPositions.FirstOrDefault(pp => pp.PlayerId == sub.PlayerOffId);
+
+        if (on is null || on.IsSubstitute || off is { IsSubstitute: false })
+            return Result.Failure("Undo the later substitution first");
+
+        var slot = new PitchSlot(on.SlotIndex, on.Position);
+        on.SlotIndex = null;
+        on.IsSubstitute = true;
+
+        if (off is not null)
+        {
+            off.SlotIndex = slot.Index;
+            off.Position = slot.Position;
+            off.IsSubstitute = false;
+        }
+
+        return Result.Success();
+    }
 
     private readonly record struct PitchSlot(int? Index, PlayerPosition Position);
 

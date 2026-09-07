@@ -246,33 +246,86 @@ public class MatchSubstitutionServiceTests : LiveMatchTestBase
     }
 
     [Fact]
-    public async Task Only_the_most_recent_substitution_of_a_period_can_be_undone()
+    public async Task A_substitution_whose_replacement_was_taken_off_again_cannot_be_undone_yet()
     {
         var game = await SeedGameAsync();
         await MatchClock.StartMatchAsync(game.Id);
         var players = await PlayersAsync();
 
+        // players[2] comes on for players[1], then is taken off herself for players[3]: undoing the
+        // first now would collide with the second, which built on the slot she left.
         Time.Advance(TimeSpan.FromMinutes(10));
         var first = await Subs.SubstituteAsync(game.Id, players[1].Id, players[2].Id);
 
         Time.Advance(TimeSpan.FromMinutes(10));
         await Subs.SubstituteAsync(game.Id, players[2].Id, players[3].Id);
 
-        // Reversing the earlier swap would fight every change made on that slot since.
         var result = await Subs.RemoveSubstitutionAsync(first.Value!.Id);
 
         Assert.True(result.IsFailure);
-        Assert.Equal("Only the most recent substitution of a half can be undone", result.Error);
+        Assert.Equal("Undo the later substitution first", result.Error);
     }
 
     [Fact]
-    public async Task Of_two_substitutions_in_the_same_second_only_the_later_one_can_be_undone()
+    public async Task An_older_substitution_on_another_slot_can_still_be_undone()
     {
         var game = await SeedGameAsync();
         await MatchClock.StartMatchAsync(game.Id);
         var players = await PlayersAsync();
 
-        // A double substitution: two taps on the touchline, one second on the match clock.
+        // Two substitutions on different slots: players[2] on for the midfielder, players[3] on for
+        // the keeper. The first is no longer the newest, but its replacement is still on the pitch.
+        Time.Advance(TimeSpan.FromMinutes(10));
+        var first = await Subs.SubstituteAsync(game.Id, players[1].Id, players[2].Id);
+        Time.Advance(TimeSpan.FromMinutes(10));
+        await Subs.SubstituteAsync(game.Id, players[0].Id, players[3].Id);
+
+        Assert.True((await Subs.RemoveSubstitutionAsync(first.Value!.Id)).IsSuccess);
+
+        Db.ChangeTracker.Clear();
+        var live = await ReloadAsync(game.Id);
+        var period = await Db.GamePeriods
+            .Include(p => p.PlayerPositions)
+            .FirstAsync(p => p.Id == live.LivePeriodId);
+
+        var back = period.PlayerPositions.Single(p => p.PlayerId == players[1].Id);
+        Assert.False(back.IsSubstitute);
+        Assert.Equal(5, back.SlotIndex);
+        Assert.True(period.PlayerPositions.Single(p => p.PlayerId == players[2].Id).IsSubstitute);
+
+        // The other slot's substitution is untouched: players[3] is still on for the keeper.
+        Assert.False(period.PlayerPositions.Single(p => p.PlayerId == players[3].Id).IsSubstitute);
+        Assert.Single(await Db.GameSubstitutions.Where(s => s.GameId == game.Id).ToListAsync());
+    }
+
+    [Fact]
+    public async Task A_substitution_whose_leaver_came_back_on_cannot_be_undone_yet()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        // players[1] off for players[2], then players[1] back on for the keeper: undoing the first now
+        // would move players[1] out of goal and leave it empty, so the later change has to go first.
+        Time.Advance(TimeSpan.FromMinutes(10));
+        var first = await Subs.SubstituteAsync(game.Id, players[1].Id, players[2].Id);
+        Time.Advance(TimeSpan.FromMinutes(10));
+        await Subs.SubstituteAsync(game.Id, players[0].Id, players[1].Id);
+
+        var result = await Subs.RemoveSubstitutionAsync(first.Value!.Id);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Undo the later substitution first", result.Error);
+    }
+
+    [Fact]
+    public async Task Of_two_substitutions_in_the_same_second_the_earlier_waits_on_the_later()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        // A double substitution on the same slot: two taps on the touchline, one second on the clock.
         Time.Advance(TimeSpan.FromMinutes(10));
         var first = await Subs.SubstituteAsync(game.Id, players[1].Id, players[2].Id);
         var second = await Subs.SubstituteAsync(game.Id, players[2].Id, players[3].Id);
@@ -281,7 +334,7 @@ public class MatchSubstitutionServiceTests : LiveMatchTestBase
 
         var refused = await Subs.RemoveSubstitutionAsync(first.Value.Id);
         Assert.True(refused.IsFailure);
-        Assert.Equal("Only the most recent substitution of a half can be undone", refused.Error);
+        Assert.Equal("Undo the later substitution first", refused.Error);
 
         Assert.True((await Subs.RemoveSubstitutionAsync(second.Value.Id)).IsSuccess);
 
@@ -377,5 +430,142 @@ public class MatchSubstitutionServiceTests : LiveMatchTestBase
 
         Assert.True(result.IsFailure);
         Assert.Equal("No half is waiting to be set up", result.Error);
+    }
+
+    [Fact]
+    public async Task Editing_a_substitution_brings_a_different_player_on()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        Time.Advance(TimeSpan.FromMinutes(12));
+        var sub = await Subs.SubstituteAsync(game.Id, players[1].Id, players[2].Id);
+
+        // The wrong player came on: it was meant to be players[3], the minute unchanged.
+        var edited = await Subs.EditSubstitutionAsync(
+            sub.Value!.Id, players[1].Id, players[3].Id, sub.Value.AtSeconds);
+        Assert.True(edited.IsSuccess);
+
+        Db.ChangeTracker.Clear();
+        var live = await ReloadAsync(game.Id);
+        var period = await Db.GamePeriods
+            .Include(p => p.PlayerPositions)
+            .FirstAsync(p => p.Id == live.LivePeriodId);
+
+        var on = period.PlayerPositions.Single(p => p.PlayerId == players[3].Id);
+        Assert.False(on.IsSubstitute);
+        Assert.Equal(5, on.SlotIndex);
+        Assert.True(period.PlayerPositions.Single(p => p.PlayerId == players[2].Id).IsSubstitute);
+        Assert.True(period.PlayerPositions.Single(p => p.PlayerId == players[1].Id).IsSubstitute);
+
+        var row = await Db.GameSubstitutions.SingleAsync(s => s.GameId == game.Id);
+        Assert.Equal(players[1].Id, row.PlayerOffId);
+        Assert.Equal(players[3].Id, row.PlayerOnId);
+    }
+
+    [Fact]
+    public async Task Editing_a_substitution_moves_it_to_a_new_minute()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        Time.Advance(TimeSpan.FromMinutes(12));
+        var sub = await Subs.SubstituteAsync(game.Id, players[1].Id, players[2].Id);
+        Assert.Equal(720, sub.Value!.AtSeconds);
+
+        // The clock has to have reached the corrected minute — a change cannot be moved past the play so far.
+        Time.Advance(TimeSpan.FromMinutes(13));
+        var edited = await Subs.EditSubstitutionAsync(
+            sub.Value.Id, players[1].Id, players[2].Id, atSeconds: 1200);
+        Assert.True(edited.IsSuccess);
+
+        var row = await Db.GameSubstitutions.SingleAsync(s => s.GameId == game.Id);
+        Assert.Equal(1200, row.AtSeconds);
+        Assert.Equal(players[2].Id, row.PlayerOnId);
+    }
+
+    [Fact]
+    public async Task An_edited_minute_is_kept_inside_the_half()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        Time.Advance(TimeSpan.FromMinutes(30));
+        var players = await PlayersAsync();
+        var sub = await Subs.SubstituteAsync(game.Id, players[1].Id, players[2].Id);
+        await MatchClock.EndHalfAsync(game.Id);
+
+        // The first half ended at 1800s; a later reading cannot belong to it.
+        var edited = await Subs.EditSubstitutionAsync(
+            sub.Value!.Id, players[1].Id, players[2].Id, atSeconds: 5000);
+        Assert.True(edited.IsSuccess);
+
+        var row = await Db.GameSubstitutions.SingleAsync(s => s.GameId == game.Id);
+        Assert.Equal(1800, row.AtSeconds);
+    }
+
+    [Fact]
+    public async Task A_substitution_whose_replacement_was_replaced_cannot_be_edited_yet()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        Time.Advance(TimeSpan.FromMinutes(10));
+        var first = await Subs.SubstituteAsync(game.Id, players[1].Id, players[2].Id);
+        Time.Advance(TimeSpan.FromMinutes(10));
+        await Subs.SubstituteAsync(game.Id, players[2].Id, players[3].Id);
+
+        var result = await Subs.EditSubstitutionAsync(
+            first.Value!.Id, players[1].Id, players[3].Id, first.Value.AtSeconds);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Undo the later substitution first", result.Error);
+    }
+
+    [Fact]
+    public async Task A_substitution_made_for_an_injury_cannot_be_edited()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        Time.Advance(TimeSpan.FromMinutes(12));
+        var injury = await Subs.MarkInjuredAsync(game.Id, players[1].Id, players[2].Id);
+        var sub = await Db.GameSubstitutions.SingleAsync(s => s.GameId == game.Id);
+        Assert.True(injury.IsSuccess);
+
+        var result = await Subs.EditSubstitutionAsync(
+            sub.Id, players[1].Id, players[3].Id, sub.AtSeconds);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("A substitution made for an injury can't be edited", result.Error);
+    }
+
+    [Fact]
+    public async Task Editing_a_substitution_that_is_not_there_is_refused()
+    {
+        var result = await Subs.EditSubstitutionAsync(999, 1, 2, 600);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Substitution not found", result.Error);
+    }
+
+    [Fact]
+    public async Task An_edited_substitution_cannot_send_a_player_on_for_herself()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        Time.Advance(TimeSpan.FromMinutes(12));
+        var sub = await Subs.SubstituteAsync(game.Id, players[1].Id, players[2].Id);
+
+        var result = await Subs.EditSubstitutionAsync(
+            sub.Value!.Id, players[1].Id, players[1].Id, sub.Value.AtSeconds);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("A player cannot be substituted for themselves", result.Error);
     }
 }

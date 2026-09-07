@@ -75,6 +75,23 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   can have moved it since, and handing the recorded slot back would seat two players in it.
   Each select's `Placeholder` is set **only** when its list is empty — MudSelect shows a
   placeholder whenever nothing is chosen, so a standing "nobody is on the bench" greets a full bench.
+- **Any substitution can be undone or edited, not only the newest, from either the live screen or the
+  result page** (the `Undo` and `Edit` buttons in the timeline's `AdminActions`). A substitution is
+  correctable as long as the player it brought on is still on the pitch — undo then follows her to
+  wherever she now stands and hands that slot back, whatever else changed on other slots since. Once a
+  later change has taken her off again, that later one has to go first (`RemoveSubstitutionAsync`
+  refuses with *"Undo the later substitution first"*). Editing (`EditSubstitutionAsync`, `EditSubDialog`)
+  changes who came on and the minute: it reverses the line-up change and lays the new one over it with
+  the same `TakeOffThePitch`/`BringOnThePitch` primitives a live substitution uses, so the slot rules
+  and the minutes stay consistent. The minute is a scoreboard reading turned back into elapsed seconds
+  through the half (`MatchClockReport.ElapsedForMinute`), kept inside the half it belongs to, and never
+  past the whistle or the live clock. **A minute left as it was shown keeps the reading already stored**
+  (`ElapsedForEditedMinute`): the shown minute is only the whole part, so a substitution made in
+  stoppage time reads 30+3 and converting an untouched 30 back would move it minutes earlier and hand
+  the wrong player the difference. Only a minute someone actually retyped is converted. The candidate
+  list is taken from **the substitution's own half**, not whichever half the screen happens to show, and
+  excludes anyone already on the pitch there, carrying a standing injury, or hurt in this match. A
+  substitution made for an injury is not editable here — its leaver is fixed by the injury.
 - **Every goal on the timeline carries the score it made it** (`ScoreProgressionReport`), in the
   scoreboard's order — home side first. It is counted forwards over the whole match and looked up
   by goal id, because the timeline itself runs newest first and a total accumulated while rendering

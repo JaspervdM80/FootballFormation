@@ -268,6 +268,53 @@ public class MatchClockReportTests
         Assert.Equal(0, MatchClockReport.ElapsedOf(game, new GameGoal()));
     }
 
+    /// Editing a substitution's minute converts it back to the elapsed clock through the same half arithmetic that shows it, so the reading
+    /// it lands on is the one that was typed.
+    [Fact]
+    public void An_edited_minute_round_trips_through_the_clock_it_will_be_shown_on()
+    {
+        var game = QuartersGame();
+        Period(game, PeriodType.FirstQuarter).StartedAtSeconds = 0;
+        var secondHalf = Period(game, PeriodType.ThirdQuarter);
+        secondHalf.Id = 7;
+        secondHalf.StartedAtSeconds = 33 * 60;
+
+        foreach (var (periodId, minute) in new[] { (1, 21), (7, 31), (7, 40) })
+        {
+            var at = MatchClockReport.ElapsedForMinute(game, minute);
+            var shown = MatchClockReport.MinuteOf(game, new GameSubstitution { GamePeriodId = periodId, AtSeconds = at });
+            Assert.Equal(new MatchMinute(minute, 0), shown);
+        }
+    }
+
+    /// The shown minute is only the whole part, so converting an untouched one back would throw a played-out half's stoppage time away and
+    /// move the change earlier — handing the wrong player the difference on a report nobody would think to check.
+    [Fact]
+    public void Correcting_a_substitution_keeps_its_clock_unless_the_minute_was_actually_changed()
+    {
+        var game = TestData.Game(durationMinutes: 60);
+        game.AddPeriod(PeriodType.FirstHalf);
+        game.AddPeriod(PeriodType.SecondHalf);
+        var first = Period(game, PeriodType.FirstHalf);
+        first.Id = 7;
+        first.StartedAtSeconds = 0;
+        first.EndedAtSeconds = 1980;
+
+        // Three minutes into a played-out 30-minute half: the timeline reads 30+3, so the dialog opens on 30.
+        var stoppage = new GameSubstitution { GamePeriodId = 7, AtSeconds = 1920 };
+        Assert.Equal(new MatchMinute(30, 3), MatchClockReport.MinuteOf(game, stoppage));
+
+        // Left alone, it keeps the reading it was recorded at rather than sliding back to the top of the 30th.
+        Assert.Equal(1920, MatchClockReport.ElapsedForEditedMinute(game, stoppage, shownMinute: 30, chosenMinute: 30));
+
+        // Changed on purpose, it moves — that is the whole point of the field.
+        Assert.Equal(600, MatchClockReport.ElapsedForEditedMinute(game, stoppage, shownMinute: 30, chosenMinute: 11));
+
+        // The same holds for a change made partway through a minute: 12:45 stays 12:45 until someone retypes it.
+        var midMinute = new GameSubstitution { GamePeriodId = 7, AtSeconds = 765 };
+        Assert.Equal(765, MatchClockReport.ElapsedForEditedMinute(game, midMinute, shownMinute: 13, chosenMinute: 13));
+    }
+
     /// A match nobody ran from the touchline has no timings to convert through, so the typed minutes keep the only order they have.
     [Fact]
     public void Typed_in_minutes_stand_on_their_own_when_no_half_was_ever_kicked_off()

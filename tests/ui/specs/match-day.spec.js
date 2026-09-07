@@ -258,14 +258,48 @@ test('a substitution and an injury entered wrong are undone from the result page
   await gotoRendered(page, `/games/${id}/result`);
   const events = page.locator('.live-event');
   await expect(events).toHaveCount(2);
-  await expect(page.locator('.live-event .mud-icon-button')).toHaveCount(2);
+  await expect(events.getByRole('button', { name: 'Undo' })).toHaveCount(2);
 
   // The injury goes on its own; the substitution is untouched by it.
   const injuryRow = events.filter({ hasText: 'not replaced' });
-  await clickFor(injuryRow.locator('.mud-icon-button'), () => expect(events).toHaveCount(1));
+  await clickFor(injuryRow.getByRole('button', { name: 'Undo' }), () => expect(events).toHaveCount(1));
 
   // And the substitution, the last thing left, goes too.
-  await clickFor(events.locator('.mud-icon-button'), () => expect(events).toHaveCount(0));
+  await clickFor(events.getByRole('button', { name: 'Undo' }), () => expect(events).toHaveCount(0));
+});
+
+test('a substitution carries an edit that opens pre-filled and round-trips through the service', async ({ page }) => {
+  const id = await liveMatch(page, 'FC Correctie');
+  const chips = page.locator('.live-lineup .pitch-player');
+
+  await clickFor(chips.first(), () => expect(page.locator('.mud-dialog')).toBeVisible());
+  const dialog = await openDialog(page);
+  await chooseOption(page, dialog, 'Comes on', '#');
+  await submitDialog(page, 'Make substitution');
+  const event = page.locator('.live-event');
+  await expect(event).toHaveCount(1);
+  const cameOn = (await event.locator('.live-event-main').textContent()).trim();
+
+  await finishMatch(page);
+
+  // The correction lives beside the undo the result page already offers.
+  await gotoRendered(page, `/games/${id}/result`);
+  await clickFor(
+    event.getByRole('button', { name: 'Edit' }),
+    () => expect(page.locator('.mud-dialog')).toBeVisible(),
+  );
+
+  // It opens knowing this change: who came off, and the roster to pick a replacement from.
+  const edit = await openDialog(page);
+  await expect(edit).toContainText('came off');
+  await expect(edit.locator('.mud-input-control', { has: page.getByText('Comes on', { exact: false }) })).toBeVisible();
+
+  // Saving runs the change back through the service — reversing the line-up and laying it down again —
+  // and the timeline stands where it was.
+  await submitDialog(page, 'Save');
+  await expect(page.getByText('Substitution updated', { exact: false })).toBeVisible();
+  await expect(event).toHaveCount(1);
+  await expect(event.locator('.live-event-main')).toHaveText(cameOn);
 });
 
 test('the timeline draws half time between the two halves', async ({ page }) => {

@@ -87,6 +87,18 @@ are unaffected.
 **Undoing a substitution follows the slot, not the recorded one** — a swap can have moved it since,
 and handing the recorded slot back would seat two players in it.
 
+**Any substitution can be undone or edited, from the live screen or the result page**, not only the
+newest — as long as the player it brought on is still on the pitch. Undo follows her to wherever she
+stands now; once a later change has taken her off, that one goes first (`RemoveSubstitutionAsync`
+refuses with *"Undo the later substitution first"*). `EditSubstitutionAsync` (`EditSubDialog`) changes
+who came on and the minute by **reversing the line-up change and re-applying** with the same
+`TakeOffThePitch`/`BringOnThePitch` a live sub uses, so the slot chain and the minutes stay
+consistent; the minute round-trips through `MatchClockReport.ElapsedForMinute` and is clamped inside
+its half. **A minute left alone keeps the stored reading** (`ElapsedForEditedMinute`) — the shown
+minute drops stoppage time (30+3 reads 30), so converting an untouched one back would move the change
+minutes earlier. Candidates come from the substitution's **own** half, not the one on screen. A
+substitution made for an injury is not editable — its leaver is fixed by the injury.
+
 Two substitutions in the same second settle by **id**, not just the clock.
 
 **Half-time changes are substitutions too, recorded when the next half kicks off.** At the break the

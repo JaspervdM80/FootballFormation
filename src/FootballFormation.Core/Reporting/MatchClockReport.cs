@@ -67,13 +67,27 @@ public static class MatchClockReport
         if (goal.AtSeconds is { } at) return at;
         if (goal.Minute is not { } minute) return 0;
 
+        return ElapsedForMinute(game, minute);
+    }
+
+    /// The clock a corrected substitution should carry. A minute left as it was shown keeps the reading already stored, because the shown
+    /// minute is only the whole part — 30+3 reads as 30, and a played-out half's stoppage time would be thrown away by converting it back,
+    /// moving the change minutes earlier and handing the wrong player the difference. Only a minute the coach actually changed is converted.
+    public static int ElapsedForEditedMinute(Game game, GameSubstitution substitution, int shownMinute, int chosenMinute) =>
+        chosenMinute == shownMinute ? substitution.AtSeconds : ElapsedForMinute(game, chosenMinute);
+
+    /// A scoreboard minute back to the elapsed clock a substitution stores, so an edited minute lands where the same reading would show it.
+    /// The minute alone decides the half, exactly as <see cref="ElapsedOf"/> reads a typed goal — a caller correcting a change keeps the
+    /// substitution in its own half by bounding the minute to it.
+    public static int ElapsedForMinute(Game game, int minute)
+    {
         // The start of the minute written down, on the scoreboard's scale.
         var onScoreboard = Math.Max(0, (minute - 1) * 60);
 
         var halfSeconds = GameSplitType.Halves.PeriodDurationSeconds(game.GameDurationMinutes);
         if (halfSeconds <= 0) return onScoreboard;
 
-        // The fallbacks match what Build assumes in the same position, so a match never run from the touchline keeps its goals in the
+        // The fallbacks match what Build assumes in the same position, so a match never run from the touchline keeps its events in the
         // order the typed minutes put them in — the only order they have.
         return onScoreboard < halfSeconds
             ? (HalfKickedOffAt(game, PeriodType.FirstHalf) ?? 0) + onScoreboard

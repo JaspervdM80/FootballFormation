@@ -110,6 +110,6 @@ test('a player marked injured mid-match leaves the pitch and can be put back', a
   await expect(event).toHaveCount(1);
   await expect(event.locator('.live-event-injury')).toBeVisible();
 
-  await clickFor(event.getByRole('button'), () => expect(chips).toHaveCount(2));
+  await clickFor(event.getByRole('button', { name: 'Undo' }), () => expect(chips).toHaveCount(2));
   await expect(page.locator('.live-event')).toHaveCount(0);
 });
