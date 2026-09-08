@@ -21,7 +21,17 @@
 - Every picker lists the shapes through `FormationTypeExtensions.Alphabetical` — by display name,
   not by the order they were added to the enum. The builder, the match dialog and the season
   preferences all read that one list
-- Actions: Save All, Copy to Next Period
+- Actions: Save All, Suggest Line-up, Copy to Next Period
+- **Suggest Line-up** fills the period on screen from `LineupSuggestionReport.Build(...)` and saves
+  nothing — the coach reviews it and presses Save like any other edit, and replacing a period that
+  already holds a line-up asks first. The report weighs two things against each other: how well a
+  player fits the slot (`PositionFitHelper`, the same five tiers the pitch colours with) and how
+  much she has already played. A keeper out of position costs double, which is what keeps the only
+  goalkeeper in goal rather than at centre-back where she may fit better. Minutes are the season so
+  far, from `StatsService.GetSeasonAsync`, **plus** the other periods of this match as they are
+  currently planned — so a second half balances the first instead of repeating it. Injured and
+  unavailable players are not candidates: the suggestion draws on `RosterPlayers`, the same list
+  the drag panel offers
 - **A period whose `StartedAtSeconds` is set is shown as a record, not a plan.** The pitch, the
   bench and the player list all render with their drag turned off, an inline notice says why, Copy
   to Next Period is withheld when the period it would copy *into* has kicked off, and every editing

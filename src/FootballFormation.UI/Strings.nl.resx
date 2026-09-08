@@ -208,6 +208,12 @@
   <data name="All lineups saved!" xml:space="preserve"><value>Alle opstellingen opgeslagen!</value></data>
   <data name="Lineup copied to {0}" xml:space="preserve"><value>Opstelling gekopieerd naar {0}</value></data>
   <data name="Formation changed to {0}" xml:space="preserve"><value>Opstelling gewijzigd naar {0}</value></data>
+  <data name="Suggest line-up" xml:space="preserve"><value>Opstelling voorstellen</value></data>
+  <data name="Suggest" xml:space="preserve"><value>Voorstel</value></data>
+  <data name="Suggest a line-up?" xml:space="preserve"><value>Opstelling voorstellen?</value></data>
+  <data name="Everyone currently set up for this part of the match is replaced. Nothing is saved until you save." xml:space="preserve"><value>Iedereen die nu voor dit deel van de wedstrijd staat opgesteld wordt vervangen. Er wordt niets opgeslagen tot je opslaat.</value></data>
+  <data name="Replace" xml:space="preserve"><value>Vervangen</value></data>
+  <data name="Suggested a line-up — check it before saving." xml:space="preserve"><value>Opstelling voorgesteld — controleer die voordat je opslaat.</value></data>
 
   <!-- Match result -->
   <data name="Match Result" xml:space="preserve"><value>Uitslag</value></data>
