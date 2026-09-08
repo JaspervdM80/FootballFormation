@@ -182,7 +182,12 @@ const liveCard = page.locator('.game-row', { hasText: SEED_LIVE_OPPONENT }).firs
 // "Opstelling" or "Opstelling toevoegen", depending on whether it has a line-up yet.
 await liveCard.getByTitle(/opstelling|formation|add lineup/i).first().click();
 await page.waitForURL(/\/games\/\d+\/formation/);
-const LIVE_GAME = `/games/${page.url().match(/\/games\/(\d+)\//)[1]}/live`;
+const gameId = page.url().match(/\/games\/(\d+)\//)[1];
+const LIVE_GAME = `/games/${gameId}/live`;
+
+// waitForURL says the navigation happened, not that Blazor has bound anything to the pitch — and a
+// drop onto the prerender is swallowed with no error. goto is what waits for the circuit.
+await goto(page, `${BASE}/games/${gameId}/formation`);
 
 const chips = page.locator('.pitch .pitch-player');
 if (!(await chips.count())) {

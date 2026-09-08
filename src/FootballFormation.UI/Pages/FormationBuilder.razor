@@ -174,6 +174,15 @@
             @L["Save All Lineups"]
         </MudButton>
 
+        @if (!activePeriodPlayed)
+        {
+            <MudButton Variant="Variant.Outlined" Class="btn-ghost"
+                       StartIcon="@Icons.Material.Filled.AutoFixHigh"
+                       OnClick="() => SuggestLineup(activePeriod.Id)" Size="Size.Small">
+                @L["Suggest line-up"]
+            </MudButton>
+        }
+
         @if (CanCopyToNextPeriod)
         {
             <MudButton Variant="Variant.Outlined" Class="btn-ghost"
@@ -192,6 +201,15 @@
                    OnClick="SaveAll" Size="Size.Small">
             @L["Save"]
         </MudButton>
+
+        @if (!activePeriodPlayed)
+        {
+            <MudButton Variant="Variant.Outlined" Class="btn-ghost"
+                       StartIcon="@Icons.Material.Filled.AutoFixHigh"
+                       OnClick="() => SuggestLineup(activePeriod.Id)" Size="Size.Small">
+                @L["Suggest"]
+            </MudButton>
+        }
 
         <MudSpacer />
 

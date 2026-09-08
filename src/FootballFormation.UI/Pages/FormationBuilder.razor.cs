@@ -9,6 +9,8 @@ public partial class FormationBuilder
     [Inject] private GameService GameService { get; set; } = null!;
     [Inject] private PlayerService PlayerService { get; set; } = null!;
     [Inject] private SeasonSquadService SquadService { get; set; } = null!;
+    [Inject] private StatsService StatsService { get; set; } = null!;
+    [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private NavigationTrail Trail { get; set; } = null!;
     [Inject] private ILogger<FormationBuilder> Logger { get; set; } = null!;
@@ -307,6 +309,68 @@ public partial class FormationBuilder
         Logger.LogInformation("Copied lineup from {SourcePeriod} to {NextPeriod} for game {GameId}",
             sourcePeriod.PeriodType, nextPeriod.PeriodType, GameId);
         Snackbar.Add(L["Lineup copied to {0}", L[nextPeriod.PeriodType.DisplayName()].Value], Severity.Info);
+    }
+
+    private async Task SuggestLineup(int periodId)
+    {
+        if (GameData is null || HasBeenPlayed(periodId)) return;
+
+        if (PeriodLineups[periodId].Count > 0
+            && !await DialogService.ConfirmAsync(
+                L["Suggest a line-up?"],
+                L["Everyone currently set up for this part of the match is replaced. Nothing is saved until you save."],
+                "Replace"))
+        {
+            return;
+        }
+
+        var minutes = await MinutesPlayedAsync(periodId);
+        if (minutes is null) return;
+
+        var suggestion = LineupSuggestionReport.Build(GetAllSlots(periodId), RosterPlayers, minutes);
+
+        PeriodLineups[periodId] =
+        [
+            .. suggestion.Starters.Select(s => CreateEntry(s.Player, s.Position, s.SlotIndex)),
+            .. suggestion.Substitutes.Select(p => CreateEntry(p, p.PreferredPosition, slotIndex: null, isSubstitute: true))
+        ];
+
+        Logger.LogInformation("Suggested a lineup for period {PeriodId} of game {GameId}", periodId, GameId);
+        Snackbar.Add(L["Suggested a line-up — check it before saving."], Severity.Success);
+    }
+
+    /// Season so far plus the other periods of this match as planned, so a second half balances the first. Null when the season figures
+    /// could not be read.
+    private async Task<Dictionary<int, int>?> MinutesPlayedAsync(int periodId)
+    {
+        var seasonResult = await StatsService.GetSeasonAsync(GameData!.SeasonId, Cancellation);
+        if (!Snackbar.ReportFailure(L, seasonResult)) return null;
+
+        var minutes = seasonResult.Value!.Stats.Players
+            .ToDictionary(p => p.Player.Id, p => p.TotalMinutes);
+
+        // A finished match is already in the season figures, periods and all, so adding them again would bench the very players the
+        // line-up beside this one just picked.
+        if (GameData.IsComplete) return minutes;
+
+        var planned = new Dictionary<int, int>();
+
+        foreach (var (otherPeriodId, lineup) in PeriodLineups.Where(entry => entry.Key != periodId))
+        {
+            var period = GameData.Periods.First(p => p.Id == otherPeriodId);
+            var seconds = period.StartedAtSeconds is { } start && period.EndedAtSeconds is { } end
+                ? end - start
+                : GameData.PeriodDurationSeconds;
+
+            foreach (var entry in lineup.Where(e => !e.IsSubstitute))
+                planned[entry.PlayerId] = planned.GetValueOrDefault(entry.PlayerId) + seconds;
+        }
+
+        // Converted once, per docs/known_issues/domain.md.
+        foreach (var (playerId, seconds) in planned)
+            minutes[playerId] = minutes.GetValueOrDefault(playerId) + Game.SecondsToMinutes(seconds);
+
+        return minutes;
     }
 
     private async Task SaveAll()
