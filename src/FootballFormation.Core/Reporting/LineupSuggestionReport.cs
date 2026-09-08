@@ -13,7 +13,6 @@ public class LineupSuggestion
     /// Ordered by slot, so slot 0 is always the goalkeeper — see <see cref="Models.FormationSlots.For"/>.
     public required List<SuggestedPlacement> Starters { get; init; }
 
-    /// Everyone handed in who did not make the eleven.
     public required List<Player> Substitutes { get; init; }
 }
 
@@ -21,8 +20,8 @@ public class LineupSuggestion
 /// totalled, so the caller decides whether that means this season, this match or both.
 public static class LineupSuggestionReport
 {
-    /// What the busiest player in the squad pays for being the busiest, in the same units as the fit penalties below. Above the cost of
-    /// an alternative position and well under the cost of playing somebody nowhere near her position.
+    /// What the busiest player in the squad pays for being the busiest, in the same units as the fit penalties below: enough that a fully
+    /// rested player is fielded out of position (12) ahead of her in a slot she merely suits (5 + 10).
     private const double RestWeight = 10;
 
     /// A keeper out of position loses matches in a way a winger on the wrong flank does not.
@@ -145,8 +144,8 @@ public static class LineupSuggestionReport
         return slotOwners;
     }
 
-    /// Taking the cheapest pair first can spend the only keeper on right back and leave nobody for goal. Trading assigned pairs and
-    /// bringing players off the bench until neither helps is what turns the cheapest first choice into the cheapest whole line-up.
+    /// Greedy alone can spend the only keeper on right back. Trading assigned pairs and pulling players off the bench improves on it —
+    /// a local optimum, not the cheapest eleven there is.
     private static void Improve(double[,] costs, int[] slotOwners, bool[] placed, int playerCount)
     {
         bool improved;

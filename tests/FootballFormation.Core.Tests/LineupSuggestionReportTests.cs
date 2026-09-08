@@ -124,6 +124,47 @@ public class LineupSuggestionReportTests
         Assert.Equal(2, Assert.Single(suggestion.Starters).Player.Id);
     }
 
+    /// The rungs between an exact match and no relationship at all have to be worth something, or the shape stops meaning anything: three
+    /// weeks of rest is not enough to move a defender off centre-back for a midfielder who merely suits it.
+    [Fact]
+    public void A_natural_fit_keeps_the_slot_against_a_more_rested_player_who_only_suits_it()
+    {
+        Player[] squad =
+        [
+            TestData.Player(1, "Defender", PlayerPosition.DEF, shirt: 3),
+            TestData.Player(2, "Midfielder", PlayerPosition.CM, shirt: 4, PlayerPosition.DEF),
+            TestData.Player(3, "Ever present", PlayerPosition.CM, shirt: 5)
+        ];
+
+        var suggestion = LineupSuggestionReport.Build(
+            [PlayerPosition.CB], squad, Minutes((1, 20), (2, 0), (3, 100)));
+
+        var starter = Assert.Single(suggestion.Starters);
+        Assert.Equal(1, starter.Player.Id);
+        Assert.Equal(PositionFit.NaturalFit, starter.Fit);
+    }
+
+    /// Filling the cheapest pair first puts the midfielder at centre-back and hands the striker's slot to the defender it displaced.
+    /// Trading the pair back fixes the striker but leaves centre-back wrong, and only pulling the substitute in finishes the job.
+    [Fact]
+    public void A_substitute_takes_a_slot_the_first_pass_filled_with_somebody_who_suits_it_less()
+    {
+        Player[] squad =
+        [
+            TestData.Player(1, "Centre back", PlayerPosition.CB, shirt: 1, PlayerPosition.ATT),
+            TestData.Player(2, "Midfielder", PlayerPosition.CM, shirt: 2, PlayerPosition.DEF),
+            TestData.Player(3, "Defender", PlayerPosition.DEF, shirt: 3),
+            TestData.Player(4, "Ever present", PlayerPosition.CM, shirt: 4)
+        ];
+
+        var suggestion = LineupSuggestionReport.Build(
+            [PlayerPosition.CB, PlayerPosition.ST], squad, Minutes((1, 0), (2, 0), (3, 10), (4, 100)));
+
+        Assert.Equal(3, suggestion.Starters.Single(s => s.SlotIndex == 0).Player.Id);
+        Assert.Equal(1, suggestion.Starters.Single(s => s.SlotIndex == 1).Player.Id);
+        Assert.Equal([2, 4], suggestion.Substitutes.Select(p => p.Id).Order());
+    }
+
     [Fact]
     public void An_empty_squad_suggests_nothing()
     {

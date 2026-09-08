@@ -339,8 +339,8 @@ public partial class FormationBuilder
         Snackbar.Add(L["Suggested a line-up — check it before saving."], Severity.Success);
     }
 
-    /// What the suggestion measures fairness against: the season so far, plus the halves of this match that are already planned, so a
-    /// second half balances the first instead of repeating it. Null when the season figures could not be read.
+    /// Season so far plus the other periods of this match as planned, so a second half balances the first. Null when the season figures
+    /// could not be read.
     private async Task<Dictionary<int, int>?> MinutesPlayedAsync(int periodId)
     {
         var seasonResult = await StatsService.GetSeasonAsync(GameData!.SeasonId, Cancellation);
@@ -349,16 +349,26 @@ public partial class FormationBuilder
         var minutes = seasonResult.Value!.Stats.Players
             .ToDictionary(p => p.Player.Id, p => p.TotalMinutes);
 
+        // A finished match is already in the season figures, periods and all, so adding them again would bench the very players the
+        // line-up beside this one just picked.
+        if (GameData.IsComplete) return minutes;
+
+        var planned = new Dictionary<int, int>();
+
         foreach (var (otherPeriodId, lineup) in PeriodLineups.Where(entry => entry.Key != periodId))
         {
             var period = GameData.Periods.First(p => p.Id == otherPeriodId);
-            var played = period.StartedAtSeconds is { } start && period.EndedAtSeconds is { } end
-                ? Game.SecondsToMinutes(end - start)
-                : Game.SecondsToMinutes(GameData.PeriodDurationSeconds);
+            var seconds = period.StartedAtSeconds is { } start && period.EndedAtSeconds is { } end
+                ? end - start
+                : GameData.PeriodDurationSeconds;
 
             foreach (var entry in lineup.Where(e => !e.IsSubstitute))
-                minutes[entry.PlayerId] = minutes.GetValueOrDefault(entry.PlayerId) + played;
+                planned[entry.PlayerId] = planned.GetValueOrDefault(entry.PlayerId) + seconds;
         }
+
+        // Converted once, per docs/known_issues/domain.md.
+        foreach (var (playerId, seconds) in planned)
+            minutes[playerId] = minutes.GetValueOrDefault(playerId) + Game.SecondsToMinutes(seconds);
 
         return minutes;
     }

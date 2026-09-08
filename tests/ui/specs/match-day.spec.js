@@ -26,6 +26,35 @@ test('a lineup dragged onto the pitch is still there after a reload', async ({ p
   await expect(page.locator('.draggable-player')).toHaveCount(squad - placed);
 });
 
+test('a suggested lineup fills the pitch, benches the rest, and saves like any other', async ({ page }) => {
+  const id = await matchWithId(page, 'FC Voorstel');
+
+  const chips = page.locator('.pitch .pitch-player');
+  const bench = page.locator('.subs-panel .sub-item');
+  const available = page.locator('.draggable-player');
+
+  // Counted only once the list is on screen: a count taken during the prerender is zero, and every
+  // assertion below would then hold against an empty pitch.
+  await expect(available.first()).toBeVisible();
+  const squad = await available.count();
+  const starting = Math.min(squad, await page.locator('.pitch .pitch-empty').count());
+
+  await clickFor(
+    page.getByRole('button', { name: 'Suggest line-up' }),
+    () => expect(chips).toHaveCount(starting),
+  );
+
+  // Nobody is left out twice, and nobody is counted twice: everyone offered is on the pitch or on
+  // the bench, which is the half a count of the pitch alone would not notice going wrong.
+  await expect(bench).toHaveCount(squad - starting);
+  await expect(available).toHaveCount(0);
+
+  // The suggestion is a proposal until it is saved, so the reload is what proves Save took it.
+  await saveLineup(page);
+  await goto(page, `/games/${id}/formation`);
+  await expect(chips).toHaveCount(starting);
+});
+
 test('a match is run from the live screen and its score reaches the result', async ({ page }) => {
   const id = await matchWithId(page, 'FC Uitslag');
   const { placed } = await fillLineup(page, 2);
