@@ -246,6 +246,11 @@
     .formation-layout {
         flex-direction: column;
         align-items: stretch;
+        /* The desktop row wraps. A *column* that still wraps packs the panels into columns and
+           resolves its own height from that, shrinking the pitch panel below the pitch it holds —
+           the pitch then overflows it, and the substitutes card (a positioned .mud-paper) paints
+           over the legend and the bottom of the pitch. Measured on a 390x844 phone: 46px of it. */
+        flex-wrap: nowrap;
     }
 
     .player-list-panel,

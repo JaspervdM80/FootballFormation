@@ -1883,6 +1883,16 @@ a.action-btn {
 
 /* --- Playing time overview (formation builder) --- */
 
+/* Sorting goes on a phone: MudBlazor hides the header row and offers a 60px "Sort by" select above
+   the cards instead, which is the only sort control there is. 600px, not the 599.98px the layout
+   below uses — this one tracks MudBlazor's own reveal query, and at exactly 600 that select is
+   showing. The table keeps the descending-total order it starts in. */
+@media (max-width: 600px) {
+    .playtime-table .mud-table-smalldevices-sortselect {
+        display: none !important;
+    }
+}
+
 /* Same 599.98px xs breakpoint MudBlazor stacks tables at. The default stack puts
    every cell on its own line, which turns a player's per-period positions into a
    tall vertical strip. Lay each row out as a card instead: name on top, the period
