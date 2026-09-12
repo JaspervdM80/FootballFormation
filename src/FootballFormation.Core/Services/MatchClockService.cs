@@ -243,8 +243,8 @@ public class MatchClockService(
 
             foreach (var (half, end) in corrected) half.EndedAtSeconds = end;
 
-            // What the final whistle banked, re-banked: leaving it at the old total would have the game report a duration its halves no
-            // longer add up to.
+            // The banked clock is the last whistle on the elapsed axis every event's AtSeconds is anchored to — not the played duration,
+            // which is Game.PlayedDurationSeconds and is the sum of the halves whatever the break between them cost.
             game.ClockAccumulatedSeconds = game.Periods.Max(p => p.EndedAtSeconds ?? 0);
 
             await db.SaveChangesAsync(cancellationToken);

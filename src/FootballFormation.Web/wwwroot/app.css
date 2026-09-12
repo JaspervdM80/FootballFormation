@@ -1791,9 +1791,8 @@ a.action-btn {
     }
 }
 
-/* Global rather than in MatchResult.razor.css, where the rest of .half-lengths lives: MudBlazor
-   renders this button, so a scoped selector would carry an attribute its markup never gets. Same
-   26px small-icon-button box as the two tables above. */
+/* MudBlazor renders this button, so a scoped rule in MatchResult.razor.css would carry an attribute
+   its markup never gets. */
 .half-lengths .mud-icon-button {
     width: var(--action-btn-size);
     height: var(--action-btn-size);

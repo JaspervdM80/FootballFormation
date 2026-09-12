@@ -101,9 +101,10 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   anything in stoppage time. `EditGoalAsync` therefore keeps the shape the goal was recorded in: a live
   goal stays placed by the clock **inside its own half** (`ElapsedForMinute`, clamped to the half), a
   hand-typed one keeps its `Minute`. **A minute left as it was shown keeps the stored reading**, for
-  the same stoppage-time reason `ElapsedForEditedMinute` exists for substitutions. The result page
-  passes `recountScoreline: false`, exactly as removing a goal there does — the scoreline on that page
-  is typed, not derived.
+  the same stoppage-time reason `ElapsedForEditedMinute` exists for substitutions. It leaves the
+  scoreline alone, exactly as removing a goal from the result page does — the scoreline there is typed,
+  not derived — which is also why it writes its own row rather than delegating to `GameService` the way
+  `LogGoalAsync` does: there is no recount that has to commit alongside the goal.
 - **A half whistled off late is corrected on the result page** (`MatchClockService.AdjustHalfLengthsAsync`,
   `EditHalfLengthsDialog`, behind the half-lengths row under the timeline). It takes a length in minutes
   per half and writes **only `EndedAtSeconds`**: every goal, substitution and injury keeps the second it
@@ -111,9 +112,10 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   what it contains without touching a row. Refused while the match is unfinished — a running clock owns
   the half it is timing and the next whistle would write over the correction — refused before anything
   already recorded in that half, and refused past the restart of the next. `ClockAccumulatedSeconds` is
-  re-banked to the last whistle afterwards, or the game reports a duration its halves no longer add up
-  to. The failure messages name no half, because `UiFeedback.Translate` translates a template but not
-  its arguments.
+  re-banked to the last whistle afterwards — it is the elapsed axis every event's `AtSeconds` is
+  anchored to, not the played duration, which is `Game.PlayedDurationSeconds` and stays the sum of the
+  halves. The failure messages name no half, because `UiFeedback.Translate` translates a template but
+  not its arguments.
 - **Every goal on the timeline carries the score it made it** (`ScoreProgressionReport`), in the
   scoreboard's order — home side first. It is counted forwards over the whole match and looked up
   by goal id, because the timeline itself runs newest first and a total accumulated while rendering

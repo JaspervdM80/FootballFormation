@@ -46,7 +46,9 @@ public class MatchGoalService(
         });
 
     /// Corrects a goal already on file — who scored it, who assisted, whether it was an own goal, and the minute it reads. Which side it
-    /// counts for is fixed: turning ours into theirs is a different goal, removed and logged again.
+    /// counts for is fixed: turning ours into theirs is a different goal, removed and logged again. The scoreline is left alone, as it is
+    /// when a goal is removed from the result page, so this writes here rather than delegating to <see cref="GameService"/>: there is no
+    /// recount that has to commit alongside the goal.
     public Task<Result> EditGoalAsync(
         int goalId, int? scorerId, int? assisterId, bool isOwnGoal, int minute,
         CancellationToken cancellationToken = default) =>
@@ -55,8 +57,7 @@ public class MatchGoalService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var goal = await db.GameGoals.AsNoTracking()
-                .FirstOrDefaultAsync(g => g.Id == goalId, cancellationToken);
+            var goal = await db.GameGoals.FirstOrDefaultAsync(g => g.Id == goalId, cancellationToken);
             if (goal is null || !await db.GameInScopeAsync(goal.GameId, cancellationToken))
             {
                 logger.LogWarning("Cannot correct goal {GoalId}: not found", goalId);
@@ -72,14 +73,15 @@ public class MatchGoalService(
             var game = await db.LoadWithPeriodsAsync(goal.GameId, cancellationToken);
             if (game is null) return LiveMatchQueries.GameNotFound<int>(goal.GameId);
 
-            var (atSeconds, storedMinute) = Placement(game, goal, minute);
+            (goal.AtSeconds, goal.Minute) = Placement(game, goal, minute);
+            goal.ScorerId = scorerId;
+            goal.AssisterId = assisterId;
+            goal.IsOwnGoal = isOwnGoal;
 
-            var updated = await games.UpdateGoalAsync(
-                goalId,
-                new GameService.GoalCorrection(scorerId, assisterId, isOwnGoal, atSeconds, storedMinute),
-                cancellationToken);
-            if (updated.IsFailure) return updated.To<int>();
+            await db.SaveChangesAsync(cancellationToken);
 
+            logger.LogInformation("Corrected goal {GoalId} of game {GameId} to scorer {ScorerId} at {Seconds}s / minute {Minute}",
+                goalId, goal.GameId, goal.ScorerId, goal.AtSeconds, goal.Minute);
             return Result.Success(goal.GameId);
         });
 

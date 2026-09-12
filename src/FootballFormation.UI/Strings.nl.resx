@@ -764,7 +764,6 @@
   <data name="update game" xml:space="preserve"><value>wedstrijd bijwerken</value></data>
   <data name="update player" xml:space="preserve"><value>speler bijwerken</value></data>
   <data name="update season" xml:space="preserve"><value>seizoen bijwerken</value></data>
-  <data name="update the goal" xml:space="preserve"><value>doelpunt bijwerken</value></data>
   <data name="update the training" xml:space="preserve"><value>training bijwerken</value></data>
   <data name="update the user" xml:space="preserve"><value>gebruiker bijwerken</value></data>
 </root>

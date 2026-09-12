@@ -212,38 +212,6 @@ public class GameService(
             return Result.Success(goal);
         });
 
-    /// Storage for a corrected goal. <see cref="AtSeconds"/> and <see cref="Minute"/> are the two ways a goal is placed and exactly one of
-    /// them is ever set — see docs/known_issues/live-match.md; <see cref="MatchGoalService.EditGoalAsync"/> decides which.
-    public record GoalCorrection(int? ScorerId, int? AssisterId, bool IsOwnGoal, int? AtSeconds, int? Minute);
-
-    /// The scoreline is deliberately left alone, as it is when a goal is removed from the result page: correcting one there is an
-    /// annotation, and recounting a hand-typed 3-1 would cut it down to the goals whose scorer someone remembered.
-    public Task<Result> UpdateGoalAsync(
-        int goalId, GoalCorrection correction, CancellationToken cancellationToken = default) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "update the goal", cancellationToken, async () =>
-        {
-            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
-
-            var goal = await db.GameGoals.FindAsync([goalId], cancellationToken);
-            if (goal is null || !await db.GameInScopeAsync(goal.GameId, cancellationToken))
-            {
-                logger.LogWarning("Cannot update goal {GoalId}: not found", goalId);
-                return Result.Failure("Goal not found");
-            }
-
-            goal.ScorerId = correction.ScorerId;
-            goal.AssisterId = correction.AssisterId;
-            goal.IsOwnGoal = correction.IsOwnGoal;
-            goal.AtSeconds = correction.AtSeconds;
-            goal.Minute = correction.Minute;
-
-            await db.SaveChangesAsync(cancellationToken);
-
-            logger.LogInformation("Updated goal {GoalId} of game {GameId} to scorer {ScorerId} at {Seconds}s / minute {Minute}",
-                goalId, goal.GameId, goal.ScorerId, goal.AtSeconds, goal.Minute);
-            return Result.Success();
-        });
-
     /// <inheritdoc cref="AddGoalAsync(GameGoal, bool, CancellationToken)" path="/param[@name='recountScoreline']"/>
     public Task<Result> RemoveGoalAsync(
         int goalId, bool recountScoreline = false, CancellationToken cancellationToken = default) =>
