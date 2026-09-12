@@ -5,8 +5,13 @@ namespace FootballFormation.Core.Tests;
 public class LiveMatchNotificationTests : LiveMatchTestBase
 {
     private readonly List<int> _announced = [];
+    private readonly List<LiveMatchEvent> _kinds = [];
 
-    public LiveMatchNotificationTests() => Notifier.Changed += _announced.Add;
+    public LiveMatchNotificationTests() => Notifier.Changed += (gameId, change) =>
+    {
+        _announced.Add(gameId);
+        _kinds.Add(change);
+    };
 
     [Fact]
     public async Task Every_touchline_write_names_the_game_it_changed()
@@ -35,6 +40,26 @@ public class LiveMatchNotificationTests : LiveMatchTestBase
         // Nine writes, nine announcements, each naming this match.
         Assert.Equal(9, _announced.Count);
         Assert.All(_announced, id => Assert.Equal(game.Id, id));
+    }
+
+    [Fact]
+    public async Task Only_kick_off_a_goal_and_full_time_are_worth_waking_a_phone_for()
+    {
+        var game = await SeedGameAsync(GameSplitType.Halves);
+        var players = await PlayersAsync();
+
+        Assert.True((await MatchClock.StartMatchAsync(game.Id)).IsSuccess);
+        Time.Advance(TimeSpan.FromMinutes(5));
+        Assert.True((await Goals.LogGoalAsync(game.Id, players[1].Id, null, false, false)).IsSuccess);
+        Assert.True((await Subs.SubstituteAsync(game.Id, players[1].Id, players[2].Id)).IsSuccess);
+        Assert.True((await MatchClock.EndHalfAsync(game.Id)).IsSuccess);
+        Assert.True((await MatchClock.StartNextHalfAsync(game.Id)).IsSuccess);
+        Assert.True((await MatchClock.FinishMatchAsync(game.Id)).IsSuccess);
+
+        Assert.Equal(
+            [LiveMatchEvent.KickOff, LiveMatchEvent.Goal, LiveMatchEvent.Other, LiveMatchEvent.Other,
+             LiveMatchEvent.Other, LiveMatchEvent.FullTime],
+            _kinds);
     }
 
     [Fact]

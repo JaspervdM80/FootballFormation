@@ -43,7 +43,7 @@ public class MatchGoalService(
             };
 
             return await games.AddGoalAsync(goal, recountScoreline: true, cancellationToken);
-        });
+        }, change: LiveMatchEvent.Goal);
 
     /// Corrects a goal already on file — who scored it, who assisted, whether it was an own goal, and the minute it reads. Which side it
     /// counts for is fixed: turning ours into theirs is a different goal, removed and logged again. The scoreline is left alone, as it is

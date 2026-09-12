@@ -36,6 +36,36 @@
     </a>
 }
 
+@* Hidden entirely on a browser that cannot do push, and on an iPhone until the app is installed — see push.js, which is the only
+   thing that can tell. *@
+@if (NotificationState is "on" or "off" or "install-first" or "blocked")
+{
+    <div class="home-notify">
+        <MudIcon Icon="@(NotificationsOn ? Icons.Material.Filled.NotificationsActive : Icons.Material.Filled.NotificationsNone)"
+                 Class="home-notify-icon" />
+        <div class="home-notify-body">
+            <div class="home-notify-title">@L["Match notifications"]</div>
+            <div class="home-notify-text">
+                @(NotificationState switch
+                {
+                    "install-first" => L["Add the app to your home screen first, then notifications can be turned on."],
+                    "blocked" => L["Notifications are blocked in your browser settings."],
+                    _ => L["A message at kick-off, at every goal, and at full time."]
+                })
+            </div>
+        </div>
+        @if (NotificationState is "on" or "off")
+        {
+            <MudButton Variant="@(NotificationsOn ? Variant.Text : Variant.Filled)"
+                       Color="Color.Primary"
+                       Class="home-notify-button"
+                       OnClick="ToggleNotificationsAsync">
+                @(NotificationsOn ? L["Turn off"] : L["Turn on"])
+            </MudButton>
+        }
+    </div>
+}
+
 <PageHeader Class="mb-6" Title="@Team.DisplayName"
             Subtitle="@L["Plan your team's formations, manage your squad, and organize game lineups."]" />
 

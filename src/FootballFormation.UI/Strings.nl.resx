@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -12,758 +12,2029 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-
-  <!-- Navigation & layout -->
-  <!-- "Start" (not "Home") because the key "Home" already means the venue, see Game dialog -->
-  <data name="Start" xml:space="preserve"><value>Start</value></data>
-  <data name="Squad" xml:space="preserve"><value>Selectie</value></data>
-  <data name="Reconnecting..." xml:space="preserve"><value>Verbinding herstellen...</value></data>
-  <data name="Games" xml:space="preserve"><value>Wedstrijden</value></data>
-  <data name="Preferences" xml:space="preserve"><value>Voorkeuren</value></data>
-  <data name="Logout" xml:space="preserve"><value>Uitloggen</value></data>
-  <!-- The drawer checkbox and the language disclosure: their labels are what a screen reader
-       announces, since both are icon-only. -->
-  <data name="Menu" xml:space="preserve"><value>Menu</value></data>
-  <data name="Language" xml:space="preserve"><value>Taal</value></data>
-
-  <!-- Error and not-found pages -->
-  <data name="Page Not Found" xml:space="preserve"><value>Pagina niet gevonden</value></data>
-  <data name="Sorry, the content you are looking for does not exist." xml:space="preserve"><value>Sorry, deze pagina bestaat niet.</value></data>
-  <data name="Something went wrong" xml:space="preserve"><value>Er is iets misgegaan</value></data>
-  <data name="The page could not be loaded. Try again, and if it keeps happening let the administrator know." xml:space="preserve"><value>De pagina kon niet worden geladen. Probeer het opnieuw, en laat het de beheerder weten als het blijft gebeuren.</value></data>
-  <data name="Reference" xml:space="preserve"><value>Referentie</value></data>
-  <data name="Something went wrong. Reload the page to continue." xml:space="preserve"><value>Er is iets misgegaan. Herlaad de pagina om verder te gaan.</value></data>
-  <data name="Reload" xml:space="preserve"><value>Herladen</value></data>
-  <data name="Screenshot failed — try using your device's screenshot instead" xml:space="preserve"><value>Schermafbeelding mislukt — gebruik de schermafdruk van je toestel</value></data>
-  <!-- {0} is the name of the page the back arrow returns to — see AppNav.PageNameKey -->
-  <data name="Back to {0}" xml:space="preserve"><value>Terug naar {0}</value></data>
-
-  <!-- Home -->
-  <data name="Plan your team's formations, manage your squad, and organize game lineups." xml:space="preserve"><value>Plan je opstellingen, beheer je selectie en organiseer de wedstrijden.</value></data>
-  <data name="Selection" xml:space="preserve"><value>Selectie</value></data>
-  <data name="Add players with their positions and shirt numbers." xml:space="preserve"><value>Voeg spelers toe met hun posities en rugnummers.</value></data>
-  <data name="Matches" xml:space="preserve"><value>Wedstrijden</value></data>
-  <data name="Games &amp; Formations" xml:space="preserve"><value>Wedstrijden &amp; opstellingen</value></data>
-  <data name="Create games, build formations, and track results." xml:space="preserve"><value>Maak wedstrijden aan, bouw opstellingen en houd uitslagen bij.</value></data>
-  <data name="Settings" xml:space="preserve"><value>Instellingen</value></data>
-  <data name="Configure match duration, split type, and defaults." xml:space="preserve"><value>Stel wedstrijdduur, speelperiodes en standaardwaarden in.</value></data>
-  <data name="Keep the training evenings, and note who was not there." xml:space="preserve"><value>Houd de trainingsavonden bij, en noteer wie er niet was.</value></data>
-
-  <!-- Players -->
-  <data name="Players" xml:space="preserve"><value>Spelers</value></data>
-  <data name="{0} player" xml:space="preserve"><value>{0} speler</value></data>
-  <data name="{0} players" xml:space="preserve"><value>{0} spelers</value></data>
-  <data name="{0} guest" xml:space="preserve"><value>{0} gast</value></data>
-  <data name="{0} guests" xml:space="preserve"><value>{0} gasten</value></data>
-  <data name="{0} injured" xml:space="preserve"><value>{0} geblesseerd</value></data>
-  <data name="Add Player" xml:space="preserve"><value>Speler toevoegen</value></data>
-  <data name="Edit Player" xml:space="preserve"><value>Speler bewerken</value></data>
-  <data name="No players yet. Add your first player!" xml:space="preserve"><value>Nog geen spelers. Voeg je eerste speler toe!</value></data>
-  <data name="Name" xml:space="preserve"><value>Naam</value></data>
-  <data name="Preferred Position" xml:space="preserve"><value>Voorkeurspositie</value></data>
-  <data name="Alternative Positions" xml:space="preserve"><value>Alternatieve posities</value></data>
-  <data name="GUEST" xml:space="preserve"><value>GAST</value></data>
-  <data name="ARCHIVED" xml:space="preserve"><value>GEARCHIVEERD</value></data>
-  <data name="Player {0} updated" xml:space="preserve"><value>Speler {0} bijgewerkt</value></data>
-  <data name="Player {0} deleted" xml:space="preserve"><value>Speler {0} verwijderd</value></data>
-  <data name="Delete Player" xml:space="preserve"><value>Speler verwijderen</value></data>
-  <data name="Delete {0} from every season, along with any minutes and goals on record? Archive them instead to keep their history." xml:space="preserve"><value>{0} uit elk seizoen verwijderen, samen met alle vastgelegde speeltijd en doelpunten? Archiveer de speler in plaats daarvan om de geschiedenis te bewaren.</value></data>
-
-  <!-- Player dialog -->
-  <data name="First Name" xml:space="preserve"><value>Voornaam</value></data>
-  <data name="First name is required" xml:space="preserve"><value>Voornaam is verplicht</value></data>
-  <data name="Surname" xml:space="preserve"><value>Achternaam</value></data>
-  <data name="Shirt Number" xml:space="preserve"><value>Rugnummer</value></data>
-  <data name="Guest player" xml:space="preserve"><value>Gastspeler</value></data>
-  <data name="Guests are left out of every game unless you add them to it explicitly." xml:space="preserve"><value>Gasten doen alleen mee aan een wedstrijd als je ze er zelf aan toevoegt.</value></data>
-  <data name="Injured" xml:space="preserve"><value>Geblesseerd</value></data>
-  <data name="Cancel" xml:space="preserve"><value>Annuleren</value></data>
-  <data name="Save" xml:space="preserve"><value>Opslaan</value></data>
-  <data name="Copy" xml:space="preserve"><value>Kopieer</value></data>
-  <data name="Delete" xml:space="preserve"><value>Verwijderen</value></data>
-
-  <!-- Games -->
-  <data name="{0} match" xml:space="preserve"><value>{0} wedstrijd</value></data>
-  <data name="{0} matches" xml:space="preserve"><value>{0} wedstrijden</value></data>
-  <data name="Fixtures" xml:space="preserve"><value>Programma</value></data>
-  <data name="Results" xml:space="preserve"><value>Uitslagen</value></data>
-  <data name="New Game" xml:space="preserve"><value>Nieuwe wedstrijd</value></data>
-  <data name="Edit Game" xml:space="preserve"><value>Wedstrijd bewerken</value></data>
-  <data name="No games yet. Create your first game!" xml:space="preserve"><value>Nog geen wedstrijden. Maak je eerste wedstrijd aan!</value></data>
-  <data name="H" xml:space="preserve"><value>T</value></data>
-  <data name="A" xml:space="preserve"><value>U</value></data>
-  <data name="{0} out" xml:space="preserve"><value>{0} afwezig</value></data>
-  <data name="+{0} guest" xml:space="preserve"><value>+{0} gast</value></data>
-  <data name="Formation" xml:space="preserve"><value>Opstelling</value></data>
-  <data name="Overview" xml:space="preserve"><value>Overzicht</value></data>
-  <!-- /players and /stats/positions both link the name rather than the row, because a table row
-       cannot be an anchor -->
-  <data name="Tap a player's name to see their statistics." xml:space="preserve"><value>Tik op de naam van een speler voor haar statistieken.</value></data>
-  <data name="Result" xml:space="preserve"><value>Uitslag</value></data>
-  <data name="Edit" xml:space="preserve"><value>Bewerken</value></data>
-  <data name="Game vs {0} created" xml:space="preserve"><value>Wedstrijd tegen {0} aangemaakt</value></data>
-  <data name="Game vs {0} updated" xml:space="preserve"><value>Wedstrijd tegen {0} bijgewerkt</value></data>
-  <data name="Game vs {0} deleted" xml:space="preserve"><value>Wedstrijd tegen {0} verwijderd</value></data>
-  <data name="Delete Game" xml:space="preserve"><value>Wedstrijd verwijderen</value></data>
-  <data name="Are you sure you want to delete the game vs {0}?" xml:space="preserve"><value>Weet je zeker dat je de wedstrijd tegen {0} wilt verwijderen?</value></data>
-
-  <!-- Game dialog -->
-  <data name="Opponent" xml:space="preserve"><value>Tegenstander</value></data>
-  <data name="Opponent is required" xml:space="preserve"><value>Tegenstander is verplicht</value></data>
-  <data name="Date" xml:space="preserve"><value>Datum</value></data>
-  <!-- Optional — left blank the game shows no kick-off time anywhere, see Game.HasStartTime -->
-  <data name="Kick-off Time" xml:space="preserve"><value>Aanvangstijd</value></data>
-  <!-- Shared by all three time fields, which are masked rather than native so the clock reads 24-hour
-       whatever language the browser itself is in -->
-  <data name="Enter a time on a 24-hour clock, e.g. {0}" xml:space="preserve"><value>Vul een tijd in op een 24-uursklok, bijv. {0}</value></data>
-  <data name="Check the fields marked in red" xml:space="preserve"><value>Controleer de rood gemarkeerde velden</value></data>
-  <data name="Venue" xml:space="preserve"><value>Locatie</value></data>
-  <data name="Home" xml:space="preserve"><value>Thuis</value></data>
-  <data name="Away" xml:space="preserve"><value>Uit</value></data>
-  <data name="Game Duration (minutes)" xml:space="preserve"><value>Wedstrijdduur (minuten)</value></data>
-  <data name="Game Split" xml:space="preserve"><value>Speelperiodes</value></data>
-  <data name="Halves (2 periods)" xml:space="preserve"><value>Helften (2 periodes)</value></data>
-  <data name="Quarters (4 periods)" xml:space="preserve"><value>Kwarten (4 periodes)</value></data>
-  <data name="per" xml:space="preserve"><value>per</value></data>
-  <data name="half" xml:space="preserve"><value>helft</value></data>
-  <data name="quarter" xml:space="preserve"><value>kwart</value></data>
-  <data name="Unavailable Players" xml:space="preserve"><value>Afwezige spelers</value></data>
-  <data name="{0} player(s) unavailable" xml:space="preserve"><value>{0} speler(s) afwezig</value></data>
-  <data name="{0} injured player(s) not listed — they're left out of every game already." xml:space="preserve"><value>{0} geblesseerde speler(s) niet in de lijst — die doen sowieso al niet mee.</value></data>
-  <data name="Guest Players" xml:space="preserve"><value>Gastspelers</value></data>
-  <data name="{0} guest(s) added" xml:space="preserve"><value>{0} gast(en) toegevoegd</value></data>
-
-  <!-- Match-day arrangements. All optional, and read by nothing but MatchInfoTextBuilder — a field
-       left blank is left out of the message. The first label flips with the venue. -->
-  <data name="Assemble time" xml:space="preserve"><value>Verzameltijd</value></data>
-  <data name="Departure time" xml:space="preserve"><value>Vertrektijd</value></data>
-  <data name="Warm-up time" xml:space="preserve"><value>Warming-uptijd</value></data>
-  <data name="e.g. {0}" xml:space="preserve"><value>bijv. {0}</value></data>
-  <data name="Field" xml:space="preserve"><value>Veld</value></data>
-  <data name="Dressing room" xml:space="preserve"><value>Kleedkamer</value></data>
-  <data name="Sports park" xml:space="preserve"><value>Sportpark</value></data>
-  <data name="City" xml:space="preserve"><value>Plaats</value></data>
-  <data name="Dressing room duty" xml:space="preserve"><value>Kleedkamerdienst</value></data>
-  <data name="Flag duty" xml:space="preserve"><value>Vlaggendienst</value></data>
-  <data name="Kit wash duty" xml:space="preserve"><value>Wastasdienst</value></data>
-
-  <!-- Match types. The key is MatchType.DisplayName(), so a new type needs an entry here. -->
-  <data name="Match Type" xml:space="preserve"><value>Type wedstrijd</value></data>
-  <data name="Competition" xml:space="preserve"><value>Competitie</value></data>
-  <data name="Cup" xml:space="preserve"><value>Beker</value></data>
-  <data name="Practice" xml:space="preserve"><value>Oefenwedstrijd</value></data>
-
-  <!-- Formations. The key is FormationType.DisplayName(); only the shapes carrying a word need an entry. -->
-  <data name="4-4-2 diamond" xml:space="preserve"><value>4-4-2 ruit</value></data>
-
-  <!-- Trainings. "Trainings" is the section; the lowercase "the training" phrases below are service actions and must stay apart from
-       these labels, since resx keys are case-insensitive. -->
-  <data name="Trainings" xml:space="preserve"><value>Trainingen</value></data>
-  <data name="{0} training" xml:space="preserve"><value>{0} training</value></data>
-  <data name="{0} trainings" xml:space="preserve"><value>{0} trainingen</value></data>
-  <data name="Week {0}" xml:space="preserve"><value>Week {0}</value></data>
-  <data name="Earlier" xml:space="preserve"><value>Eerder</value></data>
-  <data name="Cancelled" xml:space="preserve"><value>Vervallen</value></data>
-  <data name="{0} cancelled" xml:space="preserve"><value>{0} vervallen</value></data>
-  <data name="No trainings in {0} yet." xml:space="preserve"><value>Nog geen trainingen in {0}.</value></data>
-  <data name="No trainings yet. Add your first session!" xml:space="preserve"><value>Nog geen trainingen. Voeg je eerste training toe!</value></data>
-  <data name="Set the training days and the first and last training under Preferences, and the sessions fill themselves in." xml:space="preserve"><value>Stel onder Voorkeuren de trainingsdagen en de eerste en laatste training in, dan worden de trainingen vanzelf aangemaakt.</value></data>
-  <data name="New Training" xml:space="preserve"><value>Nieuwe training</value></data>
-  <data name="Edit Training" xml:space="preserve"><value>Training bewerken</value></data>
-  <data name="Delete Training" xml:space="preserve"><value>Training verwijderen</value></data>
-  <data name="Delete the training on {0}, along with the absences recorded for it?" xml:space="preserve"><value>De training van {0} verwijderen, samen met de afwezigheid die erbij is vastgelegd?</value></data>
-  <data name="Training on {0} added" xml:space="preserve"><value>Training van {0} toegevoegd</value></data>
-  <data name="Training on {0} updated" xml:space="preserve"><value>Training van {0} bijgewerkt</value></data>
-  <data name="Training on {0} deleted" xml:space="preserve"><value>Training van {0} verwijderd</value></data>
-  <data name="Attendance" xml:space="preserve"><value>Opkomst</value></data>
-  <data name="{0} sessions held" xml:space="preserve"><value>{0} trainingen gehouden</value></data>
-  <data name="{0}% attended" xml:space="preserve"><value>{0}% aanwezig</value></data>
-  <data name="{0} missed" xml:space="preserve"><value>{0} gemist</value></data>
-
-  <!-- Training dialog -->
-  <data name="Notes" xml:space="preserve"><value>Notities</value></data>
-  <data name="What was trained, and anything worth remembering." xml:space="preserve"><value>Wat er getraind is, en alles wat het onthouden waard is.</value></data>
-  <data name="Did not take place" xml:space="preserve"><value>Ging niet door</value></data>
-  <data name="Why the training did not go ahead." xml:space="preserve"><value>Waarom de training niet doorging.</value></data>
-
-  <!-- Formation builder -->
-  <data name="Formation Builder" xml:space="preserve"><value>Opstelling maken</value></data>
-  <data name="1st Half" xml:space="preserve"><value>1e helft</value></data>
-  <data name="2nd Half" xml:space="preserve"><value>2e helft</value></data>
-  <data name="Unavailable" xml:space="preserve"><value>Afwezig</value></data>
-  <data name="Injured players" xml:space="preserve"><value>Geblesseerde spelers</value></data>
-  <data name="Exact" xml:space="preserve"><value>Exact</value></data>
-  <data name="Natural fit" xml:space="preserve"><value>Natuurlijke positie</value></data>
-  <data name="Alternative" xml:space="preserve"><value>Alternatief</value></data>
-  <data name="Compatible" xml:space="preserve"><value>Passend</value></data>
-  <data name="Out of position" xml:space="preserve"><value>Buiten positie</value></data>
-  <data name="Save All Lineups" xml:space="preserve"><value>Alle opstellingen opslaan</value></data>
-  <data name="Copy to next {0}" xml:space="preserve"><value>Kopieer naar volgende {0}</value></data>
-  <data name="Playing Time Overview" xml:space="preserve"><value>Speeltijdoverzicht</value></data>
-  <data name="Sort By" xml:space="preserve"><value>Sorteer op</value></data>
-  <data name="Player" xml:space="preserve"><value>Speler</value></data>
-  <data name="Total" xml:space="preserve"><value>Totaal</value></data>
-  <data name="Sub" xml:space="preserve"><value>Wissel</value></data>
-  <data name="Save failed: {0}" xml:space="preserve"><value>Opslaan mislukt: {0}</value></data>
-  <data name="All lineups saved!" xml:space="preserve"><value>Alle opstellingen opgeslagen!</value></data>
-  <data name="Lineup copied to {0}" xml:space="preserve"><value>Opstelling gekopieerd naar {0}</value></data>
-  <data name="Formation changed to {0}" xml:space="preserve"><value>Opstelling gewijzigd naar {0}</value></data>
-  <data name="Suggest line-up" xml:space="preserve"><value>Opstelling voorstellen</value></data>
-  <data name="Suggest" xml:space="preserve"><value>Voorstel</value></data>
-  <data name="Suggest a line-up?" xml:space="preserve"><value>Opstelling voorstellen?</value></data>
-  <data name="Everyone currently set up for this part of the match is replaced. Nothing is saved until you save." xml:space="preserve"><value>Iedereen die nu voor dit deel van de wedstrijd staat opgesteld wordt vervangen. Er wordt niets opgeslagen tot je opslaat.</value></data>
-  <data name="Replace" xml:space="preserve"><value>Vervangen</value></data>
-  <data name="Suggested a line-up — check it before saving." xml:space="preserve"><value>Opstelling voorgesteld — controleer die voordat je opslaat.</value></data>
-
-  <!-- Match result -->
-  <data name="Match Result" xml:space="preserve"><value>Uitslag</value></data>
-  <data name="Final Score" xml:space="preserve"><value>Eindstand</value></data>
-  <data name="Us" xml:space="preserve"><value>Wij</value></data>
-  <data name="Save Score" xml:space="preserve"><value>Uitslag opslaan</value></data>
-  <data name="This match hasn't been played yet." xml:space="preserve"><value>Deze wedstrijd is nog niet gespeeld.</value></data>
-  <data name="Goals" xml:space="preserve"><value>Doelpunten</value></data>
-  <data name="OG" xml:space="preserve"><value>ED</value></data>
-  <data name="No goals recorded yet" xml:space="preserve"><value>Nog geen doelpunten ingevoerd</value></data>
-  <data name="Min" xml:space="preserve"><value>Min</value></data>
-  <data name="Scorer" xml:space="preserve"><value>Doelpuntenmaker</value></data>
-  <data name="Select player..." xml:space="preserve"><value>Kies speler...</value></data>
-  <data name="Assist" xml:space="preserve"><value>Assist</value></data>
-  <data name="Optional" xml:space="preserve"><value>Optioneel</value></data>
-  <data name="Add" xml:space="preserve"><value>Toevoegen</value></data>
-  <data name="Score saved!" xml:space="preserve"><value>Uitslag opgeslagen!</value></data>
-  <data name="Goal added!" xml:space="preserve"><value>Doelpunt toegevoegd!</value></data>
-  <data name="Goal removed" xml:space="preserve"><value>Doelpunt verwijderd</value></data>
-
-  <!-- The copyable match summary — MatchSummaryTextBuilder — shared by the result page and the
-       formation overview's share button. -->
-  <data name="Copy match result" xml:space="preserve"><value>Uitslag kopiëren</value></data>
-  <data name="Copied to clipboard" xml:space="preserve"><value>Gekopieerd naar klembord</value></data>
-  <!-- The copyable match-day message — MatchInfoTextBuilder. Its labels run mid-line after a time or
-       an emoji, so they read lowercase; the two carrying a placeholder are written that way rather
-       than cased down from the field labels above, which resx would read as the same keys. -->
-  <data name="Copy match info" xml:space="preserve"><value>Wedstrijdinfo kopiëren</value></data>
-  <data name="{0} vs {1}" xml:space="preserve"><value>{0} vs {1}</value></data>
-  <data name="assemble" xml:space="preserve"><value>verzamelen</value></data>
-  <data name="depart" xml:space="preserve"><value>vertrek</value></data>
-  <data name="briefing/warm-up" xml:space="preserve"><value>bespreking/warming-up</value></data>
-  <data name="kick-off" xml:space="preserve"><value>aftrap</value></data>
-  <data name="field {0}" xml:space="preserve"><value>veld {0}</value></data>
-  <data name="dressing room {0}" xml:space="preserve"><value>kleedkamer {0}</value></data>
-  <data name="Duties" xml:space="preserve"><value>Taken</value></data>
-  <data name="Flags" xml:space="preserve"><value>Vlaggen</value></data>
-  <data name="Kit wash" xml:space="preserve"><value>Wastas</value></data>
-  <data name="Couldn't copy — try again" xml:space="preserve"><value>Kopiëren mislukt — probeer opnieuw</value></data>
-
-  <!-- Match comments. Private unless published, so the wording has to leave no doubt which is which. -->
-  <data name="Comments" xml:space="preserve"><value>Opmerkingen</value></data>
-  <data name="No comments yet" xml:space="preserve"><value>Nog geen opmerkingen</value></data>
-  <data name="Add comment" xml:space="preserve"><value>Opmerking toevoegen</value></data>
-  <data name="Visible to everyone" xml:space="preserve"><value>Zichtbaar voor iedereen</value></data>
-  <data name="Public" xml:space="preserve"><value>Openbaar</value></data>
-  <data name="Admin only" xml:space="preserve"><value>Alleen beheerders</value></data>
-  <data name="edited" xml:space="preserve"><value>bewerkt</value></data>
-  <data name="Publish" xml:space="preserve"><value>Publiceren</value></data>
-  <data name="Publish comment" xml:space="preserve"><value>Opmerking publiceren</value></data>
-  <data name="Make admin only" xml:space="preserve"><value>Alleen voor beheerders maken</value></data>
-  <data name="This comment becomes visible to everyone who opens this match. Continue?" xml:space="preserve"><value>Deze opmerking wordt zichtbaar voor iedereen die deze wedstrijd bekijkt. Doorgaan?</value></data>
-  <data name="Delete comment" xml:space="preserve"><value>Opmerking verwijderen</value></data>
-  <data name="Delete this comment? This cannot be undone." xml:space="preserve"><value>Deze opmerking verwijderen? Dit kan niet ongedaan worden gemaakt.</value></data>
-  <data name="Comment added" xml:space="preserve"><value>Opmerking toegevoegd</value></data>
-  <data name="Comment published" xml:space="preserve"><value>Opmerking gepubliceerd</value></data>
-  <data name="Comment is now admin only" xml:space="preserve"><value>Opmerking is nu alleen voor beheerders</value></data>
-  <data name="Comment removed" xml:space="preserve"><value>Opmerking verwijderd</value></data>
-
-  <!-- Live match -->
-  <data name="Live Match" xml:space="preserve"><value>Live wedstrijd</value></data>
-  <data name="Live" xml:space="preserve"><value>Live</value></data>
-  <data name="Not started" xml:space="preserve"><value>Nog niet begonnen</value></data>
-  <data name="In progress" xml:space="preserve"><value>Bezig</value></data>
-  <data name="Additional time" xml:space="preserve"><value>Extra tijd</value></data>
-  <data name="Full time" xml:space="preserve"><value>Einde wedstrijd</value></data>
-  <data name="Start match" xml:space="preserve"><value>Wedstrijd starten</value></data>
-  <data name="Half time" xml:space="preserve"><value>Rust</value></data>
-  <data name="Start {0}" xml:space="preserve"><value>{0} starten</value></data>
-  <data name="Position changes" xml:space="preserve"><value>Positiewissels</value></data>
-  <data name="Finish match" xml:space="preserve"><value>Wedstrijd afsluiten</value></data>
-  <data name="Edit result" xml:space="preserve"><value>Uitslag aanpassen</value></data>
-  <data name="Line-up" xml:space="preserve"><value>Opstelling</value></data>
-  <data name="Tap a player to substitute them, change their position, or mark them injured." xml:space="preserve"><value>Tik op een speler om te wisselen, van positie te veranderen of haar geblesseerd te melden.</value></data>
-  <data name="Tap a player to change who starts the next half." xml:space="preserve"><value>Tik op een speler om te wijzigen wie de volgende helft begint.</value></data>
-  <data name="Recorded at kick-off" xml:space="preserve"><value>Vastgelegd bij aftrap</value></data>
-  <data name="Half-time change made" xml:space="preserve"><value>Rustwissel gemaakt</value></data>
-  <data name="No half is waiting to be set up" xml:space="preserve"><value>Er staat geen helft klaar om in te stellen</value></data>
-  <data name="Goal against" xml:space="preserve"><value>Tegen doelpunt</value></data>
-  <data name="Timeline" xml:space="preserve"><value>Tijdlijn</value></data>
-  <data name="Nothing has happened yet" xml:space="preserve"><value>Er is nog niets gebeurd</value></data>
-  <data name="Show substitutions" xml:space="preserve"><value>Wissels tonen</value></data>
-  <data name="No goals yet" xml:space="preserve"><value>Nog geen doelpunten</value></data>
-  <data name="Minutes played" xml:space="preserve"><value>Gespeelde minuten</value></data>
-  <data name="Planned minutes" xml:space="preserve"><value>Opgestelde minuten</value></data>
-  <data name="On the pitch" xml:space="preserve"><value>In het veld</value></data>
-  <data name="Live now" xml:space="preserve"><value>Nu live</value></data>
-  <!-- Home banner: the same fixture before kick-off -->
-  <data name="Today" xml:space="preserve"><value>Vandaag</value></data>
-  <data name="Remove" xml:space="preserve"><value>Verwijderen</value></data>
-  <data name="Undo" xml:space="preserve"><value>Ongedaan maken</value></data>
-  <data name="Match started" xml:space="preserve"><value>Wedstrijd gestart</value></data>
-  <data name="Changes ({0})" xml:space="preserve"><value>Wijzigingen ({0})</value></data>
-  <data name="Changes to make" xml:space="preserve"><value>Nog door te voeren wijzigingen</value></data>
-  <data name="Nothing more is planned for this half." xml:space="preserve"><value>Er is niets meer gepland voor deze helft.</value></data>
-  <data name="Tap the players on the pitch to make these changes." xml:space="preserve"><value>Tik op de spelers in het veld om deze wijzigingen te maken.</value></data>
-  <data name="Close" xml:space="preserve"><value>Sluiten</value></data>
-  <data name="Half ended" xml:space="preserve"><value>Helft beëindigd</value></data>
-  <data name="Next half started" xml:space="preserve"><value>Volgende helft gestart</value></data>
-  <data name="Match finished" xml:space="preserve"><value>Wedstrijd afgesloten</value></data>
-  <data name="End the match and save the final score? You can still edit the result afterwards." xml:space="preserve"><value>Wedstrijd afsluiten en de eindstand opslaan? Je kunt de uitslag daarna nog aanpassen.</value></data>
-  <data name="Goal" xml:space="preserve"><value>Doelpunt</value></data>
-  <data name="Add goal" xml:space="preserve"><value>Doelpunt toevoegen</value></data>
-  <data name="No assist" xml:space="preserve"><value>Geen assist</value></data>
-  <data name="Who scored?" xml:space="preserve"><value>Wie scoorde?</value></data>
-  <data name="Own goal" xml:space="preserve"><value>Eigen doelpunt</value></data>
-  <data name="An own goal counts for the opponent." xml:space="preserve"><value>Een eigen doelpunt telt voor de tegenstander.</value></data>
-  <data name="Opponent goal added" xml:space="preserve"><value>Tegendoelpunt toegevoegd</value></data>
-  <data name="Substitution" xml:space="preserve"><value>Wissel</value></data>
-  <data name="Substitution made" xml:space="preserve"><value>Wissel doorgevoerd</value></data>
-  <data name="Substitution undone" xml:space="preserve"><value>Wissel ongedaan gemaakt</value></data>
-  <data name="Edit substitution" xml:space="preserve"><value>Wissel bewerken</value></data>
-  <data name="Substitution updated" xml:space="preserve"><value>Wissel bijgewerkt</value></data>
-  <data name="Edit goal" xml:space="preserve"><value>Doelpunt bewerken</value></data>
-  <data name="Goal updated" xml:space="preserve"><value>Doelpunt bijgewerkt</value></data>
-  <data name="Goal for {0}" xml:space="preserve"><value>Doelpunt voor {0}</value></data>
-  <data name="Half lengths" xml:space="preserve"><value>Duur per helft</value></data>
-  <data name="Correct half lengths" xml:space="preserve"><value>Duur per helft corrigeren</value></data>
-  <data name="Half lengths corrected" xml:space="preserve"><value>Duur per helft gecorrigeerd</value></data>
-  <data name="Only the final whistle of each half moves. Every goal, substitution and injury keeps the moment it was recorded, so the minutes read back against the corrected half." xml:space="preserve"><value>Alleen het eindsignaal van elke helft verschuift. Elk doelpunt, elke wissel en elke blessure houdt het moment waarop die is vastgelegd, zodat de minuten worden teruggerekend vanaf de gecorrigeerde helft.</value></data>
-  <data name="came off" xml:space="preserve"><value>ging eruit</value></data>
-  <data name="Minute" xml:space="preserve"><value>Minuut</value></data>
-  <data name="Undo the later substitution first" xml:space="preserve"><value>Maak eerst de latere wissel ongedaan</value></data>
-  <data name="Only a finished match can have its half lengths corrected" xml:space="preserve"><value>Alleen bij een afgelopen wedstrijd kan de duur per helft worden gecorrigeerd</value></data>
-  <data name="That half was never played" xml:space="preserve"><value>Die helft is nooit gespeeld</value></data>
-  <data name="A half has to last at least a minute" xml:space="preserve"><value>Een helft duurt minstens één minuut</value></data>
-  <data name="That half still has something recorded after {0} minutes" xml:space="preserve"><value>In die helft is na {0} minuten nog iets vastgelegd</value></data>
-  <data name="A half cannot run past the restart of the next one" xml:space="preserve"><value>Een helft kan niet doorlopen tot na de hervatting</value></data>
-  <data name="An opponent goal cannot be an own goal" xml:space="preserve"><value>Een doelpunt van de tegenstander kan geen eigen doelpunt zijn</value></data>
-  <data name="A substitution made for an injury can't be edited" xml:space="preserve"><value>Een wissel wegens blessure kan hier niet worden bewerkt</value></data>
-  <data name="Make substitution" xml:space="preserve"><value>Wissel doorvoeren</value></data>
-  <data name="Comes on" xml:space="preserve"><value>Komt erin</value></data>
-  <data name="Nobody is on the bench for this half." xml:space="preserve"><value>Er zit niemand op de bank voor deze helft.</value></data>
-  <data name="Swaps position with" xml:space="preserve"><value>Wisselt van positie met</value></data>
-  <data name="Nobody else is on the pitch." xml:space="preserve"><value>Er staat niemand anders op het veld.</value></data>
-  <data name="A position swap keeps both players on the pitch and is not a substitution." xml:space="preserve"><value>Bij een positiewissel blijven beide spelers op het veld; het is geen wissel.</value></data>
-  <data name="Swap positions" xml:space="preserve"><value>Posities wisselen</value></data>
-  <data name="Positions swapped" xml:space="preserve"><value>Posities gewisseld</value></data>
-  <data name="The rest of the match stops counting towards her playing time." xml:space="preserve"><value>De rest van de wedstrijd telt niet meer mee voor haar speeltijd.</value></data>
-  <data name="Off injured" xml:space="preserve"><value>Geblesseerd naar de kant</value></data>
-  <data name="Off injured, not replaced" xml:space="preserve"><value>Geblesseerd naar de kant, niet vervangen</value></data>
-  <data name="{0} is off injured" xml:space="preserve"><value>{0} is geblesseerd naar de kant</value></data>
-  <data name="Injury undone" xml:space="preserve"><value>Blessure ongedaan gemaakt</value></data>
-
-  <!-- Player stats -->
-  <data name="Player Stats" xml:space="preserve"><value>Spelersstatistieken</value></data>
-  <data name="No games recorded yet for this player." xml:space="preserve"><value>Nog geen wedstrijden geregistreerd voor deze speler.</value></data>
-  <data name="Minutes" xml:space="preserve"><value>Minuten</value></data>
-  <data name="{0} / game" xml:space="preserve"><value>{0} / wedstrijd</value></data>
-  <data name="Assists" xml:space="preserve"><value>Assists</value></data>
-  <data name="Positions" xml:space="preserve"><value>Posities</value></data>
-  <data name="No minutes on the pitch yet." xml:space="preserve"><value>Nog geen speelminuten.</value></data>
-  <data name="Per game" xml:space="preserve"><value>Per wedstrijd</value></data>
-  <data name="G" xml:space="preserve"><value>D</value></data>
-  <data name="Ast" xml:space="preserve"><value>A</value></data>
-  <data name="Estimated from the planned line-up — this match was not tracked live." xml:space="preserve"><value>Geschat op basis van de opstelling — deze wedstrijd is niet live bijgehouden.</value></data>
-  <data name="~ estimated from the planned line-up; matches tracked live use the real clock and substitutions." xml:space="preserve"><value>~ geschat op basis van de opstelling; live bijgehouden wedstrijden gebruiken de echte klok en wissels.</value></data>
-
-  <!-- Season stats -->
-  <data name="Season" xml:space="preserve"><value>Seizoen</value></data>
-  <data name="Season statistics" xml:space="preserve"><value>Seizoen statistieken</value></data>
-  <data name="Team and squad totals for {0}" xml:space="preserve"><value>Team- en selectietotalen voor {0}</value></data>
-  <data name="Team and squad totals across all seasons" xml:space="preserve"><value>Team- en selectietotalen over alle seizoenen</value></data>
-  <data name="Played" xml:space="preserve"><value>Gespeeld</value></data>
-  <data name="W-D-L" xml:space="preserve"><value>W-G-V</value></data>
-  <data name="{0}% won" xml:space="preserve"><value>{0}% winst</value></data>
-  <data name="Goals for" xml:space="preserve"><value>Voor</value></data>
-  <data name="Goals against" xml:space="preserve"><value>Tegen</value></data>
-  <data name="diff" xml:space="preserve"><value>saldo</value></data>
-  <data name="Form" xml:space="preserve"><value>Vorm</value></data>
-  <data name="Win" xml:space="preserve"><value>Winst</value></data>
-  <data name="Draw" xml:space="preserve"><value>Gelijkspel</value></data>
-  <data name="Loss" xml:space="preserve"><value>Verlies</value></data>
-  <data name="Top scorers" xml:space="preserve"><value>Topscorers</value></data>
-  <data name="Playing time" xml:space="preserve"><value>Speeltijd</value></data>
-  <data name="Availability" xml:space="preserve"><value>Beschikbaarheid</value></data>
-  <data name="Not played" xml:space="preserve"><value>Niet gespeeld</value></data>
-  <data name="Goalkeeper minutes" xml:space="preserve"><value>Keeperminuten</value></data>
-  <data name="No goalkeeper minutes yet." xml:space="preserve"><value>Nog geen keeperminuten.</value></data>
-  <data name="{0}% of {1}'" xml:space="preserve"><value>{0}% van {1}'</value></data>
-  <data name="No goals recorded yet." xml:space="preserve"><value>Nog geen doelpunten geregistreerd.</value></data>
-  <data name="No players yet." xml:space="preserve"><value>Nog geen speelsters.</value></data>
-
-  <!-- Position development (squad-wide positions grid) -->
-  <data name="Position Development" xml:space="preserve"><value>Positieontwikkeling</value></data>
-  <data name="Who has played where in {0}, at a glance." xml:space="preserve"><value>In één oogopslag wie waar heeft gespeeld in {0}.</value></data>
-  <data name="Who has played where across all seasons, at a glance." xml:space="preserve"><value>In één oogopslag wie waar heeft gespeeld over alle seizoenen.</value></data>
-  <data name="Single position" xml:space="preserve"><value>Eén positie</value></data>
-  <data name="Every minute played came in one position." xml:space="preserve"><value>Elke gespeelde minuut was op één positie.</value></data>
-  <data name="Players used" xml:space="preserve"><value>Speelsters ingezet</value></data>
-  <data name="Positions used" xml:space="preserve"><value>Posities bespeeld</value></data>
-  <data name="of {0} players" xml:space="preserve"><value>van {0} speelsters</value></data>
-
-  <!-- Season squad (per-season membership and guest status) -->
-  <data name="New player" xml:space="preserve"><value>Nieuwe speler</value></data>
-  <data name="Existing player" xml:space="preserve"><value>Bestaande speler</value></data>
-  <data name="Add to squad" xml:space="preserve"><value>Aan selectie toevoegen</value></data>
-  <data name="{0} added to the squad" xml:space="preserve"><value>{0} is aan de selectie toegevoegd</value></data>
-  <data name="Remove from squad" xml:space="preserve"><value>Uit selectie verwijderen</value></data>
-  <data name="Remove {0} from the {1} squad? Their history stays intact." xml:space="preserve"><value>{0} uit de selectie van {1} verwijderen? De geschiedenis blijft bewaard.</value></data>
-  <data name="{0} removed from the squad" xml:space="preserve"><value>{0} is uit de selectie verwijderd</value></data>
-  <data name="{0} is now a guest" xml:space="preserve"><value>{0} is nu een gast</value></data>
-  <data name="{0} is now a squad player" xml:space="preserve"><value>{0} is nu een selectiespeler</value></data>
-  <data name="{0} is now injured" xml:space="preserve"><value>{0} is nu geblesseerd</value></data>
-  <data name="{0} is no longer injured" xml:space="preserve"><value>{0} is niet meer geblesseerd</value></data>
-  <data name="Copy squad from {0}" xml:space="preserve"><value>Selectie kopiëren uit {0}</value></data>
-  <data name="{0} players copied from {1}" xml:space="preserve"><value>{0} spelers gekopieerd uit {1}</value></data>
-  <data name="No squad for {0} yet." xml:space="preserve"><value>Nog geen selectie voor {0}.</value></data>
-  <data name="Copy last season's squad, or add players one by one." xml:space="preserve"><value>Kopieer de selectie van vorig seizoen, of voeg spelers los toe.</value></data>
-  <data name="Select a season to manage its squad." xml:space="preserve"><value>Kies een seizoen om de selectie te beheren.</value></data>
-  <data name="Show {0}" xml:space="preserve"><value>Toon {0}</value></data>
-  <data name="Everyone on file is already in this squad." xml:space="preserve"><value>Iedereen staat al in deze selectie.</value></data>
-  <data name="Delete player permanently" xml:space="preserve"><value>Speler definitief verwijderen</value></data>
-  <data name="Archive player" xml:space="preserve"><value>Speler archiveren</value></data>
-  <data name="Restore player" xml:space="preserve"><value>Speler terughalen</value></data>
-  <data name="Archive" xml:space="preserve"><value>Archiveren</value></data>
-  <data name="Archive {0}? They keep every appearance, goal and season they played, and stop being offered for seasons to come." xml:space="preserve"><value>{0} archiveren? Alle wedstrijden, doelpunten en seizoenen blijven bewaard, en de speler wordt niet meer aangeboden voor volgende seizoenen.</value></data>
-  <data name="{0} archived" xml:space="preserve"><value>{0} is gearchiveerd</value></data>
-  <data name="{0} is back in the squad lists" xml:space="preserve"><value>{0} staat weer in de selectielijsten</value></data>
-  <data name="Please select a player" xml:space="preserve"><value>Kies een speler</value></data>
-  <data name="More" xml:space="preserve"><value>Meer</value></data>
-  <data name="This date starts a new season — its squad is empty until you fill it in on the squad page." xml:space="preserve"><value>Deze datum start een nieuw seizoen — de selectie is leeg tot je die op de selectiepagina invult.</value></data>
-
-  <!-- Seasons (picker, management, game assignment) -->
-  <data name="Seasons" xml:space="preserve"><value>Seizoenen</value></data>
-  <data name="All seasons" xml:space="preserve"><value>Alle seizoenen</value></data>
-  <data name="Current" xml:space="preserve"><value>Huidig</value></data>
-  <data name="Set as current" xml:space="preserve"><value>Als huidig instellen</value></data>
-  <data name="Select season" xml:space="preserve"><value>Seizoen kiezen</value></data>
-  <data name="Auto (by date)" xml:space="preserve"><value>Automatisch (op datum)</value></data>
-  <data name="Season name" xml:space="preserve"><value>Seizoensnaam</value></data>
-  <data name="Season name is required" xml:space="preserve"><value>Seizoensnaam is verplicht</value></data>
-  <data name="Start date" xml:space="preserve"><value>Startdatum</value></data>
-  <data name="End date" xml:space="preserve"><value>Einddatum</value></data>
-  <data name="New Season" xml:space="preserve"><value>Nieuw seizoen</value></data>
-  <data name="Edit Season" xml:space="preserve"><value>Seizoen bewerken</value></data>
-  <data name="Delete Season" xml:space="preserve"><value>Seizoen verwijderen</value></data>
-  <data name="Are you sure you want to delete the season {0}?" xml:space="preserve"><value>Weet je zeker dat je seizoen {0} wilt verwijderen?</value></data>
-  <data name="Season {0} created" xml:space="preserve"><value>Seizoen {0} aangemaakt</value></data>
-  <data name="Season {0} updated" xml:space="preserve"><value>Seizoen {0} bijgewerkt</value></data>
-  <data name="Season {0} deleted" xml:space="preserve"><value>Seizoen {0} verwijderd</value></data>
-  <data name="Season {0} is now the current season" xml:space="preserve"><value>Seizoen {0} is nu het huidige seizoen</value></data>
-  <data name="Seasons are used to group games and filter statistics." xml:space="preserve"><value>Seizoenen groeperen wedstrijden en filteren de statistieken.</value></data>
-  <data name="No games in {0} yet." xml:space="preserve"><value>Nog geen wedstrijden in {0}.</value></data>
-
-  <!-- Games: incomplete-data flag -->
-  <data name="no lineup" xml:space="preserve"><value>geen opstelling</value></data>
-  <data name="Add lineup" xml:space="preserve"><value>Opstelling toevoegen</value></data>
-  <data name="{0} without lineup" xml:space="preserve"><value>{0} zonder opstelling</value></data>
-  <data name="This game has no lineup — playing time can't be recorded" xml:space="preserve"><value>Deze wedstrijd heeft geen opstelling — speeltijd kan niet worden geregistreerd</value></data>
-
-  <!-- Home: stats tile -->
-  <data name="Statistics" xml:space="preserve"><value>Statistieken</value></data>
-  <data name="Season stats" xml:space="preserve"><value>Seizoen statistieken</value></data>
-  <data name="See the team record, top scorers, and playing time." xml:space="preserve"><value>Bekijk de teambalans, topscorers en speeltijd.</value></data>
-
-  <!-- Position names (keys are the English DisplayName) -->
-  <data name="Goalkeeper" xml:space="preserve"><value>Keeper</value></data>
-  <data name="Left Back" xml:space="preserve"><value>Linksback</value></data>
-  <data name="Center Back" xml:space="preserve"><value>Centrale verdediger</value></data>
-  <data name="Right Back" xml:space="preserve"><value>Rechtsback</value></data>
-  <data name="Defender" xml:space="preserve"><value>Verdediger</value></data>
-  <data name="Defensive Midfielder" xml:space="preserve"><value>Verdedigende middenvelder</value></data>
-  <data name="Center Midfielder" xml:space="preserve"><value>Centrale middenvelder</value></data>
-  <data name="Left Midfielder" xml:space="preserve"><value>Linkermiddenvelder</value></data>
-  <data name="Right Midfielder" xml:space="preserve"><value>Rechtermiddenvelder</value></data>
-  <data name="Attacking Midfielder" xml:space="preserve"><value>Aanvallende middenvelder</value></data>
-  <data name="Midfielder" xml:space="preserve"><value>Middenvelder</value></data>
-  <data name="Left Winger" xml:space="preserve"><value>Linksbuiten</value></data>
-  <data name="Right Winger" xml:space="preserve"><value>Rechtsbuiten</value></data>
-  <data name="Winger" xml:space="preserve"><value>Vleugelspeler</value></data>
-  <data name="Striker" xml:space="preserve"><value>Spits</value></data>
-  <data name="Attacker" xml:space="preserve"><value>Aanvaller</value></data>
-
-  <!-- Formation overview -->
-  <data name="Formation Overview" xml:space="preserve"><value>Opstellingsoverzicht</value></data>
-  <data name="Subs" xml:space="preserve"><value>Wissels</value></data>
-  <data name="Player {0}" xml:space="preserve"><value>Speler {0}</value></data>
-  <data name="No subs" xml:space="preserve"><value>Geen wissels</value></data>
-  <data name="No formation yet" xml:space="preserve"><value>Nog geen opstelling</value></data>
-  <data name="Save as image" xml:space="preserve"><value>Opslaan als afbeelding</value></data>
-
-  <!-- Settings -->
-  <data name="Match Preferences" xml:space="preserve"><value>Wedstrijdvoorkeuren</value></data>
-  <data name="These defaults are applied when creating new games, and are kept per season." xml:space="preserve"><value>Deze standaardwaarden worden gebruikt bij het aanmaken van nieuwe wedstrijden en gelden per seizoen.</value></data>
-  <data name="Defaults" xml:space="preserve"><value>Standaardwaarden</value></data>
-  <data name="Default Game Split" xml:space="preserve"><value>Standaard speelperiodes</value></data>
-  <data name="Default Formation" xml:space="preserve"><value>Standaard opstelling</value></data>
-  <data name="Match Day" xml:space="preserve"><value>Wedstrijddag</value></data>
-  <data name="Next calculated match date:" xml:space="preserve"><value>Volgende berekende wedstrijddatum:</value></data>
-  <data name="Training Days" xml:space="preserve"><value>Trainingsdagen</value></data>
-  <data name="First Training" xml:space="preserve"><value>Eerste training</value></data>
-  <data name="Last Training" xml:space="preserve"><value>Laatste training</value></data>
-  <data name="Saving creates a session for every training day between the two, and removes the empty ones outside them." xml:space="preserve"><value>Opslaan maakt een training aan voor elke trainingsdag ertussen, en verwijdert de lege trainingen daarbuiten.</value></data>
-  <data name="{0} trainings created, {1} removed" xml:space="preserve"><value>{0} trainingen aangemaakt, {1} verwijderd</value></data>
-  <data name="Next calculated training date:" xml:space="preserve"><value>Volgende berekende trainingsdatum:</value></data>
-  <data name="Save Preferences" xml:space="preserve"><value>Voorkeuren opslaan</value></data>
-  <data name="Change Password" xml:space="preserve"><value>Wachtwoord wijzigen</value></data>
-  <data name="Current Password" xml:space="preserve"><value>Huidig wachtwoord</value></data>
-  <data name="New Password" xml:space="preserve"><value>Nieuw wachtwoord</value></data>
-  <data name="Confirm New Password" xml:space="preserve"><value>Bevestig nieuw wachtwoord</value></data>
-  <data name="Preferences for {0} saved!" xml:space="preserve"><value>Voorkeuren voor {0} opgeslagen!</value></data>
-  <data name="Please fill in all password fields" xml:space="preserve"><value>Vul alle wachtwoordvelden in</value></data>
-  <data name="New passwords do not match" xml:space="preserve"><value>De nieuwe wachtwoorden komen niet overeen</value></data>
-  <data name="Password changed successfully!" xml:space="preserve"><value>Wachtwoord gewijzigd!</value></data>
-  <data name="This account still uses the password it was created with. Choose your own below — until you do, the rest of the app stays locked." xml:space="preserve"><value>Dit account gebruikt nog het wachtwoord waarmee het is aangemaakt. Kies hieronder je eigen wachtwoord — tot die tijd blijft de rest van de app op slot.</value></data>
-  <data name="Current password is incorrect" xml:space="preserve"><value>Huidig wachtwoord is onjuist</value></data>
-  <data name="New password must be at least {0} characters" xml:space="preserve"><value>Nieuw wachtwoord moet minimaal {0} tekens lang zijn</value></data>
-  <data name="New password must be different from the current one" xml:space="preserve"><value>Nieuw wachtwoord moet verschillen van het huidige</value></data>
-
-  <!-- Users -->
-  <data name="Users" xml:space="preserve"><value>Gebruikers</value></data>
-  <data name="Accounts that can sign in, and what each one is allowed to do." xml:space="preserve"><value>Accounts die kunnen inloggen, en wat elk account mag doen.</value></data>
-  <data name="Add User" xml:space="preserve"><value>Gebruiker toevoegen</value></data>
-  <data name="Edit User" xml:space="preserve"><value>Gebruiker bewerken</value></data>
-  <data name="Delete User" xml:space="preserve"><value>Gebruiker verwijderen</value></data>
-  <data name="Reset Password" xml:space="preserve"><value>Wachtwoord opnieuw instellen</value></data>
-  <data name="Role" xml:space="preserve"><value>Rol</value></data>
-  <data name="You" xml:space="preserve"><value>JIJ</value></data>
-  <!-- Role names. The key is the UserRole member name, so a new role needs an entry here. -->
-  <data name="Admin" xml:space="preserve"><value>Beheerder</value></data>
-  <data name="ApplicationAdmin" xml:space="preserve"><value>Applicatiebeheerder</value></data>
-  <data name="Confirm password" xml:space="preserve"><value>Wachtwoord bevestigen</value></data>
-  <data name="At least {0} characters" xml:space="preserve"><value>Minimaal {0} tekens</value></data>
-  <data name="Use Reset Password to give this account a new password." xml:space="preserve"><value>Gebruik Wachtwoord opnieuw instellen om dit account een nieuw wachtwoord te geven.</value></data>
-  <data name="User {0} created" xml:space="preserve"><value>Gebruiker {0} aangemaakt</value></data>
-  <data name="User {0} updated" xml:space="preserve"><value>Gebruiker {0} bijgewerkt</value></data>
-  <data name="User {0} deleted" xml:space="preserve"><value>Gebruiker {0} verwijderd</value></data>
-  <data name="Password reset for {0}" xml:space="preserve"><value>Wachtwoord opnieuw ingesteld voor {0}</value></data>
-  <data name="Are you sure you want to delete the account for {0}?" xml:space="preserve"><value>Weet je zeker dat je het account van {0} wilt verwijderen?</value></data>
-  <!-- User validation, from UserService and UserDialog -->
-  <data name="Name is required" xml:space="preserve"><value>Naam is verplicht</value></data>
-  <data name="Username is required" xml:space="preserve"><value>Gebruikersnaam is verplicht</value></data>
-  <data name="Password is required" xml:space="preserve"><value>Wachtwoord is verplicht</value></data>
-  <data name="Passwords do not match" xml:space="preserve"><value>Wachtwoorden komen niet overeen</value></data>
-  <data name="Password must be at least {0} characters" xml:space="preserve"><value>Wachtwoord moet minimaal {0} tekens lang zijn</value></data>
-  <data name="Name must be at most {0} characters" xml:space="preserve"><value>Naam mag maximaal {0} tekens lang zijn</value></data>
-  <data name="Username must be at most {0} characters" xml:space="preserve"><value>Gebruikersnaam mag maximaal {0} tekens lang zijn</value></data>
-  <data name="A user with username {0} already exists" xml:space="preserve"><value>Er bestaat al een gebruiker met gebruikersnaam {0}</value></data>
-  <data name="{0} would be left without an administrator" xml:space="preserve"><value>{0} zou zonder beheerder achterblijven</value></data>
-  <data name="The last application administrator cannot be removed or demoted" xml:space="preserve"><value>De laatste applicatiebeheerder kan niet worden verwijderd of gedegradeerd</value></data>
-  <data name="Only an application administrator can grant that role" xml:space="preserve"><value>Alleen een applicatiebeheerder kan die rol toekennen</value></data>
-  <data name="You can only manage accounts for your own team" xml:space="preserve"><value>Je kunt alleen accounts van je eigen team beheren</value></data>
-  <data name="An administrator needs a team" xml:space="preserve"><value>Een beheerder heeft een team nodig</value></data>
-  <data name="All teams" xml:space="preserve"><value>Alle teams</value></data>
-  <data name="Only an application administrator can change this role." xml:space="preserve"><value>Alleen een applicatiebeheerder kan deze rol wijzigen.</value></data>
-  <data name="The last training must not be before the first" xml:space="preserve"><value>De laatste training mag niet vóór de eerste liggen</value></data>
-  <data name="The training period must fall inside season {0}" xml:space="preserve"><value>De trainingsperiode moet binnen seizoen {0} vallen</value></data>
-  <data name="User with ID {0} not found" xml:space="preserve"><value>Gebruiker met ID {0} niet gevonden</value></data>
-
-  <!-- Clubs and teams -->
-  <data name="Teams" xml:space="preserve"><value>Teams</value></data>
-  <data name="The clubs and teams this app serves." xml:space="preserve"><value>De clubs en teams die deze app bedient.</value></data>
-  <data name="Club" xml:space="preserve"><value>Club</value></data>
-  <data name="Clubs" xml:space="preserve"><value>Clubs</value></data>
-  <data name="Team" xml:space="preserve"><value>Team</value></data>
-  <data name="Theme" xml:space="preserve"><value>Thema</value></data>
-  <data name="Theme {0}" xml:space="preserve"><value>Thema {0}</value></data>
-  <data name="Logo" xml:space="preserve"><value>Logo</value></data>
-  <data name="Selected" xml:space="preserve"><value>GESELECTEERD</value></data>
-  <data name="Show this team" xml:space="preserve"><value>Dit team tonen</value></data>
-  <data name="{0} team" xml:space="preserve"><value>{0} team</value></data>
-  <data name="{0} teams" xml:space="preserve"><value>{0} teams</value></data>
-  <data name="No clubs yet. Add one to get started." xml:space="preserve"><value>Nog geen clubs. Voeg er een toe om te beginnen.</value></data>
-  <data name="No teams in this club yet." xml:space="preserve"><value>Nog geen teams bij deze club.</value></data>
-  <data name="Add Club" xml:space="preserve"><value>Club toevoegen</value></data>
-  <data name="Edit Club" xml:space="preserve"><value>Club bewerken</value></data>
-  <data name="Delete Club" xml:space="preserve"><value>Club verwijderen</value></data>
-  <data name="Add Team" xml:space="preserve"><value>Team toevoegen</value></data>
-  <data name="Edit Team" xml:space="preserve"><value>Team bewerken</value></data>
-  <data name="Delete Team" xml:space="preserve"><value>Team verwijderen</value></data>
-  <data name="Path to an image under wwwroot. Leave empty for the theme's own crest." xml:space="preserve"><value>Pad naar een afbeelding onder wwwroot. Laat leeg voor het logo van het thema zelf.</value></data>
-  <data name="The colours behind a theme are part of the app and cannot be edited here." xml:space="preserve"><value>De kleuren achter een thema horen bij de app en zijn hier niet te wijzigen.</value></data>
-  <data name="Club {0} created" xml:space="preserve"><value>Club {0} aangemaakt</value></data>
-  <data name="Club {0} updated" xml:space="preserve"><value>Club {0} bijgewerkt</value></data>
-  <data name="Club {0} deleted" xml:space="preserve"><value>Club {0} verwijderd</value></data>
-  <data name="Team {0} created" xml:space="preserve"><value>Team {0} aangemaakt</value></data>
-  <data name="Team {0} updated" xml:space="preserve"><value>Team {0} bijgewerkt</value></data>
-  <data name="Team {0} deleted" xml:space="preserve"><value>Team {0} verwijderd</value></data>
-  <data name="Are you sure you want to delete {0}?" xml:space="preserve"><value>Weet je zeker dat je {0} wilt verwijderen?</value></data>
-  <data name="Club name is required" xml:space="preserve"><value>Clubnaam is verplicht</value></data>
-  <data name="Team name is required" xml:space="preserve"><value>Teamnaam is verplicht</value></data>
-  <data name="Club name must be at most {0} characters" xml:space="preserve"><value>Clubnaam mag maximaal {0} tekens lang zijn</value></data>
-  <data name="Team name must be at most {0} characters" xml:space="preserve"><value>Teamnaam mag maximaal {0} tekens lang zijn</value></data>
-  <data name="A club named {0} already exists" xml:space="preserve"><value>Er bestaat al een club met de naam {0}</value></data>
-  <data name="{0} already has a team named {1}" xml:space="preserve"><value>{0} heeft al een team met de naam {1}</value></data>
-  <data name="Club {0} still has {1} teams" xml:space="preserve"><value>Club {0} heeft nog {1} teams</value></data>
-  <data name="Team {0} still has {1} accounts" xml:space="preserve"><value>Team {0} heeft nog {1} accounts</value></data>
-  <data name="{0} is the team the app is showing" xml:space="preserve"><value>{0} is het team dat de app laat zien</value></data>
-  <data name="The logo must be a path inside the app, like icons/icon-192.png" xml:space="preserve"><value>Het logo moet een pad binnen de app zijn, bijvoorbeeld icons/icon-192.png</value></data>
-  <data name="Club with ID {0} not found" xml:space="preserve"><value>Club met ID {0} niet gevonden</value></data>
-  <data name="Team with ID {0} not found" xml:space="preserve"><value>Team met ID {0} niet gevonden</value></data>
-  <data name="load clubs" xml:space="preserve"><value>clubs te laden</value></data>
-  <data name="load teams" xml:space="preserve"><value>teams te laden</value></data>
-  <data name="load the current team" xml:space="preserve"><value>het huidige team te laden</value></data>
-  <data name="create the club" xml:space="preserve"><value>de club aan te maken</value></data>
-  <data name="update the club" xml:space="preserve"><value>de club bij te werken</value></data>
-  <data name="delete the club" xml:space="preserve"><value>de club te verwijderen</value></data>
-  <data name="create the team" xml:space="preserve"><value>het team aan te maken</value></data>
-  <data name="update the team" xml:space="preserve"><value>het team bij te werken</value></data>
-  <data name="delete the team" xml:space="preserve"><value>het team te verwijderen</value></data>
-
-  <!-- Login -->
-  <data name="Login" xml:space="preserve"><value>Inloggen</value></data>
-  <data name="Admin Login" xml:space="preserve"><value>Beheerder inloggen</value></data>
-  <data name="Sign in to manage formations" xml:space="preserve"><value>Log in om opstellingen te beheren</value></data>
-  <data name="Invalid username or password" xml:space="preserve"><value>Ongeldige gebruikersnaam of wachtwoord</value></data>
-  <data name="Too many sign-in attempts. Wait a minute and try again." xml:space="preserve"><value>Te veel aanmeldpogingen. Wacht een minuut en probeer het opnieuw.</value></data>
-  <data name="Username" xml:space="preserve"><value>Gebruikersnaam</value></data>
-  <data name="Password" xml:space="preserve"><value>Wachtwoord</value></data>
-  <data name="Sign In" xml:space="preserve"><value>Inloggen</value></data>
-  <data name="Continue as viewer" xml:space="preserve"><value>Verdergaan als bezoeker</value></data>
-
-  <!-- Builder components -->
-  <data name="Available Players" xml:space="preserve"><value>Beschikbare spelers</value></data>
-  <data name="All players assigned" xml:space="preserve"><value>Alle spelers ingedeeld</value></data>
-  <data name="Substitutes" xml:space="preserve"><value>Wisselspelers</value></data>
-  <data name="Drop here to add as sub" xml:space="preserve"><value>Sleep hierheen om als wissel toe te voegen</value></data>
-  <data name="Drag players here to add as subs" xml:space="preserve"><value>Sleep spelers hierheen om ze als wissel toe te voegen</value></data>
-
-  <!-- Install banner -->
-  <data name="Install the {0} app" xml:space="preserve"><value>Installeer de {0} app</value></data>
-  <data name="Line-ups, squad and results for {0}." xml:space="preserve"><value>Opstellingen, selectie en uitslagen van {0}.</value></data>
-  <data name="Install" xml:space="preserve"><value>Installeren</value></data>
-  <data name="Add the app to your home screen." xml:space="preserve"><value>Zet de app op je beginscherm.</value></data>
-  <data name="Tap Share, then &quot;Add to Home Screen&quot;." xml:space="preserve"><value>Tik op 'Deel' en dan op 'Zet op beginscherm'.</value></data>
-  <data name="In the browser menu (⋮), tap &quot;Add to Home screen&quot;." xml:space="preserve"><value>Tik in het browsermenu (⋮) op 'Toevoegen aan startscherm'.</value></data>
-
-  <!-- Service errors — the message templates Core returns in Result.Error -->
-  <data name="Failed to {0}" xml:space="preserve"><value>Actie mislukt: {0}</value></data>
-  <data name="You are not signed in to {0}" xml:space="preserve"><value>Je bent niet aangemeld om te {0}</value></data>
-  <data name="A goal for us needs a scorer" xml:space="preserve"><value>Een doelpunt voor ons heeft een maker nodig</value></data>
-  <data name="A player cannot swap positions with themselves" xml:space="preserve"><value>Een speler kan niet met zichzelf van positie wisselen</value></data>
-  <data name="A player cannot be substituted for themselves" xml:space="preserve"><value>Een speler kan niet voor zichzelf gewisseld worden</value></data>
-  <data name="Both players have to be on the pitch to swap positions" xml:space="preserve"><value>Beide spelers moeten op het veld staan om van positie te wisselen</value></data>
-  <data name="Cannot copy a squad onto itself" xml:space="preserve"><value>Een selectie kan niet naar zichzelf gekopieerd worden</value></data>
-  <data name="Comment not found" xml:space="preserve"><value>Opmerking niet gevonden</value></data>
-  <data name="End the current half first" xml:space="preserve"><value>Beëindig eerst de huidige helft</value></data>
-  <data name="Both halves have been played — finish the match instead" xml:space="preserve"><value>Beide helften zijn gespeeld — beëindig de wedstrijd</value></data>
-  <data name="Game not found" xml:space="preserve"><value>Wedstrijd niet gevonden</value></data>
-  <data name="Game with ID {0} not found" xml:space="preserve"><value>Wedstrijd met ID {0} niet gevonden</value></data>
-  <data name="Goal not found" xml:space="preserve"><value>Doelpunt niet gevonden</value></data>
-  <data name="Period not found" xml:space="preserve"><value>Speelperiode niet gevonden</value></data>
-  <data name="This half has already been played, so its line-up is no longer the builder's to change" xml:space="preserve"><value>Deze helft is al gespeeld, dus de opstelling ervan wordt niet meer vanuit de opstellingsbouwer gewijzigd</value></data>
-  <data name="This half was played from the touchline, so its line-up is the record of who was on the pitch and is no longer edited here." xml:space="preserve"><value>Deze helft is vanaf de lijn gespeeld, dus de opstelling is de vastlegging van wie er op het veld stond en wordt hier niet meer gewijzigd.</value></data>
-  <data name="Left as the touchline recorded it: {0}" xml:space="preserve"><value>Gelaten zoals vanaf de lijn vastgelegd: {0}</value></data>
-  <data name="Injury not found" xml:space="preserve"><value>Blessure niet gevonden</value></data>
-  <data name="No half is being played" xml:space="preserve"><value>Er wordt op dit moment geen helft gespeeld</value></data>
-  <data name="No season selected" xml:space="preserve"><value>Geen seizoen geselecteerd</value></data>
-  <data name="No seasons defined" xml:space="preserve"><value>Nog geen seizoenen ingesteld</value></data>
-  <data name="Only the most recent substitution of a half can be undone" xml:space="preserve"><value>Alleen de laatste wissel van een helft kan ongedaan gemaakt worden</value></data>
-  <data name="Player is not in this squad" xml:space="preserve"><value>Speler zit niet in deze selectie</value></data>
-  <data name="Player not found" xml:space="preserve"><value>Speler niet gevonden</value></data>
-  <data name="Player with ID {0} not found" xml:space="preserve"><value>Speler met ID {0} niet gevonden</value></data>
-  <data name="Somebody else is in that place now" xml:space="preserve"><value>Er staat nu iemand anders op die plek</value></data>
-  <data name="Season not found" xml:space="preserve"><value>Seizoen niet gevonden</value></data>
-  <data name="Season {0} has no squad to copy" xml:space="preserve"><value>Seizoen {0} heeft geen selectie om te kopiëren</value></data>
-  <data name="Season {0} is the current season" xml:space="preserve"><value>Seizoen {0} is het huidige seizoen</value></data>
-  <data name="Season {0} still has {1} games" xml:space="preserve"><value>Seizoen {0} heeft nog {1} wedstrijden</value></data>
-  <data name="Season {0} still has {1} trainings" xml:space="preserve"><value>Seizoen {0} heeft nog {1} trainingen</value></data>
-  <data name="Substitution not found" xml:space="preserve"><value>Wissel niet gevonden</value></data>
-  <data name="Training not found" xml:space="preserve"><value>Training niet gevonden</value></data>
-  <data name="That player is already marked injured" xml:space="preserve"><value>Die speler is al als geblesseerd gemarkeerd</value></data>
-  <data name="That player is already on the pitch" xml:space="preserve"><value>Die speler staat al op het veld</value></data>
-  <data name="That player is not on the pitch" xml:space="preserve"><value>Die speler staat niet op het veld</value></data>
-  <data name="The end date must be after the start date" xml:space="preserve"><value>De einddatum moet na de startdatum liggen</value></data>
-  <data name="These dates overlap season {0}" xml:space="preserve"><value>Deze datums overlappen seizoen {0}</value></data>
-  <data name="This game has no line-up to play" xml:space="preserve"><value>Deze wedstrijd heeft geen opstelling om te spelen</value></data>
-  <data name="This leaves a gap after season {0} — it should start on {1}" xml:space="preserve"><value>Dit laat een gat na seizoen {0} — het zou moeten beginnen op {1}</value></data>
-  <data name="This leaves a gap before season {0} — it should end on {1}" xml:space="preserve"><value>Dit laat een gat vóór seizoen {0} — het zou moeten eindigen op {1}</value></data>
-  <data name="This match has already been started" xml:space="preserve"><value>Deze wedstrijd is al gestart</value></data>
-  <data name="This match has not been started" xml:space="preserve"><value>Deze wedstrijd is nog niet gestart</value></data>
-  <data name="This match is not in progress" xml:space="preserve"><value>Deze wedstrijd is niet bezig</value></data>
-  <data name="{0} has already played this season" xml:space="preserve"><value>{0} heeft dit seizoen al gespeeld</value></data>
-  <data name="{0} has goals or assists this season" xml:space="preserve"><value>{0} heeft dit seizoen doelpunten of assists</value></data>
-  <data name="{0} is already in the {1} squad" xml:space="preserve"><value>{0} zit al in de selectie van {1}</value></data>
-  <data name="{0} has already played — archive them instead of deleting them" xml:space="preserve"><value>{0} heeft al gespeeld — archiveer de speler in plaats van te verwijderen</value></data>
-
-  <!-- Service actions — substituted into "Failed to {0}" -->
-  <data name="add the comment" xml:space="preserve"><value>opmerking toevoegen</value></data>
-  <data name="add the goal" xml:space="preserve"><value>doelpunt toevoegen</value></data>
-  <data name="add the player to the squad" xml:space="preserve"><value>speler aan de selectie toevoegen</value></data>
-  <data name="archive the player" xml:space="preserve"><value>speler archiveren</value></data>
-  <data name="calculate next match date" xml:space="preserve"><value>volgende wedstrijddatum berekenen</value></data>
-  <data name="calculate the next training date" xml:space="preserve"><value>volgende trainingsdatum berekenen</value></data>
-  <data name="change the formation" xml:space="preserve"><value>opstelling wijzigen</value></data>
-  <data name="change the half-time line-up" xml:space="preserve"><value>rustopstelling wijzigen</value></data>
-  <data name="correct the goal" xml:space="preserve"><value>doelpunt corrigeren</value></data>
-  <data name="correct the half lengths" xml:space="preserve"><value>duur per helft corrigeren</value></data>
-  <data name="change the squad status" xml:space="preserve"><value>selectiestatus wijzigen</value></data>
-  <data name="close season gaps" xml:space="preserve"><value>gaten tussen seizoenen sluiten</value></data>
-  <data name="copy the squad" xml:space="preserve"><value>selectie kopiëren</value></data>
-  <data name="count the squads" xml:space="preserve"><value>selecties tellen</value></data>
-  <data name="create game" xml:space="preserve"><value>wedstrijd aanmaken</value></data>
-  <data name="create player" xml:space="preserve"><value>speler aanmaken</value></data>
-  <data name="create season" xml:space="preserve"><value>seizoen aanmaken</value></data>
-  <data name="create the training" xml:space="preserve"><value>training aanmaken</value></data>
-  <data name="create the user" xml:space="preserve"><value>gebruiker aanmaken</value></data>
-  <data name="delete the game" xml:space="preserve"><value>wedstrijd verwijderen</value></data>
-  <data name="delete the player" xml:space="preserve"><value>speler verwijderen</value></data>
-  <data name="delete the season" xml:space="preserve"><value>seizoen verwijderen</value></data>
-  <data name="delete the training" xml:space="preserve"><value>training verwijderen</value></data>
-  <data name="delete the user" xml:space="preserve"><value>gebruiker verwijderen</value></data>
-  <data name="end the half" xml:space="preserve"><value>helft beëindigen</value></data>
-  <data name="find the previous season" xml:space="preserve"><value>vorig seizoen zoeken</value></data>
-  <data name="find the season for that date" xml:space="preserve"><value>seizoen bij die datum zoeken</value></data>
-  <data name="find today&#x27;s match" xml:space="preserve"><value>wedstrijd van vandaag zoeken</value></data>
-  <data name="finish the match" xml:space="preserve"><value>wedstrijd afronden</value></data>
-  <data name="load comments" xml:space="preserve"><value>opmerkingen laden</value></data>
-  <data name="load current season" xml:space="preserve"><value>huidig seizoen laden</value></data>
-  <data name="load game" xml:space="preserve"><value>wedstrijd laden</value></data>
-  <data name="load game details" xml:space="preserve"><value>wedstrijdgegevens laden</value></data>
-  <data name="load games" xml:space="preserve"><value>wedstrijden laden</value></data>
-  <data name="load live match" xml:space="preserve"><value>live wedstrijd laden</value></data>
-  <data name="load player" xml:space="preserve"><value>speler laden</value></data>
-  <data name="load players" xml:space="preserve"><value>spelers laden</value></data>
-  <data name="load players outside the squad" xml:space="preserve"><value>spelers buiten de selectie laden</value></data>
-  <data name="load preferences" xml:space="preserve"><value>voorkeuren laden</value></data>
-  <data name="load seasons" xml:space="preserve"><value>seizoenen laden</value></data>
-  <data name="load the player statistics" xml:space="preserve"><value>spelerstatistieken laden</value></data>
-  <data name="load the squad" xml:space="preserve"><value>selectie laden</value></data>
-  <data name="load the squads" xml:space="preserve"><value>selecties laden</value></data>
-  <data name="load the statistics" xml:space="preserve"><value>statistieken laden</value></data>
-  <data name="load the training attendance" xml:space="preserve"><value>trainingsopkomst laden</value></data>
-  <data name="load the trainings" xml:space="preserve"><value>trainingen laden</value></data>
-  <data name="load users" xml:space="preserve"><value>gebruikers laden</value></data>
-  <data name="log the goal" xml:space="preserve"><value>doelpunt vastleggen</value></data>
-  <data name="look up the season for that date" xml:space="preserve"><value>seizoen bij die datum opzoeken</value></data>
-  <data name="make the substitution" xml:space="preserve"><value>wissel doorvoeren</value></data>
-  <data name="prepare seasons" xml:space="preserve"><value>seizoenen voorbereiden</value></data>
-  <data name="record the injury" xml:space="preserve"><value>blessure vastleggen</value></data>
-  <data name="remove comment" xml:space="preserve"><value>opmerking verwijderen</value></data>
-  <data name="remove goal" xml:space="preserve"><value>doelpunt verwijderen</value></data>
-  <data name="remove the goal" xml:space="preserve"><value>doelpunt verwijderen</value></data>
-  <data name="remove the player from the squad" xml:space="preserve"><value>speler uit de selectie verwijderen</value></data>
-  <data name="save lineup" xml:space="preserve"><value>opstelling opslaan</value></data>
-  <data name="save the preferences" xml:space="preserve"><value>voorkeuren opslaan</value></data>
-  <data name="save the score" xml:space="preserve"><value>score opslaan</value></data>
-  <data name="set the password" xml:space="preserve"><value>wachtwoord instellen</value></data>
-  <data name="start the match" xml:space="preserve"><value>wedstrijd starten</value></data>
-  <data name="start the next half" xml:space="preserve"><value>volgende helft starten</value></data>
-  <data name="swap the positions" xml:space="preserve"><value>posities wisselen</value></data>
-  <data name="switch season" xml:space="preserve"><value>van seizoen wisselen</value></data>
-  <data name="undo the injury" xml:space="preserve"><value>blessure ongedaan maken</value></data>
-  <data name="undo the substitution" xml:space="preserve"><value>wissel ongedaan maken</value></data>
-  <data name="edit the substitution" xml:space="preserve"><value>wissel bewerken</value></data>
-  <data name="update comment" xml:space="preserve"><value>opmerking bijwerken</value></data>
-  <data name="update game" xml:space="preserve"><value>wedstrijd bijwerken</value></data>
-  <data name="update player" xml:space="preserve"><value>speler bijwerken</value></data>
-  <data name="update season" xml:space="preserve"><value>seizoen bijwerken</value></data>
-  <data name="update the training" xml:space="preserve"><value>training bijwerken</value></data>
-  <data name="update the user" xml:space="preserve"><value>gebruiker bijwerken</value></data>
+  <data name="Start" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="Squad" xml:space="preserve">
+    <value>Selectie</value>
+  </data>
+  <data name="Reconnecting..." xml:space="preserve">
+    <value>Verbinding herstellen...</value>
+  </data>
+  <data name="Games" xml:space="preserve">
+    <value>Wedstrijden</value>
+  </data>
+  <data name="Preferences" xml:space="preserve">
+    <value>Voorkeuren</value>
+  </data>
+  <data name="Logout" xml:space="preserve">
+    <value>Uitloggen</value>
+  </data>
+  <data name="Menu" xml:space="preserve">
+    <value>Menu</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Taal</value>
+  </data>
+  <data name="Page Not Found" xml:space="preserve">
+    <value>Pagina niet gevonden</value>
+  </data>
+  <data name="Sorry, the content you are looking for does not exist." xml:space="preserve">
+    <value>Sorry, deze pagina bestaat niet.</value>
+  </data>
+  <data name="Something went wrong" xml:space="preserve">
+    <value>Er is iets misgegaan</value>
+  </data>
+  <data name="The page could not be loaded. Try again, and if it keeps happening let the administrator know." xml:space="preserve">
+    <value>De pagina kon niet worden geladen. Probeer het opnieuw, en laat het de beheerder weten als het blijft gebeuren.</value>
+  </data>
+  <data name="Reference" xml:space="preserve">
+    <value>Referentie</value>
+  </data>
+  <data name="Something went wrong. Reload the page to continue." xml:space="preserve">
+    <value>Er is iets misgegaan. Herlaad de pagina om verder te gaan.</value>
+  </data>
+  <data name="Reload" xml:space="preserve">
+    <value>Herladen</value>
+  </data>
+  <data name="Screenshot failed — try using your device's screenshot instead" xml:space="preserve">
+    <value>Schermafbeelding mislukt — gebruik de schermafdruk van je toestel</value>
+  </data>
+  <data name="Back to {0}" xml:space="preserve">
+    <value>Terug naar {0}</value>
+  </data>
+  <data name="Plan your team's formations, manage your squad, and organize game lineups." xml:space="preserve">
+    <value>Plan je opstellingen, beheer je selectie en organiseer de wedstrijden.</value>
+  </data>
+  <data name="Selection" xml:space="preserve">
+    <value>Selectie</value>
+  </data>
+  <data name="Add players with their positions and shirt numbers." xml:space="preserve">
+    <value>Voeg spelers toe met hun posities en rugnummers.</value>
+  </data>
+  <data name="Matches" xml:space="preserve">
+    <value>Wedstrijden</value>
+  </data>
+  <data name="Games &amp; Formations" xml:space="preserve">
+    <value>Wedstrijden &amp; opstellingen</value>
+  </data>
+  <data name="Create games, build formations, and track results." xml:space="preserve">
+    <value>Maak wedstrijden aan, bouw opstellingen en houd uitslagen bij.</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Instellingen</value>
+  </data>
+  <data name="Configure match duration, split type, and defaults." xml:space="preserve">
+    <value>Stel wedstrijdduur, speelperiodes en standaardwaarden in.</value>
+  </data>
+  <data name="Keep the training evenings, and note who was not there." xml:space="preserve">
+    <value>Houd de trainingsavonden bij, en noteer wie er niet was.</value>
+  </data>
+  <data name="Players" xml:space="preserve">
+    <value>Spelers</value>
+  </data>
+  <data name="{0} player" xml:space="preserve">
+    <value>{0} speler</value>
+  </data>
+  <data name="{0} players" xml:space="preserve">
+    <value>{0} spelers</value>
+  </data>
+  <data name="{0} guest" xml:space="preserve">
+    <value>{0} gast</value>
+  </data>
+  <data name="{0} guests" xml:space="preserve">
+    <value>{0} gasten</value>
+  </data>
+  <data name="{0} injured" xml:space="preserve">
+    <value>{0} geblesseerd</value>
+  </data>
+  <data name="Add Player" xml:space="preserve">
+    <value>Speler toevoegen</value>
+  </data>
+  <data name="Edit Player" xml:space="preserve">
+    <value>Speler bewerken</value>
+  </data>
+  <data name="No players yet. Add your first player!" xml:space="preserve">
+    <value>Nog geen spelers. Voeg je eerste speler toe!</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Naam</value>
+  </data>
+  <data name="Preferred Position" xml:space="preserve">
+    <value>Voorkeurspositie</value>
+  </data>
+  <data name="Alternative Positions" xml:space="preserve">
+    <value>Alternatieve posities</value>
+  </data>
+  <data name="GUEST" xml:space="preserve">
+    <value>GAST</value>
+  </data>
+  <data name="ARCHIVED" xml:space="preserve">
+    <value>GEARCHIVEERD</value>
+  </data>
+  <data name="Player {0} updated" xml:space="preserve">
+    <value>Speler {0} bijgewerkt</value>
+  </data>
+  <data name="Player {0} deleted" xml:space="preserve">
+    <value>Speler {0} verwijderd</value>
+  </data>
+  <data name="Delete Player" xml:space="preserve">
+    <value>Speler verwijderen</value>
+  </data>
+  <data name="Delete {0} from every season, along with any minutes and goals on record? Archive them instead to keep their history." xml:space="preserve">
+    <value>{0} uit elk seizoen verwijderen, samen met alle vastgelegde speeltijd en doelpunten? Archiveer de speler in plaats daarvan om de geschiedenis te bewaren.</value>
+  </data>
+  <data name="First Name" xml:space="preserve">
+    <value>Voornaam</value>
+  </data>
+  <data name="First name is required" xml:space="preserve">
+    <value>Voornaam is verplicht</value>
+  </data>
+  <data name="Surname" xml:space="preserve">
+    <value>Achternaam</value>
+  </data>
+  <data name="Shirt Number" xml:space="preserve">
+    <value>Rugnummer</value>
+  </data>
+  <data name="Guest player" xml:space="preserve">
+    <value>Gastspeler</value>
+  </data>
+  <data name="Guests are left out of every game unless you add them to it explicitly." xml:space="preserve">
+    <value>Gasten doen alleen mee aan een wedstrijd als je ze er zelf aan toevoegt.</value>
+  </data>
+  <data name="Injured" xml:space="preserve">
+    <value>Geblesseerd</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Annuleren</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Opslaan</value>
+  </data>
+  <data name="Copy" xml:space="preserve">
+    <value>Kopieer</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Verwijderen</value>
+  </data>
+  <data name="{0} match" xml:space="preserve">
+    <value>{0} wedstrijd</value>
+  </data>
+  <data name="{0} matches" xml:space="preserve">
+    <value>{0} wedstrijden</value>
+  </data>
+  <data name="Fixtures" xml:space="preserve">
+    <value>Programma</value>
+  </data>
+  <data name="Results" xml:space="preserve">
+    <value>Uitslagen</value>
+  </data>
+  <data name="New Game" xml:space="preserve">
+    <value>Nieuwe wedstrijd</value>
+  </data>
+  <data name="Edit Game" xml:space="preserve">
+    <value>Wedstrijd bewerken</value>
+  </data>
+  <data name="No games yet. Create your first game!" xml:space="preserve">
+    <value>Nog geen wedstrijden. Maak je eerste wedstrijd aan!</value>
+  </data>
+  <data name="H" xml:space="preserve">
+    <value>T</value>
+  </data>
+  <data name="A" xml:space="preserve">
+    <value>U</value>
+  </data>
+  <data name="{0} out" xml:space="preserve">
+    <value>{0} afwezig</value>
+  </data>
+  <data name="+{0} guest" xml:space="preserve">
+    <value>+{0} gast</value>
+  </data>
+  <data name="Formation" xml:space="preserve">
+    <value>Opstelling</value>
+  </data>
+  <data name="Overview" xml:space="preserve">
+    <value>Overzicht</value>
+  </data>
+  <data name="Tap a player's name to see their statistics." xml:space="preserve">
+    <value>Tik op de naam van een speler voor haar statistieken.</value>
+  </data>
+  <data name="Result" xml:space="preserve">
+    <value>Uitslag</value>
+  </data>
+  <data name="Edit" xml:space="preserve">
+    <value>Bewerken</value>
+  </data>
+  <data name="Game vs {0} created" xml:space="preserve">
+    <value>Wedstrijd tegen {0} aangemaakt</value>
+  </data>
+  <data name="Game vs {0} updated" xml:space="preserve">
+    <value>Wedstrijd tegen {0} bijgewerkt</value>
+  </data>
+  <data name="Game vs {0} deleted" xml:space="preserve">
+    <value>Wedstrijd tegen {0} verwijderd</value>
+  </data>
+  <data name="Delete Game" xml:space="preserve">
+    <value>Wedstrijd verwijderen</value>
+  </data>
+  <data name="Are you sure you want to delete the game vs {0}?" xml:space="preserve">
+    <value>Weet je zeker dat je de wedstrijd tegen {0} wilt verwijderen?</value>
+  </data>
+  <data name="Opponent" xml:space="preserve">
+    <value>Tegenstander</value>
+  </data>
+  <data name="Opponent is required" xml:space="preserve">
+    <value>Tegenstander is verplicht</value>
+  </data>
+  <data name="Date" xml:space="preserve">
+    <value>Datum</value>
+  </data>
+  <data name="Kick-off Time" xml:space="preserve">
+    <value>Aanvangstijd</value>
+  </data>
+  <data name="Enter a time on a 24-hour clock, e.g. {0}" xml:space="preserve">
+    <value>Vul een tijd in op een 24-uursklok, bijv. {0}</value>
+  </data>
+  <data name="Check the fields marked in red" xml:space="preserve">
+    <value>Controleer de rood gemarkeerde velden</value>
+  </data>
+  <data name="Venue" xml:space="preserve">
+    <value>Locatie</value>
+  </data>
+  <data name="Home" xml:space="preserve">
+    <value>Thuis</value>
+  </data>
+  <data name="Away" xml:space="preserve">
+    <value>Uit</value>
+  </data>
+  <data name="Game Duration (minutes)" xml:space="preserve">
+    <value>Wedstrijdduur (minuten)</value>
+  </data>
+  <data name="Game Split" xml:space="preserve">
+    <value>Speelperiodes</value>
+  </data>
+  <data name="Halves (2 periods)" xml:space="preserve">
+    <value>Helften (2 periodes)</value>
+  </data>
+  <data name="Quarters (4 periods)" xml:space="preserve">
+    <value>Kwarten (4 periodes)</value>
+  </data>
+  <data name="per" xml:space="preserve">
+    <value>per</value>
+  </data>
+  <data name="half" xml:space="preserve">
+    <value>helft</value>
+  </data>
+  <data name="quarter" xml:space="preserve">
+    <value>kwart</value>
+  </data>
+  <data name="Unavailable Players" xml:space="preserve">
+    <value>Afwezige spelers</value>
+  </data>
+  <data name="{0} player(s) unavailable" xml:space="preserve">
+    <value>{0} speler(s) afwezig</value>
+  </data>
+  <data name="{0} injured player(s) not listed — they're left out of every game already." xml:space="preserve">
+    <value>{0} geblesseerde speler(s) niet in de lijst — die doen sowieso al niet mee.</value>
+  </data>
+  <data name="Guest Players" xml:space="preserve">
+    <value>Gastspelers</value>
+  </data>
+  <data name="{0} guest(s) added" xml:space="preserve">
+    <value>{0} gast(en) toegevoegd</value>
+  </data>
+  <data name="Assemble time" xml:space="preserve">
+    <value>Verzameltijd</value>
+  </data>
+  <data name="Departure time" xml:space="preserve">
+    <value>Vertrektijd</value>
+  </data>
+  <data name="Warm-up time" xml:space="preserve">
+    <value>Warming-uptijd</value>
+  </data>
+  <data name="e.g. {0}" xml:space="preserve">
+    <value>bijv. {0}</value>
+  </data>
+  <data name="Field" xml:space="preserve">
+    <value>Veld</value>
+  </data>
+  <data name="Dressing room" xml:space="preserve">
+    <value>Kleedkamer</value>
+  </data>
+  <data name="Sports park" xml:space="preserve">
+    <value>Sportpark</value>
+  </data>
+  <data name="City" xml:space="preserve">
+    <value>Plaats</value>
+  </data>
+  <data name="Dressing room duty" xml:space="preserve">
+    <value>Kleedkamerdienst</value>
+  </data>
+  <data name="Flag duty" xml:space="preserve">
+    <value>Vlaggendienst</value>
+  </data>
+  <data name="Kit wash duty" xml:space="preserve">
+    <value>Wastasdienst</value>
+  </data>
+  <data name="Match Type" xml:space="preserve">
+    <value>Type wedstrijd</value>
+  </data>
+  <data name="Competition" xml:space="preserve">
+    <value>Competitie</value>
+  </data>
+  <data name="Cup" xml:space="preserve">
+    <value>Beker</value>
+  </data>
+  <data name="Practice" xml:space="preserve">
+    <value>Oefenwedstrijd</value>
+  </data>
+  <data name="4-4-2 diamond" xml:space="preserve">
+    <value>4-4-2 ruit</value>
+  </data>
+  <data name="Trainings" xml:space="preserve">
+    <value>Trainingen</value>
+  </data>
+  <data name="{0} training" xml:space="preserve">
+    <value>{0} training</value>
+  </data>
+  <data name="{0} trainings" xml:space="preserve">
+    <value>{0} trainingen</value>
+  </data>
+  <data name="Week {0}" xml:space="preserve">
+    <value>Week {0}</value>
+  </data>
+  <data name="Earlier" xml:space="preserve">
+    <value>Eerder</value>
+  </data>
+  <data name="Cancelled" xml:space="preserve">
+    <value>Vervallen</value>
+  </data>
+  <data name="{0} cancelled" xml:space="preserve">
+    <value>{0} vervallen</value>
+  </data>
+  <data name="No trainings in {0} yet." xml:space="preserve">
+    <value>Nog geen trainingen in {0}.</value>
+  </data>
+  <data name="No trainings yet. Add your first session!" xml:space="preserve">
+    <value>Nog geen trainingen. Voeg je eerste training toe!</value>
+  </data>
+  <data name="Set the training days and the first and last training under Preferences, and the sessions fill themselves in." xml:space="preserve">
+    <value>Stel onder Voorkeuren de trainingsdagen en de eerste en laatste training in, dan worden de trainingen vanzelf aangemaakt.</value>
+  </data>
+  <data name="New Training" xml:space="preserve">
+    <value>Nieuwe training</value>
+  </data>
+  <data name="Edit Training" xml:space="preserve">
+    <value>Training bewerken</value>
+  </data>
+  <data name="Delete Training" xml:space="preserve">
+    <value>Training verwijderen</value>
+  </data>
+  <data name="Delete the training on {0}, along with the absences recorded for it?" xml:space="preserve">
+    <value>De training van {0} verwijderen, samen met de afwezigheid die erbij is vastgelegd?</value>
+  </data>
+  <data name="Training on {0} added" xml:space="preserve">
+    <value>Training van {0} toegevoegd</value>
+  </data>
+  <data name="Training on {0} updated" xml:space="preserve">
+    <value>Training van {0} bijgewerkt</value>
+  </data>
+  <data name="Training on {0} deleted" xml:space="preserve">
+    <value>Training van {0} verwijderd</value>
+  </data>
+  <data name="Attendance" xml:space="preserve">
+    <value>Opkomst</value>
+  </data>
+  <data name="{0} sessions held" xml:space="preserve">
+    <value>{0} trainingen gehouden</value>
+  </data>
+  <data name="{0}% attended" xml:space="preserve">
+    <value>{0}% aanwezig</value>
+  </data>
+  <data name="{0} missed" xml:space="preserve">
+    <value>{0} gemist</value>
+  </data>
+  <data name="Notes" xml:space="preserve">
+    <value>Notities</value>
+  </data>
+  <data name="What was trained, and anything worth remembering." xml:space="preserve">
+    <value>Wat er getraind is, en alles wat het onthouden waard is.</value>
+  </data>
+  <data name="Did not take place" xml:space="preserve">
+    <value>Ging niet door</value>
+  </data>
+  <data name="Why the training did not go ahead." xml:space="preserve">
+    <value>Waarom de training niet doorging.</value>
+  </data>
+  <data name="Formation Builder" xml:space="preserve">
+    <value>Opstelling maken</value>
+  </data>
+  <data name="1st Half" xml:space="preserve">
+    <value>1e helft</value>
+  </data>
+  <data name="2nd Half" xml:space="preserve">
+    <value>2e helft</value>
+  </data>
+  <data name="Unavailable" xml:space="preserve">
+    <value>Afwezig</value>
+  </data>
+  <data name="Injured players" xml:space="preserve">
+    <value>Geblesseerde spelers</value>
+  </data>
+  <data name="Exact" xml:space="preserve">
+    <value>Exact</value>
+  </data>
+  <data name="Natural fit" xml:space="preserve">
+    <value>Natuurlijke positie</value>
+  </data>
+  <data name="Alternative" xml:space="preserve">
+    <value>Alternatief</value>
+  </data>
+  <data name="Compatible" xml:space="preserve">
+    <value>Passend</value>
+  </data>
+  <data name="Out of position" xml:space="preserve">
+    <value>Buiten positie</value>
+  </data>
+  <data name="Save All Lineups" xml:space="preserve">
+    <value>Alle opstellingen opslaan</value>
+  </data>
+  <data name="Copy to next {0}" xml:space="preserve">
+    <value>Kopieer naar volgende {0}</value>
+  </data>
+  <data name="Playing Time Overview" xml:space="preserve">
+    <value>Speeltijdoverzicht</value>
+  </data>
+  <data name="Sort By" xml:space="preserve">
+    <value>Sorteer op</value>
+  </data>
+  <data name="Player" xml:space="preserve">
+    <value>Speler</value>
+  </data>
+  <data name="Total" xml:space="preserve">
+    <value>Totaal</value>
+  </data>
+  <data name="Sub" xml:space="preserve">
+    <value>Wissel</value>
+  </data>
+  <data name="Save failed: {0}" xml:space="preserve">
+    <value>Opslaan mislukt: {0}</value>
+  </data>
+  <data name="All lineups saved!" xml:space="preserve">
+    <value>Alle opstellingen opgeslagen!</value>
+  </data>
+  <data name="Lineup copied to {0}" xml:space="preserve">
+    <value>Opstelling gekopieerd naar {0}</value>
+  </data>
+  <data name="Formation changed to {0}" xml:space="preserve">
+    <value>Opstelling gewijzigd naar {0}</value>
+  </data>
+  <data name="Suggest line-up" xml:space="preserve">
+    <value>Opstelling voorstellen</value>
+  </data>
+  <data name="Suggest" xml:space="preserve">
+    <value>Voorstel</value>
+  </data>
+  <data name="Suggest a line-up?" xml:space="preserve">
+    <value>Opstelling voorstellen?</value>
+  </data>
+  <data name="Everyone currently set up for this part of the match is replaced. Nothing is saved until you save." xml:space="preserve">
+    <value>Iedereen die nu voor dit deel van de wedstrijd staat opgesteld wordt vervangen. Er wordt niets opgeslagen tot je opslaat.</value>
+  </data>
+  <data name="Replace" xml:space="preserve">
+    <value>Vervangen</value>
+  </data>
+  <data name="Suggested a line-up — check it before saving." xml:space="preserve">
+    <value>Opstelling voorgesteld — controleer die voordat je opslaat.</value>
+  </data>
+  <data name="Match Result" xml:space="preserve">
+    <value>Uitslag</value>
+  </data>
+  <data name="Final Score" xml:space="preserve">
+    <value>Eindstand</value>
+  </data>
+  <data name="Us" xml:space="preserve">
+    <value>Wij</value>
+  </data>
+  <data name="Save Score" xml:space="preserve">
+    <value>Uitslag opslaan</value>
+  </data>
+  <data name="This match hasn't been played yet." xml:space="preserve">
+    <value>Deze wedstrijd is nog niet gespeeld.</value>
+  </data>
+  <data name="Goals" xml:space="preserve">
+    <value>Doelpunten</value>
+  </data>
+  <data name="OG" xml:space="preserve">
+    <value>ED</value>
+  </data>
+  <data name="No goals recorded yet" xml:space="preserve">
+    <value>Nog geen doelpunten ingevoerd</value>
+  </data>
+  <data name="Min" xml:space="preserve">
+    <value>Min</value>
+  </data>
+  <data name="Scorer" xml:space="preserve">
+    <value>Doelpuntenmaker</value>
+  </data>
+  <data name="Select player..." xml:space="preserve">
+    <value>Kies speler...</value>
+  </data>
+  <data name="Assist" xml:space="preserve">
+    <value>Assist</value>
+  </data>
+  <data name="Optional" xml:space="preserve">
+    <value>Optioneel</value>
+  </data>
+  <data name="Add" xml:space="preserve">
+    <value>Toevoegen</value>
+  </data>
+  <data name="Score saved!" xml:space="preserve">
+    <value>Uitslag opgeslagen!</value>
+  </data>
+  <data name="Goal added!" xml:space="preserve">
+    <value>Doelpunt toegevoegd!</value>
+  </data>
+  <data name="Goal removed" xml:space="preserve">
+    <value>Doelpunt verwijderd</value>
+  </data>
+  <data name="Copy match result" xml:space="preserve">
+    <value>Uitslag kopiëren</value>
+  </data>
+  <data name="Copied to clipboard" xml:space="preserve">
+    <value>Gekopieerd naar klembord</value>
+  </data>
+  <data name="Copy match info" xml:space="preserve">
+    <value>Wedstrijdinfo kopiëren</value>
+  </data>
+  <data name="{0} vs {1}" xml:space="preserve">
+    <value>{0} vs {1}</value>
+  </data>
+  <data name="assemble" xml:space="preserve">
+    <value>verzamelen</value>
+  </data>
+  <data name="depart" xml:space="preserve">
+    <value>vertrek</value>
+  </data>
+  <data name="briefing/warm-up" xml:space="preserve">
+    <value>bespreking/warming-up</value>
+  </data>
+  <data name="kick-off" xml:space="preserve">
+    <value>aftrap</value>
+  </data>
+  <data name="field {0}" xml:space="preserve">
+    <value>veld {0}</value>
+  </data>
+  <data name="dressing room {0}" xml:space="preserve">
+    <value>kleedkamer {0}</value>
+  </data>
+  <data name="Duties" xml:space="preserve">
+    <value>Taken</value>
+  </data>
+  <data name="Flags" xml:space="preserve">
+    <value>Vlaggen</value>
+  </data>
+  <data name="Kit wash" xml:space="preserve">
+    <value>Wastas</value>
+  </data>
+  <data name="Couldn't copy — try again" xml:space="preserve">
+    <value>Kopiëren mislukt — probeer opnieuw</value>
+  </data>
+  <data name="Comments" xml:space="preserve">
+    <value>Opmerkingen</value>
+  </data>
+  <data name="No comments yet" xml:space="preserve">
+    <value>Nog geen opmerkingen</value>
+  </data>
+  <data name="Add comment" xml:space="preserve">
+    <value>Opmerking toevoegen</value>
+  </data>
+  <data name="Visible to everyone" xml:space="preserve">
+    <value>Zichtbaar voor iedereen</value>
+  </data>
+  <data name="Public" xml:space="preserve">
+    <value>Openbaar</value>
+  </data>
+  <data name="Admin only" xml:space="preserve">
+    <value>Alleen beheerders</value>
+  </data>
+  <data name="edited" xml:space="preserve">
+    <value>bewerkt</value>
+  </data>
+  <data name="Publish" xml:space="preserve">
+    <value>Publiceren</value>
+  </data>
+  <data name="Publish comment" xml:space="preserve">
+    <value>Opmerking publiceren</value>
+  </data>
+  <data name="Make admin only" xml:space="preserve">
+    <value>Alleen voor beheerders maken</value>
+  </data>
+  <data name="This comment becomes visible to everyone who opens this match. Continue?" xml:space="preserve">
+    <value>Deze opmerking wordt zichtbaar voor iedereen die deze wedstrijd bekijkt. Doorgaan?</value>
+  </data>
+  <data name="Delete comment" xml:space="preserve">
+    <value>Opmerking verwijderen</value>
+  </data>
+  <data name="Delete this comment? This cannot be undone." xml:space="preserve">
+    <value>Deze opmerking verwijderen? Dit kan niet ongedaan worden gemaakt.</value>
+  </data>
+  <data name="Comment added" xml:space="preserve">
+    <value>Opmerking toegevoegd</value>
+  </data>
+  <data name="Comment published" xml:space="preserve">
+    <value>Opmerking gepubliceerd</value>
+  </data>
+  <data name="Comment is now admin only" xml:space="preserve">
+    <value>Opmerking is nu alleen voor beheerders</value>
+  </data>
+  <data name="Comment removed" xml:space="preserve">
+    <value>Opmerking verwijderd</value>
+  </data>
+  <data name="Live Match" xml:space="preserve">
+    <value>Live wedstrijd</value>
+  </data>
+  <data name="Live" xml:space="preserve">
+    <value>Live</value>
+  </data>
+  <data name="Not started" xml:space="preserve">
+    <value>Nog niet begonnen</value>
+  </data>
+  <data name="In progress" xml:space="preserve">
+    <value>Bezig</value>
+  </data>
+  <data name="Additional time" xml:space="preserve">
+    <value>Extra tijd</value>
+  </data>
+  <data name="Full time" xml:space="preserve">
+    <value>Einde wedstrijd</value>
+  </data>
+  <data name="Start match" xml:space="preserve">
+    <value>Wedstrijd starten</value>
+  </data>
+  <data name="Half time" xml:space="preserve">
+    <value>Rust</value>
+  </data>
+  <data name="Start {0}" xml:space="preserve">
+    <value>{0} starten</value>
+  </data>
+  <data name="Position changes" xml:space="preserve">
+    <value>Positiewissels</value>
+  </data>
+  <data name="Finish match" xml:space="preserve">
+    <value>Wedstrijd afsluiten</value>
+  </data>
+  <data name="Edit result" xml:space="preserve">
+    <value>Uitslag aanpassen</value>
+  </data>
+  <data name="Line-up" xml:space="preserve">
+    <value>Opstelling</value>
+  </data>
+  <data name="Tap a player to substitute them, change their position, or mark them injured." xml:space="preserve">
+    <value>Tik op een speler om te wisselen, van positie te veranderen of haar geblesseerd te melden.</value>
+  </data>
+  <data name="Tap a player to change who starts the next half." xml:space="preserve">
+    <value>Tik op een speler om te wijzigen wie de volgende helft begint.</value>
+  </data>
+  <data name="Recorded at kick-off" xml:space="preserve">
+    <value>Vastgelegd bij aftrap</value>
+  </data>
+  <data name="Half-time change made" xml:space="preserve">
+    <value>Rustwissel gemaakt</value>
+  </data>
+  <data name="No half is waiting to be set up" xml:space="preserve">
+    <value>Er staat geen helft klaar om in te stellen</value>
+  </data>
+  <data name="Goal against" xml:space="preserve">
+    <value>Tegen doelpunt</value>
+  </data>
+  <data name="Timeline" xml:space="preserve">
+    <value>Tijdlijn</value>
+  </data>
+  <data name="Nothing has happened yet" xml:space="preserve">
+    <value>Er is nog niets gebeurd</value>
+  </data>
+  <data name="Show substitutions" xml:space="preserve">
+    <value>Wissels tonen</value>
+  </data>
+  <data name="No goals yet" xml:space="preserve">
+    <value>Nog geen doelpunten</value>
+  </data>
+  <data name="Minutes played" xml:space="preserve">
+    <value>Gespeelde minuten</value>
+  </data>
+  <data name="Planned minutes" xml:space="preserve">
+    <value>Opgestelde minuten</value>
+  </data>
+  <data name="On the pitch" xml:space="preserve">
+    <value>In het veld</value>
+  </data>
+  <data name="Live now" xml:space="preserve">
+    <value>Nu live</value>
+  </data>
+  <data name="Today" xml:space="preserve">
+    <value>Vandaag</value>
+  </data>
+  <data name="Remove" xml:space="preserve">
+    <value>Verwijderen</value>
+  </data>
+  <data name="Undo" xml:space="preserve">
+    <value>Ongedaan maken</value>
+  </data>
+  <data name="Match started" xml:space="preserve">
+    <value>Wedstrijd gestart</value>
+  </data>
+  <data name="Changes ({0})" xml:space="preserve">
+    <value>Wijzigingen ({0})</value>
+  </data>
+  <data name="Changes to make" xml:space="preserve">
+    <value>Nog door te voeren wijzigingen</value>
+  </data>
+  <data name="Nothing more is planned for this half." xml:space="preserve">
+    <value>Er is niets meer gepland voor deze helft.</value>
+  </data>
+  <data name="Tap the players on the pitch to make these changes." xml:space="preserve">
+    <value>Tik op de spelers in het veld om deze wijzigingen te maken.</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Sluiten</value>
+  </data>
+  <data name="Half ended" xml:space="preserve">
+    <value>Helft beëindigd</value>
+  </data>
+  <data name="Next half started" xml:space="preserve">
+    <value>Volgende helft gestart</value>
+  </data>
+  <data name="Match finished" xml:space="preserve">
+    <value>Wedstrijd afgesloten</value>
+  </data>
+  <data name="End the match and save the final score? You can still edit the result afterwards." xml:space="preserve">
+    <value>Wedstrijd afsluiten en de eindstand opslaan? Je kunt de uitslag daarna nog aanpassen.</value>
+  </data>
+  <data name="Goal" xml:space="preserve">
+    <value>Doelpunt</value>
+  </data>
+  <data name="Add goal" xml:space="preserve">
+    <value>Doelpunt toevoegen</value>
+  </data>
+  <data name="No assist" xml:space="preserve">
+    <value>Geen assist</value>
+  </data>
+  <data name="Who scored?" xml:space="preserve">
+    <value>Wie scoorde?</value>
+  </data>
+  <data name="Own goal" xml:space="preserve">
+    <value>Eigen doelpunt</value>
+  </data>
+  <data name="An own goal counts for the opponent." xml:space="preserve">
+    <value>Een eigen doelpunt telt voor de tegenstander.</value>
+  </data>
+  <data name="Opponent goal added" xml:space="preserve">
+    <value>Tegendoelpunt toegevoegd</value>
+  </data>
+  <data name="Substitution" xml:space="preserve">
+    <value>Wissel</value>
+  </data>
+  <data name="Substitution made" xml:space="preserve">
+    <value>Wissel doorgevoerd</value>
+  </data>
+  <data name="Substitution undone" xml:space="preserve">
+    <value>Wissel ongedaan gemaakt</value>
+  </data>
+  <data name="Edit substitution" xml:space="preserve">
+    <value>Wissel bewerken</value>
+  </data>
+  <data name="Substitution updated" xml:space="preserve">
+    <value>Wissel bijgewerkt</value>
+  </data>
+  <data name="Edit goal" xml:space="preserve">
+    <value>Doelpunt bewerken</value>
+  </data>
+  <data name="Goal updated" xml:space="preserve">
+    <value>Doelpunt bijgewerkt</value>
+  </data>
+  <data name="Goal for {0}" xml:space="preserve">
+    <value>Doelpunt voor {0}</value>
+  </data>
+  <data name="Half lengths" xml:space="preserve">
+    <value>Duur per helft</value>
+  </data>
+  <data name="Correct half lengths" xml:space="preserve">
+    <value>Duur per helft corrigeren</value>
+  </data>
+  <data name="Half lengths corrected" xml:space="preserve">
+    <value>Duur per helft gecorrigeerd</value>
+  </data>
+  <data name="Only the final whistle of each half moves. Every goal, substitution and injury keeps the moment it was recorded, so the minutes read back against the corrected half." xml:space="preserve">
+    <value>Alleen het eindsignaal van elke helft verschuift. Elk doelpunt, elke wissel en elke blessure houdt het moment waarop die is vastgelegd, zodat de minuten worden teruggerekend vanaf de gecorrigeerde helft.</value>
+  </data>
+  <data name="came off" xml:space="preserve">
+    <value>ging eruit</value>
+  </data>
+  <data name="Minute" xml:space="preserve">
+    <value>Minuut</value>
+  </data>
+  <data name="Undo the later substitution first" xml:space="preserve">
+    <value>Maak eerst de latere wissel ongedaan</value>
+  </data>
+  <data name="Only a finished match can have its half lengths corrected" xml:space="preserve">
+    <value>Alleen bij een afgelopen wedstrijd kan de duur per helft worden gecorrigeerd</value>
+  </data>
+  <data name="That half was never played" xml:space="preserve">
+    <value>Die helft is nooit gespeeld</value>
+  </data>
+  <data name="A half has to last at least a minute" xml:space="preserve">
+    <value>Een helft duurt minstens één minuut</value>
+  </data>
+  <data name="That half still has something recorded after {0} minutes" xml:space="preserve">
+    <value>In die helft is na {0} minuten nog iets vastgelegd</value>
+  </data>
+  <data name="A half cannot run past the restart of the next one" xml:space="preserve">
+    <value>Een helft kan niet doorlopen tot na de hervatting</value>
+  </data>
+  <data name="An opponent goal cannot be an own goal" xml:space="preserve">
+    <value>Een doelpunt van de tegenstander kan geen eigen doelpunt zijn</value>
+  </data>
+  <data name="A substitution made for an injury can't be edited" xml:space="preserve">
+    <value>Een wissel wegens blessure kan hier niet worden bewerkt</value>
+  </data>
+  <data name="Make substitution" xml:space="preserve">
+    <value>Wissel doorvoeren</value>
+  </data>
+  <data name="Comes on" xml:space="preserve">
+    <value>Komt erin</value>
+  </data>
+  <data name="Nobody is on the bench for this half." xml:space="preserve">
+    <value>Er zit niemand op de bank voor deze helft.</value>
+  </data>
+  <data name="Swaps position with" xml:space="preserve">
+    <value>Wisselt van positie met</value>
+  </data>
+  <data name="Nobody else is on the pitch." xml:space="preserve">
+    <value>Er staat niemand anders op het veld.</value>
+  </data>
+  <data name="A position swap keeps both players on the pitch and is not a substitution." xml:space="preserve">
+    <value>Bij een positiewissel blijven beide spelers op het veld; het is geen wissel.</value>
+  </data>
+  <data name="Swap positions" xml:space="preserve">
+    <value>Posities wisselen</value>
+  </data>
+  <data name="Positions swapped" xml:space="preserve">
+    <value>Posities gewisseld</value>
+  </data>
+  <data name="The rest of the match stops counting towards her playing time." xml:space="preserve">
+    <value>De rest van de wedstrijd telt niet meer mee voor haar speeltijd.</value>
+  </data>
+  <data name="Off injured" xml:space="preserve">
+    <value>Geblesseerd naar de kant</value>
+  </data>
+  <data name="Off injured, not replaced" xml:space="preserve">
+    <value>Geblesseerd naar de kant, niet vervangen</value>
+  </data>
+  <data name="{0} is off injured" xml:space="preserve">
+    <value>{0} is geblesseerd naar de kant</value>
+  </data>
+  <data name="Injury undone" xml:space="preserve">
+    <value>Blessure ongedaan gemaakt</value>
+  </data>
+  <data name="Player Stats" xml:space="preserve">
+    <value>Spelersstatistieken</value>
+  </data>
+  <data name="No games recorded yet for this player." xml:space="preserve">
+    <value>Nog geen wedstrijden geregistreerd voor deze speler.</value>
+  </data>
+  <data name="Minutes" xml:space="preserve">
+    <value>Minuten</value>
+  </data>
+  <data name="{0} / game" xml:space="preserve">
+    <value>{0} / wedstrijd</value>
+  </data>
+  <data name="Assists" xml:space="preserve">
+    <value>Assists</value>
+  </data>
+  <data name="Positions" xml:space="preserve">
+    <value>Posities</value>
+  </data>
+  <data name="No minutes on the pitch yet." xml:space="preserve">
+    <value>Nog geen speelminuten.</value>
+  </data>
+  <data name="Per game" xml:space="preserve">
+    <value>Per wedstrijd</value>
+  </data>
+  <data name="G" xml:space="preserve">
+    <value>D</value>
+  </data>
+  <data name="Ast" xml:space="preserve">
+    <value>A</value>
+  </data>
+  <data name="Estimated from the planned line-up — this match was not tracked live." xml:space="preserve">
+    <value>Geschat op basis van de opstelling — deze wedstrijd is niet live bijgehouden.</value>
+  </data>
+  <data name="~ estimated from the planned line-up; matches tracked live use the real clock and substitutions." xml:space="preserve">
+    <value>~ geschat op basis van de opstelling; live bijgehouden wedstrijden gebruiken de echte klok en wissels.</value>
+  </data>
+  <data name="Season" xml:space="preserve">
+    <value>Seizoen</value>
+  </data>
+  <data name="Season statistics" xml:space="preserve">
+    <value>Seizoen statistieken</value>
+  </data>
+  <data name="Team and squad totals for {0}" xml:space="preserve">
+    <value>Team- en selectietotalen voor {0}</value>
+  </data>
+  <data name="Team and squad totals across all seasons" xml:space="preserve">
+    <value>Team- en selectietotalen over alle seizoenen</value>
+  </data>
+  <data name="Played" xml:space="preserve">
+    <value>Gespeeld</value>
+  </data>
+  <data name="W-D-L" xml:space="preserve">
+    <value>W-G-V</value>
+  </data>
+  <data name="{0}% won" xml:space="preserve">
+    <value>{0}% winst</value>
+  </data>
+  <data name="Goals for" xml:space="preserve">
+    <value>Voor</value>
+  </data>
+  <data name="Goals against" xml:space="preserve">
+    <value>Tegen</value>
+  </data>
+  <data name="diff" xml:space="preserve">
+    <value>saldo</value>
+  </data>
+  <data name="Form" xml:space="preserve">
+    <value>Vorm</value>
+  </data>
+  <data name="Win" xml:space="preserve">
+    <value>Winst</value>
+  </data>
+  <data name="Draw" xml:space="preserve">
+    <value>Gelijkspel</value>
+  </data>
+  <data name="Loss" xml:space="preserve">
+    <value>Verlies</value>
+  </data>
+  <data name="Top scorers" xml:space="preserve">
+    <value>Topscorers</value>
+  </data>
+  <data name="Playing time" xml:space="preserve">
+    <value>Speeltijd</value>
+  </data>
+  <data name="Availability" xml:space="preserve">
+    <value>Beschikbaarheid</value>
+  </data>
+  <data name="Not played" xml:space="preserve">
+    <value>Niet gespeeld</value>
+  </data>
+  <data name="Goalkeeper minutes" xml:space="preserve">
+    <value>Keeperminuten</value>
+  </data>
+  <data name="No goalkeeper minutes yet." xml:space="preserve">
+    <value>Nog geen keeperminuten.</value>
+  </data>
+  <data name="{0}% of {1}'" xml:space="preserve">
+    <value>{0}% van {1}'</value>
+  </data>
+  <data name="No goals recorded yet." xml:space="preserve">
+    <value>Nog geen doelpunten geregistreerd.</value>
+  </data>
+  <data name="No players yet." xml:space="preserve">
+    <value>Nog geen speelsters.</value>
+  </data>
+  <data name="Position Development" xml:space="preserve">
+    <value>Positieontwikkeling</value>
+  </data>
+  <data name="Who has played where in {0}, at a glance." xml:space="preserve">
+    <value>In één oogopslag wie waar heeft gespeeld in {0}.</value>
+  </data>
+  <data name="Who has played where across all seasons, at a glance." xml:space="preserve">
+    <value>In één oogopslag wie waar heeft gespeeld over alle seizoenen.</value>
+  </data>
+  <data name="Single position" xml:space="preserve">
+    <value>Eén positie</value>
+  </data>
+  <data name="Every minute played came in one position." xml:space="preserve">
+    <value>Elke gespeelde minuut was op één positie.</value>
+  </data>
+  <data name="Players used" xml:space="preserve">
+    <value>Speelsters ingezet</value>
+  </data>
+  <data name="Positions used" xml:space="preserve">
+    <value>Posities bespeeld</value>
+  </data>
+  <data name="of {0} players" xml:space="preserve">
+    <value>van {0} speelsters</value>
+  </data>
+  <data name="New player" xml:space="preserve">
+    <value>Nieuwe speler</value>
+  </data>
+  <data name="Existing player" xml:space="preserve">
+    <value>Bestaande speler</value>
+  </data>
+  <data name="Add to squad" xml:space="preserve">
+    <value>Aan selectie toevoegen</value>
+  </data>
+  <data name="{0} added to the squad" xml:space="preserve">
+    <value>{0} is aan de selectie toegevoegd</value>
+  </data>
+  <data name="Remove from squad" xml:space="preserve">
+    <value>Uit selectie verwijderen</value>
+  </data>
+  <data name="Remove {0} from the {1} squad? Their history stays intact." xml:space="preserve">
+    <value>{0} uit de selectie van {1} verwijderen? De geschiedenis blijft bewaard.</value>
+  </data>
+  <data name="{0} removed from the squad" xml:space="preserve">
+    <value>{0} is uit de selectie verwijderd</value>
+  </data>
+  <data name="{0} is now a guest" xml:space="preserve">
+    <value>{0} is nu een gast</value>
+  </data>
+  <data name="{0} is now a squad player" xml:space="preserve">
+    <value>{0} is nu een selectiespeler</value>
+  </data>
+  <data name="{0} is now injured" xml:space="preserve">
+    <value>{0} is nu geblesseerd</value>
+  </data>
+  <data name="{0} is no longer injured" xml:space="preserve">
+    <value>{0} is niet meer geblesseerd</value>
+  </data>
+  <data name="Copy squad from {0}" xml:space="preserve">
+    <value>Selectie kopiëren uit {0}</value>
+  </data>
+  <data name="{0} players copied from {1}" xml:space="preserve">
+    <value>{0} spelers gekopieerd uit {1}</value>
+  </data>
+  <data name="No squad for {0} yet." xml:space="preserve">
+    <value>Nog geen selectie voor {0}.</value>
+  </data>
+  <data name="Copy last season's squad, or add players one by one." xml:space="preserve">
+    <value>Kopieer de selectie van vorig seizoen, of voeg spelers los toe.</value>
+  </data>
+  <data name="Select a season to manage its squad." xml:space="preserve">
+    <value>Kies een seizoen om de selectie te beheren.</value>
+  </data>
+  <data name="Show {0}" xml:space="preserve">
+    <value>Toon {0}</value>
+  </data>
+  <data name="Everyone on file is already in this squad." xml:space="preserve">
+    <value>Iedereen staat al in deze selectie.</value>
+  </data>
+  <data name="Delete player permanently" xml:space="preserve">
+    <value>Speler definitief verwijderen</value>
+  </data>
+  <data name="Archive player" xml:space="preserve">
+    <value>Speler archiveren</value>
+  </data>
+  <data name="Restore player" xml:space="preserve">
+    <value>Speler terughalen</value>
+  </data>
+  <data name="Archive" xml:space="preserve">
+    <value>Archiveren</value>
+  </data>
+  <data name="Archive {0}? They keep every appearance, goal and season they played, and stop being offered for seasons to come." xml:space="preserve">
+    <value>{0} archiveren? Alle wedstrijden, doelpunten en seizoenen blijven bewaard, en de speler wordt niet meer aangeboden voor volgende seizoenen.</value>
+  </data>
+  <data name="{0} archived" xml:space="preserve">
+    <value>{0} is gearchiveerd</value>
+  </data>
+  <data name="{0} is back in the squad lists" xml:space="preserve">
+    <value>{0} staat weer in de selectielijsten</value>
+  </data>
+  <data name="Please select a player" xml:space="preserve">
+    <value>Kies een speler</value>
+  </data>
+  <data name="More" xml:space="preserve">
+    <value>Meer</value>
+  </data>
+  <data name="This date starts a new season — its squad is empty until you fill it in on the squad page." xml:space="preserve">
+    <value>Deze datum start een nieuw seizoen — de selectie is leeg tot je die op de selectiepagina invult.</value>
+  </data>
+  <data name="Seasons" xml:space="preserve">
+    <value>Seizoenen</value>
+  </data>
+  <data name="All seasons" xml:space="preserve">
+    <value>Alle seizoenen</value>
+  </data>
+  <data name="Current" xml:space="preserve">
+    <value>Huidig</value>
+  </data>
+  <data name="Set as current" xml:space="preserve">
+    <value>Als huidig instellen</value>
+  </data>
+  <data name="Select season" xml:space="preserve">
+    <value>Seizoen kiezen</value>
+  </data>
+  <data name="Auto (by date)" xml:space="preserve">
+    <value>Automatisch (op datum)</value>
+  </data>
+  <data name="Season name" xml:space="preserve">
+    <value>Seizoensnaam</value>
+  </data>
+  <data name="Season name is required" xml:space="preserve">
+    <value>Seizoensnaam is verplicht</value>
+  </data>
+  <data name="Start date" xml:space="preserve">
+    <value>Startdatum</value>
+  </data>
+  <data name="End date" xml:space="preserve">
+    <value>Einddatum</value>
+  </data>
+  <data name="New Season" xml:space="preserve">
+    <value>Nieuw seizoen</value>
+  </data>
+  <data name="Edit Season" xml:space="preserve">
+    <value>Seizoen bewerken</value>
+  </data>
+  <data name="Delete Season" xml:space="preserve">
+    <value>Seizoen verwijderen</value>
+  </data>
+  <data name="Are you sure you want to delete the season {0}?" xml:space="preserve">
+    <value>Weet je zeker dat je seizoen {0} wilt verwijderen?</value>
+  </data>
+  <data name="Season {0} created" xml:space="preserve">
+    <value>Seizoen {0} aangemaakt</value>
+  </data>
+  <data name="Season {0} updated" xml:space="preserve">
+    <value>Seizoen {0} bijgewerkt</value>
+  </data>
+  <data name="Season {0} deleted" xml:space="preserve">
+    <value>Seizoen {0} verwijderd</value>
+  </data>
+  <data name="Season {0} is now the current season" xml:space="preserve">
+    <value>Seizoen {0} is nu het huidige seizoen</value>
+  </data>
+  <data name="Seasons are used to group games and filter statistics." xml:space="preserve">
+    <value>Seizoenen groeperen wedstrijden en filteren de statistieken.</value>
+  </data>
+  <data name="No games in {0} yet." xml:space="preserve">
+    <value>Nog geen wedstrijden in {0}.</value>
+  </data>
+  <data name="no lineup" xml:space="preserve">
+    <value>geen opstelling</value>
+  </data>
+  <data name="Add lineup" xml:space="preserve">
+    <value>Opstelling toevoegen</value>
+  </data>
+  <data name="{0} without lineup" xml:space="preserve">
+    <value>{0} zonder opstelling</value>
+  </data>
+  <data name="This game has no lineup — playing time can't be recorded" xml:space="preserve">
+    <value>Deze wedstrijd heeft geen opstelling — speeltijd kan niet worden geregistreerd</value>
+  </data>
+  <data name="Statistics" xml:space="preserve">
+    <value>Statistieken</value>
+  </data>
+  <data name="Season stats" xml:space="preserve">
+    <value>Seizoen statistieken</value>
+  </data>
+  <data name="See the team record, top scorers, and playing time." xml:space="preserve">
+    <value>Bekijk de teambalans, topscorers en speeltijd.</value>
+  </data>
+  <data name="Goalkeeper" xml:space="preserve">
+    <value>Keeper</value>
+  </data>
+  <data name="Left Back" xml:space="preserve">
+    <value>Linksback</value>
+  </data>
+  <data name="Center Back" xml:space="preserve">
+    <value>Centrale verdediger</value>
+  </data>
+  <data name="Right Back" xml:space="preserve">
+    <value>Rechtsback</value>
+  </data>
+  <data name="Defender" xml:space="preserve">
+    <value>Verdediger</value>
+  </data>
+  <data name="Defensive Midfielder" xml:space="preserve">
+    <value>Verdedigende middenvelder</value>
+  </data>
+  <data name="Center Midfielder" xml:space="preserve">
+    <value>Centrale middenvelder</value>
+  </data>
+  <data name="Left Midfielder" xml:space="preserve">
+    <value>Linkermiddenvelder</value>
+  </data>
+  <data name="Right Midfielder" xml:space="preserve">
+    <value>Rechtermiddenvelder</value>
+  </data>
+  <data name="Attacking Midfielder" xml:space="preserve">
+    <value>Aanvallende middenvelder</value>
+  </data>
+  <data name="Midfielder" xml:space="preserve">
+    <value>Middenvelder</value>
+  </data>
+  <data name="Left Winger" xml:space="preserve">
+    <value>Linksbuiten</value>
+  </data>
+  <data name="Right Winger" xml:space="preserve">
+    <value>Rechtsbuiten</value>
+  </data>
+  <data name="Winger" xml:space="preserve">
+    <value>Vleugelspeler</value>
+  </data>
+  <data name="Striker" xml:space="preserve">
+    <value>Spits</value>
+  </data>
+  <data name="Attacker" xml:space="preserve">
+    <value>Aanvaller</value>
+  </data>
+  <data name="Formation Overview" xml:space="preserve">
+    <value>Opstellingsoverzicht</value>
+  </data>
+  <data name="Subs" xml:space="preserve">
+    <value>Wissels</value>
+  </data>
+  <data name="Player {0}" xml:space="preserve">
+    <value>Speler {0}</value>
+  </data>
+  <data name="No subs" xml:space="preserve">
+    <value>Geen wissels</value>
+  </data>
+  <data name="No formation yet" xml:space="preserve">
+    <value>Nog geen opstelling</value>
+  </data>
+  <data name="Save as image" xml:space="preserve">
+    <value>Opslaan als afbeelding</value>
+  </data>
+  <data name="Match Preferences" xml:space="preserve">
+    <value>Wedstrijdvoorkeuren</value>
+  </data>
+  <data name="These defaults are applied when creating new games, and are kept per season." xml:space="preserve">
+    <value>Deze standaardwaarden worden gebruikt bij het aanmaken van nieuwe wedstrijden en gelden per seizoen.</value>
+  </data>
+  <data name="Defaults" xml:space="preserve">
+    <value>Standaardwaarden</value>
+  </data>
+  <data name="Default Game Split" xml:space="preserve">
+    <value>Standaard speelperiodes</value>
+  </data>
+  <data name="Default Formation" xml:space="preserve">
+    <value>Standaard opstelling</value>
+  </data>
+  <data name="Match Day" xml:space="preserve">
+    <value>Wedstrijddag</value>
+  </data>
+  <data name="Next calculated match date:" xml:space="preserve">
+    <value>Volgende berekende wedstrijddatum:</value>
+  </data>
+  <data name="Training Days" xml:space="preserve">
+    <value>Trainingsdagen</value>
+  </data>
+  <data name="First Training" xml:space="preserve">
+    <value>Eerste training</value>
+  </data>
+  <data name="Last Training" xml:space="preserve">
+    <value>Laatste training</value>
+  </data>
+  <data name="Saving creates a session for every training day between the two, and removes the empty ones outside them." xml:space="preserve">
+    <value>Opslaan maakt een training aan voor elke trainingsdag ertussen, en verwijdert de lege trainingen daarbuiten.</value>
+  </data>
+  <data name="{0} trainings created, {1} removed" xml:space="preserve">
+    <value>{0} trainingen aangemaakt, {1} verwijderd</value>
+  </data>
+  <data name="Next calculated training date:" xml:space="preserve">
+    <value>Volgende berekende trainingsdatum:</value>
+  </data>
+  <data name="Save Preferences" xml:space="preserve">
+    <value>Voorkeuren opslaan</value>
+  </data>
+  <data name="Change Password" xml:space="preserve">
+    <value>Wachtwoord wijzigen</value>
+  </data>
+  <data name="Current Password" xml:space="preserve">
+    <value>Huidig wachtwoord</value>
+  </data>
+  <data name="New Password" xml:space="preserve">
+    <value>Nieuw wachtwoord</value>
+  </data>
+  <data name="Confirm New Password" xml:space="preserve">
+    <value>Bevestig nieuw wachtwoord</value>
+  </data>
+  <data name="Preferences for {0} saved!" xml:space="preserve">
+    <value>Voorkeuren voor {0} opgeslagen!</value>
+  </data>
+  <data name="Please fill in all password fields" xml:space="preserve">
+    <value>Vul alle wachtwoordvelden in</value>
+  </data>
+  <data name="New passwords do not match" xml:space="preserve">
+    <value>De nieuwe wachtwoorden komen niet overeen</value>
+  </data>
+  <data name="Password changed successfully!" xml:space="preserve">
+    <value>Wachtwoord gewijzigd!</value>
+  </data>
+  <data name="This account still uses the password it was created with. Choose your own below — until you do, the rest of the app stays locked." xml:space="preserve">
+    <value>Dit account gebruikt nog het wachtwoord waarmee het is aangemaakt. Kies hieronder je eigen wachtwoord — tot die tijd blijft de rest van de app op slot.</value>
+  </data>
+  <data name="Current password is incorrect" xml:space="preserve">
+    <value>Huidig wachtwoord is onjuist</value>
+  </data>
+  <data name="New password must be at least {0} characters" xml:space="preserve">
+    <value>Nieuw wachtwoord moet minimaal {0} tekens lang zijn</value>
+  </data>
+  <data name="New password must be different from the current one" xml:space="preserve">
+    <value>Nieuw wachtwoord moet verschillen van het huidige</value>
+  </data>
+  <data name="Users" xml:space="preserve">
+    <value>Gebruikers</value>
+  </data>
+  <data name="Accounts that can sign in, and what each one is allowed to do." xml:space="preserve">
+    <value>Accounts die kunnen inloggen, en wat elk account mag doen.</value>
+  </data>
+  <data name="Add User" xml:space="preserve">
+    <value>Gebruiker toevoegen</value>
+  </data>
+  <data name="Edit User" xml:space="preserve">
+    <value>Gebruiker bewerken</value>
+  </data>
+  <data name="Delete User" xml:space="preserve">
+    <value>Gebruiker verwijderen</value>
+  </data>
+  <data name="Reset Password" xml:space="preserve">
+    <value>Wachtwoord opnieuw instellen</value>
+  </data>
+  <data name="Role" xml:space="preserve">
+    <value>Rol</value>
+  </data>
+  <data name="You" xml:space="preserve">
+    <value>JIJ</value>
+  </data>
+  <data name="Admin" xml:space="preserve">
+    <value>Beheerder</value>
+  </data>
+  <data name="ApplicationAdmin" xml:space="preserve">
+    <value>Applicatiebeheerder</value>
+  </data>
+  <data name="Confirm password" xml:space="preserve">
+    <value>Wachtwoord bevestigen</value>
+  </data>
+  <data name="At least {0} characters" xml:space="preserve">
+    <value>Minimaal {0} tekens</value>
+  </data>
+  <data name="Use Reset Password to give this account a new password." xml:space="preserve">
+    <value>Gebruik Wachtwoord opnieuw instellen om dit account een nieuw wachtwoord te geven.</value>
+  </data>
+  <data name="User {0} created" xml:space="preserve">
+    <value>Gebruiker {0} aangemaakt</value>
+  </data>
+  <data name="User {0} updated" xml:space="preserve">
+    <value>Gebruiker {0} bijgewerkt</value>
+  </data>
+  <data name="User {0} deleted" xml:space="preserve">
+    <value>Gebruiker {0} verwijderd</value>
+  </data>
+  <data name="Password reset for {0}" xml:space="preserve">
+    <value>Wachtwoord opnieuw ingesteld voor {0}</value>
+  </data>
+  <data name="Are you sure you want to delete the account for {0}?" xml:space="preserve">
+    <value>Weet je zeker dat je het account van {0} wilt verwijderen?</value>
+  </data>
+  <data name="Name is required" xml:space="preserve">
+    <value>Naam is verplicht</value>
+  </data>
+  <data name="Username is required" xml:space="preserve">
+    <value>Gebruikersnaam is verplicht</value>
+  </data>
+  <data name="Password is required" xml:space="preserve">
+    <value>Wachtwoord is verplicht</value>
+  </data>
+  <data name="Passwords do not match" xml:space="preserve">
+    <value>Wachtwoorden komen niet overeen</value>
+  </data>
+  <data name="Password must be at least {0} characters" xml:space="preserve">
+    <value>Wachtwoord moet minimaal {0} tekens lang zijn</value>
+  </data>
+  <data name="Name must be at most {0} characters" xml:space="preserve">
+    <value>Naam mag maximaal {0} tekens lang zijn</value>
+  </data>
+  <data name="Username must be at most {0} characters" xml:space="preserve">
+    <value>Gebruikersnaam mag maximaal {0} tekens lang zijn</value>
+  </data>
+  <data name="A user with username {0} already exists" xml:space="preserve">
+    <value>Er bestaat al een gebruiker met gebruikersnaam {0}</value>
+  </data>
+  <data name="{0} would be left without an administrator" xml:space="preserve">
+    <value>{0} zou zonder beheerder achterblijven</value>
+  </data>
+  <data name="The last application administrator cannot be removed or demoted" xml:space="preserve">
+    <value>De laatste applicatiebeheerder kan niet worden verwijderd of gedegradeerd</value>
+  </data>
+  <data name="Only an application administrator can grant that role" xml:space="preserve">
+    <value>Alleen een applicatiebeheerder kan die rol toekennen</value>
+  </data>
+  <data name="You can only manage accounts for your own team" xml:space="preserve">
+    <value>Je kunt alleen accounts van je eigen team beheren</value>
+  </data>
+  <data name="An administrator needs a team" xml:space="preserve">
+    <value>Een beheerder heeft een team nodig</value>
+  </data>
+  <data name="All teams" xml:space="preserve">
+    <value>Alle teams</value>
+  </data>
+  <data name="Only an application administrator can change this role." xml:space="preserve">
+    <value>Alleen een applicatiebeheerder kan deze rol wijzigen.</value>
+  </data>
+  <data name="The last training must not be before the first" xml:space="preserve">
+    <value>De laatste training mag niet vóór de eerste liggen</value>
+  </data>
+  <data name="The training period must fall inside season {0}" xml:space="preserve">
+    <value>De trainingsperiode moet binnen seizoen {0} vallen</value>
+  </data>
+  <data name="User with ID {0} not found" xml:space="preserve">
+    <value>Gebruiker met ID {0} niet gevonden</value>
+  </data>
+  <data name="Teams" xml:space="preserve">
+    <value>Teams</value>
+  </data>
+  <data name="The clubs and teams this app serves." xml:space="preserve">
+    <value>De clubs en teams die deze app bedient.</value>
+  </data>
+  <data name="Club" xml:space="preserve">
+    <value>Club</value>
+  </data>
+  <data name="Clubs" xml:space="preserve">
+    <value>Clubs</value>
+  </data>
+  <data name="Team" xml:space="preserve">
+    <value>Team</value>
+  </data>
+  <data name="Theme" xml:space="preserve">
+    <value>Thema</value>
+  </data>
+  <data name="Theme {0}" xml:space="preserve">
+    <value>Thema {0}</value>
+  </data>
+  <data name="Logo" xml:space="preserve">
+    <value>Logo</value>
+  </data>
+  <data name="Selected" xml:space="preserve">
+    <value>GESELECTEERD</value>
+  </data>
+  <data name="Show this team" xml:space="preserve">
+    <value>Dit team tonen</value>
+  </data>
+  <data name="{0} team" xml:space="preserve">
+    <value>{0} team</value>
+  </data>
+  <data name="{0} teams" xml:space="preserve">
+    <value>{0} teams</value>
+  </data>
+  <data name="No clubs yet. Add one to get started." xml:space="preserve">
+    <value>Nog geen clubs. Voeg er een toe om te beginnen.</value>
+  </data>
+  <data name="No teams in this club yet." xml:space="preserve">
+    <value>Nog geen teams bij deze club.</value>
+  </data>
+  <data name="Add Club" xml:space="preserve">
+    <value>Club toevoegen</value>
+  </data>
+  <data name="Edit Club" xml:space="preserve">
+    <value>Club bewerken</value>
+  </data>
+  <data name="Delete Club" xml:space="preserve">
+    <value>Club verwijderen</value>
+  </data>
+  <data name="Add Team" xml:space="preserve">
+    <value>Team toevoegen</value>
+  </data>
+  <data name="Edit Team" xml:space="preserve">
+    <value>Team bewerken</value>
+  </data>
+  <data name="Delete Team" xml:space="preserve">
+    <value>Team verwijderen</value>
+  </data>
+  <data name="Path to an image under wwwroot. Leave empty for the theme's own crest." xml:space="preserve">
+    <value>Pad naar een afbeelding onder wwwroot. Laat leeg voor het logo van het thema zelf.</value>
+  </data>
+  <data name="The colours behind a theme are part of the app and cannot be edited here." xml:space="preserve">
+    <value>De kleuren achter een thema horen bij de app en zijn hier niet te wijzigen.</value>
+  </data>
+  <data name="Club {0} created" xml:space="preserve">
+    <value>Club {0} aangemaakt</value>
+  </data>
+  <data name="Club {0} updated" xml:space="preserve">
+    <value>Club {0} bijgewerkt</value>
+  </data>
+  <data name="Club {0} deleted" xml:space="preserve">
+    <value>Club {0} verwijderd</value>
+  </data>
+  <data name="Team {0} created" xml:space="preserve">
+    <value>Team {0} aangemaakt</value>
+  </data>
+  <data name="Team {0} updated" xml:space="preserve">
+    <value>Team {0} bijgewerkt</value>
+  </data>
+  <data name="Team {0} deleted" xml:space="preserve">
+    <value>Team {0} verwijderd</value>
+  </data>
+  <data name="Are you sure you want to delete {0}?" xml:space="preserve">
+    <value>Weet je zeker dat je {0} wilt verwijderen?</value>
+  </data>
+  <data name="Club name is required" xml:space="preserve">
+    <value>Clubnaam is verplicht</value>
+  </data>
+  <data name="Team name is required" xml:space="preserve">
+    <value>Teamnaam is verplicht</value>
+  </data>
+  <data name="Club name must be at most {0} characters" xml:space="preserve">
+    <value>Clubnaam mag maximaal {0} tekens lang zijn</value>
+  </data>
+  <data name="Team name must be at most {0} characters" xml:space="preserve">
+    <value>Teamnaam mag maximaal {0} tekens lang zijn</value>
+  </data>
+  <data name="A club named {0} already exists" xml:space="preserve">
+    <value>Er bestaat al een club met de naam {0}</value>
+  </data>
+  <data name="{0} already has a team named {1}" xml:space="preserve">
+    <value>{0} heeft al een team met de naam {1}</value>
+  </data>
+  <data name="Club {0} still has {1} teams" xml:space="preserve">
+    <value>Club {0} heeft nog {1} teams</value>
+  </data>
+  <data name="Team {0} still has {1} accounts" xml:space="preserve">
+    <value>Team {0} heeft nog {1} accounts</value>
+  </data>
+  <data name="{0} is the team the app is showing" xml:space="preserve">
+    <value>{0} is het team dat de app laat zien</value>
+  </data>
+  <data name="The logo must be a path inside the app, like icons/icon-192.png" xml:space="preserve">
+    <value>Het logo moet een pad binnen de app zijn, bijvoorbeeld icons/icon-192.png</value>
+  </data>
+  <data name="Club with ID {0} not found" xml:space="preserve">
+    <value>Club met ID {0} niet gevonden</value>
+  </data>
+  <data name="Team with ID {0} not found" xml:space="preserve">
+    <value>Team met ID {0} niet gevonden</value>
+  </data>
+  <data name="load clubs" xml:space="preserve">
+    <value>clubs te laden</value>
+  </data>
+  <data name="load teams" xml:space="preserve">
+    <value>teams te laden</value>
+  </data>
+  <data name="load the current team" xml:space="preserve">
+    <value>het huidige team te laden</value>
+  </data>
+  <data name="create the club" xml:space="preserve">
+    <value>de club aan te maken</value>
+  </data>
+  <data name="update the club" xml:space="preserve">
+    <value>de club bij te werken</value>
+  </data>
+  <data name="delete the club" xml:space="preserve">
+    <value>de club te verwijderen</value>
+  </data>
+  <data name="create the team" xml:space="preserve">
+    <value>het team aan te maken</value>
+  </data>
+  <data name="update the team" xml:space="preserve">
+    <value>het team bij te werken</value>
+  </data>
+  <data name="delete the team" xml:space="preserve">
+    <value>het team te verwijderen</value>
+  </data>
+  <data name="Login" xml:space="preserve">
+    <value>Inloggen</value>
+  </data>
+  <data name="Admin Login" xml:space="preserve">
+    <value>Beheerder inloggen</value>
+  </data>
+  <data name="Sign in to manage formations" xml:space="preserve">
+    <value>Log in om opstellingen te beheren</value>
+  </data>
+  <data name="Invalid username or password" xml:space="preserve">
+    <value>Ongeldige gebruikersnaam of wachtwoord</value>
+  </data>
+  <data name="Too many sign-in attempts. Wait a minute and try again." xml:space="preserve">
+    <value>Te veel aanmeldpogingen. Wacht een minuut en probeer het opnieuw.</value>
+  </data>
+  <data name="Username" xml:space="preserve">
+    <value>Gebruikersnaam</value>
+  </data>
+  <data name="Password" xml:space="preserve">
+    <value>Wachtwoord</value>
+  </data>
+  <data name="Sign In" xml:space="preserve">
+    <value>Inloggen</value>
+  </data>
+  <data name="Continue as viewer" xml:space="preserve">
+    <value>Verdergaan als bezoeker</value>
+  </data>
+  <data name="Available Players" xml:space="preserve">
+    <value>Beschikbare spelers</value>
+  </data>
+  <data name="All players assigned" xml:space="preserve">
+    <value>Alle spelers ingedeeld</value>
+  </data>
+  <data name="Substitutes" xml:space="preserve">
+    <value>Wisselspelers</value>
+  </data>
+  <data name="Drop here to add as sub" xml:space="preserve">
+    <value>Sleep hierheen om als wissel toe te voegen</value>
+  </data>
+  <data name="Drag players here to add as subs" xml:space="preserve">
+    <value>Sleep spelers hierheen om ze als wissel toe te voegen</value>
+  </data>
+  <data name="Install the {0} app" xml:space="preserve">
+    <value>Installeer de {0} app</value>
+  </data>
+  <data name="Line-ups, squad and results for {0}." xml:space="preserve">
+    <value>Opstellingen, selectie en uitslagen van {0}.</value>
+  </data>
+  <data name="Install" xml:space="preserve">
+    <value>Installeren</value>
+  </data>
+  <data name="Add the app to your home screen." xml:space="preserve">
+    <value>Zet de app op je beginscherm.</value>
+  </data>
+  <data name="Tap Share, then &quot;Add to Home Screen&quot;." xml:space="preserve">
+    <value>Tik op 'Deel' en dan op 'Zet op beginscherm'.</value>
+  </data>
+  <data name="In the browser menu (⋮), tap &quot;Add to Home screen&quot;." xml:space="preserve">
+    <value>Tik in het browsermenu (⋮) op 'Toevoegen aan startscherm'.</value>
+  </data>
+  <data name="Failed to {0}" xml:space="preserve">
+    <value>Actie mislukt: {0}</value>
+  </data>
+  <data name="You are not signed in to {0}" xml:space="preserve">
+    <value>Je bent niet aangemeld om te {0}</value>
+  </data>
+  <data name="A goal for us needs a scorer" xml:space="preserve">
+    <value>Een doelpunt voor ons heeft een maker nodig</value>
+  </data>
+  <data name="A player cannot swap positions with themselves" xml:space="preserve">
+    <value>Een speler kan niet met zichzelf van positie wisselen</value>
+  </data>
+  <data name="A player cannot be substituted for themselves" xml:space="preserve">
+    <value>Een speler kan niet voor zichzelf gewisseld worden</value>
+  </data>
+  <data name="Both players have to be on the pitch to swap positions" xml:space="preserve">
+    <value>Beide spelers moeten op het veld staan om van positie te wisselen</value>
+  </data>
+  <data name="Cannot copy a squad onto itself" xml:space="preserve">
+    <value>Een selectie kan niet naar zichzelf gekopieerd worden</value>
+  </data>
+  <data name="Comment not found" xml:space="preserve">
+    <value>Opmerking niet gevonden</value>
+  </data>
+  <data name="End the current half first" xml:space="preserve">
+    <value>Beëindig eerst de huidige helft</value>
+  </data>
+  <data name="Both halves have been played — finish the match instead" xml:space="preserve">
+    <value>Beide helften zijn gespeeld — beëindig de wedstrijd</value>
+  </data>
+  <data name="Game not found" xml:space="preserve">
+    <value>Wedstrijd niet gevonden</value>
+  </data>
+  <data name="Game with ID {0} not found" xml:space="preserve">
+    <value>Wedstrijd met ID {0} niet gevonden</value>
+  </data>
+  <data name="Goal not found" xml:space="preserve">
+    <value>Doelpunt niet gevonden</value>
+  </data>
+  <data name="Period not found" xml:space="preserve">
+    <value>Speelperiode niet gevonden</value>
+  </data>
+  <data name="This half has already been played, so its line-up is no longer the builder's to change" xml:space="preserve">
+    <value>Deze helft is al gespeeld, dus de opstelling ervan wordt niet meer vanuit de opstellingsbouwer gewijzigd</value>
+  </data>
+  <data name="This half was played from the touchline, so its line-up is the record of who was on the pitch and is no longer edited here." xml:space="preserve">
+    <value>Deze helft is vanaf de lijn gespeeld, dus de opstelling is de vastlegging van wie er op het veld stond en wordt hier niet meer gewijzigd.</value>
+  </data>
+  <data name="Left as the touchline recorded it: {0}" xml:space="preserve">
+    <value>Gelaten zoals vanaf de lijn vastgelegd: {0}</value>
+  </data>
+  <data name="Injury not found" xml:space="preserve">
+    <value>Blessure niet gevonden</value>
+  </data>
+  <data name="No half is being played" xml:space="preserve">
+    <value>Er wordt op dit moment geen helft gespeeld</value>
+  </data>
+  <data name="No season selected" xml:space="preserve">
+    <value>Geen seizoen geselecteerd</value>
+  </data>
+  <data name="No seasons defined" xml:space="preserve">
+    <value>Nog geen seizoenen ingesteld</value>
+  </data>
+  <data name="Only the most recent substitution of a half can be undone" xml:space="preserve">
+    <value>Alleen de laatste wissel van een helft kan ongedaan gemaakt worden</value>
+  </data>
+  <data name="Player is not in this squad" xml:space="preserve">
+    <value>Speler zit niet in deze selectie</value>
+  </data>
+  <data name="Player not found" xml:space="preserve">
+    <value>Speler niet gevonden</value>
+  </data>
+  <data name="Player with ID {0} not found" xml:space="preserve">
+    <value>Speler met ID {0} niet gevonden</value>
+  </data>
+  <data name="Somebody else is in that place now" xml:space="preserve">
+    <value>Er staat nu iemand anders op die plek</value>
+  </data>
+  <data name="Season not found" xml:space="preserve">
+    <value>Seizoen niet gevonden</value>
+  </data>
+  <data name="Season {0} has no squad to copy" xml:space="preserve">
+    <value>Seizoen {0} heeft geen selectie om te kopiëren</value>
+  </data>
+  <data name="Season {0} is the current season" xml:space="preserve">
+    <value>Seizoen {0} is het huidige seizoen</value>
+  </data>
+  <data name="Season {0} still has {1} games" xml:space="preserve">
+    <value>Seizoen {0} heeft nog {1} wedstrijden</value>
+  </data>
+  <data name="Season {0} still has {1} trainings" xml:space="preserve">
+    <value>Seizoen {0} heeft nog {1} trainingen</value>
+  </data>
+  <data name="Substitution not found" xml:space="preserve">
+    <value>Wissel niet gevonden</value>
+  </data>
+  <data name="Training not found" xml:space="preserve">
+    <value>Training niet gevonden</value>
+  </data>
+  <data name="That player is already marked injured" xml:space="preserve">
+    <value>Die speler is al als geblesseerd gemarkeerd</value>
+  </data>
+  <data name="That player is already on the pitch" xml:space="preserve">
+    <value>Die speler staat al op het veld</value>
+  </data>
+  <data name="That player is not on the pitch" xml:space="preserve">
+    <value>Die speler staat niet op het veld</value>
+  </data>
+  <data name="The end date must be after the start date" xml:space="preserve">
+    <value>De einddatum moet na de startdatum liggen</value>
+  </data>
+  <data name="These dates overlap season {0}" xml:space="preserve">
+    <value>Deze datums overlappen seizoen {0}</value>
+  </data>
+  <data name="This game has no line-up to play" xml:space="preserve">
+    <value>Deze wedstrijd heeft geen opstelling om te spelen</value>
+  </data>
+  <data name="This leaves a gap after season {0} — it should start on {1}" xml:space="preserve">
+    <value>Dit laat een gat na seizoen {0} — het zou moeten beginnen op {1}</value>
+  </data>
+  <data name="This leaves a gap before season {0} — it should end on {1}" xml:space="preserve">
+    <value>Dit laat een gat vóór seizoen {0} — het zou moeten eindigen op {1}</value>
+  </data>
+  <data name="This match has already been started" xml:space="preserve">
+    <value>Deze wedstrijd is al gestart</value>
+  </data>
+  <data name="This match has not been started" xml:space="preserve">
+    <value>Deze wedstrijd is nog niet gestart</value>
+  </data>
+  <data name="This match is not in progress" xml:space="preserve">
+    <value>Deze wedstrijd is niet bezig</value>
+  </data>
+  <data name="{0} has already played this season" xml:space="preserve">
+    <value>{0} heeft dit seizoen al gespeeld</value>
+  </data>
+  <data name="{0} has goals or assists this season" xml:space="preserve">
+    <value>{0} heeft dit seizoen doelpunten of assists</value>
+  </data>
+  <data name="{0} is already in the {1} squad" xml:space="preserve">
+    <value>{0} zit al in de selectie van {1}</value>
+  </data>
+  <data name="{0} has already played — archive them instead of deleting them" xml:space="preserve">
+    <value>{0} heeft al gespeeld — archiveer de speler in plaats van te verwijderen</value>
+  </data>
+  <data name="add the comment" xml:space="preserve">
+    <value>opmerking toevoegen</value>
+  </data>
+  <data name="add the goal" xml:space="preserve">
+    <value>doelpunt toevoegen</value>
+  </data>
+  <data name="add the player to the squad" xml:space="preserve">
+    <value>speler aan de selectie toevoegen</value>
+  </data>
+  <data name="archive the player" xml:space="preserve">
+    <value>speler archiveren</value>
+  </data>
+  <data name="calculate next match date" xml:space="preserve">
+    <value>volgende wedstrijddatum berekenen</value>
+  </data>
+  <data name="calculate the next training date" xml:space="preserve">
+    <value>volgende trainingsdatum berekenen</value>
+  </data>
+  <data name="change the formation" xml:space="preserve">
+    <value>opstelling wijzigen</value>
+  </data>
+  <data name="change the half-time line-up" xml:space="preserve">
+    <value>rustopstelling wijzigen</value>
+  </data>
+  <data name="correct the goal" xml:space="preserve">
+    <value>doelpunt corrigeren</value>
+  </data>
+  <data name="correct the half lengths" xml:space="preserve">
+    <value>duur per helft corrigeren</value>
+  </data>
+  <data name="change the squad status" xml:space="preserve">
+    <value>selectiestatus wijzigen</value>
+  </data>
+  <data name="close season gaps" xml:space="preserve">
+    <value>gaten tussen seizoenen sluiten</value>
+  </data>
+  <data name="copy the squad" xml:space="preserve">
+    <value>selectie kopiëren</value>
+  </data>
+  <data name="count the squads" xml:space="preserve">
+    <value>selecties tellen</value>
+  </data>
+  <data name="create game" xml:space="preserve">
+    <value>wedstrijd aanmaken</value>
+  </data>
+  <data name="create player" xml:space="preserve">
+    <value>speler aanmaken</value>
+  </data>
+  <data name="create season" xml:space="preserve">
+    <value>seizoen aanmaken</value>
+  </data>
+  <data name="create the training" xml:space="preserve">
+    <value>training aanmaken</value>
+  </data>
+  <data name="create the user" xml:space="preserve">
+    <value>gebruiker aanmaken</value>
+  </data>
+  <data name="delete the game" xml:space="preserve">
+    <value>wedstrijd verwijderen</value>
+  </data>
+  <data name="delete the player" xml:space="preserve">
+    <value>speler verwijderen</value>
+  </data>
+  <data name="delete the season" xml:space="preserve">
+    <value>seizoen verwijderen</value>
+  </data>
+  <data name="delete the training" xml:space="preserve">
+    <value>training verwijderen</value>
+  </data>
+  <data name="delete the user" xml:space="preserve">
+    <value>gebruiker verwijderen</value>
+  </data>
+  <data name="end the half" xml:space="preserve">
+    <value>helft beëindigen</value>
+  </data>
+  <data name="find the previous season" xml:space="preserve">
+    <value>vorig seizoen zoeken</value>
+  </data>
+  <data name="find the season for that date" xml:space="preserve">
+    <value>seizoen bij die datum zoeken</value>
+  </data>
+  <data name="find today's match" xml:space="preserve">
+    <value>wedstrijd van vandaag zoeken</value>
+  </data>
+  <data name="finish the match" xml:space="preserve">
+    <value>wedstrijd afronden</value>
+  </data>
+  <data name="load comments" xml:space="preserve">
+    <value>opmerkingen laden</value>
+  </data>
+  <data name="load current season" xml:space="preserve">
+    <value>huidig seizoen laden</value>
+  </data>
+  <data name="load game" xml:space="preserve">
+    <value>wedstrijd laden</value>
+  </data>
+  <data name="load game details" xml:space="preserve">
+    <value>wedstrijdgegevens laden</value>
+  </data>
+  <data name="load games" xml:space="preserve">
+    <value>wedstrijden laden</value>
+  </data>
+  <data name="load live match" xml:space="preserve">
+    <value>live wedstrijd laden</value>
+  </data>
+  <data name="load player" xml:space="preserve">
+    <value>speler laden</value>
+  </data>
+  <data name="load players" xml:space="preserve">
+    <value>spelers laden</value>
+  </data>
+  <data name="load players outside the squad" xml:space="preserve">
+    <value>spelers buiten de selectie laden</value>
+  </data>
+  <data name="load preferences" xml:space="preserve">
+    <value>voorkeuren laden</value>
+  </data>
+  <data name="load seasons" xml:space="preserve">
+    <value>seizoenen laden</value>
+  </data>
+  <data name="load the player statistics" xml:space="preserve">
+    <value>spelerstatistieken laden</value>
+  </data>
+  <data name="load the squad" xml:space="preserve">
+    <value>selectie laden</value>
+  </data>
+  <data name="load the squads" xml:space="preserve">
+    <value>selecties laden</value>
+  </data>
+  <data name="load the statistics" xml:space="preserve">
+    <value>statistieken laden</value>
+  </data>
+  <data name="load the training attendance" xml:space="preserve">
+    <value>trainingsopkomst laden</value>
+  </data>
+  <data name="load the trainings" xml:space="preserve">
+    <value>trainingen laden</value>
+  </data>
+  <data name="load users" xml:space="preserve">
+    <value>gebruikers laden</value>
+  </data>
+  <data name="log the goal" xml:space="preserve">
+    <value>doelpunt vastleggen</value>
+  </data>
+  <data name="look up the season for that date" xml:space="preserve">
+    <value>seizoen bij die datum opzoeken</value>
+  </data>
+  <data name="make the substitution" xml:space="preserve">
+    <value>wissel doorvoeren</value>
+  </data>
+  <data name="prepare seasons" xml:space="preserve">
+    <value>seizoenen voorbereiden</value>
+  </data>
+  <data name="record the injury" xml:space="preserve">
+    <value>blessure vastleggen</value>
+  </data>
+  <data name="remove comment" xml:space="preserve">
+    <value>opmerking verwijderen</value>
+  </data>
+  <data name="remove goal" xml:space="preserve">
+    <value>doelpunt verwijderen</value>
+  </data>
+  <data name="remove the goal" xml:space="preserve">
+    <value>doelpunt verwijderen</value>
+  </data>
+  <data name="remove the player from the squad" xml:space="preserve">
+    <value>speler uit de selectie verwijderen</value>
+  </data>
+  <data name="save lineup" xml:space="preserve">
+    <value>opstelling opslaan</value>
+  </data>
+  <data name="save the preferences" xml:space="preserve">
+    <value>voorkeuren opslaan</value>
+  </data>
+  <data name="save the score" xml:space="preserve">
+    <value>score opslaan</value>
+  </data>
+  <data name="set the password" xml:space="preserve">
+    <value>wachtwoord instellen</value>
+  </data>
+  <data name="start the match" xml:space="preserve">
+    <value>wedstrijd starten</value>
+  </data>
+  <data name="start the next half" xml:space="preserve">
+    <value>volgende helft starten</value>
+  </data>
+  <data name="swap the positions" xml:space="preserve">
+    <value>posities wisselen</value>
+  </data>
+  <data name="switch season" xml:space="preserve">
+    <value>van seizoen wisselen</value>
+  </data>
+  <data name="undo the injury" xml:space="preserve">
+    <value>blessure ongedaan maken</value>
+  </data>
+  <data name="undo the substitution" xml:space="preserve">
+    <value>wissel ongedaan maken</value>
+  </data>
+  <data name="edit the substitution" xml:space="preserve">
+    <value>wissel bewerken</value>
+  </data>
+  <data name="update comment" xml:space="preserve">
+    <value>opmerking bijwerken</value>
+  </data>
+  <data name="update game" xml:space="preserve">
+    <value>wedstrijd bijwerken</value>
+  </data>
+  <data name="update player" xml:space="preserve">
+    <value>speler bijwerken</value>
+  </data>
+  <data name="update season" xml:space="preserve">
+    <value>seizoen bijwerken</value>
+  </data>
+  <data name="update the training" xml:space="preserve">
+    <value>training bijwerken</value>
+  </data>
+  <data name="update the user" xml:space="preserve">
+    <value>gebruiker bijwerken</value>
+  </data>
+  <data name="Match notifications" xml:space="preserve">
+    <value>Wedstrijdmeldingen</value>
+  </data>
+  <data name="Turn on" xml:space="preserve">
+    <value>Aanzetten</value>
+  </data>
+  <data name="Turn off" xml:space="preserve">
+    <value>Uitzetten</value>
+  </data>
+  <data name="A message at kick-off, at every goal, and at full time." xml:space="preserve">
+    <value>Een bericht bij de aftrap, bij elk doelpunt en bij het eindsignaal.</value>
+  </data>
+  <data name="Notifications are blocked in your browser settings." xml:space="preserve">
+    <value>Meldingen zijn geblokkeerd in je browserinstellingen.</value>
+  </data>
+  <data name="Add the app to your home screen first, then notifications can be turned on." xml:space="preserve">
+    <value>Zet de app eerst op je beginscherm, daarna kun je meldingen aanzetten.</value>
+  </data>
+  <data name="The match has started" xml:space="preserve">
+    <value>De wedstrijd is begonnen</value>
+  </data>
 </root>

@@ -84,3 +84,51 @@
     font-weight: 800;
     font-variant-numeric: tabular-nums;
 }
+
+/* The opt-in row. Quieter than the live banner on purpose — it is standing offer, not news. */
+.home-notify {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    border: 1px solid var(--ink-faint);
+    border-radius: 16px;
+    background: var(--gradient-card);
+}
+
+.home-notify-icon {
+    flex-shrink: 0;
+    color: var(--club-primary-bright);
+}
+
+.home-notify-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.home-notify-title {
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.home-notify-text {
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+}
+
+.home-notify-button {
+    flex-shrink: 0;
+    min-height: 44px;
+}
+
+/* Narrow enough that the button beside the text would leave neither room to read: it takes its own row and the full width. */
+@media (max-width: 599.98px) {
+    .home-notify {
+        flex-wrap: wrap;
+    }
+
+    .home-notify-button {
+        width: 100%;
+    }
+}

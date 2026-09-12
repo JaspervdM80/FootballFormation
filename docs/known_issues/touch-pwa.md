@@ -186,3 +186,19 @@
   viewport tall enough that the capture needs no `fullPage`. `scripts/touch-targets.mjs` is safe on
   both counts (its own contexts, no screenshots), which is why this only shows up in ad-hoc scripts.
 
+- **Web push on iOS only works for a PWA already on the home screen, and there is no way to ask
+  first.** Safari exposes `PushManager` in a plain tab, so feature-detection says yes and
+  `pushManager.subscribe()` then fails — the install requirement is not detectable through the API
+  that needs it. `push.js` infers it instead, from the same `display-mode: standalone` and
+  iPadOS-reports-as-Mac tests the install banner already does, and reports `install-first` so Home
+  explains rather than offering a button that could only fail. This is the ceiling on the whole
+  feature's reach: an Android parent taps yes, an iPhone parent has to be walked through Share → Add
+  to Home Screen first, which [#66](https://github.com/JaspervdM80/FootballFormation/issues/66)
+  measures as real drop-off with non-technical parents. **Deleting the installed app silently drops
+  the subscription** with no notification to us — the row is only cleared when a later send comes
+  back 404 or 410.
+- **`Notification.requestPermission()` has to be reached from the click that called it.** Safari and
+  Firefox refuse a prompt raised from anything they do not consider a user gesture, and awaiting
+  something first — a `fetch` for the VAPID key, a service lookup — is enough to lose it. `enable()`
+  in `push.js` asks for permission *before* it fetches anything, which is why the order there looks
+  backwards.

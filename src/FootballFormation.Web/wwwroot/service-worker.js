@@ -22,6 +22,40 @@ self.addEventListener('activate', (event) => event.waitUntil((async () => {
     await self.clients.claim();
 })()));
 
+// The server composes the finished text: a worker has no access to IStringLocalizer, so nothing here is translated or even inspected
+// beyond being read out of the payload.
+self.addEventListener('push', (event) => {
+    if (!event.data) return;
+
+    const message = event.data.json();
+
+    event.waitUntil(self.registration.showNotification(message.title, {
+        body: message.body,
+        icon: 'icons/icon-192.png',
+        badge: 'icons/icon-192.png',
+        // Same tag for the whole match, so a third goal replaces the second rather than stacking three rows on the lock screen.
+        tag: message.tag,
+        renotify: true,
+        data: { url: message.url }
+    }));
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+
+    const url = event.notification.data && event.notification.data.url ? event.notification.data.url : '/';
+
+    event.waitUntil((async () => {
+        // Focus the match if it is already open somewhere — a parent who tapped the last goal should not get a second tab.
+        const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        for (const client of windows) {
+            if (new URL(client.url).pathname === url) return client.focus();
+        }
+
+        return self.clients.openWindow(url);
+    })());
+});
+
 self.addEventListener('fetch', (event) => {
     const request = event.request;
 

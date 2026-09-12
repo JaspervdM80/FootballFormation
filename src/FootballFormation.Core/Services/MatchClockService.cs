@@ -41,7 +41,7 @@ public class MatchClockService(
             logger.LogInformation("Started live match {GameId} in the {Half} with line-up {PeriodId}",
                 gameId, first.PeriodType.Half(), first.Id);
             return Result.Success(game);
-        });
+        }, change: LiveMatchEvent.KickOff);
 
     /// The clock stops and no half is live until the next kicks off.
     public Task<Result<Game>> EndHalfAsync(int gameId, CancellationToken cancellationToken = default) =>
@@ -190,7 +190,7 @@ public class MatchClockService(
             logger.LogInformation("Finished game {GameId} at {Home}-{Away} after {Seconds}s",
                 gameId, game.ScoreHome, game.ScoreAway, game.ClockAccumulatedSeconds);
             return Result.Success(game);
-        });
+        }, change: LiveMatchEvent.FullTime);
 
     /// Corrects a match played with the whistle pressed late. Only the end of a half moves: every goal, substitution and injury keeps the
     /// second it was recorded on, so a shortened half re-times what it contains without touching a row, and the second half stays where it

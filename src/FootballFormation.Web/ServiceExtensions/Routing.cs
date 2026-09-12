@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Antiforgery;
@@ -5,6 +6,7 @@ using FootballFormation.Core.Models;
 using FootballFormation.Core.Reporting;
 using FootballFormation.UI;
 using FootballFormation.UI.State;
+using FootballFormation.Web.Push;
 using Microsoft.Extensions.Localization;
 
 namespace FootballFormation.Web.ServiceExtensions;
@@ -163,6 +165,32 @@ public static class Routing
             }, contentType: "application/manifest+json");
         }).AllowAnonymous();
 
+        // The applicationServerKey every browser has to pass to pushManager.subscribe. Public by definition — it is what a push service
+        // checks our signature against, and it is useless without the private half.
+        app.MapGet("/push/key", (PushConfiguration push) => push.IsConfigured
+            ? Results.Text(push.Keys!.PublicKey)
+            : Results.NotFound()).AllowAnonymous();
+
+        // Anonymous on purpose: nobody signs in to follow a match. The rate limit is what stands in for the write guard every other
+        // mutation goes through — see PushSubscriptionService.
+        app.MapPost("/push/subscribe", async (PushRegistration registration, PushSubscriptionService subscriptions, HttpContext context) =>
+        {
+            var result = await subscriptions.SubscribeAsync(
+                registration.Endpoint,
+                registration.P256dh,
+                registration.Auth,
+                CultureInfo.CurrentUICulture.TwoLetterISOLanguageName,
+                context.RequestAborted);
+
+            return result.IsSuccess ? Results.NoContent() : Results.BadRequest();
+        }).AllowAnonymous().RequireRateLimiting("push");
+
+        app.MapPost("/push/unsubscribe", async (PushRegistration registration, PushSubscriptionService subscriptions, HttpContext context) =>
+        {
+            await subscriptions.UnsubscribeAsync(registration.Endpoint, context.RequestAborted);
+            return Results.NoContent();
+        }).AllowAnonymous().RequireRateLimiting("push");
+
         app.MapGet("/culture/set", (string culture, string redirectUri, HttpContext context) =>
         {
             if (culture is "nl" or "en")
@@ -262,3 +290,6 @@ public static class Routing
     }
 
 }
+
+/// What pushManager.subscribe() hands the browser, flattened. Every field is checked in PushSubscriptionService, not here.
+public sealed record PushRegistration(string Endpoint, string P256dh, string Auth);
