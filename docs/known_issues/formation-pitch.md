@@ -14,3 +14,13 @@
   a narrow one — at ~225px wide, a 52px chip is a quarter of the pitch and the wide positions
   (LM at `left: 8%`) hung off the grass, since `.pitch` has no `overflow: hidden`.
 
+- **A wrapping row that becomes a column must stop wrapping.** `.formation-layout` is
+  `flex-wrap: wrap` for the three-panel desktop row, and the `959.98px` media query used to flip
+  only `flex-direction` to `column`. A *column* that still wraps packs its items into columns and
+  resolves its own height from that heuristic, which shrank `.pitch-panel` below the pitch inside
+  it — `aspect-ratio: 3/4` on a `width: 100%` box contributes almost nothing to a flex item's
+  automatic minimum size, so nothing stopped it. The pitch then overflowed its panel and the
+  substitutes card, a `position: relative` `.mud-paper`, painted over the static legend and the
+  bottom of the pitch: on a 390x844 phone the legend was invisible and the card sat 14px over the
+  grass. Only on tall phones — a 375x667 viewport reflowed correctly, which is why it survived a
+  review. `tests/ui/specs/mobile.formation.spec.js` measures the panel's overflow now.
