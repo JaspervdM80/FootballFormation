@@ -1897,6 +1897,13 @@ a.action-btn {
         padding: 10px 14px;
     }
 
+    /* Sorting goes on a phone. MudBlazor hides the header row at this width and puts a 60px "Sort
+       by" select above the cards in its place — the only sort control there is, so this is the rule
+       that removes it. The table keeps the descending-total order it starts in. */
+    .playtime-table .mud-table-smalldevices-sortselect {
+        display: none !important;
+    }
+
     .playtime-table .mud-table-body .mud-table-cell {
         border: none !important;
         padding: 0 !important;

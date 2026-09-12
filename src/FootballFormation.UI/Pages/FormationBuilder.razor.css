@@ -94,6 +94,27 @@
     border: 2px solid var(--fit-out-of-position-edge);
 }
 
+/* Five tiers on one phone row. The labels are the only thing that can give, so the text scales with
+   the viewport — measured at 11px of slack on a 320px screen with the longer Dutch wording. The row
+   may still wrap: a translation longer again belongs on a second line, not off the side of the page. */
+@media (max-width: 599.98px) {
+    .pitch-legend {
+        justify-content: space-between;
+        gap: 3px;
+    }
+
+    .legend-item {
+        gap: 3px;
+        font-size: clamp(0.5rem, 2.5vw, 0.6rem);
+        white-space: nowrap;
+    }
+
+    .legend-dot {
+        width: 8px;
+        height: 8px;
+    }
+}
+
 .unavailable-player,
 .injured-player {
     display: flex;
