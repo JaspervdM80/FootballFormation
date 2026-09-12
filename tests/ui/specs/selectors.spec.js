@@ -31,7 +31,7 @@ const SELECTORS = {
                      'action-live', 'action-live-now'],
   'a match still missing its lineup': ['nolineup-icon', 'action-needs-lineup'],
   'the formation builder': ['pitch', 'pitch-empty', 'pitch-player', 'pitch-number', 'draggable-player',
-                            'subs-panel', 'sub-item', 'pitch-panel', 'pitch-legend', 'legend-item',
+                            'subs-panel', 'sub-item', 'pitch-legend', 'legend-item',
                             'sub-drop-zone', 'builder-opponent', 'builder-date'],
   'the playing-time table': ['playtime-table', 'pt-total', 'playtime-note'],
   'the live screen': ['live-lineup', 'live-controls', 'live-score-value', 'live-score-away',

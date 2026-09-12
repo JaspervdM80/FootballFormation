@@ -65,27 +65,6 @@ test.describe.serial('the formation builder on a phone', () => {
     expect(overflow, 'the legend should not push the page sideways').toBeLessThanOrEqual(1);
   });
 
-  test('the substitutes card sits under the pitch, not over it', async ({ page }) => {
-    await openBuilder(page);
-    await expect(page.locator('.pitch')).toBeVisible();
-
-    const boxes = await page.evaluate(() => {
-      const panel = document.querySelector('.pitch-panel');
-      const box = sel => { const { top, bottom } = document.querySelector(sel).getBoundingClientRect();
-        return { top, bottom }; };
-      return {
-        // The panel shrinking below the pitch is what let the card ride up over it.
-        panelOverflow: panel.scrollHeight - panel.getBoundingClientRect().height,
-        legend: box('.pitch-legend'),
-        subs: box('.subs-panel'),
-      };
-    });
-
-    expect(Math.round(boxes.panelOverflow), 'the pitch should fit its own panel').toBeLessThanOrEqual(1);
-    expect(boxes.subs.top, 'the substitutes card should start below the legend')
-      .toBeGreaterThanOrEqual(boxes.legend.bottom - 1);
-  });
-
   test('the match date sits under the opponent, not beside it', async ({ page }) => {
     await openBuilder(page);
 

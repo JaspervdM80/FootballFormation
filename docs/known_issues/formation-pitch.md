@@ -23,4 +23,4 @@
   substitutes card, a `position: relative` `.mud-paper`, painted over the static legend and the
   bottom of the pitch: on a 390x844 phone the legend was invisible and the card sat 14px over the
   grass. Only on tall phones — a 375x667 viewport reflowed correctly, which is why it survived a
-  review. `tests/ui/specs/mobile.formation.spec.js` measures the panel's overflow now.
+  review.
