@@ -196,7 +196,13 @@ public partial class FormationBuilder
     private void OnSwapFieldPlayerWithSub(int periodId, int subPlayerId)
     {
         if (Drag.PlayerId is null || Drag.PlayerId == subPlayerId || HasBeenPlayed(periodId)) return;
-        if (Drag.FromSlotIndex is not { } slotIndex) return;
+        if (Drag.FromSlotIndex is not { } slotIndex)
+        {
+            // A sub row covers most of the bench panel, and it stops the drop from reaching it — so a
+            // player dragged from the list onto one joins the bench rather than landing in nothing.
+            if (!Drag.FromSub) OnPlayerDroppedToSub(periodId);
+            return;
+        }
 
         var lineup = PeriodLineups[periodId];
         var position = GetAllSlots(periodId)[slotIndex];

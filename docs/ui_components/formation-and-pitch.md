@@ -49,15 +49,19 @@
 - **On a phone** (below `599.98px`) the header puts the date on its own line under the opponent —
   `PageHeader`'s `SubtitleContent`, so the venue badge keeps the heading's line — the fit legend
   scales its labels with the viewport (`clamp`) to hold all five tiers on one row down to 320px, and
-  the playing-time table drops its sorting: the arrows crowd a header that only just fits, and the
-  rule that hides them lives with the rest of `.playtime-table`'s phone layout in `app.css`
+  the playing-time table drops its sorting. That last one is **not** the header: MudBlazor hides the
+  header row at its own `600px` and renders `.mud-table-smalldevices-sortselect`, a 60px *Sort by*
+  select above the cards, so that select is what `app.css` hides. Both are width-only, like
+  MudBlazor's own switch — a landscape phone gets the full table, header and sorting and all
 
 
 ## Drag & Drop (HTML5 API)
 - **Player list → Pitch**: Assigns player to position slot
 - **Player list → Sub bench**: Adds as substitute. The dashed "Drop here to add as sub" zone shows
-  mid-drag **only while the bench is empty** — the panel itself takes the drop either way, so once a
-  sub is named the zone would only push the list down under the cursor
+  mid-drag **only while the bench is empty** — once a sub is named it would only push the list down
+  under the cursor. A sub row covers most of the panel and stops the drop from reaching it, so
+  `OnSwapFieldPlayerWithSub` falls through to `OnPlayerDroppedToSub` for a drag that started in the
+  list (no `FromSlotIndex`): landing on a row adds to the bench rather than doing nothing at all
 - **Pitch → Pitch**: Swaps two players' slots (`Drag.FromSlotIndex` is set ⇒ the drop is a swap)
 - **Pitch → Sub bench**: Drop on empty bench area moves player to bench; drop **on a sub** swaps the two (`OnSwapFieldPlayerWithSub`)
 - **Sub bench → Pitch**: Sub takes the slot; the displaced starter goes to the bench
