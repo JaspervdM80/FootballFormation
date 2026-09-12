@@ -327,9 +327,22 @@
   <data name="Substitution undone" xml:space="preserve"><value>Wissel ongedaan gemaakt</value></data>
   <data name="Edit substitution" xml:space="preserve"><value>Wissel bewerken</value></data>
   <data name="Substitution updated" xml:space="preserve"><value>Wissel bijgewerkt</value></data>
+  <data name="Edit goal" xml:space="preserve"><value>Doelpunt bewerken</value></data>
+  <data name="Goal updated" xml:space="preserve"><value>Doelpunt bijgewerkt</value></data>
+  <data name="Goal for {0}" xml:space="preserve"><value>Doelpunt voor {0}</value></data>
+  <data name="Half lengths" xml:space="preserve"><value>Duur per helft</value></data>
+  <data name="Correct half lengths" xml:space="preserve"><value>Duur per helft corrigeren</value></data>
+  <data name="Half lengths corrected" xml:space="preserve"><value>Duur per helft gecorrigeerd</value></data>
+  <data name="Only the final whistle of each half moves. Every goal, substitution and injury keeps the moment it was recorded, so the minutes read back against the corrected half." xml:space="preserve"><value>Alleen het eindsignaal van elke helft verschuift. Elk doelpunt, elke wissel en elke blessure houdt het moment waarop die is vastgelegd, zodat de minuten worden teruggerekend vanaf de gecorrigeerde helft.</value></data>
   <data name="came off" xml:space="preserve"><value>ging eruit</value></data>
   <data name="Minute" xml:space="preserve"><value>Minuut</value></data>
   <data name="Undo the later substitution first" xml:space="preserve"><value>Maak eerst de latere wissel ongedaan</value></data>
+  <data name="Only a finished match can have its half lengths corrected" xml:space="preserve"><value>Alleen bij een afgelopen wedstrijd kan de duur per helft worden gecorrigeerd</value></data>
+  <data name="That half was never played" xml:space="preserve"><value>Die helft is nooit gespeeld</value></data>
+  <data name="A half has to last at least a minute" xml:space="preserve"><value>Een helft duurt minstens één minuut</value></data>
+  <data name="That half still has something recorded after {0} minutes" xml:space="preserve"><value>In die helft is na {0} minuten nog iets vastgelegd</value></data>
+  <data name="A half cannot run past the restart of the next one" xml:space="preserve"><value>Een helft kan niet doorlopen tot na de hervatting</value></data>
+  <data name="An opponent goal cannot be an own goal" xml:space="preserve"><value>Een doelpunt van de tegenstander kan geen eigen doelpunt zijn</value></data>
   <data name="A substitution made for an injury can't be edited" xml:space="preserve"><value>Een wissel wegens blessure kan hier niet worden bewerkt</value></data>
   <data name="Make substitution" xml:space="preserve"><value>Wissel doorvoeren</value></data>
   <data name="Comes on" xml:space="preserve"><value>Komt erin</value></data>
@@ -688,6 +701,8 @@
   <data name="calculate the next training date" xml:space="preserve"><value>volgende trainingsdatum berekenen</value></data>
   <data name="change the formation" xml:space="preserve"><value>opstelling wijzigen</value></data>
   <data name="change the half-time line-up" xml:space="preserve"><value>rustopstelling wijzigen</value></data>
+  <data name="correct the goal" xml:space="preserve"><value>doelpunt corrigeren</value></data>
+  <data name="correct the half lengths" xml:space="preserve"><value>duur per helft corrigeren</value></data>
   <data name="change the squad status" xml:space="preserve"><value>selectiestatus wijzigen</value></data>
   <data name="close season gaps" xml:space="preserve"><value>gaten tussen seizoenen sluiten</value></data>
   <data name="copy the squad" xml:space="preserve"><value>selectie kopiëren</value></data>
@@ -749,6 +764,7 @@
   <data name="update game" xml:space="preserve"><value>wedstrijd bijwerken</value></data>
   <data name="update player" xml:space="preserve"><value>speler bijwerken</value></data>
   <data name="update season" xml:space="preserve"><value>seizoen bijwerken</value></data>
+  <data name="update the goal" xml:space="preserve"><value>doelpunt bijwerken</value></data>
   <data name="update the training" xml:space="preserve"><value>training bijwerken</value></data>
   <data name="update the user" xml:space="preserve"><value>gebruiker bijwerken</value></data>
 </root>

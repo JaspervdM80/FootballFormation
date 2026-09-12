@@ -35,6 +35,15 @@
   typed in by hand. That backfill has run everywhere it was ever going to, and the migration was
   folded into `InitialCreate` along with the test that drove it across the boundary — so what is
   written here is now the only record of why an old row looks the way it does.
+- **Correcting a half's length is the end of the half moving, never its start.** The clock left
+  running past the whistle inflates `EndedAtSeconds`, and `GameMinutesReport` hands that overrun to
+  whoever was on the pitch — real playing time in the season's utilisation, for minutes nobody
+  played. `AdjustHalfLengthsAsync` writes `EndedAtSeconds` and nothing else. Moving
+  `StartedAtSeconds` instead would look equivalent and is not: every goal, substitution and injury in
+  the half stores an absolute elapsed second, and `MatchClockReport` derives their minutes as
+  `elapsed - start`, so shifting a start silently re-times every event in that half. The second half
+  also legitimately begins later than the first half now ends — the gap is the break, and it costs no
+  minutes because the report credits each period from its own start to its own end.
 - **A stored `Minute` is a scoreboard reading, and the timeline is ordered on elapsed seconds — do
   not mix the two.** They agree only while the halves run to length. On a match whose first half
   was whistled off three minutes long, the scoreboard's 31' is 33 minutes of elapsed play, so

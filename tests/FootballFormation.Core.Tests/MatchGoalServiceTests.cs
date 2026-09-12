@@ -167,6 +167,121 @@ public class MatchGoalServiceTests : LiveMatchTestBase
         Assert.Equal(2, (await ReloadAsync(game.Id)).ScoreHome);
     }
 
+    [Fact]
+    public async Task Correcting_a_goal_moves_its_minute_and_leaves_it_in_the_half_it_was_scored_in()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        Time.Advance(TimeSpan.FromMinutes(12));
+        var logged = await Goals.LogGoalAsync(game.Id, players[1].Id, null, false, false);
+
+        var result = await Goals.EditGoalAsync(logged.Value!.Id, players[1].Id, null, false, minute: 8);
+
+        Assert.True(result.IsSuccess);
+        var corrected = await GoalAsync(logged.Value.Id);
+        Assert.Equal(7 * 60, corrected.AtSeconds);
+        Assert.Equal(logged.Value.GamePeriodId, corrected.GamePeriodId);
+
+        // Still placed by the clock, not turned into a hand-typed row — see docs/known_issues/live-match.md.
+        Assert.Null(corrected.Minute);
+        Assert.Equal(new MatchMinute(8, 0), MatchClockReport.MinuteOf(await ReloadAsync(game.Id), corrected));
+    }
+
+    /// The shown minute drops stoppage time, so converting an untouched 30+2 back would move the goal two minutes earlier every time
+    /// somebody corrected the scorer.
+    [Fact]
+    public async Task Correcting_only_the_scorer_leaves_a_stoppage_time_goal_exactly_where_it_was()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        Time.Advance(TimeSpan.FromMinutes(31));      // one minute past a 30-minute half
+        var logged = await Goals.LogGoalAsync(game.Id, players[1].Id, null, false, false);
+
+        var result = await Goals.EditGoalAsync(logged.Value!.Id, players[0].Id, null, false, minute: 30);
+
+        Assert.True(result.IsSuccess);
+        var corrected = await GoalAsync(logged.Value.Id);
+        Assert.Equal(players[0].Id, corrected.ScorerId);
+        Assert.Equal(31 * 60, corrected.AtSeconds);
+        Assert.Equal(new MatchMinute(30, 2), MatchClockReport.MinuteOf(await ReloadAsync(game.Id), corrected));
+    }
+
+    /// A goal typed in on the result page has no half behind it, and giving it a clock reading would place it against timings it was
+    /// never measured on.
+    [Fact]
+    public async Task A_goal_typed_in_by_hand_keeps_its_minute_rather_than_gaining_a_clock_reading()
+    {
+        var game = await SeedGameAsync();
+        var players = await PlayersAsync();
+
+        var added = await Games.AddGoalAsync(new GameGoal
+        {
+            GameId = game.Id,
+            ScorerId = players[1].Id,
+            Minute = 20
+        });
+
+        var result = await Goals.EditGoalAsync(added.Value!.Id, players[1].Id, null, false, minute: 24);
+
+        Assert.True(result.IsSuccess);
+        var corrected = await GoalAsync(added.Value.Id);
+        Assert.Equal(24, corrected.Minute);
+        Assert.Null(corrected.AtSeconds);
+    }
+
+    [Fact]
+    public async Task An_opponent_goal_can_be_re_timed_but_never_becomes_an_own_goal()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+
+        Time.Advance(TimeSpan.FromMinutes(20));
+        var logged = await Goals.LogGoalAsync(game.Id, null, null, false, true);
+
+        Assert.True((await Goals.EditGoalAsync(logged.Value!.Id, null, null, false, minute: 15)).IsSuccess);
+        Assert.Equal(14 * 60, (await GoalAsync(logged.Value.Id)).AtSeconds);
+
+        var asOwnGoal = await Goals.EditGoalAsync(logged.Value.Id, null, null, true, minute: 15);
+
+        Assert.True(asOwnGoal.IsFailure);
+        Assert.Equal("An opponent goal cannot be an own goal", asOwnGoal.Error);
+    }
+
+    [Fact]
+    public async Task A_corrected_goal_for_us_still_needs_a_scorer()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        Time.Advance(TimeSpan.FromMinutes(10));
+        var logged = await Goals.LogGoalAsync(game.Id, players[1].Id, null, false, false);
+
+        var result = await Goals.EditGoalAsync(logged.Value!.Id, null, null, false, minute: 10);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("A goal for us needs a scorer", result.Error);
+    }
+
+    [Fact]
+    public async Task A_goal_that_is_not_there_fails_rather_than_throwing()
+    {
+        var result = await Goals.EditGoalAsync(999, null, null, false, minute: 5);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Goal not found", result.Error);
+    }
+
+    private async Task<GameGoal> GoalAsync(int goalId)
+    {
+        Db.ChangeTracker.Clear();
+        return await Db.GameGoals.FirstAsync(g => g.Id == goalId);
+    }
+
     /// The same service, wired to a factory that can be asked what it was made to write.
     private MatchGoalService GoalsOver(IDbContextFactory<AppDbContext> factory) =>
         new(factory,

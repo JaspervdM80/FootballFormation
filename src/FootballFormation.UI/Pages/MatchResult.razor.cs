@@ -6,6 +6,8 @@ namespace FootballFormation.UI.Pages;
 public partial class MatchResult
 {
     [Inject] private GameService GameService { get; set; } = null!;
+    [Inject] private MatchGoalService GoalService { get; set; } = null!;
+    [Inject] private MatchClockService ClockService { get; set; } = null!;
     [Inject] private MatchSubstitutionService SubService { get; set; } = null!;
     [Inject] private PlayerService PlayerService { get; set; } = null!;
     [Inject] private SeasonSquadService SquadService { get; set; } = null!;
@@ -57,6 +59,22 @@ public partial class MatchResult
     /// Logging a goal recounts the score, so it is the same permission as typing a scoreline. Built on <see cref="IsAdmin"/> rather than
     /// an AuthorizeView for the reason given there.
     private bool CanEditScore => IsAdmin && !IsFuture;
+
+    /// Nothing to correct on a match nobody ran from the touchline, and a half still being timed belongs to the live clock.
+    private bool CanEditTimings =>
+        IsAdmin && GameData is { MatchState: MatchState.Finished } game && game.HasActualTimings;
+
+    private string HalfLengthsLine => string.Join(" · ",
+        new[] { PeriodType.FirstHalf, PeriodType.SecondHalf }
+            .Select(half => (Half: half, Minutes: HalfLengthMinutes(half)))
+            .Where(entry => entry.Minutes is not null)
+            .Select(entry => $"{L[entry.Half.DisplayName()]} {entry.Minutes}′"));
+
+    /// Null for a half that was never played, or one still running.
+    private int? HalfLengthMinutes(PeriodType half) =>
+        GameData?.PlayedHalf(half) is { StartedAtSeconds: { } start, EndedAtSeconds: { } end }
+            ? Game.SecondsToMinutes(end - start)
+            : null;
 
     /// Only our side is gated, because the opponent's regular goals are never tracked by scorer.
     private bool AllScorersLogged
@@ -180,6 +198,64 @@ public partial class MatchResult
 
         await ReloadGame();
         ResetGoalForm();
+    }
+
+    /// Corrected rather than removed and retyped: a goal logged live carries its half and the clock it was scored on, and re-entering it
+    /// here would leave only a scoreboard minute — which sorts wrongly against anything in stoppage time. See docs/known_issues/live-match.md.
+    private async Task EditGoal(GameGoal goal)
+    {
+        if (GameData is null) return;
+
+        var shownMinute = MatchClockReport.MinuteOf(GameData, goal)?.Minute ?? 1;
+
+        var choice = await DialogService.PromptAsync<EditGoalDialog, EditGoalChoice>(
+            L["Edit goal"],
+            p =>
+            {
+                p.Add(x => x.Candidates, SquadPlayers);
+                p.Add(x => x.ScorerId, goal.ScorerId);
+                p.Add(x => x.AssisterId, goal.AssisterId);
+                p.Add(x => x.IsOwnGoal, goal.IsOwnGoal);
+                p.Add(x => x.IsOpponentGoal, goal.IsOpponentGoal);
+                p.Add(x => x.Opponent, GameData.Opponent);
+                p.Add(x => x.Minute, shownMinute);
+                p.Add(x => x.MaxMinute, GameData.GameDurationMinutes);
+            });
+        if (choice is null) return;
+
+        var result = await GoalService.EditGoalAsync(
+            goal.Id, choice.ScorerId, choice.AssisterId, choice.IsOwnGoal, choice.Minute);
+        if (!Snackbar.Report(L, result, L["Goal updated"])) return;
+
+        await ReloadGame();
+    }
+
+    private async Task EditHalfLengths()
+    {
+        if (GameData is null) return;
+
+        var first = HalfLengthMinutes(PeriodType.FirstHalf);
+        var second = HalfLengthMinutes(PeriodType.SecondHalf);
+
+        var choice = await DialogService.PromptAsync<EditHalfLengthsDialog, HalfLengthsChoice>(
+            L["Correct half lengths"],
+            p =>
+            {
+                p.Add(x => x.FirstHalfMinutes, first);
+                p.Add(x => x.SecondHalfMinutes, second);
+                p.Add(x => x.MaxMinute, GameData.GameDurationMinutes);
+            });
+        if (choice is null) return;
+        if (choice.FirstHalfMinutes == first && choice.SecondHalfMinutes == second) return;
+
+        // A half left at the length it was shown is passed as null, so the service never re-whistles one the coach did not touch.
+        var result = await ClockService.AdjustHalfLengthsAsync(
+            GameId,
+            choice.FirstHalfMinutes == first ? null : choice.FirstHalfMinutes,
+            choice.SecondHalfMinutes == second ? null : choice.SecondHalfMinutes);
+        if (!Snackbar.Report(L, result, L["Half lengths corrected"])) return;
+
+        await ReloadGame();
     }
 
     private async Task RemoveGoal(GameGoal goal)

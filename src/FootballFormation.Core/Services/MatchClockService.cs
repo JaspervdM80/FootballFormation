@@ -192,6 +192,97 @@ public class MatchClockService(
             return Result.Success(game);
         });
 
+    /// Corrects a match played with the whistle pressed late. Only the end of a half moves: every goal, substitution and injury keeps the
+    /// second it was recorded on, so a shortened half re-times what it contains without touching a row, and the second half stays where it
+    /// actually restarted. A null length leaves that half as it stands.
+    public Task<Result<Game>> AdjustHalfLengthsAsync(
+        int gameId, int? firstHalfMinutes, int? secondHalfMinutes, CancellationToken cancellationToken = default) =>
+        LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "correct the half lengths",
+            cancellationToken, async () =>
+        {
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
+            if (game is null) return NotFound(gameId);
+
+            // A running clock is still the source of truth for the half it is timing, and moving an end under it would be overwritten by
+            // the next whistle anyway.
+            if (game.MatchState != MatchState.Finished)
+                return Result.Failure<Game>("Only a finished match can have its half lengths corrected");
+
+            var lastRecorded = await LastRecordedSecondsAsync(db, gameId, cancellationToken);
+            var corrected = new List<(GamePeriod Half, int End)>();
+
+            foreach (var (type, requested) in new[]
+                     {
+                         (PeriodType.FirstHalf, firstHalfMinutes),
+                         (PeriodType.SecondHalf, secondHalfMinutes)
+                     })
+            {
+                if (requested is not { } minutes) continue;
+
+                // The half is named nowhere in these messages: UiFeedback translates a failure's template but not its arguments, so a
+                // half name handed in as one would reach a Dutch screen in English.
+                if (game.PlayedHalf(type) is not { } half)
+                    return Result.Failure<Game>("That half was never played");
+
+                if (minutes < 1)
+                    return Result.Failure<Game>("A half has to last at least a minute");
+
+                var end = half.StartedAtSeconds!.Value + (minutes * 60);
+
+                if (lastRecorded.GetValueOrDefault(half.Id) > end)
+                    return Result.Failure<Game>(
+                        "That half still has something recorded after {0} minutes", minutes);
+
+                if (NextKickOffAfter(game, half) is { } restart && end > restart)
+                    return Result.Failure<Game>("A half cannot run past the restart of the next one");
+
+                corrected.Add((half, end));
+            }
+
+            foreach (var (half, end) in corrected) half.EndedAtSeconds = end;
+
+            // What the final whistle banked, re-banked: leaving it at the old total would have the game report a duration its halves no
+            // longer add up to.
+            game.ClockAccumulatedSeconds = game.Periods.Max(p => p.EndedAtSeconds ?? 0);
+
+            await db.SaveChangesAsync(cancellationToken);
+            logger.LogInformation("Corrected the half lengths of game {GameId} to {First} and {Second} minutes",
+                gameId, firstHalfMinutes, secondHalfMinutes);
+            return Result.Success(game);
+        });
+
+    /// The latest second anything was recorded against each half, so a whistle is never moved in front of a goal or a substitution the
+    /// half already contains — which would credit playing time past the change that ended it.
+    private static async Task<Dictionary<int, int>> LastRecordedSecondsAsync(
+        AppDbContext db, int gameId, CancellationToken cancellationToken)
+    {
+        var goals = await db.GameGoals
+            .Where(g => g.GameId == gameId && g.GamePeriodId != null && g.AtSeconds != null)
+            .Select(g => new { PeriodId = g.GamePeriodId!.Value, Seconds = g.AtSeconds!.Value })
+            .ToListAsync(cancellationToken);
+
+        var substitutions = await db.GameSubstitutions
+            .Where(s => s.GameId == gameId)
+            .Select(s => new { PeriodId = s.GamePeriodId, Seconds = s.AtSeconds })
+            .ToListAsync(cancellationToken);
+
+        var injuries = await db.GameInjuries
+            .Where(i => i.GameId == gameId)
+            .Select(i => new { PeriodId = i.GamePeriodId, Seconds = i.AtSeconds })
+            .ToListAsync(cancellationToken);
+
+        return goals.Concat(substitutions).Concat(injuries)
+            .GroupBy(e => e.PeriodId)
+            .ToDictionary(g => g.Key, g => g.Max(e => e.Seconds));
+    }
+
+    /// Null for the last half played — otherwise the second the next one kicked off, which no earlier half may be stretched past.
+    private static int? NextKickOffAfter(Game game, GamePeriod half) => game.Periods
+        .Where(p => p.StartedAtSeconds > half.StartedAtSeconds)
+        .Min(p => p.StartedAtSeconds);
+
     /// Every state change calls this first, so no seconds are lost or double-counted between the anchor and the banked total.
     private void BankClock(Game game)
     {

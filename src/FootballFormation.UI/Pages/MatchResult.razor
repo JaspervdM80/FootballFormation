@@ -122,9 +122,12 @@
             <MatchTimeline Events="Timeline" Opponent="@GameData.Opponent" IsHomeGame="GameData.IsHomeGame"
                            ResolveName="PlayerName" ShowScore="true">
                 <AdminActions Context="entry">
-                    @if (entry.Goal is { } goalToRemove)
+                    @if (entry.Goal is { } goalToCorrect)
                     {
-                        <button class="goal-remove" title="@L["Remove"]" @onclick="() => RemoveGoal(goalToRemove)">×</button>
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                       title="@L["Edit"]"
+                                       OnClick="() => EditGoal(goalToCorrect)" />
+                        <button class="goal-remove" title="@L["Remove"]" @onclick="() => RemoveGoal(goalToCorrect)">×</button>
                     }
                     else if (entry.Substitution is { } subToEdit)
                     {
@@ -153,6 +156,18 @@
             <MudText Typo="Typo.body2" Style="color: var(--ink-subtle);" Class="mb-3">
                 @L["No goals recorded yet"]
             </MudText>
+        }
+
+        @* Admin-only, and only where a clock actually ran: these are the timings every minute on the
+           timeline above is derived from, and a whistle pressed late is corrected here. *@
+        @if (CanEditTimings)
+        {
+            <div class="half-lengths">
+                <span class="half-lengths-label">@L["Half lengths"]</span>
+                <span class="half-lengths-value">@HalfLengthsLine</span>
+                <MudIconButton Icon="@Icons.Material.Filled.Timer" Size="Size.Small"
+                               title="@L["Correct half lengths"]" OnClick="EditHalfLengths" />
+            </div>
         }
 
         @* A goal is a scoreline by another route — AddGoalAsync recounts it — so whoever may not

@@ -122,6 +122,31 @@
     }
 }
 
+.half-lengths {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+.half-lengths-label {
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--ink-subtle);
+}
+
+/* Pushes the button to the far edge, so the tap target never crowds the reading it belongs to. */
+.half-lengths-value {
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+    margin-right: auto;
+}
+
 /* Add goal section */
 .add-section {
     margin-top: 16px;

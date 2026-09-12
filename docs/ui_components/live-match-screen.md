@@ -92,6 +92,28 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   list is taken from **the substitution's own half**, not whichever half the screen happens to show, and
   excludes anyone already on the pitch there, carrying a standing injury, or hurt in this match. A
   substitution made for an injury is not editable here — its leaver is fixed by the injury.
+- **A goal can be corrected rather than removed and retyped** (`MatchGoalService.EditGoalAsync`,
+  `EditGoalDialog`, the `Edit` button beside the `×` in the result page's timeline): the scorer, the
+  assist, the own-goal flag and the minute. Which side it counts for is fixed — turning ours into
+  theirs is a different goal, removed and logged again — so an opponent goal's dialog offers the minute
+  alone. This exists because re-entering a goal on `/result` produces a row with only a scoreboard
+  minute, losing the half and the clock reading the live one carried, which then sorts wrongly against
+  anything in stoppage time. `EditGoalAsync` therefore keeps the shape the goal was recorded in: a live
+  goal stays placed by the clock **inside its own half** (`ElapsedForMinute`, clamped to the half), a
+  hand-typed one keeps its `Minute`. **A minute left as it was shown keeps the stored reading**, for
+  the same stoppage-time reason `ElapsedForEditedMinute` exists for substitutions. The result page
+  passes `recountScoreline: false`, exactly as removing a goal there does — the scoreline on that page
+  is typed, not derived.
+- **A half whistled off late is corrected on the result page** (`MatchClockService.AdjustHalfLengthsAsync`,
+  `EditHalfLengthsDialog`, behind the half-lengths row under the timeline). It takes a length in minutes
+  per half and writes **only `EndedAtSeconds`**: every goal, substitution and injury keeps the second it
+  was recorded on, and the second half stays where it actually restarted, so shortening a half re-times
+  what it contains without touching a row. Refused while the match is unfinished — a running clock owns
+  the half it is timing and the next whistle would write over the correction — refused before anything
+  already recorded in that half, and refused past the restart of the next. `ClockAccumulatedSeconds` is
+  re-banked to the last whistle afterwards, or the game reports a duration its halves no longer add up
+  to. The failure messages name no half, because `UiFeedback.Translate` translates a template but not
+  its arguments.
 - **Every goal on the timeline carries the score it made it** (`ScoreProgressionReport`), in the
   scoreboard's order — home side first. It is counted forwards over the whole match and looked up
   by goal id, because the timeline itself runs newest first and a total accumulated while rendering

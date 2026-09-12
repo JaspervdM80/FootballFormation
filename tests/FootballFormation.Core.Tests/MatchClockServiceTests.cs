@@ -280,6 +280,147 @@ public class MatchClockServiceTests : LiveMatchTestBase
         Assert.True(second.First(p => p.PlayerId == players[1].Id).IsSubstitute);
     }
 
+    /// The whistle nobody pressed on time. Only the end of the half moves: the restart stays where it actually happened, so everything
+    /// recorded in the second half still reads the minute it was scored on.
+    [Fact]
+    public async Task Correcting_a_half_moves_its_whistle_and_nothing_that_was_recorded_in_it()
+    {
+        var game = await PlayedWithTheClockLeftRunningAsync();
+        var before = await ReloadAsync(game.Id);
+        var secondHalfStart = before.Periods.Single(p => p.PeriodType == PeriodType.SecondHalf).StartedAtSeconds;
+
+        var result = await MatchClock.AdjustHalfLengthsAsync(game.Id, firstHalfMinutes: 37, secondHalfMinutes: 38);
+
+        Assert.True(result.IsSuccess);
+        var corrected = await ReloadAsync(game.Id);
+        var first = corrected.Periods.Single(p => p.PeriodType == PeriodType.FirstHalf);
+        var second = corrected.Periods.Single(p => p.PeriodType == PeriodType.SecondHalf);
+
+        Assert.Equal(37 * 60, first.EndedAtSeconds);
+        Assert.Equal(secondHalfStart, second.StartedAtSeconds);
+        Assert.Equal(second.StartedAtSeconds + (38 * 60), second.EndedAtSeconds);
+
+        // The banked total is what the final whistle left behind, so it has to follow the half it was taken from.
+        Assert.Equal(second.EndedAtSeconds, corrected.ClockAccumulatedSeconds);
+    }
+
+    /// The reason this exists at all: the overrun was credited to whoever was on the pitch, and went on into the season's utilisation.
+    [Fact]
+    public async Task Shortening_a_half_takes_back_the_minutes_it_never_ran()
+    {
+        var game = await PlayedWithTheClockLeftRunningAsync();
+        var players = await PlayersAsync();
+
+        var inflated = GameMinutesReport.Build(await LoadForMinutesAsync(game.Id)).SecondsFor(players[1].Id);
+
+        await MatchClock.AdjustHalfLengthsAsync(game.Id, firstHalfMinutes: 37, secondHalfMinutes: 38);
+
+        var corrected = GameMinutesReport.Build(await LoadForMinutesAsync(game.Id)).SecondsFor(players[1].Id);
+        Assert.Equal((45 + 40) * 60, inflated);
+        Assert.Equal((37 + 38) * 60, corrected);
+    }
+
+    [Fact]
+    public async Task A_half_cannot_be_whistled_off_before_something_it_already_contains()
+    {
+        var game = await PlayedWithTheClockLeftRunningAsync();
+        var players = await PlayersAsync();
+
+        // A goal in the 40th minute of the first half — the half cannot now be 30 minutes long.
+        await Db.GameGoals.AddAsync(new GameGoal
+        {
+            GameId = game.Id,
+            ScorerId = players[1].Id,
+            GamePeriodId = (await ReloadAsync(game.Id)).Periods.Single(p => p.PeriodType == PeriodType.FirstHalf).Id,
+            AtSeconds = 40 * 60
+        });
+        await Db.SaveChangesAsync();
+
+        var result = await MatchClock.AdjustHalfLengthsAsync(game.Id, firstHalfMinutes: 30, secondHalfMinutes: null);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("That half still has something recorded after {0} minutes", result.ErrorKey);
+    }
+
+    [Fact]
+    public async Task A_half_cannot_be_stretched_past_the_restart_of_the_next()
+    {
+        var game = await PlayedWithTheClockLeftRunningAsync();
+
+        var result = await MatchClock.AdjustHalfLengthsAsync(game.Id, firstHalfMinutes: 50, secondHalfMinutes: null);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("A half cannot run past the restart of the next one", result.Error);
+    }
+
+    /// While the clock is still running it owns the half it is timing, and the next whistle would write over the correction anyway.
+    [Fact]
+    public async Task A_match_still_being_played_keeps_its_half_lengths()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        Time.Advance(TimeSpan.FromMinutes(30));
+
+        var result = await MatchClock.AdjustHalfLengthsAsync(game.Id, firstHalfMinutes: 25, secondHalfMinutes: null);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Only a finished match can have its half lengths corrected", result.Error);
+    }
+
+    /// The dialog's field cannot go below one, but the rule belongs at the service — a zero-length half would credit nobody the time
+    /// they were on the pitch for.
+    [Fact]
+    public async Task A_half_cannot_be_corrected_to_no_time_at_all()
+    {
+        var game = await PlayedWithTheClockLeftRunningAsync();
+
+        var result = await MatchClock.AdjustHalfLengthsAsync(game.Id, firstHalfMinutes: 0, secondHalfMinutes: null);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("A half has to last at least a minute", result.Error);
+    }
+
+    [Fact]
+    public async Task A_half_that_was_never_played_has_no_length_to_correct()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        Time.Advance(TimeSpan.FromMinutes(30));
+        await MatchClock.FinishMatchAsync(game.Id);
+
+        var result = await MatchClock.AdjustHalfLengthsAsync(game.Id, firstHalfMinutes: null, secondHalfMinutes: 30);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("That half was never played", result.Error);
+    }
+
+    /// A 60-minute game run with the whistle pressed late twice: a first half of 45 and a second of 40.
+    private async Task<Game> PlayedWithTheClockLeftRunningAsync()
+    {
+        var game = await SeedGameAsync();
+
+        await MatchClock.StartMatchAsync(game.Id);
+        Time.Advance(TimeSpan.FromMinutes(45));
+        await MatchClock.EndHalfAsync(game.Id);
+
+        Time.Advance(TimeSpan.FromMinutes(10));
+        await MatchClock.StartNextHalfAsync(game.Id);
+        Time.Advance(TimeSpan.FromMinutes(40));
+        await MatchClock.FinishMatchAsync(game.Id);
+
+        return game;
+    }
+
+    private async Task<Game> LoadForMinutesAsync(int gameId)
+    {
+        Db.ChangeTracker.Clear();
+        return await Db.Games
+            .Include(g => g.Periods).ThenInclude(p => p.PlayerPositions)
+            .Include(g => g.Substitutions)
+            .Include(g => g.Injuries)
+            .FirstAsync(g => g.Id == gameId);
+    }
+
     private Task<List<GamePlayerPosition>> SecondHalfLineupAsync(int gameId, PeriodType type) =>
         Db.GamePlayerPositions
             .Where(pp => pp.GamePeriod.GameId == gameId && pp.GamePeriod.PeriodType == type)
