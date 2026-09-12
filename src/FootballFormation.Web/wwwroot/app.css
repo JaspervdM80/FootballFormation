@@ -1897,6 +1897,17 @@ a.action-btn {
         padding: 10px 14px;
     }
 
+    /* Sorting is a desktop affordance here: the arrows crowd a header that already only just fits,
+       and a card list this short is read top to bottom anyway. */
+    .playtime-table .mud-table-head .mud-table-sort-label {
+        pointer-events: none;
+        cursor: default;
+    }
+
+    .playtime-table .mud-table-head .mud-table-sort-label-icon {
+        display: none !important;
+    }
+
     .playtime-table .mud-table-body .mud-table-cell {
         border: none !important;
         padding: 0 !important;

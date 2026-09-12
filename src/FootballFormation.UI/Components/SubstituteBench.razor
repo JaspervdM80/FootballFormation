@@ -5,16 +5,17 @@
           @ondrop="() => OnPlayerDroppedToSub.InvokeAsync()">
     <MudText Typo="Typo.subtitle2" GutterBottom="true">@L["Substitutes"]</MudText>
 
-    @if (DraggedPlayerId is not null && !ReadOnly)
+    @{
+        var subs = Lineup.Where(p => p.IsSubstitute).ToList();
+    }
+
+    @* Empty bench only: the panel itself already takes the drop, so the zone would just push the list down mid-drag. *@
+    @if (DraggedPlayerId is not null && !ReadOnly && subs.Count == 0)
     {
         <div class="sub-drop-zone">
             <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Size="Size.Small" />
             <MudText Typo="Typo.caption">@L["Drop here to add as sub"]</MudText>
         </div>
-    }
-
-    @{
-        var subs = Lineup.Where(p => p.IsSubstitute).ToList();
     }
 
     @if (subs.Count > 0)

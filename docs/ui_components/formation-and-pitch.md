@@ -46,11 +46,18 @@
   `periods × period length` estimate before that. An estimate is written `~30 min` in the muted
   ink and the table carries a footnote — the same `~` the player report uses, so the mark means
   one thing across the app. The choice is per game, so every row of one table is marked alike
+- **On a phone** (below `599.98px`) the header puts the date on its own line under the opponent —
+  `PageHeader`'s `SubtitleContent`, so the venue badge keeps the heading's line — the fit legend
+  scales its labels with the viewport (`clamp`) to hold all five tiers on one row down to 320px, and
+  the playing-time table drops its sorting: the arrows crowd a header that only just fits, and the
+  rule that hides them lives with the rest of `.playtime-table`'s phone layout in `app.css`
 
 
 ## Drag & Drop (HTML5 API)
 - **Player list → Pitch**: Assigns player to position slot
-- **Player list → Sub bench**: Adds as substitute
+- **Player list → Sub bench**: Adds as substitute. The dashed "Drop here to add as sub" zone shows
+  mid-drag **only while the bench is empty** — the panel itself takes the drop either way, so once a
+  sub is named the zone would only push the list down under the cursor
 - **Pitch → Pitch**: Swaps two players' slots (`Drag.FromSlotIndex` is set ⇒ the drop is a swap)
 - **Pitch → Sub bench**: Drop on empty bench area moves player to bench; drop **on a sub** swaps the two (`OnSwapFieldPlayerWithSub`)
 - **Sub bench → Pitch**: Sub takes the slot; the displaced starter goes to the bench
