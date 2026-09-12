@@ -60,8 +60,10 @@
 <div class="builder-mobile">
     <PageHeader BackFallback="@AppRoutes.Games" TitleTypo="Typo.h6" Class="mb-3"
                 TitleClass="builder-opponent" Title="@GameData.Opponent">
-        <Meta>
+        <SubtitleContent>
             <span class="builder-date">@GameData.DateLine("dd MMM yyyy")</span>
+        </SubtitleContent>
+        <Meta>
             <VenueBadge IsHome="GameData.IsHomeGame" />
         </Meta>
     </PageHeader>
