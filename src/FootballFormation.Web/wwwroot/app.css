@@ -1791,6 +1791,14 @@ a.action-btn {
     }
 }
 
+/* MudBlazor renders this button, so a scoped rule in MatchResult.razor.css would carry an attribute
+   its markup never gets. */
+.half-lengths .mud-icon-button {
+    width: var(--action-btn-size);
+    height: var(--action-btn-size);
+    padding: 0;
+}
+
 /* 599.98px is MudBlazor's xs breakpoint, where it stacks a table into per-row cards. Its
    default stack prints a column label beside every cell, which here costs three lines and
    ~150px per account to say what a bold name, a muted login and a role badge already say.

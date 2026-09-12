@@ -1,3 +1,5 @@
+using FootballFormation.Core.Reporting;
+
 namespace FootballFormation.Core.Services;
 
 /// Adds the one thing only a match in progress knows: the half being played and the reading on the clock. The write itself is delegated
@@ -42,6 +44,63 @@ public class MatchGoalService(
 
             return await games.AddGoalAsync(goal, recountScoreline: true, cancellationToken);
         });
+
+    /// Corrects a goal already on file — who scored it, who assisted, whether it was an own goal, and the minute it reads. Which side it
+    /// counts for is fixed: turning ours into theirs is a different goal, removed and logged again. The scoreline is left alone, as it is
+    /// when a goal is removed from the result page, so this writes here rather than delegating to <see cref="GameService"/>: there is no
+    /// recount that has to commit alongside the goal.
+    public Task<Result> EditGoalAsync(
+        int goalId, int? scorerId, int? assisterId, bool isOwnGoal, int minute,
+        CancellationToken cancellationToken = default) =>
+        LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "correct the goal",
+            cancellationToken, async () =>
+        {
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            var goal = await db.GameGoals.FirstOrDefaultAsync(g => g.Id == goalId, cancellationToken);
+            if (goal is null || !await db.GameInScopeAsync(goal.GameId, cancellationToken))
+            {
+                logger.LogWarning("Cannot correct goal {GoalId}: not found", goalId);
+                return Result.Failure<int>("Goal not found");
+            }
+
+            if (scorerId is null && !goal.IsOpponentGoal)
+                return Result.Failure<int>("A goal for us needs a scorer");
+
+            if (isOwnGoal && goal.IsOpponentGoal)
+                return Result.Failure<int>("An opponent goal cannot be an own goal");
+
+            var game = await db.LoadWithPeriodsAsync(goal.GameId, cancellationToken);
+            if (game is null) return LiveMatchQueries.GameNotFound<int>(goal.GameId);
+
+            (goal.AtSeconds, goal.Minute) = Placement(game, goal, minute);
+            goal.ScorerId = scorerId;
+            goal.AssisterId = assisterId;
+            goal.IsOwnGoal = isOwnGoal;
+
+            await db.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation("Corrected goal {GoalId} of game {GameId} to scorer {ScorerId} at {Seconds}s / minute {Minute}",
+                goalId, goal.GameId, goal.ScorerId, goal.AtSeconds, goal.Minute);
+            return Result.Success(goal.GameId);
+        });
+
+    /// A goal keeps the shape it was recorded in: one logged live stays placed by the clock inside its own half, one typed in on the result
+    /// page by its scoreboard minute. A minute left as it was shown keeps the stored reading, because the shown minute drops stoppage time
+    /// and converting an untouched 30+3 back would move the goal three minutes earlier.
+    private (int? AtSeconds, int? Minute) Placement(Game game, GameGoal goal, int minute)
+    {
+        if (minute == MatchClockReport.MinuteOf(game, goal)?.Minute) return (goal.AtSeconds, goal.Minute);
+
+        if (goal.GamePeriodId is not { } periodId
+            || game.Periods.FirstOrDefault(p => p.Id == periodId) is not { StartedAtSeconds: { } start } half)
+        {
+            return (null, minute);
+        }
+
+        var end = half.EndedAtSeconds ?? game.ElapsedSecondsAt(UtcNow);
+        return (Math.Clamp(MatchClockReport.ElapsedForMinute(game, minute), start, Math.Max(start, end)), null);
+    }
 
     /// Removes a goal and pulls the scoreline back in step with what is left.
     public Task<Result> RemoveGoalAsync(

@@ -1,0 +1,29 @@
+@inject IStringLocalizer<Strings> L
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-4" Style="color: var(--ink-muted);">
+            @L["Only the final whistle of each half moves. Every goal, substitution and injury keeps the moment it was recorded, so the minutes read back against the corrected half."]
+        </MudText>
+
+        @if (FirstHalfMinutes is not null)
+        {
+            <MudNumericField T="int" @bind-Value="FirstLength" Label="@L["1st Half"]"
+                             Min="1" Max="Ceiling" Immediate="true" Class="mb-3"
+                             AdornmentText="@L["Minutes"]" Adornment="Adornment.End" />
+        }
+
+        @if (SecondHalfMinutes is not null)
+        {
+            <MudNumericField T="int" @bind-Value="SecondLength" Label="@L["2nd Half"]"
+                             Min="1" Max="Ceiling" Immediate="true"
+                             AdornmentText="@L["Minutes"]" Adornment="Adornment.End" />
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="@(!HasChoice)" OnClick="Submit">
+            @L["Save"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>

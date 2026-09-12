@@ -187,6 +187,13 @@ public class Game
     public GamePeriod? LiveHalf() =>
         LivePeriodId is null ? null : Periods.FirstOrDefault(p => p.Id == LivePeriodId);
 
+    /// The line-up that opened a half and therefore carries its timings — a quarters game plans two per half and only the first kicks off.
+    /// Null when the half was never played.
+    public GamePeriod? PlayedHalf(PeriodType half) => Periods
+        .Where(p => p.PeriodType.Half() == half.Half() && p.StartedAtSeconds is not null)
+        .OrderBy(p => p.StartedAtSeconds)
+        .FirstOrDefault();
+
     /// Null once both halves have run. A quarters game plans two rows per half but plays two halves, so after the first half this is the
     /// third quarter's line-up, not the second quarter's plan left behind inside the half just played.
     public GamePeriod? NextHalf()

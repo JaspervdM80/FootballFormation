@@ -70,6 +70,17 @@ id — the timeline, the result page's goal list, and `ScoreProgressionReport`. 
 rather than reading it as elapsed time; the two scales part company by however long a half over-ran,
 and taking one for the other puts a second-half goal under the half-time rule.
 
+**A goal is corrected, not removed and retyped** (`EditGoalAsync`, `EditGoalDialog`): re-entering one on
+`/result` leaves only a scoreboard minute, losing the half and the clock reading. The edit keeps the
+shape the goal was recorded in — a live goal stays placed by the clock inside its own half, a hand-typed
+one keeps its `Minute` — and a minute left as it was shown keeps the stored reading, for the same
+stoppage-time reason `ElapsedForEditedMinute` exists. Which side it counts for is fixed.
+
+**A half whistled off late is corrected by moving its end, never its start** (`AdjustHalfLengthsAsync`,
+finished matches only). Every event stores an absolute elapsed second and `MatchClockReport` reads
+`elapsed - start`, so shifting a start would silently re-time everything in the half; writing
+`EndedAtSeconds` alone re-times nothing and takes the overrun back off `GameMinutesReport`.
+
 Half time is a **dashed rule across the timeline**, not an event.
 
 ## Substitutions

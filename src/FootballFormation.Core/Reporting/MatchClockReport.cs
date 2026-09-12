@@ -114,17 +114,5 @@ public static class MatchClockReport
     /// The first minute of play is 1', not 0'.
     private static MatchMinute PlainMinute(int seconds) => new((seconds / 60) + 1, 0);
 
-    /// The earliest of the half's line-ups to start: a quarters game plans two per half, and only the first of them opens it.
-    private static int? HalfKickedOffAt(Game game, PeriodType half)
-    {
-        int? earliest = null;
-
-        foreach (var period in game.Periods)
-        {
-            if (period.PeriodType.Half() != half || period.StartedAtSeconds is not { } start) continue;
-            if (earliest is null || start < earliest) earliest = start;
-        }
-
-        return earliest;
-    }
+    private static int? HalfKickedOffAt(Game game, PeriodType half) => game.PlayedHalf(half)?.StartedAtSeconds;
 }
