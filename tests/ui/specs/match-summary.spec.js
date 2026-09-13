@@ -140,6 +140,13 @@ test('a visitor reads the score but is not offered the copy button', async ({ pa
   await expect(visitorPage.getByRole('button', { name: 'Copy match result' })).toHaveCount(0);
   await expect(visitorPage.locator('#match-summary-text')).toHaveCount(0);
 
+  // The shareable overview is the same rule, and the page a visitor is most likely to be sent: the
+  // match is still readable there, the summary is not composed at all.
+  await gotoRendered(visitorPage, `/games/${id}/overview`);
+  await expect(visitorPage.getByText('FC Bezoeker', { exact: false }).first()).toBeVisible();
+  await expect(visitorPage.getByRole('button', { name: 'Copy match result' })).toHaveCount(0);
+  await expect(visitorPage.locator('#match-summary-text')).toHaveCount(0);
+
   await visitor.close();
 });
 

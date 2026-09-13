@@ -31,6 +31,10 @@ public partial class FormationOverview
     /// shared, not the arrangements for getting there.
     private string? MatchInfoText { get; set; }
 
+    /// Posting the result to the team is the coach's job, the same as on the result page — so the text is not rendered at all for anyone
+    /// else, hidden element included.
+    private bool CanCopySummary => !IsAnonymous && SummaryText is not null;
+
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateTask;
@@ -63,7 +67,7 @@ public partial class FormationOverview
             await Team.EnsureLoadedAsync();
             MatchInfoText = MatchInfoTextBuilder.Build(GameData, Team.Current?.FullName ?? L["Us"], L);
         }
-        else
+        else if (!IsAnonymous)
         {
             // Always false: the summary is for sharing, so it is never built from private notes, whoever is looking at this page.
             var commentsResult = await GameService.GetCommentsAsync(GameId, includePrivate: false, Cancellation);
