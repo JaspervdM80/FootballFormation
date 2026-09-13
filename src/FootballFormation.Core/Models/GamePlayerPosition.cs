@@ -11,8 +11,16 @@ public class GamePlayerPosition
     /// Matches the formation slot for a starter; for a substitute it is her designated position.
     public PlayerPosition Position { get; set; }
 
-    /// The source of truth for where a starter appears on the pitch: 0 is the goalkeeper, 1–10 outfield. Null for substitutes.
+    /// The source of truth for where a starter appears on the pitch: 0 is the goalkeeper, the rest outfield. Null for substitutes.
     public int? SlotIndex { get; set; }
 
     public bool IsSubstitute { get; set; }
+
+    /// Her designated position comes back with her, so the bench shows what she plays rather than the slot she was taken out of.
+    public void SendToBench()
+    {
+        IsSubstitute = true;
+        Position = Player?.PreferredPosition ?? Position;
+        SlotIndex = null;
+    }
 }
