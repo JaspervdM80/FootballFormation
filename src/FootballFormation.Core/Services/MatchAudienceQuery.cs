@@ -4,7 +4,6 @@ namespace FootballFormation.Core.Services;
 
 public record MatchAudience(
     MatchNotification Notification,
-    string TeamName,
     int GameId,
     bool IsFinished,
     IReadOnlyList<PushSubscription> Followers);
@@ -41,8 +40,7 @@ public sealed class MatchAudienceQuery(IRawDbContextFactory dbFactory)
         if (followers.Count == 0) return null;
 
         return new MatchAudience(
-            MatchNotificationReport.Build(game, change),
-            $"{team.ClubName} {team.Name}",
+            MatchNotificationReport.Build(game, change, $"{team.ClubName} {team.Name}"),
             gameId,
             game.MatchState == MatchState.Finished,
             followers);

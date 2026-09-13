@@ -7,18 +7,16 @@ namespace FootballFormation.UI.Helpers;
 /// travel in the payload.
 public static class MatchNotificationTextBuilder
 {
-    public static (string Title, string Body) Build(MatchNotification notification, string teamName, IStringLocalizer<Strings> L)
+    /// The sides are already named and in venue order — see MatchNotification, which is where that is decided and tested.
+    public static (string Title, string Body) Build(MatchNotification notification, IStringLocalizer<Strings> L)
     {
-        var homeName = notification.IsHomeGame ? teamName : notification.Opponent;
-        var awayName = notification.IsHomeGame ? notification.Opponent : teamName;
-        var scoreline = $"{homeName} {notification.Score} {awayName}";
+        var scoreline = $"{notification.HomeName} {notification.Score} {notification.AwayName}";
 
         return notification.Event switch
         {
-            LiveMatchEvent.KickOff => (L["The match has started"], $"{homeName} - {awayName}"),
-            LiveMatchEvent.Goal => (GoalTitle(notification, L), scoreline),
+            LiveMatchEvent.KickOff => (L["The match has started"], $"{notification.HomeName} - {notification.AwayName}"),
             LiveMatchEvent.FullTime => (L["Full time"], scoreline),
-            _ => (teamName, scoreline)
+            _ => (GoalTitle(notification, L), scoreline)
         };
     }
 

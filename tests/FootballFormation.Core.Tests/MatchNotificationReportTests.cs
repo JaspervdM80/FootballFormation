@@ -2,6 +2,8 @@ namespace FootballFormation.Core.Tests;
 
 public class MatchNotificationReportTests : LiveMatchTestBase
 {
+    private const string TeamName = "GJS MO15-2";
+
     [Fact]
     public async Task A_goal_names_whoever_scored_it_and_the_minute_it_read()
     {
@@ -12,7 +14,7 @@ public class MatchNotificationReportTests : LiveMatchTestBase
         Time.Advance(TimeSpan.FromMinutes(12));
         await Goals.LogGoalAsync(game.Id, players[1].Id, null, false, false);
 
-        var notification = MatchNotificationReport.Build(await LoadAsync(game.Id), LiveMatchEvent.Goal);
+        var notification = MatchNotificationReport.Build(await LoadAsync(game.Id), LiveMatchEvent.Goal, TeamName);
 
         Assert.Equal("P2", notification.ScorerName);
         Assert.Equal(13, notification.Minute!.Value.Minute);
@@ -28,7 +30,7 @@ public class MatchNotificationReportTests : LiveMatchTestBase
         Time.Advance(TimeSpan.FromMinutes(5));
         await Goals.LogGoalAsync(game.Id, null, null, false, true);
 
-        var notification = MatchNotificationReport.Build(await LoadAsync(game.Id), LiveMatchEvent.Goal);
+        var notification = MatchNotificationReport.Build(await LoadAsync(game.Id), LiveMatchEvent.Goal, TeamName);
 
         Assert.Null(notification.ScorerName);
         Assert.Equal(new VenueScore(0, 1), notification.Score);
@@ -44,7 +46,7 @@ public class MatchNotificationReportTests : LiveMatchTestBase
         Time.Advance(TimeSpan.FromMinutes(5));
         await Goals.LogGoalAsync(game.Id, players[0].Id, null, true, false);
 
-        var notification = MatchNotificationReport.Build(await LoadAsync(game.Id), LiveMatchEvent.Goal);
+        var notification = MatchNotificationReport.Build(await LoadAsync(game.Id), LiveMatchEvent.Goal, TeamName);
 
         Assert.Null(notification.ScorerName);
     }
@@ -64,7 +66,7 @@ public class MatchNotificationReportTests : LiveMatchTestBase
         var late = await Goals.LogGoalAsync(game.Id, players[2].Id, null, false, false);
         await Goals.EditGoalAsync(late.Value!.Id, players[2].Id, null, false, 5);
 
-        var notification = MatchNotificationReport.Build(await LoadAsync(game.Id), LiveMatchEvent.Goal);
+        var notification = MatchNotificationReport.Build(await LoadAsync(game.Id), LiveMatchEvent.Goal, TeamName);
 
         Assert.Equal("P3", notification.ScorerName);
     }
@@ -83,10 +85,31 @@ public class MatchNotificationReportTests : LiveMatchTestBase
         Time.Advance(TimeSpan.FromMinutes(5));
         await Goals.LogGoalAsync(game.Id, players[1].Id, null, false, false);
 
-        var notification = MatchNotificationReport.Build(await LoadAsync(game.Id), LiveMatchEvent.Goal);
+        var notification = MatchNotificationReport.Build(await LoadAsync(game.Id), LiveMatchEvent.Goal, TeamName);
 
-        Assert.False(notification.IsHomeGame);
+        // Ours second on the scoreboard, and second in the names beside it — the two must not be able to disagree.
+        Assert.Equal("Opponent", notification.HomeName);
+        Assert.Equal(TeamName, notification.AwayName);
         Assert.Equal(new VenueScore(0, 1), notification.Score);
+    }
+
+    /// The flip nothing else would catch: this text is only ever a push payload, never markup a browser test could read, so a reversed
+    /// scoreline would reach every follower's lock screen with no check in between.
+    [Fact]
+    public async Task A_home_scoreline_names_us_first()
+    {
+        var game = await SeedGameAsync();
+        var players = await PlayersAsync();
+
+        await MatchClock.StartMatchAsync(game.Id);
+        Time.Advance(TimeSpan.FromMinutes(5));
+        await Goals.LogGoalAsync(game.Id, players[1].Id, null, false, false);
+
+        var notification = MatchNotificationReport.Build(await LoadAsync(game.Id), LiveMatchEvent.Goal, TeamName);
+
+        Assert.Equal(TeamName, notification.HomeName);
+        Assert.Equal("Opponent", notification.AwayName);
+        Assert.Equal(new VenueScore(1, 0), notification.Score);
     }
 
     [Fact]
@@ -99,8 +122,8 @@ public class MatchNotificationReportTests : LiveMatchTestBase
         Time.Advance(TimeSpan.FromMinutes(5));
         await Goals.LogGoalAsync(game.Id, players[1].Id, null, false, false);
 
-        var kickOff = MatchNotificationReport.Build(await LoadAsync(game.Id), LiveMatchEvent.KickOff);
-        var fullTime = MatchNotificationReport.Build(await LoadAsync(game.Id), LiveMatchEvent.FullTime);
+        var kickOff = MatchNotificationReport.Build(await LoadAsync(game.Id), LiveMatchEvent.KickOff, TeamName);
+        var fullTime = MatchNotificationReport.Build(await LoadAsync(game.Id), LiveMatchEvent.FullTime, TeamName);
 
         Assert.Null(kickOff.ScorerName);
         Assert.Null(kickOff.Minute);
@@ -116,7 +139,7 @@ public class MatchNotificationReportTests : LiveMatchTestBase
         var carried = typeof(MatchNotification).GetProperties().Select(p => p.Name).ToHashSet();
 
         Assert.Equal(
-            ["Event", "Opponent", "IsHomeGame", "Score", "ScorerName", "Minute"],
+            ["Event", "HomeName", "AwayName", "Score", "ScorerName", "Minute"],
             carried);
     }
 

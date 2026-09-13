@@ -4,10 +4,13 @@ namespace FootballFormation.Core.Reporting;
 
 /// A null <paramref name="ScorerName"/> on a <see cref="LiveMatchEvent.Goal"/> means it was not ours to celebrate — an opponent goal or
 /// an own goal, both of which still move the scoreline a follower is watching.
+///
+/// The sides arrive named and in venue order, so the text builder has no flip left to get wrong: this text is never rendered into a page
+/// a browser test could read, so what decides it has to be here where a test can.
 public record MatchNotification(
     LiveMatchEvent Event,
-    string Opponent,
-    bool IsHomeGame,
+    string HomeName,
+    string AwayName,
     VenueScore Score,
     string? ScorerName,
     MatchMinute? Minute);
@@ -18,14 +21,14 @@ public record MatchNotification(
 /// least recoverable place in the app to leak what the stats pages keep behind an admin sign-in.
 public static class MatchNotificationReport
 {
-    public static MatchNotification Build(Game game, LiveMatchEvent change)
+    public static MatchNotification Build(Game game, LiveMatchEvent change, string teamName)
     {
         var goal = change == LiveMatchEvent.Goal ? LatestGoal(game) : null;
 
         return new MatchNotification(
             change,
-            game.Opponent,
-            game.IsHomeGame,
+            game.IsHomeGame ? teamName : game.Opponent,
+            game.IsHomeGame ? game.Opponent : teamName,
             game.ScoreboardOrder(),
             goal?.CountsForUs == true ? goal.Scorer?.DisplayName : null,
             goal is null ? null : MatchClockReport.MinuteOf(game, goal));

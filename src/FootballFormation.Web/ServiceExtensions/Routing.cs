@@ -207,7 +207,7 @@ public static class Routing
             var result = await subscriptions.FollowsCurrentTeamAsync(probe.Endpoint, context.RequestAborted);
 
             return Results.Json(new { known = result.IsSuccess && result.Value });
-        }).AllowAnonymous().RequireRateLimiting("push");
+        }).AllowAnonymous().RequireRateLimiting("push-read");
 
         app.MapGet("/culture/set", (string culture, string redirectUri, HttpContext context) =>
         {

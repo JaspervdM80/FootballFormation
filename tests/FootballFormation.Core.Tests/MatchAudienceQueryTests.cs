@@ -37,7 +37,8 @@ public class MatchAudienceQueryTests : LiveMatchTestBase
         var match = await _audience.ForAsync(game.Id, LiveMatchEvent.Goal);
 
         Assert.NotNull(match);
-        Assert.Equal("GJS MO15-2", match.TeamName);
+        // The club and team, resolved without a team in scope to resolve it from.
+        Assert.Equal("GJS MO15-2", match.Notification.HomeName);
         Assert.Equal("P2", match.Notification.ScorerName);
         Assert.Equal(Endpoint, Assert.Single(match.Followers).Endpoint);
     }

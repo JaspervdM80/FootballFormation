@@ -197,6 +197,18 @@ try
             return ValueTask.CompletedTask;
         };
 
+        // Its own budget, because it is a read that fires on every home page load: a ground's worth of parents on one wifi would
+        // otherwise spend the writes' allowance between them and throttle whoever next tries to turn notifications on.
+        options.AddPolicy("push-read", httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: ClientIp.Of(httpContext),
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 120,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0
+                }));
+
         // Anonymous and unauthenticated, so this is the only thing standing between a subscribe endpoint and a filled table. Looser than
         // the sign-in limit because one device legitimately re-subscribes whenever the browser rotates its endpoint.
         options.AddPolicy("push", httpContext =>

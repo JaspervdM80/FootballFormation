@@ -114,7 +114,7 @@ public sealed class MatchNotificationSender(
 
         try
         {
-            var (title, body) = MatchNotificationTextBuilder.Build(match.Notification, match.TeamName, localizer);
+            var (title, body) = MatchNotificationTextBuilder.Build(match.Notification, localizer);
 
             return JsonSerializer.SerializeToUtf8Bytes(new
             {
