@@ -70,8 +70,22 @@ public partial class Games
 
     private async Task OpenEditDialog(Game game)
     {
+        // The dialog edits this very instance, so the shape it opened on has to be read before it does.
+        var formationBefore = game.FormationType;
+
         var updated = await ShowGameDialogAsync(L["Edit Game"], game);
         if (updated is null) return;
+
+        // Before the update rather than after: SaveFormationAsync reshapes the line-ups out of the shape the game still has on file, and
+        // the update would already have replaced it with the new one.
+        if (updated.FormationType != formationBefore
+            && !Snackbar.ReportFailure(L, await GameService.SaveFormationAsync(updated.Id, updated.FormationType)))
+        {
+            // The dialog wrote its edits into the row the list is still rendering, so without this the card goes on showing what was
+            // typed while the database holds none of it.
+            await LoadAsync();
+            return;
+        }
 
         var result = await GameService.UpdateAsync(updated);
         Snackbar.Report(L, result, L["Game vs {0} updated", updated.Opponent]);

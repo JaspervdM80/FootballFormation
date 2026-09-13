@@ -162,7 +162,7 @@ public partial class FormationBuilder
             {
                 if (wasFromSub)
                 {
-                    SendToBench(existingAtSlot);
+                    existingAtSlot.SendToBench();
                 }
                 else
                 {
@@ -211,7 +211,7 @@ public partial class FormationBuilder
         var subEntry = lineup.FirstOrDefault(p => p.PlayerId == subPlayerId && p.IsSubstitute);
         if (fieldEntry is null || subEntry is null) return;
 
-        SendToBench(fieldEntry);
+        fieldEntry.SendToBench();
 
         subEntry.IsSubstitute = false;
         subEntry.Position = position;
@@ -236,13 +236,6 @@ public partial class FormationBuilder
         if (HasBeenPlayed(periodId)) return;
 
         PeriodLineups[periodId].Remove(sub);
-    }
-
-    private static void SendToBench(GamePlayerPosition entry)
-    {
-        entry.IsSubstitute = true;
-        entry.Position = entry.Player?.PreferredPosition ?? entry.Position;
-        entry.SlotIndex = null;
     }
 
     private static GamePlayerPosition CreateEntry(

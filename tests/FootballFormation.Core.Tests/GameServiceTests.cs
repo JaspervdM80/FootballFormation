@@ -165,6 +165,53 @@ public class GameServiceTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task Switching_to_a_smaller_shape_benches_the_starters_it_has_no_slot_for()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(2);
+        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
+
+        var period = Db.GamePeriods.First(p => p.GameId == game.Id);
+        await Games.SavePeriodLineupAsync(period.Id, [
+            TestData.Starter(players[0].Id, PlayerPosition.CM, slot: 6),
+            TestData.Starter(players[1].Id, PlayerPosition.ST, slot: 10)
+        ]);
+
+        // 3-3-2 stops at slot 8, so the second striker's slot is gone.
+        await Games.SaveFormationAsync(game.Id, FormationType.F332);
+
+        var lineup = Read().GamePlayerPositions.OrderBy(pp => pp.Id).ToList();
+        Assert.Equal((PlayerPosition.RM, 6, false), (lineup[0].Position, lineup[0].SlotIndex, lineup[0].IsSubstitute));
+
+        // Her own position, not the striker's slot she was taken out of — which needs Player loaded alongside the line-up.
+        Assert.Equal((PlayerPosition.CM, null, true), (lineup[1].Position, lineup[1].SlotIndex, lineup[1].IsSubstitute));
+    }
+
+    [Fact]
+    public async Task A_half_already_played_keeps_the_shape_it_was_played_in_rather_than_losing_a_starter_to_a_smaller_one()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(2);
+        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
+
+        var period = Db.GamePeriods.First(p => p.GameId == game.Id);
+        await Games.SavePeriodLineupAsync(period.Id, [
+            TestData.Starter(players[0].Id, PlayerPosition.CM, slot: 6),
+            TestData.Starter(players[1].Id, PlayerPosition.ST, slot: 10)
+        ]);
+
+        period.StartedAtSeconds = 0;
+        await Db.SaveChangesAsync();
+
+        await Games.SaveFormationAsync(game.Id, FormationType.F332);
+
+        // Benching her would take the minutes she played off a match that is over, so the half is pinned to the eleven it was played in.
+        Assert.Equal(FormationType.F442, Read().GamePeriods.Single(p => p.Id == period.Id).FormationTypeOverride);
+        Assert.All(Read().GamePlayerPositions, entry => Assert.False(entry.IsSubstitute));
+        Assert.Equal([6, 10], Read().GamePlayerPositions.OrderBy(pp => pp.Id).Select(pp => pp.SlotIndex));
+    }
+
+    [Fact]
     public async Task Changing_the_formation_clears_a_shape_a_period_had_of_its_own()
     {
         var season = await SeedSeasonAsync();

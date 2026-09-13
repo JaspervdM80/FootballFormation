@@ -42,7 +42,7 @@
         <span class="formation-picker-label">@L["Formation"]:</span>
         <MudSelect T="FormationType" Value="GameData.FormationType" ValueChanged="OnFormationChanged"
                    Dense="true" Variant="Variant.Outlined" Class="formation-select">
-            @foreach (var formation in FormationTypeExtensions.Alphabetical)
+            @foreach (var formation in FormationTypeExtensions.Alphabetical(GameData.FormationType.Format()))
             {
                 <MudSelectItem Value="formation">@L[formation.DisplayName()]</MudSelectItem>
             }
@@ -77,7 +77,7 @@
     </div>
     <MudSelect T="FormationType" Value="GameData.FormationType" ValueChanged="OnFormationChanged"
                Dense="true" Variant="Variant.Outlined" Label="@L["Formation"]" Class="formation-select mb-3">
-        @foreach (var formation in FormationTypeExtensions.Alphabetical)
+        @foreach (var formation in FormationTypeExtensions.Alphabetical(GameData.FormationType.Format()))
         {
             <MudSelectItem Value="formation">@L[formation.DisplayName()]</MudSelectItem>
         }

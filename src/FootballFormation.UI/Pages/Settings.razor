@@ -47,9 +47,17 @@
             <MudSelectItem Value="GameSplitType.Quarters">@L["Quarters (4 periods)"]</MudSelectItem>
         </MudSelect>
 
+        <MudSelect T="MatchFormat" Value="DefaultMatchFormat" ValueChanged="OnDefaultMatchFormatChanged"
+                   Label="@L["Default Match Format"]" Class="mb-4">
+            @foreach (var format in MatchFormatExtensions.Descending)
+            {
+                <MudSelectItem Value="format">@L[format.DisplayName()]</MudSelectItem>
+            }
+        </MudSelect>
+
         <MudSelect T="FormationType" @bind-Value="_prefs.DefaultFormation"
                    Label="@L["Default Formation"]" Class="mb-4">
-            @foreach (var f in FormationTypeExtensions.Alphabetical)
+            @foreach (var f in FormationTypeExtensions.Alphabetical(DefaultMatchFormat))
             {
                 <MudSelectItem Value="f">@L[f.DisplayName()]</MudSelectItem>
             }
