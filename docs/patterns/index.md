@@ -8,3 +8,4 @@
 - [Service Registration](service-registration.md) — the DI lifetime table and why two services are singletons.
 - [Authorization and Authentication](authorization-and-auth.md) — the service-boundary auth rule, minute-figure visibility, the sign-in cookie settings, and revoking authority mid-circuit.
 - [Blazor Rendering](blazor-rendering.md) — render mode and layout, in brief.
+- [Push Notifications](push-notifications.md) — the one anonymous write, the event kind that stops a substitution waking a phone, why the sender runs outside every scope, and what web push cannot do.

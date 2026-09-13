@@ -7,12 +7,13 @@ internal static class LiveMatchOperation
 
     internal static Task<Result<T>> RunAdminAsync<T>(
         LiveMatchNotifier notifier, int gameId, ICurrentUser currentUser, ILogger logger, string action,
-        CancellationToken cancellationToken, Func<Task<Result<T>>> operation) =>
+        CancellationToken cancellationToken, Func<Task<Result<T>>> operation,
+        LiveMatchEvent change = LiveMatchEvent.Other) =>
         // Inside the wrapper, not after it: a subscriber that throws is a failed operation, as it was when each method notified itself.
         ServiceOperation.RunAdminAsync(currentUser, logger, action, cancellationToken, async () =>
         {
             var result = await operation();
-            if (result.IsSuccess) notifier.Notify(gameId);
+            if (result.IsSuccess) notifier.Notify(gameId, change);
             return result;
         });
 
@@ -20,11 +21,12 @@ internal static class LiveMatchOperation
     /// undoing a substitution identified by its own id, say.
     internal static async Task<Result> RunAdminAsync(
         LiveMatchNotifier notifier, ICurrentUser currentUser, ILogger logger, string action,
-        CancellationToken cancellationToken, Func<Task<Result<int>>> operation) =>
+        CancellationToken cancellationToken, Func<Task<Result<int>>> operation,
+        LiveMatchEvent change = LiveMatchEvent.Other) =>
         await ServiceOperation.RunAdminAsync(currentUser, logger, action, cancellationToken, async () =>
         {
             var result = await operation();
-            if (result.IsSuccess) notifier.Notify(result.Value);
+            if (result.IsSuccess) notifier.Notify(result.Value, change);
             return result;
         });
 }

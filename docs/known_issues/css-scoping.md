@@ -19,3 +19,13 @@
   the capture block too and laid its header out *beside* the pitches instead of above them. The
   scoped rule could not win: it never declared `display` at all. A class in `app.css` is global;
   read it as one before reusing a name a page already uses.
+- **It happened again, on the notification opt-in — and this time nothing measured the page.** The
+  `min-height: 44px` and the phone-width `width: 100%` for the "Aan/Uit" button were written in
+  `Home.razor.css`, so they compiled to `.home-notify-button[b-mskvn728zw]` and never reached the
+  `<button>` MudBlazor renders. The button sat at MudBlazor's own ~36.5px, under the touch floor, and
+  stayed beside the text on a phone instead of taking its own row. What let it through is the second
+  half of the lesson: **`scripts/touch-targets.mjs` had no home-page scene at all**, so the harness
+  that exists to catch exactly this reported "every touch target clears its floor" while measuring a
+  page the button is not on. A `home` scene was added with the fix; it now measures 260.4x44 at
+  320px. When a rule lands on a MudBlazor root, move it to `app.css` **and** check the page is
+  actually audited.

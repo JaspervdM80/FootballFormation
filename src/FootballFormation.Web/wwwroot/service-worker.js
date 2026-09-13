@@ -3,6 +3,8 @@
 // stored and leak an admin's /stats to the next person on a shared phone (#98). Not offline
 // support; caching pages is #104.
 
+importScripts('js/push-shared.js');
+
 const CACHE = 'ff-immutable-assets';
 
 // By destination, not URL: path matching cannot tell a navigation from an asset.
@@ -15,12 +17,86 @@ self.addEventListener('install', () => self.skipWaiting());
 
 self.addEventListener('activate', (event) => event.waitUntil((async () => {
     // Older *names* only: a deploy needs no purge, and dropping this cache would discard assets
-    // the new build still asks for by the same URL.
+    // the new build still asks for by the same URL. pushShared.CACHE is spared because it is not an
+    // asset cache at all — clearing it would lose the one record of which follower a rotated
+    // subscription belongs to.
     const names = await caches.keys();
-    await Promise.all(names.filter(name => name !== CACHE).map(name => caches.delete(name)));
+    await Promise.all(names
+        .filter(name => name !== CACHE && name !== pushShared.CACHE)
+        .map(name => caches.delete(name)));
 
     await self.clients.claim();
 })()));
+
+// The server composes the finished text: a worker has no access to IStringLocalizer, so nothing here is translated or even inspected
+// beyond being read out of the payload.
+self.addEventListener('push', (event) => {
+    if (!event.data) return;
+
+    const message = event.data.json();
+
+    event.waitUntil(self.registration.showNotification(message.title, {
+        body: message.body,
+        icon: 'icons/icon-192.png',
+        badge: 'icons/icon-192.png',
+        // Same tag for the whole match, so a third goal replaces the second rather than stacking three rows on the lock screen.
+        tag: message.tag,
+        renotify: true,
+        data: { url: message.url }
+    }));
+});
+
+// A browser may rotate a push endpoint whenever it likes. Without this the old one starts answering 410, the server prunes the row, and
+// a follower who never opens the app again is silently lost for good — so the renewal has to happen here, with no page and no prompt.
+self.addEventListener('pushsubscriptionchange', (event) => {
+    event.waitUntil(renewSubscription(event.oldSubscription));
+});
+
+async function renewSubscription(oldSubscription) {
+    // `event.oldSubscription` is unset in several browsers, so the endpoint is also remembered at subscribe time — without one the
+    // server cannot tell which follower rotated, and the toggle's next reconcile is what repairs it instead.
+    const previous = oldSubscription?.endpoint || await pushShared.rememberedEndpoint();
+    if (!previous) return;
+
+    const key = await fetch('push/key');
+    if (!key.ok) return;
+
+    const subscription = await self.registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: pushShared.decodeKey(await key.text())
+    });
+
+    const json = subscription.toJSON();
+
+    const response = await fetch('push/renew', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            oldEndpoint: previous,
+            endpoint: json.endpoint,
+            p256dh: json.keys.p256dh,
+            auth: json.keys.auth
+        })
+    });
+
+    if (response.ok) await pushShared.rememberEndpoint(json.endpoint);
+}
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+
+    const url = event.notification.data && event.notification.data.url ? event.notification.data.url : '/';
+
+    event.waitUntil((async () => {
+        // Focus the match if it is already open somewhere — a parent who tapped the last goal should not get a second tab.
+        const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        for (const client of windows) {
+            if (new URL(client.url).pathname === url) return client.focus();
+        }
+
+        return self.clients.openWindow(url);
+    })());
+});
 
 self.addEventListener('fetch', (event) => {
     const request = event.request;
