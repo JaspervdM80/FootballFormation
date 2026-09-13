@@ -28,4 +28,20 @@ public static class PushDeliveryOutcome
         >= HttpStatusCode.InternalServerError => PushDelivery.Retry,
         _ => PushDelivery.Refused
     };
+
+    /// False means prune, and only <see cref="PushDelivery.Gone"/> may answer that — a run of retries that never succeeded returns true,
+    /// because a push service having a bad afternoon must never unsubscribe a whole ground.
+    public static async Task<bool> DeliverAsync(
+        Func<Task<PushDelivery>> attempt, Func<int, Task> backOff, int maxAttempts)
+    {
+        for (var n = 1; ; n++)
+        {
+            var outcome = await attempt();
+
+            if (outcome is not PushDelivery.Retry) return outcome is not PushDelivery.Gone;
+            if (n == maxAttempts) return true;
+
+            await backOff(n);
+        }
+    }
 }

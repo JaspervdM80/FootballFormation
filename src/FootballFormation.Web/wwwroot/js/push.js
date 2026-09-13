@@ -56,14 +56,14 @@ window.matchNotifications = (function () {
             const subscription = await registration.pushManager.subscribe({
                 // Required by Chrome: a push that shows nothing is not allowed.
                 userVisibleOnly: true,
-                applicationServerKey: decodeKey(await response.text())
+                applicationServerKey: pushShared.decodeKey(await response.text())
             });
 
             if (!await send('push/subscribe', subscription)) return 'off';
 
             // So the worker can name this endpoint when the browser later rotates it — several browsers leave
             // pushsubscriptionchange.oldSubscription unset, and then this is the only record of which follower rotated.
-            await remember(subscription.endpoint);
+            await pushShared.rememberEndpoint(subscription.endpoint);
             return 'on';
         } catch {
             return 'off';
@@ -79,7 +79,7 @@ window.matchNotifications = (function () {
             // Told first, then dropped: a row for an endpoint that no longer exists would only be cleared by the next failed send.
             await send('push/unsubscribe', subscription);
             await subscription.unsubscribe();
-            await forget();
+            await pushShared.forgetEndpoint();
         } catch {
             // Nothing to report — the state is read back either way.
         }
@@ -101,32 +101,6 @@ window.matchNotifications = (function () {
         });
 
         return response.ok;
-    }
-
-    // Written here and read by the service worker, which shares this origin's caches — the worker has no other way to learn the endpoint
-    // it is replacing. Keep the names in step with ENDPOINT_CACHE / ENDPOINT_KEY in service-worker.js.
-    async function remember(endpoint) {
-        try {
-            const cache = await caches.open('ff-push');
-            await cache.put('/push/last-endpoint', new Response(endpoint));
-        } catch {
-            // A browser refusing the Cache API only loses the silent-renewal path; the toggle still reconciles on the next launch.
-        }
-    }
-
-    async function forget() {
-        try {
-            await (await caches.open('ff-push')).delete('/push/last-endpoint');
-        } catch {
-            // As above.
-        }
-    }
-
-    // The VAPID key travels as base64url and has to reach pushManager.subscribe as bytes.
-    function decodeKey(key) {
-        const padded = (key + '='.repeat((4 - key.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/');
-        const raw = atob(padded);
-        return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
     }
 
     // The toggle is handled here rather than through a Blazor OnClick, because that would arrive as a WebSocket message and

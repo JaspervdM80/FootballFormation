@@ -1,12 +1,9 @@
 using System.Collections.Concurrent;
-using System.Globalization;
 using System.Net;
 using System.Security.Cryptography;
-using System.Text.Json;
 using System.Threading.Channels;
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Push;
-using FootballFormation.Core.Reporting;
 using FootballFormation.UI;
 using FootballFormation.UI.Helpers;
 using FootballFormation.UI.Navigation;
@@ -82,11 +79,11 @@ public sealed class MatchNotificationSender(
 
         var url = match.IsFinished ? AppRoutes.Result(match.GameId) : AppRoutes.Live(match.GameId);
 
-        // Composed once per language rather than once per follower — the text is identical within a culture.
-        var payloads = match.Followers
-            .Select(f => f.Culture)
-            .Distinct()
-            .ToDictionary(culture => culture, culture => Payload(match, url, culture));
+        var payloads = MatchPayloads.For(
+            match.Followers.Select(f => f.Culture),
+            url,
+            match.GameId,
+            () => MatchNotificationTextBuilder.Build(match.Notification, localizer));
 
         var gone = new ConcurrentBag<string>();
 
@@ -106,51 +103,11 @@ public sealed class MatchNotificationSender(
             match.Followers.Count - gone.Count, queued.Change, queued.GameId, gone.Count);
     }
 
-    /// The culture is swapped around the lookup rather than passed into it: IStringLocalizer reads the ambient one, and a follower who
-    /// subscribed in English must not be sent Dutch because the last write happened on a Dutch circuit.
-    private byte[] Payload(MatchAudience match, string url, string culture)
-    {
-        var previous = CultureInfo.CurrentUICulture;
-        CultureInfo.CurrentUICulture = new CultureInfo(culture);
-
-        try
-        {
-            var (title, body) = MatchNotificationTextBuilder.Build(match.Notification, localizer);
-
-            return JsonSerializer.SerializeToUtf8Bytes(new
-            {
-                title,
-                body,
-                url,
-                // One notification per match rather than a stack of them: the newest score replaces the one before it.
-                tag = $"match-{match.GameId}"
-            });
-        }
-        finally
-        {
-            CultureInfo.CurrentUICulture = previous;
-        }
-    }
-
-    /// False only when the push service says this browser is gone for good, which is what the caller prunes on. Which answers are worth
-    /// another attempt is <see cref="PushDeliveryOutcome"/>'s to decide.
-    private async Task<bool> DeliverAsync(PushSubscription follower, byte[] payload, CancellationToken cancellationToken)
-    {
-        for (var attempt = 1; ; attempt++)
-        {
-            var outcome = await TryDeliverAsync(follower, payload, cancellationToken);
-
-            if (outcome is not PushDelivery.Retry) return outcome is not PushDelivery.Gone;
-
-            if (attempt == MaxAttempts)
-            {
-                logger.LogWarning("Gave up on a push service after {Attempts} attempts", MaxAttempts);
-                return true;
-            }
-
-            await Task.Delay(TimeSpan.FromSeconds(attempt), time, cancellationToken);
-        }
-    }
+    private Task<bool> DeliverAsync(PushSubscription follower, byte[] payload, CancellationToken cancellationToken) =>
+        PushDeliveryOutcome.DeliverAsync(
+            () => TryDeliverAsync(follower, payload, cancellationToken),
+            attempt => Task.Delay(TimeSpan.FromSeconds(attempt), time, cancellationToken),
+            MaxAttempts);
 
     private async Task<PushDelivery> TryDeliverAsync(
         PushSubscription follower, byte[] payload, CancellationToken cancellationToken)

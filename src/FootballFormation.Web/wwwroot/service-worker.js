@@ -3,6 +3,8 @@
 // stored and leak an admin's /stats to the next person on a shared phone (#98). Not offline
 // support; caching pages is #104.
 
+importScripts('js/push-shared.js');
+
 const CACHE = 'ff-immutable-assets';
 
 // By destination, not URL: path matching cannot tell a navigation from an asset.
@@ -11,20 +13,16 @@ const CACHEABLE = new Set(['style', 'script', 'font', 'image']);
 // A deploy orphans entries rather than replacing them, so nothing evicts itself.
 const MAX_ENTRIES = 60;
 
-// Not an asset cache: the one place the endpoint a rotation replaced can be read back from. See pushsubscriptionchange below.
-const ENDPOINT_CACHE = 'ff-push';
-const ENDPOINT_KEY = '/push/last-endpoint';
-
 self.addEventListener('install', () => self.skipWaiting());
 
 self.addEventListener('activate', (event) => event.waitUntil((async () => {
     // Older *names* only: a deploy needs no purge, and dropping this cache would discard assets
-    // the new build still asks for by the same URL. ENDPOINT_CACHE is spared because it is not an
+    // the new build still asks for by the same URL. pushShared.CACHE is spared because it is not an
     // asset cache at all — clearing it would lose the one record of which follower a rotated
     // subscription belongs to.
     const names = await caches.keys();
     await Promise.all(names
-        .filter(name => name !== CACHE && name !== ENDPOINT_CACHE)
+        .filter(name => name !== CACHE && name !== pushShared.CACHE)
         .map(name => caches.delete(name)));
 
     await self.clients.claim();
@@ -57,7 +55,7 @@ self.addEventListener('pushsubscriptionchange', (event) => {
 async function renewSubscription(oldSubscription) {
     // `event.oldSubscription` is unset in several browsers, so the endpoint is also remembered at subscribe time — without one the
     // server cannot tell which follower rotated, and the toggle's next reconcile is what repairs it instead.
-    const previous = oldSubscription?.endpoint || await rememberedEndpoint();
+    const previous = oldSubscription?.endpoint || await pushShared.rememberedEndpoint();
     if (!previous) return;
 
     const key = await fetch('push/key');
@@ -65,7 +63,7 @@ async function renewSubscription(oldSubscription) {
 
     const subscription = await self.registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: decodeKey(await key.text())
+        applicationServerKey: pushShared.decodeKey(await key.text())
     });
 
     const json = subscription.toJSON();
@@ -81,24 +79,7 @@ async function renewSubscription(oldSubscription) {
         })
     });
 
-    if (response.ok) await rememberEndpoint(json.endpoint);
-}
-
-async function rememberedEndpoint() {
-    const cache = await caches.open(ENDPOINT_CACHE);
-    const hit = await cache.match(ENDPOINT_KEY);
-    return hit ? await hit.text() : null;
-}
-
-async function rememberEndpoint(endpoint) {
-    const cache = await caches.open(ENDPOINT_CACHE);
-    await cache.put(ENDPOINT_KEY, new Response(endpoint));
-}
-
-function decodeKey(key) {
-    const padded = (key + '='.repeat((4 - key.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/');
-    const raw = atob(padded);
-    return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+    if (response.ok) await pushShared.rememberEndpoint(json.endpoint);
 }
 
 self.addEventListener('notificationclick', (event) => {

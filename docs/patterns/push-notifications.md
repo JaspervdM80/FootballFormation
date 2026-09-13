@@ -122,7 +122,13 @@ making is logged and left, because it would fail identically.
 
 That table lives in `Core/Push/` rather than beside the sender **because `Web` carries no unit
 tests** and it is the part most likely to be got wrong — treating a 429 as Gone would unsubscribe a
-browser that was only being throttled.
+browser that was only being throttled. The retry loop itself moved there for the same reason: read
+the other way round, a push service having a bad afternoon prunes a whole ground, and only
+`Gone` may ever answer prune. `MatchPayloads` followed, because a follower who subscribed in
+English being sent Dutch is invisible until someone complains in the wrong language.
+
+What is left in `MatchNotificationSender` is wiring: the queue, the HTTP call, and the parallel
+fan-out.
 
 **A row that quietly vanished.** `status()` no longer trusts the browser's own `getSubscription()`.
 It asks `/push/known`, which answers from the database through the ordinary team query filter, so
