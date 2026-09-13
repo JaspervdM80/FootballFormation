@@ -10,7 +10,7 @@ public class Club
 
     public required string Name { get; set; }
 
-    /// A path under wwwroot, so swapping a crest is a file drop. Null falls back to the theme's own logo.
+    /// A path under the host's wwwroot, so swapping a crest is a file drop. Null falls back to the theme's own logo.
     public string? LogoUrl { get; set; }
 
     public string ThemeName { get; set; } = DefaultTheme;

@@ -45,8 +45,8 @@
         <a href="" class="reload">@L["Reload"]</a>
     </div>
     <script src="@Assets["_content/MudBlazor/MudBlazor.min.js"]"></script>
-    @* The three the RCL's own components call into travel with it; pwa.js stays here because a service worker and an install
-       banner are the web host's alone. *@
+    @* Plain paths, unlike the two lines above: fingerprinting pwa.js would take away service-worker.spec.js's control for a
+       script the worker must pass over. *@
     <script src="_content/FootballFormation.UI/js/screenshot.js"></script>
     <script src="_content/FootballFormation.UI/js/clipboard.js"></script>
     <script src="_content/FootballFormation.UI/js/drag-drop-touch.js"></script>

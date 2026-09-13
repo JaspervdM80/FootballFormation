@@ -218,10 +218,11 @@ wwwroot/                      — Served to any host at _content/FootballFormati
 
 **The assets a component needs live here, not in the host.** A rule in `app.css`, the DM Sans faces
 and the three scripts the pages call into are as much part of this library as the markup that needs
-them; a second host would otherwise have to re-supply them by hand. `@Assets[]` resolves them under
-`_content/FootballFormation.UI/`, so `App.razor` names them the same way it names MudBlazor's own.
-The host keeps only what is a *web* concern — the service worker, `js/pwa.js`, the manifest, the
-icons — see the Web section below.
+them; a second host would otherwise have to re-supply them by hand. `App.razor` names them under
+`_content/FootballFormation.UI/`, the same prefix it uses for MudBlazor's own — `theme.css` and
+`app.css` through `@Assets[]`, so they are fingerprinted and the service worker can cache them, the
+three scripts and the fonts as plain paths. The host keeps only what is a *web* concern — the
+service worker, `js/pwa.js`, the manifest, the icons — see the Web section below.
 
 Report builders live in **Core** (`Core/Reporting/`), not the UI: minutes played, utilisation and
 position share are domain answers, and keeping them out of the Razor project is what makes them
@@ -267,7 +268,9 @@ KeepAlive/
                             so Fly's unconfigurable ~5-minute idle sweep starts later (see
                             docs/deployment.md, "Cost control")
 wwwroot/                  — The web-only half; everything a component needs is in the UI library
-  service-worker.js       — Caches assets the server marks `immutable`; never markup (no offline mode)
+  service-worker.js       — Caches assets the server marks `immutable`; never markup (no offline mode).
+                            Must stay at the root: a worker's scope is its own path, so under
+                            _content/… it would register and control nothing
   js/pwa.js               — Service worker registration, and the reload once a rejoin has failed.
                             Deliberately not through Assets[]: service-worker.spec.js uses it as the
                             control for an unfingerprinted script the worker must pass over
