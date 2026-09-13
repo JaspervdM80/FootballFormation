@@ -46,7 +46,7 @@
                     }
                     else
                     {
-                        <span class="score-big-input" style="pointer-events: none;">@(ScoreHome?.ToString() ?? "–")</span>
+                        <span class="score-value">@(ScoreHome?.ToString() ?? "–")</span>
                     }
                 </div>;
             RenderFragment opponentSide =
@@ -60,7 +60,7 @@
                     }
                     else
                     {
-                        <span class="score-big-input score-away" style="pointer-events: none;">@(ScoreAway?.ToString() ?? "–")</span>
+                        <span class="score-value score-away">@(ScoreAway?.ToString() ?? "–")</span>
                     }
                 </div>;
         }
@@ -86,7 +86,9 @@
         }
         @* A plain onclick into js/clipboard.js, not a Blazor handler: navigator.clipboard.writeText must run inside the click's own
            task, and a round trip through server interop loses that gesture on iOS Safari and Firefox. *@
-        @if (SummaryText is not null)
+        @* Admin-only here, because this is the screen the score is entered on; the shareable overview is where a visitor copies the
+           same text. *@
+        @if (IsAdmin && SummaryText is not null)
         {
             <button type="button" class="btn-gold mt-3 result-copy"
                     onclick="copyElementText('match-summary-text', 'copy-success', 'copy-error')">

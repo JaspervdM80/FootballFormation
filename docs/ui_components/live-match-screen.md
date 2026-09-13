@@ -253,15 +253,19 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   played. It lives on `Game` rather than as a page-local helper because `MatchResult` and
   `FormationOverview` need the same test to decide whether there is a result worth copying.
 - **The copyable match summary** (`MatchSummaryReport` in `Core/Reporting`, composed into text by
-  `MatchSummaryTextBuilder` in `UI/Helpers`) is offered on both `/result` and `/overview` once
-  `game.HasFinalScore` — a 📆 date line, the scoreline in venue order, our own goals with their
+  `MatchSummaryTextBuilder` in `UI/Helpers`) is offered to an admin on both `/result` and
+  `/overview` once `game.HasFinalScore` — a 📆 date line, the scoreline in venue order, our own goals with their
   assist on one line, and any **public** comment. No half-time score: the paste is a group-chat
   message, not a report. Where two consecutive goals cross half time, a plain-character dashed
   break stands in for the live timeline's own rule — see `MatchSummaryGoal.Half` and
   `MatchSummaryTextBuilder.GoalLines` — but a break with no goal on one side of it stays silent.
-  Never gated on admin-ness: sharing the result is the point for whoever just watched the match, and the anonymous
-  overview page already shows the same public comments as text — `includePrivate: false` is passed
-  unconditionally there, same as everywhere else a visitor reads a comment. Both pages render the
+  Admin-only on both pages: posting the result to the team is the coach's job, so a visitor reads
+  the match and copies nothing. The button and the hidden `<pre>` under it go together — on
+  `/overview` the text is not composed at all for a visitor, which also saves the comments query
+  behind it. The **match-day message** below is the exception and stays public: it tells whoever is
+  driving where to be. None of this is about privacy — `MatchSummaryReport` never sees a private
+  comment in the first place, `includePrivate: false` being passed unconditionally on `/overview`,
+  same as everywhere else a visitor reads a comment. Both pages render the
   composed text into a hidden `<pre>` and copy it from a plain `onclick` into `js/clipboard.js`
   rather than a Blazor click handler, even on `/result` which has a circuit:
   `navigator.clipboard.writeText` only runs inside the task the user's click gesture produced, and a

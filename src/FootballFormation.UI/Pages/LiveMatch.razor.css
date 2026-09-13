@@ -26,33 +26,9 @@
     min-width: 0;
 }
 
-.live-score-name {
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--ink-muted);
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.live-score-value {
-    font-size: 2.75rem;
-    font-weight: 800;
-    line-height: 1.1;
-    color: var(--club-primary);
-}
-
-.live-score-away {
-    color: var(--color-away);
-}
-
+/* The name, the number, the away colour and the dash are shared with the result page — see the
+   scoreline block in app.css. Only the padding that sits this dash on the row stays here. */
 .live-score-dash {
-    font-size: 1.75rem;
-    font-weight: 300;
-    color: var(--ink-faint);
     padding-bottom: 6px;
 }
 

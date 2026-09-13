@@ -41,7 +41,8 @@ const SELECTORS = {
                       'live-minutes-card', 'card-label', 'planned-row'],
   'the result page': ['result-comments', 'comment-entry', 'comment-visibility', 'comment-add-row',
                       'live-event', 'live-event-against', 'live-event-tag', 'og-check', 'add-row',
-                      'btn-add-goal', 'score-big-input', 'score-away', 'stat-tile', 'stat-value'],
+                      'btn-add-goal', 'score-big-input', 'score-value', 'score-away',
+                      'stat-tile', 'stat-value'],
   'season and squad management': ['list-row', 'list-row-meta', 'players-table', 'badge-guest',
                                   'season-menu-item', 'training-row'],
   // The minutes checks are counts of zero against a signed-out visitor, so a rename here is exactly
@@ -80,8 +81,10 @@ test('every class name these tests rely on still exists in the app', () => {
   const missing = [];
   for (const [area, classes] of Object.entries(SELECTORS)) {
     for (const name of classes) {
-      // Word-bounded, so `pitch` does not match `pitch-empty` and call itself present.
-      if (!new RegExp(`\\b${name}\\b`).test(source)) missing.push(`${name} (${area})`);
+      // Bounded on both sides, so `pitch` does not match `pitch-empty` and call itself present —
+      // and a hyphen counts as part of the name, or `score-value` would answer for
+      // `live-score-value` on another page and the rename it exists to catch would sail through.
+      if (!new RegExp(`(?<![\\w-])${name}\\b`).test(source)) missing.push(`${name} (${area})`);
     }
   }
 

@@ -3,7 +3,7 @@
 // text — the thing someone actually pastes into the group chat, as opposed to the screenshot the
 // overview page already offered.
 import { test, expect } from '../fixtures.js';
-import { BASE_URL } from '../playwright.config.js';
+import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
 import {
   chooseOption, clickFor, createMatch, fileScore, fillField, fillLineup, finishMatch, gameAction,
   goto, gotoRendered, matchWithId, openDialog, startMatch, submitDialog,
@@ -124,6 +124,30 @@ test('a goal in each half puts a dashed break between them in the copied text', 
   const breakIndex = lines.indexOf('———————————');
   expect(breakIndex).toBeGreaterThan(lines.indexOf(goalLines[0]));
   expect(breakIndex).toBeLessThan(lines.indexOf(goalLines[1]));
+});
+
+test('a visitor reads the score but is not offered the copy button', async ({ page, browser }) => {
+  test.skip(new Date().getDate() === 1, 'no earlier day in the current month to date a match to');
+
+  const id = await matchWithId(page, 'FC Bezoeker', { past: true });
+  await fileScore(page, id, 2, 1);
+
+  const visitor = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
+  const visitorPage = await visitor.newPage();
+  await gotoRendered(visitorPage, `/games/${id}/result`);
+
+  await expect(visitorPage.locator('.score-value:not(.score-away)')).toHaveText('2');
+  await expect(visitorPage.getByRole('button', { name: 'Copy match result' })).toHaveCount(0);
+  await expect(visitorPage.locator('#match-summary-text')).toHaveCount(0);
+
+  // The shareable overview is the same rule, and the page a visitor is most likely to be sent: the
+  // match is still readable there, the summary is not composed at all.
+  await gotoRendered(visitorPage, `/games/${id}/overview`);
+  await expect(visitorPage.getByText('FC Bezoeker', { exact: false }).first()).toBeVisible();
+  await expect(visitorPage.getByRole('button', { name: 'Copy match result' })).toHaveCount(0);
+  await expect(visitorPage.locator('#match-summary-text')).toHaveCount(0);
+
+  await visitor.close();
 });
 
 test('a kick-off time set on the game dialog shows up on the result page', async ({ page }) => {
