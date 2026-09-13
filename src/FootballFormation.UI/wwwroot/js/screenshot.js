@@ -52,7 +52,7 @@ window.captureFormationOverview = async function (elementId, errorId) {
         if (typeof html2canvas === 'undefined') {
             await new Promise((resolve, reject) => {
                 const script = document.createElement('script');
-                script.src = 'js/vendor/html2canvas.min.js';
+                script.src = '_content/FootballFormation.UI/js/vendor/html2canvas.min.js';
                 script.onload = resolve;
                 script.onerror = reject;
                 document.head.appendChild(script);

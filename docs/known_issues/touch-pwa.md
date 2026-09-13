@@ -132,7 +132,7 @@
   on null. Always attach `new DataTransfer()` (or a stub with those fields). Plain `Event`
   objects with a drag type name are ignored entirely. Cost hours; see `js/drag-drop-touch.js`.
 - **HTML5 drag events never fire from touch input**: iOS Safari and Android Chrome require the
-  shim in `wwwroot/js/drag-drop-touch.js`, plus `touch-action: none` on `[draggable="true"]`
+  shim in `UI/wwwroot/js/drag-drop-touch.js`, plus `touch-action: none` on `[draggable="true"]`
   (in app.css) so the browser doesn't claim the gesture for scrolling.
 
 - **White page after switching apps**: a suspended PWA loses its SignalR circuit. Two

@@ -56,8 +56,8 @@ A web app for planning football (soccer) formations, managing your youth team sq
 FootballFormation/
 ├── src/
 │   ├── FootballFormation.Core/    # Domain models, EF Core DbContext, services, reports
-│   ├── FootballFormation.UI/      # Blazor components, pages, helpers, layout
-│   └── FootballFormation.Web/     # Host project, Program.cs, wwwroot
+│   ├── FootballFormation.UI/      # Blazor components, pages, helpers, layout, their CSS and JS
+│   └── FootballFormation.Web/     # Host project, Program.cs, the PWA and the icons
 ├── tests/
 │   └── FootballFormation.Core.Tests/   # Service and domain tests (gate the merge)
 ├── .claude/skills/                # The working rules, one skill per area

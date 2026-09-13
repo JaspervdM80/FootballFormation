@@ -71,7 +71,7 @@
   empty slot `.pitch-empty` — never on the `.pitch-slot` wrapper, which carries only the
   coordinates. Relevant when scripting or testing a drag: a synthetic event aimed at the wrapper
   reaches no handler
-- **Touch devices**: `wwwroot/js/drag-drop-touch.js` (Web project) converts touch gestures into
+- **Touch devices**: `UI/wwwroot/js/drag-drop-touch.js` converts touch gestures into
   synthetic `DragEvent`s with a real `DataTransfer` — Blazor ignores drag events without one.
   A floating ghost follows the finger; an 8px threshold separates taps from drags. Draggable
   chips have `touch-action: none` (app.css), so a scroll gesture cannot start on a chip.
