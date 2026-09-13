@@ -1,4 +1,6 @@
-﻿namespace FootballFormation.UI.Pages;
+﻿using Microsoft.JSInterop;
+
+namespace FootballFormation.UI.Pages;
 
 /// The live banner is the only moving part: whenever a match is on, this is the shortest route to it for anyone sent the site rather
 /// than a link to the game.
@@ -8,6 +10,13 @@ public partial class Home
     [Inject] private LiveMatchNotifier Notifier { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
     [Inject] private State.TeamState Team { get; set; } = null!;
+    [Inject] private IJSRuntime JS { get; set; } = null!;
+
+    /// What push.js last answered. Null until the first render has asked, which keeps the row out of the markup rather than flashing a
+    /// wrong label — the browser is the only thing that knows, and the server prerenders this page before it can be asked.
+    private string? NotificationState { get; set; }
+
+    private bool NotificationsOn => NotificationState == "on";
 
     private Game? TodaysGame { get; set; }
 
@@ -47,7 +56,40 @@ public partial class Home
         TodaysGame = result.IsSuccess ? result.Value : null;
     }
 
-    private void OnLiveChanged(int gameId) => _ = InvokeAsync(async () =>
+    private DotNetObjectReference<Home>? _self;
+
+    /// Only after the first render: the prerender has no browser to ask, and calling JS before then throws. The button's own click is
+    /// handled in push.js rather than here — see NotificationStateChanged.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        _self = DotNetObjectReference.Create(this);
+
+        // A browser with the script blocked, or an old one without the Push API, leaves the row hidden rather than showing a button that
+        // cannot work.
+        try
+        {
+            NotificationState = await JS.InvokeAsync<string>("matchNotifications.bind", Cancellation, _self);
+        }
+        catch (Exception ex) when (ex is JSException or InvalidOperationException or TaskCanceledException)
+        {
+            NotificationState = null;
+        }
+
+        StateHasChanged();
+    }
+
+    /// Called by push.js once it has turned notifications on or off, because the tap has to reach the permission prompt as a user
+    /// gesture — which a click routed through the circuit is not.
+    [JSInvokable]
+    public Task NotificationStateChanged(string state)
+    {
+        NotificationState = state;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private void OnLiveChanged(int gameId, LiveMatchEvent change) => _ = InvokeAsync(async () =>
     {
         await LoadTodaysGameAsync();
         StateHasChanged();
@@ -63,6 +105,7 @@ public partial class Home
     public override void Dispose()
     {
         Notifier.Changed -= OnLiveChanged;
+        _self?.Dispose();
         base.Dispose();
     }
 }

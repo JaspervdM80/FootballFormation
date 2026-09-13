@@ -15,4 +15,9 @@
     <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The Web Push crypto is verified against RFC 8291's own test vector, which needs the salt and ephemeral key injected. -->
+    <InternalsVisibleTo Include="FootballFormation.Core.Tests" />
+  </ItemGroup>
+
 </Project>
