@@ -19,6 +19,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<AppUser> Users => Set<AppUser>();
     public DbSet<Club> Clubs => Set<Club>();
     public DbSet<Team> Teams => Set<Team>();
+    public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
 
     /// The team and club this context is scoped to, stamped by TeamScopedDbContextFactory before any query runs. Null on a context the
     /// factory did not stamp — which the filters below read as "match nothing", so a query that escapes the factory fails closed rather
@@ -48,6 +49,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<Training>().HasQueryFilter(t => t.TeamId == CurrentTeamId);
         modelBuilder.Entity<MatchPreferences>().HasQueryFilter(m => m.TeamId == CurrentTeamId);
         modelBuilder.Entity<SeasonSquadMember>().HasQueryFilter(m => m.TeamId == CurrentTeamId);
+        modelBuilder.Entity<PushSubscription>().HasQueryFilter(s => s.TeamId == CurrentTeamId);
 
         // Players belong to the club, not the team: a season's squad draws from the club pool, so a girl who moves between teams keeps one row.
         modelBuilder.Entity<Player>().HasQueryFilter(p => p.ClubId == CurrentClubId);

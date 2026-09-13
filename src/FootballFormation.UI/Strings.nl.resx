@@ -49,6 +49,15 @@
   <data name="Configure match duration, split type, and defaults." xml:space="preserve"><value>Stel wedstrijdduur, speelperiodes en standaardwaarden in.</value></data>
   <data name="Keep the training evenings, and note who was not there." xml:space="preserve"><value>Houd de trainingsavonden bij, en noteer wie er niet was.</value></data>
 
+  <!-- Match notifications. The title of a push is "Match started" / "Goal against" / "Full time" above — a notification composed by
+       MatchNotificationTextBuilder reuses those rather than wording the same event twice. -->
+  <data name="Match notifications" xml:space="preserve"><value>Wedstrijdmeldingen</value></data>
+  <data name="A message at kick-off, at every goal, and at full time." xml:space="preserve"><value>Een bericht bij de aftrap, bij elk doelpunt en bij het eindsignaal.</value></data>
+  <data name="Turn on" xml:space="preserve"><value>Aanzetten</value></data>
+  <data name="Turn off" xml:space="preserve"><value>Uitzetten</value></data>
+  <data name="Add the app to your home screen first, then notifications can be turned on." xml:space="preserve"><value>Zet de app eerst op je beginscherm, daarna kun je meldingen aanzetten.</value></data>
+  <data name="Notifications are blocked in your browser settings." xml:space="preserve"><value>Meldingen zijn geblokkeerd in je browserinstellingen.</value></data>
+
   <!-- Players -->
   <data name="Players" xml:space="preserve"><value>Spelers</value></data>
   <data name="{0} player" xml:space="preserve"><value>{0} speler</value></data>

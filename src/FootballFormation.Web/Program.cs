@@ -4,6 +4,7 @@ using FootballFormation.UI.Navigation;
 using FootballFormation.UI.Security;
 using FootballFormation.Web.Components;
 using FootballFormation.Web.KeepAlive;
+using FootballFormation.Web.Push;
 using FootballFormation.Web.Security;
 using FootballFormation.Web.ServiceExtensions;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -99,8 +100,18 @@ try
     builder.Services.AddScoped<UserService>();
     builder.Services.AddScoped<TeamService>();
     builder.Services.AddScoped<StatsService>();
+    builder.Services.AddScoped<PushSubscriptionService>();
 
     builder.Services.AddSingleton<LiveMatchNotifier>();
+
+    // Keys absent locally and in CI, which turns the sender into a no-op rather than a boot failure. See PushConfiguration.
+    builder.Services.AddSingleton(PushConfiguration.From(builder.Configuration));
+    builder.Services.AddSingleton<MatchAudienceQuery>();
+    // Redirects off: PushSubscriptionService.IsPushEndpoint is the only thing deciding where an anonymous caller can make this container
+    // POST, and a 307 to an internal address would walk straight past it.
+    builder.Services.AddHttpClient("WebPush", client => client.Timeout = TimeSpan.FromSeconds(10))
+        .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
+    builder.Services.AddHostedService<MatchNotificationSender>();
 
     builder.Services.AddScoped<SeasonState>();
     builder.Services.AddScoped<TeamState>();
@@ -180,10 +191,38 @@ try
         options.OnRejected = (context, _) =>
         {
             context.HttpContext.Response.Headers.RetryAfter = "60";
-            if (HttpMethods.IsPost(context.HttpContext.Request.Method))
+
+            // The /push endpoints answer a script, not a browser navigation — a redirect to the sign-in form would be nonsense there.
+            if (HttpMethods.IsPost(context.HttpContext.Request.Method)
+                && !context.HttpContext.Request.Path.StartsWithSegments("/push"))
                 context.HttpContext.Response.Redirect("/login?error=throttled");
+
             return ValueTask.CompletedTask;
         };
+
+        // Its own budget, because it is a read that fires on every home page load: a ground's worth of parents on one wifi would
+        // otherwise spend the writes' allowance between them and throttle whoever next tries to turn notifications on.
+        options.AddPolicy("push-read", httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: ClientIp.Of(httpContext),
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 120,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0
+                }));
+
+        // Anonymous and unauthenticated, so this is the only thing standing between a subscribe endpoint and a filled table. Looser than
+        // the sign-in limit because one device legitimately re-subscribes whenever the browser rotates its endpoint.
+        options.AddPolicy("push", httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: ClientIp.Of(httpContext),
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 20,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0
+                }));
 
         options.AddPolicy("login", httpContext =>
             RateLimitPartition.GetFixedWindowLimiter(

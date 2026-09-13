@@ -222,7 +222,7 @@ public partial class LiveMatch
     }
 
     /// Reloads rather than patches, so every viewer shows exactly what is stored no matter which browser made the change.
-    private void OnLiveChanged(int gameId)
+    private void OnLiveChanged(int gameId, LiveMatchEvent change)
     {
         if (gameId != GameId) return;
 

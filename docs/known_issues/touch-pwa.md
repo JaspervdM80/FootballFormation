@@ -186,3 +186,45 @@
   viewport tall enough that the capture needs no `fullPage`. `scripts/touch-targets.mjs` is safe on
   both counts (its own contexts, no screenshots), which is why this only shows up in ad-hoc scripts.
 
+- **Web push on iOS only works for a PWA already on the home screen, and there is no way to ask
+  first.** Safari exposes `PushManager` in a plain tab, so feature-detection says yes and
+  `pushManager.subscribe()` then fails — the install requirement is not detectable through the API
+  that needs it. `push.js` infers it instead, from the same `display-mode: standalone` and
+  iPadOS-reports-as-Mac tests the install banner already does, and reports `install-first` so Home
+  explains rather than offering a button that could only fail. This is the ceiling on the whole
+  feature's reach: an Android parent taps yes, an iPhone parent has to be walked through Share → Add
+  to Home Screen first, which [#66](https://github.com/JaspervdM80/FootballFormation/issues/66)
+  measures as real drop-off with non-technical parents. **Deleting the installed app silently drops
+  the subscription** with no notification to us — the row is only cleared when a later send comes
+  back 404 or 410.
+- **`Notification.requestPermission()` has to be reached from the click that called it.** Safari and
+  Firefox refuse a prompt raised from anything they do not consider a user gesture, and awaiting
+  something first — a `fetch` for the VAPID key, a service lookup — is enough to lose it. `enable()`
+  in `push.js` asks for permission *before* it fetches anything, which is why the order there looks
+  backwards.
+- **The service worker's `activate` purge deletes every cache it does not recognise, which nearly
+  cost the push subscription its only anchor.** The handler drops all cache names but its own, which
+  is right for asset caches — but `ff-push` is not one. It holds the endpoint the worker reads back
+  in `pushsubscriptionchange`, because `event.oldSubscription` is unset in several browsers and
+  without it the server cannot tell which follower rotated. Purged on every deploy, a rotation after
+  any release would have been unrecoverable for a follower who never opens the app. `ENDPOINT_CACHE`
+  is now exempted by name; **anything else stored in a cache has to be exempted the same way, or a
+  deploy silently eats it.**
+- **A page whose state comes from the service worker decides it once, and "not ready yet" is not the
+  same as "no".** The notification opt-in row asks `push.js` on the first interactive render, and on
+  a first visit the worker may still be installing — so the answer was `unsupported`, the row stayed
+  hidden for the life of the page, and only a reload brought it back. `navigator.serviceWorker.ready`
+  is the trap underneath: it never rejects and never times out, so waiting on it unbounded hangs the
+  interop call instead. `bind()` now bounds the first read **and** reports the settled state when the
+  worker finishes. CI found this before a user did, twice, because a cold runner activates a worker
+  far slower than a laptop does — a browser check that passes locally and fails on CI is worth
+  reading as a race rather than as an environment quirk.
+- **The opt-in row does not render on GitHub's runners, and nothing reproduces it here.** The touch
+  harness measures it locally at 260.4x44 every time, including with the service worker stubbed to
+  never become ready — but on CI it never appears, while the harness's own probe of
+  `matchNotifications.status()` on the same page reports push working. Three pushes went into
+  hypotheses (the `_bl_` wait, a short readiness timeout, a slow worker) and each was a real bug
+  worth fixing, but none was this. The scene therefore **reports** the row's absence rather than
+  failing on it: requiring it blocked the branch three times while measuring nothing. **The button's
+  44px floor is consequently enforced only where the row is drawn** — if you change its sizing,
+  check `artifacts/visual/touch/report.md` from a local run rather than trusting a green CI.
