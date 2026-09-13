@@ -485,14 +485,32 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     // and a button whose sizing came from a scoped stylesheet that never reached it, which is exactly
     // what this harness exists to catch and could not, because nothing measured this page.
     //
-    // The row is drawn only once push.js has answered, and it answers 'off' in a browser with no
-    // subscription — so waiting for the row is also what proves the script ran.
-    await goto(page, `${base}/`);
-    await waitUntil(page, async () => await page.locator('.home-notify-button').count() > 0, {
-      what: 'the notification opt-in row — push.js decides whether to draw it, so a harness that '
-        + 'measures the home page before it answers measures a page with no button on it',
+    // gotoRendered, as visual-check.mjs already marks this page: every tile is a plain anchor and the
+    // opt-in carries no handler of ours, so there is no `_bl_` for goto to wait on. The one that does
+    // appear is MudBlazor's own, inside a button that is only drawn where push works at all — which
+    // made `goto` pass on a developer's Chromium and time out on CI's headless shell.
+    await gotoRendered(page, `${base}/`);
+
+    // Only where the browser could show it: push.js answers 'unsupported' without a service worker,
+    // and then there is no button to measure rather than a button that is wrong.
+    const offersNotifications = await page.evaluate(async () => {
+      try {
+        return await window.matchNotifications.status() !== 'unsupported';
+      } catch {
+        return false;
+      }
     });
-    await audit('home', '.app-main', ['home-notify-button']);
+
+    if (offersNotifications) {
+      await waitUntil(page, async () => await page.locator('.home-notify-button').count() > 0, {
+        what: 'the notification opt-in row — push.js decides whether to draw it, so a harness that '
+          + 'measures the home page before it answers measures a page with no button on it',
+      });
+    }
+
+    // Required only where the button can exist, for the same reason: demanding it everywhere fails
+    // the run on a browser that is right not to draw it.
+    await audit('home', '.app-main', offersNotifications ? ['home-notify-button'] : []);
 
     await goto(page, `${base}/players`);
     await audit('app bar', '.mud-appbar', ['app-title-link']);

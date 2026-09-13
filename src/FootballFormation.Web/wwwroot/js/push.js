@@ -13,6 +13,15 @@ window.matchNotifications = (function () {
         return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
     }
 
+    // navigator.serviceWorker.ready never rejects and never times out: a worker that fails to activate leaves it pending for the life of
+    // the page, and with it the interop call the Home page is awaiting. Answering null instead is what keeps that page from hanging.
+    function readyRegistration() {
+        return Promise.race([
+            navigator.serviceWorker.ready,
+            new Promise(resolve => setTimeout(() => resolve(null), 5000))
+        ]);
+    }
+
     async function status() {
         if (!supported) return 'unsupported';
 
@@ -22,7 +31,9 @@ window.matchNotifications = (function () {
         if (Notification.permission === 'denied') return 'blocked';
 
         try {
-            const registration = await navigator.serviceWorker.ready;
+            const registration = await readyRegistration();
+            if (!registration) return 'unsupported';
+
             const subscription = await registration.pushManager.getSubscription();
             if (!subscription) return 'off';
 
@@ -52,7 +63,9 @@ window.matchNotifications = (function () {
             const response = await fetch('push/key');
             if (!response.ok) return 'unsupported';
 
-            const registration = await navigator.serviceWorker.ready;
+            const registration = await readyRegistration();
+            if (!registration) return 'unsupported';
+
             const subscription = await registration.pushManager.subscribe({
                 // Required by Chrome: a push that shows nothing is not allowed.
                 userVisibleOnly: true,
@@ -72,7 +85,9 @@ window.matchNotifications = (function () {
 
     async function disable() {
         try {
-            const registration = await navigator.serviceWorker.ready;
+            const registration = await readyRegistration();
+            if (!registration) return 'off';
+
             const subscription = await registration.pushManager.getSubscription();
             if (!subscription) return 'off';
 
