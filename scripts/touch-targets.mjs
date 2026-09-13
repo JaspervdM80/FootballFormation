@@ -481,6 +481,19 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     // season picker there and its own overflow clips whatever is left past the right-hand edge. The
     // drawer scene below carries the pickers; the sign-out button is app-bar only and is measured at
     // the landscape width, where the bar keeps every item it started with (issue #137).
+    // The home page, which had no scene here at all until the notification opt-in put a button on it —
+    // and a button whose sizing came from a scoped stylesheet that never reached it, which is exactly
+    // what this harness exists to catch and could not, because nothing measured this page.
+    //
+    // The row is drawn only once push.js has answered, and it answers 'off' in a browser with no
+    // subscription — so waiting for the row is also what proves the script ran.
+    await goto(page, `${base}/`);
+    await waitUntil(page, async () => await page.locator('.home-notify-button').count() > 0, {
+      what: 'the notification opt-in row — push.js decides whether to draw it, so a harness that '
+        + 'measures the home page before it answers measures a page with no button on it',
+    });
+    await audit('home', '.app-main', ['home-notify-button']);
+
     await goto(page, `${base}/players`);
     await audit('app bar', '.mud-appbar', ['app-title-link']);
 
@@ -533,9 +546,9 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     await audit('live match, line-up', '.app-main', ['pitch-player']);
 
     // Asserted, not logged: a scene that stopped running would otherwise say so only in a number
-    // nobody reads. The drawer is on every viewport now, so every viewport audits the same fifteen.
-    if (scenes !== 15)
-      throw new Error(`${viewport.name}: audited ${scenes} screens, expected 15`);
+    // nobody reads. The drawer is on every viewport now, so every viewport audits the same sixteen.
+    if (scenes !== 16)
+      throw new Error(`${viewport.name}: audited ${scenes} screens, expected 16`);
     console.log(`${viewport.name.padEnd(8)} audited ${scenes} screens`);
     await context.close();
   }

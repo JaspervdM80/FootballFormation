@@ -1,4 +1,5 @@
 using System.Buffers.Text;
+using System.Security.Cryptography;
 using FootballFormation.Core.Security;
 
 namespace FootballFormation.Core.Services;
@@ -22,7 +23,7 @@ public class PushSubscriptionService(
         ServiceOperation.RunAsync(logger, "follow this team's matches", cancellationToken, async () =>
         {
             if (!IsPushEndpoint(endpoint)) return Rejected("endpoint", endpoint);
-            if (!IsKeyOfLength(p256dh, PublicKeyLength)) return Rejected("p256dh", p256dh);
+            if (!IsPublicKey(p256dh)) return Rejected("p256dh", p256dh);
             if (!IsKeyOfLength(auth, AuthSecretLength)) return Rejected("auth", auth);
             if (!Cultures.Contains(culture)) return Rejected("culture", culture);
 
@@ -84,7 +85,7 @@ public class PushSubscriptionService(
         ServiceOperation.RunAsync(logger, "renew the match notifications", cancellationToken, async () =>
         {
             if (!IsPushEndpoint(endpoint)) return Rejected("endpoint", endpoint);
-            if (!IsKeyOfLength(p256dh, PublicKeyLength)) return Rejected("p256dh", p256dh);
+            if (!IsPublicKey(p256dh)) return Rejected("p256dh", p256dh);
             if (!IsKeyOfLength(auth, AuthSecretLength)) return Rejected("auth", auth);
 
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -136,11 +137,37 @@ public class PushSubscriptionService(
         && endpoint.Length <= 1000;
 
     private static bool IsKeyOfLength(string value, int length) =>
-        Base64Url.IsValid(value) && Base64Url.DecodeFromChars(value).Length == length;
+        !string.IsNullOrEmpty(value) && Base64Url.IsValid(value) && Base64Url.DecodeFromChars(value).Length == length;
 
-    private Result Rejected(string field, string value)
+    /// The length check is not enough: 65 arbitrary bytes pass it and then throw inside the encryption, where the failure would take
+    /// down the whole match's fan-out rather than this one row. The only way to know is to import the point.
+    private static bool IsPublicKey(string value)
     {
-        logger.LogWarning("Refused a push subscription with an unusable {Field} of {Length} characters", field, value.Length);
+        if (!IsKeyOfLength(value, PublicKeyLength)) return false;
+
+        var point = Base64Url.DecodeFromChars(value);
+        if (point[0] != 0x04) return false;
+
+        try
+        {
+            using var _ = ECDiffieHellman.Create(new ECParameters
+            {
+                Curve = ECCurve.NamedCurves.nistP256,
+                Q = new ECPoint { X = point[1..33], Y = point[33..PublicKeyLength] }
+            });
+
+            return true;
+        }
+        catch (CryptographicException)
+        {
+            return false;
+        }
+    }
+
+    /// A non-nullable record parameter is no guarantee: System.Text.Json binds a missing field to null regardless.
+    private Result Rejected(string field, string? value)
+    {
+        logger.LogWarning("Refused a push subscription with an unusable {Field} of {Length} characters", field, value?.Length ?? 0);
         return Result.Failure("That subscription is not usable");
     }
 }

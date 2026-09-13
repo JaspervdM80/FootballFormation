@@ -107,7 +107,10 @@ try
     // Keys absent locally and in CI, which turns the sender into a no-op rather than a boot failure. See PushConfiguration.
     builder.Services.AddSingleton(PushConfiguration.From(builder.Configuration));
     builder.Services.AddSingleton<MatchAudienceQuery>();
-    builder.Services.AddHttpClient("WebPush", client => client.Timeout = TimeSpan.FromSeconds(10));
+    // Redirects off: PushSubscriptionService.IsPushEndpoint is the only thing deciding where an anonymous caller can make this container
+    // POST, and a 307 to an internal address would walk straight past it.
+    builder.Services.AddHttpClient("WebPush", client => client.Timeout = TimeSpan.FromSeconds(10))
+        .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
     builder.Services.AddHostedService<MatchNotificationSender>();
 
     builder.Services.AddScoped<SeasonState>();

@@ -12,11 +12,13 @@ public static class MatchNotificationTextBuilder
     {
         var scoreline = $"{notification.HomeName} {notification.Score} {notification.AwayName}";
 
+        // Exhaustive on purpose: a fourth kind wired through later must not inherit the goal wording and announce half time as a goal.
         return notification.Event switch
         {
-            LiveMatchEvent.KickOff => (L["The match has started"], $"{notification.HomeName} - {notification.AwayName}"),
+            LiveMatchEvent.KickOff => (L["Match started"], $"{notification.HomeName} - {notification.AwayName}"),
+            LiveMatchEvent.Goal => (GoalTitle(notification, L), scoreline),
             LiveMatchEvent.FullTime => (L["Full time"], scoreline),
-            _ => (GoalTitle(notification, L), scoreline)
+            _ => (notification.HomeName, scoreline)
         };
     }
 

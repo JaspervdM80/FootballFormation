@@ -38,8 +38,15 @@ guard — `"push"` in `Program.cs`, looser than `"login"` because one device leg
 re-subscribes whenever the browser rotates its endpoint.
 
 That makes it the one place an anonymous caller hands us a URL the server later POSTs to, so
-`IsPushEndpoint` refuses anything that is not https, is loopback, or is not a DNS host. Both keys are
-checked for being base64url of the right length before they reach the crypto.
+`IsPushEndpoint` refuses anything that is not https, is loopback, or is not a DNS host.
+
+**Redirects are off on the `WebPush` client.** That check is the entire decision about where this
+container can be made to POST, and a `307` to an internal address walks straight past it —
+`AllowAutoRedirect = false` in `Program.cs` is what keeps it meaningful.
+
+**The public key is imported, not just measured.** 65 bytes of the right length still throw inside
+`ECDiffieHellman`, and that throw would escape `Parallel.ForEachAsync` and take the whole match's
+fan-out down with one row — which anyone could plant, since the endpoint is anonymous.
 
 ## Endpoints are unique across every team
 

@@ -129,5 +129,24 @@ window.matchNotifications = (function () {
         return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
     }
 
-    return { status, enable, disable };
+    // The toggle is handled here rather than through a Blazor OnClick, because that would arrive as a WebSocket message and
+    // Notification.requestPermission() raised from one carries no user gesture — Safari refuses it outright. Delegated from the document
+    // so it does not matter when the button appears, and nothing is awaited before enable() reaches the prompt.
+    let page = null;
+
+    document.addEventListener('click', event => {
+        const toggle = event.target.closest?.('[data-notify-toggle]');
+        if (!toggle) return;
+
+        const answer = toggle.dataset.notifyToggle === 'on' ? disable() : enable();
+
+        answer.then(state => page?.invokeMethodAsync('NotificationStateChanged', state));
+    });
+
+    async function bind(reference) {
+        page = reference;
+        return await status();
+    }
+
+    return { status, enable, disable, bind };
 })();

@@ -2,11 +2,8 @@ using FootballFormation.Core.Services;
 
 namespace FootballFormation.Core.Reporting;
 
-/// A null <paramref name="ScorerName"/> on a <see cref="LiveMatchEvent.Goal"/> means it was not ours to celebrate — an opponent goal or
-/// an own goal, both of which still move the scoreline a follower is watching.
-///
-/// The sides arrive named and in venue order, so the text builder has no flip left to get wrong: this text is never rendered into a page
-/// a browser test could read, so what decides it has to be here where a test can.
+/// A null <paramref name="ScorerName"/> on a <see cref="LiveMatchEvent.Goal"/> means it was not ours to celebrate. The sides arrive
+/// named and in venue order, so the text builder has no flip left to get wrong.
 public record MatchNotification(
     LiveMatchEvent Event,
     string HomeName,

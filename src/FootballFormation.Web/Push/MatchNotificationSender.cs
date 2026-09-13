@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading.Channels;
 using FootballFormation.Core.Models;
@@ -154,21 +155,25 @@ public sealed class MatchNotificationSender(
     private async Task<PushDelivery> TryDeliverAsync(
         PushSubscription follower, byte[] payload, CancellationToken cancellationToken)
     {
-        // A fresh message each attempt: an HttpRequestMessage cannot be sent twice.
-        using var request = new HttpRequestMessage(HttpMethod.Post, follower.Endpoint)
-        {
-            Content = new ByteArrayContent(WebPush.Encrypt(payload, follower.P256dh, follower.Auth))
-        };
-
-        request.Content.Headers.ContentType = new("application/octet-stream");
-        request.Content.Headers.ContentEncoding.Add("aes128gcm");
-        request.Headers.TryAddWithoutValidation("TTL", "3600");
-        request.Headers.TryAddWithoutValidation("Urgency", "high");
-        request.Headers.TryAddWithoutValidation(
-            "Authorization", WebPush.Authorization(follower.Endpoint, push.Keys!, time.GetUtcNow()));
-
         try
         {
+            // Inside the try, not in the initialiser: a key that survived validation but will not import throws here, and outside it the
+            // throw would escape Parallel.ForEachAsync and take the whole match's fan-out down with this one follower.
+            var sealedPayload = WebPush.Encrypt(payload, follower.P256dh, follower.Auth);
+
+            // A fresh message each attempt: an HttpRequestMessage cannot be sent twice.
+            using var request = new HttpRequestMessage(HttpMethod.Post, follower.Endpoint)
+            {
+                Content = new ByteArrayContent(sealedPayload)
+            };
+
+            request.Content.Headers.ContentType = new("application/octet-stream");
+            request.Content.Headers.ContentEncoding.Add("aes128gcm");
+            request.Headers.TryAddWithoutValidation("TTL", "3600");
+            request.Headers.TryAddWithoutValidation("Urgency", "high");
+            request.Headers.TryAddWithoutValidation(
+                "Authorization", WebPush.Authorization(follower.Endpoint, push.Keys!, time.GetUtcNow()));
+
             var client = httpClientFactory.CreateClient("WebPush");
             using var response = await client.SendAsync(request, cancellationToken);
 
@@ -178,6 +183,13 @@ public sealed class MatchNotificationSender(
                 logger.LogWarning("A push service refused a notification with {StatusCode}", response.StatusCode);
 
             return outcome;
+        }
+        // Never worth retrying: the same key will fail to import every time. The row stays, because only the push service gets to say a
+        // browser is gone.
+        catch (CryptographicException ex)
+        {
+            logger.LogWarning(ex, "A stored subscription key could not be used");
+            return PushDelivery.Refused;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

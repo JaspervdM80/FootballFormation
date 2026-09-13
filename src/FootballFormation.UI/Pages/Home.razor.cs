@@ -56,37 +56,37 @@ public partial class Home
         TodaysGame = result.IsSuccess ? result.Value : null;
     }
 
-    /// Only after the first render: the prerender has no browser to ask, and calling JS before then throws.
+    private DotNetObjectReference<Home>? _self;
+
+    /// Only after the first render: the prerender has no browser to ask, and calling JS before then throws. The button's own click is
+    /// handled in push.js rather than here — see NotificationStateChanged.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
 
-        await ReadNotificationStateAsync();
-        StateHasChanged();
-    }
+        _self = DotNetObjectReference.Create(this);
 
-    private async Task ToggleNotificationsAsync()
-    {
-        // Straight from the click, with nothing awaited in between: Safari only honours a permission prompt raised by a user gesture.
-        var call = NotificationsOn ? "matchNotifications.disable" : "matchNotifications.enable";
-
-        await InvokeJsAsync(call);
-    }
-
-    private Task ReadNotificationStateAsync() => InvokeJsAsync("matchNotifications.status");
-
-    /// A browser with the script blocked, or an old one without the Push API, leaves the row hidden rather than showing a button that
-    /// cannot work.
-    private async Task InvokeJsAsync(string identifier)
-    {
+        // A browser with the script blocked, or an old one without the Push API, leaves the row hidden rather than showing a button that
+        // cannot work.
         try
         {
-            NotificationState = await JS.InvokeAsync<string>(identifier, Cancellation);
+            NotificationState = await JS.InvokeAsync<string>("matchNotifications.bind", Cancellation, _self);
         }
         catch (Exception ex) when (ex is JSException or InvalidOperationException or TaskCanceledException)
         {
             NotificationState = null;
         }
+
+        StateHasChanged();
+    }
+
+    /// Called by push.js once it has turned notifications on or off, because the tap has to reach the permission prompt as a user
+    /// gesture — which a click routed through the circuit is not.
+    [JSInvokable]
+    public Task NotificationStateChanged(string state)
+    {
+        NotificationState = state;
+        return InvokeAsync(StateHasChanged);
     }
 
     private void OnLiveChanged(int gameId, LiveMatchEvent change) => _ = InvokeAsync(async () =>
@@ -105,6 +105,7 @@ public partial class Home
     public override void Dispose()
     {
         Notifier.Changed -= OnLiveChanged;
+        _self?.Dispose();
         base.Dispose();
     }
 }

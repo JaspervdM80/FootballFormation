@@ -100,6 +100,25 @@ public class PushSubscriptionServiceTests : ServiceTestBase
         Assert.Empty(await Read().PushSubscriptions.ToListAsync());
     }
 
+    /// 65 bytes of the right shape still need to be a point on the curve. Stored unchecked, the encryption throws mid-fan-out and — since
+    /// anyone can subscribe — one planted row would silence every goal for the whole team.
+    [Theory]
+    [InlineData("BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")]
+    [InlineData("AiVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4")]
+    public async Task A_public_key_that_is_not_a_point_on_the_curve_is_refused(string key)
+    {
+        Assert.True((await _push.SubscribeAsync(Endpoint, key, Auth, "nl")).IsFailure);
+        Assert.Empty(await Read().PushSubscriptions.ToListAsync());
+    }
+
+    /// A non-nullable record parameter does not stop System.Text.Json binding a missing field to null.
+    [Fact]
+    public async Task A_body_with_nothing_in_it_is_refused_without_throwing()
+    {
+        Assert.True((await _push.SubscribeAsync(null!, null!, null!, null!)).IsFailure);
+        Assert.Empty(await Read().PushSubscriptions.ToListAsync());
+    }
+
     [Fact]
     public async Task A_culture_the_app_does_not_serve_is_refused()
     {
