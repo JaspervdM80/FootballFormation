@@ -86,7 +86,8 @@
         }
         @* A plain onclick into js/clipboard.js, not a Blazor handler: navigator.clipboard.writeText must run inside the click's own
            task, and a round trip through server interop loses that gesture on iOS Safari and Firefox. *@
-        @* Admin-only: the summary is written to be posted to the team, which is the coach's job — a visitor reads the page instead. *@
+        @* Admin-only here, because this is the screen the score is entered on; the shareable overview is where a visitor copies the
+           same text. *@
         @if (IsAdmin && SummaryText is not null)
         {
             <button type="button" class="btn-gold mt-3 result-copy"

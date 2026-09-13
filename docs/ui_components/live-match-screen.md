@@ -259,9 +259,13 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   message, not a report. Where two consecutive goals cross half time, a plain-character dashed
   break stands in for the live timeline's own rule — see `MatchSummaryGoal.Half` and
   `MatchSummaryTextBuilder.GoalLines` — but a break with no goal on one side of it stays silent.
-  Never gated on admin-ness: sharing the result is the point for whoever just watched the match, and the anonymous
-  overview page already shows the same public comments as text — `includePrivate: false` is passed
-  unconditionally there, same as everywhere else a visitor reads a comment. Both pages render the
+  Public on `/overview` and admin-only on `/result`: sharing the result is the point for whoever just
+  watched the match, so the shareable page keeps the button for everyone — and it shows the same
+  public comments as text, `includePrivate: false` being passed unconditionally there, same as
+  everywhere else a visitor reads a comment. `/result` is the screen the score is *entered* on, and
+  the paste is the coach's job, so the button (and the hidden `<pre>` under it) is behind `IsAdmin`
+  there. Neither gate is about privacy: `MatchSummaryReport` filters the private comments itself,
+  whatever the page loaded. Both pages render the
   composed text into a hidden `<pre>` and copy it from a plain `onclick` into `js/clipboard.js`
   rather than a Blazor click handler, even on `/result` which has a circuit:
   `navigator.clipboard.writeText` only runs inside the task the user's click gesture produced, and a

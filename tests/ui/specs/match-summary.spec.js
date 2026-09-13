@@ -132,13 +132,11 @@ test('a visitor reads the score but is not offered the copy button', async ({ pa
   const id = await matchWithId(page, 'FC Bezoeker', { past: true });
   await fileScore(page, id, 2, 1);
 
-  // A second context rather than this one: the visitor state is a different cookie, and the
-  // storageState a `browser.newContext` takes does not carry the config's baseURL with it.
-  const visitor = await browser.newContext({ storageState: VISITOR_STATE });
+  const visitor = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
   const visitorPage = await visitor.newPage();
-  await gotoRendered(visitorPage, `${BASE_URL}/games/${id}/result`);
+  await gotoRendered(visitorPage, `/games/${id}/result`);
 
-  await expect(visitorPage.locator('.score-value').first()).toHaveText('2');
+  await expect(visitorPage.locator('.score-value:not(.score-away)')).toHaveText('2');
   await expect(visitorPage.getByRole('button', { name: 'Copy match result' })).toHaveCount(0);
   await expect(visitorPage.locator('#match-summary-text')).toHaveCount(0);
 

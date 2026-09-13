@@ -39,24 +39,8 @@
     min-width: 0;
 }
 
-.score-name {
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--ink-muted);
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.score-value {
-    font-size: 2.75rem;
-    font-weight: 800;
-    line-height: 1.1;
-    color: var(--club-primary);
-}
+/* .score-name, .score-value, .score-away and .score-vs are shared with the live scoreboard — see
+   the scoreline block in app.css. What stays here is the row, the input and the phone bump. */
 
 /* .result-header, .result-opponent and .result-subtitle now live in app.css: PageHeader renders
    those three elements, so they carry its scope attribute rather than this file's. */
@@ -88,17 +72,13 @@
     background: linear-gradient(to bottom, color-mix(in srgb, var(--club-primary-bright) 5%, transparent), transparent);
 }
 
-/* The opponent's number, in the same away colour the live scoreboard uses
-   (.live-score-away). The markup has always carried this class; the rule was missing, so
-   both scorelines rendered in the club colour and the two screens disagreed. */
-.score-away {
+/* The away colour comes from app.css, which the scoped .score-big-input rule above outranks — so
+   the input, and only the input, needs it said again here. */
+.score-big-input.score-away {
     color: var(--color-away);
 }
 
 .score-vs {
-    font-size: 1.75rem;
-    color: var(--ink-faint);
-    font-weight: 300;
     align-self: end;
     padding-bottom: 6px;
 }

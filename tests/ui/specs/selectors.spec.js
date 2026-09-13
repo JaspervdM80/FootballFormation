@@ -81,8 +81,10 @@ test('every class name these tests rely on still exists in the app', () => {
   const missing = [];
   for (const [area, classes] of Object.entries(SELECTORS)) {
     for (const name of classes) {
-      // Word-bounded, so `pitch` does not match `pitch-empty` and call itself present.
-      if (!new RegExp(`\\b${name}\\b`).test(source)) missing.push(`${name} (${area})`);
+      // Bounded on both sides, so `pitch` does not match `pitch-empty` and call itself present —
+      // and a hyphen counts as part of the name, or `score-value` would answer for
+      // `live-score-value` on another page and the rename it exists to catch would sail through.
+      if (!new RegExp(`(?<![\\w-])${name}\\b`).test(source)) missing.push(`${name} (${area})`);
     }
   }
 
