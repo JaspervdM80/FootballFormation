@@ -363,6 +363,8 @@ public class GameService(
             var game = await db.Games
                 .Include(g => g.Periods)
                 .ThenInclude(p => p.PlayerPositions)
+                // Reshaping reads a benched player's own position off her, and lazy loading is off.
+                .ThenInclude(pp => pp.Player)
                 .FirstOrDefaultAsync(g => g.Id == gameId, cancellationToken);
 
             if (game is null)
@@ -375,10 +377,17 @@ public class GameService(
 
             foreach (var period in game.Periods)
             {
-                FormationSlots.Reshape(
-                    period.PlayerPositions,
-                    FormationSlots.For(period.FormationTypeOverride ?? game.FormationType),
-                    slots);
+                var from = FormationSlots.For(period.FormationTypeOverride ?? game.FormationType);
+
+                // A smaller shape benches the starters it has no slot for, which on a half already played would take minutes off a
+                // match that is over. That half keeps the shape it was played in, the way SavePeriodLineupAsync refuses to replace it.
+                if (period.HasKickedOff && slots.Length < from.Length)
+                {
+                    period.FormationTypeOverride ??= game.FormationType;
+                    continue;
+                }
+
+                FormationSlots.Reshape(period.PlayerPositions, from, slots);
 
                 // The shape belongs to the whole game, so an override left on a period would quietly outrank the one just picked.
                 period.FormationTypeOverride = null;

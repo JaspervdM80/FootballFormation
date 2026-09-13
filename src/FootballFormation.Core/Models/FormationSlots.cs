@@ -57,7 +57,7 @@ public static class FormationSlots
         {
             if (standing[slot] is not { } entry) continue;
 
-            // Nine-a-side has no slot to move her into, and leaving her a starter would keep her off the pitch but on the clock.
+            // The smaller shape has no slot for her, and leaving her a starter keeps her off the pitch but on the clock.
             if (slot >= to.Length)
             {
                 entry.SendToBench();

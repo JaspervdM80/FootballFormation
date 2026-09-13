@@ -105,6 +105,22 @@ public class FormationTypeTests
         }
     }
 
+    [Fact]
+    public void Every_match_format_is_named_for_the_number_it_fields()
+    {
+        // The display name is also the resx key, so a drift on either side renders the enum member in the picker with no warning.
+        foreach (var format in MatchFormatExtensions.Descending)
+        {
+            Assert.Equal($"{format.PlayerCount()} vs {format.PlayerCount()}", format.DisplayName());
+        }
+    }
+
+    [Fact]
+    public void The_formats_are_offered_largest_first()
+    {
+        Assert.Equal([MatchFormat.ElevenASide, MatchFormat.NineASide], MatchFormatExtensions.Descending);
+    }
+
     [Theory]
     [InlineData(PlayerPosition.GK, PositionCategory.Goalkeeper)]
     [InlineData(PlayerPosition.CB, PositionCategory.Defender)]

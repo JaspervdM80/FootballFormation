@@ -81,6 +81,9 @@ public partial class Games
         if (updated.FormationType != formationBefore
             && !Snackbar.ReportFailure(L, await GameService.SaveFormationAsync(updated.Id, updated.FormationType)))
         {
+            // The dialog wrote its edits into the row the list is still rendering, so without this the card goes on showing what was
+            // typed while the database holds none of it.
+            await LoadAsync();
             return;
         }
 

@@ -31,6 +31,13 @@
   new shape and left the reshape moving the line-up from it to itself. `FormationSlots.Reshape`
   benches anyone standing in a slot the smaller shape does not field — left a starter she would be
   off the pitch but still on the playing-time clock
+- **A half already played is never shrunk.** `SaveFormationAsync` skips a period with
+  `StartedAtSeconds` when the new shape has fewer slots, and pins it to the shape it *was* played in
+  through `FormationTypeOverride`. Benching a starter there would take the minutes she actually
+  played off a finished match — `GameMinutesReport` reads `!IsSubstitute` for the kick-off line-up —
+  which is the same reason `SavePeriodLineupAsync` refuses to replace such a half at all. The query
+  loads `Player` alongside the line-up, because `GamePlayerPosition.SendToBench` reads her own
+  position off it and lazy loading is off
 - Actions: Save All, Suggest Line-up, Copy to Next Period
 - **Suggest Line-up** fills the period on screen from `LineupSuggestionReport.Build(...)` and saves
   nothing — the coach reviews it and presses Save like any other edit, and replacing a period that

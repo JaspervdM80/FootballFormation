@@ -21,9 +21,8 @@ test('the match format picks the shapes the formation picker offers', async ({ p
   const formation = panel.locator('.mud-input-control', { hasText: 'Formation' }).first();
   await expect(formation).toContainText('3-3-2');
 
-  const field = panel.locator('.mud-input-control', { has: page.getByText('Formation', { exact: false }) }).first();
   const options = page.locator('.mud-popover-open .mud-list-item');
-  await clickFor(field, () => expect(options.first()).toBeVisible());
+  await clickFor(formation, () => expect(options.first()).toBeVisible());
 
   // Every shape offered adds up to eight outfield players, so 4-4-2 is not among them.
   const names = await options.allInnerTexts();
@@ -58,14 +57,15 @@ test('switching an eleven-a-side match to nine benches the starters it has no sl
   await gameRow(page, 'FC Omschakeling').getByTitle(/Formation|Add lineup/).click();
   await page.waitForURL(/\/games\/\d+\/formation/);
 
-  // The whole fixture squad on the pitch, which is fewer than eleven but more than the striker slots
-  // nine-a-side drops — the point is that nobody ends up a starter with nowhere to stand.
+  // Filled from the back of the pitch, so the first ones placed are the striker slots nine-a-side
+  // drops — the point is that nobody ends up a starter with nowhere to stand. Capped at the slots
+  // there are: the squad grows with whatever specs ran before this one.
   const available = page.locator('.draggable-player');
   const emptySlots = page.locator('.pitch .pitch-empty');
   await expect(available.first()).toBeVisible();
 
-  const squad = await available.count();
-  for (let i = 0; i < squad; i++) {
+  const placed = Math.min(await available.count(), await emptySlots.count());
+  for (let i = 0; i < placed; i++) {
     await available.first().dragTo(emptySlots.last());
     await expect(page.locator('.pitch .pitch-player')).toHaveCount(i + 1);
   }
@@ -88,5 +88,15 @@ test('switching an eleven-a-side match to nine benches the starters it has no sl
   // Nobody was dropped from the line-up: whoever the smaller pitch has no slot for is on the bench.
   const onPitch = await page.locator('.pitch .pitch-player').count();
   const onBench = await page.locator('.sub-list .sub-item').count();
-  expect(onPitch + onBench).toBe(squad);
+  expect(onPitch + onBench).toBe(placed);
+});
+
+test('the season preferences pick a format for every match that follows', async ({ page }) => {
+  await goto(page, '/settings');
+  // The page itself: there is no dialog to scope to here, and MudAppBar is a MudPaper too, so
+  // `.mud-paper` first is the chrome rather than the preferences card.
+  const prefs = page.locator('body');
+
+  await chooseOption(page, prefs, 'Default Match Format', '9 vs 9');
+  await expect(prefs.locator('.mud-input-control', { hasText: 'Default Formation' }).first()).toContainText('3-3-2');
 });
