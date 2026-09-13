@@ -44,7 +44,11 @@
         <MudIcon Icon="@(NotificationsOn ? Icons.Material.Filled.NotificationsActive : Icons.Material.Filled.NotificationsNone)"
                  Class="home-notify-icon" />
         <div class="home-notify-body">
-            <div class="home-notify-title">@L["Match notifications"]</div>
+            @* The team is named because the subscription is stored against whichever one was in scope when the button was pressed —
+               without it a follower has no way to tell which team they signed up for. *@
+            <div class="home-notify-title">
+                @L["Match notifications"]<span class="home-notify-team"> — @Team.DisplayName</span>
+            </div>
             <div class="home-notify-text">
                 @(NotificationState switch
                 {
