@@ -128,7 +128,7 @@ The global season filter, backed by the scoped `SeasonState` (see
 - It loads the season list itself (`SeasonState.EnsureLoadedAsync()` in `OnInitializedAsync`) —
   otherwise it would render nothing on the start page, where no page loads seasons. The call is
   memoized, so on the season-aware pages it shares the page's own query rather than adding one.
-- Its CSS lives in `Web/wwwroot/app.css`, **not** scoped CSS, precisely because it renders from two
+- Its CSS lives in `UI/wwwroot/app.css`, **not** scoped CSS, precisely because it renders from two
   places — isolation would force a duplicate stylesheet, the problem `.stat-tiles` already has
   between `SeasonStats.razor.css` and `PlayerStats.razor.css`.
 - **Route allowlist**, now `AppNav.IsSeasonAware` rather than a copy of the route list living here:

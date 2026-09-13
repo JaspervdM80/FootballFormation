@@ -213,7 +213,7 @@ full, and `CLAUDE.md` carries the five that fail silently.
 - **Navigation and markup**: URLs from `AppRoutes`; every page opens with `<PageHeader>`; a base
   class goes in the `.razor` as `@inherits`, never on the code-behind (CS0263).
 - **CSS**: anything used by more than one page, or targeting a MudBlazor root, goes in
-  `Web/wwwroot/app.css` — a `.razor.css` class silently fails to match elsewhere. Colors from the
+  `UI/wwwroot/app.css` — a `.razor.css` class silently fails to match elsewhere. Colors from the
   theme tokens and the named ink ramp, never an ad-hoc `color-mix`.
 - **Touch**: 44px floor on anything tappable, and a gap to its neighbour that is either zero or at
   least 8px. A width-only media query does not cover a phone in landscape (844x390) — anything

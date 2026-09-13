@@ -203,7 +203,25 @@ Strings.cs                    — Marker type for IStringLocalizer<Strings>. No 
                                 English text is the key
 Strings.nl.resx               — The Dutch translations, the app's default culture
 GlobalUsings.cs               — Aliases our MatchType over System.IO's, which implicit usings pull in
+wwwroot/                      — Served to any host at _content/FootballFormation.UI/
+  theme.css                   — Semantic tokens, the muted-ink ramp and the gradients (see docs/theming.md)
+  app.css                     — Global styles: MudBlazor overrides, badges, .action-btn, .stacked-table,
+                                the responsive table layouts and the nav breakpoints
+  fonts/                      — Self-hosted DM Sans (no render-blocking Google Fonts request).
+                                app.css reaches it with a relative url(), so the two move together
+  js/screenshot.js            — Renders the overview to a PNG via the bundled html2canvas, flattening
+                                color-mix() in the clone first (see docs/known_issues/general.md)
+  js/clipboard.js             — Copies a match summary; called from a plain onclick, not a circuit
+  js/drag-drop-touch.js       — Touch → HTML5 drag event shim for the formation builder on phones
+  js/vendor/html2canvas.min.js
 ```
+
+**The assets a component needs live here, not in the host.** A rule in `app.css`, the DM Sans faces
+and the three scripts the pages call into are as much part of this library as the markup that needs
+them; a second host would otherwise have to re-supply them by hand. `@Assets[]` resolves them under
+`_content/FootballFormation.UI/`, so `App.razor` names them the same way it names MudBlazor's own.
+The host keeps only what is a *web* concern — the service worker, `js/pwa.js`, the manifest, the
+icons — see the Web section below.
 
 Report builders live in **Core** (`Core/Reporting/`), not the UI: minutes played, utilisation and
 position share are domain answers, and keeping them out of the Razor project is what makes them
@@ -248,21 +266,18 @@ KeepAlive/
   KeepAlivePingService.cs — Pings the public /health endpoint for 30 minutes after the last visitor,
                             so Fly's unconfigurable ~5-minute idle sweep starts later (see
                             docs/deployment.md, "Cost control")
-wwwroot/
-  theme.css               — Semantic tokens, the muted-ink ramp and the gradients (see docs/theming.md)
-  app.css                 — Global styles: MudBlazor overrides, badges, .action-btn, .stacked-table,
-                            the responsive table layouts and the nav breakpoints
-  fonts/                  — Self-hosted DM Sans (no render-blocking Google Fonts request)
-  js/screenshot.js        — Renders the overview to a PNG via the bundled html2canvas, flattening
-                            color-mix() in the clone first (see docs/known_issues/general.md)
-  js/vendor/html2canvas.min.js
-  manifest.webmanifest    — PWA manifest (installable on iOS/Android via Add to Home Screen)
+wwwroot/                  — The web-only half; everything a component needs is in the UI library
   service-worker.js       — Caches assets the server marks `immutable`; never markup (no offline mode)
-  icons/                  — GJS club logo as app icons: 180 (apple-touch) / 192 / 512 / 512-maskable
-  js/pwa.js               — Service worker registration, and the reload once a rejoin has failed
-  js/drag-drop-touch.js   — Touch → HTML5 drag event shim for the formation builder on phones
-  js/season.js            — Writes the season picker's cookie; the server reads it off the request
+  js/pwa.js               — Service worker registration, and the reload once a rejoin has failed.
+                            Deliberately not through Assets[]: service-worker.spec.js uses it as the
+                            control for an unfingerprinted script the worker must pass over
+  icons/                  — GJS club logo as app icons: 180 (apple-touch) / 192 / 512 / 512-maskable.
+                            Stays at this path because Club.LogoUrl holds one of them as stored data
+  favicon.png
 ```
+
+`manifest.webmanifest` is not a file — `Routing.cs` builds it per team so the installed name and
+crest follow the team in scope.
 
 ## Deployment (repo root)
 ```

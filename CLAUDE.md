@@ -33,8 +33,9 @@ clean can still fail CI.
 
 ```
 src/FootballFormation.Core/   Models, Data (EF Core), Reporting, Services, Result — no UI references
-src/FootballFormation.UI/     Razor Class Library: pages, components, navigation, state, theming
-src/FootballFormation.Web/    Host: Program.cs, App.razor, Routes.razor, wwwroot (CSS, JS, PWA)
+src/FootballFormation.UI/     Razor Class Library: pages, components, navigation, state, theming,
+                              wwwroot (app.css, theme.css, the fonts and the components' own JS)
+src/FootballFormation.Web/    Host: Program.cs, App.razor, Routes.razor, wwwroot (the PWA and icons)
 tests/FootballFormation.Core.Tests/   xUnit v3
 docs/                         Detailed reference and the incident record
 scripts/                      visual-check.sh + its Playwright driver
@@ -42,7 +43,9 @@ scripts/                      visual-check.sh + its Playwright driver
 
 Dependencies point one way: `Web → UI → Core`. **UI is a separate RCL for future MAUI Blazor Hybrid
 reuse** — that is why report builders live in `Core/Reporting/` as pure static functions rather than
-in the pages. Keep new domain and reporting logic out of the Razor project.
+in the pages. Keep new domain and reporting logic out of the Razor project, and put an asset a
+component needs in `UI/wwwroot/` (served at `_content/FootballFormation.UI/`) rather than the host's.
+The host's `wwwroot` is for what is a web concern alone: the service worker, `pwa.js` and the icons.
 
 Solution file is `FootballFormation.slnx`. Package versions are centralized in
 `Directory.Packages.props`; csproj files list names only.

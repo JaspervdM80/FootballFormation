@@ -70,7 +70,9 @@ that failed to load its data. `ClubTheme.All` is the list, `ClubTheme.Named` res
 back to the default rather than throwing — a club naming a theme a later build dropped renders in
 GJS colours rather than failing.
 
-The logo is a path under `wwwroot`, so swapping a crest is a file drop — and `TeamService` enforces
+The logo is a path under the host's `wwwroot`, which is why `icons/` stayed there when the
+component assets moved into the class library — a stored `icons/icon-192.png` would otherwise stop
+resolving. Swapping a crest is a file drop — and `TeamService` enforces
 that rather than trusting the helper text, refusing an absolute URL, a protocol-relative `//host/…`
 and a `javascript:` scheme. The crest renders into an `img` on every page for every anonymous
 visitor and the app sets no Content-Security-Policy, so an off-site path would have the whole

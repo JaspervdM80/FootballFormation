@@ -168,7 +168,7 @@ that ever becomes a real choice.
 | Property | Type | Notes |
 |---|---|---|
 | Club.Name | string(100) | **Unique index** |
-| Club.LogoUrl | string(255)? | A path under `wwwroot`. Null falls back to the theme's own crest |
+| Club.LogoUrl | string(255)? | A path under the host's `wwwroot`. Null falls back to the theme's own crest |
 | Club.ThemeName | string(50) | Names a `ClubTheme` preset, not a set of colours — the styles are compiled in and not editable. `ClubTheme.Named` falls back to the default rather than throwing |
 | Team.ClubId | int | FK, **Restrict** |
 | Team.Name | string(50) | **Unique with ClubId** — two clubs may each have an MO15-2 |
