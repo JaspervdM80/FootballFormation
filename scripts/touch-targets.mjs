@@ -502,7 +502,10 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     });
 
     if (offersNotifications) {
+      // Longer than the default: the row waits on the service worker activating, which on a cold CI
+      // runner takes appreciably longer than it does on a developer's machine.
       await waitUntil(page, async () => await page.locator('.home-notify-button').count() > 0, {
+        timeout: 30_000,
         what: 'the notification opt-in row — push.js decides whether to draw it, so a harness that '
           + 'measures the home page before it answers measures a page with no button on it',
       });

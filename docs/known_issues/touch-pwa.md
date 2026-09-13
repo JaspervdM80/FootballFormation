@@ -210,3 +210,12 @@
   any release would have been unrecoverable for a follower who never opens the app. `ENDPOINT_CACHE`
   is now exempted by name; **anything else stored in a cache has to be exempted the same way, or a
   deploy silently eats it.**
+- **A page whose state comes from the service worker decides it once, and "not ready yet" is not the
+  same as "no".** The notification opt-in row asks `push.js` on the first interactive render, and on
+  a first visit the worker may still be installing — so the answer was `unsupported`, the row stayed
+  hidden for the life of the page, and only a reload brought it back. `navigator.serviceWorker.ready`
+  is the trap underneath: it never rejects and never times out, so waiting on it unbounded hangs the
+  interop call instead. `bind()` now bounds the first read **and** reports the settled state when the
+  worker finishes. CI found this before a user did, twice, because a cold runner activates a worker
+  far slower than a laptop does — a browser check that passes locally and fails on CI is worth
+  reading as a race rather than as an environment quirk.

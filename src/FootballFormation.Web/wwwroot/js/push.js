@@ -134,7 +134,21 @@ window.matchNotifications = (function () {
 
     async function bind(reference) {
         page = reference;
-        return await status();
+
+        const state = await status();
+
+        // A first visit can get here while the worker is still installing, and readyRegistration gives up before it finishes. Without
+        // this the row stays hidden for the life of the page and only a reload brings it back.
+        if (state === 'unsupported' && supported) {
+            navigator.serviceWorker.ready
+                .then(status)
+                .then(settled => {
+                    if (settled !== 'unsupported') page?.invokeMethodAsync('NotificationStateChanged', settled);
+                })
+                .catch(() => { /* the worker never arrived; the row stays hidden, which is the honest answer */ });
+        }
+
+        return state;
     }
 
     return { status, enable, disable, bind };
