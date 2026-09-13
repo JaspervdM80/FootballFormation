@@ -23,7 +23,20 @@ window.matchNotifications = (function () {
 
         try {
             const registration = await navigator.serviceWorker.ready;
-            return await registration.pushManager.getSubscription() ? 'on' : 'off';
+            const subscription = await registration.pushManager.getSubscription();
+            if (!subscription) return 'off';
+
+            // The server decides, not this browser's copy: a row pruned after a 410 would otherwise leave the toggle reading "on" while
+            // nothing is ever delivered again.
+            const response = await fetch('push/known', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ endpoint: subscription.endpoint })
+            });
+
+            if (!response.ok) return 'on';
+
+            return (await response.json()).known ? 'on' : 'off';
         } catch {
             return 'unsupported';
         }
@@ -46,7 +59,12 @@ window.matchNotifications = (function () {
                 applicationServerKey: decodeKey(await response.text())
             });
 
-            return await send('push/subscribe', subscription) ? 'on' : 'off';
+            if (!await send('push/subscribe', subscription)) return 'off';
+
+            // So the worker can name this endpoint when the browser later rotates it — several browsers leave
+            // pushsubscriptionchange.oldSubscription unset, and then this is the only record of which follower rotated.
+            await remember(subscription.endpoint);
+            return 'on';
         } catch {
             return 'off';
         }
@@ -61,6 +79,7 @@ window.matchNotifications = (function () {
             // Told first, then dropped: a row for an endpoint that no longer exists would only be cleared by the next failed send.
             await send('push/unsubscribe', subscription);
             await subscription.unsubscribe();
+            await forget();
         } catch {
             // Nothing to report — the state is read back either way.
         }
@@ -82,6 +101,25 @@ window.matchNotifications = (function () {
         });
 
         return response.ok;
+    }
+
+    // Written here and read by the service worker, which shares this origin's caches — the worker has no other way to learn the endpoint
+    // it is replacing. Keep the names in step with ENDPOINT_CACHE / ENDPOINT_KEY in service-worker.js.
+    async function remember(endpoint) {
+        try {
+            const cache = await caches.open('ff-push');
+            await cache.put('/push/last-endpoint', new Response(endpoint));
+        } catch {
+            // A browser refusing the Cache API only loses the silent-renewal path; the toggle still reconciles on the next launch.
+        }
+    }
+
+    async function forget() {
+        try {
+            await (await caches.open('ff-push')).delete('/push/last-endpoint');
+        } catch {
+            // As above.
+        }
     }
 
     // The VAPID key travels as base64url and has to reach pushManager.subscribe as bytes.

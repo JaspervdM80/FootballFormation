@@ -202,3 +202,11 @@
   something first — a `fetch` for the VAPID key, a service lookup — is enough to lose it. `enable()`
   in `push.js` asks for permission *before* it fetches anything, which is why the order there looks
   backwards.
+- **The service worker's `activate` purge deletes every cache it does not recognise, which nearly
+  cost the push subscription its only anchor.** The handler drops all cache names but its own, which
+  is right for asset caches — but `ff-push` is not one. It holds the endpoint the worker reads back
+  in `pushsubscriptionchange`, because `event.oldSubscription` is unset in several browsers and
+  without it the server cannot tell which follower rotated. Purged on every deploy, a rotation after
+  any release would have been unrecoverable for a follower who never opens the app. `ENDPOINT_CACHE`
+  is now exempted by name; **anything else stored in a cache has to be exempted the same way, or a
+  deploy silently eats it.**

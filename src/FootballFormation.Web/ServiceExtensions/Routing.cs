@@ -191,6 +191,24 @@ public static class Routing
             return Results.NoContent();
         }).AllowAnonymous().RequireRateLimiting("push");
 
+        // Called by the service worker alone, when the browser rotates an endpoint out from under a follower who may never open the app
+        // again. Nothing here comes from a person, so it carries the old endpoint rather than a team.
+        app.MapPost("/push/renew", async (PushRenewal renewal, PushSubscriptionService subscriptions, HttpContext context) =>
+        {
+            var result = await subscriptions.RenewAsync(
+                renewal.OldEndpoint, renewal.Endpoint, renewal.P256dh, renewal.Auth, context.RequestAborted);
+
+            return result.IsSuccess ? Results.NoContent() : Results.BadRequest();
+        }).AllowAnonymous().RequireRateLimiting("push");
+
+        // What the toggle believes is "on": the server's answer, never the browser's own copy of the subscription.
+        app.MapPost("/push/known", async (PushEndpoint probe, PushSubscriptionService subscriptions, HttpContext context) =>
+        {
+            var result = await subscriptions.FollowsCurrentTeamAsync(probe.Endpoint, context.RequestAborted);
+
+            return Results.Json(new { known = result.IsSuccess && result.Value });
+        }).AllowAnonymous().RequireRateLimiting("push");
+
         app.MapGet("/culture/set", (string culture, string redirectUri, HttpContext context) =>
         {
             if (culture is "nl" or "en")
@@ -293,3 +311,8 @@ public static class Routing
 
 /// What pushManager.subscribe() hands the browser, flattened. Every field is checked in PushSubscriptionService, not here.
 public sealed record PushRegistration(string Endpoint, string P256dh, string Auth);
+
+/// The service worker's view of a rotation: the endpoint the browser just replaced, and what it replaced it with.
+public sealed record PushRenewal(string OldEndpoint, string Endpoint, string P256dh, string Auth);
+
+public sealed record PushEndpoint(string Endpoint);

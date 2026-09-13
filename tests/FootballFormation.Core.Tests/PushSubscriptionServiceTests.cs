@@ -122,4 +122,77 @@ public class PushSubscriptionServiceTests : ServiceTestBase
     {
         Assert.True((await _push.UnsubscribeAsync(Endpoint)).IsSuccess);
     }
+
+    private const string Rotated = "https://fcm.googleapis.com/fcm/send/rotated";
+
+    /// The service worker renews with no page and no person, so the team and language have to survive the rotation untouched — a browser
+    /// that rotated an endpoint has chosen nothing new.
+    [Fact]
+    public async Task A_rotated_endpoint_keeps_the_team_and_language_it_was_following_with()
+    {
+        await _push.SubscribeAsync(Endpoint, Key, Auth, "en");
+        var team = CurrentTeam.Id;
+
+        // As the worker does it: whatever team the worker's cookies happen to name is not the follower's choice.
+        SeedTeam("GJS", "MO17-1");
+
+        Assert.True((await _push.RenewAsync(Endpoint, Rotated, Key, Auth)).IsSuccess);
+
+        var stored = await Read().PushSubscriptions.IgnoreQueryFilters().SingleAsync();
+        Assert.Equal(Rotated, stored.Endpoint);
+        Assert.Equal(team, stored.TeamId);
+        Assert.Equal("en", stored.Culture);
+    }
+
+    [Fact]
+    public async Task Renewing_something_never_stored_changes_nothing()
+    {
+        Assert.True((await _push.RenewAsync(Endpoint, Rotated, Key, Auth)).IsFailure);
+        Assert.Empty(await Read().PushSubscriptions.IgnoreQueryFilters().ToListAsync());
+    }
+
+    /// Rotating onto an endpoint already on file would otherwise hit the unique index and lose the renewal entirely.
+    [Fact]
+    public async Task A_rotation_onto_an_endpoint_already_held_replaces_it()
+    {
+        await _push.SubscribeAsync(Endpoint, Key, Auth, "nl");
+        await _push.SubscribeAsync(Rotated, Key, Auth, "nl");
+
+        Assert.True((await _push.RenewAsync(Endpoint, Rotated, Key, Auth)).IsSuccess);
+
+        var stored = await Read().PushSubscriptions.IgnoreQueryFilters().SingleAsync();
+        Assert.Equal(Rotated, stored.Endpoint);
+    }
+
+    [Fact]
+    public async Task A_renewal_to_an_unusable_endpoint_is_refused()
+    {
+        await _push.SubscribeAsync(Endpoint, Key, Auth, "nl");
+
+        Assert.True((await _push.RenewAsync(Endpoint, "https://127.0.0.1/send/x", Key, Auth)).IsFailure);
+        Assert.Equal(Endpoint, (await Read().PushSubscriptions.SingleAsync()).Endpoint);
+    }
+
+    /// What stops the toggle reading "on" off the browser's own copy while the row behind it has been pruned.
+    [Fact]
+    public async Task The_server_is_what_says_whether_a_browser_still_follows_this_team()
+    {
+        Assert.False((await _push.FollowsCurrentTeamAsync(Endpoint)).Value);
+
+        await _push.SubscribeAsync(Endpoint, Key, Auth, "nl");
+        Assert.True((await _push.FollowsCurrentTeamAsync(Endpoint)).Value);
+
+        await _push.UnsubscribeAsync(Endpoint);
+        Assert.False((await _push.FollowsCurrentTeamAsync(Endpoint)).Value);
+    }
+
+    [Fact]
+    public async Task Following_one_team_does_not_read_as_following_another()
+    {
+        await _push.SubscribeAsync(Endpoint, Key, Auth, "nl");
+
+        SeedTeam("GJS", "MO17-1");
+
+        Assert.False((await _push.FollowsCurrentTeamAsync(Endpoint)).Value);
+    }
 }

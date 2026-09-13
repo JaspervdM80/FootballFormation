@@ -11,13 +11,21 @@ const CACHEABLE = new Set(['style', 'script', 'font', 'image']);
 // A deploy orphans entries rather than replacing them, so nothing evicts itself.
 const MAX_ENTRIES = 60;
 
+// Not an asset cache: the one place the endpoint a rotation replaced can be read back from. See pushsubscriptionchange below.
+const ENDPOINT_CACHE = 'ff-push';
+const ENDPOINT_KEY = '/push/last-endpoint';
+
 self.addEventListener('install', () => self.skipWaiting());
 
 self.addEventListener('activate', (event) => event.waitUntil((async () => {
     // Older *names* only: a deploy needs no purge, and dropping this cache would discard assets
-    // the new build still asks for by the same URL.
+    // the new build still asks for by the same URL. ENDPOINT_CACHE is spared because it is not an
+    // asset cache at all — clearing it would lose the one record of which follower a rotated
+    // subscription belongs to.
     const names = await caches.keys();
-    await Promise.all(names.filter(name => name !== CACHE).map(name => caches.delete(name)));
+    await Promise.all(names
+        .filter(name => name !== CACHE && name !== ENDPOINT_CACHE)
+        .map(name => caches.delete(name)));
 
     await self.clients.claim();
 })()));
@@ -39,6 +47,59 @@ self.addEventListener('push', (event) => {
         data: { url: message.url }
     }));
 });
+
+// A browser may rotate a push endpoint whenever it likes. Without this the old one starts answering 410, the server prunes the row, and
+// a follower who never opens the app again is silently lost for good — so the renewal has to happen here, with no page and no prompt.
+self.addEventListener('pushsubscriptionchange', (event) => {
+    event.waitUntil(renewSubscription(event.oldSubscription));
+});
+
+async function renewSubscription(oldSubscription) {
+    // `event.oldSubscription` is unset in several browsers, so the endpoint is also remembered at subscribe time — without one the
+    // server cannot tell which follower rotated, and the toggle's next reconcile is what repairs it instead.
+    const previous = oldSubscription?.endpoint || await rememberedEndpoint();
+    if (!previous) return;
+
+    const key = await fetch('push/key');
+    if (!key.ok) return;
+
+    const subscription = await self.registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: decodeKey(await key.text())
+    });
+
+    const json = subscription.toJSON();
+
+    const response = await fetch('push/renew', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            oldEndpoint: previous,
+            endpoint: json.endpoint,
+            p256dh: json.keys.p256dh,
+            auth: json.keys.auth
+        })
+    });
+
+    if (response.ok) await rememberEndpoint(json.endpoint);
+}
+
+async function rememberedEndpoint() {
+    const cache = await caches.open(ENDPOINT_CACHE);
+    const hit = await cache.match(ENDPOINT_KEY);
+    return hit ? await hit.text() : null;
+}
+
+async function rememberEndpoint(endpoint) {
+    const cache = await caches.open(ENDPOINT_CACHE);
+    await cache.put(ENDPOINT_KEY, new Response(endpoint));
+}
+
+function decodeKey(key) {
+    const padded = (key + '='.repeat((4 - key.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/');
+    const raw = atob(padded);
+    return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
 
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();

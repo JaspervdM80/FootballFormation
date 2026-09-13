@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
 using System.Text.Json;
@@ -27,6 +28,11 @@ public sealed class MatchNotificationSender(
     /// ever holds one match's events.
     private readonly Channel<Queued> _queue = Channel.CreateBounded<Queued>(
         new BoundedChannelOptions(100) { FullMode = BoundedChannelFullMode.DropOldest });
+
+    private const int MaxAttempts = 3;
+
+    /// Enough to clear a squad's worth of parents quickly without opening a connection per follower against one push service.
+    private const int MaxParallelSends = 8;
 
     private readonly record struct Queued(int GameId, LiveMatchEvent Change);
 
@@ -74,19 +80,26 @@ public sealed class MatchNotificationSender(
         if (await audience.ForAsync(queued.GameId, queued.Change, cancellationToken) is not { } match) return;
 
         var url = match.IsFinished ? AppRoutes.Result(match.GameId) : AppRoutes.Live(match.GameId);
-        var gone = new List<string>();
 
-        foreach (var byCulture in match.Followers.GroupBy(f => f.Culture))
-        {
-            var payload = Payload(match, url, byCulture.Key);
+        // Composed once per language rather than once per follower — the text is identical within a culture.
+        var payloads = match.Followers
+            .Select(f => f.Culture)
+            .Distinct()
+            .ToDictionary(culture => culture, culture => Payload(match, url, culture));
 
-            foreach (var follower in byCulture)
+        var gone = new ConcurrentBag<string>();
+
+        // In parallel because a retry now costs seconds: sent one at a time, the last of two hundred phones would hear about a goal
+        // long after the next one was scored.
+        await Parallel.ForEachAsync(
+            match.Followers,
+            new ParallelOptions { MaxDegreeOfParallelism = MaxParallelSends, CancellationToken = cancellationToken },
+            async (follower, token) =>
             {
-                if (!await DeliverAsync(follower, payload, cancellationToken)) gone.Add(follower.Endpoint);
-            }
-        }
+                if (!await DeliverAsync(follower, payloads[follower.Culture], token)) gone.Add(follower.Endpoint);
+            });
 
-        await audience.DropAsync(gone);
+        await audience.DropAsync([.. gone]);
 
         logger.LogInformation("Notified {Count} follower(s) of {Change} in game {GameId}, dropping {Gone} that had gone away",
             match.Followers.Count - gone.Count, queued.Change, queued.GameId, gone.Count);
@@ -118,10 +131,30 @@ public sealed class MatchNotificationSender(
         }
     }
 
-    /// False only when the push service says this browser is gone for good, which is what the caller prunes on. Every other failure is
-    /// this send's problem alone and leaves the subscription where it is.
+    /// False only when the push service says this browser is gone for good, which is what the caller prunes on. Which answers are worth
+    /// another attempt is <see cref="PushDeliveryOutcome"/>'s to decide.
     private async Task<bool> DeliverAsync(PushSubscription follower, byte[] payload, CancellationToken cancellationToken)
     {
+        for (var attempt = 1; ; attempt++)
+        {
+            var outcome = await TryDeliverAsync(follower, payload, cancellationToken);
+
+            if (outcome is not PushDelivery.Retry) return outcome is not PushDelivery.Gone;
+
+            if (attempt == MaxAttempts)
+            {
+                logger.LogWarning("Gave up on a push service after {Attempts} attempts", MaxAttempts);
+                return true;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(attempt), time, cancellationToken);
+        }
+    }
+
+    private async Task<PushDelivery> TryDeliverAsync(
+        PushSubscription follower, byte[] payload, CancellationToken cancellationToken)
+    {
+        // A fresh message each attempt: an HttpRequestMessage cannot be sent twice.
         using var request = new HttpRequestMessage(HttpMethod.Post, follower.Endpoint)
         {
             Content = new ByteArrayContent(WebPush.Encrypt(payload, follower.P256dh, follower.Auth))
@@ -139,16 +172,17 @@ public sealed class MatchNotificationSender(
             var client = httpClientFactory.CreateClient("WebPush");
             using var response = await client.SendAsync(request, cancellationToken);
 
-            if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.Gone) return false;
+            var outcome = PushDeliveryOutcome.For(response.StatusCode);
 
-            if (!response.IsSuccessStatusCode)
+            if (outcome is PushDelivery.Refused)
                 logger.LogWarning("A push service refused a notification with {StatusCode}", response.StatusCode);
+
+            return outcome;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             logger.LogWarning(ex, "Could not reach a push service");
+            return PushDelivery.Retry;
         }
-
-        return true;
     }
 }
