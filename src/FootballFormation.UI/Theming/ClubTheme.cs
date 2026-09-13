@@ -25,7 +25,7 @@ public sealed record ClubTheme
 
     public required string AccentDeep { get; init; }
 
-    /// A bare path under wwwroot, not a CSS value: the app bar renders it as an <c>img</c> and ToCssVariables wraps it for the
+    /// A bare path under the host's wwwroot, not a CSS value: the app bar renders it as an <c>img</c> and ToCssVariables wraps it for the
     /// custom property, so the two cannot name different files.
     public required string LogoPath { get; init; }
 

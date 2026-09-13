@@ -114,7 +114,7 @@ instead, because the select is the far bigger target.
 ## Drag and drop has to survive a finger
 
 The app installs as a PWA, and HTML5 drag events never fire natively on a phone.
-`Web/wwwroot/js/drag-drop-touch.js` converts touches on `[draggable="true"]` elements into synthetic
+`UI/wwwroot/js/drag-drop-touch.js` converts touches on `[draggable="true"]` elements into synthetic
 `DragEvent`s, so ordinary `draggable="true"` + `@ondragstart`/`@ondrop` markup already works on
 mobile. Two rules come with it:
 

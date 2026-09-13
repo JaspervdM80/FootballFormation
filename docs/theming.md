@@ -6,13 +6,13 @@ at runtime.
 
 ## Where the tokens live
 
-`src/FootballFormation.Web/wwwroot/theme.css` is the single source of truth. It is
-loaded **before** `app.css` in `App.razor`, so every stylesheet and inline style can
-reference the tokens.
+`src/FootballFormation.UI/wwwroot/theme.css` is the single source of truth. It travels with the
+Razor class library and is served at `_content/FootballFormation.UI/theme.css`, loaded **before**
+`app.css` in `App.razor`, so every stylesheet and inline style can reference the tokens.
 
 The active theme is **GJS Gorinchem (light)**: white page, light-green sections, crest
 red primary, crest banner green accent. Colors were sampled from the club crest
-(`wwwroot/icons/icon-512.png`).
+(`Web/wwwroot/icons/icon-512.png`).
 
 ## Token groups
 

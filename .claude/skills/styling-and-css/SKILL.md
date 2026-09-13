@@ -18,7 +18,7 @@ every child of that row is a `MudButton` and the `<button>` MudBlazor renders ca
 The tell is that the *container* is styled and the *children* are not.
 
 **Anything used by more than one page, or selecting past a MudBlazor component's root element, goes in
-`Web/wwwroot/app.css`.** `.action-btn`, `.badge-*`, `.stat-tile*`, `.stacked-table`,
+`UI/wwwroot/app.css`.** `.action-btn`, `.badge-*`, `.stat-tile*`, `.stacked-table`,
 `.live-scoreboard` and `.live-action-btn` are all there for this reason.
 
 **It cuts the other way too: a class in `app.css` is global.** `.overview-capture` named both the

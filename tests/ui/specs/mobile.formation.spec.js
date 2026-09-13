@@ -22,7 +22,7 @@ test.beforeEach(async ({ page }) => {
  * `dragTo` presses at the source's coordinates and then scrolls to the target, and on a page this
  * tall the scroll puts a pitch chip under the press — a trace of a failing run shows `dragstart`
  * firing on `.pitch-player`, and the drag that was asked for never happening. These are the same
- * synthetic events `wwwroot/js/drag-drop-touch.js` raises from a real finger, `DataTransfer` and
+ * synthetic events `UI/wwwroot/js/drag-drop-touch.js` raises from a real finger, `DataTransfer` and
  * all, which is what a phone does here anyway.
  */
 const dragFromList = page => page.evaluate(() => {
