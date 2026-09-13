@@ -4,7 +4,7 @@ namespace FootballFormation.Core.Models;
 /// the builder and another on the live screen.
 public static class FormationSlots
 {
-    /// Slot 0 is always the goalkeeper; 1–10 follow <see cref="FormationTypeExtensions.DefaultPositions"/>, which is what
+    /// Slot 0 is always the goalkeeper; the rest follow <see cref="FormationTypeExtensions.DefaultPositions"/>, which is what
     /// <see cref="GamePlayerPosition.SlotIndex"/> refers to.
     public static PlayerPosition[] For(FormationType formation) =>
         [PlayerPosition.GK, .. formation.DefaultPositions()];
@@ -53,9 +53,16 @@ public static class FormationSlots
     {
         var standing = Assign(from, lineup);
 
-        for (var slot = 0; slot < standing.Length && slot < to.Length; slot++)
+        for (var slot = 0; slot < standing.Length; slot++)
         {
             if (standing[slot] is not { } entry) continue;
+
+            // Nine-a-side has no slot to move her into, and leaving her a starter would keep her off the pitch but on the clock.
+            if (slot >= to.Length)
+            {
+                entry.SendToBench();
+                continue;
+            }
 
             entry.SlotIndex = slot;
             entry.Position = to[slot];

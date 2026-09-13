@@ -156,6 +156,11 @@
   <!-- Formations. The key is FormationType.DisplayName(); only the shapes carrying a word need an entry. -->
   <data name="4-4-2 diamond" xml:space="preserve"><value>4-4-2 ruit</value></data>
 
+  <!-- Match formats. The key is MatchFormat.DisplayName(), so a new format needs an entry here. -->
+  <data name="Match Format" xml:space="preserve"><value>Wedstrijdvorm</value></data>
+  <data name="11 vs 11" xml:space="preserve"><value>11 tegen 11</value></data>
+  <data name="9 vs 9" xml:space="preserve"><value>9 tegen 9</value></data>
+
   <!-- Trainings. "Trainings" is the section; the lowercase "the training" phrases below are service actions and must stay apart from
        these labels, since resx keys are case-insensitive. -->
   <data name="Trainings" xml:space="preserve"><value>Trainingen</value></data>
@@ -501,6 +506,7 @@
   <data name="These defaults are applied when creating new games, and are kept per season." xml:space="preserve"><value>Deze standaardwaarden worden gebruikt bij het aanmaken van nieuwe wedstrijden en gelden per seizoen.</value></data>
   <data name="Defaults" xml:space="preserve"><value>Standaardwaarden</value></data>
   <data name="Default Game Split" xml:space="preserve"><value>Standaard speelperiodes</value></data>
+  <data name="Default Match Format" xml:space="preserve"><value>Standaard wedstrijdvorm</value></data>
   <data name="Default Formation" xml:space="preserve"><value>Standaard opstelling</value></data>
   <data name="Match Day" xml:space="preserve"><value>Wedstrijddag</value></data>
   <data name="Next calculated match date:" xml:space="preserve"><value>Volgende berekende wedstrijddatum:</value></data>

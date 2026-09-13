@@ -18,9 +18,19 @@
   a half already played keeps the line-up the touchline recorded (and its row ids) even if the
   builder has been sitting open since before kick-off. The page reshapes its own cached copy the
   same way, so a drag not yet saved survives the switch
-- Every picker lists the shapes through `FormationTypeExtensions.Alphabetical` — by display name,
-  not by the order they were added to the enum. The builder, the match dialog and the season
-  preferences all read that one list
+- Every picker lists the shapes through `FormationTypeExtensions.Alphabetical(format)` — one match
+  format's shapes, by display name rather than by the order they were added to the enum. The
+  builder, the match dialog and the season preferences all read that one list
+- **The format is chosen in the match dialog, not here.** `Match Format` sits above `Formation` in
+  `GameDialog` and in the season preferences, and both derive their value from the chosen shape
+  (`FormationTypeExtensions.Format()`) rather than holding one of their own — picking a format only
+  swaps the shape for that format's `DefaultFormation()`. So the builder offers the shapes of the
+  game's own format and nothing else, and a nine-a-side match is built on a nine-slot pitch.
+  Changing the format on an existing match goes through `SaveFormationAsync` **before**
+  `UpdateAsync` (`Games.OpenEditDialog`), because the update would otherwise have already stored the
+  new shape and left the reshape moving the line-up from it to itself. `FormationSlots.Reshape`
+  benches anyone standing in a slot the smaller shape does not field — left a starter she would be
+  off the pitch but still on the playing-time clock
 - Actions: Save All, Suggest Line-up, Copy to Next Period
 - **Suggest Line-up** fills the period on screen from `LineupSuggestionReport.Build(...)` and saves
   nothing — the coach reviews it and presses Save like any other edit, and replacing a period that

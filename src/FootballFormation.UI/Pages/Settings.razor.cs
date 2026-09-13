@@ -30,6 +30,15 @@ public partial class Settings
 
     private Season? PrefsSeason => _seasons?.FirstOrDefault(s => s.Id == _prefsSeasonId);
 
+    /// Read off the default shape rather than stored beside it, so the two pickers cannot disagree about how many a side the season plays.
+    private MatchFormat DefaultMatchFormat =>
+        _prefs?.DefaultFormation.Format() ?? MatchFormat.ElevenASide;
+
+    private void OnDefaultMatchFormatChanged(MatchFormat format)
+    {
+        if (_prefs is not null) _prefs.DefaultFormation = format.DefaultFormation();
+    }
+
     private string _currentPassword = "";
     private string _newPassword = "";
     private string _confirmPassword = "";

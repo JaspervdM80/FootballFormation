@@ -23,6 +23,12 @@ public partial class GameDialog
     /// Kept apart from <see cref="Date"/> so a blank field round-trips as no time at all rather than midnight — see Game.HasStartTime.
     private string? StartTimeText { get; set; }
     private FormationType SelectedFormationType { get; set; } = FormationType.F442;
+
+    /// Read off the shape rather than held beside it, so the two pickers cannot disagree about how many a side this is.
+    private MatchFormat SelectedMatchFormat => SelectedFormationType.Format();
+
+    private void OnMatchFormatChanged(MatchFormat format) =>
+        SelectedFormationType = format.DefaultFormation();
     private GameSplitType SplitType { get; set; } = GameSplitType.Halves;
     private MatchType SelectedMatchType { get; set; } = MatchType.Competition;
     private int GameDurationMinutes { get; set; } = 60;

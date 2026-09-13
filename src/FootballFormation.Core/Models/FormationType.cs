@@ -14,15 +14,32 @@ public enum FormationType
     F4321,
     F3421,
     F3511,
-    F442Diamond
+    F442Diamond,
+
+    // Nine-a-side, appended rather than filed beside the shapes they resemble: the numbers are in the database.
+    F332,
+    F323,
+    F233,
+    F242
 }
 
 public static class FormationTypeExtensions
 {
-    /// Every picker offers the shapes in this order — the enum's own order is the order they were added, which is no order at all to
-    /// hunt through.
-    public static IReadOnlyList<FormationType> Alphabetical { get; } =
-        [.. Enum.GetValues<FormationType>().OrderBy(f => f.DisplayName(), StringComparer.Ordinal)];
+    private static readonly Dictionary<MatchFormat, IReadOnlyList<FormationType>> ByFormat =
+        Enum.GetValues<FormationType>()
+            .GroupBy(f => f.Format())
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyList<FormationType>)[.. group.OrderBy(f => f.DisplayName(), StringComparer.Ordinal)]);
+
+    /// Every picker offers one format's shapes in this order — the enum's own order is the order they were added, which is no order at
+    /// all to hunt through.
+    public static IReadOnlyList<FormationType> Alphabetical(MatchFormat format) =>
+        ByFormat.GetValueOrDefault(format, []);
+
+    /// Derived from the shape itself rather than recorded beside it, so a game can never claim one format and field another.
+    public static MatchFormat Format(this FormationType formation) =>
+        (MatchFormat)(formation.DefaultPositions().Length + 1);
 
     public static string DisplayName(this FormationType formation) => formation switch
     {
@@ -39,6 +56,10 @@ public static class FormationTypeExtensions
         FormationType.F3421 => "3-4-2-1",
         FormationType.F3511 => "3-5-1-1",
         FormationType.F442Diamond => "4-4-2 diamond",
+        FormationType.F332 => "3-3-2",
+        FormationType.F323 => "3-2-3",
+        FormationType.F233 => "2-3-3",
+        FormationType.F242 => "2-4-2",
         _ => formation.ToString()
     };
 
@@ -57,6 +78,10 @@ public static class FormationTypeExtensions
         FormationType.F3421 => [PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.LM, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.RM, PlayerPosition.LW, PlayerPosition.RW, PlayerPosition.ST],
         FormationType.F3511 => [PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.LM, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.RM, PlayerPosition.CAM, PlayerPosition.ST],
         FormationType.F442Diamond => [PlayerPosition.LB, PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.RB, PlayerPosition.CDM, PlayerPosition.LM, PlayerPosition.RM, PlayerPosition.CAM, PlayerPosition.ST, PlayerPosition.ST],
+        FormationType.F332 =>  [PlayerPosition.LB, PlayerPosition.CB, PlayerPosition.RB, PlayerPosition.LM, PlayerPosition.CM, PlayerPosition.RM, PlayerPosition.ST, PlayerPosition.ST],
+        FormationType.F323 =>  [PlayerPosition.LB, PlayerPosition.CB, PlayerPosition.RB, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.LW, PlayerPosition.ST, PlayerPosition.RW],
+        FormationType.F233 =>  [PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.LM, PlayerPosition.CM, PlayerPosition.RM, PlayerPosition.LW, PlayerPosition.ST, PlayerPosition.RW],
+        FormationType.F242 =>  [PlayerPosition.CB, PlayerPosition.CB, PlayerPosition.LM, PlayerPosition.CM, PlayerPosition.CM, PlayerPosition.RM, PlayerPosition.ST, PlayerPosition.ST],
         _ => []
     };
 }

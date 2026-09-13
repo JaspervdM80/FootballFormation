@@ -3,13 +3,13 @@ namespace FootballFormation.Core.Tests;
 public class FormationSlotsTests
 {
     [Fact]
-    public void Slot_zero_is_always_the_keeper_and_there_are_eleven_slots()
+    public void Slot_zero_is_always_the_keeper_and_there_is_a_slot_for_everyone_the_format_fields()
     {
         foreach (var formation in Enum.GetValues<FormationType>())
         {
             var slots = FormationSlots.For(formation);
 
-            Assert.Equal(11, slots.Length);
+            Assert.Equal(formation.Format().PlayerCount(), slots.Length);
             Assert.Equal(PlayerPosition.GK, slots[0]);
         }
     }
@@ -133,6 +133,40 @@ public class FormationSlotsTests
 
         Assert.Equal(11, assignments.Length);
         Assert.All(assignments, Assert.Null);
+    }
+
+    [Fact]
+    public void Reshaping_into_a_smaller_shape_benches_the_starters_it_has_no_slot_for()
+    {
+        // 4-4-2 slots 9 and 10 are the two strikers; 3-3-2 stops at slot 8.
+        var lineup = new List<GamePlayerPosition>
+        {
+            new() { PlayerId = 1, Position = PlayerPosition.CM, SlotIndex = 6 },
+            new() { PlayerId = 2, Position = PlayerPosition.ST, SlotIndex = 9 },
+            new() { PlayerId = 3, Position = PlayerPosition.ST, SlotIndex = 10 }
+        };
+
+        FormationSlots.Reshape(lineup, FormationSlots.For(FormationType.F442), FormationSlots.For(FormationType.F332));
+
+        Assert.Equal((PlayerPosition.RM, 6, false), (lineup[0].Position, lineup[0].SlotIndex, lineup[0].IsSubstitute));
+        Assert.All(lineup.Skip(1), entry =>
+        {
+            Assert.True(entry.IsSubstitute);
+            Assert.Null(entry.SlotIndex);
+        });
+    }
+
+    [Fact]
+    public void A_nine_a_side_lineup_stands_in_nine_slots()
+    {
+        var assignments = FormationSlots.Assign(FormationType.F332, [
+            new GamePlayerPosition { PlayerId = 1, Position = PlayerPosition.GK, SlotIndex = 0 },
+            new GamePlayerPosition { PlayerId = 2, Position = PlayerPosition.ST, SlotIndex = 8 }
+        ]);
+
+        Assert.Equal(9, assignments.Length);
+        Assert.Equal(1, assignments[0]!.PlayerId);
+        Assert.Equal(2, assignments[8]!.PlayerId);
     }
 
     [Fact]

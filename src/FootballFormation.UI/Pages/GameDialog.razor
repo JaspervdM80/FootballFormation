@@ -40,8 +40,15 @@
                     <MudSelectItem Value="type">@L[type.DisplayName()]</MudSelectItem>
                 }
             </MudSelect>
+            <MudSelect T="MatchFormat" Value="SelectedMatchFormat" ValueChanged="OnMatchFormatChanged"
+                       Label="@L["Match Format"]" Class="mb-3">
+                @foreach (var format in MatchFormatExtensions.Descending)
+                {
+                    <MudSelectItem Value="format">@L[format.DisplayName()]</MudSelectItem>
+                }
+            </MudSelect>
             <MudSelect T="FormationType" @bind-Value="SelectedFormationType" Label="@L["Formation"]" Class="mb-3">
-                @foreach (var f in FormationTypeExtensions.Alphabetical)
+                @foreach (var f in FormationTypeExtensions.Alphabetical(SelectedMatchFormat))
                 {
                     <MudSelectItem Value="f">@L[f.DisplayName()]</MudSelectItem>
                 }

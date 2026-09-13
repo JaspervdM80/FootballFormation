@@ -6,8 +6,14 @@
 - **MatchType** (3): Competition (0), Cup, Practice. Descriptive only — nothing in the reports
   branches on it. `DisplayName()` returns the English name, which is also the resx key
 - **PlayerPosition** (16 values): GK, LB, CB, RB, DEF, CDM, CM, LM, RM, CAM, MID, LW, RW, W, ST, ATT
-- **FormationType** (13): F442, F433, F4231, F352, F343, F4141, F4411, F532, F541, F4321, F3421, F3511,
-  F442Diamond ("4-4-2 diamond", the only shape whose label is localized — "4-4-2 ruit")
+- **MatchFormat** (2): NineASide (9), ElevenASide (11) — how many a side, and **never stored**.
+  `FormationTypeExtensions.Format()` reads it back off the shape as `DefaultPositions().Length + 1`,
+  the same way `Game.PeriodCount` is read off the period table, so a game cannot claim one format
+  and field another. `MatchFormat.DefaultFormation()` is what a format opens on when it is picked
+- **FormationType** (17): eleven-a-side F442, F433, F4231, F352, F343, F4141, F4411, F532, F541,
+  F4321, F3421, F3511, F442Diamond ("4-4-2 diamond", the only shape whose label is localized —
+  "4-4-2 ruit"); nine-a-side F332, F323, F233, F242. The nine-a-side four are appended to the enum
+  rather than filed beside the shapes they resemble, because the numbers are in the database
 - **Duplicate positions in a formation are normal.** `F442.DefaultPositions()` returns two CBs and
   two STs, and that is fine: which slot a player occupies comes from
   `GamePlayerPosition.SlotIndex` (ordered by `FormationSlots.OrdinalOf`), not from the enum member.

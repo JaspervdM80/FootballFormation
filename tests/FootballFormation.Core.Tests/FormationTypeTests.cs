@@ -6,11 +6,12 @@ public class FormationTypeTests
 
     [Theory]
     [MemberData(nameof(AllFormations))]
-    public void Every_formation_fields_ten_outfield_players(FormationType formation)
+    public void Every_formation_fields_one_short_of_its_format(FormationType formation)
     {
-        // The pitch builds its slots as [GK, ..DefaultPositions()]. Anything but ten here silently
-        // produces a pitch with the wrong number of chips.
-        Assert.Equal(10, formation.DefaultPositions().Length);
+        // The pitch builds its slots as [GK, ..DefaultPositions()], and Format() reads the format back off that count — so a shape with
+        // the wrong number of outfielders lands in a format nothing offers and disappears from every picker.
+        Assert.Contains(formation.Format(), Enum.GetValues<MatchFormat>());
+        Assert.Equal(formation.Format().PlayerCount() - 1, formation.DefaultPositions().Length);
     }
 
     [Theory]
@@ -30,12 +31,12 @@ public class FormationTypeTests
 
     [Theory]
     [MemberData(nameof(AllFormations))]
-    public void The_display_name_adds_up_to_ten_outfield_players(FormationType formation)
+    public void The_display_name_adds_up_to_the_outfield_players_it_fields(FormationType formation)
     {
         // "4-2-3-1" describes ten players; a qualifier like "4-4-2 diamond" is not part of the count.
         var total = formation.DisplayName().Split(' ')[0].Split('-').Sum(int.Parse);
 
-        Assert.Equal(10, total);
+        Assert.Equal(formation.DefaultPositions().Length, total);
     }
 
     [Fact]
@@ -58,12 +59,50 @@ public class FormationTypeTests
     }
 
     [Fact]
-    public void Every_formation_is_offered_once_in_the_order_its_name_reads()
+    public void Every_formation_is_offered_once_under_its_own_format_in_the_order_its_name_reads()
     {
-        var names = FormationTypeExtensions.Alphabetical.Select(f => f.DisplayName()).ToList();
+        var offered = MatchFormatExtensions.Descending.SelectMany(FormationTypeExtensions.Alphabetical).ToList();
 
-        Assert.Equal(Enum.GetValues<FormationType>().Length, FormationTypeExtensions.Alphabetical.Distinct().Count());
-        Assert.Equal([.. names.Order(StringComparer.Ordinal)], names);
+        Assert.Equal(Enum.GetValues<FormationType>().Length, offered.Distinct().Count());
+
+        foreach (var format in MatchFormatExtensions.Descending)
+        {
+            var shapes = FormationTypeExtensions.Alphabetical(format);
+            var names = shapes.Select(f => f.DisplayName()).ToList();
+
+            Assert.All(shapes, f => Assert.Equal(format, f.Format()));
+            Assert.Equal([.. names.Order(StringComparer.Ordinal)], names);
+        }
+    }
+
+    [Fact]
+    public void Nine_a_side_fields_eight_outfield_players_and_opens_on_three_three_two()
+    {
+        var nine = FormationTypeExtensions.Alphabetical(MatchFormat.NineASide);
+
+        Assert.Contains(FormationType.F332, nine);
+        Assert.All(nine, f => Assert.Equal(8, f.DefaultPositions().Length));
+        Assert.Equal(FormationType.F332, MatchFormat.NineASide.DefaultFormation());
+    }
+
+    [Fact]
+    public void Three_three_two_is_a_back_three_a_midfield_three_and_two_up_front()
+    {
+        var positions = FormationType.F332.DefaultPositions();
+
+        Assert.Equal(3, positions.Count(p => p.Category() == PositionCategory.Defender));
+        Assert.Equal(3, positions.Count(p => p.Category() == PositionCategory.Midfielder));
+        Assert.Equal(2, positions.Count(p => p == PlayerPosition.ST));
+    }
+
+    [Fact]
+    public void Every_match_format_offers_a_shape_and_a_default_that_fields_its_own_number()
+    {
+        foreach (var format in MatchFormatExtensions.Descending)
+        {
+            Assert.NotEmpty(FormationTypeExtensions.Alphabetical(format));
+            Assert.Equal(format, format.DefaultFormation().Format());
+        }
     }
 
     [Theory]
