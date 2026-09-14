@@ -73,12 +73,8 @@ public partial class Preferences
     {
         if (_prefs is null) return;
 
-        var saveResult = await PreferencesService.SaveAsync(_prefs);
+        var saveResult = await PreferencesService.SaveMatchDefaultsAsync(_prefs);
         if (!Snackbar.Report(L, saveResult, L["Preferences for {0} saved!", PrefsSeason?.Name ?? ""])) return;
-
-        // The row carries the training period too, so a save from here can still write sessions — say so rather than leave it silent.
-        if (saveResult.Value is { IsEmpty: false } sync)
-            Snackbar.Add(L["{0} trainings created, {1} removed", sync.Created, sync.Removed], Severity.Info);
 
         await RefreshNextMatchDate();
     }

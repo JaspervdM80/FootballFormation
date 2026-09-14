@@ -135,7 +135,8 @@ three of them move, under a season select of its own. They live on the same `Mat
 as the match defaults `/preferences` edits, so **Save training settings** writes that whole row —
 both pages load it fresh. Clearable matters — an empty date is a real value here, meaning the
 season's own window, not an unfilled field, and clearing either end is how the generated sessions
-are taken back out. A period that ends before it starts, or reaches outside the season, is refused by `SaveAsync`
+are taken back out. A period that ends before it starts, or reaches outside the season, is refused by
+`SaveTrainingScheduleAsync`
 with a message rather than saved.
 
 **Save writes the sessions**, and says so: a second snackbar, "{0} trainings created, {1} removed",

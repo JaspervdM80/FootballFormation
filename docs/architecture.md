@@ -105,10 +105,12 @@ Services/
   LiveMatchQueries.cs     — The tracked load they all start from (the game with its planned
                             line-ups, via GameQueries) and the one "game not found" message
   LiveMatchNotifier.cs    — Singleton: fans live match changes out to every open circuit
-  MatchPreferencesService.cs — Per-season prefs: GetAsync(seasonId)/SaveAsync,
-                            GetNextMatchDateAsync/GetNextTrainingDateAsync(seasonId). SaveAsync also
-                            writes the sessions the training period implies — see
-                            docs/models/training.md
+  MatchPreferencesService.cs — Per-season prefs: GetAsync(seasonId), SaveMatchDefaultsAsync and
+                            SaveTrainingScheduleAsync (one row, two pages — each writes its own
+                            columns onto the stored row, never the whole snapshot),
+                            GetNextMatchDateAsync/GetNextTrainingDateAsync(seasonId).
+                            SaveTrainingScheduleAsync also writes the sessions the training period
+                            implies — see docs/models/training.md
   UserService.cs          — Accounts + credentials: CRUD returning Result<T>, plus
                             ValidateCredentialsAsync/FindForSessionAsync/ChangePasswordAsync, which
                             return raw values rather than Result so a failed login says nothing

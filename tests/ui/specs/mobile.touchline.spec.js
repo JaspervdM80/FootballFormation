@@ -28,6 +28,25 @@ test('the sections are behind the drawer, not the app bar', async ({ page }) => 
   await expect(page.getByRole('heading', { name: 'Games', exact: false }).first()).toBeVisible();
 });
 
+test('the install banner does not sit on the sections at the foot of the drawer', async ({ page }) => {
+  await gotoRendered(page, '/');
+
+  // Shown by hand rather than waited for: pwa.js decides from the user agent, the display mode and a
+  // localStorage dismissal, and the bug is about the banner being up at all — not about which of
+  // those put it there. It is fixed to the foot of the viewport at z-index 1390, over the drawer's
+  // 1300, which is where the administration group now lives.
+  await page.evaluate(() => { document.getElementById('install-banner').hidden = false; });
+  await expect(page.locator('.install-banner')).toBeInViewport();
+
+  const settingsLink = page.locator('.nav-group-admin').getByText('Settings', { exact: false }).first();
+  await clickFor(page.locator('label.nav-hamburger'), () => expect(settingsLink).toBeInViewport());
+
+  // The click is the assertion: a banner over the link would take it instead, and Playwright fails
+  // the click rather than reporting a link that is in the viewport and unreachable.
+  await settingsLink.click();
+  await expect(page).toHaveURL(/\/settings$/);
+});
+
 test('a match can be added from a phone, through the full-screen sheet', async ({ page }) => {
   await goto(page, '/games');
 

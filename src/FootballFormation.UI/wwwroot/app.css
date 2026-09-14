@@ -1403,6 +1403,14 @@ a.action-btn {
     }
 }
 
+/* The install banner is fixed to the foot of the viewport and sits above the drawer (1390 to its
+   1300), which is exactly where the drawer keeps its administration group — on a phone it covered
+   settings and users, and the app bar has no nav there to reach them from instead. Out of the way
+   while the drawer is open; pwa.js only ever toggles the hidden attribute, so nothing overrides it. */
+.nav-drawer-toggle:checked ~ .install-banner {
+    display: none;
+}
+
 /* Settings, users and teams sit at the foot of the drawer rather than among the sections a coach
    opens during a match. Scoped to the drawer, not a global .mud-* layout rule: the menu has to
    stretch before the auto margin below has anything to push into. */

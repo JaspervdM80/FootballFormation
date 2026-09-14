@@ -123,9 +123,10 @@ to `/login` has been told the section exists and nothing else.
 
 `MatchPreferences.TrainingDays` — per season, beside `MatchDay` — bounded by
 `FirstTrainingDate`/`LastTrainingDate`, the season's **training period**. Saving those in
-`/settings` is what creates the rows: `MatchPreferencesService.SaveAsync` diffs the season's sessions
-against `TrainingSchedule.DatesIn(first, last, days)` in the same `SaveChanges` that writes the
-preferences, so ninety evenings stop being ninety trips through a dialog.
+`/settings` is what creates the rows: `MatchPreferencesService.SaveTrainingScheduleAsync` diffs the
+season's sessions against `TrainingSchedule.DatesIn(first, last, days)` in the same `SaveChanges` that
+writes the schedule, so ninety evenings stop being ninety trips through a dialog. The match defaults
+share the row and are saved by a method of their own, which never touches the sessions at all.
 
 **Both ends or no schedule.** An open end means "the season's own window" everywhere else, and a
 session for every training day until the end of June is not what ticking a weekday asks for — so

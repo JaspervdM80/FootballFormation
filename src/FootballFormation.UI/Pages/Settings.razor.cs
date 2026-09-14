@@ -172,12 +172,11 @@ public partial class Settings
         });
     }
 
-    /// Writes the whole preferences row, match defaults included — /preferences edits the same one, so it is loaded fresh on both pages.
     private async Task SaveTrainingSettings()
     {
         if (_prefs is null) return;
 
-        var saveResult = await PreferencesService.SaveAsync(_prefs);
+        var saveResult = await PreferencesService.SaveTrainingScheduleAsync(_prefs);
         if (!Snackbar.Report(L, saveResult, L["Preferences for {0} saved!", TrainingSeason?.Name ?? ""])) return;
 
         if (saveResult.Value is { IsEmpty: false } sync)
