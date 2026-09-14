@@ -9,7 +9,7 @@ Avoid repeating these mistakes:
 - [Localization](localization.md) — resource-key homographs and the case-insensitivity trap in `ServiceOperation` action phrases.
 - [Blazor components](blazor-components.md) — `section` as a reserved word, the SDK-dependent build gap, `@inherits` in the `.razor` file, enhanced navigation sending the destination as the `Referer`, generic dialog results.
 - [Result](result.md) — cancellation as a messageless failure, the load-bearing catch filter, redirect-on-cancel, failure message templates.
-- [Formation/Pitch](formation-pitch.md) — duplicate enum positions are intentional, `dvh` vs `vh`, chips that scale with the pitch.
+- [Formation/Pitch](formation-pitch.md) — duplicate enum positions are intentional, `dvh` vs `vh`, chips that scale with the pitch, a wrapping row that must stop wrapping when it becomes a column, and the squad list that becomes an uncapped grid on a phone.
 - [CSS scoping](css-scoping.md) — a class with no owning `.razor.css` silently does nothing, including on a MudBlazor component's root, and a name shared with a global `app.css` rule cuts the same way round.
 - [Live match](live-match.md) — swaps that write no row, the halves-only clock, and how a goal's minute is derived rather than stored.
 - [Authentication](authentication.md) — `IsPersistent` vs `ExpireTimeSpan`, `SameSite`, data-protection application name, and why `OnValidatePrincipal` doesn't revoke a circuit.

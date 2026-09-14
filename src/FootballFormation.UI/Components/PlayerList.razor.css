@@ -1,3 +1,9 @@
+/* The scroller is the list rather than the card, so the heading stays put above it. */
+.player-grid {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
 .draggable-player {
     display: flex;
     align-items: center;
@@ -56,4 +62,22 @@
 .player-pos-text {
     font-size: 0.6rem;
     color: var(--ink-muted);
+}
+
+/* Columns below md, uncapped: a sixteen-player squad in one capped column hid its last names
+   behind an inner scroller. 120px is sized so even a 320px phone gets two of them — see
+   docs/known_issues/formation-pitch.md. */
+@media (max-width: 959.98px) {
+    .player-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 8px;
+        max-height: none;
+        overflow-y: visible;
+    }
+
+    /* The gap owns the spacing now — the row margin would leave 12px down against 8px across. */
+    .player-grid .draggable-player {
+        margin-bottom: 0;
+    }
 }

@@ -49,6 +49,14 @@
   currently planned — so a second half balances the first instead of repeating it. Injured and
   unavailable players are not candidates: the suggestion draws on `RosterPlayers`, the same list
   the drag panel offers
+- **The three panels stack below 959.98px, and the phone order is not the desktop order.** Who is
+  absent — the Unavailable and Injured cards, wrapped together as `.absent-panels` — goes *above*
+  the available squad there (`order: -1`), because the pitch is underneath the panel once it
+  stacks: the squad a player is dragged from ends up next to the pitch they are dragged onto. On a
+  desktop, where the three sit side by side, the absent cards stay under the squad
+- **The squad list is a grid on a phone**, uncapped, so a full squad is in one view rather than
+  behind an inner scroller — see docs/known_issues/formation-pitch.md for the track width, which is
+  load-bearing
 - **A period whose `StartedAtSeconds` is set is shown as a record, not a plan.** The pitch, the
   bench and the player list all render with their drag turned off, an inline notice says why, Copy
   to Next Period is withheld when the period it would copy *into* has kicked off, and every editing

@@ -1250,11 +1250,10 @@ a.action-btn {
     touch-action: none;
 }
 
-/* …but touch-action: none also forbids scrolling, and the squad list on the formation builder
-   is a scrollable panel whose every row is draggable. A finger landing on a player could not
-   scroll it — only the few pixels of padding at the edges would. pan-y gives the browser back
-   the vertical gesture; the shim only starts a drag once the finger has moved 8px, and a drag
-   that begins as a vertical pan is the one case worth losing to keep the list usable.
+/* …but touch-action: none also forbids scrolling, and every row of the formation builder's squad
+   and bench is draggable — a finger landing on a player could scroll neither the panel it sits in
+   nor the page. pan-y gives the vertical gesture back; the shim only starts a drag once the finger
+   has moved 8px, and a drag that begins as a vertical pan is the one case worth losing.
    The pitch chips keep touch-action: none — there, every direction is a drag. */
 .draggable-player,
 .sub-item {
