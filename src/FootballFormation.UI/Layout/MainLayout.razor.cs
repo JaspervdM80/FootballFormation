@@ -29,10 +29,6 @@ public partial class MainLayout
         Navigation.NavigateTo(AppRoutes.Settings, replace: true);
     }
 
-    // A link, not a handler: the circuit's culture is fixed at startup, so /culture/set only takes effect on a fresh page load.
-    private string CultureUrl(string culture) =>
-        AppRoutes.SetCulture(culture, "/" + Navigation.ToBaseRelativePath(Navigation.Uri));
-
     // The same ClubTheme record that emits the CSS custom properties, so MudBlazor and the hand-written styles cannot drift apart.
     private static readonly MudTheme Theme = ClubTheme.Current.ToMudTheme();
 }

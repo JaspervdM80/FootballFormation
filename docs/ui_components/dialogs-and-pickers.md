@@ -35,7 +35,7 @@ short rather than narrow but it is still a thumb:
   effects, so a tap that misses one hits the other and counts down instead of up. Two 44px targets
   cannot fit a 48px field, so on a phone they go and the field is what it already was — a number
   you type, behind a numeric keyboard. It affects all three `MudNumericField`s (match duration,
-  the default on `/settings`, shirt number); above 600px the arrows are back. Match MudBlazor's own
+  the default on `/preferences`, shirt number); above 600px the arrows are back. Match MudBlazor's own
   specificity when overriding it — its rule is
   `.mud-input-control.mud-input-number-control .mud-input-numeric-spin`, so a bare class loses.
 

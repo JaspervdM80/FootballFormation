@@ -7,7 +7,7 @@
 import { test, expect } from '../fixtures.js';
 import { clickFor, goto } from '../helpers.js';
 
-/** A Preferences field, found by its label the way `chooseOption` finds a select. */
+/** A settings field, found by its label the way `chooseOption` finds a select. */
 const prefsField = (page, label) =>
   page.locator('.mud-input-control', { has: page.getByText(label, { exact: true }) }).first();
 
@@ -16,7 +16,7 @@ const fieldValue = (page, label) => prefsField(page, label).locator('input:not([
 
 const snackbar = (page, text) => page.locator('.mud-snackbar').filter({ hasText: text });
 
-const savePreferences = (page) => page.getByRole('button', { name: 'Save Preferences' });
+const saveTrainingSettings = (page) => page.getByRole('button', { name: 'Save Training Settings' });
 
 /**
  * Ticks days in the training-days select and leaves it closed. Idempotent, because a second click on
@@ -86,7 +86,7 @@ test('the training period fills its weeks in, and narrowing it takes the empty o
   // Days 1–28: four whole weeks, so the run is the same length in whatever month this is run.
   await pickThisMonth(page, 'First Training', 1);
   await pickThisMonth(page, 'Last Training', 28);
-  await clickFor(savePreferences(page), () => expect(snackbar(page, /\d+ trainings created/)).toBeVisible());
+  await clickFor(saveTrainingSettings(page), () => expect(snackbar(page, /\d+ trainings created/)).toBeVisible());
 
   const opening = rowDate(mondayThisMonth());
   const closing = rowDate(mondayThisMonth({ last: true }));
@@ -99,7 +99,7 @@ test('the training period fills its weeks in, and narrowing it takes the empty o
   // recorded against any of them, so there is nothing to lose.
   await goto(page, '/settings');
   await pickThisMonth(page, 'First Training', 15);
-  await clickFor(savePreferences(page), () => expect(snackbar(page, /\d+ removed/)).toBeVisible());
+  await clickFor(saveTrainingSettings(page), () => expect(snackbar(page, /\d+ removed/)).toBeVisible());
 
   await goto(page, '/trainings');
   await expect(page.locator('.training-row', { hasText: opening })).toHaveCount(0);
@@ -109,16 +109,18 @@ test('the training period fills its weeks in, and narrowing it takes the empty o
 test('the training days read in the language the app is in', async ({ page }) => {
   await goto(page, '/settings');
   await chooseTrainingDays(page, 'Monday', 'Wednesday');
-  await clickFor(savePreferences(page), () => expect(snackbar(page, 'Preferences for')).toBeVisible());
+  await clickFor(saveTrainingSettings(page), () => expect(snackbar(page, 'Preferences for')).toBeVisible());
 
   await expect(fieldValue(page, 'Training Days')).toHaveValue('Monday, Wednesday');
 
   // MudSelectItem's child content styles the open list only: the collapsed field is the converter's,
   // and its default for an enum is ToString(). Without ToStringFunc both of these read English to a
-  // Dutch admin — see docs/known_issues/blazor-mudblazor.md.
+  // Dutch admin — see docs/known_issues/blazor-mudblazor.md. They are on a page each now, and both
+  // day selects pass it, so both are checked.
   await page.goto(`/culture/set?culture=nl&redirectUri=${encodeURIComponent('/')}`);
   await goto(page, '/settings');
-
   await expect(fieldValue(page, 'Trainingsdagen')).toHaveValue('maandag, woensdag');
+
+  await goto(page, '/preferences');
   await expect(fieldValue(page, 'Wedstrijddag')).toHaveValue('zaterdag');
 });

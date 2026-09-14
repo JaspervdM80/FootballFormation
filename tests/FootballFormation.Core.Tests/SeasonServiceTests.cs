@@ -192,7 +192,7 @@ public class SeasonServiceTests : ServiceTestBase
         prefs.FirstTrainingDate = first;
         prefs.LastTrainingDate = last;
 
-        Assert.True((await Preferences.SaveAsync(prefs)).IsSuccess);
+        Assert.True((await Preferences.SaveTrainingScheduleAsync(prefs)).IsSuccess);
     }
 
     [Fact]

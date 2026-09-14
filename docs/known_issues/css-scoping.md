@@ -21,7 +21,8 @@
   read it as one before reusing a name a page already uses.
 - **It happened again, on the notification opt-in — and this time nothing measured the page.** The
   `min-height: 44px` and the phone-width `width: 100%` for the "Aan/Uit" button were written in
-  `Home.razor.css`, so they compiled to `.home-notify-button[b-mskvn728zw]` and never reached the
+  `Home.razor.css`, so they compiled to `.home-notify-button[b-mskvn728zw]` (the row is `.notify-*`
+  now, and shared with `/settings`) and never reached the
   `<button>` MudBlazor renders. The button sat at MudBlazor's own ~36.5px, under the touch floor, and
   stayed beside the text on a phone instead of taking its own row. What let it through is the second
   half of the lesson: **`scripts/touch-targets.mjs` had no home-page scene at all**, so the harness

@@ -13,7 +13,8 @@ a dialog, a snackbar, `@bind`, JS interop, a timer, a `LiveMatchNotifier` subscr
 is not a reason: an anchor does that with no circuit at all.
 
 Today's split: `/`, `/games`, `/players`, `/games/{id}/formation`, `/games/{id}/live`,
-`/games/{id}/result`, `/settings` and `/users` are interactive. `/stats`, `/stats/positions`,
+`/games/{id}/result`, `/preferences`, `/settings` and `/users` are interactive. `/settings` is the
+one open to everyone: its admin sections are behind an `AuthorizeView`, not an `[Authorize]` route. `/stats`, `/stats/positions`,
 `/players/{id}/stats`, `/games/{id}/overview`, `/login`, `/Error` and `/not-found` are not, and
 `rendermode.spec.js` asserts they open no WebSocket. That is the whole point: a page with no circuit
 cannot show "Reconnecting…", cannot force a reload, and survives a phone suspending the app.

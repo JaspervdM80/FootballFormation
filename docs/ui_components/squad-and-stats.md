@@ -162,7 +162,7 @@ the rule holding that needs **`::deep`**, because the pill is a child component'
 those carry no scope attribute.
 
 **`/stats/positions` is admin-only outright** (`@attribute [Authorize(Roles = AppRoles.Admin)]`,
-same as `/settings` and `/users`), not redacted like the two pages above — who has been played where
+same as `/users` and `/preferences`), not redacted like the two pages above — who has been played where
 is a selection tool, not a figure worth sharing with a visitor. `PositionDevelopmentReport` pivots
 the `PlayerStats.Positions` the other two pages already compute — no new query, no new minutes
 aggregation — into a players × positions grid, reached from a `<PageHeader>` `<Actions>` button on

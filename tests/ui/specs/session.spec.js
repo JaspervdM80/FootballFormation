@@ -78,15 +78,15 @@ test.describe('an admin who is already signed in', () => {
     // so nothing leaves it and no DNS name has to exist.
     await page.route('http://link.example/', route => route.fulfill({
       contentType: 'text/html',
-      body: `<a href="${BASE_URL}/settings">Match preferences</a>`,
+      body: `<a href="${BASE_URL}/preferences">Match preferences</a>`,
     }));
 
     await page.goto('http://link.example/', { waitUntil: 'domcontentloaded' });
     await page.click('a');
 
-    // /settings is admin-only, so landing on it *is* the assertion that the cookie came along. With
-    // the cookie withheld this redirects to /login instead.
-    await expect(page).toHaveURL(/\/settings$/);
+    // /preferences is admin-only, so landing on it *is* the assertion that the cookie came along.
+    // With the cookie withheld this redirects to /login instead.
+    await expect(page).toHaveURL(/\/preferences$/);
     await expect(page.getByRole('heading', { name: 'Match Preferences', exact: false }).first())
       .toBeVisible();
   });
@@ -187,7 +187,9 @@ test.describe('an admin who changes their own password', () => {
 
       await signInThroughTheForm(theirPage, username, replacement);
       await goto(theirPage, '/settings');
-      await expect(theirPage.getByRole('heading', { name: 'Match Preferences', exact: false }).first())
+      // The password card, not the page: /settings is open to visitors too, and only the card
+      // behind its AuthorizeView says the new password signed anyone in.
+      await expect(theirPage.getByRole('button', { name: 'Change password', exact: false }))
         .toBeVisible();
     } finally {
       await theirContext.close();

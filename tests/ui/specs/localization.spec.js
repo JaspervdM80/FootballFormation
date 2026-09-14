@@ -20,19 +20,18 @@ test('a first visit is in Dutch', async ({ page }) => {
 });
 
 test('the language switcher moves the whole app to English and it sticks', async ({ page }) => {
-  await gotoRendered(page, '/players');
+  // /settings is where the choice lives, and it is the one admin-shaped route open to a visitor.
+  await gotoRendered(page, '/settings');
 
-  // A <details> disclosure of plain links: opening it is a local toggle the browser does itself,
-  // and choosing a language is a navigation to /culture/set rather than a click to retry.
-  const english = page.locator('.language-picker-menu').getByText('English', { exact: true });
-  await page.locator('.language-picker > summary').click();
+  // Plain links: choosing a language is a navigation to /culture/set rather than a click to retry.
+  const english = page.locator('.settings-language-option').getByText('English', { exact: true });
   await expect(english).toBeVisible();
   await english.click();
 
   // Switching reloads the page: the circuit's culture is fixed when it starts, so the cookie only
   // takes effect on a fresh load.
   await expect(page.locator('html')).toHaveAttribute('lang', 'en', { timeout: 20_000 });
-  await expect(page.getByRole('heading', { name: 'Squad', exact: false }).first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Settings', exact: false }).first()).toBeVisible();
 
   // And the choice survives going somewhere else, because it is a cookie rather than page state.
   await gotoRendered(page, '/games');

@@ -123,9 +123,10 @@ to `/login` has been told the section exists and nothing else.
 
 `MatchPreferences.TrainingDays` — per season, beside `MatchDay` — bounded by
 `FirstTrainingDate`/`LastTrainingDate`, the season's **training period**. Saving those in
-`/settings` is what creates the rows: `MatchPreferencesService.SaveAsync` diffs the season's sessions
-against `TrainingSchedule.DatesIn(first, last, days)` in the same `SaveChanges` that writes the
-preferences, so ninety evenings stop being ninety trips through a dialog.
+`/settings` is what creates the rows: `MatchPreferencesService.SaveTrainingScheduleAsync` diffs the
+season's sessions against `TrainingSchedule.DatesIn(first, last, days)` in the same `SaveChanges` that
+writes the schedule, so ninety evenings stop being ninety trips through a dialog. The match defaults
+share the row and are saved by a method of their own, which never touches the sessions at all.
 
 **Both ends or no schedule.** An open end means "the season's own window" everywhere else, and a
 session for every training day until the end of June is not what ticking a weekday asks for — so
@@ -144,7 +145,7 @@ What the diff may remove is only `IsUnusedSchedule`: generated, with nothing rec
 evening carrying absences, a note or a cancellation outlives the window it was drawn from and is the
 admin's to delete. So does one entered by hand — `TrainingDialog.Submit` clears `FromSchedule` on
 every save, so a session the coach has opened is the coach's, and the extra Friday in the summer
-survives the next Save on Preferences.
+survives the next save of the training settings.
 
 The period is still a bound on what gets *proposed* rather than a rule about what may be *entered*:
 a one-off outside it saves without complaint. What is validated is the period itself — see

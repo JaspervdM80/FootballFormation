@@ -105,10 +105,12 @@ Services/
   LiveMatchQueries.cs     — The tracked load they all start from (the game with its planned
                             line-ups, via GameQueries) and the one "game not found" message
   LiveMatchNotifier.cs    — Singleton: fans live match changes out to every open circuit
-  MatchPreferencesService.cs — Per-season prefs: GetAsync(seasonId)/SaveAsync,
-                            GetNextMatchDateAsync/GetNextTrainingDateAsync(seasonId). SaveAsync also
-                            writes the sessions the training period implies — see
-                            docs/models/training.md
+  MatchPreferencesService.cs — Per-season prefs: GetAsync(seasonId), SaveMatchDefaultsAsync and
+                            SaveTrainingScheduleAsync (one row, two pages — each writes its own
+                            columns onto the stored row, never the whole snapshot),
+                            GetNextMatchDateAsync/GetNextTrainingDateAsync(seasonId).
+                            SaveTrainingScheduleAsync also writes the sessions the training period
+                            implies — see docs/models/training.md
   UserService.cs          — Accounts + credentials: CRUD returning Result<T>, plus
                             ValidateCredentialsAsync/FindForSessionAsync/ChangePasswordAsync, which
                             return raw values rather than Result so a failed login says nothing
@@ -139,11 +141,16 @@ Pages/
   PlannedChangesDialog.razor  — Dialog: the changes still planned for the middle of this half, as a
                                 reference to work through by tapping the pitch. Writes nothing
   SeasonDialog.razor(.cs)     — Dialog: season name, start date, end date
-  Settings.razor(.cs)         — /settings — Match preferences, own password, season management
+  Preferences.razor(.cs)      — /preferences — The per-season match defaults: duration, split,
+                                format, formation, match day (Admin only)
+  Settings.razor(.cs)(.css)   — /settings — Language and match notifications (everyone), and behind
+                                an AuthorizeView the season list, the training schedule and the
+                                own-password form
   Users.razor(.cs)            — /users — Accounts: add, edit, reset password, delete (Admin only)
   UserDialog.razor(.cs)       — Dialog: name, login, role, password — also the reset-password form
                                 (PasswordOnly), since the fields are the same
   Home.razor(.cs)(.css)       — / — Landing page, plus the live-match banner when one is in progress
+                                and the notification invitation (MatchNotifications)
   FormationOverview.razor(.cs)(.css) — /games/{id}/overview — Read-only per-period pitches, shareable
                                 and screenshottable (html2canvas)
 Components/
@@ -164,6 +171,7 @@ Components/
   BackButton.razor(.cs)             — The back arrow; follows the trail, names its destination
   ConfirmDialog.razor(.cs)          — Reusable yes/no confirmation dialog
   InstallBanner.razor(.cs)          — The "add to home screen" prompt, rendered by MainLayout
+  MatchNotifications.razor(.cs)     — The push opt-in: the invitation on /, the switch on /settings
   RedirectToLogin.razor             — Routes NotAuthorized to /login (see Routes.razor)
 Navigation/
   AppRoutes.cs                — Every route: constants and builders. Never interpolate a URL at a call site

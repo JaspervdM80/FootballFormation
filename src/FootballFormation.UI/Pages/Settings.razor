@@ -1,179 +1,200 @@
-﻿@page "/settings"
-@attribute [Authorize(Roles = AppRoles.Admin)]
+@page "/settings"
 @inherits CancellableComponent
 @rendermode InteractiveServer
 
-@* See InteractiveShell: the providers and the session gate this page no longer inherits, because
-   the layout renders statically. *@
-<InteractiveShell RequiresRole="@AppRoles.Admin" />
+@* Open to everyone — a visitor comes here to change the language, and that is all this page shows
+   them. Every section below it is wrapped in its own AuthorizeView. *@
+<InteractiveShell />
 
-<PageTitle>@L["Match Preferences"]</PageTitle>
+<PageTitle>@L["Settings"]</PageTitle>
 
-<PageHeader Class="mb-6" Title="@L["Match Preferences"]"
-            Subtitle="@L["These defaults are applied when creating new games, and are kept per season."]" />
+<PageHeader Class="mb-6" Title="@L["Settings"]" Subtitle="@Subtitle" />
 
-@if (_mustChangePassword)
-{
-    <MudAlert Severity="Severity.Warning" Class="mb-6" Style="max-width: 500px;">
-        @L["This account still uses the password it was created with. Choose your own below — until you do, the rest of the app stays locked."]
-    </MudAlert>
-}
+<AuthorizeView Roles="@AppRoles.Admin" Context="admin">
+    @if (_mustChangePassword)
+    {
+        <MudAlert Severity="Severity.Warning" Class="mb-6" Style="max-width: 500px;">
+            @L["This account still uses the password it was created with. Choose your own below — until you do, the rest of the app stays locked."]
+        </MudAlert>
+    }
+</AuthorizeView>
 
-<MudPaper Class="pa-6" MaxWidth="500px" Elevation="2" Style="border-radius: 16px;">
-    <div class="card-label">@L["Defaults"]</div>
+<section class="settings-section">
+    <h2 class="settings-section-title">@L["Language"]</h2>
 
-    <MudSelect T="int" Value="_prefsSeasonId" ValueChanged="OnPrefsSeasonChanged"
-               Label="@L["Season"]" Class="mb-4">
-        @foreach (var season in _seasons ?? [])
+    <MudPaper Class="pa-6" Elevation="2" Style="border-radius: 16px;">
+        <MudText Typo="Typo.body2" Style="color: var(--ink-muted);" Class="mb-4">
+            @L["The app is shown in this language for this browser. Choosing one reloads the page."]
+        </MudText>
+
+        @* data-enhance-nav="false" because enhanced navigation patches the DOM without making a new circuit: the static chrome would come
+           back in the new language over an island still rendering in the old one. *@
+        <div class="settings-language" data-enhance-nav="false">
+            <a class="settings-language-option @(CultureClass("nl"))" href="@CultureUrl("nl")">
+                <span>Nederlands</span>
+                @if (IsCurrentCulture("nl"))
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" />
+                }
+            </a>
+            <a class="settings-language-option @(CultureClass("en"))" href="@CultureUrl("en")">
+                <span>English</span>
+                @if (IsCurrentCulture("en"))
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" />
+                }
+            </a>
+        </div>
+    </MudPaper>
+</section>
+
+@* Renders nothing where push does not work, section and all — a browser that cannot do it is not offered a switch that would not move. *@
+<MatchNotifications Manage="true" Heading="@L["Notifications"]" />
+
+<AuthorizeView Roles="@AppRoles.Admin" Context="admin">
+    <NotAuthorized>
+        @* Only for a session that opened this page as an admin and has since lost it — the revalidating provider saying so is what a
+           revoked account, or one that has just changed its own password, gets instead of sections quietly disappearing. *@
+        @if (_isAdmin)
         {
-            <MudSelectItem Value="season.Id">@season.Name</MudSelectItem>
+            <RedirectToLogin />
         }
-    </MudSelect>
+    </NotAuthorized>
+    <Authorized>
+    <section class="settings-section">
+        <h2 class="settings-section-title">@L["Season Settings"]</h2>
 
-    @if (_prefs is null)
-    {
-        <MudProgressCircular Indeterminate="true" />
-    }
-    else
-    {
-    <MudForm>
-        <MudNumericField T="int" @bind-Value="_prefs.GameDurationMinutes"
-                         Label="@L["Game Duration (minutes)"]" Min="10" Max="120" Step="5"
-                         Class="mb-4" />
+        <MudPaper Class="pa-6" Elevation="2" Style="border-radius: 16px;">
+            <div class="card-label">@L["Seasons"]</div>
+            <MudText Typo="Typo.body2" Style="color: var(--ink-muted);" Class="mb-4">
+                @L["Seasons are used to group games and filter statistics."]
+            </MudText>
 
-        <MudSelect T="GameSplitType" @bind-Value="_prefs.DefaultSplitType"
-                   Label="@L["Default Game Split"]" Class="mb-4">
-            <MudSelectItem Value="GameSplitType.Halves">@L["Halves (2 periods)"]</MudSelectItem>
-            <MudSelectItem Value="GameSplitType.Quarters">@L["Quarters (4 periods)"]</MudSelectItem>
-        </MudSelect>
-
-        <MudSelect T="MatchFormat" Value="DefaultMatchFormat" ValueChanged="OnDefaultMatchFormatChanged"
-                   Label="@L["Default Match Format"]" Class="mb-4">
-            @foreach (var format in MatchFormatExtensions.Descending)
+            @if (_seasons is null)
             {
-                <MudSelectItem Value="format">@L[format.DisplayName()]</MudSelectItem>
+                <MudProgressCircular Indeterminate="true" />
             }
-        </MudSelect>
-
-        <MudSelect T="FormationType" @bind-Value="_prefs.DefaultFormation"
-                   Label="@L["Default Formation"]" Class="mb-4">
-            @foreach (var f in FormationTypeExtensions.Alphabetical(DefaultMatchFormat))
+            else
             {
-                <MudSelectItem Value="f">@L[f.DisplayName()]</MudSelectItem>
-            }
-        </MudSelect>
-
-        <MudSelect T="DayOfWeek" @bind-Value="_prefs.MatchDay" ToStringFunc="DayName"
-                   Label="@L["Match Day"]" Class="mb-4">
-            @foreach (var day in Enum.GetValues<DayOfWeek>())
-            {
-                <MudSelectItem Value="day">@DayName(day)</MudSelectItem>
-            }
-        </MudSelect>
-
-        <MudText Typo="Typo.caption" Style="color: var(--ink-muted);" Class="mb-4">
-            @L["Next calculated match date:"] <strong style="color: var(--club-primary-bright);">@_nextMatchDate?.ToString("dddd dd MMM yyyy")</strong>
-        </MudText>
-
-        <MudSelect T="DayOfWeek" Label="@L["Training Days"]" MultiSelection="true"
-                   SelectedValues="_prefs.TrainingDays" SelectedValuesChanged="OnTrainingDaysChanged" ToStringFunc="DayName"
-                   Class="mb-4">
-            @foreach (var day in Enum.GetValues<DayOfWeek>())
-            {
-                <MudSelectItem Value="day">@DayName(day)</MudSelectItem>
-            }
-        </MudSelect>
-
-        @* Clearable on purpose: an empty date is a real value here. It means the season's own window to the date calculation, and
-           no schedule at all to the generator below — which is how a period entered against the wrong dates is undone. *@
-        <MudDatePicker @bind-Date="_prefs.FirstTrainingDate" Label="@L["First Training"]" Clearable="true" Class="mb-4" />
-        <MudDatePicker @bind-Date="_prefs.LastTrainingDate" Label="@L["Last Training"]" Clearable="true" Class="mb-4" />
-
-        <MudText Typo="Typo.caption" Style="color: var(--ink-muted);" Class="mb-4">
-            @L["Saving creates a session for every training day between the two, and removes the empty ones outside them."]
-        </MudText>
-
-        <MudText Typo="Typo.caption" Style="color: var(--ink-muted);" Class="mb-4">
-            @L["Next calculated training date:"] <strong style="color: var(--club-primary-bright);">@_nextTrainingDate?.ToString("dddd dd MMM yyyy")</strong>
-        </MudText>
-    </MudForm>
-
-    <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Save"
-               OnClick="Save" FullWidth="true">
-        @L["Save Preferences"]
-    </MudButton>
-    }
-</MudPaper>
-
-<MudPaper Class="pa-6 mt-6" MaxWidth="500px" Elevation="2" Style="border-radius: 16px;">
-    <div class="card-label">@L["Change Password"]</div>
-    <MudForm @ref="_passwordForm">
-        <MudTextField T="string" @bind-Value="_currentPassword" Label="@L["Current Password"]"
-                      InputType="InputType.Password" Required="true" Class="mb-4" />
-        <MudTextField T="string" @bind-Value="_newPassword" Label="@L["New Password"]"
-                      InputType="InputType.Password" Required="true" Class="mb-4" />
-        <MudTextField T="string" @bind-Value="_confirmPassword" Label="@L["Confirm New Password"]"
-                      InputType="InputType.Password" Required="true" Class="mb-4" />
-    </MudForm>
-
-    <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Lock"
-               OnClick="ChangePassword" FullWidth="true">
-        @L["Change Password"]
-    </MudButton>
-</MudPaper>
-
-<MudPaper Class="pa-6 mt-6" MaxWidth="500px" Elevation="2" Style="border-radius: 16px;">
-    <div class="card-label">@L["Seasons"]</div>
-    <MudText Typo="Typo.body2" Style="color: var(--ink-muted);" Class="mb-4">
-        @L["Seasons are used to group games and filter statistics."]
-    </MudText>
-
-    @if (_seasons is null)
-    {
-        <MudProgressCircular Indeterminate="true" />
-    }
-    else
-    {
-        <div class="list-rows mb-4">
-            @foreach (var season in _seasons)
-            {
-                <div class="list-row">
-                    <div class="list-row-info">
-                        <span class="list-row-name">
-                            @season.Name
-                            @if (season.IsCurrent)
-                            {
-                                <span class="badge-teal">@L["Current"]</span>
-                            }
-                        </span>
-                        <span class="list-row-meta">
-                            @season.StartDate.ToString("MMM yyyy") – @season.EndDate.ToString("MMM yyyy")
-                        </span>
-                    </div>
-                    <div class="list-row-actions">
-                        @if (!season.IsCurrent)
-                        {
-                            <button class="action-btn" title="@L["Set as current"]"
-                                    @onclick="() => SetCurrentSeason(season)">
-                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" />
-                            </button>
-                        }
-                        <button class="action-btn" title="@L["Edit Season"]"
-                                @onclick="() => OpenEditSeasonDialog(season)">
-                            <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
-                        </button>
-                        <button class="action-btn action-delete" title="@L["Delete Season"]"
-                                @onclick="() => DeleteSeason(season)">
-                            <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
-                        </button>
-                    </div>
+                <div class="list-rows mb-4">
+                    @foreach (var season in _seasons)
+                    {
+                        <div class="list-row">
+                            <div class="list-row-info">
+                                <span class="list-row-name">
+                                    @season.Name
+                                    @if (season.IsCurrent)
+                                    {
+                                        <span class="badge-teal">@L["Current"]</span>
+                                    }
+                                </span>
+                                <span class="list-row-meta">
+                                    @season.StartDate.ToString("MMM yyyy") – @season.EndDate.ToString("MMM yyyy")
+                                </span>
+                            </div>
+                            <div class="list-row-actions">
+                                @if (!season.IsCurrent)
+                                {
+                                    <button class="action-btn" title="@L["Set as current"]"
+                                            @onclick="() => SetCurrentSeason(season)">
+                                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" />
+                                    </button>
+                                }
+                                <button class="action-btn" title="@L["Edit Season"]"
+                                        @onclick="() => OpenEditSeasonDialog(season)">
+                                    <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                                </button>
+                                <button class="action-btn action-delete" title="@L["Delete Season"]"
+                                        @onclick="() => DeleteSeason(season)">
+                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                                </button>
+                            </div>
+                        </div>
+                    }
                 </div>
             }
-        </div>
-    }
 
-    <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Add"
-               OnClick="OpenAddSeasonDialog" FullWidth="true">
-        @L["New Season"]
-    </MudButton>
-</MudPaper>
+            <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="OpenAddSeasonDialog" FullWidth="true">
+                @L["New Season"]
+            </MudButton>
+        </MudPaper>
+    </section>
+
+    <section class="settings-section">
+        <h2 class="settings-section-title">@L["Training Settings"]</h2>
+
+        <MudPaper Class="pa-6" Elevation="2" Style="border-radius: 16px;">
+            <div class="card-label">@L["Training Schedule"]</div>
+            <MudText Typo="Typo.body2" Style="color: var(--ink-muted);" Class="mb-4">
+                @L["The evenings this team trains, kept per season."]
+            </MudText>
+
+            <MudSelect T="int" Value="_trainingSeasonId" ValueChanged="OnTrainingSeasonChanged"
+                       Label="@L["Season"]" Class="mb-4">
+                @foreach (var season in _seasons ?? [])
+                {
+                    <MudSelectItem Value="season.Id">@season.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+            @if (_prefs is null)
+            {
+                <MudProgressCircular Indeterminate="true" />
+            }
+            else
+            {
+                <MudForm>
+                    <MudSelect T="DayOfWeek" Label="@L["Training Days"]" MultiSelection="true"
+                               SelectedValues="_prefs.TrainingDays" SelectedValuesChanged="OnTrainingDaysChanged" ToStringFunc="DayName"
+                               Class="mb-4">
+                        @foreach (var day in Enum.GetValues<DayOfWeek>())
+                        {
+                            <MudSelectItem Value="day">@DayName(day)</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    @* Clearable on purpose: an empty date is a real value here. It means the season's own window to the date calculation, and
+                       no schedule at all to the generator below — which is how a period entered against the wrong dates is undone. *@
+                    <MudDatePicker @bind-Date="_prefs.FirstTrainingDate" Label="@L["First Training"]" Clearable="true" Class="mb-4" />
+                    <MudDatePicker @bind-Date="_prefs.LastTrainingDate" Label="@L["Last Training"]" Clearable="true" Class="mb-4" />
+
+                    <MudText Typo="Typo.caption" Style="color: var(--ink-muted);" Class="mb-4">
+                        @L["Saving creates a session for every training day between the two, and removes the empty ones outside them."]
+                    </MudText>
+
+                    <MudText Typo="Typo.caption" Style="color: var(--ink-muted);" Class="mb-4">
+                        @L["Next calculated training date:"] <strong style="color: var(--club-primary-bright);">@_nextTrainingDate?.ToString("dddd dd MMM yyyy")</strong>
+                    </MudText>
+                </MudForm>
+
+                <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Save"
+                           OnClick="SaveTrainingSettings" FullWidth="true">
+                    @L["Save Training Settings"]
+                </MudButton>
+            }
+        </MudPaper>
+    </section>
+
+    <section class="settings-section">
+        <h2 class="settings-section-title">@L["Account"]</h2>
+
+        <MudPaper Class="pa-6" Elevation="2" Style="border-radius: 16px;">
+            <div class="card-label">@L["Change Password"]</div>
+            <MudForm @ref="_passwordForm">
+                <MudTextField T="string" @bind-Value="_currentPassword" Label="@L["Current Password"]"
+                              InputType="InputType.Password" Required="true" Class="mb-4" />
+                <MudTextField T="string" @bind-Value="_newPassword" Label="@L["New Password"]"
+                              InputType="InputType.Password" Required="true" Class="mb-4" />
+                <MudTextField T="string" @bind-Value="_confirmPassword" Label="@L["Confirm New Password"]"
+                              InputType="InputType.Password" Required="true" Class="mb-4" />
+            </MudForm>
+
+            <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Lock"
+                       OnClick="ChangePassword" FullWidth="true">
+                @L["Change Password"]
+            </MudButton>
+        </MudPaper>
+    </section>
+    </Authorized>
+</AuthorizeView>

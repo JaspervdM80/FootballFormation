@@ -219,7 +219,9 @@
   worker finishes. CI found this before a user did, twice, because a cold runner activates a worker
   far slower than a laptop does — a browser check that passes locally and fails on CI is worth
   reading as a race rather than as an environment quirk.
-- **The opt-in row does not render on GitHub's runners, and nothing reproduces it here.** The touch
+- **The opt-in row does not render on GitHub's runners, and nothing reproduces it here.** (It is
+  `Components/MatchNotifications.razor` now, on `/` and on `/settings`, but the harness measures it
+  on `/` as before.) The touch
   harness measures it locally at 260.4x44 every time, including with the service worker stubbed to
   never become ready — but on CI it never appears, while the harness's own probe of
   `matchNotifications.status()` on the same page reports push working. Three pushes went into

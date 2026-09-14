@@ -1,0 +1,34 @@
+/* The language rows. Page-owned markup, so scoped — the section wrapper and the notification row
+   next to them are in app.css, because a component renders those too. */
+/* 8px, not 4: a gap smaller than that is a crack between two targets a thumb aims at, and the touch
+   audit refuses one. */
+.settings-language {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.settings-language-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    /* Same 44px floor as every other row a thumb has to hit. */
+    min-height: 44px;
+    padding: 0 12px;
+    border-radius: 8px;
+    border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+    font-size: 0.9rem;
+    color: var(--ink);
+    text-decoration: none;
+}
+
+.settings-language-option:hover {
+    background: var(--surface-card-alt);
+}
+
+.settings-language-option.is-current {
+    border-color: var(--club-primary-bright);
+    color: var(--club-primary-bright);
+    font-weight: 600;
+}

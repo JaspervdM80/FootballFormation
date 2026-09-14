@@ -12,7 +12,7 @@
   leaving it focusable but inert. Prefer `Label` + `StartIcon`/`EndIcon` and style the generated
   button (as the squad page's "Add Player" menu does), which arrives keyboard-accessible for free.
   Note that `MudMenu` is not an option in the chrome at all: it needs `MudPopoverProvider` and a
-  circuit, and the layout has neither — the season and language pickers are `<details>` disclosures.
+  circuit, and the layout has neither — the season picker is a `<details>` disclosure.
 - **`MudMenu.Class` styles the root wrapper, not the activator.** There is no `ActivatorClass`
   parameter, so a button style has to be pushed down a level — `.btn-gold.mud-menu .mud-button-root`
   in app.css does that for the squad page's "Add Player" menu.

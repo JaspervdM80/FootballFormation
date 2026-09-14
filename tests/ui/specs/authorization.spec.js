@@ -41,6 +41,19 @@ test.describe('an anonymous visitor', () => {
     await expect(page.getByRole('link', { name: 'Trainings', exact: false })).toHaveCount(0);
   });
 
+  test('reaches the settings for the language, and is offered none of the admin sections', async ({ page }) => {
+    await gotoRendered(page, '/settings');
+
+    await expect(page).toHaveURL(/\/settings$/);
+    await expect(page.locator('.settings-language-option')).toHaveCount(2);
+
+    // Not the notification section: it is drawn only where the browser can do push, which is not
+    // every runner — see docs/known_issues/touch-pwa.md. The three admin sections are the rest.
+    for (const heading of ['Season Settings', 'Training Settings', 'Account']) {
+      await expect(page.getByRole('heading', { name: heading, exact: true })).toHaveCount(0);
+    }
+  });
+
   test('is not shown the playing-time table on the season statistics', async ({ page }) => {
     await gotoRendered(page, '/stats');
 
@@ -56,7 +69,7 @@ test.describe('an anonymous visitor', () => {
   });
 
   test('is sent to the login page by an admin-only route', async ({ page }) => {
-    for (const path of ['/settings', '/users', '/teams', '/stats/positions', '/trainings']) {
+    for (const path of ['/preferences', '/users', '/teams', '/stats/positions', '/trainings']) {
       await page.goto(path, { waitUntil: 'domcontentloaded' });
       await page.waitForURL(/\/login/, { timeout: 15_000 });
 
@@ -101,7 +114,8 @@ test.describe('an admin', () => {
     // /stats/positions carries its only handler on a MudTable, which binds no `_bl_` — see
     // gotoRendered. It is still an admin-only route, which is what this test is about.
     for (const [path, heading, open] of [
-      ['/settings', 'Match Preferences', goto],
+      ['/preferences', 'Match Preferences', goto],
+      ['/settings', 'Settings', goto],
       ['/users', 'Users', goto],
       ['/teams', 'Teams', goto],
       ['/stats/positions', 'Position Development', gotoRendered],

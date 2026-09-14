@@ -571,20 +571,18 @@ a.action-btn {
     display: none;
 }
 
-/* --- Season and language pickers ---
-   Not scoped CSS: the season picker renders from both the app bar and the mobile drawer, and
-   isolation would force a duplicate stylesheet for the second placement.
+/* --- Season picker ---
+   Not scoped CSS: it renders from both the app bar and the mobile drawer, and isolation would force
+   a duplicate stylesheet for the second placement.
 
-   Both are <details> disclosures rather than MudMenu. They render in the layout, which is
-   statically rendered on every page, so there is no circuit to open a popover from — and the
-   browser gives keyboard and screen-reader behaviour for a disclosure for free. */
-.season-picker,
-.language-picker {
+   A <details> disclosure rather than MudMenu. It renders in the layout, which is statically
+   rendered on every page, so there is no circuit to open a popover from — and the browser gives
+   keyboard and screen-reader behaviour for a disclosure for free. */
+.season-picker {
     position: relative;
 }
 
-.season-picker > summary,
-.language-picker > summary {
+.season-picker > summary {
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -601,19 +599,16 @@ a.action-btn {
 }
 
 /* Safari draws its own triangle through a pseudo-element the standard property does not reach. */
-.season-picker > summary::-webkit-details-marker,
-.language-picker > summary::-webkit-details-marker {
+.season-picker > summary::-webkit-details-marker {
     display: none;
 }
 
-.season-picker > summary:hover,
-.language-picker > summary:hover {
+.season-picker > summary:hover {
     color: color-mix(in srgb, var(--ink) 80%, transparent);
     background: color-mix(in srgb, var(--ink) 4%, transparent);
 }
 
-.season-picker-menu,
-.language-picker-menu {
+.season-picker-menu {
     position: absolute;
     top: 100%;
     right: 0;
@@ -628,8 +623,7 @@ a.action-btn {
 }
 
 /* Menu rows pair the season name with its "current" pill */
-.season-menu-item,
-.language-picker-menu > a {
+.season-menu-item {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -642,8 +636,7 @@ a.action-btn {
     text-decoration: none;
 }
 
-.season-menu-item:hover,
-.language-picker-menu > a:hover {
+.season-menu-item:hover {
     background: var(--surface-card-alt);
 }
 
@@ -1160,6 +1153,68 @@ a.action-btn {
     }
 }
 
+/* --- The settings sections and the notification row ---
+   Global, not scoped: the row renders from the start page and from /settings, and MatchNotifications
+   carries the section wrapper for the second of those — a copy in either page's .razor.css would
+   compile to .notify-row[b-otherHash] and match nothing. */
+.settings-section {
+    max-width: 500px;
+}
+
+.settings-section + .settings-section {
+    margin-top: 40px;
+}
+
+.settings-section-title {
+    margin: 0 0 12px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.notify-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    border: 1px solid var(--ink-faint);
+    border-radius: 16px;
+    background: var(--gradient-card);
+}
+
+.notify-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.notify-title {
+    font-weight: 600;
+    color: var(--ink);
+}
+
+/* Quieter than the label it follows, and free to wrap onto its own line on a narrow phone. */
+.notify-team {
+    font-weight: 400;
+    color: var(--ink-muted);
+}
+
+.notify-text {
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+}
+
+/* Inside a settings section the row is the card, so it does not also carry the gap to the next one. */
+.settings-section > .notify-row {
+    margin-bottom: 0;
+}
+
+@media (max-width: 599.98px) {
+    .notify-row {
+        flex-wrap: wrap;
+    }
+}
+
 /* Card label */
 .card-label {
     font-size: 0.7rem;
@@ -1346,6 +1401,29 @@ a.action-btn {
     .drawer-scrim {
         transition: none;
     }
+}
+
+/* The install banner is fixed to the foot of the viewport and sits above the drawer (1390 to its
+   1300), which is exactly where the drawer keeps its administration group — on a phone it covered
+   settings and users, and the app bar has no nav there to reach them from instead. Out of the way
+   while the drawer is open; pwa.js only ever toggles the hidden attribute, so nothing overrides it. */
+.nav-drawer-toggle:checked ~ .install-banner {
+    display: none;
+}
+
+/* Settings, users and teams sit at the foot of the drawer rather than among the sections a coach
+   opens during a match. Scoped to the drawer, not a global .mud-* layout rule: the menu has to
+   stretch before the auto margin below has anything to push into. */
+.app-drawer .mud-navmenu {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.nav-group-admin {
+    margin-top: auto;
+    padding-top: 8px;
+    border-top: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
 }
 
 /* How many links fit is the bar's own arithmetic rather than a number kept in step by hand. The nav
@@ -2256,23 +2334,22 @@ a.action-btn {
     cursor: pointer;
 }
 
-/* The home page's notification opt-in. Here rather than in Home.razor.css because both selectors land on MudBlazor components, whose
-   root elements carry no scope attribute — the same reason .live-action-btn is here. See docs/known_issues/css-scoping.md. */
-.home-notify-icon {
+/* The notification row's two MudBlazor components, whose root elements carry no scope attribute — the same reason .live-action-btn is
+   here. See docs/known_issues/css-scoping.md. */
+.notify-icon {
     flex-shrink: 0;
     color: var(--club-primary-bright);
 }
 
-.home-notify-button {
+.notify-button {
     flex-shrink: 0;
     /* Under MudBlazor's own ~36px default, which is below the touch floor. */
     min-height: 44px;
 }
 
-/* Narrow enough that the button beside the text would leave neither room to read: it takes its own row. The flex-wrap that lets it is
-   on .home-notify, which is a plain div and so stays scoped. */
+/* Narrow enough that the button beside the text would leave neither room to read: it takes its own row. */
 @media (max-width: 599.98px), (max-height: 559.98px) {
-    .home-notify-button {
+    .notify-button {
         width: 100%;
     }
 }

@@ -42,37 +42,87 @@ public class MatchPreferencesService(
             return Result.Success(prefs);
         });
 
-    /// Writes the season's training sessions too: the training days and the period are the whole description of when the team trains, so
-    /// saving them is what creates the evenings they add up to.
-    public Task<Result<TrainingSync>> SaveAsync(MatchPreferences prefs, CancellationToken cancellationToken = default) =>
-        // "save the preferences", not "save preferences": resx keys are case-insensitive, and /settings already has a "Save Preferences"
+    /// The game defaults alone. The row also carries the training period, which /settings edits from a snapshot of its own — so a save
+    /// that wrote every column would revert whatever the other page had changed since this one loaded.
+    public Task<Result> SaveMatchDefaultsAsync(MatchPreferences prefs, CancellationToken cancellationToken = default) =>
+        // "save the preferences", not "save preferences": resx keys are case-insensitive, and /preferences already has a "Save Preferences"
         // button that would collide. See docs/known_issues/localization.md.
         ServiceOperation.RunAdminAsync(currentUser, logger, "save the preferences", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
+            var stored = await RowForWriteAsync(db, prefs.SeasonId, cancellationToken);
+            if (stored is null) return SeasonNotFound(prefs.SeasonId);
+
+            stored.GameDurationMinutes = prefs.GameDurationMinutes;
+            stored.DefaultSplitType = prefs.DefaultSplitType;
+            stored.DefaultFormation = prefs.DefaultFormation;
+            stored.MatchDay = prefs.MatchDay;
+
+            await db.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation(
+                "Saved match defaults for season {SeasonId}: {Duration}min, {Split}, {Formation}, {MatchDay}",
+                prefs.SeasonId, stored.GameDurationMinutes, stored.DefaultSplitType, stored.DefaultFormation, stored.MatchDay);
+            return Result.Success();
+        });
+
+    /// Writes the season's training sessions too: the training days and the period are the whole description of when the team trains, so
+    /// saving them is what creates the evenings they add up to. The game defaults on the same row are left as the database holds them —
+    /// see <see cref="SaveMatchDefaultsAsync"/>.
+    public Task<Result<TrainingSync>> SaveTrainingScheduleAsync(MatchPreferences prefs, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "save the preferences", cancellationToken, async () =>
+        {
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
             var season = await db.Seasons.FirstOrDefaultAsync(s => s.Id == prefs.SeasonId, cancellationToken);
-            if (season is null)
-            {
-                logger.LogWarning("Cannot save preferences for season {SeasonId}: not found", prefs.SeasonId);
-                return Result.Failure<TrainingSync>("Season not found");
-            }
+            if (season is null) return SeasonNotFound(prefs.SeasonId).To<TrainingSync>();
 
             // Materialised first: Season.Contains is date-only in memory, and comparing a TEXT date in SQL is what QueryTags is about.
             var periodResult = ValidateTrainingPeriod(prefs, season);
             if (periodResult.IsFailure) return periodResult.To<TrainingSync>();
 
-            db.MatchPreferences.Update(prefs);
-            var sync = await SyncTrainingsAsync(db, prefs, cancellationToken);
+            var stored = await RowForWriteAsync(db, prefs.SeasonId, cancellationToken);
+            if (stored is null) return SeasonNotFound(prefs.SeasonId).To<TrainingSync>();
+
+            // Read before the row is written to, because from there the two describe the same schedule whether or not it moved.
+            var moved = !DescribesTheSameSchedule(stored, prefs);
+
+            stored.TrainingDays = [.. prefs.TrainingDays];
+            stored.FirstTrainingDate = prefs.FirstTrainingDate;
+            stored.LastTrainingDate = prefs.LastTrainingDate;
+
+            // Only when the schedule itself moved. Re-running the diff on a save that changed nothing would re-create the evenings the
+            // admin has since deleted.
+            var sync = moved ? await SyncTrainingsAsync(db, stored, cancellationToken) : new TrainingSync(0, 0);
             await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation(
-                "Saved match preferences for season {SeasonId}: {Duration}min, {Split}, {Formation}, {MatchDay}, training {TrainingDays} "
-                + "from {FirstTraining} to {LastTraining}, {Created} sessions created and {Removed} removed",
-                prefs.SeasonId, prefs.GameDurationMinutes, prefs.DefaultSplitType, prefs.DefaultFormation, prefs.MatchDay,
-                prefs.TrainingDays, prefs.FirstTrainingDate, prefs.LastTrainingDate, sync.Created, sync.Removed);
+                "Saved the training schedule for season {SeasonId}: training {TrainingDays} from {FirstTraining} to {LastTraining}, "
+                + "{Created} sessions created and {Removed} removed",
+                prefs.SeasonId, stored.TrainingDays, stored.FirstTrainingDate, stored.LastTrainingDate, sync.Created, sync.Removed);
             return Result.Success(sync);
         });
+
+    /// The tracked row to write onto, seeded if the season has none yet. Null when the season is not this team's, or is gone.
+    private static async Task<MatchPreferences?> RowForWriteAsync(AppDbContext db, int seasonId, CancellationToken cancellationToken)
+    {
+        var stored = await db.MatchPreferences.FirstOrDefaultAsync(p => p.SeasonId == seasonId, cancellationToken);
+        if (stored is not null) return stored;
+
+        var teamId = await db.Seasons.Where(s => s.Id == seasonId).Select(s => (int?)s.TeamId).FirstOrDefaultAsync(cancellationToken);
+        if (teamId is null) return null;
+
+        stored = await SeedForAsync(db, seasonId, teamId.Value, cancellationToken);
+        db.MatchPreferences.Add(stored);
+        return stored;
+    }
+
+    private Result SeasonNotFound(int seasonId)
+    {
+        logger.LogWarning("Cannot save preferences for season {SeasonId}: not found", seasonId);
+        return Result.Failure("Season not found");
+    }
 
     /// Both ends or no schedule: an open end means "the season's own window" everywhere else, and a session for every training day until
     /// the end of June is not what ticking a weekday asks for. Clearing either end therefore takes the generated evenings back out, which
@@ -80,13 +130,6 @@ public class MatchPreferencesService(
     private static async Task<TrainingSync> SyncTrainingsAsync(
         AppDbContext db, MatchPreferences prefs, CancellationToken cancellationToken)
     {
-        // Only when the schedule itself moved. Re-running the diff on a save that changed the game length would re-create the evenings
-        // the admin has since deleted, so an unrelated preference would quietly rewrite the training calendar.
-        var stored = await db.MatchPreferences
-            .AsNoTracking()
-            .FirstOrDefaultAsync(p => p.SeasonId == prefs.SeasonId, cancellationToken);
-        if (stored is not null && DescribesTheSameSchedule(stored, prefs)) return new TrainingSync(0, 0);
-
         var scheduled = prefs.FirstTrainingDate is { } first && prefs.LastTrainingDate is { } last
             ? TrainingSchedule.DatesIn(first, last, prefs.TrainingDays)
             : [];

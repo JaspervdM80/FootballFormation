@@ -53,8 +53,8 @@ that. It is a bound on the date *proposed*, not a rule about what may be *entere
 session outside it saves without complaint, because an extra evening in the summer is legitimate and
 a guard second-guessing the date the admin typed would be in the way.
 
-**`SaveAsync` writes the sessions the period implies**, in the same `SaveChanges` as the preferences
-themselves: one for every training day between the two dates that has no session already, and away
+**`SaveTrainingScheduleAsync` writes the sessions the period implies**, in the same `SaveChanges` as
+the schedule itself: one for every training day between the two dates that has no session already, and away
 with the generated ones outside them that carry nothing. Both ends have to be set or there is no
 schedule at all; the rules, and what is deliberately never removed, are in
 [training](training.md#the-schedule-writes-the-sessions). It hands back a `TrainingSync(Created,

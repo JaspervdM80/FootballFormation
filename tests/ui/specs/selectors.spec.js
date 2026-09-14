@@ -55,10 +55,11 @@ const SELECTORS = {
   'the availability bar': ['availability-switch', 'availability-toggle', 'pt-legend', 'pt-split',
                            'pt-seg', 'pt-played', 'pt-meta-share', 'pt-meta-max', 'position-fill'],
   'the phone layout': ['dialog-sheet', 'stacked-table', 'topbar-nav'],
-  // The chrome the specs drive without a circuit: the drawer is a checkbox and the two pickers are
-  // <details> disclosures, so these names are the only handle the tests have on them.
+  // The chrome the specs drive without a circuit: the drawer is a checkbox and the season picker is
+  // a <details> disclosure, so these names are the only handle the tests have on them.
   'the chrome': ['app-drawer', 'nav-hamburger', 'season-picker', 'season-menu-all',
-                 'season-picker-label', 'language-picker', 'language-picker-menu'],
+                 'season-picker-label', 'nav-group-admin'],
+  'the settings page': ['settings-section', 'settings-language-option'],
   // The markup that replaced a handler with a link, or a snackbar with a line on the page.
   'the pages without a circuit': ['inline-notice', 'home-tile-link', 'overview-capture', 'overview-period-card',
                                   'pd-name-cell', 'player-name-cell', 'rank-row', 'action-btn'],

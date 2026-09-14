@@ -4,9 +4,32 @@
 - Dutch is the default culture; English is the fallback (and the switcher's second option)
 - All user-facing strings go through `IStringLocalizer<Strings>` (`L`); **the English text
   is the resource key**, so only `Strings.nl.resx` exists — missing keys render as English
-- Language switcher: globe menu in `MainLayout` → `/culture/set` endpoint → culture cookie
-  → full page reload (circuit culture is fixed at startup)
+- Language switcher: the Language card on `/settings` → `/culture/set` endpoint → culture cookie
+  → full page reload (circuit culture is fixed at startup). It was a globe menu in the app bar
+  until the settings page took it; `/settings` is open to everyone so that move did not take it
+  away from visitors
 - Known limitation: `Result.Error` messages from Core services are English
+
+
+## Match notifications (`Components/MatchNotifications.razor`)
+The browser half of push, rendered from two places and written once — `push.js` keeps a single page
+reference, so two components holding that handshake would fight over it.
+
+- **The start page invites, `/settings` switches.** `<MatchNotifications />` on `/` offers *Turn on*
+  while they are off and, once they are on, a link to `/settings` instead of a *Turn off* — turning
+  them off again and back on is the settings page's job. `<MatchNotifications Manage="true"
+  Heading="…" />` there renders the same row inside a settings section of its own and carries both
+  buttons. That is the other reason `/settings` is open to everyone: a follower is not an admin.
+- **The state is the browser's, and it has four answers** (`on`, `off`, `install-first`, `blocked`)
+  plus `unsupported`, which renders nothing at all — heading included, so a browser without push is
+  not offered an empty section. Only the first interactive render can ask, because the server
+  prerenders before there is a browser to ask; see `push.js` and
+  [../known_issues/touch-pwa.md](../known_issues/touch-pwa.md).
+- **The button carries no `OnClick`.** `push.js` handles the tap from a delegated document listener,
+  because `Notification.requestPermission()` raised from a circuit message carries no user gesture
+  and Safari refuses it outright. It calls back into `NotificationStateChanged`.
+- Its CSS is `.notify-*` in `app.css`, not scoped — two pages render it, and both of its styled
+  MudBlazor children carry no scope attribute anyway.
 
 
 ## InstallBanner (PWA install prompt)
@@ -118,13 +141,13 @@ The global season filter, backed by the scoped `SeasonState` (see
   mobile drawer above the nav menu. The `Compact` parameter shortens the app-bar label to "25/26"
   (`Season.ShortName`) while the drawer shows the full "2025/26".
 - **Below 700px only the drawer copy shows** — `.mud-appbar .season-picker` is hidden, because the
-  app bar is already carrying the hamburger, title, language menu and login on a phone. The rule
+  app bar is already carrying the hamburger, title and login on a phone. The rule
   targets `.mud-appbar` specifically; the drawer instance lives in `.drawer-season-picker`.
 - **A `<details>` disclosure of plain links, not a `MudMenu`.** It renders in the layout, which is
   statically rendered on every page, so there is no circuit to open a popover from and no handler to
   dispatch a click to — and a disclosure arrives keyboard- and screen-reader-correct for free.
   Choosing a season is a navigation to `/season/set` (`AppRoutes.SetSeason`), which stores the
-  cookie and redirects back; the language switcher next to it works the same way.
+  cookie and redirects back; the language links on `/settings` work the same way.
 - It loads the season list itself (`SeasonState.EnsureLoadedAsync()` in `OnInitializedAsync`) —
   otherwise it would render nothing on the start page, where no page loads seasons. The call is
   memoized, so on the season-aware pages it shares the page's own query rather than adding one.
@@ -156,6 +179,12 @@ Everything that knows a URL lives in `UI/Navigation/`. Three rules, and the whol
 3. **The menu is `AppNav.Menu`**, rendered by `<NavItems />` in both the app bar and the drawer
    (`ShowIcons="true"` there). Adding an item is one line. There is deliberately **no Start item**:
    the club-and-team title is already a home link in both places.
+
+Each entry carries a `NavGroup`. `Primary` is what a coach opens during a match; `Administration`
+— settings, users, teams — renders in the drawer as a group of its own, pushed to the foot of the
+panel under a rule (`.nav-group-admin` in `app.css`, with `.app-drawer .mud-navmenu` stretched so
+the auto margin has room to push into). The app bar has one row and renders the whole menu in
+order. The group is never empty, because settings is the one entry in it open to everyone.
 
 ### The app's own name comes from the current team
 `TeamState` (scoped, memoized like `SeasonState`) reads `TeamService.GetCurrentAsync()` once per

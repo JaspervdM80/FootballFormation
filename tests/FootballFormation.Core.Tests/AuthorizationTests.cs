@@ -106,7 +106,7 @@ public class AuthorizationTests : ServiceTestBase
 
         // Saving preferences now writes the sessions the period implies, so the guard on it is holding back a table's worth of rows
         // rather than one settings row.
-        var result = await Preferences.SaveAsync(prefs);
+        var result = await Preferences.SaveTrainingScheduleAsync(prefs);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ServiceOperation.NotAllowedKey, result.ErrorKey);

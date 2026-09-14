@@ -497,11 +497,16 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     // worker stubbed to fail. Requiring it blocked the branch three times while measuring nothing,
     // so the button's floor is enforced where it can be observed and its absence is only reported.
     // See docs/known_issues/touch-pwa.md.
-    const button = page.locator('.home-notify-button');
+    const button = page.locator('.notify-button');
     await waitUntil(page, async () => await button.count() > 0, { timeout: 10_000 })
       .catch(() => console.log(`${viewport.name}  the opt-in row was not drawn; measuring the rest of home`));
 
-    await audit('home', '.app-main', await button.count() > 0 ? ['home-notify-button'] : []);
+    await audit('home', '.app-main', await button.count() > 0 ? ['notify-button'] : []);
+
+    // The settings page: the language rows are the only target in the app reached by a thumb on a
+    // link rather than a button, and it carries the notification switch a follower comes back to.
+    await goto(page, `${base}/settings`);
+    await audit('settings', '.app-main', ['settings-language-option']);
 
     await goto(page, `${base}/players`);
     await audit('app bar', '.mud-appbar', ['app-title-link']);
@@ -555,9 +560,9 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     await audit('live match, line-up', '.app-main', ['pitch-player']);
 
     // Asserted, not logged: a scene that stopped running would otherwise say so only in a number
-    // nobody reads. The drawer is on every viewport now, so every viewport audits the same sixteen.
-    if (scenes !== 16)
-      throw new Error(`${viewport.name}: audited ${scenes} screens, expected 16`);
+    // nobody reads. The drawer is on every viewport now, so every viewport audits the same seventeen.
+    if (scenes !== 17)
+      throw new Error(`${viewport.name}: audited ${scenes} screens, expected 17`);
     console.log(`${viewport.name.padEnd(8)} audited ${scenes} screens`);
     await context.close();
   }

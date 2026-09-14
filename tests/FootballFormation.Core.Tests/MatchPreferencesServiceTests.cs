@@ -49,7 +49,7 @@ public class MatchPreferencesServiceTests : ServiceTestBase
         lastPrefs.GameDurationMinutes = 50;
         lastPrefs.DefaultFormation = FormationType.F442;
         lastPrefs.MatchDay = DayOfWeek.Sunday;
-        await Preferences.SaveAsync(lastPrefs);
+        await Preferences.SaveMatchDefaultsAsync(lastPrefs);
 
         var inherited = (await Preferences.GetAsync(next.Id)).Value!;
 
@@ -330,7 +330,7 @@ public class MatchPreferencesServiceTests : ServiceTestBase
 
         // What an admin editing preferences while somebody else deletes the season would hand in. The period check needs the season's
         // window, so there is nothing to validate against and a raw foreign-key violation is not an answer.
-        var result = await Preferences.SaveAsync(prefs);
+        var result = await Preferences.SaveTrainingScheduleAsync(prefs);
 
         Assert.True(result.IsFailure);
         Assert.Equal("Season not found", result.ErrorKey);
@@ -344,7 +344,7 @@ public class MatchPreferencesServiceTests : ServiceTestBase
         prefs.FirstTrainingDate = new DateTime(2026, 3, 10);
         prefs.LastTrainingDate = new DateTime(2026, 3, 3);
 
-        var result = await Preferences.SaveAsync(prefs);
+        var result = await Preferences.SaveTrainingScheduleAsync(prefs);
 
         Assert.True(result.IsFailure);
         Assert.Equal("The last training must not be before the first", result.ErrorKey);
@@ -357,7 +357,7 @@ public class MatchPreferencesServiceTests : ServiceTestBase
         var prefs = (await Preferences.GetAsync(season.Id)).Value!;
         prefs.LastTrainingDate = season.EndDate.Date.AddDays(1);
 
-        var result = await Preferences.SaveAsync(prefs);
+        var result = await Preferences.SaveTrainingScheduleAsync(prefs);
 
         // A date past the window belongs to the next season, and a session dated there would be filed under it — so the period would be
         // describing a season it is not attached to.
@@ -390,7 +390,7 @@ public class MatchPreferencesServiceTests : ServiceTestBase
         await SetTrainingPeriodAsync(season.Id, new DateTime(2026, 3, 2), new DateTime(2026, 3, 15));
 
         var prefs = (await Preferences.GetAsync(season.Id)).Value!;
-        var again = await Preferences.SaveAsync(prefs);
+        var again = await Preferences.SaveTrainingScheduleAsync(prefs);
 
         // Pressing Save twice is not a way to end up with every evening entered twice.
         Assert.True(again.Value!.IsEmpty);
@@ -511,20 +511,83 @@ public class MatchPreferencesServiceTests : ServiceTestBase
 
         var prefs = (await Preferences.GetAsync(season.Id)).Value!;
         prefs.GameDurationMinutes = 50;
-        var result = await Preferences.SaveAsync(prefs);
+        var result = await Preferences.SaveMatchDefaultsAsync(prefs);
 
-        // The schedule did not move, so the diff does not run: an evening the admin deleted must not come back because the game length
+        // The defaults do not touch the schedule at all: an evening the admin deleted must not come back because the game length
         // changed. Re-entering it is the dialog's job, and a week off is what "Did not take place" is for.
-        Assert.True(result.Value!.IsEmpty);
+        Assert.True(result.IsSuccess);
         Assert.DoesNotContain(new DateTime(2026, 3, 24), Read().Trainings.Select(t => t.Date).ToList());
         Assert.Equal(50, Read().MatchPreferences.Single().GameDurationMinutes);
+    }
+
+    [Fact]
+    public async Task The_match_defaults_can_be_saved_for_a_season_whose_row_has_never_been_read()
+    {
+        var season = await SeedSeasonAsync(covering: Saturday);
+        Assert.Empty(Read().MatchPreferences);
+
+        // GetAsync seeds the row on first read and both pages read before they write, so this is the defensive path — and the one that
+        // decides whether a save can create a row the team may not have.
+        var result = await Preferences.SaveMatchDefaultsAsync(
+            new MatchPreferences { SeasonId = season.Id, GameDurationMinutes = 50 });
+
+        Assert.True(result.IsSuccess);
+        var saved = Read().MatchPreferences.Single();
+        Assert.Equal(50, saved.GameDurationMinutes);
+        Assert.Equal(season.TeamId, saved.TeamId);
+    }
+
+    [Fact]
+    public async Task Match_defaults_for_a_season_that_is_gone_are_refused_rather_than_saved()
+    {
+        await SeedSeasonAsync(covering: Saturday);
+
+        var result = await Preferences.SaveMatchDefaultsAsync(new MatchPreferences { SeasonId = 9999 });
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Season not found", result.ErrorKey);
+        Assert.Empty(Read().MatchPreferences);
+    }
+
+    [Fact]
+    public async Task Saving_the_match_defaults_leaves_a_training_schedule_changed_since_alone()
+    {
+        var season = await SeedSeasonAsync(covering: Saturday);
+
+        // The snapshot /preferences loaded with, taken before /settings moved the schedule underneath it.
+        var stale = (await Preferences.GetAsync(season.Id)).Value!;
+        await SetTrainingDaysAsync(season.Id, DayOfWeek.Tuesday);
+
+        stale.GameDurationMinutes = 50;
+        Assert.True((await Preferences.SaveMatchDefaultsAsync(stale)).IsSuccess);
+
+        // Two pages edit this one row, so a save that wrote every column would take the training days back out again.
+        var saved = Read().MatchPreferences.Single();
+        Assert.Equal(50, saved.GameDurationMinutes);
+        Assert.Equal([DayOfWeek.Tuesday], saved.TrainingDays);
+    }
+
+    [Fact]
+    public async Task Saving_the_training_schedule_leaves_a_match_default_changed_since_alone()
+    {
+        var season = await SeedSeasonAsync(covering: Saturday);
+
+        var stale = (await Preferences.GetAsync(season.Id)).Value!;
+        await SetDurationAsync(season.Id, 50);
+
+        stale.TrainingDays = [DayOfWeek.Tuesday];
+        Assert.True((await Preferences.SaveTrainingScheduleAsync(stale)).IsSuccess);
+
+        var saved = Read().MatchPreferences.Single();
+        Assert.Equal(50, saved.GameDurationMinutes);
+        Assert.Equal([DayOfWeek.Tuesday], saved.TrainingDays);
     }
 
     private async Task SetTrainingDaysAsync(int seasonId, params DayOfWeek[] days)
     {
         var prefs = (await Preferences.GetAsync(seasonId)).Value!;
         prefs.TrainingDays = [.. days];
-        await Preferences.SaveAsync(prefs);
+        await Preferences.SaveTrainingScheduleAsync(prefs);
     }
 
     private async Task SetTrainingPeriodAsync(int seasonId, DateTime? first, DateTime? last)
@@ -532,20 +595,20 @@ public class MatchPreferencesServiceTests : ServiceTestBase
         var prefs = (await Preferences.GetAsync(seasonId)).Value!;
         prefs.FirstTrainingDate = first;
         prefs.LastTrainingDate = last;
-        Assert.True((await Preferences.SaveAsync(prefs)).IsSuccess);
+        Assert.True((await Preferences.SaveTrainingScheduleAsync(prefs)).IsSuccess);
     }
 
     private async Task SetMatchDayAsync(int seasonId, DayOfWeek matchDay)
     {
         var prefs = (await Preferences.GetAsync(seasonId)).Value!;
         prefs.MatchDay = matchDay;
-        await Preferences.SaveAsync(prefs);
+        await Preferences.SaveMatchDefaultsAsync(prefs);
     }
 
     private async Task SetDurationAsync(int seasonId, int minutes)
     {
         var prefs = (await Preferences.GetAsync(seasonId)).Value!;
         prefs.GameDurationMinutes = minutes;
-        await Preferences.SaveAsync(prefs);
+        await Preferences.SaveMatchDefaultsAsync(prefs);
     }
 }

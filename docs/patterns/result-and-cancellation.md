@@ -84,7 +84,8 @@ would take the app bar down with it.
 
 **`MatchPreferencesService.GetAsync` is the one read that writes**, and the one place the rule
 needed spelling out inside a method rather than at the call site. It seeds a preferences row for a
-season on first read, and both `/settings` and the game dialog hand it a page-lifetime token. The
+season on first read, and `/preferences`, `/settings` and the game dialog all hand it a page-lifetime
+token. The
 lookups above the seeding take that token and give up having written nothing, which is right; the
 `SaveChangesAsync` that inserts the row takes `CancellationToken.None`, because by then it is a
 write and a write finishes. `SeasonService.CloseSeasonGapsAsync` and `EnsureCurrentSeasonAsync` are
