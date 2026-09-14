@@ -34,6 +34,14 @@
     min-width: 160px;
 }
 
+/* One stack, two levels: the squad and the absentees, and the absentees' own two cards. */
+.player-list-panel,
+.absent-panels {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 .pitch-panel {
     flex: 0 0 420px;
     max-width: 420px;
@@ -258,5 +266,10 @@
     .subs-panel {
         flex: 1 1 auto;
         max-width: 100%;
+    }
+
+    /* The pitch is underneath the panel once it stacks, so the squad dragged onto it goes last. */
+    .absent-panels {
+        order: -1;
     }
 }
