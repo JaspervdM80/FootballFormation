@@ -12,6 +12,7 @@ public static class AppRoutes
     public const string Trainings = "/trainings";
     public const string SeasonStats = "/stats";
     public const string PositionDevelopment = "/stats/positions";
+    public const string Preferences = "/preferences";
     public const string Settings = "/settings";
     public const string Users = "/users";
     public const string Teams = "/teams";

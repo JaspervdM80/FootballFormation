@@ -20,40 +20,41 @@ public partial class Settings
 
     private MatchPreferences? _prefs;
     private MudForm _passwordForm = null!;
-    private DateTime? _nextMatchDate;
     private DateTime? _nextTrainingDate;
 
     private List<Season>? _seasons;
 
-    /// Starts on whatever the app bar picker shows but is its own choice, so an admin can set next season's game length from here.
-    private int _prefsSeasonId;
+    /// The season whose training period is being edited. Starts on whatever the app bar picker shows, so next season can be planned here.
+    private int _trainingSeasonId;
 
-    private Season? PrefsSeason => _seasons?.FirstOrDefault(s => s.Id == _prefsSeasonId);
-
-    /// Read off the default shape rather than stored beside it, so the two pickers cannot disagree about how many a side the season plays.
-    private MatchFormat DefaultMatchFormat =>
-        _prefs?.DefaultFormation.Format() ?? MatchFormat.ElevenASide;
-
-    private void OnDefaultMatchFormatChanged(MatchFormat format)
-    {
-        if (_prefs is not null) _prefs.DefaultFormation = format.DefaultFormation();
-    }
+    private Season? TrainingSeason => _seasons?.FirstOrDefault(s => s.Id == _trainingSeasonId);
 
     private string _currentPassword = "";
     private string _newPassword = "";
     private string _confirmPassword = "";
 
+    /// Everything but the language card is behind an AuthorizeView, so a visitor is not promised sections they cannot see.
+    private bool _isAdmin;
+
     /// The account is still on the seeded password, and MainLayout has pinned them to this page.
     private bool _mustChangePassword;
 
+    private string Subtitle => _isAdmin
+        ? L["The language, the seasons, the training schedule, and your own password."]
+        : L["The language the app speaks."];
+
     protected override async Task OnInitializedAsync()
     {
-        _mustChangePassword = (await AuthStateTask).User.MustChangePassword();
+        var user = (await AuthStateTask).User;
+        _isAdmin = user.IsAdmin();
+        _mustChangePassword = user.MustChangePassword();
+
+        if (!_isAdmin) return;
 
         await SeasonState.EnsureLoadedAsync();
         await LoadSeasons();
 
-        _prefsSeasonId = SeasonState.SelectedSeasonId
+        _trainingSeasonId = SeasonState.SelectedSeasonId
             ?? _seasons?.FirstOrDefault(s => s.IsCurrent)?.Id
             ?? _seasons?.FirstOrDefault()?.Id
             ?? 0;
@@ -63,28 +64,27 @@ public partial class Settings
 
     private async Task LoadPreferences()
     {
-        if (_prefsSeasonId == 0)
+        if (_trainingSeasonId == 0)
         {
             _prefs = null;
-            _nextMatchDate = null;
             _nextTrainingDate = null;
             return;
         }
 
-        var prefsResult = await PreferencesService.GetAsync(_prefsSeasonId, Cancellation);
+        var prefsResult = await PreferencesService.GetAsync(_trainingSeasonId, Cancellation);
         if (!Snackbar.ReportFailure(L, prefsResult)) return;
 
         _prefs = prefsResult.Value;
-        await RefreshNextDates();
+        await RefreshNextTrainingDate();
     }
 
-    private async Task OnPrefsSeasonChanged(int seasonId)
+    private async Task OnTrainingSeasonChanged(int seasonId)
     {
-        _prefsSeasonId = seasonId;
+        _trainingSeasonId = seasonId;
         await LoadPreferences();
     }
 
-    /// Lands back on this page, which is where the choice was made — see MainLayout.CultureUrl for why it is a link rather than a handler.
+    /// A link back to this page, not a handler: the circuit's culture is fixed at startup, so /culture/set only takes effect on a reload.
     private static string CultureUrl(string culture) => AppRoutes.SetCulture(culture, AppRoutes.Settings);
 
     private static bool IsCurrentCulture(string culture) =>
@@ -114,10 +114,10 @@ public partial class Settings
         await LoadSeasons();
         await SeasonState.RefreshAsync();
 
-        // The defaults card may have been editing the season that just went away.
-        if (_seasons?.Any(s => s.Id == _prefsSeasonId) != true)
+        // The training card may have been editing the season that just went away.
+        if (_seasons?.Any(s => s.Id == _trainingSeasonId) != true)
         {
-            _prefsSeasonId = _seasons?.FirstOrDefault(s => s.IsCurrent)?.Id
+            _trainingSeasonId = _seasons?.FirstOrDefault(s => s.IsCurrent)?.Id
                 ?? _seasons?.FirstOrDefault()?.Id
                 ?? 0;
             await LoadPreferences();
@@ -172,25 +172,23 @@ public partial class Settings
         });
     }
 
-    private async Task Save()
+    /// Writes the whole preferences row, match defaults included — /preferences edits the same one, so it is loaded fresh on both pages.
+    private async Task SaveTrainingSettings()
     {
         if (_prefs is null) return;
 
         var saveResult = await PreferencesService.SaveAsync(_prefs);
-        if (!Snackbar.Report(L, saveResult, L["Preferences for {0} saved!", PrefsSeason?.Name ?? ""])) return;
+        if (!Snackbar.Report(L, saveResult, L["Preferences for {0} saved!", TrainingSeason?.Name ?? ""])) return;
 
         if (saveResult.Value is { IsEmpty: false } sync)
             Snackbar.Add(L["{0} trainings created, {1} removed", sync.Created, sync.Removed], Severity.Info);
 
-        await RefreshNextDates();
+        await RefreshNextTrainingDate();
     }
 
-    private async Task RefreshNextDates()
+    private async Task RefreshNextTrainingDate()
     {
-        var matchResult = await PreferencesService.GetNextMatchDateAsync(_prefsSeasonId, Cancellation);
-        if (matchResult.IsSuccess) _nextMatchDate = matchResult.Value;
-
-        var trainingResult = await PreferencesService.GetNextTrainingDateAsync(_prefsSeasonId, Cancellation);
+        var trainingResult = await PreferencesService.GetNextTrainingDateAsync(_trainingSeasonId, Cancellation);
         if (trainingResult.IsSuccess) _nextTrainingDate = trainingResult.Value;
     }
 
@@ -211,8 +209,8 @@ public partial class Settings
             return;
         }
 
-        // No fallback: the page is [Authorize]d, so an absent name means the principal is wrong, and defaulting to "admin" would aim the
-        // change at somebody else's account.
+        // No fallback: the card is behind an AuthorizeView, so an absent name means the principal is wrong, and defaulting to "admin" would
+        // aim the change at somebody else's account.
         var authState = await AuthStateTask;
         var username = authState.User.Identity?.Name;
         if (string.IsNullOrEmpty(username))

@@ -115,10 +115,12 @@ test('the training days read in the language the app is in', async ({ page }) =>
 
   // MudSelectItem's child content styles the open list only: the collapsed field is the converter's,
   // and its default for an enum is ToString(). Without ToStringFunc both of these read English to a
-  // Dutch admin — see docs/known_issues/blazor-mudblazor.md.
+  // Dutch admin — see docs/known_issues/blazor-mudblazor.md. They are on a page each now, and both
+  // day selects pass it, so both are checked.
   await page.goto(`/culture/set?culture=nl&redirectUri=${encodeURIComponent('/')}`);
   await goto(page, '/settings');
-
   await expect(fieldValue(page, 'Trainingsdagen')).toHaveValue('maandag, woensdag');
+
+  await goto(page, '/preferences');
   await expect(fieldValue(page, 'Wedstrijddag')).toHaveValue('zaterdag');
 });

@@ -571,20 +571,18 @@ a.action-btn {
     display: none;
 }
 
-/* --- Season and language pickers ---
-   Not scoped CSS: the season picker renders from both the app bar and the mobile drawer, and
-   isolation would force a duplicate stylesheet for the second placement.
+/* --- Season picker ---
+   Not scoped CSS: it renders from both the app bar and the mobile drawer, and isolation would force
+   a duplicate stylesheet for the second placement.
 
-   Both are <details> disclosures rather than MudMenu. They render in the layout, which is
-   statically rendered on every page, so there is no circuit to open a popover from — and the
-   browser gives keyboard and screen-reader behaviour for a disclosure for free. */
-.season-picker,
-.language-picker {
+   A <details> disclosure rather than MudMenu. It renders in the layout, which is statically
+   rendered on every page, so there is no circuit to open a popover from — and the browser gives
+   keyboard and screen-reader behaviour for a disclosure for free. */
+.season-picker {
     position: relative;
 }
 
-.season-picker > summary,
-.language-picker > summary {
+.season-picker > summary {
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -601,19 +599,16 @@ a.action-btn {
 }
 
 /* Safari draws its own triangle through a pseudo-element the standard property does not reach. */
-.season-picker > summary::-webkit-details-marker,
-.language-picker > summary::-webkit-details-marker {
+.season-picker > summary::-webkit-details-marker {
     display: none;
 }
 
-.season-picker > summary:hover,
-.language-picker > summary:hover {
+.season-picker > summary:hover {
     color: color-mix(in srgb, var(--ink) 80%, transparent);
     background: color-mix(in srgb, var(--ink) 4%, transparent);
 }
 
-.season-picker-menu,
-.language-picker-menu {
+.season-picker-menu {
     position: absolute;
     top: 100%;
     right: 0;
@@ -628,8 +623,7 @@ a.action-btn {
 }
 
 /* Menu rows pair the season name with its "current" pill */
-.season-menu-item,
-.language-picker-menu > a {
+.season-menu-item {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -642,8 +636,7 @@ a.action-btn {
     text-decoration: none;
 }
 
-.season-menu-item:hover,
-.language-picker-menu > a:hover {
+.season-menu-item:hover {
     background: var(--surface-card-alt);
 }
 

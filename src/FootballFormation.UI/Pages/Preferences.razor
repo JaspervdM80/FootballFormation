@@ -1,0 +1,77 @@
+@page "/preferences"
+@attribute [Authorize(Roles = AppRoles.Admin)]
+@inherits CancellableComponent
+@rendermode InteractiveServer
+
+@* See InteractiveShell: the providers and the session gate this page no longer inherits, because
+   the layout renders statically. *@
+<InteractiveShell RequiresRole="@AppRoles.Admin" />
+
+<PageTitle>@L["Match Preferences"]</PageTitle>
+
+<PageHeader Class="mb-6" Title="@L["Match Preferences"]"
+            Subtitle="@L["These defaults are applied when creating new games, and are kept per season."]" />
+
+<MudPaper Class="pa-6" MaxWidth="500px" Elevation="2" Style="border-radius: 16px;">
+    <div class="card-label">@L["Defaults"]</div>
+
+    <MudSelect T="int" Value="_prefsSeasonId" ValueChanged="OnPrefsSeasonChanged"
+               Label="@L["Season"]" Class="mb-4">
+        @foreach (var season in _seasons ?? [])
+        {
+            <MudSelectItem Value="season.Id">@season.Name</MudSelectItem>
+        }
+    </MudSelect>
+
+    @if (_prefs is null)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else
+    {
+    <MudForm>
+        <MudNumericField T="int" @bind-Value="_prefs.GameDurationMinutes"
+                         Label="@L["Game Duration (minutes)"]" Min="10" Max="120" Step="5"
+                         Class="mb-4" />
+
+        <MudSelect T="GameSplitType" @bind-Value="_prefs.DefaultSplitType"
+                   Label="@L["Default Game Split"]" Class="mb-4">
+            <MudSelectItem Value="GameSplitType.Halves">@L["Halves (2 periods)"]</MudSelectItem>
+            <MudSelectItem Value="GameSplitType.Quarters">@L["Quarters (4 periods)"]</MudSelectItem>
+        </MudSelect>
+
+        <MudSelect T="MatchFormat" Value="DefaultMatchFormat" ValueChanged="OnDefaultMatchFormatChanged"
+                   Label="@L["Default Match Format"]" Class="mb-4">
+            @foreach (var format in MatchFormatExtensions.Descending)
+            {
+                <MudSelectItem Value="format">@L[format.DisplayName()]</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSelect T="FormationType" @bind-Value="_prefs.DefaultFormation"
+                   Label="@L["Default Formation"]" Class="mb-4">
+            @foreach (var f in FormationTypeExtensions.Alphabetical(DefaultMatchFormat))
+            {
+                <MudSelectItem Value="f">@L[f.DisplayName()]</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSelect T="DayOfWeek" @bind-Value="_prefs.MatchDay" ToStringFunc="DayName"
+                   Label="@L["Match Day"]" Class="mb-4">
+            @foreach (var day in Enum.GetValues<DayOfWeek>())
+            {
+                <MudSelectItem Value="day">@DayName(day)</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudText Typo="Typo.caption" Style="color: var(--ink-muted);" Class="mb-4">
+            @L["Next calculated match date:"] <strong style="color: var(--club-primary-bright);">@_nextMatchDate?.ToString("dddd dd MMM yyyy")</strong>
+        </MudText>
+    </MudForm>
+
+    <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Save"
+               OnClick="Save" FullWidth="true">
+        @L["Save Preferences"]
+    </MudButton>
+    }
+</MudPaper>

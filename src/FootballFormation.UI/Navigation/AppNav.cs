@@ -24,7 +24,8 @@ public static class AppNav
         new(AppRoutes.Games, PageNameKey(AppRoutes.Games)!, Icons.Material.Filled.SportsSoccer, NavLinkMatch.Prefix),
         new(AppRoutes.Trainings, PageNameKey(AppRoutes.Trainings)!, Icons.Material.Filled.FitnessCenter, NavLinkMatch.Prefix, RequiresRole: AppRoles.Admin),
         new(AppRoutes.SeasonStats, PageNameKey(AppRoutes.SeasonStats)!, Icons.Material.Filled.BarChart, NavLinkMatch.Prefix),
-        new(AppRoutes.Settings, PageNameKey(AppRoutes.Settings)!, Icons.Material.Filled.Settings, NavLinkMatch.All, RequiresRole: AppRoles.Admin, Group: NavGroup.Administration),
+        new(AppRoutes.Preferences, PageNameKey(AppRoutes.Preferences)!, Icons.Material.Filled.Tune, NavLinkMatch.All, RequiresRole: AppRoles.Admin),
+        new(AppRoutes.Settings, PageNameKey(AppRoutes.Settings)!, Icons.Material.Filled.Settings, NavLinkMatch.All, Group: NavGroup.Administration),
         new(AppRoutes.Users, PageNameKey(AppRoutes.Users)!, Icons.Material.Filled.ManageAccounts, NavLinkMatch.All, RequiresRole: AppRoles.Admin, Group: NavGroup.Administration),
         new(AppRoutes.Teams, PageNameKey(AppRoutes.Teams)!, Icons.Material.Filled.Shield, NavLinkMatch.All, RequiresRole: AppRoles.ApplicationAdmin, Group: NavGroup.Administration),
     ];
@@ -44,6 +45,7 @@ public static class AppNav
         ["trainings"] => "Trainings",
         ["stats"] => "Season",
         ["stats", "positions"] => "Position Development",
+        ["preferences"] => "Preferences",
         ["settings"] => "Settings",
         ["users"] => "Users",
         ["teams"] => "Teams",

@@ -131,11 +131,11 @@ because [that invariant does not live in the markup](../models/training.md#a-ses
 `/settings` carries them as a section of its own — the **Training schedule** card under the
 **Training settings** heading: the weekday multi-select, then **First training** and **Last
 training** as two `Clearable` `MudDatePicker`s, then the "Next calculated training date" caption the
-three of them move. They are stored per season, on the same `MatchPreferences` row as the match
-defaults, so the card names the season the **Match defaults** picker above it is pointed at and
-**Save training settings** writes that whole row. Clearable matters — an empty date is a real value
-here, meaning the season's own window, not an unfilled field, and clearing either end is how the
-generated sessions are taken back out. A period that ends before it starts, or reaches outside the season, is refused by `SaveAsync`
+three of them move, under a season select of its own. They live on the same `MatchPreferences` row
+as the match defaults `/preferences` edits, so **Save training settings** writes that whole row —
+both pages load it fresh. Clearable matters — an empty date is a real value here, meaning the
+season's own window, not an unfilled field, and clearing either end is how the generated sessions
+are taken back out. A period that ends before it starts, or reaches outside the season, is refused by `SaveAsync`
 with a message rather than saved.
 
 **Save writes the sessions**, and says so: a second snackbar, "{0} trainings created, {1} removed",
@@ -151,5 +151,5 @@ format, not a string somebody translates.
 ## The way in
 
 `AppNav.Menu` (`RequiresRole: AppRoles.Admin`) and a tile on the homepage, inside the same `<AuthorizeView>` as
-the Settings tile — `/trainings` is `[Authorize]`d, so a tile a visitor can see is a door that
+the Preferences tile — `/trainings` is `[Authorize]`d, so a tile a visitor can see is a door that
 only ever opens onto the login screen.

@@ -45,8 +45,8 @@ public class MatchPreferencesService(
     /// Writes the season's training sessions too: the training days and the period are the whole description of when the team trains, so
     /// saving them is what creates the evenings they add up to.
     public Task<Result<TrainingSync>> SaveAsync(MatchPreferences prefs, CancellationToken cancellationToken = default) =>
-        // "save the preferences", not "save preferences": resx keys are case-insensitive, so the phrase would collide with a button
-        // labelled "Save Preferences". See docs/known_issues/localization.md.
+        // "save the preferences", not "save preferences": resx keys are case-insensitive, and /preferences already has a "Save Preferences"
+        // button that would collide. See docs/known_issues/localization.md.
         ServiceOperation.RunAdminAsync(currentUser, logger, "save the preferences", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);

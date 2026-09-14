@@ -1,18 +1,18 @@
 // What the app bar does when it runs out of room, at the widths where it does.
 //
 // This is a regression spec rather than a feature one. #137 was seven nav links laid out against a
-// breakpoint derived for five: the season picker, the language picker and sign out went off the
-// right-hand edge, with no scroll and — above 700px — no drawer to reach them from either. Nothing
-// failed. The touch audit skips a target clipped out of the viewport by design, and the specs that
-// click `.topbar-nav a` only ever name links near the left of the bar.
+// breakpoint derived for five: the season picker and sign out went off the right-hand edge, with no
+// scroll and — above 700px — no drawer to reach them from either. Nothing failed. The touch audit
+// skips a target clipped out of the viewport by design, and the specs that click `.topbar-nav a`
+// only ever name links near the left of the bar.
 //
 // So this measures the two things that were quietly untrue: the bar does not overflow, and whatever
-// it drops is in the drawer. Neither is visible from a unit test, and an eighth section would
+// it drops is in the drawer. Neither is visible from a unit test, and another section would
 // otherwise break both again with every check green.
 import { test, expect } from '../fixtures.js';
 import { clickFor, gotoRendered } from '../helpers.js';
 
-// Signed in as an admin, which is the case that overflowed: seven sections rather than three, plus
+// Signed in as an admin, which is the case that overflowed: every section rather than three, plus
 // the account name and the sign-out button. The two shapes the issue named, and one with room.
 const SHAPES = [
   ['a landscape phone', 844, 390],
@@ -21,13 +21,12 @@ const SHAPES = [
 ];
 
 for (const [shape, width, height] of SHAPES) {
-  test(`the season picker, the language picker and sign out stay on the bar on ${shape}`, async ({ page }) => {
+  test(`the season picker and sign out stay on the bar on ${shape}`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await gotoRendered(page, '/players');
 
     // In the viewport, not merely in the DOM — being in the DOM is exactly what the clipped ones were.
     await expect(page.locator('.mud-appbar .season-picker')).toBeInViewport();
-    await expect(page.locator('.mud-appbar .language-picker')).toBeInViewport();
     await expect(page.locator('.logout-btn')).toBeInViewport();
 
     // And the bar has nothing hidden past its own right edge, which is the measurement the touch
@@ -40,7 +39,7 @@ for (const [shape, width, height] of SHAPES) {
 }
 
 test('a section the bar has no room for is in the drawer rather than nowhere', async ({ page }) => {
-  // 844x390 leaves room for one nav link, so the other six are the drop this is about.
+  // 844x390 leaves room for one nav link, so the rest are the drop this is about.
   await page.setViewportSize({ width: 844, height: 390 });
   await gotoRendered(page, '/players');
 

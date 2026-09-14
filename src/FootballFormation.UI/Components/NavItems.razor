@@ -4,13 +4,11 @@
 
 @if (ShowIcons)
 {
-    @* The drawer parks the administration entries at its foot; the app bar has one row and keeps them in line. The group is
-       authorized as a whole as well as per entry, so a visitor is not shown the rule above an empty foot. *@
-    <AuthorizeView Roles="@AppRoles.Admin">
-        <div class="nav-group-admin">
-            @Links(NavGroup.Administration)
-        </div>
-    </AuthorizeView>
+    @* The drawer parks the administration entries at its foot; the app bar has one row and keeps them in line. Never empty: settings is
+       open to everyone, so the rule above the group always has something under it. *@
+    <div class="nav-group-admin">
+        @Links(NavGroup.Administration)
+    </div>
 }
 else
 {

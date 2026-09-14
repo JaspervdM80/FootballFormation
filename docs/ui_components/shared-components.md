@@ -4,8 +4,10 @@
 - Dutch is the default culture; English is the fallback (and the switcher's second option)
 - All user-facing strings go through `IStringLocalizer<Strings>` (`L`); **the English text
   is the resource key**, so only `Strings.nl.resx` exists — missing keys render as English
-- Language switcher: globe menu in `MainLayout` → `/culture/set` endpoint → culture cookie
-  → full page reload (circuit culture is fixed at startup)
+- Language switcher: the Language card on `/settings` → `/culture/set` endpoint → culture cookie
+  → full page reload (circuit culture is fixed at startup). It was a globe menu in the app bar
+  until the settings page took it; `/settings` is open to everyone so that move did not take it
+  away from visitors
 - Known limitation: `Result.Error` messages from Core services are English
 
 
@@ -118,15 +120,13 @@ The global season filter, backed by the scoped `SeasonState` (see
   mobile drawer above the nav menu. The `Compact` parameter shortens the app-bar label to "25/26"
   (`Season.ShortName`) while the drawer shows the full "2025/26".
 - **Below 700px only the drawer copy shows** — `.mud-appbar .season-picker` is hidden, because the
-  app bar is already carrying the hamburger, title, language menu and login on a phone. The rule
+  app bar is already carrying the hamburger, title and login on a phone. The rule
   targets `.mud-appbar` specifically; the drawer instance lives in `.drawer-season-picker`.
 - **A `<details>` disclosure of plain links, not a `MudMenu`.** It renders in the layout, which is
   statically rendered on every page, so there is no circuit to open a popover from and no handler to
   dispatch a click to — and a disclosure arrives keyboard- and screen-reader-correct for free.
   Choosing a season is a navigation to `/season/set` (`AppRoutes.SetSeason`), which stores the
-  cookie and redirects back; the language switcher next to it works the same way. The globe stays in
-  the app bar even though `/settings` now carries a Language card too: that page is admin-only, and
-  the globe is the only way an anonymous visitor changes language.
+  cookie and redirects back; the language links on `/settings` work the same way.
 - It loads the season list itself (`SeasonState.EnsureLoadedAsync()` in `OnInitializedAsync`) —
   otherwise it would render nothing on the start page, where no page loads seasons. The call is
   memoized, so on the season-aware pages it shares the page's own query rather than adding one.
@@ -163,8 +163,7 @@ Each entry carries a `NavGroup`. `Primary` is what a coach opens during a match;
 — settings, users, teams — renders in the drawer as a group of its own, pushed to the foot of the
 panel under a rule (`.nav-group-admin` in `app.css`, with `.app-drawer .mud-navmenu` stretched so
 the auto margin has room to push into). The app bar has one row and renders the whole menu in
-order. The drawer's group is wrapped in an `<AuthorizeView Roles="Admin">` as well as each entry
-being authorized on its own, so a visitor is not shown a rule above an empty foot.
+order. The group is never empty, because settings is the one entry in it open to everyone.
 
 ### The app's own name comes from the current team
 `TeamState` (scoped, memoized like `SeasonState`) reads `TeamService.GetCurrentAsync()` once per

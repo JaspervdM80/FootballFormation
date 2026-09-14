@@ -92,7 +92,7 @@ test('switching an eleven-a-side match to nine benches the starters it has no sl
 });
 
 test('the season preferences pick a format for every match that follows', async ({ page }) => {
-  await goto(page, '/settings');
+  await goto(page, '/preferences');
   // The page itself: there is no dialog to scope to here, and MudAppBar is a MudPaper too, so
   // `.mud-paper` first is the chrome rather than the preferences card.
   const prefs = page.locator('body');

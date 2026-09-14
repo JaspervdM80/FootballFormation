@@ -19,7 +19,7 @@ real SignalR circuit.
 | Spec | What it holds |
 | --- | --- |
 | `smoke.spec.js` | Every page renders, is interactive, and is not still spinning |
-| `authorization.spec.js` | The public/admin split — a visitor reads the squad, fixtures and stats, is offered no control that writes, and is bounced from `/settings` and `/users` with the route it wanted remembered |
+| `authorization.spec.js` | The public/admin split — a visitor reads the squad, fixtures and stats, is offered no control that writes, and is bounced from `/preferences` and `/users` with the route it wanted remembered, and reaches `/settings` for the language and nothing else |
 | `squad.spec.js` | Adding, editing and archiving a player; a nameless player is refused and told why |
 | `games.spec.js` | Creating, editing and deleting a match; season defaults filling the form; the missing-lineup warning appearing only for a match already played |
 | `match-day.spec.js` | The journey the app exists for: drag a lineup onto the pitch, save it, run the match live, log goals, blow the whistle, and find the scoreline on the games list — plus the playing-time table dropping its `~` estimate for the match clock once that has happened |

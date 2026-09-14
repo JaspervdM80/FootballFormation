@@ -119,7 +119,7 @@
         </a>
     </MudItem>
 
-    @* /trainings and /settings are [Authorize]d, so a visitor tapping either tile only ever reached the
+    @* /trainings and /preferences are [Authorize]d, so a visitor tapping either tile only ever reached the
        login screen. Hide the whole tile rather than offer a door that is locked. *@
     <AuthorizeView Roles="@AppRoles.Admin">
         <MudItem xs="12" sm="6" md="4">
@@ -135,12 +135,12 @@
         </MudItem>
 
         <MudItem xs="12" sm="6" md="4">
-            <a class="home-tile-link" href="@AppRoutes.Settings">
+            <a class="home-tile-link" href="@AppRoutes.Preferences">
                 <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;">
-                    <MudIcon Icon="@Icons.Material.Filled.Settings" Size="Size.Large" Style="color: var(--club-primary-bright);" />
-                    <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Settings"]</MudText>
+                    <MudIcon Icon="@Icons.Material.Filled.Tune" Size="Size.Large" Style="color: var(--club-primary-bright);" />
+                    <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Preferences"]</MudText>
                     <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
-                        @L["Language, seasons, match defaults, trainings and your password."]
+                        @L["Configure match duration, split type, and defaults."]
                     </MudText>
                 </MudPaper>
             </a>

@@ -56,7 +56,8 @@ document.querySelector('form[action="/auth/logout"] button').click()
 | `/games/{id}/result` | yes | score entry |
 | `/games/{id}/live` | yes, read-only | **the risky one** — per-second timer, six `AuthorizeView` blocks, its own mobile flex-`order` reflow. Admin drives the clock, goals and substitutions |
 | `/games/{id}/formation` | **no** — `[Authorize(Roles = Admin)]` | drag & drop; anonymous is redirected to `/login` |
-| `/settings` | **no** — `[Authorize(Roles = Admin)]` | season management and self-service password change |
+| `/preferences` | **no** — `[Authorize(Roles = Admin)]` | the per-season match defaults |
+| `/settings` | yes | a visitor is shown the language card and nothing else; the season list, training schedule and password form are behind an `AuthorizeView` |
 | `/users` | **no** — `[Authorize(Roles = Admin)]` | account management |
 | `/not-found`, `/Error` | yes | both localized; easy to forget when sweeping for English text |
 

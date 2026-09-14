@@ -43,7 +43,7 @@ changed.
 ## Other rules
 
 - Comments and resource keys are English, even though the UI ships Dutch first.
-- The language switcher is the globe menu in `MainLayout` → `/culture/set` → culture cookie → full
+- The language switcher is the Language card on `/settings` → `/culture/set` → culture cookie → full
   page reload. Circuit culture is fixed at startup, so it cannot be swapped in place.
 - `UiFeedback.Translate` looks up both the message template and its arguments — a service states its
   error in English and the page translates it with `L`.
