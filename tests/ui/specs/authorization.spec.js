@@ -101,7 +101,7 @@ test.describe('an admin', () => {
     // /stats/positions carries its only handler on a MudTable, which binds no `_bl_` — see
     // gotoRendered. It is still an admin-only route, which is what this test is about.
     for (const [path, heading, open] of [
-      ['/settings', 'Match Preferences', goto],
+      ['/settings', 'Settings', goto],
       ['/users', 'Users', goto],
       ['/teams', 'Teams', goto],
       ['/stats/positions', 'Position Development', gotoRendered],

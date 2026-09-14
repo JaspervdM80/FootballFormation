@@ -84,6 +84,14 @@ public partial class Settings
         await LoadPreferences();
     }
 
+    /// Lands back on this page, which is where the choice was made — see MainLayout.CultureUrl for why it is a link rather than a handler.
+    private static string CultureUrl(string culture) => AppRoutes.SetCulture(culture, AppRoutes.Settings);
+
+    private static bool IsCurrentCulture(string culture) =>
+        string.Equals(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName, culture, StringComparison.OrdinalIgnoreCase);
+
+    private static string? CultureClass(string culture) => IsCurrentCulture(culture) ? "is-current" : null;
+
     /// The dropdown items say it in the ambient culture; without this the collapsed field falls back to DayOfWeek.ToString().
     private static string DayName(DayOfWeek day) => CultureInfo.CurrentUICulture.DateTimeFormat.GetDayName(day);
 

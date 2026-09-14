@@ -144,7 +144,7 @@ What the diff may remove is only `IsUnusedSchedule`: generated, with nothing rec
 evening carrying absences, a note or a cancellation outlives the window it was drawn from and is the
 admin's to delete. So does one entered by hand — `TrainingDialog.Submit` clears `FromSchedule` on
 every save, so a session the coach has opened is the coach's, and the extra Friday in the summer
-survives the next Save on Preferences.
+survives the next save of the training settings.
 
 The period is still a bound on what gets *proposed* rather than a rule about what may be *entered*:
 a one-off outside it saves without complaint. What is validated is the period itself — see

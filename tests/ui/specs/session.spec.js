@@ -87,7 +87,7 @@ test.describe('an admin who is already signed in', () => {
     // /settings is admin-only, so landing on it *is* the assertion that the cookie came along. With
     // the cookie withheld this redirects to /login instead.
     await expect(page).toHaveURL(/\/settings$/);
-    await expect(page.getByRole('heading', { name: 'Match Preferences', exact: false }).first())
+    await expect(page.getByRole('heading', { name: 'Settings', exact: false }).first())
       .toBeVisible();
   });
 });
@@ -187,7 +187,7 @@ test.describe('an admin who changes their own password', () => {
 
       await signInThroughTheForm(theirPage, username, replacement);
       await goto(theirPage, '/settings');
-      await expect(theirPage.getByRole('heading', { name: 'Match Preferences', exact: false }).first())
+      await expect(theirPage.getByRole('heading', { name: 'Settings', exact: false }).first())
         .toBeVisible();
     } finally {
       await theirContext.close();

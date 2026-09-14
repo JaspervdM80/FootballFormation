@@ -139,7 +139,8 @@ Pages/
   PlannedChangesDialog.razor  — Dialog: the changes still planned for the middle of this half, as a
                                 reference to work through by tapping the pitch. Writes nothing
   SeasonDialog.razor(.cs)     — Dialog: season name, start date, end date
-  Settings.razor(.cs)         — /settings — Match preferences, own password, season management
+  Settings.razor(.cs)(.css)   — /settings — Four sections: language, season settings (the season
+                                list and the per-season match defaults), training settings, account
   Users.razor(.cs)            — /users — Accounts: add, edit, reset password, delete (Admin only)
   UserDialog.razor(.cs)       — Dialog: name, login, role, password — also the reset-password form
                                 (PasswordOnly), since the fields are the same

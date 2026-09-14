@@ -115,7 +115,7 @@ state after the period has generated them — the soonest that has one, i.e. the
 trains. Add is then mostly for the extra evening, and the admin moves the date; what it must not do
 is open on the closing night of the season, which is where a fall-through to the end of the period
 put it. With no training days set it proposes today (or the day after the last session entered), so
-the section is usable before anyone visits Preferences.
+the section is usable before anyone visits Settings.
 
 Saving is what makes a session the coach's: `Submit` clears `FromSchedule`, so rewriting the period
 afterwards leaves it where it is.
@@ -126,13 +126,16 @@ select entirely instead of leaving it there contradicting the switch, and the no
 changes to ask why. `Submit` sends an empty list either way; `TrainingService` clears it regardless,
 because [that invariant does not live in the markup](../models/training.md#a-session-that-did-not-take-place).
 
-## Preferences
+## Training settings
 
-`/settings` carries the training block: the weekday multi-select, then **First training** and **Last
+`/settings` carries them as a section of its own — the **Training schedule** card under the
+**Training settings** heading: the weekday multi-select, then **First training** and **Last
 training** as two `Clearable` `MudDatePicker`s, then the "Next calculated training date" caption the
-three of them move. Clearable matters — an empty date is a real value here, meaning the season's own
-window, not an unfilled field, and clearing either end is how the generated sessions are taken back
-out. A period that ends before it starts, or reaches outside the season, is refused by `SaveAsync`
+three of them move. They are stored per season, on the same `MatchPreferences` row as the match
+defaults, so the card names the season the **Match defaults** picker above it is pointed at and
+**Save training settings** writes that whole row. Clearable matters — an empty date is a real value
+here, meaning the season's own window, not an unfilled field, and clearing either end is how the
+generated sessions are taken back out. A period that ends before it starts, or reaches outside the season, is refused by `SaveAsync`
 with a message rather than saved.
 
 **Save writes the sessions**, and says so: a second snackbar, "{0} trainings created, {1} removed",
@@ -148,5 +151,5 @@ format, not a string somebody translates.
 ## The way in
 
 `AppNav.Menu` (`RequiresRole: AppRoles.Admin`) and a tile on the homepage, inside the same `<AuthorizeView>` as
-the Preferences tile — `/trainings` is `[Authorize]`d, so a tile a visitor can see is a door that
+the Settings tile — `/trainings` is `[Authorize]`d, so a tile a visitor can see is a door that
 only ever opens onto the login screen.

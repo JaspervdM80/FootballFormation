@@ -19,7 +19,7 @@
   <data name="Squad" xml:space="preserve"><value>Selectie</value></data>
   <data name="Reconnecting..." xml:space="preserve"><value>Verbinding herstellen...</value></data>
   <data name="Games" xml:space="preserve"><value>Wedstrijden</value></data>
-  <data name="Preferences" xml:space="preserve"><value>Voorkeuren</value></data>
+  <data name="Settings" xml:space="preserve"><value>Instellingen</value></data>
   <data name="Logout" xml:space="preserve"><value>Uitloggen</value></data>
   <!-- The drawer checkbox and the language disclosure: their labels are what a screen reader
        announces, since both are icon-only. -->
@@ -45,8 +45,7 @@
   <data name="Matches" xml:space="preserve"><value>Wedstrijden</value></data>
   <data name="Games &amp; Formations" xml:space="preserve"><value>Wedstrijden &amp; opstellingen</value></data>
   <data name="Create games, build formations, and track results." xml:space="preserve"><value>Maak wedstrijden aan, bouw opstellingen en houd uitslagen bij.</value></data>
-  <data name="Settings" xml:space="preserve"><value>Instellingen</value></data>
-  <data name="Configure match duration, split type, and defaults." xml:space="preserve"><value>Stel wedstrijdduur, speelperiodes en standaardwaarden in.</value></data>
+  <data name="Language, seasons, match defaults, trainings and your password." xml:space="preserve"><value>Taal, seizoenen, standaardwaarden, trainingen en je wachtwoord.</value></data>
   <data name="Keep the training evenings, and note who was not there." xml:space="preserve"><value>Houd de trainingsavonden bij, en noteer wie er niet was.</value></data>
 
   <!-- Match notifications. The title of a push is "Match started" / "Goal against" / "Full time" above — a notification composed by
@@ -511,21 +510,29 @@
   <data name="Save as image" xml:space="preserve"><value>Opslaan als afbeelding</value></data>
 
   <!-- Settings -->
-  <data name="Match Preferences" xml:space="preserve"><value>Wedstrijdvoorkeuren</value></data>
+  <data name="The language, the seasons and their match defaults, the training schedule, and your own password." xml:space="preserve"><value>De taal, de seizoenen met hun standaardwaarden, het trainingsschema en je eigen wachtwoord.</value></data>
+  <data name="The app is shown in this language for this browser. Choosing one reloads the page." xml:space="preserve"><value>De app wordt in deze taal getoond in deze browser. Een taal kiezen herlaadt de pagina.</value></data>
+  <data name="Season Settings" xml:space="preserve"><value>Seizoensinstellingen</value></data>
+  <data name="Match Defaults" xml:space="preserve"><value>Standaardwaarden</value></data>
   <data name="These defaults are applied when creating new games, and are kept per season." xml:space="preserve"><value>Deze standaardwaarden worden gebruikt bij het aanmaken van nieuwe wedstrijden en gelden per seizoen.</value></data>
-  <data name="Defaults" xml:space="preserve"><value>Standaardwaarden</value></data>
   <data name="Default Game Split" xml:space="preserve"><value>Standaard speelperiodes</value></data>
   <data name="Default Match Format" xml:space="preserve"><value>Standaard wedstrijdvorm</value></data>
   <data name="Default Formation" xml:space="preserve"><value>Standaard opstelling</value></data>
   <data name="Match Day" xml:space="preserve"><value>Wedstrijddag</value></data>
   <data name="Next calculated match date:" xml:space="preserve"><value>Volgende berekende wedstrijddatum:</value></data>
+  <data name="Save Match Defaults" xml:space="preserve"><value>Standaardwaarden opslaan</value></data>
+  <data name="Training Settings" xml:space="preserve"><value>Trainingsinstellingen</value></data>
+  <data name="Training Schedule" xml:space="preserve"><value>Trainingsschema</value></data>
+  <!-- {0} is the season the Match Defaults card is pointed at: the training period is stored per season too -->
+  <data name="The evenings this team trains in {0}. Change the season under Match Defaults to plan another one." xml:space="preserve"><value>De avonden waarop dit team traint in {0}. Wissel het seizoen bij Standaardwaarden om een ander seizoen te plannen.</value></data>
   <data name="Training Days" xml:space="preserve"><value>Trainingsdagen</value></data>
   <data name="First Training" xml:space="preserve"><value>Eerste training</value></data>
   <data name="Last Training" xml:space="preserve"><value>Laatste training</value></data>
   <data name="Saving creates a session for every training day between the two, and removes the empty ones outside them." xml:space="preserve"><value>Opslaan maakt een training aan voor elke trainingsdag ertussen, en verwijdert de lege trainingen daarbuiten.</value></data>
   <data name="{0} trainings created, {1} removed" xml:space="preserve"><value>{0} trainingen aangemaakt, {1} verwijderd</value></data>
   <data name="Next calculated training date:" xml:space="preserve"><value>Volgende berekende trainingsdatum:</value></data>
-  <data name="Save Preferences" xml:space="preserve"><value>Voorkeuren opslaan</value></data>
+  <data name="Save Training Settings" xml:space="preserve"><value>Trainingsinstellingen opslaan</value></data>
+  <data name="Account" xml:space="preserve"><value>Account</value></data>
   <data name="Change Password" xml:space="preserve"><value>Wachtwoord wijzigen</value></data>
   <data name="Current Password" xml:space="preserve"><value>Huidig wachtwoord</value></data>
   <data name="New Password" xml:space="preserve"><value>Nieuw wachtwoord</value></data>

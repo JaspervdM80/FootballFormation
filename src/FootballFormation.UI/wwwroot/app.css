@@ -1348,6 +1348,21 @@ a.action-btn {
     }
 }
 
+/* Settings, users and teams sit at the foot of the drawer rather than among the sections a coach
+   opens during a match. Scoped to the drawer, not a global .mud-* layout rule: the menu has to
+   stretch before the auto margin below has anything to push into. */
+.app-drawer .mud-navmenu {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.nav-group-admin {
+    margin-top: auto;
+    padding-top: 8px;
+    border-top: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
 /* How many links fit is the bar's own arithmetic rather than a number kept in step by hand. The nav
    is the only item allowed to give way: what it cannot fit wraps onto a second row that max-height
    clips, and the drawer carries the whole menu at every width, so a dropped link is one tap away.

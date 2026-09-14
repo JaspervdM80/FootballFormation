@@ -14,7 +14,7 @@ const PAGES = [
   { path: '/stats', heading: 'Statistics', bare: true },
   { path: '/users', heading: 'Users' },
   { path: '/teams', heading: 'Teams' },
-  { path: '/settings', heading: 'Match Preferences' },
+  { path: '/settings', heading: 'Settings' },
   { path: '/stats/positions', heading: 'Position Development', bare: true },
 ];
 
@@ -31,7 +31,7 @@ for (const { path, heading, bare } of PAGES) {
 test('the app bar offers every section to an admin', async ({ page }) => {
   await gotoRendered(page, '/');
 
-  for (const section of ['Squad', 'Games', 'Season', 'Preferences', 'Users', 'Teams']) {
+  for (const section of ['Squad', 'Games', 'Season', 'Settings', 'Users', 'Teams']) {
     await expect(page.locator('.mud-appbar').getByText(section, { exact: false }).first()).toBeVisible();
   }
 });

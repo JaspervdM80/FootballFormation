@@ -1,20 +1,42 @@
 @inject IStringLocalizer<Strings> L
 
-@foreach (var item in AppNav.Menu)
-{
-    @* A RenderFragment local so the MudNavLink is written once and the AuthorizeView only wraps
-       the entries that need it — the codebase's one sanctioned use of markup in @code. *@
-    RenderFragment link =
-        @<MudNavLink Href="@item.Path" Match="@item.Match"
-                     Class="@(ShowIcons ? null : "topbar-nav-link")"
-                     Icon="@(ShowIcons ? item.Icon : null)">@L[item.LabelKey]</MudNavLink>;
+@Links(NavGroup.Primary)
 
-    if (item.RequiresRole is not null)
+@if (ShowIcons)
+{
+    @* The drawer parks the administration entries at its foot; the app bar has one row and keeps them in line. The group is
+       authorized as a whole as well as per entry, so a visitor is not shown the rule above an empty foot. *@
+    <AuthorizeView Roles="@AppRoles.Admin">
+        <div class="nav-group-admin">
+            @Links(NavGroup.Administration)
+        </div>
+    </AuthorizeView>
+}
+else
+{
+    @Links(NavGroup.Administration)
+}
+
+@code {
+    private RenderFragment Links(NavGroup group) => __builder =>
     {
-        <AuthorizeView Roles="@item.RequiresRole">@link</AuthorizeView>
-    }
-    else
-    {
-        @link
-    }
+        foreach (var item in AppNav.Menu.Where(i => i.Group == group))
+        {
+            @* A RenderFragment local so the MudNavLink is written once and the AuthorizeView only wraps
+               the entries that need it — the codebase's one sanctioned use of markup in @code. *@
+            RenderFragment link =
+                @<MudNavLink Href="@item.Path" Match="@item.Match"
+                             Class="@(ShowIcons ? null : "topbar-nav-link")"
+                             Icon="@(ShowIcons ? item.Icon : null)">@L[item.LabelKey]</MudNavLink>;
+
+            if (item.RequiresRole is not null)
+            {
+                <AuthorizeView Roles="@item.RequiresRole">@link</AuthorizeView>
+            }
+            else
+            {
+                @link
+            }
+        }
+    };
 }
