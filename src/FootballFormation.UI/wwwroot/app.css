@@ -1153,6 +1153,68 @@ a.action-btn {
     }
 }
 
+/* --- The settings sections and the notification row ---
+   Global, not scoped: the row renders from the start page and from /settings, and MatchNotifications
+   carries the section wrapper for the second of those — a copy in either page's .razor.css would
+   compile to .notify-row[b-otherHash] and match nothing. */
+.settings-section {
+    max-width: 500px;
+}
+
+.settings-section + .settings-section {
+    margin-top: 40px;
+}
+
+.settings-section-title {
+    margin: 0 0 12px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.notify-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    border: 1px solid var(--ink-faint);
+    border-radius: 16px;
+    background: var(--gradient-card);
+}
+
+.notify-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.notify-title {
+    font-weight: 600;
+    color: var(--ink);
+}
+
+/* Quieter than the label it follows, and free to wrap onto its own line on a narrow phone. */
+.notify-team {
+    font-weight: 400;
+    color: var(--ink-muted);
+}
+
+.notify-text {
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+}
+
+/* Inside a settings section the row is the card, so it does not also carry the gap to the next one. */
+.settings-section > .notify-row {
+    margin-bottom: 0;
+}
+
+@media (max-width: 599.98px) {
+    .notify-row {
+        flex-wrap: wrap;
+    }
+}
+
 /* Card label */
 .card-label {
     font-size: 0.7rem;
@@ -2264,23 +2326,22 @@ a.action-btn {
     cursor: pointer;
 }
 
-/* The home page's notification opt-in. Here rather than in Home.razor.css because both selectors land on MudBlazor components, whose
-   root elements carry no scope attribute — the same reason .live-action-btn is here. See docs/known_issues/css-scoping.md. */
-.home-notify-icon {
+/* The notification row's two MudBlazor components, whose root elements carry no scope attribute — the same reason .live-action-btn is
+   here. See docs/known_issues/css-scoping.md. */
+.notify-icon {
     flex-shrink: 0;
     color: var(--club-primary-bright);
 }
 
-.home-notify-button {
+.notify-button {
     flex-shrink: 0;
     /* Under MudBlazor's own ~36px default, which is below the touch floor. */
     min-height: 44px;
 }
 
-/* Narrow enough that the button beside the text would leave neither room to read: it takes its own row. The flex-wrap that lets it is
-   on .home-notify, which is a plain div and so stays scoped. */
+/* Narrow enough that the button beside the text would leave neither room to read: it takes its own row. */
 @media (max-width: 599.98px), (max-height: 559.98px) {
-    .home-notify-button {
+    .notify-button {
         width: 100%;
     }
 }

@@ -1,23 +1,11 @@
-/* One column of forms, the width the cards have always been. */
-.settings-section {
-    max-width: 500px;
-}
-
-.settings-section + .settings-section {
-    margin-top: 40px;
-}
-
-.settings-section-title {
-    margin: 0 0 12px;
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: var(--ink);
-}
-
+/* The language rows. Page-owned markup, so scoped — the section wrapper and the notification row
+   next to them are in app.css, because a component renders those too. */
+/* 8px, not 4: a gap smaller than that is a crack between two targets a thumb aims at, and the touch
+   audit refuses one. */
 .settings-language {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 8px;
 }
 
 .settings-language-option {

@@ -11,6 +11,27 @@
 - Known limitation: `Result.Error` messages from Core services are English
 
 
+## Match notifications (`Components/MatchNotifications.razor`)
+The browser half of push, rendered from two places and written once — `push.js` keeps a single page
+reference, so two components holding that handshake would fight over it.
+
+- **The start page invites, `/settings` switches.** `<MatchNotifications />` on `/` offers *Turn on*
+  while they are off and, once they are on, a link to `/settings` instead of a *Turn off* — turning
+  them off again and back on is the settings page's job. `<MatchNotifications Manage="true"
+  Heading="…" />` there renders the same row inside a settings section of its own and carries both
+  buttons. That is the other reason `/settings` is open to everyone: a follower is not an admin.
+- **The state is the browser's, and it has four answers** (`on`, `off`, `install-first`, `blocked`)
+  plus `unsupported`, which renders nothing at all — heading included, so a browser without push is
+  not offered an empty section. Only the first interactive render can ask, because the server
+  prerenders before there is a browser to ask; see `push.js` and
+  [../known_issues/touch-pwa.md](../known_issues/touch-pwa.md).
+- **The button carries no `OnClick`.** `push.js` handles the tap from a delegated document listener,
+  because `Notification.requestPermission()` raised from a circuit message carries no user gesture
+  and Safari refuses it outright. It calls back into `NotificationStateChanged`.
+- Its CSS is `.notify-*` in `app.css`, not scoped — two pages render it, and both of its styled
+  MudBlazor children carry no scope attribute anyway.
+
+
 ## InstallBanner (PWA install prompt)
 - `Components/InstallBanner.razor`, rendered once in `MainLayout`. **Markup only** — the server
   renders it `hidden`, with the localized strings for every branch already in it, and `js/pwa.js`

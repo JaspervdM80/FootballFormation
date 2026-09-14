@@ -1,0 +1,49 @@
+@inherits CancellableComponent
+
+@* Nothing at all on a browser that cannot do push, and on an iPhone until the app is installed — see push.js, which is the only
+   thing that can tell. *@
+@if (_state is "on" or "off" or "install-first" or "blocked")
+{
+    if (Heading is not null)
+    {
+        <section class="settings-section">
+            <h2 class="settings-section-title">@Heading</h2>
+            @Row
+        </section>
+    }
+    else
+    {
+        @Row
+    }
+}
+
+@code {
+    private RenderFragment Row => @<div class="notify-row">
+        <MudIcon Icon="@(On ? Icons.Material.Filled.NotificationsActive : Icons.Material.Filled.NotificationsNone)"
+                 Class="notify-icon" />
+        <div class="notify-body">
+            @* The team is named because the subscription is stored against whichever one was in scope when the button was pressed —
+               without it a follower has no way to tell which team they signed up for. *@
+            <div class="notify-title">
+                @L["Match notifications"]<span class="notify-team"> — @Team.DisplayName</span>
+            </div>
+            <div class="notify-text">@Text</div>
+        </div>
+        @* No OnClick: the tap is handled in push.js, because a permission prompt raised from a circuit message carries no user gesture. *@
+        @if (_state is "off" || (On && Manage))
+        {
+            <MudButton Variant="@(On ? Variant.Text : Variant.Filled)"
+                       Color="Color.Primary"
+                       Class="notify-button"
+                       data-notify-toggle="@(On ? "on" : "off")">
+                @(On ? L["Turn off"] : L["Turn on"])
+            </MudButton>
+        }
+        else if (On)
+        {
+            <MudButton Href="@AppRoutes.Settings" Variant="Variant.Text" Color="Color.Primary" Class="notify-button">
+                @L["Settings"]
+            </MudButton>
+        }
+    </div>;
+}

@@ -40,8 +40,8 @@ public partial class Settings
     private bool _mustChangePassword;
 
     private string Subtitle => _isAdmin
-        ? L["The language, the seasons, the training schedule, and your own password."]
-        : L["The language the app speaks."];
+        ? L["The language, the notifications, the seasons, the training schedule, and your own password."]
+        : L["The language the app speaks, and the notifications for match day."];
 
     protected override async Task OnInitializedAsync()
     {
