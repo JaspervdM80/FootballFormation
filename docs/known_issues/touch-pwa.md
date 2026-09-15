@@ -190,8 +190,8 @@
   first.** Safari exposes `PushManager` in a plain tab, so feature-detection says yes and
   `pushManager.subscribe()` then fails — the install requirement is not detectable through the API
   that needs it. `push.js` infers it instead, from the same `display-mode: standalone` and
-  iPadOS-reports-as-Mac tests the install banner already does, and reports `install-first` so Home
-  explains rather than offering a button that could only fail. This is the ceiling on the whole
+  iPadOS-reports-as-Mac tests the install banner already does, and reports `install-first` so the
+  start page explains rather than offering a button that could only fail. This is the ceiling on the whole
   feature's reach: an Android parent taps yes, an iPhone parent has to be walked through Share → Add
   to Home Screen first, which [#66](https://github.com/JaspervdM80/FootballFormation/issues/66)
   measures as real drop-off with non-technical parents. **Deleting the installed app silently drops

@@ -1,8 +1,8 @@
 @inherits CancellableComponent
 
-@* Nothing at all on a browser that cannot do push, and on an iPhone until the app is installed — see push.js, which is the only
-   thing that can tell. *@
-@if (_state is "on" or "off" or "install-first" or "blocked")
+@* Nothing at all on a browser that cannot do push — see push.js, which is the only thing that can tell — and, where this is the
+   invitation rather than the switch, nothing once the choice has been made either. *@
+@if (Manage ? Renderable : _invited)
 {
     if (Heading is not null)
     {
@@ -30,12 +30,12 @@
             <div class="notify-text">@Text</div>
         </div>
         @* No OnClick: the tap is handled in push.js, because a permission prompt raised from a circuit message carries no user gesture. *@
-        @if (_state is "off" || (On && Manage))
+        @if (_state is NotificationState.Unset or NotificationState.Off || (On && Manage))
         {
             <MudButton Variant="@(On ? Variant.Text : Variant.Filled)"
                        Color="Color.Primary"
                        Class="notify-button"
-                       data-notify-toggle="@(On ? "on" : "off")">
+                       data-notify-toggle="@Toggle">
                 @(On ? L["Turn off"] : L["Turn on"])
             </MudButton>
         }

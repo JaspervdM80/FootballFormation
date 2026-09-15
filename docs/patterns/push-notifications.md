@@ -171,8 +171,8 @@ stored as its `applicationServerKey`, so a new one silently orphans every subscr
 ## What web push cannot do
 
 - **iOS needs the PWA installed first.** Safari hands out no subscription at all until the app is on
-  the home screen, so `push.js` reports `install-first` and the Home row says so instead of offering
-  a button that could only fail. See [known_issues/touch-pwa.md](../known_issues/touch-pwa.md).
+  the home screen, so `push.js` reports `install-first` and the start page says so instead of offering
+  a button that could only fail — it is the one "no choice made yet" state besides `unset`. See [known_issues/touch-pwa.md](../known_issues/touch-pwa.md).
 - **Opting in is per browser, not per person.** The same parent on a phone and a laptop is two rows,
   and clearing site data unsubscribes them with no way for us to tell.
 - **Endpoints go stale.** A 404 or 410 from the push service is the only signal the row is dead.

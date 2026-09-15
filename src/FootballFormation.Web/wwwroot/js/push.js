@@ -1,5 +1,6 @@
-// Everything the browser half of match notifications needs, as one object the Home page calls over JS interop. It reports a state
-// rather than a boolean because "not now" has four different answers, and only one of them is worth showing a button for.
+// Everything the browser half of match notifications needs, as one object the MatchNotifications component calls over JS interop. It
+// reports a state rather than a boolean because "not now" has several different answers, and only some are worth a button. 'unset' is
+// the one the start page invites on: nobody has answered the permission prompt yet, so this browser has made no choice to respect.
 window.matchNotifications = (function () {
     const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 
@@ -35,7 +36,9 @@ window.matchNotifications = (function () {
             if (!registration) return 'unsupported';
 
             const subscription = await registration.pushManager.getSubscription();
-            if (!subscription) return 'off';
+            // 'default' means the prompt has never been answered. Turned off again after a yes leaves the permission granted, which is a
+            // choice, and the start page stops offering it.
+            if (!subscription) return Notification.permission === 'default' ? 'unset' : 'off';
 
             // The server decides, not this browser's copy: a row pruned after a 410 would otherwise leave the toggle reading "on" while
             // nothing is ever delivered again.
