@@ -30,6 +30,11 @@ reference, so two components holding that handshake would fight over it.
   choice and reads as `off`. Only the first interactive render can ask, because the server prerenders
   before there is a browser to ask; see `push.js` and
   [../known_issues/touch-pwa.md](../known_issues/touch-pwa.md).
+- **Those words are parsed once** into a private `NotificationState` enum — `Parse` is the only place
+  the vocabulary is written down on this side, and `Toggle` is the same contract going back out in
+  `data-notify-toggle`. The component then compares enum members, so a mistyped state is a compile
+  error rather than a branch that silently never fires. Nothing checks that the two files agree, which
+  is why `Parse` answers `Unsupported` for anything it does not recognise: silence, not a dead switch.
 - **The button carries no `OnClick`.** `push.js` handles the tap from a delegated document listener,
   because `Notification.requestPermission()` raised from a circuit message carries no user gesture
   and Safari refuses it outright. It calls back into `NotificationStateChanged`.
