@@ -15,15 +15,20 @@
 The browser half of push, rendered from two places and written once — `push.js` keeps a single page
 reference, so two components holding that handshake would fight over it.
 
-- **The start page invites, `/settings` switches.** `<MatchNotifications />` on `/` offers *Turn on*
-  while they are off and, once they are on, a link to `/settings` instead of a *Turn off* — turning
-  them off again and back on is the settings page's job. `<MatchNotifications Manage="true"
-  Heading="…" />` there renders the same row inside a settings section of its own and carries both
-  buttons. That is the other reason `/settings` is open to everyone: a follower is not an admin.
-- **The state is the browser's, and it has four answers** (`on`, `off`, `install-first`, `blocked`)
-  plus `unsupported`, which renders nothing at all — heading included, so a browser without push is
-  not offered an empty section. Only the first interactive render can ask, because the server
-  prerenders before there is a browser to ask; see `push.js` and
+- **The start page invites, `/settings` switches.** `<MatchNotifications />` on `/` draws the row
+  only while the browser has made **no choice yet** (`unset`, or `install-first` on an iPhone that
+  has to install the app first). The moment there is a choice — yes or no — the start page is done
+  with it and `/settings` is the only place it lives; a tap here still keeps the row for the rest of
+  that page's life, so the answer is visible rather than vanishing under the thumb, and it shows a
+  link to `/settings` rather than a *Turn off*. `<MatchNotifications Manage="true" Heading="…" />`
+  there renders the same row inside a settings section of its own and carries both buttons. That is
+  the other reason `/settings` is open to everyone: a follower is not an admin.
+- **The state is the browser's, and it has five answers** (`unset`, `on`, `off`, `install-first`,
+  `blocked`) plus `unsupported`, which renders nothing at all — heading included, so a browser
+  without push is not offered an empty section. `unset` is `Notification.permission === 'default'`
+  with no subscription: turning them off again after a yes leaves the permission granted, which is a
+  choice and reads as `off`. Only the first interactive render can ask, because the server prerenders
+  before there is a browser to ask; see `push.js` and
   [../known_issues/touch-pwa.md](../known_issues/touch-pwa.md).
 - **The button carries no `OnClick`.** `push.js` handles the tap from a delegated document listener,
   because `Notification.requestPermission()` raised from a circuit message carries no user gesture

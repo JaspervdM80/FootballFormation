@@ -524,7 +524,7 @@
   <data name="Save Preferences" xml:space="preserve"><value>Voorkeuren opslaan</value></data>
 
   <!-- Settings -->
-  <data name="The language, the notifications, the seasons, the training schedule, and your own password." xml:space="preserve"><value>De taal, de meldingen, de seizoenen, het trainingsschema en je eigen wachtwoord.</value></data>
+  <data name="The language, the seasons, the training schedule, your own password, and the notifications." xml:space="preserve"><value>De taal, de seizoenen, het trainingsschema, je eigen wachtwoord en de meldingen.</value></data>
   <data name="The language the app speaks, and the notifications for match day." xml:space="preserve"><value>De taal waarin de app spreekt, en de meldingen op wedstrijddag.</value></data>
   <data name="The app is shown in this language for this browser. Choosing one reloads the page." xml:space="preserve"><value>De app wordt in deze taal getoond in deze browser. Een taal kiezen herlaadt de pagina.</value></data>
   <data name="Season Settings" xml:space="preserve"><value>Seizoensinstellingen</value></data>

@@ -23,6 +23,13 @@ public partial class MatchNotifications
 
     private bool On => _state == "on";
 
+    /// Everything but "this browser cannot do push at all", which is drawn as nothing rather than as a switch that would not move.
+    private bool Renderable => _state is "unset" or "on" or "off" or "install-first" or "blocked";
+
+    /// The start page invites only where no choice has been made yet — once there is one, /settings is the only place it lives. Read
+    /// from the first answer and then left alone, so answering here does not take the row out from under the thumb that just tapped it.
+    private bool _invited;
+
     private string Text => _state switch
     {
         "install-first" => L["Add the app to your home screen first, then notifications can be turned on."],
@@ -55,6 +62,7 @@ public partial class MatchNotifications
             _state = null;
         }
 
+        _invited = _state is "unset" or "install-first";
         StateHasChanged();
     }
 
