@@ -212,6 +212,31 @@ rather than something a deploy could do.
 The two layers answer different questions: the pre-migration copy is the only thing precise enough to
 undo a schema change, the Fly snapshot the only thing that survives losing the volume.
 
+## A copy taken on purpose, before something risky
+
+The two layers above both run on a schedule somebody else set — one on a pending migration, one
+daily. `scripts/backup-db.sh` is the third: a restore point from *now*, for the afternoon someone is
+about to test against production and last night's snapshot is not recent enough to be a comfort.
+
+It fetches `/data/footballformation.db` and its `-wal` over `fly ssh sftp get` — read-only, never
+writing back — folds the log in with `wal_checkpoint(TRUNCATE)`, then runs the same `integrity_check`
+and `foreign_key_check` the app runs on boot. Those checks are load-bearing rather than ceremony: two
+files fetched one after the other while the app is serving can be torn against each other, and the
+`aspnet` runtime image carries no `sqlite3` to snapshot them as one on the far side. A copy that
+fails them is written as `.failed` and the script exits non-zero; re-running usually passes. With no
+`sqlite3` on the local PATH it keeps the `.db` and `-wal` as a pair and says the copy is unverified,
+rather than handing back a single file nothing checked.
+
+Nothing is pruned, unlike `dev-db.sh`, which keeps three. The copies carry real player names, so they
+belong on a development machine and nowhere else.
+
+**It does not replace the volume snapshot**, and the script says so when it finishes. The copy lives
+on whichever machine fetched it, so it survives losing the volume — but `fly volumes snapshots
+create` gets you the same guarantee in one command without a gigabyte crossing the Atlantic, and a
+restore from a snapshot is the path `fly volumes create data --snapshot-id …` already documents.
+Reach for the script when you want the file itself: to diff it, to open it locally, or to hand a
+known-good database back to a volume that is still there.
+
 ## Still open
 
 - **Both backup layers live in the same Fly account.** The snapshots are off-volume, not off-Fly: an
@@ -229,6 +254,8 @@ fly logs                 # live server logs (Serilog console output)
 fly status               # machine state (suspended = idle, normal)
 fly ssh console          # shell inside the container
 scripts/dev-db.sh                                       # copy the live DB over the local one
+scripts/backup-db.sh                                    # verified restore point, taken now
+fly volumes snapshots create <vol-id> -a gjs-meiden     # off-volume restore point, taken now
 curl https://gjs-meiden.nl/health                       # does it serve? ("healthy")
 ```
 
