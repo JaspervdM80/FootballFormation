@@ -212,30 +212,45 @@ rather than something a deploy could do.
 The two layers answer different questions: the pre-migration copy is the only thing precise enough to
 undo a schema change, the Fly snapshot the only thing that survives losing the volume.
 
-## A copy taken on purpose, before something risky
+## A copy taken on purpose, and putting it back
 
 The two layers above both run on a schedule somebody else set — one on a pending migration, one
-daily. `scripts/backup-db.sh` is the third: a restore point from *now*, for the afternoon someone is
-about to test against production and last night's snapshot is not recent enough to be a comfort.
+daily. `scripts/backup-db.sh` and `scripts/restore-db.sh` are the pair for the afternoon someone is
+about to test against production and you want a restore point from *now*.
 
-It fetches `/data/footballformation.db` and its `-wal` over `fly ssh sftp get` — read-only, never
-writing back — folds the log in with `wal_checkpoint(TRUNCATE)`, then runs the same `integrity_check`
-and `foreign_key_check` the app runs on boot. Those checks are load-bearing rather than ceremony: two
-files fetched one after the other while the app is serving can be torn against each other, and the
-`aspnet` runtime image carries no `sqlite3` to snapshot them as one on the far side. A copy that
-fails them is written as `.failed` and the script exits non-zero; re-running usually passes. With no
-`sqlite3` on the local PATH it keeps the `.db` and `-wal` as a pair and says the copy is unverified,
-rather than handing back a single file nothing checked.
+Both work **on the volume** over `fly ssh console`. Nothing is downloaded, nothing leaves Fly, and a
+restore is a `cp` in the other direction. Backups are named `manual-*.db`, deliberately not
+`pre-migration-*.db`, which is the only glob `DatabaseSafety.Prune` deletes — nothing prunes these.
 
-Nothing is pruned, unlike `dev-db.sh`, which keeps three. The copies carry real player names, so they
-belong on a development machine and nowhere else.
+**The backup restarts the app first, and that restart is the point.** SQLite folds the `-wal` into
+the `.db` and deletes it on a clean shutdown, so afterwards the single `.db` file is the whole
+database. Without it, auto-checkpointing fires roughly every 1000 pages, and on an app this quiet the
+log can hold every write since the last boot — a `.db`-only copy would open perfectly cleanly and
+silently lack all of it. `SKIP_RESTART=1` skips it and says so; the copy is then only as good as the
+last checkpoint. `fly.toml` sets no `kill_timeout`, so a shutdown has Fly's default 5 seconds to
+checkpoint, and the script warns if the log did not shrink across the restart.
 
-**It does not replace the volume snapshot**, and the script says so when it finishes. The copy lives
-on whichever machine fetched it, so it survives losing the volume — but `fly volumes snapshots
-create` gets you the same guarantee in one command without a gigabyte crossing the Atlantic, and a
-restore from a snapshot is the path `fly volumes create data --snapshot-id …` already documents.
-Reach for the script when you want the file itself: to diff it, to open it locally, or to hand a
-known-good database back to a volume that is still there.
+**Restoring cannot stop the machine first, because you cannot `fly ssh` into a stopped one.** The
+file is swapped while the app is up and the restart immediately after is what makes it take, so for
+a few seconds the running app holds a file that has been replaced underneath it. That is survivable
+here for two reasons, and only these: the app is idle during a restore, and `Program.cs` runs
+`VerifyIntegrityAsync` on **every** boot, which throws and exits non-zero rather than serving a
+damaged database. A restore that went wrong is a refused boot, not a quiet one.
+
+The restore also copies the database it is about to overwrite to `before-restore-*.db` first, clears
+the `-wal` and `-shm` that belonged to it — left in place SQLite replays them over the restored file
+and undoes the whole thing — and polls `/health` afterwards rather than assuming.
+
+**`.github/workflows/db-backup.yml`** runs the backup from a "Run workflow" button. It is dispatch
+only: no schedule and no push trigger, because the restart it performs should never happen to a live
+match unattended. It reads `FLY_API_TOKEN` from the `production` environment, whose branch policy
+admits `main` only, so it cannot run from a feature branch. There is deliberately no restore
+workflow — a one-click button that overwrites production is a footgun, and a restore is a decision
+someone should be at a terminal for.
+
+**None of this survives losing the volume.** The copies sit on the disk they protect, exactly like
+the pre-migration ones. `fly volumes snapshots create` remains the only layer that answers that
+question.
 
 ## Still open
 
@@ -254,7 +269,8 @@ fly logs                 # live server logs (Serilog console output)
 fly status               # machine state (suspended = idle, normal)
 fly ssh console          # shell inside the container
 scripts/dev-db.sh                                       # copy the live DB over the local one
-scripts/backup-db.sh                                    # verified restore point, taken now
+scripts/backup-db.sh                                    # restart, then copy the DB on the volume
+scripts/restore-db.sh                                   # list the backups; pass one to put it back
 fly volumes snapshots create <vol-id> -a gjs-meiden     # off-volume restore point, taken now
 curl https://gjs-meiden.nl/health                       # does it serve? ("healthy")
 ```

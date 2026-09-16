@@ -1,0 +1,36 @@
+name: Back up the database
+
+# Dispatch only. There is no push or schedule trigger: this restarts the app to fold the
+# write-ahead log into the database file, and nothing should be able to do that to a live match
+# without someone choosing to.
+on:
+  workflow_dispatch:
+    inputs:
+      skip_restart:
+        description: Skip the restart — faster, but the copy may be missing recent writes
+        type: boolean
+        default: false
+
+concurrency:
+  group: fly-db
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    # The same environment fly-deploy.yml uses, because it is the only place FLY_API_TOKEN exists.
+    # Its deployment branch policy admits `main` only, so this workflow can read the token from no
+    # other ref — running it from a branch fails at flyctl, not at the checkout.
+    environment:
+      name: production
+      url: https://gjs-meiden.nl
+    steps:
+      - uses: actions/checkout@v7
+      - uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # 1.6
+      - run: scripts/backup-db.sh
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          SKIP_RESTART: ${{ inputs.skip_restart && '1' || '' }}
