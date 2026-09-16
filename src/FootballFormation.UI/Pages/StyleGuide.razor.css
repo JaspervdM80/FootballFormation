@@ -1,0 +1,56 @@
+.sg-section {
+    margin-bottom: 32px;
+}
+
+.sg-swatches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 12px;
+}
+
+.sg-swatch {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+/* Chequered, so a token that resolves to nothing reads as a hole rather than as white. */
+.sg-chip {
+    height: 56px;
+    border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+    border-radius: 8px;
+    background-image: linear-gradient(45deg, color-mix(in srgb, var(--ink) 6%, transparent) 25%, transparent 25%, transparent 75%, color-mix(in srgb, var(--ink) 6%, transparent) 75%);
+    background-size: 12px 12px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Separate element because the swatch's inline `background` shorthand would reset the chequer above. */
+.sg-chip-fill {
+    width: 100%;
+    height: 100%;
+}
+
+.sg-token {
+    font-size: 0.7rem;
+    color: var(--ink-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sg-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.sg-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}

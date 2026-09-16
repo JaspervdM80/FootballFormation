@@ -1,0 +1,72 @@
+@page "/styleguide"
+@attribute [Authorize(Roles = AppRoles.Admin)]
+@using FootballFormation.UI.Theming
+
+<PageTitle>@L["Style Guide"]</PageTitle>
+
+<PageHeader TitleTypo="Typo.h5" Title="@L["Style Guide"]"
+            Subtitle="@L["Every design token and shared class, drawn by the stylesheets the app itself loads."]" />
+
+@foreach (var group in DesignTokens.Groups)
+{
+    <section class="sg-section">
+        <div class="card-label">@L[group.NameKey]</div>
+        <div class="sg-swatches">
+            @foreach (var token in group.Tokens)
+            {
+                <div class="sg-swatch">
+                    <div class="sg-chip"><div class="sg-chip-fill" style="@ChipStyle(group.Kind, token)"></div></div>
+                    <code class="sg-token">@token</code>
+                </div>
+            }
+        </div>
+    </section>
+}
+
+<section class="sg-section">
+    <div class="card-label">@L["Badges"]</div>
+    <div class="sg-row">
+        <span class="badge-gold">4-3-3</span>
+        <span class="badge-teal">MO13-1</span>
+        <span class="badge-venue badge-venue-home">@L["Home"]</span>
+        <span class="badge-venue badge-venue-away">@L["Away"]</span>
+        <span class="badge-guest">@L["GUEST"]</span>
+        <span class="badge-archived">@L["ARCHIVED"]</span>
+        <span class="badge-unavailable">@L["Unavailable"]</span>
+        <span class="badge-present">@L["Everyone present"]</span>
+        <span class="badge-warning">@L["Single position"]</span>
+    </div>
+</section>
+
+<section class="sg-section">
+    <div class="card-label">@L["Buttons"]</div>
+    <div class="sg-row">
+        <MudButton Class="btn-gold" Variant="Variant.Filled">@L["Primary"]</MudButton>
+        <MudButton Class="btn-ghost" Variant="Variant.Outlined">@L["Secondary"]</MudButton>
+        <span class="sg-actions">
+            <button type="button" class="action-btn action-live"><MudIcon Icon="@Icons.Material.Filled.PlayArrow" Size="Size.Small" /></button>
+            <button type="button" class="action-btn"><MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" /></button>
+            <button type="button" class="action-btn action-needs-lineup"><MudIcon Icon="@Icons.Material.Filled.GridView" Size="Size.Small" /></button>
+            <button type="button" class="action-btn action-delete"><MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" /></button>
+        </span>
+    </div>
+</section>
+
+<section class="sg-section">
+    <div class="card-label">@L["Cards"]</div>
+    <MudPaper Class="pa-4" Elevation="2">
+        <div class="card-label">@L["Card label"]</div>
+        <div class="list-rows">
+            <div class="list-row">
+                <div class="list-row-info">
+                    <span class="list-row-name">@L["List row"] <span class="badge-teal">@L["Current"]</span></span>
+                    <span class="list-row-meta">@L["The quieter second line."]</span>
+                </div>
+                <div class="list-row-actions">
+                    <button type="button" class="action-btn"><MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" /></button>
+                    <button type="button" class="action-btn action-delete"><MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" /></button>
+                </div>
+            </div>
+        </div>
+    </MudPaper>
+</section>

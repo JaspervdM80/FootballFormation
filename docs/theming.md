@@ -6,25 +6,35 @@ at runtime.
 
 ## Where the tokens live
 
-`src/FootballFormation.UI/wwwroot/theme.css` is the single source of truth. It travels with the
-Razor class library and is served at `_content/FootballFormation.UI/theme.css`, loaded **before**
-`app.css` in `App.razor`, so every stylesheet and inline style can reference the tokens.
+They come from two places, and which one depends on whether the value is club branding:
+
+- **`ClubTheme`** (`src/FootballFormation.UI/Theming/ClubTheme.cs`) owns everything that changes when
+  the app is re-skinned — the brand and accent ramps, the surfaces, `--ink`, `--corner-radius`. It
+  emits them into the document head as custom properties *and* builds the MudBlazor palette from the
+  same values; see "One source, two styling systems" below.
+- **`theme.css`** (`src/FootballFormation.UI/wwwroot/theme.css`) keeps what is *not* club branding:
+  the ink ramp, the semantic status colors, the five position-fit tiers, and the gradients composed
+  from the club tokens via `var()`. It travels with the Razor class library, is served at
+  `_content/FootballFormation.UI/theme.css`, and loads **before** `app.css` in `App.razor`.
 
 The active theme is **GJS Gorinchem (light)**: white page, light-green sections, crest
 red primary, crest banner green accent. Colors were sampled from the club crest
 (`Web/wwwroot/icons/icon-512.png`).
 
-## Token groups
+## The token list is the app, not this page
 
-| Group | Tokens | Notes |
-|---|---|---|
-| Brand | `--club-primary` `--club-primary-bright` `--club-primary-deep` `--club-on-primary` | `-bright` is the emphasis shade for text on light surfaces; `-deep` is the gradient partner |
-| Accent | `--club-accent` `--club-accent-bright` `--club-accent-deep` | crest green |
-| Identity | `--club-logo` `--club-logo-bg` | logo is a `background-image` URL, rendered on a `.app-title-logo` span |
-| Surfaces | `--surface-page` `--surface-card(-alt)` `--surface-appbar(-alt)` | `-alt` tokens are gradient partners |
-| Text | `--ink` | near-black with a green cast; **all text derives from this** |
-| Semantic | `--color-guest(-bright)` `--color-danger(-bright)` `--color-success-bright` | club-independent |
-| Gradients | `--gradient-primary` `--gradient-accent` `--gradient-card` `--gradient-appbar` | composed from the tokens above |
+`/styleguide` draws a swatch for every token and every shared component class, using the stylesheets
+the app itself loads — so it cannot describe a value the app does not have. It is admin-only, has no
+circuit, and is in `scripts/visual-check.sh`, so it is screenshotted and touch-audited with every
+other page.
+
+`tests/ui/specs/styleguide.spec.js` is what keeps it honest: it reads the custom properties the
+browser actually has in effect and fails if any of them has no swatch, or if a swatch names a token
+nothing declares. A hand-written table here would drift instead — this one did, documenting a
+`--club-logo` that no longer exists and missing five tokens that do.
+
+What belongs here is the reasoning behind the values, below. What the values *are* belongs on
+`/styleguide`.
 
 ## Conventions
 
@@ -58,8 +68,8 @@ carry the same red/green/ink values twice and ask whoever edited one to remember
 
 Both now come from **`ClubTheme`** (`src/FootballFormation.UI/Theming/ClubTheme.cs`):
 
-- `ToCssVariables()` emits the `--club-*`, `--surface-*` and `--ink` tokens into a `<style>`
-  block in `App.razor`, before every stylesheet that reads them.
+- `ToCssVariables()` emits the `--club-*`, `--surface-*`, `--ink` and `--corner-radius` tokens into a
+  `<style>` block in `App.razor`, before every stylesheet that reads them.
 - `ToMudTheme()` builds the `PaletteLight` (used with `IsDarkMode="false"` in `MainLayout`).
   Its text/line shades are the ink color at various alphas, mixed in `InkAt`.
 

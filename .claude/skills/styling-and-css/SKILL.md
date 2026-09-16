@@ -37,6 +37,11 @@ semantic status colours, the five position-fit tiers, and gradients composed fro
 Muted text uses the named ink ramp — `--ink-muted` / `--ink-subtle` / `--ink-faint` — **never an ad-hoc
 `color-mix` percentage**.
 
+**A new token goes in `DesignTokens.Groups` in the same change**, so `/styleguide` draws it.
+`styleguide.spec.js` reads the custom properties the browser actually has and fails on any with no
+swatch — that is a red Playwright run, not a silent gap, and it is why the token list is not written
+out in `docs/theming.md` any more.
+
 If the page colour changes, the `theme-color` meta in `App.razor` and `theme_color`/`background_color`
 in `manifest.webmanifest` must change with it, or the PWA chrome keeps the old brand.
 
