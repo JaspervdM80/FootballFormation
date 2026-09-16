@@ -55,6 +55,7 @@ const PAGES = [
   ['teams', '/teams'],
   ['preferences', '/preferences'],
   ['settings', '/settings'],
+  ['styleguide', '/styleguide', true],
 ];
 
 // Both languages, because the UI is Dutch by default and English is a resource-key fallback.

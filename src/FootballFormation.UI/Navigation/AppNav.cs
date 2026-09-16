@@ -49,6 +49,7 @@ public static class AppNav
         ["settings"] => "Settings",
         ["users"] => "Users",
         ["teams"] => "Teams",
+        ["styleguide"] => "Style Guide",
         _ => null,
     };
 
