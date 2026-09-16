@@ -48,15 +48,30 @@ fi
 SAFETY="/data/backups/before-restore-$(date +%Y%m%d-%H%M%S).db"
 echo "Keeping what is there now as $SAFETY"
 remote "cp $DB $SAFETY"
+# Its log as well, or the undo this exists for loses whatever was never checkpointed.
+if remote "test -f $DB-wal" > /dev/null 2>&1; then
+  remote "cp $DB-wal $SAFETY-wal"
+fi
 
 # Copy then rename: the rename is atomic, so the live path is never a half-written file.
 echo "Restoring..."
 remote "cp $SOURCE $DB.restoring"
 remote "mv $DB.restoring $DB"
 
-# The old log and shared-memory file belong to the database just replaced. Left in place, SQLite
-# replays them over the restored file on the next open and quietly undoes the whole restore.
-remote "rm -f $DB-wal $DB-shm"
+# The backup's own log goes back with it; without it the restored database is missing whatever was
+# never checkpointed. A log left over from the database just replaced would be read as this one's and
+# undo the restore, so the case with no saved log is a delete rather than a skip.
+if remote "test -f $SOURCE-wal" > /dev/null 2>&1; then
+  remote "cp $SOURCE-wal $DB-wal"
+  echo "Restored its write-ahead log too."
+else
+  remote "rm -f $DB-wal"
+  echo "That backup has no write-ahead log; cleared the one that was there."
+fi
+
+# Never restored, even when the backup has one: -shm holds no data SQLite cannot rebuild from the
+# log, and a stale one against a database it does not belong to is how a good restore goes bad.
+remote "rm -f $DB-shm"
 
 echo "Restarting $APP_NAME..."
 flyctl apps restart "$APP_NAME"

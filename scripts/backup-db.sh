@@ -1,6 +1,6 @@
 #!/bin/bash
-# Copies the live database to /data/backups/manual-<timestamp>.db, on the volume. Nothing is
-# downloaded and nothing leaves Fly.
+# Copies the live database to /data/backups/manual-<timestamp>.db, on the volume, with its -wal and
+# -shm beside it when they exist. Nothing is downloaded and nothing leaves Fly.
 #
 #   scripts/backup-db.sh              # restart first, so the copy is complete
 #   SKIP_RESTART=1 scripts/backup-db.sh
@@ -44,6 +44,22 @@ fi
 
 remote "mkdir -p /data/backups"
 remote "cp $DB $TARGET"
+
+# The log is copied too even though the restart above should have emptied it: a shutdown that ran
+# out of kill_timeout, or SKIP_RESTART=1, leaves writes in it that the .db does not have.
+copy_if_present() {
+  if remote "test -f $1" > /dev/null 2>&1; then
+    remote "cp $1 $2"
+    echo "  $(basename "$2")"
+  else
+    echo "  (no $(basename "$1") — nothing to copy)"
+  fi
+}
+
+echo "Copied:"
+echo "  $(basename "$TARGET")"
+copy_if_present "$DB-wal" "$TARGET-wal"
+copy_if_present "$DB-shm" "$TARGET-shm"
 
 echo
 echo "Backed up to $TARGET"

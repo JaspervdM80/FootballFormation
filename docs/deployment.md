@@ -226,9 +226,15 @@ restore is a `cp` in the other direction. Backups are named `manual-*.db`, delib
 the `.db` and deletes it on a clean shutdown, so afterwards the single `.db` file is the whole
 database. Without it, auto-checkpointing fires roughly every 1000 pages, and on an app this quiet the
 log can hold every write since the last boot — a `.db`-only copy would open perfectly cleanly and
-silently lack all of it. `SKIP_RESTART=1` skips it and says so; the copy is then only as good as the
-last checkpoint. `fly.toml` sets no `kill_timeout`, so a shutdown has Fly's default 5 seconds to
-checkpoint, and the script warns if the log did not shrink across the restart.
+silently lack all of it. `SKIP_RESTART=1` skips it and says so. `fly.toml` sets no `kill_timeout`, so
+a shutdown has Fly's default 5 seconds to checkpoint, and the script warns if the log did not shrink
+across the restart.
+
+**All three files are copied anyway**, `-wal` and `-shm` included when they exist. The restart is
+belt, this is braces: a shutdown that ran out of `kill_timeout`, or a run with `SKIP_RESTART=1`,
+leaves writes in the log that the `.db` does not have, and a backup that quietly drops them is the
+exact failure this pair exists to prevent. After a successful restart there is usually no log to copy
+and the script says so.
 
 **Restoring cannot stop the machine first, because you cannot `fly ssh` into a stopped one.** The
 file is swapped while the app is up and the restart immediately after is what makes it take, so for
@@ -237,9 +243,16 @@ here for two reasons, and only these: the app is idle during a restore, and `Pro
 `VerifyIntegrityAsync` on **every** boot, which throws and exits non-zero rather than serving a
 damaged database. A restore that went wrong is a refused boot, not a quiet one.
 
-The restore also copies the database it is about to overwrite to `before-restore-*.db` first, clears
-the `-wal` and `-shm` that belonged to it — left in place SQLite replays them over the restored file
-and undoes the whole thing — and polls `/health` afterwards rather than assuming.
+**The `-wal` goes back, the `-shm` never does.** A backup's log is restored beside it, because
+without it the restored database is missing whatever was never checkpointed. When a backup has no
+log, the one on the volume is **deleted** rather than left alone — it belongs to the database just
+replaced, and SQLite would read it as this one's and undo the restore. The `-shm` is deleted in both
+cases: it holds nothing SQLite cannot rebuild from the log, and a stale one against a database it
+does not belong to is how a good restore goes bad.
+
+The restore also copies the database it is about to overwrite to `before-restore-*.db` first, with
+its own log, so the undo it exists for does not itself lose uncheckpointed writes. It polls `/health`
+afterwards rather than assuming.
 
 **`.github/workflows/db-backup.yml`** runs the backup from a "Run workflow" button. It is dispatch
 only: no schedule and no push trigger, because the restart it performs should never happen to a live
