@@ -73,7 +73,8 @@ an afternoon to find:
 
 ### One pipeline, one compile
 
-Everything lives in `.github/workflows/ci.yml`, in four jobs on one chain, all four required checks:
+Everything lives in `.github/workflows/ci.yml`, in four jobs on one chain, all four required checks —
+alongside `Docker image`, which builds the container on its own and blocks nothing:
 
 ```
 Build and test ──┬── Coverage

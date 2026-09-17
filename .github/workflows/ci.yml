@@ -8,7 +8,7 @@ name: CI
 # against, so the app the browsers see is the app the unit tests passed on, not a rebuild of it.
 
 on:
-  # The event that reports these four checks in the ordinary course of things, and the merge ref is
+  # The event that reports these checks in the ordinary course of things, and the merge ref is
   # the thing worth building: `actions/checkout` resolves a `pull_request` event to
   # `refs/pull/N/merge`, this branch already merged into main, where a push event would check out
   # the branch tip on its own. Nothing runs on main afterwards — merging deploys — so what goes
@@ -30,10 +30,10 @@ permissions:
   contents: read
 
 jobs:
-  # All four jobs here are required checks, and `main`'s ruleset names each of them by the `name:`
-  # it declares — so renaming one means editing .github/rulesets/main-every-check-green.json in the
-  # same change, or the merge button waits forever on a check nothing reports. See
-  # docs/deployment.md.
+  # Four of the five jobs here are required checks — every one but `Docker image` — and `main`'s
+  # ruleset names each of them by the `name:` it declares, so renaming one means editing
+  # .github/rulesets/main-every-check-green.json in the same change, or the merge button waits
+  # forever on a check nothing reports. See docs/deployment.md.
   build:
     name: Build and test
     runs-on: ubuntu-latest
@@ -105,6 +105,59 @@ jobs:
           name: app
           path: artifacts/app/
           retention-days: 1
+
+  # Whether the container still builds, and whether the backup path inside it still works. Nothing
+  # else here compiles the Dockerfile: `flyctl deploy --remote-only` builds it at release time, so
+  # before this job a broken image first showed up *after* the merge, as a failed deploy. The old
+  # machine keeps serving when that happens, so it was never dangerous — but it turned a merge into
+  # an incident to unpick rather than a red check to fix.
+  #
+  # Deliberately not `needs: build`. It compiles from source itself and shares nothing with that
+  # job, so it runs alongside rather than queueing behind it.
+  #
+  # **Not one of the four required checks.** Adding it to the ruleset is a manual import of
+  # .github/rulesets/main-every-check-green.json with this job's `name:` added as a context — until
+  # that happens this reports and a red result does not hold the merge button. See docs/deployment.md.
+  image:
+    name: Docker image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      # Plain `docker build`, not docker/build-push-action: the runner already has buildx, this
+      # pushes nowhere and needs no registry credentials, and it keeps a third-party action out of
+      # the pipeline. GIT_SHA is passed the way fly-deploy.yml passes it, so the ARG is exercised
+      # here rather than first at release.
+      - name: Build the image
+        run: docker build --build-arg GIT_SHA=${{ github.sha }} -t footballformation:ci .
+
+      # The image carries sqlite3 and /usr/local/bin/backup-db for scripts/backup-db.sh to call over
+      # `fly ssh console`. Building proves they installed; only running it proves it works, and this
+      # is the one place that can — nothing else in CI has the image.
+      #
+      # 777 because a bind mount is owned by the host user and the image may run as non-root; the
+      # point here is the script's behaviour, not a permission model the volume does not share.
+      - name: Take a backup inside it, the way production will
+        run: |
+          mkdir -p /tmp/voltest && chmod 777 /tmp/voltest
+          run_in_image() {
+            docker run --rm -v /tmp/voltest:/data --entrypoint /bin/sh footballformation:ci -c "$1"
+          }
+
+          run_in_image "sqlite3 /data/footballformation.db \"PRAGMA journal_mode=WAL; CREATE TABLE Players (Id INTEGER PRIMARY KEY, Name TEXT); INSERT INTO Players (Name) VALUES ('Anna'),('Sofie');\""
+
+          # Allowed to fail, with stderr folded in: the step runs under `bash -e`, so letting the
+          # failure through here would end it before anything said what went wrong.
+          OUTPUT="$(run_in_image /usr/local/bin/backup-db 2>&1)" || true
+          echo "$OUTPUT"
+          echo "$OUTPUT" | grep -q "BACKUP OK" || { echo "::error::backup-db did not report success"; exit 1; }
+
+          # The backup has to be a real database, not merely a file that got created.
+          BACKUP="$(ls /tmp/voltest/backups/manual-*.db)"
+          ROWS="$(run_in_image "sqlite3 /data/backups/$(basename "$BACKUP") 'SELECT count(*) FROM Players;'")"
+          [ "$ROWS" = "2" ] || { echo "::error::backup holds $ROWS rows, expected 2"; exit 1; }
+          echo "Backup verified: $ROWS rows."
 
   # Whether the code this branch changed is tested. Not the repository's overall percentage, which
   # a review cannot act on — Core sits above 95%, so a solution-wide 80% gate would pass with an
