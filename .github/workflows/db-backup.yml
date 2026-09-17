@@ -1,13 +1,16 @@
 name: Back up the database
 
-# Dispatch only. There is no push or schedule trigger: this restarts the app to fold the
-# write-ahead log into the database file, and nothing should be able to do that to a live match
-# without someone choosing to.
+# Dispatch only, and deliberately not scheduled. The backup itself is cheap now that the image
+# carries sqlite3, but the fallback route restarts the app, and nothing should be able to do that to
+# a live match unattended.
+#
+# The backup never leaves the volume. It must not: this repository is public, so a database uploaded
+# with actions/upload-artifact would be downloadable by anyone, and it is full of children's names.
 on:
   workflow_dispatch:
     inputs:
       skip_restart:
-        description: Skip the restart — faster, but the copy may be missing recent writes
+        description: Fallback route only — skip the restart, accepting a copy that may miss recent writes
         type: boolean
         default: false
 

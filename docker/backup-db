@@ -1,0 +1,38 @@
+#!/bin/sh
+# Runs inside the container, invoked by scripts/backup-db.sh over `fly ssh console`.
+#
+# It lives in the image rather than being passed as a command because flyctl's -C splits what it is
+# given on spaces, and every form of the checkpoint SQL contains one. A bare path takes no quoting.
+set -e
+
+DB=/data/footballformation.db
+TARGET="/data/backups/manual-$(date +%Y%m%d-%H%M%S).db"
+
+mkdir -p /data/backups
+
+# Folding the log in here is the whole point: it means a backup costs no restart, where a clean
+# shutdown was previously the only way to get the newest writes into the .db file.
+#
+# Allowed to fail: a damaged database makes sqlite3 exit non-zero, and under `set -e` that would end
+# the script at the one moment its checks are the thing worth reaching.
+sqlite3 "$DB" "PRAGMA wal_checkpoint(TRUNCATE);" > /dev/null 2>&1 || echo "Could not checkpoint; copying as-is."
+
+cp "$DB" "$TARGET"
+
+# Copied even though the checkpoint above should have emptied the log: a checkpoint can be blocked by
+# a reader mid-query, and a backup quietly missing those writes is the failure worth guarding.
+if [ -f "$DB-wal" ]; then cp "$DB-wal" "$TARGET-wal"; fi
+if [ -f "$DB-shm" ]; then cp "$DB-shm" "$TARGET-shm"; fi
+
+INTEGRITY="$(sqlite3 "$TARGET" "PRAGMA integrity_check;" 2>&1)" || INTEGRITY="${INTEGRITY:-unreadable}"
+FOREIGN_KEYS="$(sqlite3 "$TARGET" "PRAGMA foreign_key_check;" 2>&1)" || FOREIGN_KEYS="${FOREIGN_KEYS:-unreadable}"
+
+if [ "$INTEGRITY" != "ok" ] || [ -n "$FOREIGN_KEYS" ]; then
+    mv "$TARGET" "$TARGET.failed"
+    echo "integrity_check: $INTEGRITY"
+    if [ -n "$FOREIGN_KEYS" ]; then echo "foreign_key_check: $FOREIGN_KEYS"; fi
+    echo "BACKUP FAILED — kept as $TARGET.failed, which is not a restore point."
+    exit 1
+fi
+
+echo "BACKUP OK $TARGET"

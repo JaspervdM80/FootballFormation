@@ -11,7 +11,7 @@ create` / `fly volumes create` / `fly certs add`, and A/AAAA/CNAME records at th
 
 | File | Purpose |
 |------|---------|
-| `Dockerfile` | Multi-stage build (SDK → aspnet runtime), listens on 8080 |
+| `Dockerfile` | Multi-stage build (SDK → aspnet runtime), listens on 8080. Also installs `sqlite3` and `docker/backup-db`, which the app never calls — they are what lets a backup skip the restart |
 | `global.json` | Pins the SDK for CI and web containers. `.dockerignore` keeps it out of the image, which builds on `sdk:10.0` — see [known_issues](known_issues/index.md) |
 | `fly.toml` | App `gjs-meiden`, volume `data` mounted at `/data` with 30-day snapshot retention, suspend-when-idle enabled |
 | `Program.cs` | `APP_DATA_DIR` env var overrides the data folder (DB, logs, data-protection keys); maps `/health` |
@@ -222,13 +222,24 @@ Both work **on the volume** over `fly ssh console`. Nothing is downloaded, nothi
 restore is a `cp` in the other direction. Backups are named `manual-*.db`, deliberately not
 `pre-migration-*.db`, which is the only glob `DatabaseSafety.Prune` deletes — nothing prunes these.
 
-**The backup restarts the app first, and that restart is the point.** SQLite folds the `-wal` into
-the `.db` and deletes it on a clean shutdown, so afterwards the single `.db` file is the whole
-database. Without it, auto-checkpointing fires roughly every 1000 pages, and on an app this quiet the
-log can hold every write since the last boot — a `.db`-only copy would open perfectly cleanly and
-silently lack all of it. `SKIP_RESTART=1` skips it and says so. `fly.toml` sets no `kill_timeout`, so
-a shutdown has Fly's default 5 seconds to checkpoint, and the script warns if the log did not shrink
-across the restart.
+**The image carries `sqlite3`, and that is what makes a backup free.** The runtime image installs it
+and ships `docker/backup-db` as `/usr/local/bin/backup-db`; the script runs
+`PRAGMA wal_checkpoint(TRUNCATE)` on the volume, copies the result, and verifies it with
+`integrity_check` and `foreign_key_check` — no restart, no downtime, no circuits dropped. The SQL
+lives in the image rather than being passed to `fly ssh console -C`, because flyctl splits what it is
+given on spaces and every form of that statement contains one; a bare path takes no quoting.
+
+**There is a fallback, and it is temporary.** Until an image built from this change is deployed there
+is no `sqlite3` on the far side, and the only way to fold the log into the `.db` is a clean shutdown —
+so `scripts/backup-db.sh` falls back to restarting the app. It says so when it does. Delete that
+branch once the image has shipped. `SKIP_RESTART=1` affects only the fallback.
+
+**Putting `sqlite3` in the pipeline instead does not work**, which is worth writing down because it
+looks like it should. A runner can install it in one line, but it would be running on the runner, not
+on the volume: the database would have to be fetched, and the verified result pushed back, and
+`flyctl ssh sftp` offers `get` but no scriptable `put`. Keeping the result as a build artifact is
+worse — **this repository is public**, so an uploaded database would be downloadable by anyone, and
+it is full of children's names.
 
 **All three files are copied anyway**, `-wal` and `-shm` included when they exist. The restart is
 belt, this is braces: a shutdown that ran out of `kill_timeout`, or a run with `SKIP_RESTART=1`,

@@ -2,25 +2,44 @@
 # Copies the live database to /data/backups/manual-<timestamp>.db, on the volume, with its -wal and
 # -shm beside it when they exist. Nothing is downloaded and nothing leaves Fly.
 #
-#   scripts/backup-db.sh              # restart first, so the copy is complete
-#   SKIP_RESTART=1 scripts/backup-db.sh
+#   scripts/backup-db.sh                          # no downtime once the image carries sqlite3
+#   SKIP_RESTART=1 scripts/backup-db.sh           # only affects the fallback below
 #
 # Needs flyctl signed in to the app.
 #
-# The restart is the whole reason this produces one file instead of three. SQLite folds the -wal
-# into the .db and deletes it on a clean shutdown, so after a restart the .db alone is the complete
-# database. Without it, auto-checkpointing only fires about every 1000 pages, and on an app this
-# quiet the log can hold every write since the last boot — a .db-only copy would open cleanly and
-# silently lack all of it.
+# Two routes, and which one runs depends on the image that is deployed. The image built from this
+# repository carries sqlite3 and /usr/local/bin/backup-db, which folds the write-ahead log into the
+# .db and verifies the copy without touching the running app. Until that image is live there is no
+# sqlite3 on the far side, and the only way to get the newest writes into the .db is a clean
+# shutdown — so the fallback restarts the app. Delete the fallback once the image has shipped.
 #
 # Named manual-* because DatabaseSafety.Prune globs pre-migration-*.db; these are nobody's to delete.
 set -euo pipefail
 
 APP_NAME="${FLY_APP:-gjs-meiden}"
 DB=/data/footballformation.db
-TARGET="/data/backups/manual-$(date +%Y%m%d-%H%M%S).db"
 
 remote() { flyctl ssh console -a "$APP_NAME" -C "$*"; }
+
+if remote "test -x /usr/local/bin/backup-db" > /dev/null 2>&1; then
+  echo "Backing up on the volume, no restart needed..."
+  # stderr folded in: without it a failure on the far side reports nothing but an exit code.
+  OUTPUT="$(remote /usr/local/bin/backup-db 2>&1)" || true
+  echo "$OUTPUT"
+
+  # flyctl does not reliably surface the remote exit code, so the marker the script prints on success
+  # is what decides, not $?.
+  if ! printf '%s' "$OUTPUT" | grep -q "BACKUP OK"; then
+    echo "The backup did not report success. Nothing here is a restore point."
+    exit 1
+  fi
+
+  echo
+  remote "ls -la /data/backups"
+  exit 0
+fi
+
+echo "This image has no /usr/local/bin/backup-db yet — falling back to the restart route."
 
 # `stat -c %s` on a missing file exits non-zero, which is the answer "no -wal", not a failure.
 wal_size() { remote "stat -c %s $DB-wal" 2> /dev/null || echo 0; }
@@ -42,6 +61,7 @@ else
   fi
 fi
 
+TARGET="/data/backups/manual-$(date +%Y%m%d-%H%M%S).db"
 remote "mkdir -p /data/backups"
 remote "cp $DB $TARGET"
 

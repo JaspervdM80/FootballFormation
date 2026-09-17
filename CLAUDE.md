@@ -23,7 +23,7 @@ cd src/FootballFormation.Web && dotnet run     # http://localhost:5228
 cd tests/ui && npm test        # Playwright, ~1 min (npm install first)
 scripts/visual-check.sh        # screenshots every page, then measures every touch target
 scripts/dev-db.sh              # replace the local database with a copy of the live one
-scripts/backup-db.sh           # restart the app, then copy the live database on the volume
+scripts/backup-db.sh           # verified copy of the live database, on the volume, no downtime
 scripts/restore-db.sh          # put one of those copies back and restart
 scripts/coverage.sh            # coverage of the lines this branch changed, 80% floor
 ```
