@@ -524,7 +524,7 @@
   <data name="Save Preferences" xml:space="preserve"><value>Voorkeuren opslaan</value></data>
 
   <!-- Settings -->
-  <data name="The language, the notifications, the seasons, the training schedule, and your own password." xml:space="preserve"><value>De taal, de meldingen, de seizoenen, het trainingsschema en je eigen wachtwoord.</value></data>
+  <data name="The language, the seasons, the training schedule, your own password, and the notifications." xml:space="preserve"><value>De taal, de seizoenen, het trainingsschema, je eigen wachtwoord en de meldingen.</value></data>
   <data name="The language the app speaks, and the notifications for match day." xml:space="preserve"><value>De taal waarin de app spreekt, en de meldingen op wedstrijddag.</value></data>
   <data name="The app is shown in this language for this browser. Choosing one reloads the page." xml:space="preserve"><value>De app wordt in deze taal getoond in deze browser. Een taal kiezen herlaadt de pagina.</value></data>
   <data name="Season Settings" xml:space="preserve"><value>Seizoensinstellingen</value></data>
@@ -794,4 +794,22 @@
   <data name="update season" xml:space="preserve"><value>seizoen bijwerken</value></data>
   <data name="update the training" xml:space="preserve"><value>training bijwerken</value></data>
   <data name="update the user" xml:space="preserve"><value>gebruiker bijwerken</value></data>
+  <data name="Style Guide" xml:space="preserve"><value>Stijlgids</value></data>
+  <data name="Every design token and shared class, drawn by the stylesheets the app itself loads." xml:space="preserve"><value>Elk ontwerptoken en elke gedeelde klasse, getekend door de stylesheets die de app zelf laadt.</value></data>
+  <data name="Surfaces" xml:space="preserve"><value>Vlakken</value></data>
+  <data name="Ink" xml:space="preserve"><value>Inkt</value></data>
+  <data name="Semantic" xml:space="preserve"><value>Semantisch</value></data>
+  <data name="Position Fit" xml:space="preserve"><value>Positiegeschiktheid</value></data>
+  <data name="Gradients" xml:space="preserve"><value>Verlopen</value></data>
+  <data name="Shape" xml:space="preserve"><value>Vorm</value></data>
+  <data name="Badges" xml:space="preserve"><value>Labels</value></data>
+  <data name="Buttons" xml:space="preserve"><value>Knoppen</value></data>
+  <data name="Cards" xml:space="preserve"><value>Kaarten</value></data>
+  <data name="Primary" xml:space="preserve"><value>Primair</value></data>
+  <data name="Secondary" xml:space="preserve"><value>Secundair</value></data>
+  <data name="Card label" xml:space="preserve"><value>Kaartlabel</value></data>
+  <data name="List row" xml:space="preserve"><value>Lijstrij</value></data>
+  <data name="Everyone present" xml:space="preserve"><value>Voltallig</value></data>
+  <data name="The quieter second line." xml:space="preserve"><value>De rustigere tweede regel.</value></data>
+  <data name="Sizing" xml:space="preserve"><value>Afmetingen</value></data>
 </root>

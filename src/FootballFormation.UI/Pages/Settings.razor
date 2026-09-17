@@ -48,9 +48,6 @@
     </MudPaper>
 </section>
 
-@* Renders nothing where push does not work, section and all — a browser that cannot do it is not offered a switch that would not move. *@
-<MatchNotifications Manage="true" Heading="@L["Notifications"]" />
-
 <AuthorizeView Roles="@AppRoles.Admin" Context="admin">
     <NotAuthorized>
         @* Only for a session that opened this page as an admin and has since lost it — the revalidating provider saying so is what a
@@ -198,3 +195,7 @@
     </section>
     </Authorized>
 </AuthorizeView>
+
+@* Last, and not only because a follower's section belongs under the admin's: whether it renders at all is the browser's answer, which
+   arrives half a second after the page does. Anywhere else it would push everything under it down once it lands. *@
+<MatchNotifications Manage="true" Heading="@L["Notifications"]" />
