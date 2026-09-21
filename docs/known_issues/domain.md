@@ -47,3 +47,14 @@
   the `*Seconds*` members, not the already-rounded `*Minutes` ones, and round with
   `Game.SecondsToMinutes` once the sum is final.
 
+- **An undated status copied onto dated history reaches backwards.** `SeasonSquadMember.IsInjured` is
+  a flag with no date on it. A game copies it into `Game.InjuredPlayerIds` as the match settles, so it
+  captures the flag at roughly the moment it was true. A training has no such moment — nothing in the
+  app revisits an evening nobody opened — so the sessions are settled *after the fact*, the first time
+  `TrainingService.GetAllAsync` runs past their date. Stamping them with the flag as it stands today
+  would mark a player injured in November absent from every session since August, and the attendance
+  page would rewrite itself the first time anyone opened it. `SeasonSquadMember.InjuredSince` is the
+  fix worth keeping: the settle only stamps a session dated on or after it, the column is set from the
+  injected `TimeProvider` when the flag goes on and never moved while it stays on, and the migration
+  backfills deploy day for injuries that predate the column. **Before copying any standing status onto
+  rows that carry a date, ask when the status became true — and if the answer is not stored, store it.**

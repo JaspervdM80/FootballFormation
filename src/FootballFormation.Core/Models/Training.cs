@@ -24,6 +24,13 @@ public class Training
     /// missed and two facts that can disagree eventually do.
     public List<int> UnavailablePlayerIds { get; set; } = [];
 
+    /// Kept disjoint from <see cref="UnavailablePlayerIds"/> by TrainingService — <see cref="AbsentCount"/> adds the two.
+    public List<int> InjuredPlayerIds { get; set; } = [];
+
+    /// An empty <see cref="InjuredPlayerIds"/> is otherwise indistinguishable from an unwritten one, so without this a session held in
+    /// September would be stamped with November's casualties the first time anything opened it.
+    public bool AbsencesRecorded { get; set; }
+
     /// Frost, a holiday, a hall double-booked. The session stays on file so the week reads honestly; <see cref="Notes"/> says why.
     public bool DidNotTakePlace { get; set; }
 
@@ -36,9 +43,17 @@ public class Training
     /// Been and gone, and it went ahead. Today's evening does not count yet: its register can still change before the whistle.
     public bool HasBeenHeld(DateTime today) => Date.Date < today.Date && !DidNotTakePlace;
 
+    public bool WasAbsent(int playerId) =>
+        UnavailablePlayerIds.Contains(playerId) || InjuredPlayerIds.Contains(playerId);
+
+    /// The badge on /trainings and the report's denominator read this one member, or the two would drift the first time only the
+    /// injured list had anyone in it.
+    public int AbsentCount => UnavailablePlayerIds.Count + InjuredPlayerIds.Count;
+
     /// The only session the scheduler may remove: nothing has been recorded against it, so deleting it loses nothing.
+    /// <see cref="AbsencesRecorded"/> is not a recording of its own — a session stamped with nobody injured still holds nothing.
     public bool IsUnusedSchedule =>
-        FromSchedule && !DidNotTakePlace && UnavailablePlayerIds.Count == 0 && string.IsNullOrWhiteSpace(Notes);
+        FromSchedule && !DidNotTakePlace && AbsentCount == 0 && string.IsNullOrWhiteSpace(Notes);
 }
 
 /// In memory, never in SQL — see QueryTags.ComparesDatesInSql. The tie-break is spelled out so two sessions on one day keep entry order.

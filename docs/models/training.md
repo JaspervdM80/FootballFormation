@@ -8,6 +8,8 @@ One session on one date, with the squad members who were not there and a note ab
 | Date | DateTime | Date only — a session has no start time, and the migration wiped the ones rows were carrying |
 | SeasonId | int | FK → Season, **Restrict** delete. Indexed, not unique. No navigation in either direction |
 | UnavailablePlayerIds | List\<int\> | Comma-separated text, like `Game.UnavailablePlayerIds`. Always empty when the session did not take place |
+| InjuredPlayerIds | List\<int\> | The same, for the ones who missed it through injury. Kept disjoint from the list above, and emptied with it on a cancelled session |
+| AbsencesRecorded | bool | The standing injuries have been copied onto this session. Set once, then never rewritten |
 | DidNotTakePlace | bool | The evening was cancelled — frost, a holiday, a hall double-booked |
 | FromSchedule | bool | Generated from the season's training period rather than entered by hand |
 | Notes | string(2000)? | Free text: what was trained, or why it did not go ahead |
@@ -33,7 +35,46 @@ session, a player or a squad membership can never take the other with it — the
 foreign keys.
 
 There is deliberately **no per-player note**. What was recorded is who was missing; why is one
-sentence about the session, not a field per absentee.
+sentence about the session, not a field per absentee. **Injury is the one exception**, and it is a
+second list rather than a note: it is the one reason the statistics have to be able to count.
+
+## Two absence lists, and why they never overlap
+
+`UnavailablePlayerIds` and `InjuredPlayerIds` both mean "not at this session"; only the second says
+why. `Training.AbsentCount` **adds** them, so anyone in both would be counted twice — `TrainingService`
+keeps them disjoint on every write, injury winning. `Training.WasAbsent` is the member to ask when only
+"was she there" matters — `TrainingAttendanceReport` counts attendance through it and reads
+`InjuredPlayerIds` directly only for the reason — and `AbsentCount` is what the badge on `/trainings`
+counts, so the badge and the report's denominator cannot drift apart the first time only the injured
+list has anyone in it.
+
+## How an injury reaches a session
+
+`SeasonSquadMember.IsInjured` is a standing flag. A game copies it into `Game.InjuredPlayerIds` as it
+settles, and a session does the same through `StandingTrainingInjuries` — but the two settle at
+different moments, and that difference is the whole design:
+
+- **A match settles when it is played**, so the undated flag is the right answer at that moment.
+- **A session has no such moment.** Nothing in the app revisits an evening nobody opened, so a session
+  the schedule generated and nobody has written up is stamped the first time
+  `TrainingService.GetAllAsync` runs after the evening has passed. That read writes, which is why it
+  says so on the method.
+- **`SeasonSquadMember.InjuredSince`** is what makes that safe. Without a date, a player flagged injured
+  in November would be stamped absent from every session since August the next time the page was opened.
+  The settle only stamps a session dated on or after `InjuredSince`. The column is set from the injected
+  `TimeProvider` when the flag goes on, left alone while it stays on — re-saving must not move it — and
+  cleared when she recovers. The migration backfills deploy day for everyone already flagged, so an
+  injury nobody dated cannot reach backwards either.
+- **Stamped once.** `AbsencesRecorded` marks it done, because an empty injured list is otherwise
+  indistinguishable from an unwritten one. Recovering afterwards does not empty the register: by then
+  it is history rather than a status, the same reasoning as `Game.AbsencesRecorded`.
+- **The coach outranks the flag.** The dialog offers an *Injured players* picker, prefilled once from the
+  squad's standing injuries while the session is still unstamped and free to edit — a girl carrying an
+  injury can still turn up and train lightly. **Saving a session stamps it**, whatever its date, the same
+  rule `FromSchedule` follows: a session the coach has been into is the coach's. Without that, a register
+  written up on the evening itself was still unstamped at midnight and the next morning's first read
+  replaced it — and an emptied injured list could never be saved at all, because the prefill put
+  everybody straight back.
 
 Guests are not tracked either: a training is the season's squad, and nobody else is expected.
 
@@ -44,7 +85,7 @@ the week reads honestly, and `Notes` says why. The alternative — deleting it �
 the club had intended to train, which is exactly what the register is for.
 
 **A cancelled session records nobody as absent.** `TrainingService.CreateAsync` and `UpdateAsync`
-both clear `UnavailablePlayerIds` when the flag is set, because a session nobody had is not one
+both clear `UnavailablePlayerIds` and `InjuredPlayerIds` when the flag is set, because a session nobody had is not one
 everybody missed, and two facts that can disagree eventually do. That guard lives in the service,
 not only in the dialog that hides the picker: an invariant enforced in the render tree stops holding
 the moment the service is reached another way, the same reasoning as the admin guard above. The
@@ -83,10 +124,12 @@ joined this year is not charged for the year before she was here — the same pr
 - **The squad figure weighs player-sessions, not players** — `Attended` summed over `Held` summed,
   not the mean of the individual percentages, so a girl who was there for the last month does not
   count for as much as one who was there all year.
-- **A player marked `IsInjured` still reads as present** for the sessions during her injury. Injury
-  on a squad membership is undated and the picker leaves her out, so nothing records her absent.
-  A per-session injury field is what would fix it, and that is the per-player note this model
-  [deliberately does not have](#why-it-looks-like-a-game-and-not-like-a-squad).
+- **A session missed through injury is missed.** It counts in `Missed` and is reported again on its own
+  as `Injured`, on the player's tile and beside her name in the attendance list, while the denominator
+  stays every session held — so the percentage still matches the *"n sessions held"* printed above it.
+  Removing those sessions from the denominator instead was considered and rejected: it makes a player
+  who simply did not turn up rank below one who was injured, and a row then reads *"6 / 7"* on a season
+  with twelve sessions. Where the injury came from is [above](#how-an-injury-reaches-a-session).
 
 `StatsService.GetTrainingAttendanceAsync` / `GetPlayerTrainingAttendanceAsync` are the way in, beside
 the other reports. **Neither carries an admin guard of its own and neither is cached**:

@@ -28,11 +28,30 @@
                         </MudSelectItem>
                     }
                 </MudSelect>
-                @* The picker itself only ever shows a count, so who was away is otherwise a dropdown away. *@
+                @* Prefilled from the squad's standing injuries but editable: a girl carrying one can still turn up and train lightly,
+                   and the register is the coach's answer about this evening. *@
+                <MudSelect T="int" Label="@L["Injured players"]" MultiSelection="true"
+                           @bind-SelectedValues="InjuredPlayerIds"
+                           MultiSelectionTextFunc="@(ids => L["{0} player(s) injured", ids.Count()])"
+                           Class="mb-3">
+                    @foreach (var player in SquadPlayers)
+                    {
+                        <MudSelectItem T="int" Value="player.Id">
+                            <PlayerLabel Player="player" />
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+                @* The pickers themselves only ever show a count, so who was away is otherwise a dropdown away. *@
                 @if (UnavailableNames is { Length: > 0 } names)
                 {
                     <MudText Typo="Typo.caption" Class="d-block mb-3" Style="color: var(--ink-muted);">
                         @names
+                    </MudText>
+                }
+                @if (InjuredNames is { Length: > 0 } injuredNames)
+                {
+                    <MudText Typo="Typo.caption" Class="d-block mb-3" Style="color: var(--color-warning-bright);">
+                        @L["Injured: {0}", injuredNames]
                     </MudText>
                 }
             }

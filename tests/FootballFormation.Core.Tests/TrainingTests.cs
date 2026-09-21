@@ -83,6 +83,21 @@ public class TrainingTests
         Assert.False(new Training().IsUnusedSchedule);
         Assert.False(new Training { FromSchedule = true, Notes = "Partijvorm" }.IsUnusedSchedule);
         Assert.False(new Training { FromSchedule = true, UnavailablePlayerIds = [7] }.IsUnusedSchedule);
+        Assert.False(new Training { FromSchedule = true, InjuredPlayerIds = [7] }.IsUnusedSchedule);
         Assert.False(new Training { FromSchedule = true, DidNotTakePlace = true }.IsUnusedSchedule);
+
+        // Stamped and nobody was hurt: the session still holds nothing, so the scheduler may still take it back.
+        Assert.True(new Training { FromSchedule = true, AbsencesRecorded = true }.IsUnusedSchedule);
+    }
+
+    [Fact]
+    public void An_injury_is_an_absence_and_counts_once()
+    {
+        var training = new Training { UnavailablePlayerIds = [7], InjuredPlayerIds = [9] };
+
+        Assert.True(training.WasAbsent(7));
+        Assert.True(training.WasAbsent(9));
+        Assert.False(training.WasAbsent(11));
+        Assert.Equal(2, training.AbsentCount);
     }
 }

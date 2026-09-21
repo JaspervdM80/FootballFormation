@@ -20,6 +20,13 @@ public class TrainingAttendanceReportTests
             UnavailablePlayerIds = [.. absent]
         };
 
+    private static Training SessionWithInjured(int id, params int[] injured)
+    {
+        var session = Session(id);
+        session.InjuredPlayerIds = [.. injured];
+        return session;
+    }
+
     private static SeasonSquads Squads(int seasonId, IEnumerable<Player> players, int[]? guestIds = null) =>
         SeasonSquads.Of(TestData.Squad(seasonId, players, guestIds));
 
@@ -154,6 +161,39 @@ public class TrainingAttendanceReportTests
 
         Assert.Equal(1, attendance.Held);
         Assert.Equal(1, attendance.Attended);
+    }
+
+    [Fact]
+    public void A_session_missed_through_injury_is_missed_and_says_so()
+    {
+        // Before the injured list existed she was not in the absence list either, so an injured player read as a perfect attender for
+        // every evening of her injury.
+        var attendance = TrainingAttendanceReport.Build(
+            [Session(1), SessionWithInjured(2, Ann.Id), SessionWithInjured(3, Ann.Id)],
+            Squads(1, [Ann]), Today);
+
+        var ann = attendance.Players.Single();
+
+        Assert.Equal(3, ann.Held);
+        Assert.Equal(1, ann.Attended);
+        Assert.Equal(2, ann.Missed);
+        Assert.Equal(2, ann.Injured);
+        Assert.Equal(33, ann.Percentage);
+        Assert.Equal(2, attendance.Injured);
+    }
+
+    [Fact]
+    public void A_player_named_in_both_lists_missed_the_session_once()
+    {
+        var session = SessionWithInjured(2, Ann.Id);
+        session.UnavailablePlayerIds = [Ann.Id];
+
+        var attendance = TrainingAttendanceReport.BuildFor(Ann, [Session(1), session], Squads(1, [Ann]), Today);
+
+        Assert.Equal(2, attendance.Held);
+        Assert.Equal(1, attendance.Attended);
+        Assert.Equal(1, attendance.Missed);
+        Assert.Equal(1, attendance.Injured);
     }
 
     [Fact]

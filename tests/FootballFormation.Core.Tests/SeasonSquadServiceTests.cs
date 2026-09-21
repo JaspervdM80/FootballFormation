@@ -145,6 +145,31 @@ public class SeasonSquadServiceTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task An_injury_is_dated_when_it_is_flagged_and_the_date_goes_when_it_heals()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(2);
+        await Squads.AddMemberAsync(season.Id, players[0].Id, isInjured: true);
+        await Squads.AddMemberAsync(season.Id, players[1].Id);
+
+        Assert.Equal(Now.Date, Read().SeasonSquadMembers.Single(m => m.PlayerId == players[0].Id).InjuredSince);
+        Assert.Null(Read().SeasonSquadMembers.Single(m => m.PlayerId == players[1].Id).InjuredSince);
+
+        Time.Advance(TimeSpan.FromDays(7));
+        await Squads.SetInjuredAsync(season.Id, players[1].Id, true);
+        Assert.Equal(Now.Date.AddDays(7), Read().SeasonSquadMembers.Single(m => m.PlayerId == players[1].Id).InjuredSince);
+
+        // Re-saving an injury that is already on must not move its date forward, or the sessions it has already stamped stop matching
+        // the flag that stamped them.
+        Time.Advance(TimeSpan.FromDays(7));
+        await Squads.SetInjuredAsync(season.Id, players[1].Id, true);
+        Assert.Equal(Now.Date.AddDays(7), Read().SeasonSquadMembers.Single(m => m.PlayerId == players[1].Id).InjuredSince);
+
+        await Squads.SetInjuredAsync(season.Id, players[0].Id, false);
+        Assert.Null(Read().SeasonSquadMembers.Single(m => m.PlayerId == players[0].Id).InjuredSince);
+    }
+
+    [Fact]
     public async Task Copying_a_squad_forward_does_not_carry_injury_status()
     {
         var last = await SeedSeasonAsync(covering: Now.AddYears(-1), isCurrent: false);

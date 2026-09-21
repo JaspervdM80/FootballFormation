@@ -5,8 +5,9 @@
 // covers what the coach does with it.
 import { test, expect } from '../fixtures.js';
 import {
-  chooseSeasonNamed, clickFor, confirmDialog, currentSeasonName, fillField, goto, nextSeasonName,
-  openDialog, pickEarlierThisMonth, pickNextSeasonAugust, submitDialog,
+  addPlayer, chooseSeasonNamed, clickFor, confirmDialog, currentSeasonName, fillField, goto,
+  nextSeasonName, openDialog, pickEarlierThisMonth, pickNextSeasonAugust, playerMenuItem,
+  submitDialog,
 } from '../helpers.js';
 import { SQUAD } from '../global-setup.js';
 
@@ -24,7 +25,39 @@ const trainingRow = (page, note) => page.locator('.training-row', { hasText: not
  * Escape would reach the dialog behind it and cancel the whole form.
  */
 async function markUnavailable(page, panel, playerName) {
-  const field = panel.locator('.mud-input-control', { has: page.getByText('Unavailable Players', { exact: false }) }).first();
+  await markIn(page, panel, 'Unavailable Players', playerName);
+}
+
+/** The same, for the picker that says the absence was an injury. */
+async function markInjured(page, panel, playerName) {
+  await markIn(page, panel, 'Injured players', playerName);
+}
+
+/**
+ * Empties the injured picker, which opens pre-filled with the squad's standing injuries.
+ *
+ * The specs share one database, so whether anybody is flagged injured depends on which specs ran
+ * first. Clearing it makes every count below the register this test actually wrote.
+ */
+async function clearInjured(page, panel) {
+  const field = panel.locator('.mud-input-control', { has: page.getByText('Injured players', { exact: false }) }).first();
+  const items = page.locator('.mud-popover-open .mud-list-item');
+
+  await clickFor(field, () => expect(items.first()).toBeVisible());
+
+  // aria-selected, not .mud-selected-item: that class marks the item the keyboard is on, which is
+  // the first one whether or not anything is picked — clicking it selects rather than clears.
+  const selected = page.locator('.mud-popover-open [role="option"][aria-selected="true"]');
+  for (let remaining = await selected.count(); remaining > 0; remaining--) {
+    await selected.first().click();
+  }
+
+  await field.click();
+  await expect(page.locator('.mud-popover-open')).toHaveCount(0);
+}
+
+async function markIn(page, panel, label, playerName) {
+  const field = panel.locator('.mud-input-control', { has: page.getByText(label, { exact: false }) }).first();
   const option = page.locator('.mud-popover-open .mud-list-item', { hasText: playerName }).first();
 
   await clickFor(field, () => expect(option).toBeVisible());
@@ -41,7 +74,7 @@ const cancelledSwitch = (panel) => panel.locator('.mud-switch', { hasText: 'Did 
  * so a note is all it needs — except for the attendance tests, which pass `past` to put the session
  * behind us, because only a session that has been and gone counts towards the figure.
  */
-async function addTraining(page, { note, absentee, cancelled, past } = {}) {
+async function addTraining(page, { note, absentee, injured, cancelled, past } = {}) {
   await goto(page, '/trainings');
   const panel = page.locator('.mud-dialog');
   await clickFor(page.getByRole('button', { name: 'Add' }).first(), () => expect(panel).toBeVisible());
@@ -49,7 +82,9 @@ async function addTraining(page, { note, absentee, cancelled, past } = {}) {
   await openDialog(page);
   // Before the absentees: changing the date reloads the season's squad behind the picker.
   if (past) await pickEarlierThisMonth(page, panel, 1, { allowUnchanged: true });
+  if (!cancelled) await clearInjured(page, panel);
   if (absentee) await markUnavailable(page, panel, absentee);
+  if (injured) await markInjured(page, panel, injured);
   if (note) await fillField(panel, 'Notes', note);
   if (cancelled) await cancelledSwitch(panel).click();
   await submitDialog(page);
@@ -139,6 +174,63 @@ test('the form names the absentees it is only able to count', async ({ page }) =
   await expect(panel.locator('.mud-typography-caption', { hasText: ABSENTEE })).toBeVisible();
 });
 
+test('a player marked injured is counted out and the reason is on the row', async ({ page }) => {
+  await addTraining(page, { note: 'Geblesseerd gemeld', injured: PRESENT });
+
+  // Both lists feed the count, so the absence badge says how many were missing and the amber one
+  // says how many of those were injuries — the reason, not a second count.
+  const row = trainingRow(page, 'Geblesseerd gemeld');
+  await expect(row.locator('.badge-unavailable')).toHaveText('1 out');
+
+  const injured = row.locator('.badge-injured');
+  await expect(injured).toHaveText('1 injured');
+  await expect(injured).toHaveAttribute('title', PRESENT);
+});
+
+test('a standing injury fills the register in before the coach opens it', async ({ page }) => {
+  await addPlayer(page, { firstName: 'Blessure', surname: 'Training', shirt: 86 });
+  await playerMenuItem(page, 'Blessure Training', 'Edit Player');
+  const squadDialog = await openDialog(page);
+  await squadDialog.locator('label.mud-switch', { hasText: 'Injured' }).click();
+  await submitDialog(page);
+
+  // The whole point of the feature: a girl flagged injured on the squad is already down as missing
+  // this evening, without the coach having to say so a second time.
+  await goto(page, '/trainings');
+  const panel = page.locator('.mud-dialog');
+  await clickFor(page.getByRole('button', { name: 'Add' }).first(), () => expect(panel).toBeVisible());
+  await openDialog(page);
+
+  await expect(panel.locator('.mud-typography-caption', { hasText: 'Blessure Training' })).toBeVisible();
+  await panel.getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.locator('.mud-dialog')).toHaveCount(0);
+});
+
+test('a register saved with nobody injured stays that way', async ({ page }) => {
+  // Runs after the test above, so somebody in the squad is carrying a standing injury — she trained
+  // anyway and the coach emptied the picker. Re-offering it on the next open would overrule her, and
+  // "nobody was injured" would be unsayable.
+  await addTraining(page, { note: 'Toch meegetraind' });
+
+  const row = trainingRow(page, 'Toch meegetraind');
+  await expect(row.locator('.badge-injured')).toHaveCount(0);
+
+  const panel = page.locator('.mud-dialog');
+  await clickFor(row.getByTitle('Edit'), () => expect(panel).toBeVisible());
+  await expect(panel.locator('.mud-typography-caption', { hasText: 'Injured:' })).toHaveCount(0);
+  await panel.getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.locator('.mud-dialog')).toHaveCount(0);
+});
+
+test('a player named in both pickers is only counted once', async ({ page }) => {
+  await addTraining(page, { note: 'Twee keer genoemd', absentee: ABSENTEE, injured: ABSENTEE });
+
+  // Injury wins the overlap: the same girl in both lists would otherwise read as two absences.
+  const row = trainingRow(page, 'Twee keer genoemd');
+  await expect(row.locator('.badge-unavailable')).toHaveText('1 out');
+  await expect(row.locator('.badge-injured')).toHaveText('1 injured');
+});
+
 test('a note can be corrected afterwards', async ({ page }) => {
   await addTraining(page, { note: 'Verkeerd genoteerd' });
 
@@ -165,6 +257,7 @@ test('a session that did not go ahead is marked, not deleted', async ({ page }) 
   const panel = page.locator('.mud-dialog');
   await clickFor(row.getByTitle('Edit'), () => expect(panel).toBeVisible());
   await expect(panel.getByText('Unavailable Players', { exact: false })).toHaveCount(0);
+  await expect(panel.getByText('Injured players', { exact: false })).toHaveCount(0);
 });
 
 test('marking a session cancelled drops the absences it was carrying', async ({ page }) => {

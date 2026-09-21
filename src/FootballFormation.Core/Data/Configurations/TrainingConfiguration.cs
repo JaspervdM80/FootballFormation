@@ -12,6 +12,8 @@ internal sealed class TrainingConfiguration : IEntityTypeConfiguration<Training>
 
         entity.Property(t => t.UnavailablePlayerIds).HasCsvListConversion();
 
+        entity.Property(t => t.InjuredPlayerIds).HasCsvListConversion();
+
         // Restrict, like Season -> Game: a session records who was absent, so deleting a season must not take a year of attendance with
         // it. SeasonService.DeleteAsync refuses with a readable message rather than letting the caller hit the raw constraint.
         // HasOne<Season>() rather than HasOne(t => t.Season): a Training carries the id and no navigation, as GameInjury does.

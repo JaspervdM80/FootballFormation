@@ -20,4 +20,8 @@ public class SeasonSquadMember
     /// Standing, as opposed to <see cref="Game.UnavailablePlayerIds"/>, which opts someone out of a single fixture. Undated, so every
     /// match she misses copies it into its own <see cref="Game.InjuredPlayerIds"/> as it settles — and CopyFromAsync does not carry it.
     public bool IsInjured { get; set; }
+
+    /// The date the flag went on, so a training held before it is never stamped with an injury that had not happened yet — a game takes
+    /// the flag as it settles and needs no date, but a session is only settled after the fact. Null while she is fit.
+    public DateTime? InjuredSince { get; set; }
 }

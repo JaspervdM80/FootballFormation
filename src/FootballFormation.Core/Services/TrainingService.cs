@@ -9,11 +9,15 @@ public class TrainingService(
 {
     /// A null <paramref name="seasonId"/> loads every season. Admin-only even though it reads nothing: who missed a training, and the
     /// note saying why, is the one thing in this app that is not public — see docs/models/training.md.
+    /// It does write: a session that has been and gone is stamped with the standing injuries first, because nothing else in the app
+    /// ever revisits an evening nobody opened. See <see cref="StandingTrainingInjuries"/>.
     public Task<Result<List<Training>>> GetAllAsync(
         int? seasonId = null, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAdminAsync(currentUser, logger, "load the trainings", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            await StandingTrainingInjuries.SettleAsync(db, seasonId, time.GetLocalNow().Date, cancellationToken);
 
             var trainings = (await db.Trainings
                 .AsNoTracking()
@@ -48,7 +52,7 @@ public class TrainingService(
             if (teamId is null) return Result.Failure<Training>("Season not found");
             training.TeamId = teamId.Value;
 
-            ClearAbsencesIfCancelled(training);
+            Normalise(training);
 
             db.Trainings.Add(training);
             await db.SaveChangesAsync(cancellationToken);
@@ -72,7 +76,7 @@ public class TrainingService(
 
             training.TeamId = db.CurrentTeamId!.Value;
 
-            ClearAbsencesIfCancelled(training);
+            Normalise(training);
 
             // Setting State rather than DbSet.Update, for the reason spelled out in GameService.UpdateAsync.
             db.Entry(training).State = EntityState.Modified;
@@ -104,10 +108,24 @@ public class TrainingService(
             return Result.Success();
         });
 
-    /// Here rather than only in the dialog that hides the picker: an invariant enforced in the render tree stops holding the moment the
+    /// Here rather than only in the dialog that hides the pickers: an invariant enforced in the render tree stops holding the moment the
     /// service is reached another way, and marking an ordinary session cancelled is the path that would otherwise keep its absences.
-    private static void ClearAbsencesIfCancelled(Training training)
+    private static void Normalise(Training training)
     {
-        if (training.DidNotTakePlace) training.UnavailablePlayerIds = [];
+        if (training.DidNotTakePlace)
+        {
+            training.UnavailablePlayerIds = [];
+            training.InjuredPlayerIds = [];
+            return;
+        }
+
+        // A session the coach has saved is the coach's, the same rule FromSchedule follows: settling it later would replace the
+        // register she typed — an empty injured list included — with the flags as they stand that morning.
+        training.AbsencesRecorded = true;
+
+        // Injury is the more specific answer, so it wins the overlap — and Training.AbsentCount adds the two lists, which would count
+        // anyone in both of them twice.
+        training.UnavailablePlayerIds =
+            [.. training.UnavailablePlayerIds.Where(id => !training.InjuredPlayerIds.Contains(id))];
     }
 }
