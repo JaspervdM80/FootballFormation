@@ -42,9 +42,11 @@ second list rather than a note: it is the one reason the statistics have to be a
 
 `UnavailablePlayerIds` and `InjuredPlayerIds` both mean "not at this session"; only the second says
 why. `Training.AbsentCount` **adds** them, so anyone in both would be counted twice — `TrainingService`
-keeps them disjoint on every write, injury winning, and `Training.WasAbsent` is what the report asks
-rather than either list. The badge on `/trainings` and the report's denominator read those two members,
-so they cannot drift apart the first time only the injured list has anyone in it.
+keeps them disjoint on every write, injury winning. `Training.WasAbsent` is the member to ask when only
+"was she there" matters — `TrainingAttendanceReport` counts attendance through it and reads
+`InjuredPlayerIds` directly only for the reason — and `AbsentCount` is what the badge on `/trainings`
+counts, so the badge and the report's denominator cannot drift apart the first time only the injured
+list has anyone in it.
 
 ## How an injury reaches a session
 
@@ -54,8 +56,9 @@ different moments, and that difference is the whole design:
 
 - **A match settles when it is played**, so the undated flag is the right answer at that moment.
 - **A session has no such moment.** Nothing in the app revisits an evening nobody opened, so a session
-  is stamped the first time `TrainingService.GetAllAsync` runs after the evening has passed. That read
-  writes, which is why it says so on the method.
+  the schedule generated and nobody has written up is stamped the first time
+  `TrainingService.GetAllAsync` runs after the evening has passed. That read writes, which is why it
+  says so on the method.
 - **`SeasonSquadMember.InjuredSince`** is what makes that safe. Without a date, a player flagged injured
   in November would be stamped absent from every session since August the next time the page was opened.
   The settle only stamps a session dated on or after `InjuredSince`. The column is set from the injected
@@ -65,10 +68,13 @@ different moments, and that difference is the whole design:
 - **Stamped once.** `AbsencesRecorded` marks it done, because an empty injured list is otherwise
   indistinguishable from an unwritten one. Recovering afterwards does not empty the register: by then
   it is history rather than a status, the same reasoning as `Game.AbsencesRecorded`.
-- **The coach outranks the flag.** The dialog offers an *Injured players* picker, prefilled from the
+- **The coach outranks the flag.** The dialog offers an *Injured players* picker, prefilled once from the
   squad's standing injuries while the session is still unstamped and free to edit — a girl carrying an
-  injury can still turn up and train lightly. Saving a session that has already been held stamps it, so
-  the settle never overwrites what she typed.
+  injury can still turn up and train lightly. **Saving a session stamps it**, whatever its date, the same
+  rule `FromSchedule` follows: a session the coach has been into is the coach's. Without that, a register
+  written up on the evening itself was still unstamped at midnight and the next morning's first read
+  replaced it — and an emptied injured list could never be saved at all, because the prefill put
+  everybody straight back.
 
 Guests are not tracked either: a training is the season's squad, and nobody else is expected.
 

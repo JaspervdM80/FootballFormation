@@ -45,7 +45,13 @@
         <summary>
             <span class="attendance-label">@L["Attendance"]</span>
             <span class="attendance-figure">@_attendance.Percentage.ToString("0")%</span>
-            <span class="attendance-sub">@L["{0} sessions held", _attendance.Held]</span>
+            <span class="attendance-sub">
+                @L["{0} sessions held", _attendance.Held]
+                @if (_attendance.Injured > 0)
+                {
+                    <span class="attendance-injured">· @L["{0} through injury", _attendance.Injured]</span>
+                }
+            </span>
             <MudIcon Icon="@Icons.Material.Filled.ExpandMore" Size="Size.Small" />
         </summary>
         <div class="attendance-rows">

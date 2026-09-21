@@ -34,6 +34,7 @@ public partial class TrainingDialog
     private bool SeasonNotCreatedYet { get; set; }
 
     private bool _absencesRecorded;
+    private bool _injuredPrefilled;
 
     /// The whole squad, injured included: this evening's register is what the pickers write, and a girl carrying an injury may still
     /// have trained — the standing flag only decides what the injured picker opens with.
@@ -112,11 +113,12 @@ public partial class TrainingDialog
         UnavailablePlayerIds = [.. UnavailablePlayerIds.Where(Squad.IsFullMember)];
         InjuredPlayerIds = [.. InjuredPlayerIds.Where(Squad.IsFullMember)];
 
-        // Only until the session has been stamped: after that its injured list is history, and the flags as they stand today are no
-        // longer the answer about that evening.
-        if (!_absencesRecorded && InjuredPlayerIds.Count == 0)
+        // Once per dialog, and only for a session nobody has written up yet: re-offering it would put a player the coach has just
+        // taken out of the list straight back in, so "nobody was injured" could never be saved.
+        if (!_absencesRecorded && !_injuredPrefilled)
         {
             InjuredPlayerIds = [.. Squad.Injured.Select(player => player.Id)];
+            _injuredPrefilled = true;
         }
 
         StateHasChanged();

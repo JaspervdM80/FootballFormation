@@ -24,9 +24,7 @@ public class Training
     /// missed and two facts that can disagree eventually do.
     public List<int> UnavailablePlayerIds { get; set; } = [];
 
-    /// Squad members who missed it through injury. Separate from <see cref="UnavailablePlayerIds"/> rather than a flavour of it, the
-    /// same split <see cref="Game.InjuredPlayerIds"/> makes: both count as missed, and only this one can say why. Kept disjoint from it
-    /// by TrainingService, so nobody is counted twice. Cleared with it on a cancelled session.
+    /// Kept disjoint from <see cref="UnavailablePlayerIds"/> by TrainingService — <see cref="AbsentCount"/> adds the two.
     public List<int> InjuredPlayerIds { get; set; } = [];
 
     /// An empty <see cref="InjuredPlayerIds"/> is otherwise indistinguishable from an unwritten one, so without this a session held in

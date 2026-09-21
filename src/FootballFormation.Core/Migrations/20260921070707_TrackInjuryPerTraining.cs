@@ -32,9 +32,9 @@ namespace FootballFormation.Core.Migrations
                 nullable: true);
 
             // Deploy day, not the start of the injury nobody recorded: a standing flag with no date behind it must not reach back and
-            // mark a player absent from sessions she was at. The format is the one EF writes, so it reads back as a DateTime.
+            // mark a player absent from sessions she was at. Local time, because that is what the column holds everywhere else.
             migrationBuilder.Sql(
-                "UPDATE SeasonSquadMembers SET InjuredSince = strftime('%Y-%m-%d %H:%M:%S', 'now') WHERE IsInjured = 1");
+                "UPDATE SeasonSquadMembers SET InjuredSince = datetime('now', 'localtime') WHERE IsInjured = 1");
         }
 
         /// <inheritdoc />

@@ -206,6 +206,22 @@ test('a standing injury fills the register in before the coach opens it', async 
   await expect(page.locator('.mud-dialog')).toHaveCount(0);
 });
 
+test('a register saved with nobody injured stays that way', async ({ page }) => {
+  // Runs after the test above, so somebody in the squad is carrying a standing injury — she trained
+  // anyway and the coach emptied the picker. Re-offering it on the next open would overrule her, and
+  // "nobody was injured" would be unsayable.
+  await addTraining(page, { note: 'Toch meegetraind' });
+
+  const row = trainingRow(page, 'Toch meegetraind');
+  await expect(row.locator('.badge-injured')).toHaveCount(0);
+
+  const panel = page.locator('.mud-dialog');
+  await clickFor(row.getByTitle('Edit'), () => expect(panel).toBeVisible());
+  await expect(panel.locator('.mud-typography-caption', { hasText: 'Injured:' })).toHaveCount(0);
+  await panel.getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.locator('.mud-dialog')).toHaveCount(0);
+});
+
 test('a player named in both pickers is only counted once', async ({ page }) => {
   await addTraining(page, { note: 'Twee keer genoemd', absentee: ABSENTEE, injured: ABSENTEE });
 

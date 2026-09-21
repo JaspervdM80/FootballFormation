@@ -95,8 +95,8 @@ public static class TrainingAttendanceReport
             if (!squads.For(training.SeasonId).IsFullMember(player.Id)) continue;
 
             held++;
-            if (training.InjuredPlayerIds.Contains(player.Id)) injured++;
-            else if (!training.UnavailablePlayerIds.Contains(player.Id)) attended++;
+            if (!training.WasAbsent(player.Id)) attended++;
+            else if (training.InjuredPlayerIds.Contains(player.Id)) injured++;
         }
 
         return new PlayerTrainingAttendance { Player = player, Held = held, Attended = attended, Injured = injured };

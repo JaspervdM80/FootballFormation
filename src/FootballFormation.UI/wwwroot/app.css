@@ -892,9 +892,9 @@ a.action-btn {
 /* Beside .badge-unavailable on a session, and beside the name in the attendance list: how many of the absences were injuries. Amber
    rather than the absence red, because it is a reason rather than a second count. */
 .badge-injured {
-    font-size: 0.6rem;
+    font-size: 0.65rem;
     font-weight: 600;
-    padding: 1px 6px;
+    padding: 3px 8px;
     border-radius: 4px;
     margin-left: 6px;
     background: color-mix(in srgb, var(--color-warning) 12%, transparent);

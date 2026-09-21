@@ -1,8 +1,7 @@
 namespace FootballFormation.Core.Services;
 
-/// The training counterpart of <see cref="StandingInjuries"/>. A match settles at the moment it is played, so it can copy the undated
-/// flag as it stands; a session has no such moment, so it is stamped the first time anything reads it after the evening has passed,
-/// and <see cref="SeasonSquadMember.InjuredSince"/> is what stops today's injury reaching back into September.
+/// A session has no moment of settling the way a match does, so it is stamped on the first read past its date;
+/// <see cref="SeasonSquadMember.InjuredSince"/> is what stops today's injury reaching back into September.
 internal static class StandingTrainingInjuries
 {
     internal static async Task SettleAsync(

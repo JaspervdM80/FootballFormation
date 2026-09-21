@@ -57,6 +57,19 @@
     white-space: nowrap;
 }
 
+/* Razor trims the whitespace in front of the element, so the gap before the separator is set here. */
+.attendance-injured {
+    margin-left: 4px;
+}
+
+/* The summary line already ellipsises to keep the figure and the chevron in place, and on a phone this is what gets cut — mid-word.
+   The per-player badges below carry the same fact, so it goes rather than truncates. */
+@media (max-width: 699.98px) {
+    .attendance-injured {
+        display: none;
+    }
+}
+
 /* ::deep is required: MudIcon's root carries no scope attribute, so without it this selector matches nothing. */
 .attendance[open] > summary ::deep .mud-icon-root {
     transform: rotate(180deg);

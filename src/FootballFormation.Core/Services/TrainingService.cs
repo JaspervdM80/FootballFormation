@@ -110,7 +110,7 @@ public class TrainingService(
 
     /// Here rather than only in the dialog that hides the pickers: an invariant enforced in the render tree stops holding the moment the
     /// service is reached another way, and marking an ordinary session cancelled is the path that would otherwise keep its absences.
-    private void Normalise(Training training)
+    private static void Normalise(Training training)
     {
         if (training.DidNotTakePlace)
         {
@@ -119,9 +119,9 @@ public class TrainingService(
             return;
         }
 
-        // A register the coach has filled in for an evening already behind us is the answer; settling it again would overwrite her
-        // injured list with the flags as they stand today. An evening still ahead stays unsettled, so it is stamped when it passes.
-        if (training.HasBeenHeld(time.GetLocalNow().Date)) training.AbsencesRecorded = true;
+        // A session the coach has saved is the coach's, the same rule FromSchedule follows: settling it later would replace the
+        // register she typed — an empty injured list included — with the flags as they stand that morning.
+        training.AbsencesRecorded = true;
 
         // Injury is the more specific answer, so it wins the overlap — and Training.AbsentCount adds the two lists, which would count
         // anyone in both of them twice.
