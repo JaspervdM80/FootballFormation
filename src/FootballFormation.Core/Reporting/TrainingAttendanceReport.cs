@@ -10,6 +10,10 @@ public class PlayerTrainingAttendance
 
     public int Attended { get; init; }
 
+    /// Of <see cref="Missed"/>, the sessions she missed through injury. Counted as missed all the same — the denominator stays every
+    /// session held, so the figure matches the "sessions held" it is printed under.
+    public int Injured { get; init; }
+
     public int Missed => Held - Attended;
 
     /// Share of <see cref="Held"/> she was there for, 0–100.
@@ -27,6 +31,9 @@ public class TrainingAttendance
 
     /// Best attendance first.
     public required List<PlayerTrainingAttendance> Players { get; init; }
+
+    /// Player-sessions missed through injury across the whole scope, the same unit <see cref="Percentage"/> weighs.
+    public int Injured => Players.Sum(p => p.Injured);
 
     /// Share of every player-session that was attended, 0–100 — the squad's figure, not the average of the individual ones, so a player
     /// who was only there for the last month does not weigh the same as one who was there all year.
@@ -79,6 +86,7 @@ public static class TrainingAttendanceReport
     {
         var held = 0;
         var attended = 0;
+        var injured = 0;
 
         foreach (var training in trainings)
         {
@@ -87,9 +95,10 @@ public static class TrainingAttendanceReport
             if (!squads.For(training.SeasonId).IsFullMember(player.Id)) continue;
 
             held++;
-            if (!training.UnavailablePlayerIds.Contains(player.Id)) attended++;
+            if (training.InjuredPlayerIds.Contains(player.Id)) injured++;
+            else if (!training.UnavailablePlayerIds.Contains(player.Id)) attended++;
         }
 
-        return new PlayerTrainingAttendance { Player = player, Held = held, Attended = attended };
+        return new PlayerTrainingAttendance { Player = player, Held = held, Attended = attended, Injured = injured };
     }
 }

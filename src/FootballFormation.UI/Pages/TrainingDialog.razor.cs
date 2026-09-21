@@ -21,6 +21,7 @@ public partial class TrainingDialog
     private string? Notes { get; set; }
     private bool DidNotTakePlace { get; set; }
     private IReadOnlyCollection<int> UnavailablePlayerIds { get; set; } = [];
+    private IReadOnlyCollection<int> InjuredPlayerIds { get; set; } = [];
 
     /// 0 is "resolve from the date", which TrainingService.CreateAsync does on save. An existing session keeps its own season, so
     /// retyping a date never silently moves it.
@@ -32,13 +33,19 @@ public partial class TrainingDialog
     /// True once a date resolves to no season at all — a session opening a new season.
     private bool SeasonNotCreatedYet { get; set; }
 
-    /// Injured players are left out — already out of the roster for every game, so offering them here says the same thing twice.
-    private List<Player> SquadPlayers => [.. Squad.FullMembers.Where(p => !Squad.IsInjured(p.Id))];
+    private bool _absencesRecorded;
 
-    /// Off the full squad rather than the picker's list, or a player marked injured since would be recorded as absent and go unnamed.
-    private string UnavailableNames =>
+    /// The whole squad, injured included: this evening's register is what the pickers write, and a girl carrying an injury may still
+    /// have trained — the standing flag only decides what the injured picker opens with.
+    private List<Player> SquadPlayers => Squad.FullMembers;
+
+    private string UnavailableNames => NamesOf(UnavailablePlayerIds);
+
+    private string InjuredNames => NamesOf(InjuredPlayerIds);
+
+    private string NamesOf(IReadOnlyCollection<int> playerIds) =>
         string.Join(", ", Squad.FullMembers
-            .Where(player => UnavailablePlayerIds.Contains(player.Id))
+            .Where(player => playerIds.Contains(player.Id))
             .Select(player => player.DisplayName));
 
     protected override async Task OnInitializedAsync()
@@ -103,6 +110,14 @@ public partial class TrainingDialog
         // Drops ids not valid for this season, so moving the date cannot smuggle a stale one through to Submit. Deliberately not
         // filtered on injury: a player marked injured later must not erase that this session already recorded her as absent.
         UnavailablePlayerIds = [.. UnavailablePlayerIds.Where(Squad.IsFullMember)];
+        InjuredPlayerIds = [.. InjuredPlayerIds.Where(Squad.IsFullMember)];
+
+        // Only until the session has been stamped: after that its injured list is history, and the flags as they stand today are no
+        // longer the answer about that evening.
+        if (!_absencesRecorded && InjuredPlayerIds.Count == 0)
+        {
+            InjuredPlayerIds = [.. Squad.Injured.Select(player => player.Id)];
+        }
 
         StateHasChanged();
     }
@@ -114,6 +129,8 @@ public partial class TrainingDialog
         DidNotTakePlace = training.DidNotTakePlace;
         SeasonId = training.SeasonId;
         UnavailablePlayerIds = training.UnavailablePlayerIds.ToList();
+        InjuredPlayerIds = training.InjuredPlayerIds.ToList();
+        _absencesRecorded = training.AbsencesRecorded;
     }
 
     private async Task Submit()
@@ -126,7 +143,10 @@ public partial class TrainingDialog
         training.Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim();
         training.DidNotTakePlace = DidNotTakePlace;
         training.SeasonId = SeasonId;
-        training.UnavailablePlayerIds = DidNotTakePlace ? [] : UnavailablePlayerIds.ToList();
+        training.InjuredPlayerIds = DidNotTakePlace ? [] : InjuredPlayerIds.ToList();
+        training.UnavailablePlayerIds = DidNotTakePlace
+            ? []
+            : [.. UnavailablePlayerIds.Where(id => !InjuredPlayerIds.Contains(id))];
 
         // Saved by hand, so the schedule stops managing it: rewriting the training period must not sweep away an evening the coach has
         // already been into.

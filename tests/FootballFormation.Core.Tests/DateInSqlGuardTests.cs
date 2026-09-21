@@ -9,8 +9,8 @@ public class DateInSqlGuardTests : ServiceTestBase
     {
         Assert.Equal(
             [
-                "ClockRunningSince", "CreatedAt", "Date", "EditedAt", "EndDate", "FirstTrainingDate", "LastTrainingDate",
-                "RecordedAt", "StartDate",
+                "ClockRunningSince", "CreatedAt", "Date", "EditedAt", "EndDate", "FirstTrainingDate", "InjuredSince",
+                "LastTrainingDate", "RecordedAt", "StartDate",
             ],
             DateInSqlInterceptor.DateColumns.OrderBy(c => c, StringComparer.Ordinal));
     }

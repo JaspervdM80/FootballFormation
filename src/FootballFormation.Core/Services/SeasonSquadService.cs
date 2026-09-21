@@ -5,6 +5,7 @@ namespace FootballFormation.Core.Services;
 public class SeasonSquadService(
     IDbContextFactory<AppDbContext> dbFactory,
     ICurrentUser currentUser,
+    TimeProvider time,
     ILogger<SeasonSquadService> logger)
 {
     /// An empty squad is a valid answer, not a failure — a new season has none until it is copied forward or filled in.
@@ -96,7 +97,8 @@ public class SeasonSquadService(
 
             var member = new SeasonSquadMember
             {
-                SeasonId = seasonId, TeamId = season.TeamId, PlayerId = playerId, IsGuest = isGuest, IsInjured = isInjured
+                SeasonId = seasonId, TeamId = season.TeamId, PlayerId = playerId, IsGuest = isGuest, IsInjured = isInjured,
+                InjuredSince = isInjured ? time.GetLocalNow().Date : null
             };
             db.SeasonSquadMembers.Add(member);
             await db.SaveChangesAsync(cancellationToken);
@@ -186,6 +188,12 @@ public class SeasonSquadService(
             }
 
             member.IsInjured = isInjured;
+
+            // Left alone when the flag is already on, or re-saving the squad would move the injury forward and un-stamp the sessions
+            // she has already missed.
+            if (isInjured) member.InjuredSince ??= time.GetLocalNow().Date;
+            else member.InjuredSince = null;
+
             await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("{PlayerName} is {Status} in season {SeasonId}",

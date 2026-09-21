@@ -202,4 +202,145 @@ public class TrainingServiceTests : ServiceTestBase
         Assert.True((await Trainings.DeleteAsync(9999)).IsFailure);
     }
 
+    [Fact]
+    public async Task A_session_that_did_not_take_place_records_nobody_as_injured_either()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(1);
+
+        await Trainings.CreateAsync(new Training
+        {
+            SeasonId = season.Id,
+            Date = Now,
+            DidNotTakePlace = true,
+            InjuredPlayerIds = [players[0].Id],
+        });
+
+        Assert.Empty(Read().Trainings.Single().InjuredPlayerIds);
+    }
+
+    [Fact]
+    public async Task A_player_the_coach_marked_injured_is_not_also_counted_as_unavailable()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(2);
+
+        await Trainings.CreateAsync(new Training
+        {
+            SeasonId = season.Id,
+            Date = Now,
+            UnavailablePlayerIds = [players[0].Id, players[1].Id],
+            InjuredPlayerIds = [players[0].Id],
+        });
+
+        // Both lists feed Training.AbsentCount, so the overlap would read as three absences from a squad of two.
+        var stored = Read().Trainings.Single();
+        Assert.Equal([players[1].Id], stored.UnavailablePlayerIds);
+        Assert.Equal([players[0].Id], stored.InjuredPlayerIds);
+        Assert.Equal(2, stored.AbsentCount);
+    }
+
+    [Fact]
+    public async Task A_session_that_has_been_held_is_stamped_with_the_standing_injuries_when_it_is_read()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(2);
+        await Squads.AddMemberAsync(season.Id, players[0].Id, isInjured: true);
+        await Squads.AddMemberAsync(season.Id, players[1].Id);
+
+        var held = (await Trainings.CreateAsync(
+            new Training { SeasonId = season.Id, Date = Now.AddDays(7) })).Value!;
+        var toCome = (await Trainings.CreateAsync(
+            new Training { SeasonId = season.Id, Date = Now.AddDays(21) })).Value!;
+
+        Time.Advance(TimeSpan.FromDays(14));
+        await Trainings.GetAllAsync(season.Id);
+
+        var stored = Read().Trainings.ToDictionary(t => t.Id);
+
+        // Nothing else in the app revisits an evening nobody opened, so the read is where an injury becomes that session's history.
+        Assert.Equal([players[0].Id], stored[held.Id].InjuredPlayerIds);
+        Assert.True(stored[held.Id].AbsencesRecorded);
+
+        Assert.Empty(stored[toCome.Id].InjuredPlayerIds);
+        Assert.False(stored[toCome.Id].AbsencesRecorded);
+    }
+
+    [Fact]
+    public async Task An_injury_flagged_today_does_not_reach_back_to_the_sessions_before_it()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(1);
+        await Squads.AddMemberAsync(season.Id, players[0].Id);
+
+        // Both written while they were still ahead, and neither read back since — so it is the injury date, not the stamp, that
+        // decides which of them she missed.
+        var before = (await Trainings.CreateAsync(
+            new Training { SeasonId = season.Id, Date = Now.AddDays(1) })).Value!;
+        var after = (await Trainings.CreateAsync(
+            new Training { SeasonId = season.Id, Date = Now.AddDays(10) })).Value!;
+
+        Time.Advance(TimeSpan.FromDays(5));
+        await Squads.SetInjuredAsync(season.Id, players[0].Id, isInjured: true);
+
+        Time.Advance(TimeSpan.FromDays(10));
+        await Trainings.GetAllAsync(season.Id);
+
+        // The flag is undated on the membership; InjuredSince is what keeps it from marking her absent from evenings she was at.
+        var stored = Read().Trainings.ToDictionary(t => t.Id);
+        Assert.Empty(stored[before.Id].InjuredPlayerIds);
+        Assert.Equal([players[0].Id], stored[after.Id].InjuredPlayerIds);
+    }
+
+    [Fact]
+    public async Task A_session_is_stamped_once_and_recovering_does_not_rewrite_it()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(1);
+        await Squads.AddMemberAsync(season.Id, players[0].Id, isInjured: true);
+        await Trainings.CreateAsync(new Training { SeasonId = season.Id, Date = Now.AddDays(7) });
+
+        Time.Advance(TimeSpan.FromDays(14));
+        await Trainings.GetAllAsync(season.Id);
+        await Squads.SetInjuredAsync(season.Id, players[0].Id, isInjured: false);
+        await Trainings.GetAllAsync(season.Id);
+
+        // Once stamped it is history, not a status: healing in November must not empty September's register.
+        Assert.Equal([players[0].Id], Read().Trainings.Single().InjuredPlayerIds);
+    }
+
+    [Fact]
+    public async Task A_cancelled_session_is_never_stamped()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(1);
+        await Squads.AddMemberAsync(season.Id, players[0].Id, isInjured: true);
+        await Trainings.CreateAsync(
+            new Training { SeasonId = season.Id, Date = Now.AddDays(-7), DidNotTakePlace = true });
+
+        await Trainings.GetAllAsync(season.Id);
+
+        Assert.Empty(Read().Trainings.Single().InjuredPlayerIds);
+    }
+
+    [Fact]
+    public async Task The_register_the_coach_filled_in_survives_the_next_read()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(2);
+        await Squads.AddMemberAsync(season.Id, players[0].Id, isInjured: true);
+        await Squads.AddMemberAsync(season.Id, players[1].Id);
+
+        // She was flagged injured but trained anyway, and the coach wrote up the evening that way.
+        await Trainings.CreateAsync(new Training
+        {
+            SeasonId = season.Id,
+            Date = Now.AddDays(-7),
+            InjuredPlayerIds = [players[1].Id],
+        });
+
+        await Trainings.GetAllAsync(season.Id);
+
+        Assert.Equal([players[1].Id], Read().Trainings.Single().InjuredPlayerIds);
+    }
 }

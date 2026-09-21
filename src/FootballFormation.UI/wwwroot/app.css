@@ -889,6 +889,20 @@ a.action-btn {
     border: 1px solid color-mix(in srgb, var(--color-success-bright) 20%, transparent);
 }
 
+/* Beside .badge-unavailable on a session, and beside the name in the attendance list: how many of the absences were injuries. Amber
+   rather than the absence red, because it is a reason rather than a second count. */
+.badge-injured {
+    font-size: 0.6rem;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+    background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+    color: var(--color-warning-bright);
+    border: 1px solid color-mix(in srgb, var(--color-warning) 20%, transparent);
+    white-space: nowrap;
+}
+
 /* Amber, not red: worth a look, not an alarm. */
 .badge-warning {
     font-size: 0.65rem;

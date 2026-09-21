@@ -37,9 +37,14 @@ public partial class Trainings
     private DateTime Today => Time.GetLocalNow().Date;
 
     /// In the order PlayerService hands them over — shirt number, then name — so the same absences read the same way on every session.
-    private string UnavailableNames(Training training) =>
+    private string AbsentNames(Training training) =>
+        NamesOf([.. training.UnavailablePlayerIds, .. training.InjuredPlayerIds]);
+
+    private string InjuredNames(Training training) => NamesOf(training.InjuredPlayerIds);
+
+    private string NamesOf(List<int> playerIds) =>
         string.Join(", ", _players
-            .Where(player => training.UnavailablePlayerIds.Contains(player.Id))
+            .Where(player => playerIds.Contains(player.Id))
             .Select(player => player.DisplayName));
 
     private sealed record TrainingWeek(string Title, bool OpensThePast, List<Training> Trainings);

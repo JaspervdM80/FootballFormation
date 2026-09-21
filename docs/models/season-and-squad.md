@@ -47,6 +47,7 @@ Helpers on the model: `Contains(date)` (date-only), `ShortName` ("25/26", for th
 | PlayerId | int | FK → Player, **Cascade** delete |
 | IsGuest | bool | Guest **for this season only** |
 | IsInjured | bool | Generally injured **for this season only** |
+| InjuredSince | DateTime? | The day the flag went on, null while she is fit. A training settles after the fact, so without a date today's injury would mark her absent from sessions she was at — see [training](training.md#how-an-injury-reaches-a-session) |
 
 Unique index on `(SeasonId, PlayerId)` — one row per player per season.
 

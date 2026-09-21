@@ -52,7 +52,13 @@
             @foreach (var row in _attendance.Players)
             {
                 <a class="attendance-row" href="@AppRoutes.PlayerStats(row.Player.Id)">
-                    <span class="a-name"><PlayerLabel Player="row.Player" /></span>
+                    <span class="a-name">
+                        <PlayerLabel Player="row.Player" />
+                        @if (row.Injured > 0)
+                        {
+                            <span class="badge-injured">@L["{0} injured", row.Injured]</span>
+                        }
+                    </span>
                     <span class="a-meta">@row.Attended / @row.Held · @(row.Percentage.ToString("0"))%</span>
                     <div class="position-track">
                         <div class="position-fill" style="width: @(row.Percentage.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
@@ -102,9 +108,13 @@ else
                         {
                             <span class="badge-warning">@L["Cancelled"]</span>
                         }
-                        else if (training.UnavailablePlayerIds.Count > 0)
+                        else if (training.AbsentCount > 0)
                         {
-                            <span class="badge-unavailable" title="@UnavailableNames(training)">@L["{0} out", training.UnavailablePlayerIds.Count]</span>
+                            <span class="badge-unavailable" title="@AbsentNames(training)">@L["{0} out", training.AbsentCount]</span>
+                            @if (training.InjuredPlayerIds.Count > 0)
+                            {
+                                <span class="badge-injured" title="@InjuredNames(training)">@L["{0} injured", training.InjuredPlayerIds.Count]</span>
+                            }
                         }
                         else if (training.HasBeenHeld(Today))
                         {

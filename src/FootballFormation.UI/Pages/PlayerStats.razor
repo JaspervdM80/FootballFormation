@@ -75,7 +75,9 @@
             <div class="stat-value">@_attendance.Attended<span class="stat-unit">/@_attendance.Held</span></div>
             <div class="stat-label">@L["Trainings"]</div>
             <div class="stat-sub">@L["{0}% attended", _attendance.Percentage.ToString("0")]</div>
-            <div class="stat-sub">@L["{0} missed", _attendance.Missed]</div>
+            <div class="stat-sub">
+                @L["{0} missed", _attendance.Missed]@(_attendance.Injured > 0 ? $" · {L["{0} through injury", _attendance.Injured]}" : "")
+            </div>
         </div>
     }
 </div>
