@@ -33,28 +33,50 @@ async function markInjured(page, panel, playerName) {
   await markIn(page, panel, 'Injured players', playerName);
 }
 
+/** The names the dialog says are injured — the app's own statement of what the picker holds. */
+const injuredCaption = (page, panel) =>
+  panel.locator('.mud-typography-caption', { hasText: 'Injured:' });
+
 /**
  * Empties the injured picker, which opens pre-filled with the squad's standing injuries.
  *
  * The specs share one database, so whether anybody is flagged injured depends on which specs ran
  * first. Clearing it makes every count below the register this test actually wrote.
+ *
+ * The names come from the caption rather than from the popover's own checkmarks: MudBlazor marks
+ * those a render *after* the list opens, so reading them told a loaded runner nothing was selected,
+ * this cleared nothing, and the session was saved with the prefill still on it. Opening the picker
+ * first is the synchronisation point — its options and the caption are written by the same render,
+ * so once the list is on screen the caption is settled.
  */
 async function clearInjured(page, panel) {
-  const field = panel.locator('.mud-input-control', { has: page.getByText('Injured players', { exact: false }) }).first();
-  const items = page.locator('.mud-popover-open .mud-list-item');
+  const field = injuredField(page, panel);
+  const caption = injuredCaption(page, panel);
 
-  await clickFor(field, () => expect(items.first()).toBeVisible());
-
-  // aria-selected, not .mud-selected-item: that class marks the item the keyboard is on, which is
-  // the first one whether or not anything is picked — clicking it selects rather than clears.
-  const selected = page.locator('.mud-popover-open [role="option"][aria-selected="true"]');
-  for (let remaining = await selected.count(); remaining > 0; remaining--) {
-    await selected.first().click();
-  }
-
+  await clickFor(field, () => expect(page.locator('.mud-popover-open .mud-list-item').first()).toBeVisible());
   await field.click();
   await expect(page.locator('.mud-popover-open')).toHaveCount(0);
+
+  for (const name of await injuredNames(caption)) {
+    await markInjured(page, panel, name);
+  }
+
+  await expect(caption).toHaveCount(0);
 }
+
+/** "Injured: Ann de Vries, Bea Bakker" → the two names. Empty when the caption is not rendered. */
+async function injuredNames(caption) {
+  if (!(await caption.count())) return [];
+
+  return (await caption.innerText())
+    .replace(/^Injured:\s*/, '')
+    .split(',')
+    .map(name => name.trim())
+    .filter(Boolean);
+}
+
+const injuredField = (page, panel) =>
+  panel.locator('.mud-input-control', { has: page.getByText('Injured players', { exact: false }) }).first();
 
 async function markIn(page, panel, label, playerName) {
   const field = panel.locator('.mud-input-control', { has: page.getByText(label, { exact: false }) }).first();
