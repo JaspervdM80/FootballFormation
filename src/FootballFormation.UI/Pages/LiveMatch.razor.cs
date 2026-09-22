@@ -322,13 +322,14 @@ public partial class LiveMatch
                 p.Add(x => x.PlayerOnId, sub.PlayerOnId);
                 p.Add(x => x.Minute, shownMinute);
                 p.Add(x => x.MaxMinute, GameData.GameDurationMinutes);
+                p.Add(x => x.Injured, GameData.InjuryFor(sub) is not null);
             });
         if (choice is null) return;
 
         Snackbar.Report(L,
             await SubService.EditSubstitutionAsync(
                 sub.Id, sub.PlayerOffId, choice.PlayerOnId,
-                MatchClockReport.ElapsedForEditedMinute(GameData, sub, shownMinute, choice.Minute)),
+                MatchClockReport.ElapsedForEditedMinute(GameData, sub, shownMinute, choice.Minute), choice.Injured),
             L["Substitution updated"]);
     }
 

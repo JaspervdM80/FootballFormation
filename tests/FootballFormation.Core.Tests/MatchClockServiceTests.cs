@@ -411,16 +411,6 @@ public class MatchClockServiceTests : LiveMatchTestBase
         return game;
     }
 
-    private async Task<Game> LoadForMinutesAsync(int gameId)
-    {
-        Db.ChangeTracker.Clear();
-        return await Db.Games
-            .Include(g => g.Periods).ThenInclude(p => p.PlayerPositions)
-            .Include(g => g.Substitutions)
-            .Include(g => g.Injuries)
-            .FirstAsync(g => g.Id == gameId);
-    }
-
     private Task<List<GamePlayerPosition>> SecondHalfLineupAsync(int gameId, PeriodType type) =>
         Db.GamePlayerPositions
             .Where(pp => pp.GamePeriod.GameId == gameId && pp.GamePeriod.PeriodType == type)

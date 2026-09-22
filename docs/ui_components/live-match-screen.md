@@ -90,8 +90,19 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   stoppage time reads 30+3 and converting an untouched 30 back would move it minutes earlier and hand
   the wrong player the difference. Only a minute someone actually retyped is converted. The candidate
   list is taken from **the substitution's own half**, not whichever half the screen happens to show, and
-  excludes anyone already on the pitch there, carrying a standing injury, or hurt in this match. A
-  substitution made for an injury is not editable here — its leaver is fixed by the injury.
+  excludes anyone already on the pitch there, carrying a standing injury, or hurt in this match. The
+  **Injured** switch turns a plain substitution into one made for an injury, or back: the `GameInjury`
+  is added, removed, or moved to the substitution's new second, since `Game.WasReplaced` pairs the two
+  only on the same half, player and second.
+- **A substitution forgotten at the touchline is added afterwards** (`AddSubstitutionAsync`,
+  `AddSubDialog`, "Add substitution" under the result page's timeline, on any match with timings): a
+  half, who went off, who came on, the minute, and whether it was an injury. It is laid over the line-up
+  the half *finished* with — that is the only line-up stored — so the leaver has to be on the pitch at
+  the end of that half and the replacement off it, and it is refused with *"Undo the later substitution
+  first"* when either player takes part in a later change in that half: rewinding past that change would
+  put her in two places. The minute is clamped inside the chosen half. Here and in the edit, an injury is
+  refused for a player who played on in a later half (*"She played on in a later half"*): the injury
+  ends her availability, so her later minutes would read as utilisation over 100%.
 - **A goal can be corrected rather than removed and retyped** (`MatchGoalService.EditGoalAsync`,
   `EditGoalDialog`, the `Edit` button beside the `×` in the result page's timeline): the scorer, the
   assist, the own-goal flag and the minute. Which side it counts for is fixed — turning ours into

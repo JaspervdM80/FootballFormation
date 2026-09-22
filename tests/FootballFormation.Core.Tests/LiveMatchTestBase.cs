@@ -56,5 +56,15 @@ public abstract class LiveMatchTestBase : ServiceTestBase
         return await Db.Games.Include(g => g.Periods).FirstAsync(g => g.Id == gameId);
     }
 
+    protected async Task<Game> LoadForMinutesAsync(int gameId)
+    {
+        Db.ChangeTracker.Clear();
+        return await Db.Games
+            .Include(g => g.Periods).ThenInclude(p => p.PlayerPositions)
+            .Include(g => g.Substitutions)
+            .Include(g => g.Injuries)
+            .FirstAsync(g => g.Id == gameId);
+    }
+
     protected Task<List<Player>> PlayersAsync() => Db.Players.OrderBy(p => p.Id).ToListAsync();
 }

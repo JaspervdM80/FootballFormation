@@ -189,12 +189,9 @@
                     }
                     else if (entry.Substitution is { } subToEdit)
                     {
-                        @if (entry.Injury is null)
-                        {
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
-                                           title="@L["Edit"]"
-                                           OnClick="() => EditSubstitution(subToEdit)" />
-                        }
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                       title="@L["Edit"]"
+                                       OnClick="() => EditSubstitution(subToEdit)" />
                         @* Undo also drops any injury recorded with it — one tap made both. *@
                         <MudIconButton Icon="@Icons.Material.Filled.Undo" Size="Size.Small"
                                        title="@L["Undo"]"

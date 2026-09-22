@@ -108,7 +108,12 @@ consistent; the minute round-trips through `MatchClockReport.ElapsedForMinute` a
 its half. **A minute left alone keeps the stored reading** (`ElapsedForEditedMinute`) — the shown
 minute drops stoppage time (30+3 reads 30), so converting an untouched one back would move the change
 minutes earlier. Candidates come from the substitution's **own** half, not the one on screen. A
-substitution made for an injury is not editable — its leaver is fixed by the injury.
+substitution's **Injured** switch adds, removes or moves its `GameInjury` to the same second, because
+`Game.WasReplaced` pairs them only there.
+
+**A forgotten substitution is added afterwards** on the result page (`AddSubstitutionAsync`). It is
+laid over the line-up the half finished with, so it is refused when either player takes part in a later
+change in that half.
 
 Two substitutions in the same second settle by **id**, not just the clock.
 

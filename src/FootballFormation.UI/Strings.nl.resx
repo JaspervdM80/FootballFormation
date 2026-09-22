@@ -362,7 +362,11 @@
   <data name="That half still has something recorded after {0} minutes" xml:space="preserve"><value>In die helft is na {0} minuten nog iets vastgelegd</value></data>
   <data name="A half cannot run past the restart of the next one" xml:space="preserve"><value>Een helft kan niet doorlopen tot na de hervatting</value></data>
   <data name="An opponent goal cannot be an own goal" xml:space="preserve"><value>Een doelpunt van de tegenstander kan geen eigen doelpunt zijn</value></data>
-  <data name="A substitution made for an injury can't be edited" xml:space="preserve"><value>Een wissel wegens blessure kan hier niet worden bewerkt</value></data>
+  <data name="Add substitution" xml:space="preserve"><value>Wissel toevoegen</value></data>
+  <data name="Substitution added" xml:space="preserve"><value>Wissel toegevoegd</value></data>
+  <data name="Which half" xml:space="preserve"><value>Welke helft</value></data>
+  <data name="Goes off" xml:space="preserve"><value>Gaat eruit</value></data>
+  <data name="She played on in a later half" xml:space="preserve"><value>Ze speelde daarna nog een helft</value></data>
   <data name="Make substitution" xml:space="preserve"><value>Wissel doorvoeren</value></data>
   <data name="Comes on" xml:space="preserve"><value>Komt erin</value></data>
   <data name="Nobody is on the bench for this half." xml:space="preserve"><value>Er zit niemand op de bank voor deze helft.</value></data>
@@ -791,6 +795,7 @@
   <data name="undo the injury" xml:space="preserve"><value>blessure ongedaan maken</value></data>
   <data name="undo the substitution" xml:space="preserve"><value>wissel ongedaan maken</value></data>
   <data name="edit the substitution" xml:space="preserve"><value>wissel bewerken</value></data>
+  <data name="add the substitution" xml:space="preserve"><value>wissel toevoegen</value></data>
   <data name="update comment" xml:space="preserve"><value>opmerking bijwerken</value></data>
   <data name="update game" xml:space="preserve"><value>wedstrijd bijwerken</value></data>
   <data name="update player" xml:space="preserve"><value>speler bijwerken</value></data>
