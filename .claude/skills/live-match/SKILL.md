@@ -107,13 +107,11 @@ who came on and the minute by **reversing the line-up change and re-applying** w
 consistent; the minute round-trips through `MatchClockReport.ElapsedForMinute` and is clamped inside
 its half. **A minute left alone keeps the stored reading** (`ElapsedForEditedMinute`) — the shown
 minute drops stoppage time (30+3 reads 30), so converting an untouched one back would move the change
-minutes earlier. Candidates come from the substitution's **own** half, not the one on screen. A
-substitution's **Injured** switch adds, removes or moves its `GameInjury` to the same second, because
-`Game.WasReplaced` pairs them only there.
+minutes earlier. Candidates come from the substitution's **own** half, not the one on screen. The
+**Injured** switch keeps its `GameInjury` on the same second — `Game.WasReplaced` pairs them there.
 
-**A forgotten substitution is added afterwards** on the result page (`AddSubstitutionAsync`). It is
-laid over the line-up the half finished with, so it is refused when either player takes part in a later
-change in that half.
+**A forgotten substitution is added afterwards** (`AddSubstitutionAsync`), laid over the half's final
+line-up — so refused when either player is in a later change there.
 
 Two substitutions in the same second settle by **id**, not just the clock.
 
