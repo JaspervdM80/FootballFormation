@@ -15,8 +15,8 @@ is not a reason: an anchor does that with no circuit at all.
 Today's split: `/`, `/games`, `/players`, `/games/{id}/formation`, `/games/{id}/live`,
 `/games/{id}/result`, `/preferences`, `/settings` and `/users` are interactive. `/settings` is the
 one open to everyone: its admin sections are behind an `AuthorizeView`, not an `[Authorize]` route. `/stats`, `/stats/positions`,
-`/players/{id}/stats`, `/games/{id}/overview`, `/login`, `/Error` and `/not-found` are not, and
-`rendermode.spec.js` asserts they open no WebSocket. That is the whole point: a page with no circuit
+`/players/{id}/stats`, `/games/{id}/overview`, `/games/duties`, `/login`, `/Error` and `/not-found`
+are not, and `rendermode.spec.js` and `duties.spec.js` assert they open no WebSocket. That is the whole point: a page with no circuit
 cannot show "Reconnecting…", cannot force a reload, and survives a phone suspending the app.
 
 **A page that declares a render mode opens with `<InteractiveShell />`** (or

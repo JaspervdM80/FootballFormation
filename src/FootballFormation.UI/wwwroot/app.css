@@ -1513,9 +1513,10 @@ a.action-btn {
         margin-inline-end: 0 !important;
     }
 
+    /* 44 rather than 0: an outlined button's thinner padding leaves the bare icon at 43.7px. */
     .btn-compact.mud-button-root,
     .btn-compact .mud-button-root {
-        min-width: 0 !important;
+        min-width: 44px !important;
     }
 
     /* Stack the squad header actions, Add on top. The markup order is Copy then Add so

@@ -1,0 +1,77 @@
+@page "/games/duties"
+@inherits SeasonAwarePage
+
+<PageTitle>@L["Duties"]</PageTitle>
+
+<InlineNotice Notice="_notice" />
+
+<PageHeader Class="mb-6" Title="@L["Duties"]"
+            Subtitle="@(SeasonState.SelectedSeason is { } season
+                ? L["Who does what at each match in {0}", season.Name]
+                : L["Who does what at each match, across all seasons"])" />
+
+@if (_roster is null)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else if (_roster.Rows.Count == 0 || !_roster.HasAnyDuty)
+{
+    <MudPaper Class="pa-6" Elevation="2" Style="border-radius: 16px; text-align: center;">
+        <MudIcon Icon="@Icons.Material.Filled.Assignment" Size="Size.Large" Style="color: var(--ink-faint);" />
+        <MudText Typo="Typo.body1" Class="mt-3" Style="color: var(--ink-muted);">
+            @(_roster.Rows.Count == 0 ? L["No games yet."] : L["No duties have been entered yet."])
+        </MudText>
+    </MudPaper>
+}
+else
+{
+    <table class="duty-table">
+        <thead>
+            <tr>
+                <th>@L["Date"]</th>
+                <th>@L["Opponent"]</th>
+                @if (_roster.ShowsDressingRoom)
+                {
+                    <th>@L["Dressing room"]</th>
+                }
+                @if (_roster.ShowsFlags)
+                {
+                    <th>@L["Flags"]</th>
+                }
+                @if (_roster.ShowsWash)
+                {
+                    <th>@L["Kit wash"]</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in _roster.Rows)
+            {
+                var game = row.Game;
+                var isNext = row.Timing == DutyTiming.Next;
+                <tr class="duty-row duty-@row.Timing.ToString().ToLowerInvariant()" id="@(isNext ? AppRoutes.NextDutyAnchor : null)">
+                    <td class="duty-date">@game.DateLine("ddd d MMM")</td>
+                    <td class="duty-opponent">
+                        @game.Opponent<VenueBadge IsHome="game.IsHomeGame" Inline="true" />
+                        @if (isNext)
+                        {
+                            <span class="badge-teal duty-next-badge">@L["Up next"]</span>
+                        }
+                    </td>
+                    @if (_roster.ShowsDressingRoom)
+                    {
+                        <td class="duty-cell" data-label="@L["Dressing room"]">@Duty(game.DressingRoomDuty)</td>
+                    }
+                    @if (_roster.ShowsFlags)
+                    {
+                        <td class="duty-cell" data-label="@L["Flags"]">@Duty(game.FlagDuty)</td>
+                    }
+                    @if (_roster.ShowsWash)
+                    {
+                        <td class="duty-cell" data-label="@L["Kit wash"]">@Duty(game.WashDuty)</td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+}

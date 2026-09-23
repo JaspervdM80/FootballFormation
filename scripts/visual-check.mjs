@@ -48,6 +48,7 @@ const PAGES = [
   ['home', '/', true],
   ['players', '/players'],
   ['games', '/games'],
+  ['duties', '/games/duties', true],
   ['trainings', '/trainings'],
   ['stats', '/stats', true],
   ['position-development', '/stats/positions', true],
@@ -172,6 +173,19 @@ async function seedGameToday(opponent) {
 }
 
 await seedGameToday(SEED_OPPONENT);
+
+// With no duty entered anywhere, /games/duties is its empty-state paragraph rather than the table.
+await gotoRendered(page, `${BASE}/games/duties`);
+if (!(await page.locator('.duty-row').count())) {
+  await goto(page, `${BASE}/games`);
+  const dialog = page.locator('.mud-dialog');
+  await clickFor(page.locator('.game-row', { hasText: SEED_OPPONENT }).first().getByTitle(/bewerken|edit/i).first(),
+    () => dialog.isVisible());
+  await dialog.getByLabel(rx('vlaggendienst', 'flag duty')).first().fill('Vader van Anouk');
+  await clickFor(dialog.getByRole('button', { name: rx('opslaan', 'save') }),
+    async () => await page.locator('.mud-dialog').count() === 0, { settle: 10_000 });
+  console.log(`seeded a flag duty on the game vs ${SEED_OPPONENT}`);
+}
 
 // A second one with a line-up on it and the clock running. The live screen is where a mis-tap costs
 // the most, and none of what a coach taps there exists until a match is actually under way — the

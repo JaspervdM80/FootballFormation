@@ -165,7 +165,7 @@ The global season filter, backed by the scoped `SeasonState` (see
   places — isolation would force a duplicate stylesheet, the problem `.stat-tiles` already has
   between `SeasonStats.razor.css` and `PlayerStats.razor.css`.
 - **Route allowlist**, now `AppNav.IsSeasonAware` rather than a copy of the route list living here:
-  `/games`, `/stats`, `/stats/positions`, `/players` (the squad is per season), `/players/{id}/stats`,
+  `/games`, `/games/duties`, `/stats`, `/stats/positions`, `/players` (the squad is per season), `/players/{id}/stats`,
   and `/` — the start page filters nothing, but it is where a visit begins, so the season can be set
   before navigating. Hidden on `/settings`, where it would be misleading while the season list itself
   is edited, and on the single-game routes, where it is inert. Visibility is recomputed on every
