@@ -21,6 +21,11 @@ No utility classes. Style with `var(--token)`; make tints in place with `color-m
 - Light theme only. Text in `-bright` club shades on light surfaces; the plain shades are fills.
 - Cards: `background: var(--gradient-card)`, `border: 1px solid color-mix(in srgb, var(--ink) 5%, transparent)`, `border-radius: var(--corner-radius)`.
 - Home is club green, away is `--color-away`.
+- Status is green, actions are light. A card that *reports* (next match, last result, season record) is filled with `var(--gradient-accent)` and set in `--club-on-primary`; a tile that *goes somewhere* keeps the light card look. Never make a navigation tile green, or the two stop reading apart.
+- On a green status card: labels at 85% opacity, secondary lines at 90% — not the ink ramp, which is tuned for white. A pale tinted chip vanishes on green, so a venue badge becomes solid `--club-on-primary` with its home/away text colour, and a win pill turns white with `--club-accent-deep` text; loss stays `--color-danger-bright`, draw is white at 30%.
+- A record reads caption over figure: a small `W-G-V` caption, the big `5-2-1` below it, then `Doelsaldo: +7` as its own line — never an abbreviation squeezed beside the numbers.
+- A result is the score plus a one-letter result pill (W/G/V), not a coloured score — red and green text both fail on a green card.
+- A truncating name gives way before the badge that follows it: ellipsis on the name only, the badge `flex: none`.
 - Position-fit colours are never replaced with club colours: green-to-red means good-to-bad, on a green pitch.
 - Mobile first (coaches use it on the touchline): every tap target at least 44px tall, at least 8px apart.
 - UI copy is Dutch by default.

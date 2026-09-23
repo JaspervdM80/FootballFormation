@@ -276,7 +276,6 @@
   <!-- The season's duties page -->
   <data name="Who does what at each match in {0}" xml:space="preserve"><value>Wie wat doet bij elke wedstrijd in {0}</value></data>
   <data name="Who does what at each match, across all seasons" xml:space="preserve"><value>Wie wat doet bij elke wedstrijd, over alle seizoenen</value></data>
-  <data name="Up next" xml:space="preserve"><value>Volgende</value></data>
   <data name="No games yet." xml:space="preserve"><value>Nog geen wedstrijden.</value></data>
   <data name="No duties have been entered yet." xml:space="preserve"><value>Er zijn nog geen taken ingevuld.</value></data>
 
@@ -829,6 +828,9 @@
   <data name="Sizing" xml:space="preserve"><value>Afmetingen</value></data>
   <data name="Next match" xml:space="preserve"><value>Volgende wedstrijd</value></data>
   <data name="Last result" xml:space="preserve"><value>Laatste uitslag</value></data>
+  <data name="Goal difference: {0}" xml:space="preserve"><value>Doelsaldo: {0}</value></data>
+  <data name="{0} and {1}" xml:space="preserve"><value>{0} en {1}</value></data>
+  <data name="Who does what at each match." xml:space="preserve"><value>Wie wat doet bij elke wedstrijd.</value></data>
   <data name="No matches left in this season." xml:space="preserve"><value>Geen wedstrijden meer in dit seizoen.</value></data>
   <data name="No match planned yet." xml:space="preserve"><value>Nog geen wedstrijd gepland.</value></data>
   <data name="No matches played yet." xml:space="preserve"><value>Nog geen wedstrijden gespeeld.</value></data>

@@ -1,5 +1,6 @@
 ﻿@page "/"
 @inherits SeasonAwarePage
+@using FootballFormation.Core.Reporting
 @rendermode InteractiveServer
 
 @* See InteractiveShell: the providers and the session gate this page no longer inherits, because
@@ -47,7 +48,7 @@
         <a class="home-card" href="@AppRoutes.Overview(next.Id)">
             <div class="home-card-label">@L["Next match"]</div>
             <div class="home-card-title">
-                @next.Opponent<VenueBadge IsHome="next.IsHomeGame" Inline="true" />
+                <span class="home-card-opponent">@next.Opponent</span><VenueBadge IsHome="next.IsHomeGame" Inline="true" />
             </div>
             <div class="home-card-line">@CardDate(next)</div>
             @if (MeetLine(next) is { } meet)
@@ -68,9 +69,12 @@
     {
         <a class="home-card" href="@AppRoutes.Result(last.Id)">
             <div class="home-card-label">@L["Last result"]</div>
-            <div class="home-card-title home-card-result">
-                <span class="home-card-opponent">@last.Opponent<VenueBadge IsHome="last.IsHomeGame" Inline="true" /></span>
-                <span class="home-card-score @ResultClass(last)">@last.ScoreboardOrder()</span>
+            <div class="home-card-title">
+                <span class="home-card-opponent">@last.Opponent</span><VenueBadge IsHome="last.IsHomeGame" Inline="true" />
+            </div>
+            <div class="home-card-result">
+                <span class="home-card-score">@last.ScoreboardOrder()</span>
+                <ResultPill Result="SeasonStatsReport.ResultOf(last)" />
             </div>
             <div class="home-card-line">@CardDate(last)</div>
             @if (_dashboard.LastScorers.Count > 0)
@@ -93,10 +97,9 @@
         <div class="home-card-label">@RecordLabel</div>
         @if (_dashboard.Record.Played > 0)
         {
-            <div class="home-card-title">
-                @($"{_dashboard.Record.Won}-{_dashboard.Record.Drawn}-{_dashboard.Record.Lost}")
-                <span class="home-card-aside">@L["W-D-L"] · @GoalDifference @L["diff"]</span>
-            </div>
+            <div class="home-card-caption">@L["W-D-L"]</div>
+            <div class="home-card-record">@($"{_dashboard.Record.Won}-{_dashboard.Record.Drawn}-{_dashboard.Record.Lost}")</div>
+            <div class="home-card-line">@L["Goal difference: {0}", GoalDifference]</div>
             <FormGuide Form="_dashboard.Record.Form" />
         }
         else
@@ -181,4 +184,16 @@
             </a>
         </MudItem>
     </AuthorizeView>
+
+    <MudItem xs="12" sm="6" md="4">
+        <a class="home-tile-link" href="@AppRoutes.Duties">
+            <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;">
+                <MudIcon Icon="@Icons.Material.Filled.AssignmentInd" Size="Size.Large" Style="color: var(--club-primary-bright);" />
+                <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Duties"]</MudText>
+                <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
+                    @DutiesText
+                </MudText>
+            </MudPaper>
+        </a>
+    </MudItem>
 </MudGrid>

@@ -52,11 +52,6 @@
     box-shadow: inset 4px 0 0 0 var(--club-accent-bright);
 }
 
-.duty-next-badge {
-    margin-left: 8px;
-    white-space: nowrap;
-}
-
 /* The app bar is fixed, so without this the anchored row opens underneath it. */
 .duty-next {
     scroll-margin-top: 88px;

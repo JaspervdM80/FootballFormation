@@ -1,4 +1,5 @@
-﻿using FootballFormation.Core.Reporting;
+﻿using System.Globalization;
+using FootballFormation.Core.Reporting;
 
 namespace FootballFormation.UI.Pages;
 
@@ -16,6 +17,8 @@ public partial class Home
     private Game? TodaysGame { get; set; }
 
     private HomeDashboard _dashboard = HomeDashboard.Empty;
+
+    private DutyRoster? _duties;
 
     private bool IsLive => TodaysGame?.MatchState == MatchState.InProgress;
 
@@ -50,9 +53,9 @@ public partial class Home
     protected override async Task LoadAsync()
     {
         var result = await GameService.GetAllAsync(SeasonId, Cancellation);
-        _dashboard = Snackbar.ReportFailure(L, result)
-            ? HomeDashboardReport.Build(result.Value!, Now)
-            : HomeDashboard.Empty;
+        var loaded = Snackbar.ReportFailure(L, result);
+        _dashboard = loaded ? HomeDashboardReport.Build(result.Value!, Now) : HomeDashboard.Empty;
+        _duties = loaded ? DutyRosterReport.Build(result.Value!, Now) : null;
     }
 
     private async Task LoadTodaysGameAsync()
@@ -85,11 +88,41 @@ public partial class Home
 
     private string RecordLabel => SeasonState.SelectedSeason?.Name ?? L["All seasons"];
 
-    private static string ResultClass(Game game) =>
-        game.ScoreHome > game.ScoreAway ? "win" : game.ScoreHome < game.ScoreAway ? "loss" : "draw";
-
     private string Scorers => string.Join(", ", _dashboard.LastScorers.Select(s =>
         s.Goals > 1 ? $"{s.Scorer.DisplayName} ({s.Goals})" : s.Scorer.DisplayName));
+
+    /// Names only the duties the team actually keeps — the same columns the duties page shows.
+    private string DutiesText
+    {
+        get
+        {
+            if (_duties is null)
+            {
+                return L["Who does what at each match."];
+            }
+
+            if (!_duties.HasAnyDuty)
+            {
+                return L["No duties have been entered yet."];
+            }
+
+            var roster = _duties;
+
+            string?[] shown =
+            [
+                roster.ShowsDressingRoom ? L["Dressing room duty"].Value : null,
+                roster.ShowsFlags ? L["Flag duty"].Value : null,
+                roster.ShowsWash ? L["Kit wash"].Value : null
+            ];
+
+            var words = shown.OfType<string>()
+                .Select((name, i) => i == 0 ? name : name.ToLower(CultureInfo.CurrentCulture))
+                .ToList();
+            return words.Count == 1
+                ? words[0]
+                : L["{0} and {1}", string.Join(", ", words[..^1]), words[^1]];
+        }
+    }
 
     private string GoalDifference => _dashboard.Record.GoalDifference.ToString("+0;-0;+0");
 
