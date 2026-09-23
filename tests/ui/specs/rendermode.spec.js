@@ -72,7 +72,8 @@ test('a shared match report opens no circuit', async ({ page }) => {
   const shared = await page.context().newPage();
   const sockets = watchSockets(shared);
   await gotoRendered(shared, overviewPath);
-  await expect(shared.getByRole('button', { name: 'Save as image', exact: false })).toBeVisible();
+  await expect(shared.locator('#formation-overview')).toBeVisible();
+  await expect(shared.getByRole('button', { name: 'Save as image' })).toHaveCount(0);
   expect(sockets, 'the match report opened a circuit').toEqual([]);
   await shared.close();
 });
