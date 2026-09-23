@@ -92,6 +92,7 @@
     gap: 16px;
 }
 
+/* Status, not navigation: the club green sets these apart from the light action tiles below. */
 .home-card {
     display: flex;
     flex-direction: column;
@@ -99,22 +100,22 @@
     min-width: 0;
     padding: 16px 20px;
     border-radius: 16px;
-    color: var(--ink);
+    color: var(--club-on-primary);
     text-decoration: none;
-    background: var(--surface-card);
-    border: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
-    box-shadow: 0 2px 4px color-mix(in srgb, var(--ink) 8%, transparent);
-    transition: box-shadow 120ms ease;
+    background: var(--gradient-accent);
+    box-shadow: 0 2px 6px color-mix(in srgb, var(--club-accent-deep) 30%, transparent);
+    transition: box-shadow 120ms ease, filter 120ms ease;
 }
 
 a.home-card:focus-visible {
-    outline: 2px solid var(--club-primary-bright);
+    outline: 2px solid var(--club-accent-bright);
     outline-offset: 2px;
 }
 
 @media (hover: hover) {
     a.home-card:hover {
-        box-shadow: 0 6px 20px color-mix(in srgb, var(--club-primary) 22%, transparent);
+        filter: brightness(1.06);
+        box-shadow: 0 6px 20px color-mix(in srgb, var(--club-accent-deep) 40%, transparent);
     }
 }
 
@@ -127,49 +128,58 @@ a.home-card:focus-visible {
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--club-primary-bright);
+    opacity: 0.85;
 }
 
 .home-card-title {
+    display: flex;
+    align-items: center;
     font-size: 1.15rem;
     font-weight: 700;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .home-card-result {
     display: flex;
-    align-items: baseline;
-    gap: 12px;
+    align-items: center;
+    gap: 10px;
 }
 
+/* The name gives way before the venue badge does. */
 .home-card-opponent {
-    flex: 1;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.home-card-score {
+/* The venue badge's pale tint vanishes on green; a solid chip keeps its home/away colour readable. */
+.home-card-title ::deep .badge-venue {
+    flex: none;
+    background: var(--club-on-primary);
+    border-color: transparent;
+}
+
+.home-card-score,
+.home-card-record {
     font-size: 1.5rem;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
 }
 
-.home-card-score.win { color: var(--color-success-bright); }
-.home-card-score.loss { color: var(--color-danger-bright); }
+.home-card-record {
+    line-height: 1.1;
+}
 
-.home-card-aside {
-    margin-left: 6px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--ink-muted);
+.home-card-caption {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    opacity: 0.85;
 }
 
 .home-card-line {
     font-size: 0.875rem;
-    color: var(--ink-muted);
+    opacity: 0.9;
 }
 
 .home-card-scorers {
@@ -181,9 +191,28 @@ a.home-card:focus-visible {
 /* MudIcon's svg carries no scope attribute of its own. */
 .home-card-scorers ::deep svg {
     flex: none;
-    color: var(--club-primary-bright);
 }
 
-.home-card .form-row {
-    margin-top: 4px;
+/* FormGuide and ResultPill carry no scope attribute either, and their pills are coloured for a light card:
+   a green win pill vanishes on the green one, so it turns white here. */
+.home-card ::deep .form-row {
+    margin-top: 6px;
+}
+
+.home-card ::deep .form-label {
+    color: inherit;
+    opacity: 0.85;
+}
+
+.home-card ::deep .form-pill.win {
+    color: var(--club-accent-deep);
+    background: var(--club-on-primary);
+}
+
+.home-card ::deep .form-pill.draw {
+    background: color-mix(in srgb, var(--club-on-primary) 30%, transparent);
+}
+
+.home-card ::deep .form-pill {
+    flex: none;
 }

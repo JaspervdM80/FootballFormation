@@ -1,0 +1,11 @@
+@using FootballFormation.Core.Reporting
+@inject IStringLocalizer<Strings> L
+
+<span class="form-pill @Result.ToString().ToLowerInvariant()" title="@L[Result.ToString()]">@Letter</span>
+
+@code {
+    [Parameter, EditorRequired] public GameResult Result { get; set; }
+
+    // The localized word's first letter: W/D/L in English, W/G/V in Dutch.
+    private string Letter => L[Result.ToString()].ToString()[..1];
+}

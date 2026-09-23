@@ -70,7 +70,7 @@ public static class SeasonStatsReport
         };
     }
 
-    private static GameResult ResultOf(Game g) =>
+    public static GameResult ResultOf(Game g) =>
         g.ScoreHome > g.ScoreAway ? GameResult.Win
         : g.ScoreHome < g.ScoreAway ? GameResult.Loss
         : GameResult.Draw;

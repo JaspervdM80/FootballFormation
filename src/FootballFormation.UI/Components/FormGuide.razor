@@ -7,7 +7,7 @@
         <span class="form-label">@L["Form"]</span>
         @foreach (var r in Form)
         {
-            <span class="form-pill @r.ToString().ToLowerInvariant()" title="@L[r.ToString()]">@Letter(r)</span>
+            <ResultPill Result="r" />
         }
     </div>
 }
@@ -16,7 +16,4 @@
     [Parameter, EditorRequired] public IReadOnlyList<GameResult> Form { get; set; } = [];
 
     [Parameter] public string? Class { get; set; }
-
-    // The localized word's first letter: W/D/L in English, W/G/V in Dutch.
-    private string Letter(GameResult r) => L[r.ToString()].ToString()[..1];
 }

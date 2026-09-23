@@ -53,10 +53,6 @@ else
                     <td class="duty-date">@game.DateLine("ddd d MMM")</td>
                     <td class="duty-opponent">
                         @game.Opponent<VenueBadge IsHome="game.IsHomeGame" Inline="true" />
-                        @if (isNext)
-                        {
-                            <span class="badge-teal duty-next-badge">@L["Up next"]</span>
-                        }
                     </td>
                     @if (_roster.ShowsDressingRoom)
                     {
