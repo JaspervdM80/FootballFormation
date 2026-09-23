@@ -70,6 +70,8 @@ Reporting/
                            UI/Components/PlannedChangesList
   ScoreProgressionReport.cs — The score after each goal (MatchScore), for the live timeline —
                            counted forwards because that list runs newest first
+  DutyRosterReport.cs     — The games for /games/duties oldest first, which one is next by the
+                           calendar, and which duty columns anyone filled in
   HealthReport.cs         — Whether a booted container is actually serving: the /health payload and
                            the rule that pending migrations mean unhealthy. Pure, so it is tested
 Services/
@@ -126,6 +128,8 @@ Pages/
   PlayerDialog.razor(.cs)     — Dialog: first name, surname, shirt #, positions (no guest switch — that's per season)
   SquadMemberDialog.razor(.cs)— Dialog: add someone already on file to this season's squad
   Games.razor(.cs)            — /games — Game list with formation builder link
+  Duties.razor(.cs)(.css)     — /games/duties — Public: the season's dressing-room, flag and kit-wash
+                                duties, one row per game, opened on the next match
   Trainings.razor(.cs)(.css)  — /trainings — Admin-only: the season's training sessions, grouped by ISO week
   TrainingDialog.razor(.cs)   — Dialog: date, unavailable players, note, did-not-take-place
   GameDialog.razor(.cs)       — Dialog: opponent, date, season, formation, split, duration, unavailable players
@@ -243,7 +247,7 @@ season, and a report may walk games spanning several of them.
 `@rendermode InteractiveServer` is declared **per page**, never on `<Routes>` or `<HeadOutlet>`.
 Nine pages carry it — the start page, the games list, the squad and the trainings list, the four
 game screens, and settings and users. Everything else is plain server HTML: `/stats`, `/stats/positions`,
-`/players/{id}/stats`, `/games/{id}/overview`, `/login`, `/Error` and `/not-found`.
+`/players/{id}/stats`, `/games/{id}/overview`, `/games/duties`, `/login`, `/Error` and `/not-found`.
 
 The reason is a phone. Backgrounding an installed PWA suspends the tab and kills the circuit's
 WebSocket; coming back puts up a blocking overlay and, past the retention window, forces a reload

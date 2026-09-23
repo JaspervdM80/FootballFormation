@@ -27,6 +27,10 @@
         </MudText>
     </SubtitleContent>
     <Actions>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="btn-compact" StartIcon="@Icons.Material.Filled.Assignment"
+                   Href="@AppRoutes.DutiesFromNextGame" title="@L["Duties"]" aria-label="@L["Duties"]">
+            @L["Duties"]
+        </MudButton>
         <AuthorizeView Roles="@AppRoles.Admin">
             <MudButton Variant="Variant.Filled" Class="btn-gold btn-compact" StartIcon="@Icons.Material.Filled.Add"
                        OnClick="OpenAddDialog">

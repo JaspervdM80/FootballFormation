@@ -52,6 +52,7 @@ document.querySelector('form[action="/auth/logout"] button').click()
 | `/players/{id}/stats` | yes | |
 | `/stats` | yes | season statistics: tiles, form pills, scorers, playing-time bars |
 | `/games` | yes | admin gets "Add" and the edit/delete icons |
+| `/games/duties` | yes | no circuit; an empty duty column is left out; below 599.98px each row becomes a card |
 | `/games/{id}/overview` | yes | the share/read-only view; two pitch columns collapse at 959.98px |
 | `/games/{id}/result` | yes | score entry |
 | `/games/{id}/live` | yes, read-only | **the risky one** — per-second timer, six `AuthorizeView` blocks, its own mobile flex-`order` reflow. Admin drives the clock, goals and substitutions |

@@ -273,6 +273,13 @@
   <data name="Kit wash" xml:space="preserve"><value>Wastas</value></data>
   <data name="Couldn't copy — try again" xml:space="preserve"><value>Kopiëren mislukt — probeer opnieuw</value></data>
 
+  <!-- The season's duties page -->
+  <data name="Who does what at each match in {0}" xml:space="preserve"><value>Wie wat doet bij elke wedstrijd in {0}</value></data>
+  <data name="Who does what at each match, across all seasons" xml:space="preserve"><value>Wie wat doet bij elke wedstrijd, over alle seizoenen</value></data>
+  <data name="Up next" xml:space="preserve"><value>Volgende</value></data>
+  <data name="No games yet." xml:space="preserve"><value>Nog geen wedstrijden.</value></data>
+  <data name="No duties have been entered yet." xml:space="preserve"><value>Er zijn nog geen taken ingevuld.</value></data>
+
   <!-- Match comments. Private unless published, so the wording has to leave no doubt which is which. -->
   <data name="Comments" xml:space="preserve"><value>Opmerkingen</value></data>
   <data name="No comments yet" xml:space="preserve"><value>Nog geen opmerkingen</value></data>
