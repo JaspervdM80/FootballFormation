@@ -42,7 +42,7 @@ screen — a clock a stray tap can stop is a clock the season's minutes cannot b
 
 ## The clock never round-trips
 
-A per-circuit 1-second `System.Timers.Timer` re-renders `Game.ElapsedSecondsAt(DateTime.UtcNow)` from
+A per-circuit 1-second `System.Timers.Timer` re-renders `Game.ElapsedSecondsAt(Time.GetUtcNow().UtcDateTime)` from
 the anchor the server stored, repainting only while the clock runs. The clock is an anchor plus a
 banked total, so a refresh or a second device picks it up exactly where it is.
 

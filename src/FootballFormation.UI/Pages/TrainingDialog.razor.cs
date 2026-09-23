@@ -11,12 +11,14 @@ public partial class TrainingDialog
     [Inject] private SeasonService SeasonService { get; set; } = null!;
     [Inject] private MatchPreferencesService PreferencesService { get; set; } = null!;
     [Inject] private SeasonState SeasonState { get; set; } = null!;
+    [Inject] private TimeProvider Time { get; set; } = null!;
 
     [Parameter]
     public Training? Training { get; set; }
 
     private MudForm Form { get; set; } = null!;
-    private DateTime? Date { get; set; } = DateTime.Today;
+    private DateTime? Date { get; set; }
+    private DateTime Today => Time.GetLocalNow().Date;
 
     private string? Notes { get; set; }
     private bool DidNotTakePlace { get; set; }
@@ -51,6 +53,7 @@ public partial class TrainingDialog
 
     protected override async Task OnInitializedAsync()
     {
+        Date = Today;
         await SeasonState.EnsureLoadedAsync();
 
         if (Training is not null)
@@ -93,7 +96,7 @@ public partial class TrainingDialog
         {
             // FindForDateAsync, not GetOrCreateForDateAsync: typing a date into a dialog the user may still cancel must never create a
             // season. CreateAsync does that on save.
-            var seasonResult = await SeasonService.FindForDateAsync(Date ?? DateTime.Today, Cancellation);
+            var seasonResult = await SeasonService.FindForDateAsync(Date ?? Today, Cancellation);
             seasonId = seasonResult.IsSuccess ? seasonResult.Value?.Id ?? 0 : 0;
             SeasonNotCreatedYet = seasonId == 0;
         }
@@ -141,7 +144,7 @@ public partial class TrainingDialog
         if (!Form.IsValid) return;
 
         var training = Training ?? new Training();
-        training.Date = (Date ?? DateTime.Today).Date;
+        training.Date = (Date ?? Today).Date;
         training.Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim();
         training.DidNotTakePlace = DidNotTakePlace;
         training.SeasonId = SeasonId;

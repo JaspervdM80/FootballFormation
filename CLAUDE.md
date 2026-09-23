@@ -56,7 +56,8 @@ Solution file is `FootballFormation.slnx`. Package versions are centralized in
 queries, migrations, the domain model, Razor pages and the circuit, the live match, styling, touch
 and breakpoints, localization, testing, UI testing, verifying a UI change, build and release. **Load
 the skill for the area you are touching before changing it**; each one ends with a pointer into
-`docs/` for the full story.
+`docs/` for the full story. `.claude/hooks/skill-gate.sh` refuses the first edit in a mapped area until
+its skill has been loaded that session, and lets a retry through.
 **`comment-rule` applies to every change**, whatever else it touches: default to no comments, write
 one only for a non-obvious *why*, and never a paragraph. The one in `.claude/skills/` is the rule
 here — a plugin or marketplace skill of the same name is not this repository's, so don't load it.
@@ -76,9 +77,11 @@ These fail silently or expensively, so they are here rather than only in a skill
    `ORDER BY Date` sorts the string the value happened to be written as. Materialise first, then use
    `GameOrdering` / `SeasonOrdering`.
 3. **Take the clock from the injected `TimeProvider`**, never `DateTime.UtcNow` or `DateTime.Today` —
-   in services and in pages alike. Tests drive `FakeTimeProvider`.
+   in services and in pages alike. Tests drive `FakeTimeProvider`. `BannedSymbols.txt` makes the
+   wall clock an RS0030 error in a Release build of `src/`.
 4. **Every user-facing string goes through `IStringLocalizer<Strings>` (`L`), with the English text
-   as the key.** A missing `Strings.nl.resx` entry renders English with no warning, and resx keys are
+   as the key.** The app renders a missing `Strings.nl.resx` entry as English without warning;
+   `LocalizationTests` catches a literal `L["..."]` key but not one built at runtime. Resx keys are
    case-insensitive, so a lowercase service action phrase can collide with a button label.
 5. **Most pages have no circuit, and the layout never has one.** `@rendermode InteractiveServer` is
    per page; `/stats`, `/stats/positions`, `/players/{id}/stats`, `/games/{id}/overview` and the
@@ -95,7 +98,9 @@ These fail silently or expensively, so they are here rather than only in a skill
   branch is up to date with `main`, and every review thread is resolved.
 - **Merging to `main` releases**, straight onto the live volume, with no staging environment and
   nothing re-running on `main`. The four checks on the pull request are the last look — which is why
-  a flaky browser job is re-run rather than merged past.
+  a flaky browser job is re-run rather than merged past. `.claude/settings.json` denies pushing to
+  `main`, force-pushing, `gh pr merge` and `fly deploy`/`ssh`/`secrets`/`volumes`; those stay a
+  person's call.
 - Commit messages are plain imperative sentences describing the intent, not conventional-commit
   prefixes: *"Split the games list on the scoreline, not the calendar"*.
 - `.editorconfig` codifies the existing style (CRLF, 4 spaces, file-scoped namespaces, `_camelCase`
@@ -107,7 +112,7 @@ These fail silently or expensively, so they are here rather than only in a skill
 Claude Code web containers are rebuilt every session and ship no .NET SDK, so
 `.claude/hooks/session-start.sh` installs `dotnet-sdk-10.0` from **Ubuntu's own archive** — it has to
 be Ubuntu's, because the container's egress policy blocks `builds.dotnet.microsoft.com`. Chromium is
-already at `/opt/pw-browsers/chromium`. `global.json` pins 10.0.110 with `rollForward: disable`; see
+already at `/opt/pw-browsers/chromium`. `global.json` pins 10.0.111 with `rollForward: latestPatch`; see
 `docs/known_issues/blazor-components.md`, "the SDK the pin cannot reach", before changing any of it.
 
 Locally the database and logs live under `%LOCALAPPDATA%\FootballFormation\`; set `APP_DATA_DIR` to

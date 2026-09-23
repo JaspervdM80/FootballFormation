@@ -15,7 +15,7 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   [patterns](../patterns/service-structure.md#when-a-service-gets-long-split-it-by-use-case--not-into-layers).
 
 - **The clock never round-trips.** A per-circuit 1-second `System.Timers.Timer` re-renders
-  `Game.ElapsedSecondsAt(DateTime.UtcNow)` from the anchor the server stored, and it repaints only
+  `Game.ElapsedSecondsAt(Time.GetUtcNow().UtcDateTime)` from the anchor the server stored, and it repaints only
   while the clock is running. See [models](../models/game.md#game).
 - **Spectators are pushed to via the singleton `LiveMatchNotifier`.** No service raises it by hand:
   `LiveMatchOperation` — the shape every touchline write runs inside — does it after a successful

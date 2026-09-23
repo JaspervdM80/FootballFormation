@@ -188,8 +188,6 @@ public class GameService(
             if (!await db.GameInScopeAsync(goal.GameId, cancellationToken))
                 return GameNotInScope<GameGoal>(goal.GameId);
 
-            // The service's clock, not the entity initializer's wall clock, or a live match driven by a fake clock would still record
-            // real timestamps. The initializer stays as the default for a goal built outside a service.
             goal.RecordedAt = UtcNow;
 
             await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
@@ -292,7 +290,6 @@ public class GameService(
             if (!await db.GameInScopeAsync(comment.GameId, cancellationToken))
                 return GameNotInScope<GameComment>(comment.GameId);
 
-            // The service's clock, not the entity initializer's — see AddGoalAsync.
             comment.CreatedAt = UtcNow;
 
             db.GameComments.Add(comment);

@@ -12,13 +12,15 @@ public partial class GameDialog
     [Inject] private MatchPreferencesService PreferencesService { get; set; } = null!;
     [Inject] private SeasonState SeasonState { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
+    [Inject] private TimeProvider Time { get; set; } = null!;
 
     [Parameter]
     public Game? Game { get; set; }
 
     private MudForm Form { get; set; } = null!;
     private string Opponent { get; set; } = string.Empty;
-    private DateTime? Date { get; set; } = DateTime.Today;
+    private DateTime? Date { get; set; }
+    private DateTime Today => Time.GetLocalNow().Date;
 
     /// Kept apart from <see cref="Date"/> so a blank field round-trips as no time at all rather than midnight — see Game.HasStartTime.
     private string? StartTimeText { get; set; }
@@ -69,6 +71,7 @@ public partial class GameDialog
 
     protected override async Task OnInitializedAsync()
     {
+        Date = Today;
         await SeasonState.EnsureLoadedAsync();
 
         var seasonsResult = await SeasonService.GetAllAsync(Cancellation);
@@ -128,7 +131,7 @@ public partial class GameDialog
         {
             // FindForDateAsync, not GetOrCreateForDateAsync: typing a date into a dialog the user may still cancel must never create a
             // season. CreateAsync does that on save.
-            var seasonResult = await SeasonService.FindForDateAsync(Date ?? DateTime.Today, Cancellation);
+            var seasonResult = await SeasonService.FindForDateAsync(Date ?? Today, Cancellation);
             seasonId = seasonResult.IsSuccess ? seasonResult.Value?.Id ?? 0 : 0;
             SeasonNotCreatedYet = seasonId == 0;
         }
@@ -208,7 +211,7 @@ public partial class GameDialog
 
         var game = Game ?? new Game { Opponent = Opponent };
         game.Opponent = Opponent;
-        game.Date = (Date ?? DateTime.Today).Date + (ClockText.Parse(StartTimeText) ?? TimeSpan.Zero);
+        game.Date = (Date ?? Today).Date + (ClockText.Parse(StartTimeText) ?? TimeSpan.Zero);
         game.FormationType = SelectedFormationType;
         game.SplitType = SplitType;
         game.MatchType = SelectedMatchType;

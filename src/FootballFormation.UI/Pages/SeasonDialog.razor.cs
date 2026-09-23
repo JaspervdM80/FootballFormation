@@ -5,6 +5,8 @@ public partial class SeasonDialog
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = null!;
 
+    [Inject] private TimeProvider Time { get; set; } = null!;
+
     [Parameter]
     public Season? Season { get; set; }
 
@@ -12,6 +14,7 @@ public partial class SeasonDialog
     private string Name { get; set; } = string.Empty;
     private DateTime? StartDate { get; set; }
     private DateTime? EndDate { get; set; }
+    private DateTime Today => Time.GetLocalNow().Date;
 
     protected override void OnInitialized()
     {
@@ -19,7 +22,7 @@ public partial class SeasonDialog
 
         // Create mode: pre-fill the season covering today, so the common case is one click.
         // Qualified because the Season parameter shadows the type name here.
-        var suggested = Core.Models.Season.CreateFor(DateTime.Today);
+        var suggested = Core.Models.Season.CreateFor(Today);
         Name = suggested.Name;
         StartDate = suggested.StartDate;
         EndDate = suggested.EndDate;
@@ -43,8 +46,8 @@ public partial class SeasonDialog
 
         var season = Season ?? new Season { Name = Name };
         season.Name = Name;
-        season.StartDate = StartDate ?? DateTime.Today;
-        season.EndDate = EndDate ?? DateTime.Today.AddYears(1).AddDays(-1);
+        season.StartDate = StartDate ?? Today;
+        season.EndDate = EndDate ?? Today.AddYears(1).AddDays(-1);
 
         MudDialog.Close(DialogResult.Ok(season));
     }

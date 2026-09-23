@@ -47,6 +47,9 @@ isolation. Do not ask for one — the UI is covered by `tests/ui` and `scripts/v
   `DateTime` property is covered as soon as it is mapped. `DateInSqlGuardTests` pins both the refusal
   and the one `.TagWith(QueryTags.ComparesDatesInSql)` exemption.
 
+The wall-clock ban (`BannedSymbols.txt`, RS0030) skips test projects, where `DateTime.UtcNow` is a
+legitimate way to say "any real instant".
+
 ## Coverage
 
 ```bash

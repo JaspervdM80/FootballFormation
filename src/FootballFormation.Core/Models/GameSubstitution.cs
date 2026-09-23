@@ -26,5 +26,5 @@ public class GameSubstitution
     public PlayerPosition Position { get; set; }
 
     /// Breaks ties against goals in the same second, where <see cref="AtSeconds"/> cannot. See <see cref="GameGoal.RecordedAt"/>.
-    public DateTime RecordedAt { get; set; } = DateTime.UtcNow;
+    public DateTime RecordedAt { get; set; }
 }
