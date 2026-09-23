@@ -31,6 +31,20 @@ public class GameServiceTests : ServiceTestBase
         Assert.Equal(players[2].Id, loaded.Goals.Single().Assister!.Id);
     }
 
+    /// The home page names the last result's scorers from this list, and with only the goal rows loaded the line quietly disappears.
+    [Fact]
+    public async Task Loading_all_games_brings_back_each_goals_scorer()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(1);
+        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
+        await Games.AddGoalAsync(new GameGoal { GameId = game.Id, ScorerId = players[0].Id, Minute = 12 });
+
+        var loaded = (await Games.GetAllAsync(season.Id)).Value!;
+
+        Assert.Equal(players[0].Id, loaded.Single().Goals.Single().Scorer!.Id);
+    }
+
     [Fact]
     public async Task Editing_a_game_leaves_its_lineups_goals_and_substitutions_alone()
     {

@@ -20,7 +20,7 @@ public class GameService(
                 .AsNoTracking()
                 .Where(g => seasonId == null || g.SeasonId == seasonId)
                 .WithPeriods()
-                .WithGoals()
+                .WithGoalsAndScorers()
                 .ToListAsync(cancellationToken))
                 .NewestFirst();
 

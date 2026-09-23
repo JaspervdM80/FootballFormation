@@ -54,9 +54,6 @@ public partial class SeasonStats
         _loaded = true;
     }
 
-    /// Single-letter form pill, localized (W/D/L in English, W/G/V in Dutch).
-    private string ResultLetter(GameResult r) => L[r.ToString()].ToString()[..1];
-
     /// The availability bar's four segments, in the order they are stacked.
     private (string Class, string Label)[] Legend =>
     [

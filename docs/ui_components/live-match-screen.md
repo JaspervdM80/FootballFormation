@@ -329,4 +329,9 @@ way the live screen does: the banner has no game of its own until it loads one, 
 started is exactly the event it must not miss. That is what makes it appear on an already-open home
 page without a refresh.
 
+The same event reloads the cards below the banner (`HomeDashboardReport`), on every change rather
+than only at full time: a goal corrected after the whistle changes the last result too. The
+next-match card starts from tomorrow, so on match day it shows the fixture after the one the banner
+already carries rather than the same game twice.
+
 

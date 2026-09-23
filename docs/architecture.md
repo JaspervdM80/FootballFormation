@@ -72,6 +72,9 @@ Reporting/
                            counted forwards because that list runs newest first
   DutyRosterReport.cs     — The games for /games/duties oldest first, which one is next by the
                            calendar, and which duty columns anyone filled in
+  HomeDashboardReport.cs  — The home page's cards: the next fixture after today (today's belongs to
+                           the match-day banner), the latest result with our scorers, and the
+                           season record through SeasonStatsReport. No minutes — the page is public
   HealthReport.cs         — Whether a booted container is actually serving: the /health payload and
                            the rule that pending migrations mean unhealthy. Pure, so it is tested
 Services/
@@ -153,7 +156,8 @@ Pages/
   Users.razor(.cs)            — /users — Accounts: add, edit, reset password, delete (Admin only)
   UserDialog.razor(.cs)       — Dialog: name, login, role, password — also the reset-password form
                                 (PasswordOnly), since the fields are the same
-  Home.razor(.cs)(.css)       — / — Landing page, plus the live-match banner when one is in progress
+  Home.razor(.cs)(.css)       — / — Landing page: the live-match banner on match day, the next match,
+                                last result and season record cards (HomeDashboardReport), the tiles,
                                 and the notification invitation (MatchNotifications)
   FormationOverview.razor(.cs)(.css) — /games/{id}/overview — Read-only per-period pitches, shareable
                                 and screenshottable (html2canvas)

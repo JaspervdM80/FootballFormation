@@ -1,0 +1,22 @@
+@using FootballFormation.Core.Reporting
+@inject IStringLocalizer<Strings> L
+
+@if (Form.Count > 0)
+{
+    <div class="form-row @Class">
+        <span class="form-label">@L["Form"]</span>
+        @foreach (var r in Form)
+        {
+            <span class="form-pill @r.ToString().ToLowerInvariant()" title="@L[r.ToString()]">@Letter(r)</span>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<GameResult> Form { get; set; } = [];
+
+    [Parameter] public string? Class { get; set; }
+
+    // The localized word's first letter: W/D/L in English, W/G/V in Dutch.
+    private string Letter(GameResult r) => L[r.ToString()].ToString()[..1];
+}
