@@ -51,16 +51,7 @@
     </div>
 </div>
 
-@if (_stats.Form.Count > 0)
-{
-    <div class="form-row mb-4">
-        <span class="form-label">@L["Form"]</span>
-        @foreach (var r in _stats.Form)
-        {
-            <span class="form-pill @r.ToString().ToLowerInvariant()" title="@L[r.ToString()]">@ResultLetter(r)</span>
-        }
-    </div>
-}
+<FormGuide Form="_stats.Form" Class="mb-4" />
 
 <div class="stats-layout">
     <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">

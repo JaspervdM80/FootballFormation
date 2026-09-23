@@ -827,4 +827,12 @@
   <data name="Everyone present" xml:space="preserve"><value>Voltallig</value></data>
   <data name="The quieter second line." xml:space="preserve"><value>De rustigere tweede regel.</value></data>
   <data name="Sizing" xml:space="preserve"><value>Afmetingen</value></data>
+  <data name="Next match" xml:space="preserve"><value>Volgende wedstrijd</value></data>
+  <data name="Last result" xml:space="preserve"><value>Laatste uitslag</value></data>
+  <data name="No matches left in this season." xml:space="preserve"><value>Geen wedstrijden meer in dit seizoen.</value></data>
+  <data name="No match planned yet." xml:space="preserve"><value>Nog geen wedstrijd gepland.</value></data>
+  <data name="No matches played yet." xml:space="preserve"><value>Nog geen wedstrijden gespeeld.</value></data>
+  <data name="The players in the squad, with their shirt numbers." xml:space="preserve"><value>De spelers in de selectie, met hun rugnummers.</value></data>
+  <data name="Fixtures, line-ups and results." xml:space="preserve"><value>Programma, opstellingen en uitslagen.</value></data>
+  <data name="The team record, top scorers and goalkeepers." xml:space="preserve"><value>De teamresultaten, topscorers en keepers.</value></data>
 </root>

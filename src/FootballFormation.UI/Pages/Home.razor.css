@@ -85,4 +85,105 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* The opt-in row. Quieter than the live banner on purpose — it is standing offer, not news. */
+
+.home-dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+.home-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    padding: 16px 20px;
+    border-radius: 16px;
+    color: var(--ink);
+    text-decoration: none;
+    background: var(--surface-card);
+    border: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
+    box-shadow: 0 2px 4px color-mix(in srgb, var(--ink) 8%, transparent);
+    transition: box-shadow 120ms ease;
+}
+
+a.home-card:focus-visible {
+    outline: 2px solid var(--club-primary-bright);
+    outline-offset: 2px;
+}
+
+@media (hover: hover) {
+    a.home-card:hover {
+        box-shadow: 0 6px 20px color-mix(in srgb, var(--club-primary) 22%, transparent);
+    }
+}
+
+.home-card-empty {
+    box-shadow: none;
+}
+
+.home-card-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--club-primary-bright);
+}
+
+.home-card-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.home-card-result {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.home-card-opponent {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.home-card-score {
+    font-size: 1.5rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.home-card-score.win { color: var(--color-success-bright); }
+.home-card-score.loss { color: var(--color-danger-bright); }
+
+.home-card-aside {
+    margin-left: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ink-muted);
+}
+
+.home-card-line {
+    font-size: 0.875rem;
+    color: var(--ink-muted);
+}
+
+.home-card-scorers {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* MudIcon's svg carries no scope attribute of its own. */
+.home-card-scorers ::deep svg {
+    flex: none;
+    color: var(--club-primary-bright);
+}
+
+.home-card .form-row {
+    margin-top: 4px;
+}

@@ -1,5 +1,5 @@
 ﻿@page "/"
-@inherits CancellableComponent
+@inherits SeasonAwarePage
 @rendermode InteractiveServer
 
 @* See InteractiveShell: the providers and the session gate this page no longer inherits, because
@@ -41,6 +41,71 @@
 <PageHeader Class="mb-6" Title="@Team.DisplayName"
             Subtitle="@L["Plan your team's formations, manage your squad, and organize game lineups."]" />
 
+<div class="home-dashboard mb-6">
+    @if (_dashboard.NextGame is { } next)
+    {
+        <a class="home-card" href="@AppRoutes.Overview(next.Id)">
+            <div class="home-card-label">@L["Next match"]</div>
+            <div class="home-card-title">
+                @next.Opponent<VenueBadge IsHome="next.IsHomeGame" Inline="true" />
+            </div>
+            <div class="home-card-line">@CardDate(next)</div>
+            @if (MeetLine(next) is { } meet)
+            {
+                <div class="home-card-line">@meet</div>
+            }
+        </a>
+    }
+    else
+    {
+        <div class="home-card home-card-empty">
+            <div class="home-card-label">@L["Next match"]</div>
+            <div class="home-card-line">@NoNextGameText</div>
+        </div>
+    }
+
+    @if (_dashboard.LastGame is { } last)
+    {
+        <a class="home-card" href="@AppRoutes.Result(last.Id)">
+            <div class="home-card-label">@L["Last result"]</div>
+            <div class="home-card-title home-card-result">
+                <span class="home-card-opponent">@last.Opponent<VenueBadge IsHome="last.IsHomeGame" Inline="true" /></span>
+                <span class="home-card-score @ResultClass(last)">@last.ScoreboardOrder()</span>
+            </div>
+            <div class="home-card-line">@CardDate(last)</div>
+            @if (_dashboard.LastScorers.Count > 0)
+            {
+                <div class="home-card-line home-card-scorers">
+                    <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Size="Size.Small" />@Scorers
+                </div>
+            }
+        </a>
+    }
+    else
+    {
+        <div class="home-card home-card-empty">
+            <div class="home-card-label">@L["Last result"]</div>
+            <div class="home-card-line">@L["No matches played yet."]</div>
+        </div>
+    }
+
+    <a class="home-card" href="@AppRoutes.SeasonStats">
+        <div class="home-card-label">@RecordLabel</div>
+        @if (_dashboard.Record.Played > 0)
+        {
+            <div class="home-card-title">
+                @($"{_dashboard.Record.Won}-{_dashboard.Record.Drawn}-{_dashboard.Record.Lost}")
+                <span class="home-card-aside">@L["W-D-L"] · @GoalDifference @L["diff"]</span>
+            </div>
+            <FormGuide Form="_dashboard.Record.Form" />
+        }
+        else
+        {
+            <div class="home-card-line">@L["No matches played yet."]</div>
+        }
+    </a>
+</div>
+
 @* Whole tiles are the target — a card with a single destination does not need a button
    repeating it, and the larger hit area is what a thumb wants on a phone. *@
 <MudGrid Spacing="4">
@@ -49,11 +114,12 @@
             <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;">
                 <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Style="color: var(--club-primary-bright);" />
                 <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Selection"]</MudText>
-                <AuthorizeView Roles="@AppRoles.Admin">
-                    <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
-                        @L["Add players with their positions and shirt numbers."]
-                    </MudText>
-                </AuthorizeView>
+                <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
+                    <AuthorizeView Roles="@AppRoles.Admin">
+                        <Authorized>@L["Add players with their positions and shirt numbers."]</Authorized>
+                        <NotAuthorized>@L["The players in the squad, with their shirt numbers."]</NotAuthorized>
+                    </AuthorizeView>
+                </MudText>
             </MudPaper>
         </a>
     </MudItem>
@@ -63,11 +129,12 @@
             <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;">
                 <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Size="Size.Large" Style="color: var(--club-primary-bright);" />
                 <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Games & Formations"]</MudText>
-                <AuthorizeView Roles="@AppRoles.Admin">
-                    <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
-                        @L["Create games, build formations, and track results."]
-                    </MudText>
-                </AuthorizeView>
+                <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
+                    <AuthorizeView Roles="@AppRoles.Admin">
+                        <Authorized>@L["Create games, build formations, and track results."]</Authorized>
+                        <NotAuthorized>@L["Fixtures, line-ups and results."]</NotAuthorized>
+                    </AuthorizeView>
+                </MudText>
             </MudPaper>
         </a>
     </MudItem>
@@ -77,11 +144,12 @@
             <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;">
                 <MudIcon Icon="@Icons.Material.Filled.BarChart" Size="Size.Large" Style="color: var(--club-primary-bright);" />
                 <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Season stats"]</MudText>
-                <AuthorizeView Roles="@AppRoles.Admin">
-                    <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
-                        @L["See the team record, top scorers, and playing time."]
-                    </MudText>
-                </AuthorizeView>
+                <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
+                    <AuthorizeView Roles="@AppRoles.Admin">
+                        <Authorized>@L["See the team record, top scorers, and playing time."]</Authorized>
+                        <NotAuthorized>@L["The team record, top scorers and goalkeepers."]</NotAuthorized>
+                    </AuthorizeView>
+                </MudText>
             </MudPaper>
         </a>
     </MudItem>
