@@ -267,8 +267,8 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   Admin-only on both pages: posting the result to the team is the coach's job, so a visitor reads
   the match and copies nothing. The button and the hidden `<pre>` under it go together — on
   `/overview` the text is not composed at all for a visitor, which also saves the comments query
-  behind it. The **match-day message** below is the exception and stays public: it tells whoever is
-  driving where to be. None of this is about privacy — `MatchSummaryReport` never sees a private
+  behind it. The **match-day message** below and "Save as image" follow the same rule — the whole
+  action row on `/overview` is admin-only, and a visitor gets the line-up alone. None of this is about privacy — `MatchSummaryReport` never sees a private
   comment in the first place, `includePrivate: false` being passed unconditionally on `/overview`,
   same as everywhere else a visitor reads a comment. Both pages render the
   composed text into a hidden `<pre>` and copy it from a plain `onclick` into `js/clipboard.js`

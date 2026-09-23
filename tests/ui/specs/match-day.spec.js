@@ -226,7 +226,7 @@ test('the timeline can be narrowed to the goals', async ({ page }) => {
   await expect(page.locator('.live-bench')).toBeVisible();
 });
 
-test('a substitution and an injury reach the result page, where the toggle folds only the sub away', async ({ page }) => {
+test('a substitution and an injury reach the result page, where only the sub waits behind the toggle', async ({ page }) => {
   const id = await liveMatch(page, 'FC Naspel');
 
   const chips = page.locator('.live-lineup .pitch-player');
@@ -247,18 +247,16 @@ test('a substitution and an injury reach the result page, where the toggle folds
 
   await finishMatch(page);
 
-  // The finished match reads back the touchline's own list — kick-off first, and the page a parent
-  // opens to see what happened — so both the substitution and the injury have to be on it.
+  // The result page opens with substitutions folded away, but never the injury — the one change nobody came on for.
   await gotoRendered(page, `/games/${id}/result`);
   const events = page.locator('.live-event');
-  await expect(events).toHaveCount(2);
+  await expect(events).toHaveCount(1);
   const injuryRow = events.filter({ hasText: 'not replaced' });
   await expect(injuryRow.locator('.live-event-injury')).toBeVisible();
 
-  // The toggle folds the substitution away and leaves the injury — the one change nobody came on for.
   await clickFor(
     page.locator('.live-timeline-toggle input[type=checkbox]'),
-    () => expect(events).toHaveCount(1),
+    () => expect(events).toHaveCount(2),
   );
   await expect(injuryRow).toHaveCount(1);
 });
@@ -286,7 +284,10 @@ test('a substitution and an injury entered wrong are undone from the result page
   // to be here too — a goal carries the × it always did, a change carries an undo.
   await gotoRendered(page, `/games/${id}/result`);
   const events = page.locator('.live-event');
-  await expect(events).toHaveCount(2);
+  await clickFor(
+    page.locator('.live-timeline-toggle input[type=checkbox]'),
+    () => expect(events).toHaveCount(2),
+  );
   await expect(events.getByRole('button', { name: 'Undo' })).toHaveCount(2);
 
   // The injury goes on its own; the substitution is untouched by it.
@@ -313,6 +314,10 @@ test('a substitution carries an edit that opens pre-filled and round-trips throu
 
   // The correction lives beside the undo the result page already offers.
   await gotoRendered(page, `/games/${id}/result`);
+  await clickFor(
+    page.locator('.live-timeline-toggle input[type=checkbox]'),
+    () => expect(event).toHaveCount(1),
+  );
   await clickFor(
     event.getByRole('button', { name: 'Edit' }),
     () => expect(page.locator('.mud-dialog')).toBeVisible(),

@@ -1,4 +1,4 @@
-﻿@page "/games/{GameId:int}/result"
+@page "/games/{GameId:int}/result"
 @inherits CancellableComponent
 @rendermode InteractiveServer
 
@@ -18,7 +18,7 @@
    .result-opponent and .result-subtitle live in app.css, since PageHeader renders those elements. *@
 <PageHeader BackFallback="@AppRoutes.Games" TitleTypo="Typo.h5"
             Class="mb-2 result-header" TitleClass="result-opponent"
-            Title="@($"{(GameData.IsHomeGame ? "vs" : "@")} {GameData.Opponent}")">
+            Title="@($"vs {GameData.Opponent}")">
     <Meta>
         <VenueBadge IsHome="GameData.IsHomeGame" />
     </Meta>

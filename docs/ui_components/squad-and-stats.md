@@ -36,7 +36,9 @@ Season-scoped: it follows the season picker and shows that season's squad, not e
   small-devices sort select appear and left its popover looking for a provider the destination has
   not got (`../known_issues/blazor-mudblazor.md`, "a row click that navigates to a page with no circuit"). The chevron
   and the "Tap a player's name…" hint say the name is the target; `.player-name-cell` carries the
-  44px floor that makes it one.
+  `--action-btn-size` floor (44px on a coarse pointer) that makes it one. From 600px up its `::after`
+  is stretched over the whole row, so the row is the link on a desktop with no row handler; the row
+  actions and the injury mark sit above it on `z-index: 1`.
 - Row actions (admin only): **remove from squad** (person-remove) and an overflow `MudMenu` holding
   "Edit player", "Archive player" / "Restore player", and "Delete player permanently". Removing from
   a squad is the everyday action; the two that act on the *person* are demoted out of the icon row,
@@ -154,8 +156,8 @@ entirely. The second is a copy of `SeasonSquadMember.IsInjured` taken at the fin
 here would be the retroactive rewrite `Game.IsInRoster` refuses, since a girl injured today would
 have her whole season recoloured including the matches she was fit for.
 
-**The per-game rows carry `<VenueBadge Inline="true" />`**, rather than the `vs` / `@` prefix the
-rest of the app still uses in running text. The row is a list of fixtures where the venue is a fact
+**The per-game rows carry `<VenueBadge Inline="true" />`**, rather than the `vs` prefix the
+builder and result headings use. The row is a list of fixtures where the venue is a fact
 about each one, not a sentence about a single match — a badge reads down it, a prefix does not.
 `.g-opp-name` is a flex row so the pill keeps its width and `.g-opp-text` gives way to the ellipsis;
 the rule holding that needs **`::deep`**, because the pill is a child component's root element and
