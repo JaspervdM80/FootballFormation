@@ -19,6 +19,7 @@ public partial class LiveMatch
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
+    [Inject] private TimeProvider Time { get; set; } = null!;
 
     [CascadingParameter]
     private Task<AuthenticationState> AuthStateTask { get; set; } = null!;
@@ -39,7 +40,7 @@ public partial class LiveMatch
     private System.Timers.Timer? _tick;
 
     /// Real running time, which is what gets stored and counted. <see cref="Clock"/> is the same instant as a scoreboard shows it.
-    private int ElapsedSeconds => GameData?.ElapsedSecondsAt(DateTime.UtcNow) ?? 0;
+    private int ElapsedSeconds => GameData?.ElapsedSecondsAt(Time.GetUtcNow().UtcDateTime) ?? 0;
 
     private MatchClock Clock => GameData is null
         ? MatchClock.BeforeKickOff

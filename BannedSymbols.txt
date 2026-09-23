@@ -1,0 +1,5 @@
+P:System.DateTime.Now; Take the clock from the injected TimeProvider
+P:System.DateTime.UtcNow; Take the clock from the injected TimeProvider
+P:System.DateTime.Today; Take the clock from the injected TimeProvider: Time.GetLocalNow().Date
+P:System.DateTimeOffset.Now; Take the clock from the injected TimeProvider
+P:System.DateTimeOffset.UtcNow; Take the clock from the injected TimeProvider

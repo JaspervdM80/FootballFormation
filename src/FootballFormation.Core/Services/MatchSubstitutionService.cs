@@ -46,8 +46,6 @@ public class MatchSubstitutionService(
                 PlayerOffId = playerOffId,
                 PlayerOnId = playerOnId,
                 AtSeconds = game.ElapsedSecondsAt(UtcNow),
-                // This service's clock, not the entity initializer's wall-clock default, or a match driven to an exact instant under
-                // test would have AtSeconds and RecordedAt describing different afternoons.
                 RecordedAt = UtcNow,
                 SlotIndex = slot.Index,
                 Position = slot.Position

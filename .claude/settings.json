@@ -1,4 +1,53 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build *)",
+      "Bash(dotnet test *)",
+      "Bash(dotnet restore *)",
+      "Bash(npm test *)",
+      "Bash(scripts/coverage.sh *)",
+      "Bash(scripts/visual-check.sh *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git fetch *)",
+      "PowerShell(dotnet build *)",
+      "PowerShell(dotnet test *)",
+      "PowerShell(dotnet restore *)",
+      "PowerShell(git status *)",
+      "PowerShell(git diff *)",
+      "PowerShell(git log *)",
+      "PowerShell(git show *)",
+      "PowerShell(git fetch *)"
+    ],
+    "deny": [
+      "Bash(git push * main)",
+      "Bash(git push *:main)",
+      "Bash(git push *--force*)",
+      "Bash(git push * +*)",
+      "Bash(git push -f *)",
+      "Bash(git push * -f)",
+      "Bash(gh pr merge *)",
+      "Bash(fly deploy *)",
+      "Bash(fly ssh *)",
+      "Bash(fly secrets *)",
+      "Bash(fly volumes *)",
+      "Bash(flyctl *)",
+      "PowerShell(git push * main)",
+      "PowerShell(git push *:main)",
+      "PowerShell(git push *--force*)",
+      "PowerShell(git push * +*)",
+      "PowerShell(git push -f *)",
+      "PowerShell(git push * -f)",
+      "PowerShell(gh pr merge *)",
+      "PowerShell(fly deploy *)",
+      "PowerShell(fly ssh *)",
+      "PowerShell(fly secrets *)",
+      "PowerShell(fly volumes *)",
+      "PowerShell(flyctl *)"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {
@@ -17,6 +66,21 @@
           {
             "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/comment-rule-reminder.sh"
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/skill-gate.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/skill-gate.sh record"
           }
         ]
       }

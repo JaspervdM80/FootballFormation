@@ -33,7 +33,7 @@ public class GameGoal
 
     /// When this was entered, not the match minute: a goal and the substitution that followed it share a minute, and only this can put
     /// them in the order they happened.
-    public DateTime RecordedAt { get; set; } = DateTime.UtcNow;
+    public DateTime RecordedAt { get; set; }
 
     /// The one statement of which end of the scoreline a goal lands on — <see cref="Game.CountOurGoals"/> and ScoreProgressionReport
     /// both read it rather than restating the rule.

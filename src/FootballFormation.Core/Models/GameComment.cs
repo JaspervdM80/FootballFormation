@@ -17,7 +17,7 @@ public class GameComment
     public int? AuthorId { get; set; }
     public AppUser? Author { get; set; }
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; }
 
     /// Null until the body is changed, so an untouched comment shows no edit marker.
     public DateTime? EditedAt { get; set; }

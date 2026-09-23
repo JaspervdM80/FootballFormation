@@ -20,4 +20,10 @@
     <MSBuildWarningsAsErrors>MSB3568</MSBuildWarningsAsErrors>
   </PropertyGroup>
 
+  <!-- RS0030 holds the rules CLAUDE.md can only ask for, starting with the clock. Tests may read the wall clock. -->
+  <ItemGroup Condition="'$(IsTestProject)' != 'true'">
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" PrivateAssets="all" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" />
+  </ItemGroup>
+
 </Project>

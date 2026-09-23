@@ -216,7 +216,7 @@ public static class Routing
                 context.Response.Cookies.Append(
                     CookieRequestCultureProvider.DefaultCookieName,
                     CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture)),
-                    new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1), IsEssential = true });
+                    new CookieOptions { MaxAge = TimeSpan.FromDays(365), IsEssential = true });
             }
 
             return Results.LocalRedirect($"~/{redirectUri.TrimStart('/')}");

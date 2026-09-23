@@ -16,8 +16,9 @@ Result.Failure("Season {0} still has {1} games", name, count)   // the template 
 
 ## A missing key renders English, silently
 
-Nothing warns. After adding an `L["..."]` key, check it against `src/FootballFormation.UI/Strings.nl.resx`
-or it ships untranslated.
+The app gives no warning. `LocalizationTests` scans `src/` for literal `L["..."]` keys and fails on
+any that `src/FootballFormation.UI/Strings.nl.resx` lacks. It cannot see a key built at runtime,
+such as a `ServiceOperation` action phrase or a `Result.Failure` template, so check those by hand.
 
 ## Resx keys are case-insensitive, and a collision now fails the build
 

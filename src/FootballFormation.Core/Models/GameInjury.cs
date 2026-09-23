@@ -16,5 +16,5 @@ public class GameInjury
     public PlayerPosition Position { get; set; }
 
     /// Breaks ties against goals and substitutions in the same second. See <see cref="GameGoal.RecordedAt"/>.
-    public DateTime RecordedAt { get; set; } = DateTime.UtcNow;
+    public DateTime RecordedAt { get; set; }
 }
