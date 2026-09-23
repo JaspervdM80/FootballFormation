@@ -110,8 +110,8 @@
     <HeaderContent>
         <MudTh><MudTableSortLabel SortBy="new Func<SeasonSquadMember, object>(m => m.Player!.ShirtNumber ?? 999)">#</MudTableSortLabel></MudTh>
         <MudTh><MudTableSortLabel SortBy="new Func<SeasonSquadMember, object>(m => m.Player!.FirstName)">@L["Name"]</MudTableSortLabel></MudTh>
+        <MudTh>@L["Preferred Position"]</MudTh>
         <AuthorizeView Roles="@AppRoles.Admin" Context="authHeader">
-            <MudTh>@L["Preferred Position"]</MudTh>
             <MudTh Class="cell-right">@L["Alternative Positions"]</MudTh>
             <MudTh Class="cell-right"></MudTh>
         </AuthorizeView>

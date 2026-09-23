@@ -1,4 +1,4 @@
-﻿@page "/games/{GameId:int}/overview"
+@page "/games/{GameId:int}/overview"
 @inherits CancellableComponent
 
 <PageTitle>@L["Formation Overview"]</PageTitle>
@@ -23,7 +23,8 @@
             <span class="overview-date">
                 @GameData.DateLine("dd MMM yyyy")@if (GameData.MatchType != MatchType.Competition)
                 {
-                    <text> · </text>@L[GameData.MatchType.DisplayName()]
+                    <text> · </text>
+                    @L[GameData.MatchType.DisplayName()]
                 }
             </span>
             <span class="overview-formation">@L[GameData.FormationType.DisplayName()]</span>
@@ -75,52 +76,54 @@
     }
 </div>
 
-@* A plain onclick into js/screenshot.js, not a Blazor handler: this page renders without a circuit to dispatch one to, and the script
-   already takes an element id, does the download and reports its own failure. *@
-<div class="overview-actions">
-    <button type="button" class="btn-gold overview-btn"
-            onclick="captureFormationOverview('formation-overview', 'screenshot-error')">
-        <MudIcon Icon="@Icons.Material.Filled.CameraAlt" Size="Size.Small" />
-        @L["Save as image"]
-    </button>
-    @* Same shape as the screenshot button above. A fixture has one of these and a played match the
-       other, never both — the result replaces the arrangements once it exists. *@
+<AuthorizeView Roles="@AppRoles.Admin">
+    @* A plain onclick into js/screenshot.js, not a Blazor handler: this page renders without a circuit to dispatch one to, and the script
+       already takes an element id, does the download and reports its own failure. *@
+    <div class="overview-actions">
+        <button type="button" class="btn-gold overview-btn"
+                onclick="captureFormationOverview('formation-overview', 'screenshot-error')">
+            <MudIcon Icon="@Icons.Material.Filled.CameraAlt" Size="Size.Small" />
+            @L["Save as image"]
+        </button>
+        @* Same shape as the screenshot button above. A fixture has one of these and a played match the
+           other, never both — the result replaces the arrangements once it exists. *@
+        @if (CanCopySummary)
+        {
+            <button type="button" class="btn-gold overview-btn"
+                    onclick="copyElementText('match-summary-text', 'copy-success', 'copy-error')">
+                <MudIcon Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small" />
+                @L["Copy match result"]
+            </button>
+        }
+        @if (MatchInfoText is not null)
+        {
+            <button type="button" class="btn-gold overview-btn"
+                    onclick="copyElementText('match-info-text', 'copy-success', 'copy-error')">
+                <MudIcon Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small" />
+                @L["Copy match info"]
+            </button>
+        }
+    </div>
+
+    <div id="screenshot-error" class="inline-notice inline-notice-warning" role="alert" hidden>
+        @L["Screenshot failed — try using your device's screenshot instead"]
+    </div>
+
     @if (CanCopySummary)
     {
-        <button type="button" class="btn-gold overview-btn"
-                onclick="copyElementText('match-summary-text', 'copy-success', 'copy-error')">
-            <MudIcon Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small" />
-            @L["Copy match result"]
-        </button>
+        <pre id="match-summary-text" hidden>@SummaryText</pre>
     }
     @if (MatchInfoText is not null)
     {
-        <button type="button" class="btn-gold overview-btn"
-                onclick="copyElementText('match-info-text', 'copy-success', 'copy-error')">
-            <MudIcon Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small" />
-            @L["Copy match info"]
-        </button>
+        <pre id="match-info-text" hidden>@MatchInfoText</pre>
     }
-</div>
-
-<div id="screenshot-error" class="inline-notice inline-notice-warning" role="alert" hidden>
-    @L["Screenshot failed — try using your device's screenshot instead"]
-</div>
-
-@if (CanCopySummary)
-{
-    <pre id="match-summary-text" hidden>@SummaryText</pre>
-}
-@if (MatchInfoText is not null)
-{
-    <pre id="match-info-text" hidden>@MatchInfoText</pre>
-}
-@if (CanCopySummary || MatchInfoText is not null)
-{
-    <div id="copy-success" class="inline-notice inline-notice-success" role="status" hidden>
-        @L["Copied to clipboard"]
-    </div>
-    <div id="copy-error" class="inline-notice inline-notice-warning" role="alert" hidden>
-        @L["Couldn't copy — try again"]
-    </div>
-}
+    @if (CanCopySummary || MatchInfoText is not null)
+    {
+        <div id="copy-success" class="inline-notice inline-notice-success" role="status" hidden>
+            @L["Copied to clipboard"]
+        </div>
+        <div id="copy-error" class="inline-notice inline-notice-warning" role="alert" hidden>
+            @L["Couldn't copy — try again"]
+        </div>
+    }
+</AuthorizeView>

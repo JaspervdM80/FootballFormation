@@ -31,9 +31,7 @@ public partial class FormationOverview
     /// shared, not the arrangements for getting there.
     private string? MatchInfoText { get; set; }
 
-    /// Posting the result to the team is the coach's job, the same as on the result page — so the text is not rendered at all for anyone
-    /// else, hidden element included.
-    private bool CanCopySummary => !IsAnonymous && SummaryText is not null;
+    private bool CanCopySummary => SummaryText is not null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -60,14 +58,17 @@ public partial class FormationOverview
             PeriodLineups[period.Id] = period.PlayerPositions.ToList();
         }
 
+        // Posting to the team's group chat is the coach's job, so neither text is composed for anyone else — hidden element included.
+        if (IsAnonymous) return;
+
         if (!GameData.HasFinalScore)
         {
             // TeamState rather than TeamService: the chrome on this page has already loaded it in this scope, and it is the one place a
-            // failure to name our own side is swallowed — reading Result.Value here would throw the whole public page away instead.
+            // failure to name our own side is swallowed — reading Result.Value here would throw the whole page away instead.
             await Team.EnsureLoadedAsync();
             MatchInfoText = MatchInfoTextBuilder.Build(GameData, Team.Current?.FullName ?? L["Us"], L);
         }
-        else if (!IsAnonymous)
+        else
         {
             // Always false: the summary is for sharing, so it is never built from private notes, whoever is looking at this page.
             var commentsResult = await GameService.GetCommentsAsync(GameId, includePrivate: false, Cancellation);

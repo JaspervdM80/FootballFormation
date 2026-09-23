@@ -1736,6 +1736,36 @@ a.action-btn {
 
 /* --- Squad table --- */
 
+/* Stretched across a desktop the table spread a handful of short columns over 1000px of air */
+.players-table {
+    max-width: 760px;
+}
+
+@media (min-width: 600px) {
+    .players-table th:first-child,
+    .players-table td[data-label="#"] {
+        width: 1%;
+        white-space: nowrap;
+    }
+
+    /* The name's anchor is stretched over the row, because an OnRowClick is off the table (see Players.razor) */
+    .players-table .mud-table-body .mud-table-row {
+        position: relative;
+    }
+
+    .players-table .player-name-cell::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+    }
+
+    .players-table .row-actions,
+    .players-table .injured-mark {
+        position: relative;
+        z-index: 1;
+    }
+}
+
 /* Alternative positions and the row actions hug the right edge of the table */
 .players-table .cell-right {
     justify-content: flex-end;
@@ -1753,13 +1783,13 @@ a.action-btn {
 }
 
 /* An anchor to that player's statistics, so it brings a colour and an underline to override — the
-   same shape as .pd-name-cell on /stats/positions. The 44px floor is what makes it a target a thumb
-   can hit rather than a word-sized one, and it is why the row does not need a height of its own. */
+   same shape as .pd-name-cell on /stats/positions. The token is 44px under a thumb and 32px under a
+   mouse, and it is why the row does not need a height of its own. */
 .players-table .player-name-cell {
     display: inline-flex;
     align-items: center;
     flex-wrap: wrap;
-    min-height: 44px;
+    min-height: var(--action-btn-size);
     color: inherit;
     text-decoration: none;
 }

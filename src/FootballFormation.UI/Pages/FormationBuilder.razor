@@ -25,7 +25,7 @@
 
 <div class="builder-desktop">
     <PageHeader BackFallback="@AppRoutes.Games" TitleTypo="Typo.h6" Class="mb-2"
-                Title="@($"{(GameData.IsHomeGame ? "vs" : "@")} {GameData.Opponent}")">
+                Title="@($"vs {GameData.Opponent}")">
         <Meta>
             <VenueBadge IsHome="GameData.IsHomeGame" />
             <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">@GameData.DateLine("dd MMM yyyy")</MudText>
