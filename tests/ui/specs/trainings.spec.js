@@ -48,8 +48,10 @@ async function clearInjured(page, panel) {
   // aria-selected, not .mud-selected-item: that class marks the item the keyboard is on, which is
   // the first one whether or not anything is picked — clicking it selects rather than clears.
   const selected = page.locator('.mud-popover-open [role="option"][aria-selected="true"]');
+  // Each click waits for its own round trip: the next one otherwise lands on the option just cleared and selects it again.
   for (let remaining = await selected.count(); remaining > 0; remaining--) {
     await selected.first().click();
+    await expect(selected).toHaveCount(remaining - 1);
   }
 
   await field.click();
