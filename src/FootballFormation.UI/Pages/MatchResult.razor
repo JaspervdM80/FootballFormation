@@ -133,12 +133,9 @@
                     }
                     else if (entry.Substitution is { } subToEdit)
                     {
-                        @if (entry.Injury is null)
-                        {
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
-                                           title="@L["Edit"]"
-                                           OnClick="() => EditSubstitution(subToEdit)" />
-                        }
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                       title="@L["Edit"]"
+                                       OnClick="() => EditSubstitution(subToEdit)" />
                         @* Undo also drops any injury recorded with it — one tap made both. *@
                         <MudIconButton Icon="@Icons.Material.Filled.Undo" Size="Size.Small"
                                        title="@L["Undo"]"
@@ -158,6 +155,14 @@
             <MudText Typo="Typo.body2" Style="color: var(--ink-subtle);" Class="mb-3">
                 @L["No goals recorded yet"]
             </MudText>
+        }
+
+        @if (CanAddSubstitution)
+        {
+            <MudButton Variant="Variant.Text" Color="Color.Primary" Class="mt-2"
+                       StartIcon="@Icons.Material.Filled.SwapHoriz" OnClick="AddSubstitution">
+                @L["Add substitution"]
+            </MudButton>
         }
 
         @if (CanEditTimings)

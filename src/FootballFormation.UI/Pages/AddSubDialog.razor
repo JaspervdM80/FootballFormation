@@ -1,0 +1,41 @@
+@inject IStringLocalizer<Strings> L
+
+<MudDialog>
+    <DialogContent>
+        <MudSelect T="PeriodType" Value="SelectedHalf" ValueChanged="ChooseHalf" Label="@L["Which half"]">
+            @foreach (var half in Halves)
+            {
+                <MudSelectItem T="PeriodType" Value="half.Half">@L[half.Half.DisplayName()]</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSelect T="int?" @bind-Value="SelectedOffId" Label="@L["Goes off"]" Class="mt-4">
+            @foreach (var player in Current.OnPitch)
+            {
+                <MudSelectItem T="int?" Value="player.Id">
+                    <PlayerLabel Player="player" />
+                </MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSelect T="int?" @bind-Value="SelectedOnId" Label="@L["Comes on"]" Class="mt-4">
+            @foreach (var player in Current.Bench)
+            {
+                <MudSelectItem T="int?" Value="player.Id">
+                    <PlayerLabel Player="player" />
+                </MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudNumericField T="int" @bind-Value="SelectedMinute" Label="@L["Minute"]"
+                         Min="Current.FirstMinute" Max="Current.LastMinute" Immediate="true" Class="mt-4" />
+
+        <MudSwitch @bind-Value="SelectedInjured" Color="Color.Error" Class="mt-4">@L["Injured"]</MudSwitch>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="@(!HasChoice)" OnClick="Submit">
+            @L["Add"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>

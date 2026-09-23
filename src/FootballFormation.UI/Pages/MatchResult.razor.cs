@@ -290,11 +290,13 @@ public partial class MatchResult
                 p.Add(x => x.PlayerOnId, sub.PlayerOnId);
                 p.Add(x => x.Minute, shownMinute);
                 p.Add(x => x.MaxMinute, GameData.GameDurationMinutes);
+                p.Add(x => x.Injured, GameData.InjuryFor(sub) is not null);
             });
         if (choice is null) return;
 
         var atSeconds = MatchClockReport.ElapsedForEditedMinute(GameData, sub, shownMinute, choice.Minute);
-        var result = await SubService.EditSubstitutionAsync(sub.Id, sub.PlayerOffId, choice.PlayerOnId, atSeconds);
+        var result = await SubService.EditSubstitutionAsync(
+            sub.Id, sub.PlayerOffId, choice.PlayerOnId, atSeconds, choice.Injured);
         if (!Snackbar.Report(L, result, L["Substitution updated"])) return;
 
         await ReloadGame();
@@ -318,6 +320,55 @@ public partial class MatchResult
             candidates.Insert(0, on);
 
         return candidates;
+    }
+
+    /// Only a half that was kicked off has the timings a substitution is placed by.
+    private bool CanAddSubstitution => IsAdmin && GameData is { HasActualTimings: true };
+
+    private async Task AddSubstitution()
+    {
+        if (GameData is null || AllPlayers is null) return;
+
+        var halves = AddSubHalves();
+        if (halves.Count == 0) return;
+
+        var choice = await DialogService.PromptAsync<AddSubDialog, AddSubChoice>(
+            L["Add substitution"], p => p.Add(x => x.Halves, halves));
+        if (choice is null) return;
+
+        var result = await SubService.AddSubstitutionAsync(
+            GameId, choice.Half, choice.PlayerOffId, choice.PlayerOnId, choice.Minute, choice.Injured);
+        if (!Snackbar.Report(L, result, L["Substitution added"])) return;
+
+        await ReloadGame();
+    }
+
+    private List<AddSubHalf> AddSubHalves()
+    {
+        if (GameData is null || AllPlayers is null) return [];
+
+        var halfMinutes = GameData.GameDurationMinutes / 2;
+        var roster = GameData.SelectRoster(AllPlayers, Squad);
+
+        return new[] { PeriodType.FirstHalf, PeriodType.SecondHalf }
+            .Select(half => (Half: half, Period: GameData.PlayedHalf(half)))
+            .Where(entry => entry.Period is not null)
+            .Select(entry =>
+            {
+                var hurt = GameData.Injuries
+                    .Where(i => GameData.Periods.FirstOrDefault(p => p.Id == i.GamePeriodId)?.StartedAtSeconds
+                                <= entry.Period!.StartedAtSeconds)
+                    .Select(i => i.PlayerId).ToHashSet();
+                var onPitchIds = entry.Period!.PlayerPositions.Where(pp => !pp.IsSubstitute).Select(pp => pp.PlayerId).ToHashSet();
+                var first = entry.Half == PeriodType.FirstHalf ? 1 : halfMinutes + 1;
+                var last = entry.Half == PeriodType.FirstHalf ? halfMinutes : GameData.GameDurationMinutes;
+
+                return new AddSubHalf(
+                    entry.Half, first, last,
+                    AllPlayers.Where(p => onPitchIds.Contains(p.Id) && !hurt.Contains(p.Id)).ToList(),
+                    roster.Where(p => !onPitchIds.Contains(p.Id) && !hurt.Contains(p.Id)).ToList());
+            })
+            .ToList();
     }
 
     private async Task RemoveInjury(GameInjury injury)

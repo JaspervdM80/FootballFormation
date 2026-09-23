@@ -130,7 +130,7 @@ public class Game
     /// The whole played duration, or the stretch up to the moment she was hurt. The multi-game form — see <see cref="SecondsToMinutes"/>.
     public int AvailableSecondsFor(int playerId)
     {
-        // Only the live screen writes an injury, so a game never run live can have none.
+        // An injury needs a played half, so a game never run live can have none.
         if (!HasActualTimings) return PlayedDurationSecondsEffective;
 
         return Injuries.FirstOrDefault(i => i.PlayerId == playerId) is { } injury
