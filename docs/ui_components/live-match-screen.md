@@ -90,8 +90,13 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   stoppage time reads 30+3 and converting an untouched 30 back would move it minutes earlier and hand
   the wrong player the difference. Only a minute someone actually retyped is converted. The candidate
   list is taken from **the substitution's own half**, not whichever half the screen happens to show, and
-  excludes anyone already on the pitch there, carrying a standing injury, or hurt in this match. A
-  substitution made for an injury is not editable here — its leaver is fixed by the injury.
+  excludes anyone already on the pitch there, carrying a standing injury, or hurt in this match. The
+  **Injured** switch keeps the `GameInjury` on the substitution's second, where `Game.WasReplaced`
+  pairs them.
+- **A forgotten substitution is added afterwards** from the result page (`AddSubstitutionAsync`). It is
+  laid over the line-up the half finished with, so it is refused when either player is in a later change
+  in that half. An injury is refused for a player who played on in a later half — her minutes would
+  exceed her availability.
 - **A goal can be corrected rather than removed and retyped** (`MatchGoalService.EditGoalAsync`,
   `EditGoalDialog`, the `Edit` button beside the `×` in the result page's timeline): the scorer, the
   assist, the own-goal flag and the minute. Which side it counts for is fixed — turning ours into

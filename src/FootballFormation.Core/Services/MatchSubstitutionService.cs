@@ -1,4 +1,6 @@
-﻿namespace FootballFormation.Core.Services;
+﻿using FootballFormation.Core.Reporting;
+
+namespace FootballFormation.Core.Services;
 
 /// An injury lives here rather than in a service of its own because it is the same write: it takes a player off the pitch, and half the
 /// time it brings one on. Only <see cref="Game.ElapsedSecondsAt"/> is needed from the clock, so this stays free of MatchClockService.
@@ -293,12 +295,92 @@ public class MatchSubstitutionService(
             return Result.Success(sub.GameId);
         });
 
-    /// Corrects a substitution entered wrong: a different player coming on, or a different minute. It reverses the line-up change and lays
-    /// the new one over it with the same primitives a live substitution uses, so the same slot rules apply and the line-up stays consistent
-    /// for GameMinutesReport to rewind. Editable on the same terms undo is — the incoming player must still be on the pitch — and refused on
-    /// a substitution made for an injury, whose leaver is fixed by the injury.
+    /// A substitution forgotten at the touchline, entered afterwards into a half already kicked off. Laid over the line-up as it stands now,
+    /// so it is refused when either player takes part in a later change in that half — rewinding past it would put her in two places.
+    public Task<Result<GameSubstitution>> AddSubstitutionAsync(
+        int gameId, PeriodType half, int playerOffId, int playerOnId, int minute, bool injured,
+        CancellationToken cancellationToken = default) =>
+        LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "add the substitution",
+            cancellationToken, async () =>
+        {
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            if (playerOffId == playerOnId)
+                return Result.Failure<GameSubstitution>("A player cannot be substituted for themselves");
+
+            var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
+            if (game is null) return LiveMatchQueries.GameNotFound<GameSubstitution>(gameId);
+
+            if (game.PlayedHalf(half) is not { StartedAtSeconds: { } start } period)
+                return Result.Failure<GameSubstitution>("That half was never played");
+
+            await db.Entry(game).Collection(g => g.Substitutions).LoadAsync(cancellationToken);
+            await db.Entry(game).Collection(g => g.Injuries).LoadAsync(cancellationToken);
+
+            var end = period.EndedAtSeconds ?? game.ElapsedSecondsAt(UtcNow);
+            var atSeconds = Math.Clamp(MatchClockReport.ElapsedForMinute(game, minute), start, Math.Max(start, end));
+
+            var involved = new[] { playerOffId, playerOnId };
+            if (game.Substitutions.Any(s => s.GamePeriodId == period.Id && s.AtSeconds > atSeconds
+                                            && (involved.Contains(s.PlayerOffId) || involved.Contains(s.PlayerOnId)))
+                || game.Injuries.Any(i => i.GamePeriodId == period.Id && i.AtSeconds > atSeconds && involved.Contains(i.PlayerId)))
+                return Result.Failure<GameSubstitution>("Undo the later substitution first");
+
+            if (injured && game.Injuries.Any(i => i.PlayerId == playerOffId))
+                return Result.Failure<GameSubstitution>("That player is already marked injured");
+
+            if (injured && await PlaysInALaterHalfAsync(db, game, period, playerOffId, cancellationToken))
+                return Result.Failure<GameSubstitution>("She played on in a later half");
+
+            await db.Entry(period).Collection(p => p.PlayerPositions).LoadAsync(cancellationToken);
+
+            var taken = TakeOffThePitch(period, playerOffId);
+            if (taken.IsFailure) return taken.To<GameSubstitution>();
+
+            var slot = taken.Value;
+            var brought = BringOnThePitch(period, playerOnId, slot);
+            if (brought.IsFailure) return brought.To<GameSubstitution>();
+
+            var sub = new GameSubstitution
+            {
+                GameId = gameId,
+                GamePeriodId = period.Id,
+                PlayerOffId = playerOffId,
+                PlayerOnId = playerOnId,
+                AtSeconds = atSeconds,
+                RecordedAt = UtcNow,
+                SlotIndex = slot.Index,
+                Position = slot.Position
+            };
+            db.GameSubstitutions.Add(sub);
+
+            if (injured)
+            {
+                db.GameInjuries.Add(new GameInjury
+                {
+                    GameId = gameId,
+                    GamePeriodId = period.Id,
+                    PlayerId = playerOffId,
+                    AtSeconds = atSeconds,
+                    RecordedAt = UtcNow,
+                    SlotIndex = slot.Index,
+                    Position = slot.Position
+                });
+            }
+
+            await db.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation("Game {GameId}: added {Off} off{Injured}, {On} on at {Seconds}s in the {Half}",
+                gameId, playerOffId, injured ? " injured" : "", playerOnId, atSeconds, half.Half());
+
+            return Result.Success(sub);
+        });
+
+    /// Reverses the change and lays the corrected one over it; refused once a later change has moved the incoming player. A paired injury
+    /// moves with it, since Game.WasReplaced pairs the two on the same second.
     public Task<Result> EditSubstitutionAsync(
-        int subId, int playerOffId, int playerOnId, int atSeconds, CancellationToken cancellationToken = default) =>
+        int subId, int playerOffId, int playerOnId, int atSeconds, bool injured,
+        CancellationToken cancellationToken = default) =>
         LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "edit the substitution",
             cancellationToken, async () =>
         {
@@ -311,18 +393,19 @@ public class MatchSubstitutionService(
             if (sub is null || !await db.GameInScopeAsync(sub.GameId, cancellationToken))
                 return Result.Failure<int>("Substitution not found");
 
-            if (await db.GameInjuries.AnyAsync(
-                    i => i.GamePeriodId == sub.GamePeriodId
-                         && i.PlayerId == sub.PlayerOffId
-                         && i.AtSeconds == sub.AtSeconds,
-                    cancellationToken))
-                return Result.Failure<int>("A substitution made for an injury can't be edited");
-
             var game = await db.LoadWithPeriodsAsync(sub.GameId, cancellationToken);
             if (game is null) return LiveMatchQueries.GameNotFound<int>(sub.GameId);
 
+            await db.Entry(game).Collection(g => g.Injuries).LoadAsync(cancellationToken);
+            var injury = game.InjuryFor(sub);
+            if (injured && game.Injuries.Any(i => i.PlayerId == playerOffId && i != injury))
+                return Result.Failure<int>("That player is already marked injured");
+
             var half = game.Periods.FirstOrDefault(p => p.Id == sub.GamePeriodId);
             if (half is null) return Result.Failure<int>("Substitution not found");
+
+            if (injured && await PlaysInALaterHalfAsync(db, game, half, playerOffId, cancellationToken))
+                return Result.Failure<int>("She played on in a later half");
 
             await db.Entry(half).Collection(p => p.PlayerPositions).LoadAsync(cancellationToken);
 
@@ -346,13 +429,32 @@ public class MatchSubstitutionService(
             sub.SlotIndex = slot.Index;
             sub.Position = slot.Position;
 
+            if (!injured && injury is not null)
+            {
+                db.GameInjuries.Remove(injury);
+            }
+            else if (injured)
+            {
+                if (injury is null)
+                {
+                    injury = new GameInjury { GameId = sub.GameId, RecordedAt = UtcNow };
+                    db.GameInjuries.Add(injury);
+                }
+
+                injury.GamePeriodId = sub.GamePeriodId;
+                injury.PlayerId = playerOffId;
+                injury.AtSeconds = sub.AtSeconds;
+                injury.SlotIndex = slot.Index;
+                injury.Position = slot.Position;
+            }
+
             await db.SaveChangesAsync(cancellationToken);
 
             await db.Entry(sub).Reference(s => s.PlayerOff).LoadAsync(cancellationToken);
             await db.Entry(sub).Reference(s => s.PlayerOn).LoadAsync(cancellationToken);
 
-            logger.LogInformation("Edited substitution {SubId} in game {GameId}: {Off} off, {On} on at {Seconds}s",
-                subId, sub.GameId, playerOffId, playerOnId, sub.AtSeconds);
+            logger.LogInformation("Edited substitution {SubId} in game {GameId}: {Off} off{Injured}, {On} on at {Seconds}s",
+                subId, sub.GameId, playerOffId, injured ? " injured" : "", playerOnId, sub.AtSeconds);
             return Result.Success(sub.GameId);
         });
 
@@ -380,6 +482,28 @@ public class MatchSubstitutionService(
         }
 
         return Result.Success();
+    }
+
+    /// An injury ends her availability, so time played after it would read as over 100% utilisation. Being taken off at a later half's
+    /// restart is the break's change, not playing on.
+    private static async Task<bool> PlaysInALaterHalfAsync(
+        AppDbContext db, Game game, GamePeriod half, int playerId, CancellationToken cancellationToken)
+    {
+        var later = game.Periods
+            .Where(p => p.StartedAtSeconds > half.StartedAtSeconds)
+            .ToDictionary(p => p.Id, p => p.StartedAtSeconds!.Value);
+        if (later.Count == 0) return false;
+
+        var laterIds = later.Keys.ToList();
+        if (await db.GamePlayerPositions.AnyAsync(
+                pp => laterIds.Contains(pp.GamePeriodId) && pp.PlayerId == playerId && !pp.IsSubstitute, cancellationToken))
+            return true;
+
+        var laterSubs = await db.GameSubstitutions
+            .Where(s => laterIds.Contains(s.GamePeriodId) && (s.PlayerOnId == playerId || s.PlayerOffId == playerId))
+            .ToListAsync(cancellationToken);
+
+        return laterSubs.Any(s => s.PlayerOnId == playerId || s.AtSeconds > later[s.GamePeriodId]);
     }
 
     private readonly record struct PitchSlot(int? Index, PlayerPosition Position);
