@@ -7,7 +7,7 @@ INPUT=$(cat)
 
 # grep rather than jq: jq is not on a Windows Git Bash PATH.
 field() {
-  printf '%s' "$INPUT" | grep -o "\"$1\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" | head -1 | sed -e 's/.*:[[:space:]]*"//' -e 's/"$//'
+  printf '%s' "$INPUT" | grep -o "\"$1\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" | head -1 | sed -e 's/.*:[[:space:]]*"//' -e 's/"$//' || true
 }
 
 SESSION=$(field session_id)
