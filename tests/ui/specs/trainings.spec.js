@@ -48,9 +48,13 @@ async function clearInjured(page, panel) {
   // aria-selected, not .mud-selected-item: that class marks the item the keyboard is on, which is
   // the first one whether or not anything is picked — clicking it selects rather than clears.
   const selected = page.locator('.mud-popover-open [role="option"][aria-selected="true"]');
-  for (let remaining = await selected.count(); remaining > 0; remaining--) {
-    await selected.first().click();
-  }
+  // The dialog's own caption, not the options: aria-selected can lag a render behind the prefill,
+  // and a count read in that gap cleared nothing.
+  const injuredCaption = panel.locator('.mud-typography-caption', { hasText: /^Injured:/ });
+  await expect(async () => {
+    if (await selected.count()) await selected.first().click();
+    await expect(injuredCaption).toHaveCount(0, { timeout: 2000 });
+  }).toPass({ timeout: 15000 });
 
   await field.click();
   await expect(page.locator('.mud-popover-open')).toHaveCount(0);
