@@ -105,7 +105,7 @@
         }
     </MudPaper>
 
-    <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">
+    <MudPaper Class="@(ShowMinutes ? "pa-5 result-timeline" : "pa-5")" Elevation="2" Style="border-radius: 16px;">
         @* The goals, and the substitutions and injuries alongside them — the same list the live screen shows, read kick-off first here. *@
         <div class="live-card-head">
             <div class="card-label">@L["Timeline"]</div>
@@ -224,6 +224,14 @@
             </div>
         }
     </MudPaper>
+
+    @* A bool rather than an AuthorizeView: the timeline's row span depends on it too. *@
+    @if (ShowMinutes)
+    {
+        <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">
+            <MinutesPlayedList Rows="MinutesPlayed" IsActual="GameData.HasActualTimings" />
+        </MudPaper>
+    }
 
     @* A visitor with nothing to read gets no card at all; an admin always does, since it is where comments are written. IsAdmin comes
        from the same place the load does, so the controls can never disagree with what GetCommentsAsync was asked for. *@

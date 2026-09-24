@@ -96,6 +96,17 @@ public partial class MatchResult
     private List<MatchEvent> Timeline =>
         GameData is null ? [] : MatchTimelineReport.Build(GameData, ShowSubstitutions, newestFirst: false);
 
+    /// Built on load and after each correction rather than per render: nothing on this page ticks, and it re-renders on every keystroke.
+    private List<LiveMinutesRow> MinutesPlayed { get; set; } = [];
+
+    private bool ShowMinutes => IsAdmin && MinutesPlayed.Count > 0;
+
+    private void RefreshMinutes() =>
+        MinutesPlayed = GameData is null || AllPlayers is null
+            ? []
+            : LiveMinutesReport.Build(GameData, GameData.ElapsedSecondsAt(Time.GetUtcNow().UtcDateTime),
+                id => AllPlayers.FirstOrDefault(p => p.Id == id));
+
     private string PlayerName(int playerId) =>
         AllPlayers?.FirstOrDefault(p => p.Id == playerId)?.ShortName ?? L["Player {0}", playerId].Value;
 
@@ -146,6 +157,7 @@ public partial class MatchResult
         // The full pool, so anyone who actually appeared stays selectable as a scorer regardless of current membership.
         var playersResult = await PlayerService.GetAllAsync(Cancellation);
         AllPlayers = playersResult.IsSuccess ? playersResult.Value! : [];
+        RefreshMinutes();
 
         await ReloadComments();
     }
@@ -443,6 +455,7 @@ public partial class MatchResult
     {
         var gameResult = await GameService.GetByIdAsync(GameId, Cancellation);
         if (gameResult.IsSuccess) GameData = gameResult.Value;
+        RefreshMinutes();
         RefreshSummaryText();
     }
 
