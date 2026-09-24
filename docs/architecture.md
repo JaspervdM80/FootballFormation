@@ -176,7 +176,7 @@ Components/
   VenueBadge.razor                  — THUIS/UIT, in the colours the games list stripes its cards with
   NavItems.razor(.cs)               — The main menu, from AppNav.Menu; rendered in both, ShowIcons for the drawer
   PageHeader.razor(.cs)             — Every page's title block: heading, subtitle, back arrow, actions
-  BackButton.razor(.cs)             — The back arrow; follows the trail, names its destination
+  BackButton.razor(.cs)             — The back arrow; its href is the fallback, js/back.js follows history
   ConfirmDialog.razor(.cs)          — Reusable yes/no confirmation dialog
   InstallBanner.razor(.cs)          — The "add to home screen" prompt, rendered by MainLayout
   MatchNotifications.razor(.cs)     — The push opt-in: the invitation on /, the switch on /settings
@@ -184,7 +184,7 @@ Components/
 Navigation/
   AppRoutes.cs                — Every route: constants and builders. Never interpolate a URL at a call site
   AppNav.cs                   — What each route is called, the menu, and which routes the season filters
-  NavigationTrail.cs          — Scoped: where the visitor has been, so back returns there
+  NavigationTrail.cs          — Scoped: Redirect, which replaces the failed page in history
 State/
   SeasonState.cs              — Scoped: the selected season, shared by the layout and the pages
   SeasonPreference.cs         — That choice in a cookie for 8h, so a deploy's dropped circuit
@@ -192,10 +192,8 @@ State/
   TeamState.cs                — Scoped: the club and team the app says it is, for the chrome
   TeamPreference.cs           — The team in a cookie for a year. /team/set writes it on a choice;
                                 Program.cs stamps the resolved team on every page served
-  RequestContext.cs           — The three cookies a scope was created with, so the static render and
+  RequestContext.cs           — The two cookies a scope was created with, so the static render and
                                 the circuit cannot disagree about them
-  NavigationTrailCookie.cs    — The last two pages served, in a cookie because enhanced navigation
-                                sends the destination as the Referer. Program.cs writes it
 Helpers/
   PitchPositionHelper.cs      — Maps PlayerPosition → (left%, top%) coordinates
   UiFeedback.cs               — Snackbar.Report()/ReportFailure() over Result (translates the error,
@@ -228,6 +226,7 @@ wwwroot/                      — Served to any host at _content/FootballFormati
   js/screenshot.js            — Renders the overview to a PNG via the bundled html2canvas, flattening
                                 color-mix() in the clone first (see docs/known_issues/general.md)
   js/clipboard.js             — Copies a match summary; called from a plain onclick, not a circuit
+  js/back.js                  — Turns the back arrow into a step back through the tab's history
   js/drag-drop-touch.js       — Touch → HTML5 drag event shim for the formation builder on phones
   js/vendor/html2canvas.min.js
 ```

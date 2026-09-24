@@ -19,12 +19,17 @@ public partial class MainLayout
             EnforcePasswordChange();
     }
 
+    /// What back.js records this page as, for a back arrow on a later one to name. Null on a page the app cannot name, which the arrow
+    /// then steps past.
+    private string? PageName => AppNav.PageNameKey(CurrentPath) is { } key ? L[key].Value : null;
+
+    private string CurrentPath => "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
+
     /// The visible half of the rule only: such a session is not an admin as far as the services are concerned either (see ICurrentUser).
     /// Once per initialization is once per navigation, because the layout renders statically and the router rebuilds it for every page.
     private void EnforcePasswordChange()
     {
-        var path = "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
-        if (path.StartsWith(AppRoutes.Settings, StringComparison.OrdinalIgnoreCase)) return;
+        if (CurrentPath.StartsWith(AppRoutes.Settings, StringComparison.OrdinalIgnoreCase)) return;
 
         Navigation.NavigateTo(AppRoutes.Settings, replace: true);
     }

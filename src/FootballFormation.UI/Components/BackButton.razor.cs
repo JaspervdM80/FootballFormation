@@ -1,19 +1,13 @@
 namespace FootballFormation.UI.Components;
 
-/// Returns to the page the visitor actually came from (see <see cref="NavigationTrail"/>) and names it in the tooltip, so "back" is never
-/// a guess. <see cref="PageHeader"/> renders one of these; reach for it directly only if a page's header is too bespoke for that.
+/// <see cref="PageHeader"/> renders one of these; reach for it directly only if a page's header is too bespoke for that.
 public partial class BackButton
 {
-    [Inject] private NavigationTrail Trail { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
-    /// Used when there is nothing behind us — a shared link opened cold, a bookmark — and on every interactive page. On a static page's
-    /// normal visit the trail wins.
+    /// Where the arrow goes when this tab has no named page behind it — a shared link opened cold, a bookmark — or when the browser has
+    /// no Navigation API for back.js to ask.
     [Parameter, EditorRequired] public string Fallback { get; set; } = null!;
 
-    /// Resolved in one place so the tooltip and the destination cannot disagree. An island does not consult the trail at all: its circuit
-    /// holds the one its scope was created with, however far the visitor has navigated through it since.
-    private string Target => AssignedRenderMode is null ? Trail.Previous ?? Fallback : Fallback;
-
-    private string Label => L["Back to {0}", L[AppNav.PageNameKey(Target) ?? "Start"]];
+    private string Label => L["Back to {0}", L[AppNav.PageNameKey(Fallback) ?? "Start"]];
 }

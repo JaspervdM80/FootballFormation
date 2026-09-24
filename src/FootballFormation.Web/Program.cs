@@ -118,13 +118,12 @@ try
     builder.Services.AddScoped<NavigationTrail>();
 
     // A static render and a circuit are separate scopes, but the circuit is created during the /_blazor request, which carries the same
-    // cookies — so both answer the same way without asking the browser. Which is why the trail is one too; see NavigationTrailCookie.
+    // cookies — so both answer the same way without asking the browser.
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped(sp =>
         sp.GetRequiredService<IHttpContextAccessor>().HttpContext is { } http
             ? new RequestContext(
                 http.Request.Cookies[SeasonPreference.CookieName],
-                http.Request.Cookies[NavigationTrailCookie.CookieName],
                 http.Request.Cookies[TeamPreference.CookieName])
             : RequestContext.None);
 
@@ -314,45 +313,12 @@ try
     app.UseRateLimiter();
     app.UseAntiforgery();
 
-    // Where the visitor has been, for the back arrow. Recorded here rather than read off the Referer header, which enhanced navigation
-    // sends as the page being loaded — see NavigationTrailCookie.
-    app.Use(async (context, next) =>
-    {
-        var path = context.Request.Path + context.Request.QueryString;
-        var trail = NavigationTrailCookie.Parse(context.Request.Cookies[NavigationTrailCookie.CookieName]);
-
-        context.Response.OnStarting(() =>
-        {
-            // A page only: a redirect, an asset and /_blazor are all steps the visitor never stood on.
-            if (HttpMethods.IsGet(context.Request.Method)
-                && context.Response.StatusCode == StatusCodes.Status200OK
-                && context.Response.ContentType?.StartsWith("text/html", StringComparison.OrdinalIgnoreCase) == true)
-            {
-                context.Response.Cookies.Append(
-                    NavigationTrailCookie.CookieName,
-                    NavigationTrailCookie.Format(path, trail),
-                    new CookieOptions
-                    {
-                        // No MaxAge: where a visit has been is over when the browser closes. Secure is left off for the same reason the
-                        // season cookie leaves it off — a local `dotnet run` serves plain http, and a path is not a credential.
-                        HttpOnly = true,
-                        SameSite = SameSiteMode.Lax,
-                        IsEssential = true,
-                    });
-            }
-
-            return Task.CompletedTask;
-        });
-
-        await next();
-    });
-
     // Which team the visit was about, so the next one opens on it rather than on whichever team comes first in the database.
     app.Use(async (context, next) =>
     {
         context.Response.OnStarting(async () =>
         {
-            // A page only, as with the trail above: a redirect, an asset and a JSON endpoint are not a team anyone looked at. Asked
+            // A page only: a redirect, an asset and a JSON endpoint are not a team anyone looked at. Asked
             // here rather than before the response, so nothing but a page pays for the answer — and a page has already asked for it,
             // so by now CurrentTeam has one memoized.
             if (context.Response.StatusCode != StatusCodes.Status200OK

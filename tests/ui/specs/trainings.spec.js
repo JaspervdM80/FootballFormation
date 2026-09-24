@@ -367,11 +367,12 @@ test('a player opened from the register comes back to the register', async ({ pa
   await panel.locator('.attendance-row', { hasText: PRESENT }).first().click();
   await expect(page).toHaveURL(/\/players\/\d+\/stats/);
 
-  // /players is this page's fallback, so the squad is also the answer a trail that knows nothing
-  // gives — which is what it gave for every in-app link while the trail was read off the Referer.
+  // /players is this page's fallback, so arriving anywhere but the register means history was not followed.
   const back = page.locator('a.back-button').first();
-  await expect(back).toHaveAttribute('href', '/trainings');
+  await back.hover();
   await expect(back).toHaveAttribute('title', 'Back to Trainings');
+  await back.click();
+  await expect(page).toHaveURL(/\/trainings$/);
 });
 
 test('a player marked unavailable loses that session from her attendance', async ({ page }) => {

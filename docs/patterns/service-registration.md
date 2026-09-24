@@ -18,8 +18,8 @@ builder.Services.AddScoped<MatchSubstitutionService>();  // the substitutions
 builder.Services.AddScoped<MatchPreferencesService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<SeasonState>();       // UI state, see "UI state services"
-builder.Services.AddScoped<NavigationTrail>();   // where the visitor came from, for the back arrow
-builder.Services.AddScoped<RequestContext>();    // the cookie and referrer this scope's request had
+builder.Services.AddScoped<NavigationTrail>();   // Redirect, for a page that failed to load
+builder.Services.AddScoped<RequestContext>();    // the cookies this scope's request had
 ```
 
 The two singletons are the deliberate exceptions. `LiveMatchNotifier` has to be shared across

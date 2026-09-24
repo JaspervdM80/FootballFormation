@@ -19,7 +19,7 @@ public partial class PageHeader
 
     [Parameter] public RenderFragment? Actions { get; set; }
 
-    /// The fallback for a visitor who arrived directly; otherwise the arrow follows the trail. Null renders no arrow at all.
+    /// Where the arrow goes when this tab has nothing named behind it. Null renders no arrow at all.
     [Parameter] public string? BackFallback { get; set; }
 
     /// Top-level pages use h4, detail pages h5 or h6.

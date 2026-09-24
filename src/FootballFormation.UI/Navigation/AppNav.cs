@@ -31,7 +31,7 @@ public static class AppNav
     ];
 
     /// Names the menu entries and fills in "Back to {0}", so a page is called the same thing wherever it is referred to. Null outside the
-    /// app's own routes (/login, /not-found, /Error), which is how the back arrow knows to take its fallback instead.
+    /// app's own routes (/login, /not-found, /Error), which is how back.js knows to step past them.
     public static string? PageNameKey(string? path) => Segments(path) switch
     {
         [] => "Start",

@@ -2,8 +2,8 @@
 
 ## UI state services
 Two of these: `SeasonState` (`UI/State/SeasonState.cs`) holds the selected season, shared by
-`MainLayout`'s picker and the season-aware pages; `NavigationTrail` (`UI/Navigation/`) holds where
-the visitor has been. The pattern, taking `SeasonState` as the worked example:
+`MainLayout`'s picker and the season-aware pages; `TeamState` names the club and team. The
+pattern, taking `SeasonState` as the worked example:
 
 - Registered `Scoped`, which since the render-mode split means **one per scope, and a page has
   two**: the static render of the chrome, and the circuit behind an interactive page's island. Both
@@ -59,43 +59,36 @@ the visitor has been. The pattern, taking `SeasonState` as the worked example:
 - The state holds a **view** choice and never writes shared data. The picker is reachable by
   anonymous visitors, so it must not touch `Season.IsCurrent`, which is admin-owned on `/settings`.
 
-`NavigationTrail` answers the same question from the other end, and it is a cookie for the same
-reason: **`ff.trail`, the last two pages served, newest first**, written by a middleware in
-`Program.cs` on every 200 `text/html` GET and read back off `RequestContext`.
+## The back arrow
 
-**The browser's `Referer` cannot answer this, which is what the trail used to read.** Blazor's
-enhanced navigation pushes the destination into history *before* it fetches the page, so the header
-on that fetch names the page being loaded rather than the one being left — and every in-app link is
-an enhanced navigation. `NavigationTrail` saw the current path, took its "nothing behind us" branch,
-and every back arrow in the app silently fell through to its `Fallback`. See
-[known_issues](../known_issues/blazor-components.md).
+**The back arrow follows the tab's own history, and only the browser has that.** `BackButton`
+renders an anchor whose `href` is the page's `Fallback`; `UI/wwwroot/js/back.js` turns a click on it
+into a `navigation.traverseTo` to the nearest earlier entry in this tab that the app can name and that
+is not the current page, and names that entry in the tooltip on hover or focus. Where there is no
+such entry — a shared link opened cold, a bookmark — or no Navigation API, the `href` stands. One
+mechanism for every page: static or interactive makes no difference, because none of it runs on the
+server.
 
-Two entries rather than one, for two cases that both put a useless page at the front: a **refresh**,
-whose request carries the cookie the page itself wrote, and a **`/login` or `/not-found`** the route
-table cannot name. `Previous` skips any entry that is the current path or that `AppNav.PageNameKey`
-cannot name, and takes the first that survives.
-
-**A circuit never asks.** Its scope is created once and outlives every enhanced navigation made
-through it, so the `RequestContext` it holds is the one the circuit *started* on — right for the
-first page and stale from the second onwards (`/players` → `/games` → a formation offers `/players`).
-So `BackButton` consults the trail only where `AssignedRenderMode is null`, and an island takes its
-`Fallback`. That is checked on the component rather than in `NavigationTrail` because only a
-component knows which of the two it is rendering in, and `AssignedRenderMode` reads the same in the
-prerender as in the circuit — so the arrow does not change destination under a thumb when the
-circuit connects. The three pages in that position — the builder, the live screen, the match result
-— are reached from `/games`, which is what their fallback already says.
-
-One thing a cookie cannot do that the header could: **it is one per browser, not one per tab.** Open
-a link in a second tab and the page it lands on rewrites the trail the first tab reads on its next
-navigation. Two entries and a single-page depth keep the damage to a back arrow offering a sibling
-page; nothing server-side can be per-tab, so this is accepted rather than solved.
+- **Names are recorded by the page itself.** `MainLayout` puts `data-page-name` (the localized
+  `AppNav.PageNameKey`, absent on `/login`, `/not-found`, `/Error`) and `data-page-path` on the main
+  content; `back.js` stores the name in `sessionStorage` under that path, on load, on every
+  `navigate` event and on `pagehide`. Keyed by the path the page *states*, not by the current
+  history entry: enhanced navigation moves to the next entry before it has fetched it, so for a
+  moment the two disagree, and a page left in that window is simply never recorded.
+- **An unnamed entry is stepped past**, as is one for the current URL: `/games` → `/login` → `/games`
+  goes back past both, to whatever came before.
+- **Why not the server.** It used to be: first the `Referer` header, which enhanced navigation sends
+  as the page being *loaded* ([known_issues](../known_issues/blazor-components.md)), then an
+  `ff.trail` cookie written per page served. The cookie was one per browser rather than per tab,
+  one step deep, and an interactive page could not use it at all — a circuit's `RequestContext` is
+  the one it started on — so every island fell back to a fixed page.
+- `tests/ui/specs/navigation.spec.js` pins the three cases, and `trainings.spec.js` the one where the
+  fallback is not where the visitor came from.
 
 Two related rules for anything that navigates:
 
 - Build URLs from `AppRoutes` (`AppRoutes.PlayerStats(id)`), never an interpolated literal.
 - Redirect away from a page that failed to load with `Trail.Redirect(...)`, not `NavigateTo`. It
-  replaces the failed page in browser history, so the browser's own back button does not walk
-  straight back into it. The failed page has already written itself to `ff.trail` and stays there as
-  the second entry — harmless, because the page redirected *to* is then the first, and it is the one
-  a back arrow offers.
+  replaces the failed page in browser history, so neither the browser's back button nor the app's
+  walks straight back into it.
 
