@@ -131,6 +131,32 @@ test('a private comment is the coach\'s alone, and a public one is the parents\'
   }
 });
 
+test('the minutes each player got are the coach\'s to read, not a visitor\'s', async ({ page, browser }) => {
+  test.skip(new Date().getDate() === 1, 'no earlier day in the current month to date a match to');
+
+  const id = await matchWithId(page, 'FC Speeltijd', { past: true });
+  await fillLineup(page, 2);
+  await fileScore(page, id, 2, 0);
+
+  // Nobody kicked this one off, so these are the line-up's planned minutes and the heading says so.
+  const rows = page.locator('.live-minutes-row');
+  await expect(rows.first()).toBeVisible();
+  await expect(page.locator('.card-label', { hasText: 'Planned minutes' })).toBeVisible();
+
+  const visitor = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
+  try {
+    const anon = await visitor.newPage();
+    await gotoRendered(anon, `/games/${id}/result`);
+
+    // The scoreboard first, so the absence below is a rendered page rather than one still loading.
+    await expect(anon.locator('.score-value').first()).toBeVisible();
+    await expect(anon.locator('.live-minutes-row')).toHaveCount(0);
+    await expect(anon.getByText('Planned minutes', { exact: false })).toHaveCount(0);
+  } finally {
+    await visitor.close();
+  }
+});
+
 test('an own goal is the opponent\'s, and does not tick one of ours off the list', async ({ page }) => {
   test.skip(new Date().getDate() === 1, 'no earlier day in the current month to date a match to');
 

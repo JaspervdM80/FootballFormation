@@ -1,0 +1,30 @@
+@inject IStringLocalizer<Strings> L
+
+<div class="card-label">@(IsActual ? L["Minutes played"] : L["Planned minutes"])</div>
+
+<div class="live-minutes">
+    @foreach (var row in Rows)
+    {
+        <div class="live-minutes-row @(row.IsOnPitch ? "live-minutes-on" : "")">
+            @if (row.Player.ShirtNumber is not null)
+            {
+                <span class="live-minutes-number">#@row.Player.ShirtNumber</span>
+            }
+            <span class="live-minutes-name">@row.Player.DisplayName</span>
+            @if (row.IsOnPitch)
+            {
+                <span class="live-minutes-dot" title="@L["On the pitch"]"></span>
+            }
+            <span class="live-minutes-value">@row.Minutes'</span>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<LiveMinutesRow> Rows { get; set; } = [];
+
+    /// False before any kick-off: the rows are the line-up costed at a full period each, and only the heading can say so.
+    [Parameter, EditorRequired]
+    public bool IsActual { get; set; }
+}

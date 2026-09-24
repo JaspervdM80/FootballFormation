@@ -213,7 +213,9 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   property, so the running player's total climbs with the clock tick. Until the first kick-off
   there is no time played at all and the figures are the planned line-up costed at a full period
   each, so the card is headed **"Planned minutes"** rather than "Minutes played"
-  (`Game.HasActualTimings`) — the numbers cannot say which they are, so the heading does.
+  (`Game.HasActualTimings`) — the numbers cannot say which they are, so the heading does. The rows
+  are `MinutesPlayedList`, which `/games/{id}/result` shows admins too, under the score card; on a
+  desktop the result page's timeline (`.result-timeline`, `app.css`) spans both rows to make room.
 - **Mobile reorders the column with flex `order`**: what just happened matters more at a touchline
   than where everyone stands, so the line-up card (`.live-lineup`, `order: 1`) and the minutes
   table (`.live-minutes-card`, `order: 2`) drop below the timeline under 600px. Both rules live in

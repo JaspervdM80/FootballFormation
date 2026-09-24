@@ -1126,6 +1126,13 @@ a.action-btn {
     grid-column: 1 / -1;
 }
 
+/* Spans the minutes card's row too, so that card sits straight under the score instead of below the whole timeline. */
+@media (min-width: 700.02px) {
+    .result-timeline {
+        grid-row: span 2;
+    }
+}
+
 /* Formation builder: "Formation: [dropdown]" on a desktop, where the select is a MudBlazor
    component whose own elements a scoped rule cannot reach. On a phone the select carries its own
    floating label and stands on its own line, so only the desktop row is written here. */

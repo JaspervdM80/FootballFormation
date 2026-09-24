@@ -42,7 +42,7 @@ const SELECTORS = {
   'the result page': ['result-comments', 'comment-entry', 'comment-visibility', 'comment-add-row',
                       'live-event', 'live-event-against', 'live-event-tag', 'og-check', 'add-row',
                       'btn-add-goal', 'score-big-input', 'score-value', 'score-away',
-                      'stat-tile', 'stat-value'],
+                      'stat-tile', 'stat-value', 'live-minutes-row'],
   'season and squad management': ['list-row', 'list-row-meta', 'players-table', 'badge-guest',
                                   'season-menu-item', 'training-row'],
   // The minutes checks are counts of zero against a signed-out visitor, so a rename here is exactly

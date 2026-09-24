@@ -213,10 +213,6 @@ public partial class LiveMatch
     private List<LiveMinutesRow> MinutesPlayed =>
         GameData is null ? [] : LiveMinutesReport.Build(GameData, ElapsedSeconds, FindPlayer);
 
-    /// False before kick-off, when <see cref="MinutesPlayed"/> is the planned line-up costed at a full period each — a different thing,
-    /// and the card has to say so rather than claim minutes nobody has played.
-    private bool MinutesAreActual => GameData?.HasActualTimings == true;
-
     /// Counts only the two kinds <see cref="ShowSubstitutions"/> can hide, so an empty timeline can be told apart from a filtered one.
     private bool HasEvents => GameData is { } game && (game.Goals.Count > 0 || game.Substitutions.Count > 0);
 

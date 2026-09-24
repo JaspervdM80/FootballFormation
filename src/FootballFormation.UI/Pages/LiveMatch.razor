@@ -228,27 +228,7 @@
     {
         <AuthorizeView Roles="@AppRoles.Admin">
             <MudPaper Class="pa-4 live-minutes-card" Elevation="2" Style="border-radius: 16px;">
-                @* Before kick-off these are the minutes the line-up plans for, not minutes anyone has
-                   played — the heading says which, because the numbers themselves cannot. *@
-                <div class="card-label">@(MinutesAreActual ? L["Minutes played"] : L["Planned minutes"])</div>
-
-                <div class="live-minutes">
-                    @foreach (var row in MinutesPlayed)
-                    {
-                        <div class="live-minutes-row @(row.IsOnPitch ? "live-minutes-on" : "")">
-                            @if (row.Player.ShirtNumber is not null)
-                            {
-                                <span class="live-minutes-number">#@row.Player.ShirtNumber</span>
-                            }
-                            <span class="live-minutes-name">@row.Player.DisplayName</span>
-                            @if (row.IsOnPitch)
-                            {
-                                <span class="live-minutes-dot" title="@L["On the pitch"]"></span>
-                            }
-                            <span class="live-minutes-value">@row.Minutes'</span>
-                        </div>
-                    }
-                </div>
+                <MinutesPlayedList Rows="MinutesPlayed" IsActual="GameData.HasActualTimings" />
             </MudPaper>
         </AuthorizeView>
     }
