@@ -44,9 +44,9 @@
   rather than as no destination ("training → player → back went to the squad"), and it was invisible
   wherever the fallback happened to be where the visitor came from. Only a link opting out with
   `data-enhance-nav="false"` — or a bookmark, or a refresh — ever sent a true referrer, which is why
-  it looked like it worked. The trail is the `ff.trail` cookie now, written by a middleware in
-  `Program.cs`; see [patterns](../patterns/ui-state-and-navigation.md#ui-state-services). Anything
-  else reaching for `Referer` in this app is wrong for the same reason.
+  it looked like it worked. The arrow follows the browser's own history now; see
+  [patterns](../patterns/ui-state-and-navigation.md#the-back-arrow). Anything else reaching for
+  `Referer` in this app is wrong for the same reason.
 - **A circuit's scoped services are a snapshot of the request that created it, and enhanced
   navigation does not refresh them.** The same circuit serves every page navigated to through it, so
   a scoped service holding something that changes per page is right for the first one and stale from

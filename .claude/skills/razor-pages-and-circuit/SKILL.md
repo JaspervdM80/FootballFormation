@@ -59,8 +59,7 @@ a regular method will not do.
 3. **The menu is `AppNav.Menu`**, rendered by `<NavItems />` in both app bar and drawer.
 
 **Redirect away from a page that failed to load with `Trail.Redirect(...)`, not `NavigateTo`.** It
-replaces the failed page in the trail and in browser history, so neither back button walks straight
-back into it.
+replaces the failed page in browser history, so neither back button walks straight back into it.
 
 ## Every page opens with `<PageHeader>`
 
@@ -107,19 +106,20 @@ A circuit outlives a request and a singleton outlives the circuit.
 
 ## UI state services
 
-`SeasonState` holds the selected season; `NavigationTrail` answers where the visitor came from. Both
-are `Scoped`, and since the render-mode split **a page has two scopes**: the static render of the
-chrome, and the circuit behind an interactive page's island.
+`SeasonState` holds the selected season, `TeamState` the club and team. Both are `Scoped`, and
+since the render-mode split **a page has two scopes**: the static render of the chrome, and the
+circuit behind an interactive page's island.
 
 - Both read `RequestContext`, which the host fills in from the **cookies** on the request that
   created the scope. That works in either scope for the season, because a circuit is created
   *during* the `/_blazor` request, which carries the same ones. **Never reach for the `Referer`
   header**: enhanced navigation pushes the destination into history before it fetches, so the
-  referrer names the page being loaded. The trail is the `ff.trail` cookie, written by a middleware.
+  referrer names the page being loaded.
 - **A circuit's `RequestContext` is a snapshot, and it does not move.** The scope is created once
   and outlives every enhanced navigation through it, so anything on it that changes per page is
-  stale from the second navigation onwards — the season does not, the trail does. `BackButton`
-  consults the trail only where `AssignedRenderMode is null`; an island takes its `Fallback`.
+  stale from the second navigation onwards. That is why "where did this tab come from" is not a
+  server question at all: the back arrow's `href` is its `Fallback`, and `js/back.js` follows the
+  browser's history instead.
 - Loading is a **memoized task** (`EnsureLoadedAsync() => _loading ??= LoadAsync()`), because a scoped
   service cannot load in its constructor and the layout and page both need the data during their own
   `OnInitializedAsync`.

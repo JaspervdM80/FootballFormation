@@ -63,7 +63,7 @@
 
     @* A clamp rather than a flat 24px, which left a 320px phone only 272px of content. The safe-area insets matter too: viewport-fit=cover
        means landscape on a notched phone would otherwise run content under the notch. *@
-    <MudMainContent Class="app-main" Style="max-width: 1100px; margin: 0 auto;">
+    <MudMainContent Class="app-main" Style="max-width: 1100px; margin: 0 auto;" data-page-name="@PageName" data-page-path="@CurrentPath">
         @Body
     </MudMainContent>
 

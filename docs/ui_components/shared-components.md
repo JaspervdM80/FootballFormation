@@ -235,27 +235,20 @@ Do not hand-roll a header row.
   the browser tab is right before the data arrives.
 
 ### Back arrow (`Components/BackButton.razor`)
-Rendered by `PageHeader` when you pass `BackFallback`. It returns to the page the visitor **came
-from** — `NavigationTrail`, see [patterns](../patterns/ui-state-and-navigation.md#ui-state-services) — and names that
-destination in `aria-label` + `title` ("Terug naar Seizoen"). Icon-only by design; the tooltip is
-the whole affordance, which is why the label and the destination are resolved from one expression.
+Rendered by `PageHeader` when you pass `BackFallback`. It returns to the page this tab **came
+from**, through the browser's history — `js/back.js`, see
+[patterns](../patterns/ui-state-and-navigation.md#the-back-arrow) — and names that destination in
+`aria-label` + `title` ("Terug naar Seizoen"). Icon-only by design; the tooltip is the whole
+affordance.
 
 **A plain `<a href>` styled by `.back-button` in app.css**, not a `MudIconButton` with an `OnClick`:
 it renders on pages that have no circuit to dispatch a click to. The rule lives in app.css because
 the element `MudIcon` renders is out of reach of a page's scoped stylesheet.
 
-`BackFallback` is used when there is nothing behind — a shared link, a bookmark, a page reached from
-one the route table cannot name — **and on every interactive page**, because a circuit's scope holds
-the trail it was created with however far the visitor has navigated through it since (see
-[patterns](../patterns/ui-state-and-navigation.md#ui-state-services)). Pick the page someone landing
-cold most likely wants: `/players` for player stats, `/games` for the game screens, and for
-`/games/{id}/overview` the editor for an admin, `/games` for a visitor.
-
-**It used to be the answer on the static pages too, on every visit**, because the trail read the
-`Referer` header and Blazor's enhanced navigation sends the destination as the referrer — so a
-fallback that happened to be right was indistinguishable from a trail that worked. An assertion that
-a back arrow followed the visitor therefore has to be made on a page with no circuit *and* whose
-fallback is not where they came from: `/players/{id}/stats` opened from `/trainings` is the one in
-`trainings.spec.js`.
+`BackFallback` is the `href`, and what the arrow does when the tab has nothing named behind it — a
+shared link, a bookmark. Pick the page someone landing cold most likely wants: `/players` for player
+stats, `/games` for the game screens, and for `/games/{id}/overview` the editor for an admin,
+`/games` for a visitor. An assertion that the arrow followed the visitor has to be made where the
+fallback is not where they came from, or a working fallback passes for working history.
 
 
