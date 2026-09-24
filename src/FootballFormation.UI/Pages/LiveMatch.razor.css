@@ -82,6 +82,72 @@
     color: #fff;
 }
 
+.live-clock-block {
+    position: relative;
+}
+
+/* Laid over the clock rather than pushing it down, so nothing under a thumb moves when a goal lands. The forwards fill leaves it faded
+   out until the page drops it. */
+.live-goal-flash {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: var(--club-primary);
+    color: var(--club-on-primary);
+    pointer-events: none;
+    animation: live-goal-flash 4.5s ease-out forwards;
+}
+
+.live-goal-flash-word {
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1.1;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.live-goal-flash-scorer {
+    font-size: 0.9rem;
+    font-weight: 600;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@keyframes live-goal-flash {
+    0% { opacity: 0; transform: scale(0.9); }
+    8% { opacity: 1; transform: scale(1.04); }
+    14% { transform: scale(1); }
+    85% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+.live-score-pop {
+    animation: live-score-pop 0.8s ease-out;
+}
+
+@keyframes live-score-pop {
+    0% { transform: scale(1); }
+    35% { transform: scale(1.35); }
+    100% { transform: scale(1); }
+}
+
+/* The score and the timeline already say what happened; without motion the banner would only be a box in the way. */
+@media (prefers-reduced-motion: reduce) {
+    .live-goal-flash {
+        display: none;
+    }
+
+    .live-score-pop {
+        animation: none;
+    }
+}
+
 /* The clock controls (.live-control-row) are laid out in app.css: every child is a MudButton,
    and scoped CSS never reaches a child component's root element. */
 .live-pitch-hint {

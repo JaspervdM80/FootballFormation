@@ -168,6 +168,26 @@ and serves either way.
 The key pair is generated once and **never rotated casually**: the public half is what every browser
 stored as its `applicationServerKey`, so a new one silently orphans every subscription on file.
 
+## Vibration is a per-browser choice the worker reads
+
+The switch under the notifications row on `/settings` (`VibrationSetting`, passed to
+`MatchNotifications` as a second row of its section) is kept in the `ff-push` cache
+(`pushShared.vibrationOn` / `setVibration`), because the Cache API is the only storage both the page
+and the worker can read. Nothing is stored on the server: like the subscription, it belongs to a
+browser, not a person. It is on unless switched off, and the switch is not offered at all where
+`navigator.vibrate` is missing, so iOS never sees it. **Nor where push is unsupported**, even if
+vibrate is: it is a row of the notifications section, which is not drawn there. A deliberate choice
+for one section over two; in practice that is only an in-app WebView, which still buzzes on the live
+screen with no switch to stop it.
+
+- **Off means silent, not just still.** No browser can drop the buzz and keep the sound, so the
+  worker shows the notification with `silent: true`. It must then pass `renotify: false`:
+  `showNotification` throws a `TypeError` on the two together, and the notification is lost.
+- **The same choice stops the live screen's own buzz** (`vibration.buzz`), which is what someone
+  watching with the page open feels. That one needs the page visible and, on Chrome, a tap first.
+- **Custom patterns are not attempted in a notification.** Android has taken vibration over into the
+  notification channel, where the phone's own settings decide it.
+
 ## What web push cannot do
 
 - **iOS needs the PWA installed first.** Safari hands out no subscription at all until the app is on

@@ -96,6 +96,109 @@ test('the clock stops at half time and the second half picks up from the banked 
   await expect.poll(() => clockSeconds(page), { timeout: 20_000 }).toBeGreaterThan(banked);
 });
 
+test('a spectator sees and feels our goal as it arrives, but not again on a reload', async ({ page, browser }) => {
+  const id = await liveMatch(page, 'FC Juichen');
+
+  const visitor = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
+  try {
+    const watching = await visitor.newPage();
+    // Stands in for the phone's motor: records the patterns rather than needing a tap first, as Chrome's real one does.
+    await watching.addInitScript(() => {
+      window.buzzes = [];
+      navigator.vibrate = (pattern) => { window.buzzes.push(pattern); return true; };
+    });
+    await gotoRendered(watching, `/games/${id}/live`);
+
+    const flash = watching.locator('.live-goal-flash');
+    await expect(watching).toHaveTitle(/^0 – 0 · .*FC Juichen/);
+    await expect(flash).toHaveCount(0);
+
+    await page.evaluate(() => {
+      window.buzzes = [];
+      navigator.vibrate = (pattern) => { window.buzzes.push(pattern); return true; };
+    });
+
+    await clickFor(
+      page.getByRole('button', { name: 'Goal', exact: true }),
+      () => expect(page.locator('.mud-dialog')).toBeVisible(),
+    );
+    const goalDialog = await openDialog(page);
+    await chooseOption(page, goalDialog, 'Scorer', 'Fixture');
+    await submitDialog(page, 'Add goal');
+
+    await expect(flash).toContainText('Fixture');
+    await expect(watching.locator('.live-event-fresh')).toHaveCount(1);
+    await expect(watching).toHaveTitle(/^(1 – 0|0 – 1) · /);
+    await expect.poll(() => watching.evaluate(() => window.buzzes.length)).toBe(1);
+    // The coach tapped the button; the buzz is for the people who did not.
+    expect(await page.evaluate(() => window.buzzes)).toEqual([]);
+
+    // It stands down by itself, and a reload mid-match must not replay it.
+    await expect(flash).toHaveCount(0, { timeout: 15_000 });
+    await gotoRendered(watching, `/games/${id}/live`);
+    await expect(watching.locator('.live-score-value').first()).toBeVisible();
+    await expect(flash).toHaveCount(0);
+    await expect(watching.locator('.live-event-fresh')).toHaveCount(0);
+
+    // A goal against is news, not a party: a buzz and the new row, no banner.
+    await clickFor(
+      page.getByRole('button', { name: 'Goal against' }),
+      () => expect(watching.locator('.live-event')).toHaveCount(2),
+    );
+    await expect(watching.locator('.live-event-fresh')).toHaveCount(1);
+    await expect.poll(() => watching.evaluate(() => window.buzzes.length)).toBe(1);
+    await expect(flash).toHaveCount(0);
+  } finally {
+    await visitor.close();
+  }
+});
+
+test('a spectator who switched vibration off still sees our goal, but is not buzzed for it', async ({ page, browser }) => {
+  const id = await liveMatch(page, 'FC Stiltezone');
+
+  const visitor = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
+  try {
+    const watching = await visitor.newPage();
+    await watching.addInitScript(() => {
+      window.buzzes = [];
+      navigator.vibrate = (pattern) => { window.buzzes.push(pattern); return true; };
+    });
+
+    // Drawn only once the browser has answered, so its button arrives with its handler already bound. Clicked once on purpose: a
+    // retried click on a toggle switches it straight back.
+    await gotoRendered(watching, '/settings');
+    const setting = watching.locator('.notify-row', { hasText: 'Vibrate on match events' });
+    await setting.getByRole('button', { name: 'Turn off' }).click();
+    await expect(setting).toContainText('Off in this browser');
+
+    // Kept by the browser, not the circuit.
+    await gotoRendered(watching, '/settings');
+    await expect(setting.getByRole('button', { name: 'Turn on' })).toBeVisible();
+
+    await gotoRendered(watching, `/games/${id}/live`);
+    await expect(watching.locator('.live-score-value').first()).toBeVisible();
+
+    await clickFor(
+      page.getByRole('button', { name: 'Goal', exact: true }),
+      () => expect(page.locator('.mud-dialog')).toBeVisible(),
+    );
+    const goalDialog = await openDialog(page);
+    await chooseOption(page, goalDialog, 'Scorer', 'Fixture');
+    await submitDialog(page, 'Add goal');
+
+    await expect(watching.locator('.live-goal-flash')).toBeVisible();
+
+    // The circuit asks for its buzz after drawing the banner, so the banner proves nothing about it. Asking the same function directly
+    // and awaiting it does: whatever the page asked for, the switch has had to refuse.
+    expect(await watching.evaluate(async () => {
+      await window.vibration.buzz([100]);
+      return window.buzzes;
+    })).toEqual([]);
+  } finally {
+    await visitor.close();
+  }
+});
+
 test('a spectator watching the same match is given a pitch that does nothing', async ({ page, browser }) => {
   const id = await liveMatch(page, 'FC Toeschouwer');
 

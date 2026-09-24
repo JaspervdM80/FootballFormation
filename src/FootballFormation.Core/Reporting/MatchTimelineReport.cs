@@ -5,7 +5,11 @@ namespace FootballFormation.Core.Reporting;
 public record MatchEvent(
     int AtSeconds, MatchMinute? Minute, PeriodType Half, DateTime RecordedAt, int Id,
     GameGoal? Goal, GameSubstitution? Substitution, GameInjury? Injury = null,
-    MatchScore? Score = null, bool HalfTimeAbove = false);
+    MatchScore? Score = null, bool HalfTimeAbove = false)
+{
+    /// Stable across a reload, unlike the record's own equality, which compares the entities by reference.
+    public string Key => Goal is not null ? $"goal-{Id}" : Substitution is not null ? $"sub-{Id}" : $"injury-{Id}";
+}
 
 /// The goals, substitutions and injuries of a match on one clock — built once here so the live screen and the finished-match result page
 /// read the same list. Substitutions can be filtered out because heavy rotation buries the goals among them; an injury is never folded away.

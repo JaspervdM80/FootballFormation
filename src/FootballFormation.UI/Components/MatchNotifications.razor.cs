@@ -17,6 +17,9 @@ public partial class MatchNotifications
     /// Set to wrap the row in a settings section of its own, which is how /settings places it.
     [Parameter] public string? Heading { get; set; }
 
+    /// Further rows for that section, drawn under this one. Only used alongside <see cref="Heading"/>.
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
     /// What push.js can answer. Starts <see cref="NotificationState.Unsupported"/> and stays there until the first interactive render
     /// has asked, which keeps the row out of the markup rather than flashing a wrong label: the browser is the only thing that knows,
     /// and the server prerenders before it can be asked.

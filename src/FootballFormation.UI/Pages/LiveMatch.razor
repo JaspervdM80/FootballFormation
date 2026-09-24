@@ -6,7 +6,7 @@
    the layout renders statically. *@
 <InteractiveShell />
 
-<PageTitle>@L["Live Match"]</PageTitle>
+<PageTitle>@TabTitle</PageTitle>
 
 @if (GameData is null)
 {
@@ -28,7 +28,8 @@
             RenderFragment ourSide =
                 @<div class="live-score-side">
                     <span class="live-score-name">@L["Us"]</span>
-                    <span class="live-score-value">@(GameData.ScoreHome ?? 0)</span>
+                    <span @key="_celebrations"
+                          class="live-score-value @(_celebration is not null ? "live-score-pop" : "")">@(GameData.ScoreHome ?? 0)</span>
                 </div>;
             RenderFragment theirSide =
                 @<div class="live-score-side">
@@ -42,16 +43,29 @@
             @(GameData.IsHomeGame ? theirSide : ourSide)
         </div>
 
-        @* The clock stops at the end of the half; anything past it is counted alongside rather
-           than rolled into the reading, the way a scoreboard shows 30:00 +2:15. *@
-        <div class="live-clock">
-            @ClockDisplay
-            @if (Clock.IsInAdditionalTime)
+        @* The celebration covers the clock and not the score, which is the news, and never reaches the controls below the card. *@
+        <div class="live-clock-block">
+            @* The clock stops at the end of the half; anything past it is counted alongside rather
+               than rolled into the reading, the way a scoreboard shows 30:00 +2:15. *@
+            <div class="live-clock">
+                @ClockDisplay
+                @if (Clock.IsInAdditionalTime)
+                {
+                    <span class="live-clock-extra">+@AdditionalDisplay</span>
+                }
+            </div>
+            <div class="@StatusCssClass">@StatusLabel</div>
+
+            @if (_celebration is { } goal)
             {
-                <span class="live-clock-extra">+@AdditionalDisplay</span>
+                <div @key="_celebrations" class="live-goal-flash" role="status">
+                    <span class="live-goal-flash-word">@L["Goal!"]</span>
+                    <span class="live-goal-flash-scorer">
+                        @goal.ScorerName@(goal.Minute is { } minute ? $" {minute}'" : "")
+                    </span>
+                </div>
             }
         </div>
-        <div class="@StatusCssClass">@StatusLabel</div>
     </MudPaper>
 
     @* Kick-off is the only thing to do before a match, so it stays under the scoreboard. Everything the clock does afterwards lives at
@@ -179,7 +193,7 @@
         {
             @* Newest first — the latest event on top is what a coach glances down at. *@
             <MatchTimeline Events="Timeline" Opponent="@GameData.Opponent" IsHomeGame="GameData.IsHomeGame"
-                           ResolveName="PlayerLabel" ShowScore="true">
+                           ResolveName="PlayerLabel" ShowScore="true" Fresh="_freshEvents">
                 <AdminActions Context="entry">
                     @if (entry.Goal is { } goalToRemove)
                     {
