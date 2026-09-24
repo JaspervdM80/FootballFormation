@@ -199,6 +199,30 @@ test('a spectator who switched vibration off still sees our goal, but is not buz
   }
 });
 
+test('an installed iPhone app is pointed at its own settings instead of offered a switch it would ignore', async ({ browser }) => {
+  const iphone = await browser.newContext({
+    storageState: VISITOR_STATE,
+    baseURL: BASE_URL,
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
+  });
+  try {
+    const page = await iphone.newPage();
+    // Safari has no Vibration API at all, which is what the page reads — the user agent alone would leave Chromium's in place. And
+    // installed, the only way the app has an entry in the iPhone's settings to point at.
+    await page.addInitScript(() => {
+      delete Navigator.prototype.vibrate;
+      Object.defineProperty(Navigator.prototype, 'standalone', { get: () => true });
+    });
+    await gotoRendered(page, '/settings');
+
+    const setting = page.locator('.notify-row', { hasText: 'Vibrate on match events' });
+    await expect(setting).toContainText('Settings → Notifications');
+    await expect(setting.getByRole('button')).toHaveCount(0);
+  } finally {
+    await iphone.close();
+  }
+});
+
 test('a spectator watching the same match is given a pitch that does nothing', async ({ page, browser }) => {
   const id = await liveMatch(page, 'FC Toeschouwer');
 

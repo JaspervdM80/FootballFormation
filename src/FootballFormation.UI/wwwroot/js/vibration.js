@@ -1,8 +1,12 @@
 // The choice is kept by the host's push-shared.js, because the service worker has to read it too.
 window.vibration = {
-    // 'unsupported' where there is nothing to drive — iOS above all — so the switch is not offered there at all.
+    // iOS has no Vibration API and ignores a silent notification, so it gets a pointer to its own settings instead of a switch — once
+    // installed, because that is when the app first appears there.
     state: async () => {
-        if (typeof navigator.vibrate !== 'function') return 'unsupported';
+        if (typeof navigator.vibrate !== 'function') {
+            const notifications = window.matchNotifications;
+            return notifications?.isIos() && notifications.isInstalled() ? 'ios' : 'unsupported';
+        }
         return await pushShared.vibrationOn() ? 'on' : 'off';
     },
 
