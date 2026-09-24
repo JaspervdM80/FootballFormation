@@ -11,7 +11,9 @@
         }
 
         var against = entry.Goal is { } g && (g.IsOwnGoal || g.IsOpponentGoal);
-        <div class="live-event @(against ? "live-event-against" : "")">
+        @* Keyed so a new entry gets an element of its own, and its highlight animation plays on it rather than on the row it pushed down. *@
+        <div @key="entry.Key"
+             class="live-event @(against ? "live-event-against" : "") @(Fresh.Contains(entry.Key) ? "live-event-fresh" : "")">
             <span class="live-event-min">@(entry.Minute is { } at ? $"{at}'" : "—")</span>
             <MudIcon Size="Size.Small" Icon="@EventIcon(entry)"
                      Class="@(entry.Injury is not null ? "live-event-injury" : null)"
@@ -74,6 +76,9 @@
 
     /// The running scoreline after each goal, parked on the right. Off by default; the caller turns it on.
     [Parameter] public bool ShowScore { get; set; }
+
+    /// <see cref="MatchEvent.Key"/>s of the entries that just arrived, drawn highlighted.
+    [Parameter] public IReadOnlySet<string> Fresh { get; set; } = new HashSet<string>();
 
     /// Per-entry admin controls (remove a goal, undo a substitution). Rendered inside an admin gate, so a visitor never sees them.
     [Parameter] public RenderFragment<MatchEvent>? AdminActions { get; set; }

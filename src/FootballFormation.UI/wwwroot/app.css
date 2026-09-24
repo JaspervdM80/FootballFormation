@@ -1223,6 +1223,10 @@ a.action-btn {
     margin-bottom: 0;
 }
 
+.settings-section > .notify-row + .notify-row {
+    margin-top: 12px;
+}
+
 @media (max-width: 599.98px) {
     .notify-row {
         flex-wrap: wrap;

@@ -57,6 +57,9 @@
   <data name="On in this browser. Turn them off under Settings." xml:space="preserve"><value>Aan in deze browser. Zet ze uit bij Instellingen.</value></data>
   <data name="Turn on" xml:space="preserve"><value>Aanzetten</value></data>
   <data name="Turn off" xml:space="preserve"><value>Uitzetten</value></data>
+  <data name="Vibrate on match events" xml:space="preserve"><value>Trillen bij wedstrijdmomenten</value></data>
+  <data name="On in this browser: a buzz at kick-off, at every goal and at full time." xml:space="preserve"><value>Aan in deze browser: trillen bij de aftrap, bij elk doelpunt en bij het eindsignaal.</value></data>
+  <data name="Off in this browser. Match notifications, if on, arrive without sound or vibration." xml:space="preserve"><value>Uit in deze browser. Wedstrijdmeldingen komen, als ze aanstaan, zonder geluid of trillen binnen.</value></data>
   <data name="Add the app to your home screen first, then notifications can be turned on." xml:space="preserve"><value>Zet de app eerst op je beginscherm, daarna kun je meldingen aanzetten.</value></data>
   <data name="Notifications are blocked in your browser settings." xml:space="preserve"><value>Meldingen zijn geblokkeerd in je browserinstellingen.</value></data>
 
@@ -252,6 +255,7 @@
   <data name="Score saved!" xml:space="preserve"><value>Uitslag opgeslagen!</value></data>
   <data name="Goal added!" xml:space="preserve"><value>Doelpunt toegevoegd!</value></data>
   <data name="Goal removed" xml:space="preserve"><value>Doelpunt verwijderd</value></data>
+  <data name="Goal!" xml:space="preserve"><value>Goal!</value></data>
 
   <!-- The copyable match summary — MatchSummaryTextBuilder — shared by the result page and the
        formation overview's share button. -->

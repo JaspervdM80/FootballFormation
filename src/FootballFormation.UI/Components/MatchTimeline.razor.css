@@ -79,6 +79,26 @@
 
 /* .live-event-injury is in app.css, not here: it paints a MudIcon, whose root element carries no scope attribute for this file to match. */
 
+/* The padding and margin cancel out, so the tint gets a little room either side without moving the row. */
+.live-event-fresh {
+    margin: 0 -8px;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-radius: 8px;
+    animation: live-event-fresh 5s ease-out forwards;
+}
+
+@keyframes live-event-fresh {
+    from { background: color-mix(in srgb, var(--club-primary) 14%, transparent); }
+    to { background: transparent; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .live-event-fresh {
+        animation: none;
+    }
+}
+
 /* Anything that put the ball in our net reads in the opponent's colour. */
 .live-event-against .live-event-main {
     color: var(--color-away);

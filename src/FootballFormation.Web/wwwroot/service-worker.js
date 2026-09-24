@@ -35,15 +35,22 @@ self.addEventListener('push', (event) => {
 
     const message = event.data.json();
 
-    event.waitUntil(self.registration.showNotification(message.title, {
-        body: message.body,
-        icon: 'icons/icon-192.png',
-        badge: 'icons/icon-192.png',
-        // Same tag for the whole match, so a third goal replaces the second rather than stacking three rows on the lock screen.
-        tag: message.tag,
-        renotify: true,
-        data: { url: message.url }
-    }));
+    event.waitUntil((async () => {
+        // No browser can keep the sound and drop the buzz, so switching vibration off here silences the notification entirely.
+        const buzz = await pushShared.vibrationOn();
+
+        await self.registration.showNotification(message.title, {
+            body: message.body,
+            icon: 'icons/icon-192.png',
+            badge: 'icons/icon-192.png',
+            // Same tag for the whole match, so a third goal replaces the second rather than stacking three rows on the lock screen.
+            tag: message.tag,
+            // Tied to the buzz because showNotification throws on renotify and silent together.
+            renotify: buzz,
+            silent: !buzz,
+            data: { url: message.url }
+        });
+    })());
 });
 
 // A browser may rotate a push endpoint whenever it likes. Without this the old one starts answering 410, the server prunes the row, and

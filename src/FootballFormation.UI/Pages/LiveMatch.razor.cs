@@ -1,6 +1,8 @@
 ﻿using System.Timers;
 using FootballFormation.Core.Reporting;
+using FootballFormation.UI.State;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.JSInterop;
 
 namespace FootballFormation.UI.Pages;
 
@@ -20,6 +22,8 @@ public partial class LiveMatch
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
     [Inject] private TimeProvider Time { get; set; } = null!;
+    [Inject] private TeamState Team { get; set; } = null!;
+    [Inject] private IJSRuntime JS { get; set; } = null!;
 
     [CascadingParameter]
     private Task<AuthenticationState> AuthStateTask { get; set; } = null!;
@@ -38,6 +42,32 @@ public partial class LiveMatch
 
     /// Repaint only — the elapsed value comes from the anchor the server stored, so a tick never talks to the server.
     private System.Timers.Timer? _tick;
+
+    private static readonly TimeSpan MomentLength = TimeSpan.FromSeconds(5);
+
+    /// Set only by a change this circuit received, never by a load, so reloading mid-match replays nothing.
+    private MatchNotification? _celebration;
+
+    /// Keys the scoreboard's animated elements, so a second goal inside the moment replays the animation on a fresh element.
+    private int _celebrations;
+
+    private IReadOnlySet<string> _freshEvents = new HashSet<string>();
+
+    private CancellationTokenSource? _momentEnds;
+
+    private string? _shownTitle;
+
+    /// The score first, so a pinned or backgrounded tab still shows it.
+    private string TabTitle
+    {
+        get
+        {
+            if (GameData is not { MatchState: MatchState.InProgress } game) return L["Live Match"];
+
+            var match = MatchNotificationReport.Build(game, LiveMatchEvent.Other, Team.DisplayName);
+            return $"{match.Score} · {match.HomeName} – {match.AwayName}";
+        }
+    }
 
     /// Real running time, which is what gets stored and counted. <see cref="Clock"/> is the same instant as a scoreboard shows it.
     private int ElapsedSeconds => GameData?.ElapsedSecondsAt(Time.GetUtcNow().UtcDateTime) ?? 0;
@@ -199,6 +229,7 @@ public partial class LiveMatch
         var authState = await AuthStateTask;
         _isAdmin = authState.User.IsAdmin();
 
+        await Team.EnsureLoadedAsync();
         if (!await ReloadAsync()) return;
 
         // Every player, not the squad: anyone who appeared stays nameable regardless of current membership.
@@ -229,9 +260,88 @@ public partial class LiveMatch
 
         _ = InvokeAsync(async () =>
         {
-            await ReloadAsync();
+            var before = EventKeys();
+            var buzz = await ReloadAsync() ? MarkTheMoment(change, before) : null;
             StateHasChanged();
+
+            if (buzz is not null) await BrowserAsync("vibration.buzz", buzz);
         });
+    }
+
+    /// Every entry, whatever the substitutions toggle says, so hiding them never makes one look new when it comes back.
+    private HashSet<string> EventKeys() => GameData is null
+        ? []
+        : [.. MatchTimelineReport.Build(GameData, includeSubstitutions: true, newestFirst: true).Select(e => e.Key)];
+
+    /// Answers the vibration pattern the moment calls for, if any — asked for only after it has been drawn, so a slow round trip to the
+    /// browser never holds the banner back.
+    private int[]? MarkTheMoment(LiveMatchEvent change, HashSet<string> before)
+    {
+        var fresh = EventKeys();
+        fresh.ExceptWith(before);
+        _freshEvents = fresh;
+
+        var moment = MatchNotificationReport.Build(GameData!, change, Team.DisplayName);
+        if (change == LiveMatchEvent.Goal && moment.ScorerName is not null)
+        {
+            _celebration = moment;
+            _celebrations++;
+        }
+
+        _ = EndTheMomentAsync();
+
+        // The coach's own tap already told them; a buzz there answers their thumb rather than the match.
+        return _isAdmin ? null : VibrationFor(change, ours: moment.ScorerName is not null);
+    }
+
+    private static int[]? VibrationFor(LiveMatchEvent change, bool ours) => change switch
+    {
+        LiveMatchEvent.KickOff => [200, 100, 200],
+        LiveMatchEvent.Goal when ours => [300, 100, 300, 100, 800],
+        LiveMatchEvent.Goal => [200],
+        LiveMatchEvent.FullTime => [600, 200, 600, 200, 600],
+        _ => null
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (GameData is null || TabTitle == _shownTitle) return;
+
+        _shownTitle = TabTitle;
+        await BrowserAsync("liveMatch.setTitle", _shownTitle);
+    }
+
+    /// Both calls are extras: a browser that cannot take one still shows the match.
+    private async Task BrowserAsync(string identifier, object argument)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync(identifier, Cancellation, argument);
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or TaskCanceledException)
+        {
+        }
+    }
+
+    /// One moment at a time: a change arriving inside the last one restarts the countdown rather than cutting the new one short.
+    private async Task EndTheMomentAsync()
+    {
+        _momentEnds?.Cancel();
+        _momentEnds?.Dispose();
+        _momentEnds = new CancellationTokenSource();
+
+        try
+        {
+            await Task.Delay(MomentLength, Time, _momentEnds.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        _celebration = null;
+        _freshEvents = new HashSet<string>();
+        StateHasChanged();
     }
 
     private async Task<bool> ReloadAsync()
@@ -404,6 +514,9 @@ public partial class LiveMatch
     public override void Dispose()
     {
         Notifier.Changed -= OnLiveChanged;
+
+        _momentEnds?.Cancel();
+        _momentEnds?.Dispose();
 
         if (_tick is not null)
         {

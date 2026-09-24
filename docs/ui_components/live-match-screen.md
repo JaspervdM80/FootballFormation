@@ -22,6 +22,22 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   one, naming the game that changed. The page filters on its own `GameId`, reloads and
   `InvokeAsync(StateHasChanged)`, and unsubscribes in `Dispose`. In-process only — fine for the
   single Fly.io instance, but it needs a backplane if the app is ever scaled out.
+- **A change that arrives is marked for five seconds; a load never is.** `OnLiveChanged` compares
+  the timeline's `MatchEvent.Key`s before and after its reload, and the new entries are drawn with
+  `.live-event-fresh`. A goal is ours to celebrate when `MatchNotificationReport` names a scorer, the
+  same rule the push uses: the score pops and a "Goal!" banner with the scorer covers the clock (not
+  the score, and never the controls below the card). A goal against gets the highlighted row only.
+  Because nothing but a received change sets any of this, a reload or a reconnect mid-match replays
+  nothing. Under `prefers-reduced-motion` the banner is not drawn and nothing animates.
+- **The phone buzzes at kick-off, at every goal and at full time**, for everyone but an admin, whose
+  own tap already told them, and for nobody who switched it off on `/settings`. `navigator.vibrate`
+  through `js/vibration.js`, one pattern per event (ours is the long one). **Best effort, and silent
+  when refused:** iOS Safari has no Vibration API at all, Chrome ignores it until the page has had a
+  tap, and a backgrounded tab gets nothing. The push notification is what reaches a phone in a
+  pocket — see [push notifications](../patterns/push-notifications.md) for the switch both obey.
+- **The tab title is the score from kick-off to full time** (`1 – 0 · GJS MO15-2 – FC X`), set through JS
+  because `<PageTitle>` cannot update from a circuit — see
+  [known issues](../known_issues/blazor-components.md).
 - **`GetLiveAsync` is `AsNoTrackingWithIdentityResolution`, and it has to be.** A spectator's
   circuit keeps one scoped `AppDbContext` for its whole life, so a tracked `Game` keeps returning
   the score, clock and state from its first load while newly inserted goals appear alongside them —

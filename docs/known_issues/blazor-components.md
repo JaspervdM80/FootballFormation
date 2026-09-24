@@ -31,6 +31,12 @@
   CI ↔ web-container agreement, never CI ↔ production agreement.** Moving the *band* means checking
   that MCR has an image for the new one first. A container build cannot be rehearsed from a web
   session: the Docker CLI is installed but no daemon runs.
+- **`<PageTitle>` on an interactive page sets the title once and never again.** `<HeadOutlet>` in
+  `App.razor` carries no render mode, so the title the prerender wrote is the last one the circuit
+  can reach: a `<PageTitle>@TabTitle</PageTitle>` bound to a changing value renders fine on the
+  server and never reaches `<head>`. No error, the tab just keeps the first score. `/games/{id}/live`
+  keeps `<PageTitle>` for the first paint and sets `document.title` itself from
+  `OnAfterRenderAsync` (`liveMatch.setTitle` in `js/live-match.js`) whenever the text changes.
 - **A base class for a page goes in the `.razor`, not the code-behind**: putting
   `: SeasonAwarePage` on the `public partial class` gives *CS0263: Partial declarations must not
   specify different base classes*, because the generated Razor partial already declares
