@@ -174,8 +174,11 @@ The switch under the notifications row on `/settings` (`VibrationSetting`, passe
 `MatchNotifications` as a second row of its section) is kept in the `ff-push` cache
 (`pushShared.vibrationOn` / `setVibration`), because the Cache API is the only storage both the page
 and the worker can read. Nothing is stored on the server: like the subscription, it belongs to a
-browser, not a person. It is on unless switched off, and the switch is not offered at all where
-`navigator.vibrate` is missing, so iOS never sees it. **Nor where push is unsupported**, even if
+browser, not a person. It is on unless switched off. **An installed iOS app gets a pointer
+instead of a switch**: Safari has no `navigator.vibrate` and ignores a silent notification, so the
+row names Settings → Notifications, where iOS keeps that choice itself. Detection is `push.js`'s
+`isIos` and `isInstalled`; before installing, the app has no entry in those settings to point at.
+Any other browser without `navigator.vibrate` gets no row. **Nor where push is unsupported**, even if
 vibrate is: it is a row of the notifications section, which is not drawn there. A deliberate choice
 for one section over two; in practice that is only an in-app WebView, which still buzzes on the live
 screen with no switch to stop it.

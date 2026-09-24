@@ -154,5 +154,5 @@ window.matchNotifications = (function () {
         return state;
     }
 
-    return { status, enable, disable, bind };
+    return { status, enable, disable, bind, isIos, isInstalled };
 })();
