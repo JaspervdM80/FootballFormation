@@ -266,6 +266,12 @@
        an emoji, so they read lowercase; the two carrying a placeholder are written that way rather
        than cased down from the field labels above, which resx would read as the same keys. -->
   <data name="Copy match info" xml:space="preserve"><value>Wedstrijdinfo kopiëren</value></data>
+  <data name="Match info" xml:space="preserve"><value>Wedstrijdinfo</value></data>
+  <data name="Add to calendar" xml:space="preserve"><value>Zet in agenda</value></data>
+  <data name="Route" xml:space="preserve"><value>Route</value></data>
+  <data name="Subscribe to all matches" xml:space="preserve"><value>Abonneer op alle wedstrijden</value></data>
+  <data name="Apple or Outlook calendar" xml:space="preserve"><value>Apple- of Outlook-agenda</value></data>
+  <data name="Google Calendar" xml:space="preserve"><value>Google Agenda</value></data>
   <data name="{0} vs {1}" xml:space="preserve"><value>{0} vs {1}</value></data>
   <data name="assemble" xml:space="preserve"><value>verzamelen</value></data>
   <data name="depart" xml:space="preserve"><value>vertrek</value></data>

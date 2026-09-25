@@ -27,8 +27,8 @@ public partial class FormationOverview
     /// Null before the game loads, or for a fixture with no score to report.
     private string? SummaryText { get; set; }
 
-    /// The same hidden-element trick as <see cref="SummaryText"/>. Null once the match has been played — by then the result is what gets
-    /// shared, not the arrangements for getting there.
+    /// Shown to everyone as the match-info card, which is also the element the admin's copy button reads. Null once the match has been
+    /// played — by then the result is what gets shared, not the arrangements for getting there.
     private string? MatchInfoText { get; set; }
 
     private bool CanCopySummary => SummaryText is not null;
@@ -58,27 +58,28 @@ public partial class FormationOverview
             PeriodLineups[period.Id] = period.PlayerPositions.ToList();
         }
 
-        // Posting to the team's group chat is the coach's job, so neither text is composed for anyone else — hidden element included.
-        if (IsAnonymous) return;
-
         if (!GameData.HasFinalScore)
         {
             // TeamState rather than TeamService: the chrome on this page has already loaded it in this scope, and it is the one place a
             // failure to name our own side is swallowed — reading Result.Value here would throw the whole page away instead.
             await Team.EnsureLoadedAsync();
             MatchInfoText = MatchInfoTextBuilder.Build(GameData, Team.Current?.FullName ?? L["Us"], L);
+            return;
         }
-        else
-        {
-            // Always false: the summary is for sharing, so it is never built from private notes, whoever is looking at this page.
-            var commentsResult = await GameService.GetCommentsAsync(GameId, includePrivate: false, Cancellation);
-            if (commentsResult.IsCancelled) return;
 
-            var comments = commentsResult.IsSuccess ? commentsResult.Value! : [];
-            var summary = MatchSummaryReport.Build(GameData, comments);
-            SummaryText = MatchSummaryTextBuilder.Build(GameData, summary, L);
-        }
+        // Posting the result to the team's group chat is the coach's job, so the summary is not composed for anyone else.
+        if (IsAnonymous) return;
+
+        // Always false: the summary is for sharing, so it is never built from private notes, whoever is looking at this page.
+        var commentsResult = await GameService.GetCommentsAsync(GameId, includePrivate: false, Cancellation);
+        if (commentsResult.IsCancelled) return;
+
+        var comments = commentsResult.IsSuccess ? commentsResult.Value! : [];
+        var summary = MatchSummaryReport.Build(GameData, comments);
+        SummaryText = MatchSummaryTextBuilder.Build(GameData, summary, L);
     }
+
+    private string? RouteUrl => GameData is null ? null : CalendarLinks.Route(GameData);
 
     /// Only reached on a deep link, which a shared overview usually is: an admin landing here cold is most likely on their way to edit.
     private string BackFallback => IsAnonymous ? AppRoutes.Games : AppRoutes.Formation(GameId);

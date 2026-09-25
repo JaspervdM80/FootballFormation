@@ -119,6 +119,14 @@ child by the child's own id (a goal, a comment) gates on `AppDbContext.GameInSco
 `TeamDataScopingTests` is the read-side counterpart to `AuthorizationTests`: it seeds two teams and
 asserts every public read returns only the team in scope, so a forgotten filter fails there.
 
+**The calendar feed names its team in the URL instead** (`/calendar/team/{teamId}.ics`). A calendar
+app polls with no cookie, so `ICurrentTeam` would hand every subscriber the first team.
+`MatchCalendarQuery` runs on the raw factory and stamps the team it was given, the way
+`MatchAudienceQuery` does for the push sender; the one-off `/games/{id}/calendar.ics` takes the team
+from the game. Both are anonymous, which exposes nothing new: fixtures and duties are public already.
+They carry no rate limit, unlike the push endpoints, because Google and Outlook poll from shared
+server addresses that a per-IP limit would lock out.
+
 ## There are two rungs of authority, and the upper one is a second guard
 `ServiceOperation.RunApplicationAdminAsync` is `RunAdminAsync` asking a different question:
 `ICurrentUser.IsApplicationAdminAsync()` rather than `IsAdminAsync()`. Only `TeamService`'s writes

@@ -85,3 +85,21 @@
   too, but cannot reach a `::before` — in the clone the pseudo-element is a real node carrying its
   own styles, and on the page there is nothing to set an inline style on. The vendored copy is the
   last release, from 2022, so this will keep happening as CSS colour gains functions.
+- **A subscribed calendar updates when the calendar app next polls, not when the game changes.**
+  `/calendar/team/{id}.ics` asks for an hourly refresh (`REFRESH-INTERVAL`, `X-PUBLISHED-TTL`), and
+  Apple and Outlook roughly honour it. Google Calendar ignores both and refetches on its own schedule,
+  commonly 12 to 24 hours and sometimes longer, so a kick-off moved on Friday evening may not reach
+  an Android parent's calendar before Saturday morning. Nothing on our side can speed that up. The
+  one-off *Add to calendar* download is a snapshot, updated only by downloading it again, which the
+  stable `UID` turns into an update rather than a second event.
+- **`scripts/coverage.sh` does not see a file git does not track yet.** The changed lines come from
+  `git diff` against the base, so a brand-new service reads "Changed lines: none measurable in Core"
+  and the run passes, whatever its coverage. CI only ever sees committed files, so this is a local
+  trap. Mark the new files with `git add -N` before measuring, and `git reset` them afterwards if
+  they are not meant to be staged.
+- **`visual-check.sh` measures whatever already answers on its port.** It starts its own app on
+  `VISUAL_PORT` (5228, the same as `dotnet run`) and then waits for the port, so a dev server left
+  running there is the one it drives — against your local database, not the freshly seeded one — and
+  it fails on something unrelated, such as a page that seed would have filled. On Windows, killing
+  `dotnet run` leaves `FootballFormation.Web.exe` running, which is the usual way to end up here.
+  Check `Get-NetTCPConnection -LocalPort 5228` first.

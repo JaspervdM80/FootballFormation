@@ -1,0 +1,21 @@
+@inject IStringLocalizer<Strings> L
+@inject NavigationManager Navigation
+
+@* Plain anchors, so it works on the overview, which has no circuit. *@
+<div class="calendar-subscribe">
+    <span class="calendar-subscribe-label">@L["Subscribe to all matches"]</span>
+    <div class="calendar-subscribe-links">
+        <a class="btn-ghost overview-btn" href="@CalendarLinks.Subscribe(Navigation.BaseUri, TeamId)">
+            <MudIcon Icon="@Icons.Material.Filled.EventRepeat" Size="Size.Small" />
+            @L["Apple or Outlook calendar"]
+        </a>
+        <a class="btn-ghost overview-btn" href="@CalendarLinks.SubscribeInGoogle(Navigation.BaseUri, TeamId)" target="_blank" rel="noopener">
+            <MudIcon Icon="@Icons.Material.Filled.EventRepeat" Size="Size.Small" />
+            @L["Google Calendar"]
+        </a>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public int TeamId { get; set; }
+}

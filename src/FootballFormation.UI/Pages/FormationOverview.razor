@@ -76,6 +76,29 @@
     }
 </div>
 
+@if (MatchInfoText is not null)
+{
+    @* Plain anchors: this page has no circuit, and the download and the map are just URLs. *@
+    <section class="match-info" aria-labelledby="match-info-title">
+        <h2 id="match-info-title" class="match-info-title">@L["Match info"]</h2>
+        <p id="match-info-text" class="match-info-text">@MatchInfoText</p>
+        <div class="overview-actions">
+            <a class="btn-gold overview-btn" href="@AppRoutes.GameCalendar(GameId)" download>
+                <MudIcon Icon="@Icons.Material.Filled.EventAvailable" Size="Size.Small" />
+                @L["Add to calendar"]
+            </a>
+            @if (RouteUrl is not null)
+            {
+                <a class="btn-ghost overview-btn" href="@RouteUrl" target="_blank" rel="noopener">
+                    <MudIcon Icon="@Icons.Material.Filled.Directions" Size="Size.Small" />
+                    @L["Route"]
+                </a>
+            }
+        </div>
+        <CalendarSubscribe TeamId="GameData.TeamId" />
+    </section>
+}
+
 <AuthorizeView Roles="@AppRoles.Admin">
     @* A plain onclick into js/screenshot.js, not a Blazor handler: this page renders without a circuit to dispatch one to, and the script
        already takes an element id, does the download and reports its own failure. *@
@@ -112,10 +135,6 @@
     @if (CanCopySummary)
     {
         <pre id="match-summary-text" hidden>@SummaryText</pre>
-    }
-    @if (MatchInfoText is not null)
-    {
-        <pre id="match-info-text" hidden>@MatchInfoText</pre>
     }
     @if (CanCopySummary || MatchInfoText is not null)
     {

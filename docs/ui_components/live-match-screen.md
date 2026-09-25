@@ -285,8 +285,9 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   Admin-only on both pages: posting the result to the team is the coach's job, so a visitor reads
   the match and copies nothing. The button and the hidden `<pre>` under it go together — on
   `/overview` the text is not composed at all for a visitor, which also saves the comments query
-  behind it. The **match-day message** below and "Save as image" follow the same rule — the whole
-  action row on `/overview` is admin-only, and a visitor gets the line-up alone. None of this is about privacy — `MatchSummaryReport` never sees a private
+  behind it. "Save as image" and the **match-day message**'s copy button follow the same rule — the
+  action row under the capture is admin-only — though the message itself is shown to everyone, below.
+  None of this is about privacy — `MatchSummaryReport` never sees a private
   comment in the first place, `includePrivate: false` being passed unconditionally on `/overview`,
   same as everywhere else a visitor reads a comment. Both pages render the
   composed text into a hidden `<pre>` and copy it from a plain `onclick` into `js/clipboard.js`
@@ -308,9 +309,19 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   "veld Veld 3" until someone retypes it. Our own side is named from `TeamState.Current?.FullName`,
   falling back to `L["Us"]` before a club is seeded — `TeamState` because the chrome on this page has
   already loaded it in this scope, and it is the one place a failure to name our own side is
-  swallowed rather than read off `Result.Value`, which throws. Same hidden `<pre>` plus
-  `js/clipboard.js` mechanism as the summary, and public for the same reason — the arrangements are
-  for whoever is coming to the match.
+  swallowed rather than read off `Result.Value`, which throws. **It is rendered for everyone** as the
+  match-info card (`white-space: pre-line`, so the message's own line breaks are the layout), and the
+  admin's copy button reads that same element through `js/clipboard.js` — the card and the message
+  sent round cannot disagree. The duty names in it were already public on `/games/duties`.
+- **The card's links are plain anchors**, because `/overview` has no circuit. *Add to calendar* is
+  `/games/{id}/calendar.ics`; *Route* is a Google Maps search for the sports park and town, left out
+  when neither is set; `CalendarSubscribe` (also at the foot of `/games`) offers the team's feed at
+  `/calendar/team/{teamId}.ics` twice — as `webcal://` for iOS, macOS and desktop Outlook, and through
+  Google Calendar's `?cid=` page, because Android has no webcal handler. Both files come from
+  `MatchCalendarReport` in Core: a stable `UID` per game (so a refresh or a second download updates
+  rather than duplicates), `TZID=Europe/Amsterdam` with a fixed `VTIMEZONE`, and lines folded at 75
+  octets without splitting a UTF-8 sequence. The feed was a header menu on `/games` first, and at
+  320px a third header button pushed *Add* off the screen.
 - **A kick-off time is optional and lives in `Date`'s time component**, not a separate column —
   `Game.HasStartTime` is the test, `GameDialog`'s "Kick-off Time" field is how it is set, and
   `Game.DateLine(format)` is the one place the result page, the overview and the copyable summary

@@ -2408,8 +2408,8 @@ a.action-btn {
     display: none;
 }
 
-/* Plain <button>s with an inline onclick on /games/{id}/overview, so there is no MudButton layout to
-   inherit — .btn-gold only paints. Not .overview-capture: that name belongs to the captured block. */
+/* Plain <button>s and <a>s with no MudButton layout to inherit — on /games/{id}/overview and in
+   CalendarSubscribe, which /games shows too. .btn-gold only paints. Not .overview-capture: that name belongs to the captured block. */
 .overview-btn {
     display: inline-flex;
     align-items: center;
@@ -2419,6 +2419,7 @@ a.action-btn {
     border-radius: 6px;
     font-size: 0.875rem;
     cursor: pointer;
+    text-decoration: none;
 }
 
 /* The notification row's two MudBlazor components, whose root elements carry no scope attribute — the same reason .live-action-btn is

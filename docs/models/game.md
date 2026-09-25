@@ -33,9 +33,12 @@
 | Injuries | List\<GameInjury\> | Cascade delete. Players hurt during this match |
 | Comments | List\<GameComment\> | Cascade delete. Never eager-loaded — see GameComment |
 
-The nine **match-day** columns exist for one reader, `MatchInfoTextBuilder`, and every one of them is
-optional: a field left blank is left out of the message rather than printed empty, which is what lets
-one shape serve a club that fills in everything and a coach who only ever types a departure time.
+The nine **match-day** columns have two readers, `MatchInfoTextBuilder` and `MatchCalendarReport`,
+and every one of them is optional: a field left blank is left out of the message rather than printed
+empty, which is what lets one shape serve a club that fills in everything and a coach who only ever
+types a departure time. The calendar starts an event at `MeetTime` (the kick-off if that is earlier,
+an all-day event if neither is set) and takes its `LOCATION` from the sports park and city alone; the
+message itself is the event's description.
 `GameDialog` writes whitespace back as null for the same reason. They carry no `Player` reference —
 the flags and the kit wash are a parent's job, and the app has no row for a parent.
 
