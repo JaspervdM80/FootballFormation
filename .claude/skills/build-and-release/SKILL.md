@@ -54,6 +54,10 @@ A flaky browser job is **re-run, not merged past**.
 `/health` until it reports the commit that was just built. There is no staging environment and
 nothing re-runs on `main`, so the four checks on the pull request are the last look.
 
+To see a branch on Fly before merging, run *Deploy to test* (`fly-deploy-test.yml`) on it. The branch must
+be up to date with `main`. It deploys to `https://gjs-meiden-test.fly.dev`, which has anonymised data
+and its own scoped token. After testing a migration there, reload with `scripts/test-db.sh`.
+
 The app **auto-migrates against the live volume on boot**, so a merge is also a schema change. See the
 `migrations` skill before writing one.
 
