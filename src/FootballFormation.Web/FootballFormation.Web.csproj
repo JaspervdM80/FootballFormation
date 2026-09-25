@@ -16,4 +16,29 @@
     <PackageReference Include="Serilog.AspNetCore" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+
+  <Target Name="DropUnusedStaticWebAssets" BeforeTargets="GenerateStaticWebAssetsPublishManifest">
+    <ItemGroup>
+      <_UnusedStaticWebAsset Include="@(StaticWebAsset)"
+                             Condition="'%(Filename)%(Extension)' == 'blazor.server.js' Or '%(Filename)%(Extension)' == 'MudBlazor.min.js.map' Or ('%(Filename)%(Extension)' == 'README.md' And $([System.String]::Copy('%(Identity)').Replace('\', '/').Contains('/js/vendor/')))" />
+    </ItemGroup>
+    <PropertyGroup>
+      <_UnusedStaticWebAssetIds>;@(_UnusedStaticWebAsset);</_UnusedStaticWebAssetIds>
+    </PropertyGroup>
+    <ItemGroup>
+      <_UnusedStaticWebAsset Include="@(StaticWebAsset)"
+                             Condition="'%(RelatedAsset)' != '' And $(_UnusedStaticWebAssetIds.Contains(';%(RelatedAsset);'))" />
+      <_UnusedStaticWebAssetFile Include="@(_UnusedStaticWebAsset)" AssetFile="%(Identity)" />
+      <StaticWebAsset Remove="@(_UnusedStaticWebAsset)" />
+      <StaticWebAssetEndpoint Remove="@(_UnusedStaticWebAssetFile)" MatchOnMetadata="AssetFile" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="DropStaticSqliteLibrary" AfterTargets="Publish">
+    <Delete Files="$(PublishDir)libe_sqlite3.a" />
+  </Target>
+
 </Project>

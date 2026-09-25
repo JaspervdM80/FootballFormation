@@ -29,22 +29,18 @@
       "Bash(git push -f *)",
       "Bash(git push * -f)",
       "Bash(gh pr merge *)",
-      "Bash(fly deploy *)",
-      "Bash(fly ssh *)",
-      "Bash(fly secrets *)",
-      "Bash(fly volumes *)",
-      "Bash(flyctl *)",
       "PowerShell(git push * main)",
       "PowerShell(git push *:main)",
       "PowerShell(git push *--force*)",
       "PowerShell(git push * +*)",
       "PowerShell(git push -f *)",
       "PowerShell(git push * -f)",
-      "PowerShell(gh pr merge *)",
-      "PowerShell(fly deploy *)",
-      "PowerShell(fly ssh *)",
-      "PowerShell(fly secrets *)",
-      "PowerShell(fly volumes *)",
+      "PowerShell(gh pr merge *)"
+    ],
+    "ask": [
+      "Bash(fly *)",
+      "Bash(flyctl *)",
+      "PowerShell(fly *)",
       "PowerShell(flyctl *)"
     ]
   },

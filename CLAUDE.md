@@ -99,8 +99,8 @@ These fail silently or expensively, so they are here rather than only in a skill
 - **Merging to `main` releases**, straight onto the live volume, with no staging environment and
   nothing re-running on `main`. The four checks on the pull request are the last look — which is why
   a flaky browser job is re-run rather than merged past. `.claude/settings.json` denies pushing to
-  `main`, force-pushing, `gh pr merge` and `fly deploy`/`ssh`/`secrets`/`volumes`; those stay a
-  person's call.
+  `main`, force-pushing and `gh pr merge`; those stay a person's call. Every `fly`/`flyctl`
+  command is allowed but set to `ask`, so it always waits for approval and never runs on its own.
 - Commit messages are plain imperative sentences describing the intent, not conventional-commit
   prefixes: *"Split the games list on the scoreline, not the calendar"*.
 - `.editorconfig` codifies the existing style (CRLF, 4 spaces, file-scoped namespaces, `_camelCase`
