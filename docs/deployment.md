@@ -212,6 +212,25 @@ rather than something a deploy could do.
 The two layers answer different questions: the pre-migration copy is the only thing precise enough to
 undo a schema change, the Fly snapshot the only thing that survives losing the volume.
 
+Nothing prunes a hand-made copy such as `footballformation.db.pre-<tag>`. Delete it once the change it
+guarded is confirmed: it holds the squad and every password hash, and the snapshots already cover it.
+
+## The app runs as `app`, not root
+
+The container starts as root only long enough to `chown -R app:app /data`, then `setpriv` drops to
+the image's built-in `app` user (uid 1654) before `dotnet` starts. Fly mounts the volume root-owned,
+and `fly ssh` is root too, so a file written over ssh would otherwise be one the app cannot open. The
+chown repairs that only on a real boot (`fly apps restart` or a deploy); resuming from suspend does
+not rerun the entrypoint. Run anything that writes to `/data`
+while the app is up as `app`: `setpriv --reuid=app --regid=app --init-groups <command>`.
+
+`fly.test.toml` overrides the entrypoint to swap in the test database, so it carries the same chown
+and `setpriv`. Change the two together.
+
+The publish also drops what the app never serves (`blazor.server.js`, MudBlazor's source map, the
+vendor README, `appsettings.Development.json`, `libe_sqlite3.a`); see `DropUnusedStaticWebAssets` in
+`FootballFormation.Web.csproj`.
+
 ## Test site
 
 **https://gjs-meiden-test.fly.dev** is a second Fly app, `gjs-meiden-test`, configured by

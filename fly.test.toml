@@ -10,8 +10,8 @@ swap_size_mb = 512
 
 [experimental]
   # scripts/test-db.sh uploads the anonymised copy as incoming.db; swapping it in here, before the app opens the database, is the
-  # only moment no connection can race the replacement. The final exec must match the Dockerfile's ENTRYPOINT.
-  entrypoint = ["sh", "-c", "cd /data && if [ -f incoming.db ]; then { [ -f footballformation.db ] && chown --reference=footballformation.db incoming.db; } ; rm -f footballformation.db-wal footballformation.db-shm && mv incoming.db footballformation.db; fi; cd /app && exec dotnet FootballFormation.Web.dll"]
+  # only moment no connection can race the replacement. Everything from the chown on must match the Dockerfile's ENTRYPOINT.
+  entrypoint = ["sh", "-c", "cd /data && if [ -f incoming.db ]; then rm -f footballformation.db-wal footballformation.db-shm && mv incoming.db footballformation.db; fi; cd /app && chown -R app:app \"$APP_DATA_DIR\" && exec setpriv --reuid=app --regid=app --init-groups env HOME=/home/app dotnet FootballFormation.Web.dll"]
 
 [[mounts]]
   source = "data"

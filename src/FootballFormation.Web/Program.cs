@@ -183,6 +183,8 @@ try
         builder.Services.AddHostedService<KeepAlivePingService>();
     }
 
+    builder.Services.AddHsts(options => options.MaxAge = TimeSpan.FromDays(365));
+
     builder.Services.AddRateLimiter(options =>
     {
         options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -296,6 +298,19 @@ try
         app.UseExceptionHandler("/Error", createScopeForErrors: true);
         app.UseHsts();
     }
+
+    // After the exception handler, which clears headers before it re-executes. 'self' rather than 'none' because html2canvas
+    // renders its screenshot inside a same-origin iframe.
+    app.Use(async (context, next) =>
+    {
+        var headers = context.Response.Headers;
+        headers.ContentSecurityPolicy = "frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'";
+        headers.XFrameOptions = "SAMEORIGIN";
+        headers.XContentTypeOptions = "nosniff";
+        headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+
+        await next();
+    });
 
     // The Accept-Language provider is removed on purpose, so a visitor's browser cannot override the Dutch default.
     var localizationOptions = new RequestLocalizationOptions()

@@ -19,4 +19,6 @@ ENV APP_DATA_DIR=/data
 ENV ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
 
 EXPOSE 8080
-ENTRYPOINT ["dotnet", "FootballFormation.Web.dll"]
+# Starts as root only to hand the volume to the image's non-root `app` user: Fly mounts it root-owned,
+# and anything written over `fly ssh` is root-owned too, so ownership is reapplied on every boot.
+ENTRYPOINT ["sh", "-c", "chown -R app:app \"$APP_DATA_DIR\" && exec setpriv --reuid=app --regid=app --init-groups env HOME=/home/app dotnet FootballFormation.Web.dll"]
