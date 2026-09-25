@@ -220,7 +220,8 @@ guarded is confirmed: it holds the squad and every password hash, and the snapsh
 The container starts as root only long enough to `chown -R app:app /data`, then `setpriv` drops to
 the image's built-in `app` user (uid 1654) before `dotnet` starts. Fly mounts the volume root-owned,
 and `fly ssh` is root too, so a file written over ssh would otherwise be one the app cannot open. The
-chown on every boot repairs that, but not until the next boot. Run anything that writes to `/data`
+chown repairs that only on a real boot (`fly apps restart` or a deploy); resuming from suspend does
+not rerun the entrypoint. Run anything that writes to `/data`
 while the app is up as `app`: `setpriv --reuid=app --regid=app --init-groups <command>`.
 
 `fly.test.toml` overrides the entrypoint to swap in the test database, so it carries the same chown
