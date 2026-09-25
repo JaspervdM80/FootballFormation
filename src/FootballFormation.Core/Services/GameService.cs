@@ -77,24 +77,10 @@ public class GameService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            // Resolved here rather than at the call site, so "every game has a season" is an invariant no caller can bypass. SeasonId 0
-            // is the dialog's "auto by date" default.
-            if (game.SeasonId == 0)
-            {
-                var seasonResult = await seasons.GetOrCreateForDateAsync(game.Date, cancellationToken);
-                if (seasonResult.IsFailure) return seasonResult.To<Game>();
-
-                game.SeasonId = seasonResult.Value!.Id;
-            }
-
-            // Denormalised from the season the game hangs off, read through the filter — so a season from another team is refused rather
-            // than producing a game whose TeamId and season disagree.
-            var teamId = await db.Seasons
-                .Where(s => s.Id == game.SeasonId)
-                .Select(s => (int?)s.TeamId)
-                .FirstOrDefaultAsync(cancellationToken);
-            if (teamId is null) return Result.Failure<Game>("Season not found");
-            game.TeamId = teamId.Value;
+            // Resolved here rather than at the call site, so "every game has a season" is an invariant no caller can bypass.
+            var placement = await seasons.PlaceAsync(db, game.SeasonId, game.Date, cancellationToken);
+            if (placement.IsFailure) return placement.To<Game>();
+            (game.SeasonId, game.TeamId) = placement.Value;
 
             foreach (var periodType in PeriodTypeExtensions.ForSplitType(game.SplitType))
             {

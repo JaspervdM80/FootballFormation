@@ -51,57 +51,49 @@ public static class ServiceOperation
 
     /// <summary>Every mutating service method goes through this rather than the plain overload, so the admin check is a property of the
     /// shape instead of something each method has to remember.</summary>
-    internal static async Task<Result> RunAdminAsync(
+    internal static Task<Result> RunAdminAsync(
         ICurrentUser currentUser, ILogger logger, string action, CancellationToken cancellationToken,
-        Func<Task<Result>> operation)
-    {
-        // Ahead of the authorization check, so an abandoned call is never logged as a refusal.
-        if (cancellationToken.IsCancellationRequested) return Abandoned(logger, action);
-
-        if (!await IsAllowedAsync(currentUser.IsAdminAsync, logger, action))
-            return Result.Failure(NotAllowedKey, action);
-
-        return await RunAsync(logger, action, cancellationToken, operation);
-    }
+        Func<Task<Result>> operation) =>
+        RunGuardedAsync(currentUser.IsAdminAsync, logger, action, cancellationToken,
+            () => Abandoned(logger, action), () => Result.Failure(NotAllowedKey, action),
+            () => RunAsync(logger, action, cancellationToken, operation));
 
     /// <inheritdoc cref="RunAdminAsync(ICurrentUser, ILogger, string, CancellationToken, Func{Task{Result}})"/>
-    internal static async Task<Result<T>> RunAdminAsync<T>(
+    internal static Task<Result<T>> RunAdminAsync<T>(
         ICurrentUser currentUser, ILogger logger, string action, CancellationToken cancellationToken,
-        Func<Task<Result<T>>> operation)
-    {
-        if (cancellationToken.IsCancellationRequested) return Abandoned<T>(logger, action);
-
-        if (!await IsAllowedAsync(currentUser.IsAdminAsync, logger, action))
-            return Result.Failure<T>(NotAllowedKey, action);
-
-        return await RunAsync(logger, action, cancellationToken, operation);
-    }
+        Func<Task<Result<T>>> operation) =>
+        RunGuardedAsync(currentUser.IsAdminAsync, logger, action, cancellationToken,
+            () => Abandoned<T>(logger, action), () => Result.Failure<T>(NotAllowedKey, action),
+            () => RunAsync(logger, action, cancellationToken, operation));
 
     /// <summary>The same shape one rung up, for what only an application admin may change: the clubs and teams the app serves, and who
     /// else may manage them.</summary>
-    internal static async Task<Result> RunApplicationAdminAsync(
+    internal static Task<Result> RunApplicationAdminAsync(
         ICurrentUser currentUser, ILogger logger, string action, CancellationToken cancellationToken,
-        Func<Task<Result>> operation)
-    {
-        if (cancellationToken.IsCancellationRequested) return Abandoned(logger, action);
-
-        if (!await IsAllowedAsync(currentUser.IsApplicationAdminAsync, logger, action))
-            return Result.Failure(NotAllowedKey, action);
-
-        return await RunAsync(logger, action, cancellationToken, operation);
-    }
+        Func<Task<Result>> operation) =>
+        RunGuardedAsync(currentUser.IsApplicationAdminAsync, logger, action, cancellationToken,
+            () => Abandoned(logger, action), () => Result.Failure(NotAllowedKey, action),
+            () => RunAsync(logger, action, cancellationToken, operation));
 
     /// <inheritdoc cref="RunApplicationAdminAsync(ICurrentUser, ILogger, string, CancellationToken, Func{Task{Result}})"/>
-    internal static async Task<Result<T>> RunApplicationAdminAsync<T>(
+    internal static Task<Result<T>> RunApplicationAdminAsync<T>(
         ICurrentUser currentUser, ILogger logger, string action, CancellationToken cancellationToken,
-        Func<Task<Result<T>>> operation)
+        Func<Task<Result<T>>> operation) =>
+        RunGuardedAsync(currentUser.IsApplicationAdminAsync, logger, action, cancellationToken,
+            () => Abandoned<T>(logger, action), () => Result.Failure<T>(NotAllowedKey, action),
+            () => RunAsync(logger, action, cancellationToken, operation));
+
+    private static async Task<TResult> RunGuardedAsync<TResult>(
+        Func<Task<bool>> authorize, ILogger logger, string action, CancellationToken cancellationToken,
+        Func<TResult> abandoned, Func<TResult> refused, Func<Task<TResult>> run)
+        where TResult : Result
     {
-        if (cancellationToken.IsCancellationRequested) return Abandoned<T>(logger, action);
+        // Ahead of the authorization check, so an abandoned call is never logged as a refusal.
+        if (cancellationToken.IsCancellationRequested) return abandoned();
 
-        if (!await IsAllowedAsync(currentUser.IsApplicationAdminAsync, logger, action))
-            return Result.Failure<T>(NotAllowedKey, action);
+        if (!await IsAllowedAsync(authorize, logger, action)) return refused();
 
-        return await RunAsync(logger, action, cancellationToken, operation);
+        return await run();
     }
 
     /// Debug, not Warning: a visitor leaving a page is the most ordinary thing there is.

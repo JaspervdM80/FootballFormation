@@ -34,23 +34,9 @@ public class TrainingService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            // Resolved here rather than at the call site, the same as GameService.CreateAsync: SeasonId 0 is the dialog's "by date".
-            if (training.SeasonId == 0)
-            {
-                var seasonResult = await seasons.GetOrCreateForDateAsync(training.Date, cancellationToken);
-                if (seasonResult.IsFailure) return seasonResult.To<Training>();
-
-                training.SeasonId = seasonResult.Value!.Id;
-            }
-
-            // Denormalised from the season the session hangs off, read through the filter — so another team's season is refused rather
-            // than producing a training whose TeamId and season disagree.
-            var teamId = await db.Seasons
-                .Where(s => s.Id == training.SeasonId)
-                .Select(s => (int?)s.TeamId)
-                .FirstOrDefaultAsync(cancellationToken);
-            if (teamId is null) return Result.Failure<Training>("Season not found");
-            training.TeamId = teamId.Value;
+            var placement = await seasons.PlaceAsync(db, training.SeasonId, training.Date, cancellationToken);
+            if (placement.IsFailure) return placement.To<Training>();
+            (training.SeasonId, training.TeamId) = placement.Value;
 
             Normalise(training);
 
