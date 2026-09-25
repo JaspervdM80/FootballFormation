@@ -1,0 +1,51 @@
+name: Deploy to test
+
+# Any branch, on demand only: pick the branch under "Run workflow". The test app has its own volume
+# and its own anonymised data, so nothing here can reach production.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: fly-deploy-test
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    # The `test` environment admits every branch, which is safe only because its FLY_API_TOKEN is a
+    # deploy token scoped to gjs-meiden-test. See docs/deployment.md, "Test site".
+    environment:
+      name: test
+      url: https://gjs-meiden-test.fly.dev
+    steps:
+      - uses: actions/checkout@v7
+      - uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # 1.6
+      - run: flyctl deploy --config fly.test.toml --remote-only --ha=false --build-arg GIT_SHA=${{ github.sha }}
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      # The same check as fly-deploy.yml, which explains each step of it.
+      - name: Smoke check
+        run: |
+          for attempt in 1 2 3 4 5; do
+            code=$(curl -sS -o /tmp/health -w '%{http_code}' --max-time 30 https://gjs-meiden-test.fly.dev/health) || code=000
+            if [ "$code" = "200" ]; then
+              served=$(jq -r '.version' /tmp/health) || served=
+              if [ "$served" = "$GITHUB_SHA" ]; then
+                echo "Serving $served"
+                cat /tmp/health
+                exit 0
+              fi
+              echo "Attempt $attempt: healthy but serving $served, waiting for $GITHUB_SHA"
+            else
+              echo "Attempt $attempt: HTTP $code"
+            fi
+            if [ "$attempt" -lt 5 ]; then sleep $((attempt * 5)); fi
+          done
+          echo "::error::/health never confirmed $GITHUB_SHA is serving on the test site."
+          if [ -s /tmp/health ]; then cat /tmp/health; fi
+          exit 1

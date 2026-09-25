@@ -6,5 +6,5 @@
 docs/
 *.md
 Dockerfile
-fly.toml
+fly*.toml
 global.json

@@ -1,0 +1,29 @@
+# The test site, https://gjs-meiden-test.fly.dev — deployed by fly-deploy-test.yml from any branch.
+# See docs/deployment.md, "Test site". Everything here is chosen to cost as little as possible.
+app = "gjs-meiden-test"
+primary_region = "ams"
+swap_size_mb = 512
+
+[env]
+  # The ping targets gjs-meiden.nl, so from here it would only keep production awake.
+  KeepAlive__Enabled = "false"
+
+[experimental]
+  # scripts/test-db.sh uploads the anonymised copy as incoming.db; swapping it in here, before the app opens the database, is the
+  # only moment no connection can race the replacement. The final exec must match the Dockerfile's ENTRYPOINT.
+  entrypoint = ["sh", "-c", "cd /data && if [ -f incoming.db ]; then { [ -f footballformation.db ] && chown --reference=footballformation.db incoming.db; } ; rm -f footballformation.db-wal footballformation.db-shm && mv incoming.db footballformation.db; fi; cd /app && exec dotnet FootballFormation.Web.dll"]
+
+[[mounts]]
+  source = "data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
