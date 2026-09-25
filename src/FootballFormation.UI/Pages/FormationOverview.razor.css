@@ -114,6 +114,36 @@
     max-width: 900px;
 }
 
+/* Match info: the same text the admin copies, so its own line breaks are the layout. */
+.match-info {
+    margin-top: 16px;
+    max-width: 900px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    background: var(--surface-card);
+    border: 1px solid color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+.match-info-title {
+    margin: 0 0 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--club-primary-bright);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.match-info-text {
+    margin: 0;
+    white-space: pre-line;
+    line-height: 1.6;
+    color: var(--ink);
+}
+
+.match-info .overview-actions {
+    margin-top: 12px;
+}
+
 /* Responsive.
    Collapsed at 959.98px rather than at phone width: two columns on a tablet gave each pitch only
    about 225px, which is too narrow to read a lineup off even now that the chips scale with it.

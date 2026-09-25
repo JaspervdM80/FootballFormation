@@ -1,10 +1,13 @@
 using System.Globalization;
 using System.Net;
 using System.Security.Claims;
+using System.Text;
 using Microsoft.AspNetCore.Antiforgery;
 using FootballFormation.Core.Models;
 using FootballFormation.Core.Reporting;
 using FootballFormation.UI;
+using FootballFormation.UI.Helpers;
+using FootballFormation.UI.Navigation;
 using FootballFormation.UI.State;
 using FootballFormation.Web.Push;
 using Microsoft.Extensions.Localization;
@@ -209,6 +212,23 @@ public static class Routing
             return Results.Json(new { known = result.IsSuccess && result.Value });
         }).AllowAnonymous().RequireRateLimiting("push-read");
 
+        // No rate limit, unlike the push endpoints: Google and Outlook poll from shared addresses a per-IP limit would lock out.
+        app.MapGet("/calendar/team/{teamId:int}.ics", async (
+            int teamId, MatchCalendarQuery calendars, IStringLocalizer<Strings> localizer, TimeProvider time, HttpContext context) =>
+        {
+            var calendar = await calendars.ForTeamAsync(teamId, context.RequestAborted);
+            return calendar is null ? Results.NotFound() : CalendarFile(calendar, localizer, time, context.Request, fileName: null);
+        }).AllowAnonymous();
+
+        app.MapGet("/games/{gameId:int}/calendar.ics", async (
+            int gameId, MatchCalendarQuery calendars, IStringLocalizer<Strings> localizer, TimeProvider time, HttpContext context) =>
+        {
+            var calendar = await calendars.ForGameAsync(gameId, context.RequestAborted);
+            return calendar is null
+                ? Results.NotFound()
+                : CalendarFile(calendar, localizer, time, context.Request, fileName: $"match-{gameId}.ics");
+        }).AllowAnonymous();
+
         app.MapGet("/culture/set", (string culture, string redirectUri, HttpContext context) =>
         {
             if (culture is "nl" or "en")
@@ -258,6 +278,22 @@ public static class Routing
     {
         if (user.TeamId is { } teamId)
             context.Response.Cookies.Append(TeamPreference.CookieName, TeamPreference.Format(teamId), TeamCookie());
+    }
+
+    /// The request carries no culture cookie from a calendar app, so the description is in the Dutch default — right for this club.
+    static IResult CalendarFile(
+        MatchCalendar calendar, IStringLocalizer<Strings> localizer, TimeProvider time, HttpRequest request, string? fileName)
+    {
+        var origin = $"{request.Scheme}://{request.Host}";
+
+        var ics = MatchCalendarReport.Build(
+            calendar.TeamFullName,
+            calendar.Games,
+            game => MatchInfoTextBuilder.Build(game, calendar.TeamFullName, localizer),
+            game => origin + AppRoutes.Overview(game.Id),
+            time.GetUtcNow().UtcDateTime);
+
+        return Results.File(Encoding.UTF8.GetBytes(ics), "text/calendar; charset=utf-8", fileName);
     }
 
     /// Secure is left off so this works over the plain http:// of a local `dotnet run` — a team id is not a credential.
