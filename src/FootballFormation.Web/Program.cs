@@ -107,6 +107,7 @@ try
     // Keys absent locally and in CI, which turns the sender into a no-op rather than a boot failure. See PushConfiguration.
     builder.Services.AddSingleton(PushConfiguration.From(builder.Configuration));
     builder.Services.AddSingleton<MatchAudienceQuery>();
+    builder.Services.AddSingleton<MatchCalendarQuery>();
     // Redirects off: PushSubscriptionService.IsPushEndpoint is the only thing deciding where an anonymous caller can make this container
     // POST, and a 307 to an internal address would walk straight past it.
     builder.Services.AddHttpClient("WebPush", client => client.Timeout = TimeSpan.FromSeconds(10))
@@ -175,7 +176,8 @@ try
 
     // FLY_APP_NAME, not !IsDevelopment(): a published build run from a laptop is Production too, and must not start pinging the live site
     // every two minutes. See KeepAlivePingService.
-    if (Environment.GetEnvironmentVariable("FLY_APP_NAME") is { Length: > 0 })
+    if (Environment.GetEnvironmentVariable("FLY_APP_NAME") is { Length: > 0 }
+        && builder.Configuration.GetValue("KeepAlive:Enabled", true))
     {
         builder.Services.AddHttpClient("KeepAlive", client => client.Timeout = TimeSpan.FromSeconds(15));
         builder.Services.AddHostedService<KeepAlivePingService>();

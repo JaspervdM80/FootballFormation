@@ -212,6 +212,53 @@ rather than something a deploy could do.
 The two layers answer different questions: the pre-migration copy is the only thing precise enough to
 undo a schema change, the Fly snapshot the only thing that survives losing the volume.
 
+## Test site
+
+**https://gjs-meiden-test.fly.dev** is a second Fly app, `gjs-meiden-test`, configured by
+`fly.test.toml`, with its own 1 GB volume. It exists so a branch can run on Fly for real before
+the merge that releases it. Nothing ties it to production: its own volume, its own token, no domain.
+
+**Deploying:** Actions → *Deploy to test* → *Run workflow*, pick any branch that contains
+`fly-deploy-test.yml` and `fly.test.toml`, which means anything up to date with `main` (or
+`gh workflow run fly-deploy-test.yml --ref <branch>`). It deploys and runs the same SHA-matching
+`/health` smoke check as the production workflow. It is not a required check.
+
+A branch's migration runs against the test copy and stays there. After testing one, run
+`scripts/test-db.sh` before deploying a different branch, or its history will claim a migration that
+branch lacks (see [known_issues](known_issues/ef-core.md), "a history that claims more than the file
+holds").
+
+**Why any branch is safe here:** the workflow reads `FLY_API_TOKEN` from the GitHub environment
+`test`, which admits every branch, and that token is a *deploy token scoped to `gjs-meiden-test`*
+(`fly tokens create deploy -a gjs-meiden-test`). It cannot touch `gjs-meiden`. Never put the
+production token, or an org-wide one, in `test`.
+
+**Data:** `scripts/test-db.sh` loads a copy of production with every player renamed to a placeholder,
+surnames dropped, duty rotas, comments and training notes replaced, and `Users` and
+`PushSubscriptions` emptied. That keeps real password hashes on production and the test app away
+from parents' phones. The boot then seeds `admin`/`admin`, **so change that password straight after a
+load**: `*.fly.dev` is public, and whoever claims that account first sees the admin-only playing
+minutes. Shirt numbers, goals and dates survive the renaming, so those minutes still map back to named
+children on the production site. The script refuses any app whose name does not end in `-test`. It
+uploads the copy as `/data/incoming.db` and restarts; `fly.test.toml`'s entrypoint swaps it in
+before the app opens the database, the only moment no connection can race the replacement.
+
+**Cost:** `min_machines_running = 0` with suspend, so the machine only runs while someone uses it,
+and `KeepAlive__Enabled=false`, because the keep-alive pings `gjs-meiden.nl` and from here would keep
+*production* awake. What's left is the volume (~$0.15/month) and suspended rootfs storage.
+**Don't** allocate a dedicated IPv4 (`fly ips allocate-v4` without `--shared` costs $2/month); the
+shared v4 and v6 the first deploy hands out are free.
+
+One-time setup:
+
+```powershell
+fly apps create gjs-meiden-test
+fly volumes create data -a gjs-meiden-test -r ams -s 1 -y
+fly deploy --config fly.test.toml --ha=false
+fly tokens create deploy -a gjs-meiden-test    # GitHub → Environments → new "test" → secret FLY_API_TOKEN
+scripts/test-db.sh
+```
+
 ## Still open
 
 - **Both backup layers live in the same Fly account.** The snapshots are off-volume, not off-Fly: an
@@ -253,7 +300,8 @@ curl https://gjs-meiden.nl/health                       # does it serve? ("healt
   activity in `Program.cs`, or the ping would perpetually renew its own window and the machine would
   never suspend at all. Registered only when `FLY_APP_NAME` is set — the platform sets it on every
   machine, and it's absent everywhere else — so a `dotnet run`, or even a published build run from a
-  laptop, never calls out to the live site.
+  laptop, never calls out to the live site. `KeepAlive:Enabled=false` turns it off on a Fly
+  machine too; the test app sets it, see [Test site](#test-site).
 - **Do not** scale to more than one machine: SQLite lives on one volume; a second machine would get
   its own empty volume and a split-brain database.
 - Where going idle still shows up in the app, so nobody hunts it as a bug: a *stopped* machine — a

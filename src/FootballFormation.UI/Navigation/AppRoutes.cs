@@ -32,6 +32,10 @@ public static class AppRoutes
 
     public static string Result(int gameId) => $"/games/{gameId}/result";
 
+    public static string GameCalendar(int gameId) => $"/games/{gameId}/calendar.ics";
+
+    public static string TeamCalendar(int teamId) => $"/calendar/team/{teamId}.ics";
+
     /// Endpoints, not pages: the culture, the season and the team are all fixed for the lifetime of a render — the circuit's culture at
     /// startup, the other two off the request — so each writes a cookie and sends the visitor back where they were.
     public static string SetCulture(string culture, string returnUrl) => $"/culture/set?culture={culture}&redirectUri={Uri.EscapeDataString(returnUrl)}";

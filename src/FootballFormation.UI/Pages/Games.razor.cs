@@ -1,3 +1,4 @@
+using FootballFormation.UI.State;
 using Microsoft.AspNetCore.Components.Authorization;
 
 namespace FootballFormation.UI.Pages;
@@ -8,6 +9,7 @@ public partial class Games
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
+    [Inject] private TeamState Team { get; set; } = null!;
     [Inject] private TimeProvider Time { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
@@ -16,12 +18,17 @@ public partial class Games
 
     private bool _isAdmin;
 
+    private int? _teamId;
+
     private List<Game>? _games;
 
     protected override async Task OnInitializedCoreAsync()
     {
         var authState = await AuthStateTask;
         _isAdmin = authState.User.IsAdmin();
+
+        await Team.EnsureLoadedAsync();
+        _teamId = Team.Current?.Id;
     }
 
     protected override async Task LoadAsync()
