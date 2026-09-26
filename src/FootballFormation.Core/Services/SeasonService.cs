@@ -305,6 +305,25 @@ public class SeasonService(
         return await db.Teams.AsNoTracking().OrderBy(t => t.Id).Select(t => t.Id).ToListAsync(cancellationToken);
     }
 
+    /// The season and team a new game or training is stamped with. SeasonId 0 is the dialogs' "by date"; the team is read off the season
+    /// through the filter, so another team's season is refused rather than producing a row whose TeamId and season disagree.
+    internal async Task<Result<(int SeasonId, int TeamId)>> PlaceAsync(
+        AppDbContext db, int seasonId, DateTime date, CancellationToken cancellationToken)
+    {
+        if (seasonId == 0)
+        {
+            var season = await GetOrCreateForDateAsync(date, cancellationToken);
+            if (season.IsFailure) return season.To<(int, int)>();
+
+            seasonId = season.Value!.Id;
+        }
+
+        var teamId = await db.TeamIdOfSeasonAsync(seasonId, cancellationToken);
+        return teamId is null
+            ? Result.Failure<(int, int)>("Season not found")
+            : Result.Success((seasonId, teamId.Value));
+    }
+
     private Result SeasonNotInScope(int id)
     {
         logger.LogWarning("Cannot update season {SeasonId}: not in scope", id);

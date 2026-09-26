@@ -73,11 +73,7 @@ try
     builder.Services.AddSingleton<IRawDbContextFactory, RawDbContextFactory>();
     builder.Services.AddScoped<IDbContextFactory<AppDbContext>, TeamScopedDbContextFactory>();
 
-    builder.Services.AddSingleton(TimeProvider.System);
-
-    builder.Services.AddMemoryCache();
-    builder.Services.AddSingleton<StatsCache>();
-    builder.Services.AddSingleton<StatsCacheInvalidator>();
+    builder.Services.AddFootballFormationCore();
 
     builder.Services.AddScoped<ICurrentUser, CircuitCurrentUser>();
 
@@ -87,27 +83,8 @@ try
         sp.GetRequiredService<IRawDbContextFactory>(),
         TeamPreference.Parse(sp.GetRequiredService<RequestContext>().TeamCookie)));
 
-    builder.Services.AddScoped<PlayerService>();
-    builder.Services.AddScoped<SeasonService>();
-    builder.Services.AddScoped<SeasonSquadService>();
-    builder.Services.AddScoped<GameService>();
-    builder.Services.AddScoped<TrainingService>();
-    builder.Services.AddScoped<LiveMatchService>();
-    builder.Services.AddScoped<MatchClockService>();
-    builder.Services.AddScoped<MatchGoalService>();
-    builder.Services.AddScoped<MatchSubstitutionService>();
-    builder.Services.AddScoped<MatchPreferencesService>();
-    builder.Services.AddScoped<UserService>();
-    builder.Services.AddScoped<TeamService>();
-    builder.Services.AddScoped<StatsService>();
-    builder.Services.AddScoped<PushSubscriptionService>();
-
-    builder.Services.AddSingleton<LiveMatchNotifier>();
-
     // Keys absent locally and in CI, which turns the sender into a no-op rather than a boot failure. See PushConfiguration.
     builder.Services.AddSingleton(PushConfiguration.From(builder.Configuration));
-    builder.Services.AddSingleton<MatchAudienceQuery>();
-    builder.Services.AddSingleton<MatchCalendarQuery>();
     // Redirects off: PushSubscriptionService.IsPushEndpoint is the only thing deciding where an anonymous caller can make this container
     // POST, and a 307 to an internal address would walk straight past it.
     builder.Services.AddHttpClient("WebPush", client => client.Timeout = TimeSpan.FromSeconds(10))

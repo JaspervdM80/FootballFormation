@@ -48,6 +48,9 @@ Data/
   GameQueries.cs          — The include chains a Game is loaded with, named once as IQueryable
                            extensions and composed at the call site. Not a repository: tracking,
                            filtering and tagging stay the caller's
+  ScopeQueries.cs         — The team gates read through the query filter: GameInScopeAsync for a
+                           write reaching a game's child by its own id, TeamIdOfSeasonAsync for
+                           a row stamped with the team of the season it hangs off
   QueryTags.cs            — TagWith markers. Holds ComparesDatesInSql, the only way past the test
                            suite's DateInSqlInterceptor
 Reporting/
@@ -78,6 +81,9 @@ Reporting/
   HealthReport.cs         — Whether a booted container is actually serving: the /health payload and
                            the rule that pending migrations mean unhealthy. Pure, so it is tested
 Services/
+  CoreServiceRegistration.cs — AddFootballFormationCore(): every Core service, cache and singleton a
+                            host needs. The host adds the DbContext factories, ICurrentUser and
+                            ICurrentTeam, which read its own request and storage
   ServiceOperation.cs     — Shared try/catch + error logging wrapper for all service methods, and
                             where a cancelled call stops being an exception: OperationCanceledException
                             is caught ahead of the general handler and answered with Result.Cancelled()

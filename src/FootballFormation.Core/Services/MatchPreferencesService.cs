@@ -27,7 +27,7 @@ public class MatchPreferencesService(
 
             // No row yet, so the season is what says which team to seed one for — and confirms it is the scope's, since seeding a row for
             // another team's season would both leak it and trip the one-per-season index against that team's existing row.
-            var teamId = await db.Seasons.Where(s => s.Id == seasonId).Select(s => (int?)s.TeamId).FirstOrDefaultAsync(cancellationToken);
+            var teamId = await db.TeamIdOfSeasonAsync(seasonId, cancellationToken);
             if (teamId is null)
                 return Result.Failure<MatchPreferences>("Season not found");
 
@@ -110,7 +110,7 @@ public class MatchPreferencesService(
         var stored = await db.MatchPreferences.FirstOrDefaultAsync(p => p.SeasonId == seasonId, cancellationToken);
         if (stored is not null) return stored;
 
-        var teamId = await db.Seasons.Where(s => s.Id == seasonId).Select(s => (int?)s.TeamId).FirstOrDefaultAsync(cancellationToken);
+        var teamId = await db.TeamIdOfSeasonAsync(seasonId, cancellationToken);
         if (teamId is null) return null;
 
         stored = await SeedForAsync(db, seasonId, teamId.Value, cancellationToken);

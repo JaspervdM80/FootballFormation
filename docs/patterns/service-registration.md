@@ -1,30 +1,15 @@
 # Service Registration
 
 ## Service Registration
-Scoped, except the two that must outlive a circuit:
-```csharp
-builder.Services.AddSingleton(TimeProvider.System);        // the clock, injected so tests can drive it
-builder.Services.AddSingleton<LiveMatchNotifier>();        // fans live changes to every open circuit
+Core registers itself: `builder.Services.AddFootballFormationCore()`
+(`Core/Services/CoreServiceRegistration.cs`) is the one list of Core services, so a second host
+calls one method rather than copying `Program.cs`. The host keeps what reads its own request and
+storage — the DbContext factories, `ICurrentUser`, `ICurrentTeam`, the UI state services and
+`RequestContext`.
 
-builder.Services.AddScoped<ICurrentUser, CircuitCurrentUser>();  // who is asking; the write guard
-builder.Services.AddScoped<PlayerService>();
-builder.Services.AddScoped<SeasonService>();
-builder.Services.AddScoped<SeasonSquadService>();
-builder.Services.AddScoped<GameService>();
-builder.Services.AddScoped<LiveMatchService>();          // reading a live match
-builder.Services.AddScoped<MatchClockService>();         // writing to one, split by what happens
-builder.Services.AddScoped<MatchGoalService>();          // on the touchline: the clock, the goals,
-builder.Services.AddScoped<MatchSubstitutionService>();  // the substitutions
-builder.Services.AddScoped<MatchPreferencesService>();
-builder.Services.AddScoped<UserService>();
-builder.Services.AddScoped<SeasonState>();       // UI state, see "UI state services"
-builder.Services.AddScoped<NavigationTrail>();   // Redirect, for a page that failed to load
-builder.Services.AddScoped<RequestContext>();    // the cookies this scope's request had
-```
-
-The two singletons are the deliberate exceptions. `LiveMatchNotifier` has to be shared across
-circuits or a substitution on the sideline would never reach the parents watching; `TimeProvider`
-is stateless.
+Services are scoped. The singletons are the deliberate exceptions: `LiveMatchNotifier` has to be
+shared across circuits or a substitution on the sideline would never reach the parents watching;
+`TimeProvider`, the stats cache and the push queries hold no per-circuit state.
 
 Service-to-service edges are kept few and named: `GameService` injects `SeasonService` so that
 "every game has a season" is an invariant no caller can bypass, and `MatchGoalService` injects
