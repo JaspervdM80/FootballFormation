@@ -1,6 +1,5 @@
 namespace FootballFormation.Core.Data;
 
-/// Both read through the query filter, so an id from another team answers the same as one that never existed.
 internal static class ScopeQueries
 {
     /// The team gate for a write that reaches a game's child by the child's own id — a goal, a comment, an injury. The child rows carry

@@ -13,6 +13,8 @@ public static class CoreServiceRegistration
         services.AddMemoryCache();
         services.AddSingleton<StatsCache>();
         services.AddSingleton<StatsCacheInvalidator>();
+        services.AddSingleton<MatchAudienceQuery>();
+        services.AddSingleton<MatchCalendarQuery>();
 
         services.AddScoped<PlayerService>();
         services.AddScoped<SeasonService>();
@@ -31,8 +33,6 @@ public static class CoreServiceRegistration
 
         // Shared across circuits, or a substitution on the touchline would never reach the parents watching.
         services.AddSingleton<LiveMatchNotifier>();
-        services.AddSingleton<MatchAudienceQuery>();
-        services.AddSingleton<MatchCalendarQuery>();
 
         return services;
     }
