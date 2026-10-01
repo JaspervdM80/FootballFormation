@@ -113,4 +113,46 @@ test.describe.serial('the formation builder on a phone', () => {
     await goto(page, `/games/${gameId}/formation`);
     await expect(subs).toHaveCount(2);
   });
+
+  // The squad sits above the pitch on a phone, further than one screen from the keeper — a drag
+  // cannot get there, so a tap has to be able to do everything a drag does.
+  test('a tap picks a player up and a second tap puts them down', async ({ page }) => {
+    await openBuilder(page);
+    const chips = page.locator('.pitch .pitch-player');
+    const subs = page.locator('.subs-panel .sub-item');
+    const bar = page.locator('.selection-bar');
+    const keeper = page.locator('.pitch .pitch-empty', { hasText: 'GK' });
+    // An empty slot pulses while a player is in hand, so it never passes Playwright's stability
+    // check — and forced, a click at the bottom of the screen lands on the selection bar instead.
+    const tapKeeper = async () => {
+      await keeper.evaluate(el => el.scrollIntoView({ block: 'center' }));
+      await keeper.click({ force: true });
+    };
+    await expect(chips).toHaveCount(0);
+    await expect(subs).toHaveCount(2);
+
+    const first = page.locator('.draggable-player').first();
+    await first.click();
+    await expect(first).toHaveClass(/selected/);
+    await expect(bar).toBeVisible();
+
+    await tapKeeper();
+    await expect(chips).toHaveCount(1);
+    await expect(bar).toHaveCount(0);
+
+    // A tap on a chip picks it up; only the bar's Remove takes it off.
+    await chips.first().click();
+    await expect(chips.first()).toHaveClass(/pitch-selected/);
+    await expect(chips).toHaveCount(1);
+    await bar.locator('.mud-button-root').first().click();
+    await expect(chips).toHaveCount(0);
+
+    await page.locator('.draggable-player').first().click();
+    await tapKeeper();
+    await expect(chips).toHaveCount(1);
+    await chips.first().click();
+    await page.locator('.subs-panel .mud-typography-subtitle2').click();
+    await expect(chips).toHaveCount(0);
+    await expect(subs).toHaveCount(3);
+  });
 });

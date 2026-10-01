@@ -9,5 +9,14 @@ public partial class PlayerList
     public EventCallback<int> OnDragStart { get; set; }
 
     [Parameter]
+    public EventCallback<int> OnPlayerTapped { get; set; }
+
+    [Parameter]
+    public int? SelectedPlayerId { get; set; }
+
+    [Parameter]
     public bool ReadOnly { get; set; }
+
+    private Task OnTapped(int playerId) =>
+        ReadOnly ? Task.CompletedTask : OnPlayerTapped.InvokeAsync(playerId);
 }

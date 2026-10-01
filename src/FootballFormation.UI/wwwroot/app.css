@@ -1352,6 +1352,20 @@ a.action-btn {
     touch-action: pan-y;
 }
 
+/* The formation builder's player in hand, whether it was picked up from the squad or the bench. */
+.draggable-player.selected,
+.sub-item.selected {
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--club-primary) 15%, transparent);
+    outline: 1px solid var(--club-primary-bright);
+}
+
+@media (pointer: coarse) {
+    .selection-bar .mud-button-root {
+        min-height: 44px;
+    }
+}
+
 /* --- Mobile navigation & PWA safe areas --- */
 
 /* --- The drawer, which is a checkbox ---

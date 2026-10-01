@@ -21,7 +21,7 @@
             {
                 var player = assigned.Player;
 
-                <div class="@ChipCssClass(position, player)"
+                <div class="@ChipCssClass(slotIndex, position, player)"
                      draggable="@Draggable.ToString().ToLowerInvariant()"
                      @ondragstart="() => OnPlayerDragStart.InvokeAsync(slotIndex)"
                      @ondragover:preventDefault="true"
@@ -35,7 +35,8 @@
             {
                 <div class="pitch-empty @(IsDropTarget ? "drop-ready" : "")"
                      @ondragover:preventDefault="true"
-                     @ondrop="() => OnPlayerDropped.InvokeAsync(slotIndex)">
+                     @ondrop="() => OnPlayerDropped.InvokeAsync(slotIndex)"
+                     @onclick="() => OnEmptySlotClicked(slotIndex)">
                     <span class="pitch-label">@position.ToString()</span>
                 </div>
             }

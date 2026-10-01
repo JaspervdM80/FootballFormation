@@ -12,6 +12,9 @@ public partial class SubstituteBench
     public int? DraggedPlayerId { get; set; }
 
     [Parameter]
+    public int? SelectedPlayerId { get; set; }
+
+    [Parameter]
     public bool ReadOnly { get; set; }
 
     [Parameter]
@@ -22,4 +25,17 @@ public partial class SubstituteBench
 
     [Parameter]
     public EventCallback<int> OnSwapWithSub { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnSubTapped { get; set; }
+
+    /// A tap on the panel itself rather than on one of its subs.
+    [Parameter]
+    public EventCallback OnBenchTapped { get; set; }
+
+    private Task OnSubClicked(int playerId) =>
+        ReadOnly ? Task.CompletedTask : OnSubTapped.InvokeAsync(playerId);
+
+    private Task OnBenchClicked() =>
+        ReadOnly ? Task.CompletedTask : OnBenchTapped.InvokeAsync();
 }

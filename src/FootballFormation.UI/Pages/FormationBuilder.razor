@@ -104,7 +104,9 @@
     <div class="player-list-panel">
         <PlayerList Players="GetAvailablePlayers(activePeriod.Id)"
                     ReadOnly="activePeriodPlayed"
-                    OnDragStart="OnPlayerDragStart" />
+                    SelectedPlayerId="Drag.SelectedPlayerId"
+                    OnDragStart="OnPlayerDragStart"
+                    OnPlayerTapped="OnListPlayerTapped" />
         @if (UnavailablePlayers.Count > 0 || InjuredPlayers.Count > 0)
         {
             <div class="absent-panels">
@@ -152,8 +154,9 @@
                ConstrainHeight="true"
                Draggable="@(!activePeriodPlayed)"
                DraggedPlayerId="Drag.PlayerId"
+               SelectedSlotIndex="Drag.SelectedSlotIndex"
                OnPlayerDropped="(slot) => OnPlayerDropped(activePeriod.Id, slot)"
-               OnPlayerRemoved="(slot) => OnPlayerRemoved(activePeriod.Id, slot)"
+               OnSlotTapped="(slot) => OnSlotTapped(activePeriod.Id, slot)"
                OnPlayerDragStart="(slot) => OnPitchPlayerDragStart(activePeriod.Id, slot)" />
         <div class="pitch-legend">
             <span class="legend-item"><span class="legend-dot fit-preferred"></span> @L["Exact"]</span>
@@ -167,12 +170,33 @@
         <SubstituteBench Lineup="PeriodLineups[activePeriod.Id]"
                          ReadOnly="activePeriodPlayed"
                          DraggedPlayerId="Drag.PlayerId"
+                         SelectedPlayerId="Drag.SelectedPlayerId"
+                         OnSubTapped="(playerId) => OnSubTapped(activePeriod.Id, playerId)"
+                         OnBenchTapped="() => OnBenchTapped(activePeriod.Id)"
                          OnSubRemoved="(pp) => RemoveSub(activePeriod.Id, pp)"
                          OnPlayerDroppedToSub="() => OnPlayerDroppedToSub(activePeriod.Id)"
                          OnSubDragStart="(playerId) => OnSubDragStart(playerId)"
                          OnSwapWithSub="(subPlayerId) => OnSwapFieldPlayerWithSub(activePeriod.Id, subPlayerId)" />
     </div>
 </div>
+
+@if (!activePeriodPlayed && SelectedPlayer is { } selected)
+{
+    <div class="selection-bar">
+        <span class="selection-text">@L["{0}: tap a position or the bench", selected.DisplayName]</span>
+        @if (Drag.FromSlotIndex is not null || Drag.FromSub)
+        {
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" Class="btn-ghost"
+                       StartIcon="@Icons.Material.Filled.PersonRemove"
+                       OnClick="() => RemoveSelected(activePeriod.Id)">
+                @L["Remove"]
+            </MudButton>
+        }
+        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="Drag.Clear">
+            @L["Cancel"]
+        </MudButton>
+    </div>
+}
 
 <div class="builder-desktop">
     <div class="d-flex gap-2 mt-2 mb-4">

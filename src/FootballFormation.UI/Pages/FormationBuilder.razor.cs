@@ -25,8 +25,21 @@ public partial class FormationBuilder
     /// From the game, not the season picker: the builder is scoped to one fixture and must not follow a global filter.
     private SeasonSquad Squad { get; set; } = SeasonSquad.Empty;
     private Dictionary<int, List<GamePlayerPosition>> PeriodLineups { get; } = [];
-    private int ActivePeriodIndex { get; set; }
     private LineupDragState Drag { get; } = new();
+
+    private int ActivePeriodIndex
+    {
+        get;
+        set
+        {
+            // A selection names a slot in the period on screen, so it cannot follow the coach to another one.
+            if (field != value) Drag.Clear();
+            field = value;
+        }
+    }
+
+    private Player? SelectedPlayer =>
+        Drag.SelectedPlayerId is { } id ? AllPlayers?.FirstOrDefault(p => p.Id == id) : null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -221,14 +234,65 @@ public partial class FormationBuilder
         StateHasChanged();
     }
 
-    private void OnPlayerRemoved(int periodId, int slotIndex)
+    private void OnListPlayerTapped(int playerId)
+    {
+        if (Drag.SelectedPlayerId == playerId)
+            Drag.Clear();
+        else
+            Drag.StartFromList(playerId, tapped: true);
+    }
+
+    /// With nothing in hand a tap picks the chip up; with a player in hand it places them, exactly as a drop would.
+    private void OnSlotTapped(int periodId, int slotIndex)
     {
         if (HasBeenPlayed(periodId)) return;
 
-        var existing = BuildSlotAssignments(periodId)[slotIndex];
-        if (existing is not null)
-            PeriodLineups[periodId].Remove(existing);
-        StateHasChanged();
+        if (!Drag.IsTapSelection)
+        {
+            if (BuildSlotAssignments(periodId)[slotIndex] is { } occupant)
+                Drag.StartFromPitch(occupant.PlayerId, slotIndex, tapped: true);
+            else
+                Drag.Clear();
+            return;
+        }
+
+        if (Drag.FromSlotIndex == slotIndex)
+        {
+            Drag.Clear();
+            return;
+        }
+
+        OnPlayerDropped(periodId, slotIndex);
+    }
+
+    private void OnSubTapped(int periodId, int subPlayerId)
+    {
+        if (HasBeenPlayed(periodId)) return;
+
+        if (Drag.IsTapSelection && !Drag.FromSub)
+        {
+            OnSwapFieldPlayerWithSub(periodId, subPlayerId);
+            return;
+        }
+
+        if (Drag.SelectedPlayerId == subPlayerId)
+            Drag.Clear();
+        else
+            Drag.StartFromSub(subPlayerId, tapped: true);
+    }
+
+    private void OnBenchTapped(int periodId)
+    {
+        if (Drag.IsTapSelection && !Drag.FromSub)
+            OnPlayerDroppedToSub(periodId);
+    }
+
+    private void RemoveSelected(int periodId)
+    {
+        if (HasBeenPlayed(periodId) || Drag.PlayerId is not { } playerId) return;
+
+        PeriodLineups[periodId].RemoveAll(p => p.PlayerId == playerId);
+        Drag.Clear();
     }
 
     private void RemoveSub(int periodId, GamePlayerPosition sub)
@@ -236,6 +300,7 @@ public partial class FormationBuilder
         if (HasBeenPlayed(periodId)) return;
 
         PeriodLineups[periodId].Remove(sub);
+        if (Drag.SelectedPlayerId == sub.PlayerId) Drag.Clear();
     }
 
     private static GamePlayerPosition CreateEntry(
@@ -259,6 +324,7 @@ public partial class FormationBuilder
         if (!Snackbar.ReportFailure(L, result)) return;
 
         ReshapeCachedLineups(formation);
+        Drag.Clear();
         Snackbar.Add(L["Formation changed to {0}", L[formation.DisplayName()].Value], Severity.Success);
     }
 
@@ -328,6 +394,7 @@ public partial class FormationBuilder
 
         var suggestion = LineupSuggestionReport.Build(GetAllSlots(periodId), RosterPlayers, minutes);
 
+        Drag.Clear();
         PeriodLineups[periodId] =
         [
             .. suggestion.Starters.Select(s => CreateEntry(s.Player, s.Position, s.SlotIndex)),

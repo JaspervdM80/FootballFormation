@@ -11,9 +11,10 @@
     <div class="player-grid">
         @foreach (var player in Players)
         {
-            <div class="draggable-player"
+            <div class="draggable-player @(player.Id == SelectedPlayerId ? "selected" : "")"
                  draggable="@((!ReadOnly).ToString().ToLowerInvariant())"
-                 @ondragstart="() => OnDragStart.InvokeAsync(player.Id)">
+                 @ondragstart="() => OnDragStart.InvokeAsync(player.Id)"
+                 @onclick="() => OnTapped(player.Id)">
                 <span class="player-shirt">@(player.ShirtNumber?.ToString() ?? "-")</span>
                 <div class="player-info">
                     <span class="player-name-text">@player.DisplayName</span>

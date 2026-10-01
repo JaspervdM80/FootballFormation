@@ -159,6 +159,12 @@
     transform: scale(0.92);
 }
 
+.pitch-player.pitch-selected {
+    outline: 3px solid #fff;
+    outline-offset: 2px;
+    transform: scale(1.1);
+}
+
 /* White, not the club color: the highlight must stay visible on the green pitch
    whatever the club palette is */
 .pitch-empty.drop-ready {

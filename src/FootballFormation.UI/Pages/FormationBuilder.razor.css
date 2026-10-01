@@ -273,3 +273,29 @@
         order: -1;
     }
 }
+
+/* Sticky rather than fixed: once the coach scrolls down to the bench it settles under the panels instead of covering them. */
+.selection-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+    border-radius: 10px;
+    background: var(--surface-card);
+    border: 1px solid var(--club-primary-bright);
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.selection-text {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.8rem;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

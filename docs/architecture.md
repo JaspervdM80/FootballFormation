@@ -208,7 +208,7 @@ Helpers/
                                 stays silent about a cancelled one), shared LockedDialog options
   DialogPrompts.cs            — ConfirmAsync()/ConfirmDeleteAsync(), and PromptAsync() for an
                                 editing dialog that returns a value
-  LineupDragState.cs          — In-flight drag on the formation builder
+  LineupDragState.cs          — The player in hand on the formation builder, dragged or tapped
   PrincipalExtensions.cs      — ClaimsPrincipal.IsAdmin()/DisplayName()/UserId()/AdminTeamId(). Use
                                 IsAdmin(), never Identity.IsAuthenticated — being signed in is not a role
 Theming/

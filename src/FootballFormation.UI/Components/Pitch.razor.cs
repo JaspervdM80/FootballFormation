@@ -40,13 +40,17 @@ public partial class Pitch
     [Parameter]
     public int? DraggedPlayerId { get; set; }
 
+    /// The chip picked up by a tap, ringed until a second tap places it.
+    [Parameter]
+    public int? SelectedSlotIndex { get; set; }
+
     /// Raised with the slot index a drag was released over.
     [Parameter]
     public EventCallback<int> OnPlayerDropped { get; set; }
 
-    /// Raised with the slot index when an occupied slot is tapped on a draggable pitch.
+    /// Raised with the slot index when any slot, empty or not, is tapped on a draggable pitch.
     [Parameter]
-    public EventCallback<int> OnPlayerRemoved { get; set; }
+    public EventCallback<int> OnSlotTapped { get; set; }
 
     /// Raised with the slot index a drag started from.
     [Parameter]
@@ -62,17 +66,19 @@ public partial class Pitch
 
     private string SizeClass => Size == PitchSize.Compact ? "pitch-compact" : "pitch-regular";
 
-    /// A tap means "take this player off" on the builder and "select" everywhere else.
     private Task OnChipClicked(int slotIndex, int playerId) =>
         Draggable
-            ? OnPlayerRemoved.InvokeAsync(slotIndex)
+            ? OnSlotTapped.InvokeAsync(slotIndex)
             : OnPlayerClicked.InvokeAsync(playerId);
 
-    private string ChipCssClass(PlayerPosition position, Player player)
+    private Task OnEmptySlotClicked(int slotIndex) =>
+        Draggable ? OnSlotTapped.InvokeAsync(slotIndex) : Task.CompletedTask;
+
+    private string ChipCssClass(int slotIndex, PlayerPosition position, Player player)
     {
         var fit = HidePositionFit ? PositionFit.Preferred : PositionFitHelper.GetFit(player, position);
 
-        return $"pitch-player {FitCssClass(fit)} {(IsChipInteractive ? "pitch-clickable" : "")}";
+        return $"pitch-player {FitCssClass(fit)} {(IsChipInteractive ? "pitch-clickable" : "")} {(slotIndex == SelectedSlotIndex ? "pitch-selected" : "")}";
     }
 
     private bool IsChipInteractive => Draggable || OnPlayerClicked.HasDelegate;
