@@ -184,7 +184,15 @@
 {
     <div class="selection-bar">
         <span class="selection-text">@L["{0}: tap a position or the bench", selected.DisplayName]</span>
-        @if (Drag.FromSlotIndex is not null || Drag.FromSub)
+        @if (Drag.FromSlotIndex is not null)
+        {
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" Class="btn-ghost"
+                       StartIcon="@Icons.Material.Filled.EventSeat"
+                       OnClick="() => BenchSelected(activePeriod.Id)">
+                @L["To the bench"]
+            </MudButton>
+        }
+        else if (Drag.FromSub)
         {
             <MudButton Variant="Variant.Outlined" Size="Size.Small" Class="btn-ghost"
                        StartIcon="@Icons.Material.Filled.PersonRemove"

@@ -97,9 +97,10 @@
   on the same player again puts them down. Only a tap selection counts — a drag let go over nothing
   leaves `Drag.PlayerId` set, and a later tap must not place that stale player
 - While a player is picked up, a sticky `.selection-bar` under the panels names them and offers
-  **Cancel**, plus **Remove** when they are on the pitch or the bench. A tap on a chip used to remove
-  the player outright, which was easy to hit by accident; removing is now only that button (or the
-  bench row's cross). Changing period, formation or suggesting a line-up drops the selection, since
+  **Cancel**, plus **To the bench** for a starter (`SendToBench`, so a starter is never dropped from
+  the match in one tap) or **Remove** for a sub, which puts them back in the squad list. A tap on a
+  chip used to remove the player outright, which was easy to hit by accident; taking a starter off
+  is now only that button, and removing a sub that button or the bench row's cross. Changing period, formation or suggesting a line-up drops the selection, since
   it names a slot in the line-up on screen
 - `@ondragstart`/`@ondrop` sit on the **inner** element — the occupied chip `.pitch-player` and the
   empty slot `.pitch-empty` — never on the `.pitch-slot` wrapper, which carries only the

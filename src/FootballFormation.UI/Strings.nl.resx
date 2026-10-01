@@ -685,6 +685,7 @@
   <data name="Tap or drop here to add as sub" xml:space="preserve"><value>Tik of sleep hierheen om als wissel toe te voegen</value></data>
   <data name="Drag or tap players here to add as subs" xml:space="preserve"><value>Sleep of tik spelers hierheen om ze als wissel toe te voegen</value></data>
   <data name="{0}: tap a position or the bench" xml:space="preserve"><value>{0}: tik op een positie of de wissels</value></data>
+  <data name="To the bench" xml:space="preserve"><value>Naar de wissels</value></data>
 
   <!-- Install banner -->
   <data name="Install the {0} app" xml:space="preserve"><value>Installeer de {0} app</value></data>

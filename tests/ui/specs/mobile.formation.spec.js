@@ -140,12 +140,20 @@ test.describe.serial('the formation builder on a phone', () => {
     await expect(chips).toHaveCount(1);
     await expect(bar).toHaveCount(0);
 
-    // A tap on a chip picks it up; only the bar's Remove takes it off.
+    // A tap on a chip picks it up; the bar's first button sends a starter to the bench, and a sub
+    // taken off the bench goes back to the squad.
+    const name = (await first.locator('.player-name-text').innerText()).trim();
     await chips.first().click();
     await expect(chips.first()).toHaveClass(/pitch-selected/);
     await expect(chips).toHaveCount(1);
     await bar.locator('.mud-button-root').first().click();
     await expect(chips).toHaveCount(0);
+    await expect(subs).toHaveCount(3);
+
+    await subs.last().click();
+    await bar.locator('.mud-button-root').first().click();
+    await expect(subs).toHaveCount(2);
+    await expect(page.locator('.draggable-player', { hasText: name })).toHaveCount(1);
 
     await page.locator('.draggable-player').first().click();
     await tapKeeper();
