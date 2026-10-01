@@ -74,3 +74,13 @@ test('archiving retires a player without erasing the seasons they played', async
   await expect(row).toBeVisible();
   await expect(row.locator('.badge-archived')).toBeVisible();
 });
+
+test('on a desktop, removing stays an icon on the row rather than a second entry in its menu', async ({ page }) => {
+  await goto(page, '/players');
+  const row = playerRow(page, 'Fixture Defender');
+  await expect(row.getByLabel('Remove from squad')).toBeVisible();
+
+  const edit = page.locator('.mud-popover-open').getByText('Edit Player', { exact: true });
+  await clickFor(row.locator('.mud-menu button').first(), () => expect(edit).toBeVisible());
+  await expect(page.locator('.mud-popover-open').getByText('Remove from squad', { exact: true })).toBeHidden();
+});

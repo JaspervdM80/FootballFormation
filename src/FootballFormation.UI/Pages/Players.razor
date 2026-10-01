@@ -137,7 +137,7 @@
                                  Size="Size.Small" Title="@L["Injured"]" />
                     }
                 </AuthorizeView>
-                <span style="font-weight: 600; color: var(--ink);">@context.Player!.DisplayName</span>
+                <span class="player-name" style="font-weight: 600; color: var(--ink);">@context.Player!.DisplayName</span>
                 @if (context.IsGuest)
                 {
                     <span class="badge-guest">@L["GUEST"]</span>
@@ -170,7 +170,7 @@
                     @* Guest status is a switch in Edit Player, not an icon here: the GUEST badge already says who is a guest, and a
                        toggle beside it is one control too many on a row that has three. *@
                     <MudIconButton Icon="@Icons.Material.Filled.PersonRemove" Size="Size.Small"
-                                   Style="color: var(--ink-subtle);"
+                                   Class="row-remove" Style="color: var(--ink-subtle);"
                                    aria-label="@L["Remove from squad"]"
                                    OnClick="() => RemoveMember(context)" />
                     @* Editing, retiring and deleting are all rarer than squad changes, so they sit behind an overflow menu — with
@@ -178,6 +178,8 @@
                     <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true"
                              AriaLabel="@L["More"]"
                              Style="color: var(--ink-subtle);">
+                        @* The phone's stand-in for the remove icon, which does not fit on a one-line row there *@
+                        <MudMenuItem Class="menu-remove-phone" OnClick="() => RemoveMember(context)">@L["Remove from squad"]</MudMenuItem>
                         <MudMenuItem OnClick="() => OpenEditDialog(context)">@L["Edit Player"]</MudMenuItem>
                         <MudMenuItem OnClick="() => ToggleArchived(context.Player!)">
                             @(context.Player!.IsArchived ? L["Restore player"] : L["Archive player"])
