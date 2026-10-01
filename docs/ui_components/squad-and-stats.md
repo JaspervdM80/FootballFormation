@@ -5,18 +5,18 @@
   and must stay untouched** when changing mobile.
 - The four data cells carry classes `cell-name` / `cell-pref` / `cell-alt` /
   `cell-actions` so mobile CSS can place them; desktop ignores the classes.
-- Below MudBlazor's `599.98px` xs breakpoint (its stacked-card mode), `app.css` overrides
-  the card into a **CSS grid** per row: name + preferred position on line 1, alternative
-  positions on line 2, edit/delete on line 3, all data right-aligned except the name. The
-  per-cell `::before` labels are hidden — the grid replaces "label: value" stacking.
-- To make the row a grid container, `.mud-table-root`/`.mud-table-body` are flipped to
+- Below MudBlazor's `599.98px` xs breakpoint (its stacked-card mode), `app.css` lays each
+  row out as **one flex line**: shirt number and name (`.player-name` ellipses), preferred
+  position, ⋮. The alternative positions and the remove icon are hidden there; the ⋮ menu
+  gains a "Remove from squad" item (`.menu-remove-phone`, hidden from 600px up) in its place
+  ([#207](https://github.com/JaspervdM80/FootballFormation/issues/207)). The per-cell
+  `::before` labels are hidden.
+- To make the row a flex container, `.mud-table-root`/`.mud-table-body` are flipped to
   `display: block` on mobile (they are normal table boxes on desktop).
 - Gotcha: MudBlazor's dense-table rule outspecifies a plain `.cell-name` selector, so the
   mobile name font-size is set on the inner `.player-name-cell` wrapper, not the cell.
-- A row with no alternatives collapses its line via `.cell-alt:not(:has(.badge-gold))`
-  (alternatives render as `.badge-gold`, preferred as `.badge-teal`).
 - Both position badges are sized for the widest abbreviation (`min-width: 3.25rem`, centred),
-  so `GK` and `CDM` are the same box and the alternatives line up under the preferred one.
+  so `GK` and `CDM` are the same box down the column.
   Scoped to `.players-table`: elsewhere those two badge classes carry words.
 - The row actions are the same box as a game card's `.action-btn` — 32px for a pointer, 44px
   and flush for a finger. MudBlazor sizes a small icon button from its padding, which lands
