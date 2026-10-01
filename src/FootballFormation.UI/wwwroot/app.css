@@ -1172,6 +1172,16 @@ a.action-btn {
         font-weight: 600;
         color: color-mix(in srgb, var(--ink) 82%, transparent);
     }
+
+    /* The app bar already names the team; visually hidden rather than display:none so the page keeps a heading to navigate by. */
+    .home-header {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
 }
 
 /* --- The settings sections and the notification row ---

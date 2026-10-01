@@ -39,8 +39,15 @@
 
 <MatchNotifications />
 
-<PageHeader Class="mb-6" Title="@Team.DisplayName"
-            Subtitle="@L["Plan your team's formations, manage your squad, and organize game lineups."]" />
+<PageHeader Class="mb-6 home-header" Title="@Team.DisplayName">
+    <SubtitleContent>
+        <AuthorizeView Roles="@AppRoles.Admin">
+            <MudText Typo="Typo.body2" Class="page-header-subtitle">
+                @L["Plan your team's formations, manage your squad, and organize game lineups."]
+            </MudText>
+        </AuthorizeView>
+    </SubtitleContent>
+</PageHeader>
 
 <div class="home-dashboard mb-6">
     @if (_dashboard.NextGame is { } next)

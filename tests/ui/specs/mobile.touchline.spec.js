@@ -28,6 +28,16 @@ test('the sections are behind the drawer, not the app bar', async ({ page }) => 
   await expect(page.getByRole('heading', { name: 'Games', exact: false }).first()).toBeVisible();
 });
 
+test('the start page opens on the next match, not a second copy of the team name', async ({ page }) => {
+  await gotoRendered(page, '/');
+
+  await expect(page.locator('.app-title-text').first()).toBeVisible();
+  // Visually hidden, not removed: a screen reader still finds the page's heading.
+  await expect(page.getByRole('heading', { name: 'GJS MO15-2', exact: false })).toHaveCount(1);
+  expect((await page.locator('.home-header').boundingBox()).height).toBeLessThanOrEqual(1);
+  await expect(page.getByText('Next match', { exact: false })).toBeInViewport();
+});
+
 test('the install banner does not sit on the sections at the foot of the drawer', async ({ page }) => {
   await gotoRendered(page, '/');
 
