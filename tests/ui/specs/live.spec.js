@@ -9,7 +9,7 @@
 // that the screen driving it shows the banked figure rather than a clock that never stopped.
 import { test, expect } from '../fixtures.js';
 import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
-import { clickFor, goto, gotoRendered, liveMatch, openDialog, pickPlayer } from '../helpers.js';
+import { clickFor, finishMatch, goto, gotoRendered, liveMatch, openDialog, pickPlayer } from '../helpers.js';
 
 // Shirt *and* short name, because a shirt number is not unique — nothing stops two players in a
 // squad wearing the same one, and this file's arithmetic would then credit a substitution to the
@@ -244,4 +244,68 @@ test('a spectator watching the same match is given a pitch that does nothing', a
   } finally {
     await visitor.close();
   }
+});
+
+// Stands in for the Screen Wake Lock API, counting what is held: headless Chromium refuses the real one.
+const fakeWakeLock = () => {
+  window.wakeLocks = { held: [], requests: 0 };
+  Object.defineProperty(navigator, 'wakeLock', {
+    value: {
+      request: async () => {
+        window.wakeLocks.requests++;
+        const sentinel = new EventTarget();
+        sentinel.release = async () => {
+          window.wakeLocks.held = window.wakeLocks.held.filter(held => held !== sentinel);
+          sentinel.dispatchEvent(new Event('release'));
+        };
+        window.wakeLocks.held.push(sentinel);
+        return sentinel;
+      },
+    },
+  });
+};
+
+test('the coach\'s screen stays awake from kick-off to full time, and a spectator\'s is left alone', async ({ page, browser }) => {
+  await page.addInitScript(fakeWakeLock);
+  const id = await liveMatch(page, 'FC Wakker');
+  const held = (on) => on.evaluate(() => window.wakeLocks.held.length);
+
+  await expect.poll(() => held(page)).toBe(1);
+
+  // What the browser does to a hidden page: the lock goes, and coming back to it has to ask again.
+  await page.evaluate(() => window.wakeLocks.held[0].release());
+  expect(await held(page)).toBe(0);
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await expect.poll(() => held(page)).toBe(1);
+
+  const visitor = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
+  try {
+    const watching = await visitor.newPage();
+    await watching.addInitScript(fakeWakeLock);
+    await gotoRendered(watching, `/games/${id}/live`);
+    await expect(watching).toHaveTitle(/^0 – 0 · .*FC Wakker/);
+
+    // Calls reach the browser in the order they were made, so once a later render's title lands, anything the first render sent has
+    // already run — whichever order the page makes them in.
+    await clickFor(
+      page.getByRole('button', { name: 'Goal against' }),
+      () => expect(watching).toHaveTitle(/^(0 – 1|1 – 0) · /),
+    );
+    expect(await watching.evaluate(() => window.wakeLocks.requests)).toBe(0);
+  } finally {
+    await visitor.close();
+  }
+
+  // Leaving in-app keeps the window, the listener and the lock with it, so only the page letting go releases it. The marker proves this
+  // was not a full load, which would release it whatever the page did.
+  await page.evaluate(() => { window.sameDocument = true; });
+  await page.locator('.topbar-nav a[href="/games"]').first().click();
+  await page.waitForURL(/\/games$/);
+  expect(await page.evaluate(() => window.sameDocument)).toBe(true);
+  await expect.poll(() => held(page)).toBe(0);
+
+  await goto(page, `/games/${id}/live`);
+  await expect.poll(() => held(page)).toBe(1);
+  await finishMatch(page);
+  await expect.poll(() => held(page)).toBe(0);
 });

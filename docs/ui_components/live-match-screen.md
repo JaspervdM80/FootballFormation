@@ -35,6 +35,12 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   when refused:** iOS Safari has no Vibration API at all, Chrome ignores it until the page has had a
   tap, and a backgrounded tab gets nothing. The push notification is what reaches a phone in a
   pocket — see [push notifications](../patterns/push-notifications.md) for the switch both obey.
+- **The coach's screen stays on from kick-off to full time.** For an admin only, while the match is
+  `InProgress` (the break included), `liveMatch.keepAwake` in `js/live-match.js` holds a Screen Wake
+  Lock, so the phone never auto-locks into the reconnect described in
+  [known issues](../known_issues/touch-pwa.md). The browser drops the lock whenever the page is hidden,
+  so it is asked for again on every `visibilitychange`; leaving the page releases it from `Dispose`.
+  Silent where unsupported or refused (a battery saver can refuse it), like the vibration.
 - **The tab title is the score from kick-off to full time** (`1 – 0 · GJS MO15-2 – FC X`), set through JS
   because `<PageTitle>` cannot update from a circuit — see
   [known issues](../known_issues/blazor-components.md).

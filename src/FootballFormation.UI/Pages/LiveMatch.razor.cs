@@ -59,6 +59,11 @@ public partial class LiveMatch
 
     private string? _shownTitle;
 
+    private bool _keptAwake;
+
+    /// The coach holds this screen for the whole match, and each auto-lock risks a reconnect on the way back. Nobody else needs it.
+    private bool KeepAwake => _isAdmin && GameData?.MatchState == MatchState.InProgress;
+
     /// The score first, so a pinned or backgrounded tab still shows it.
     private string TabTitle
     {
@@ -304,13 +309,21 @@ public partial class LiveMatch
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (GameData is null || TabTitle == _shownTitle) return;
+        if (GameData is null) return;
+
+        if (KeepAwake != _keptAwake)
+        {
+            _keptAwake = KeepAwake;
+            await BrowserAsync("liveMatch.keepAwake", _keptAwake);
+        }
+
+        if (TabTitle == _shownTitle) return;
 
         _shownTitle = TabTitle;
         await BrowserAsync("liveMatch.setTitle", _shownTitle);
     }
 
-    /// Both calls are extras: a browser that cannot take one still shows the match.
+    /// Every call here is an extra: a browser that cannot take one still shows the match.
     private async Task BrowserAsync(string identifier, object argument)
     {
         try
@@ -513,6 +526,8 @@ public partial class LiveMatch
     public override void Dispose()
     {
         Notifier.Changed -= OnLiveChanged;
+
+        if (_keptAwake) _ = BrowserAsync("liveMatch.keepAwake", false);
 
         _momentEnds?.Cancel();
         _momentEnds?.Dispose();
