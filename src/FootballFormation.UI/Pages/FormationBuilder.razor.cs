@@ -287,6 +287,14 @@ public partial class FormationBuilder
             OnPlayerDroppedToSub(periodId);
     }
 
+    private void BenchSelected(int periodId)
+    {
+        if (HasBeenPlayed(periodId) || Drag.SelectedSlotIndex is not { } slotIndex) return;
+
+        BuildSlotAssignments(periodId)[slotIndex]?.SendToBench();
+        Drag.Clear();
+    }
+
     private void RemoveSelected(int periodId)
     {
         if (HasBeenPlayed(periodId) || Drag.PlayerId is not { } playerId) return;
