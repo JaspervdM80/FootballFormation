@@ -140,6 +140,16 @@ export async function submitDialog(page, buttonName = 'Save') {
   );
 }
 
+/**
+ * Taps a player in a dialog's PlayerPicker, which is the choice and the submit in one. `name` is
+ * matched against the start of the full name, which the button carries as its title — it shows only
+ * the shirt and the short name.
+ */
+export async function pickPlayer(page, scope, name = '') {
+  const button = scope.locator(name ? `.player-pick[title^="${name}"]` : '.player-pick').first();
+  await clickFor(button, () => expect(page.locator('.mud-dialog')).toHaveCount(0), { settle: 10_000 });
+}
+
 /** Answers the app's ConfirmDialog. `action` is the confirming button's label. */
 export async function confirmDialog(page, action) {
   await submitDialog(page, action);

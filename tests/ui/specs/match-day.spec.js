@@ -8,7 +8,7 @@ import { test, expect } from '../fixtures.js';
 import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
 import {
   chooseOption, clickFor, fillLineup, finishMatch, gameRow, goto, gotoRendered, liveMatch,
-  matchWithId, openDialog, saveLineup, startMatch, submitDialog,
+  matchWithId, openDialog, pickPlayer, saveLineup, startMatch, submitDialog,
 } from '../helpers.js';
 
 test('a lineup dragged onto the pitch is still there after a reload', async ({ page }) => {
@@ -76,8 +76,7 @@ test('a match is run from the live screen and its score reaches the result', asy
     () => expect(page.locator('.mud-dialog')).toBeVisible(),
   );
   const goalDialog = await openDialog(page);
-  await chooseOption(page, goalDialog, 'Scorer', 'Fixture');
-  await submitDialog(page, 'Add goal');
+  await pickPlayer(page, goalDialog, 'Fixture');
   await expect(ourScore).toHaveText('1');
 
   await clickFor(
@@ -134,9 +133,13 @@ test('tapping a player on the pitch offers a substitution and a position swap', 
   await clickFor(first, () => expect(page.locator('.mud-dialog')).toBeVisible());
   const dialog = await openDialog(page);
 
-  // Two lists, and the button names whichever one was used.
-  await expect(dialog.getByRole('button', { name: 'Make substitution' })).toBeDisabled();
+  // Tapping a substitute would make the change, so a swap is the only one waiting on a button — and
+  // that button is not there until a team-mate is chosen.
+  await expect(dialog.locator('.player-pick').first()).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Swap positions' })).toHaveCount(0);
   await chooseOption(page, dialog, 'Swaps position with', '#');
+  // A bench tap would otherwise make a substitution and drop the swap just chosen.
+  await expect(dialog.locator('.player-pick').first()).toBeDisabled();
   await submitDialog(page, 'Swap positions');
   await expect(page.getByText('Positions swapped', { exact: false })).toBeVisible();
 
@@ -211,8 +214,7 @@ test('the timeline can be narrowed to the goals', async ({ page }) => {
     () => expect(page.locator('.mud-dialog')).toBeVisible(),
   );
   const dialog = await openDialog(page);
-  await chooseOption(page, dialog, 'Comes on', '#');
-  await submitDialog(page, 'Make substitution');
+  await pickPlayer(page, dialog);
   await expect(events).toHaveCount(2);
 
   // Only a goal carries a scoreline, so what is left is the goal rather than the substitution.
@@ -234,8 +236,7 @@ test('a substitution and an injury reach the result page, where only the sub wai
   // A substitution — somebody off the roster comes on for a player on the pitch.
   await clickFor(chips.first(), () => expect(page.locator('.mud-dialog')).toBeVisible());
   let dialog = await openDialog(page);
-  await chooseOption(page, dialog, 'Comes on', '#');
-  await submitDialog(page, 'Make substitution');
+  await pickPlayer(page, dialog);
   await expect(page.locator('.live-event')).toHaveCount(1);
 
   // And an injury nobody came on for — the switch alone, no replacement, so it stands as its own row.
@@ -268,8 +269,7 @@ test('a substitution and an injury entered wrong are undone from the result page
   // A substitution and an injury nobody came on for, both entered live — the two to be undone later.
   await clickFor(chips.first(), () => expect(page.locator('.mud-dialog')).toBeVisible());
   let dialog = await openDialog(page);
-  await chooseOption(page, dialog, 'Comes on', '#');
-  await submitDialog(page, 'Make substitution');
+  await pickPlayer(page, dialog);
   await expect(page.locator('.live-event')).toHaveCount(1);
 
   await clickFor(chips.first(), () => expect(page.locator('.mud-dialog')).toBeVisible());
@@ -304,8 +304,7 @@ test('a substitution carries an edit that opens pre-filled and round-trips throu
 
   await clickFor(chips.first(), () => expect(page.locator('.mud-dialog')).toBeVisible());
   const dialog = await openDialog(page);
-  await chooseOption(page, dialog, 'Comes on', '#');
-  await submitDialog(page, 'Make substitution');
+  await pickPlayer(page, dialog);
   const event = page.locator('.live-event');
   await expect(event).toHaveCount(1);
   const cameOn = (await event.locator('.live-event-main').textContent()).trim();
@@ -387,8 +386,7 @@ test('a half-time change is set on the pitch at the break and recorded when the 
   const dialog = await openDialog(page);
   await expect(dialog.getByText('Swaps position with')).toHaveCount(0);
   await expect(dialog.locator('label.mud-switch', { hasText: 'Injured' })).toHaveCount(0);
-  await chooseOption(page, dialog, 'Comes on', '#');
-  await submitDialog(page, 'Make substitution');
+  await pickPlayer(page, dialog);
   await expect(page.getByText('Half-time change made', { exact: false })).toBeVisible();
 
   // A plan until the half starts: nothing on the timeline yet, but listed as what kick-off will record.

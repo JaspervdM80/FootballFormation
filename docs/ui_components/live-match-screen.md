@@ -74,23 +74,27 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
 - The pitch shows the half being played; **at the break the half about to be played**, so the coach
   sets it up there; after full time the last one played, and before kick-off the half the match opens
   with — so it is never blank when a lineup exists. The bench strip under it is always drawn.
-- **Tapping a player offers two changes, one dropdown each** (`LiveSubDialog`): someone comes on for
-  them (`SubstituteAsync`), or they trade positions with a team-mate who stays on
-  (`SwapPositionsAsync`). Choosing in either list clears the other, so the single action button
-  always has exactly one change to make and says which — "Make substitution" or "Swap positions".
-  A third control, the **"Injured" switch**, is not a third change: it says *why* she is going off,
-  so the "Comes on" list above still names her replacement and the button reads "Off injured"
-  (`MarkInjuredAsync`). It is the one way the dialog closes with nobody named — a bench with nothing
-  left on it, and the team plays a player short. Turning it on clears the swap; picking a swap
-  clears it.
+- **Tapping a player offers two changes** (`LiveSubDialog`): someone comes on for them
+  (`SubstituteAsync`), or they trade positions with a team-mate who stays on (`SwapPositionsAsync`).
+  The bench is a grid of shirt-number buttons (`PlayerPicker`) and **tapping one makes the
+  substitution** — two taps from the pitch. The bench is ordered by `LiveCandidateOrder.ForPosition`:
+  best `PositionFit` for the position being vacated, then name. The swap stays a dropdown, and only
+  once one is chosen does the footer grow a "Swap positions" button; while a swap is chosen the bench
+  buttons are disabled, so a tap there cannot quietly turn it into a substitution.
+  The **"Injured" switch** sits above the bench and is not a third change: it says *why* she is going
+  off, so a bench tap after it still names her replacement (`MarkInjuredAsync`). With the switch on
+  and nobody tapped, the footer offers "Off injured" — the one way the dialog closes with nobody
+  named: a bench with nothing left on it, and the team plays a player short. Turning it on clears
+  the swap; picking a swap clears it.
   A position swap writes no `GameSubstitution`: nobody's minutes changed, and a row there would say
   they did. The price is the *split by position* — `GameMinutesReport` reads the lineup as it finally
   stands, so after a swap the whole half is credited to the position each player moved **into**
   (pinned by `A_position_change_with_no_substitution_credits_the_position_it_ended_in`). Totals are
   unaffected. Undoing a substitution therefore follows the slot rather than the recorded one: a swap
   can have moved it since, and handing the recorded slot back would seat two players in it.
-  Each select's `Placeholder` is set **only** when its list is empty — MudSelect shows a
-  placeholder whenever nothing is chosen, so a standing "nobody is on the bench" greets a full bench.
+  The swap select's `Placeholder` is set **only** when its list is empty — MudSelect shows a
+  placeholder whenever nothing is chosen, so a standing "nobody else is on the pitch" would greet a
+  full pitch. An empty bench is a line of text in place of the grid.
 - **Any substitution can be undone or edited, not only the newest, from either the live screen or the
   result page** (the `Undo` and `Edit` buttons in the timeline's `AdminActions`). A substitution is
   correctable as long as the player it brought on is still on the pitch — undo then follows her to
@@ -220,8 +224,14 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   than where everyone stands, so the line-up card (`.live-lineup`, `order: 1`) and the minutes
   table (`.live-minutes-card`, `order: 2`) drop below the timeline under 600px. Both rules live in
   `app.css` — the classes sit on `MudPaper` roots, which scoped CSS cannot reach.
-- Goal and assist selects bind `int?`, not `int`: an `int` binds to 0, which is nobody's id but
-  still renders as a chosen value, so the scorer field looked pre-filled.
+- **A goal is two taps: "Goal", then the scorer** (`LiveGoalDialog`). The scorer is a grid of
+  shirt-number buttons (`PlayerPicker`, 64px tall), and tapping one adds the goal. The order is
+  `LiveCandidateOrder.Scorers`: on the pitch first, then the rest of the roster, each by season goals
+  (complete matches plus this one, own goals excluded) and then by name. The season figures are
+  loaded once, for an admin only. The assist and the own-goal switch sit under the grid and have to
+  be set *before* the scorer is tapped — the dialog says so — because there is no confirm step left to
+  set them in. The assist select binds `int?`, not `int`: an `int` binds to 0, which is nobody's id
+  but still renders as a chosen value.
 - **`/games` is two lists, not one** (`Games.Sections()`): fixtures still to play, soonest first,
   then results newest first — each list leads with the match you came to look at. A single list has
   to put one of them at the wrong end, and newest-first throughout put the *most distant* fixture at

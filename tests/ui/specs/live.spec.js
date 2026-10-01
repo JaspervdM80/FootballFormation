@@ -9,7 +9,7 @@
 // that the screen driving it shows the banked figure rather than a clock that never stopped.
 import { test, expect } from '../fixtures.js';
 import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
-import { chooseOption, clickFor, goto, gotoRendered, liveMatch, openDialog, submitDialog } from '../helpers.js';
+import { clickFor, goto, gotoRendered, liveMatch, openDialog, pickPlayer } from '../helpers.js';
 
 // Shirt *and* short name, because a shirt number is not unique — nothing stops two players in a
 // squad wearing the same one, and this file's arithmetic would then credit a substitution to the
@@ -39,8 +39,7 @@ test('a substitution swaps the two chips over, and undoing it puts them back', a
   await clickFor(page.locator('.live-lineup .pitch-player').first(),
     () => expect(page.locator('.mud-dialog')).toBeVisible());
   const dialog = await openDialog(page);
-  await chooseOption(page, dialog, 'Comes on', '#');
-  await submitDialog(page, 'Make substitution');
+  await pickPlayer(page, dialog);
 
   const event = page.locator('.live-event');
   await expect(event).toHaveCount(1);
@@ -123,8 +122,7 @@ test('a spectator sees and feels our goal as it arrives, but not again on a relo
       () => expect(page.locator('.mud-dialog')).toBeVisible(),
     );
     const goalDialog = await openDialog(page);
-    await chooseOption(page, goalDialog, 'Scorer', 'Fixture');
-    await submitDialog(page, 'Add goal');
+    await pickPlayer(page, goalDialog, 'Fixture');
 
     await expect(flash).toContainText('Fixture');
     await expect(watching.locator('.live-event-fresh')).toHaveCount(1);
@@ -183,8 +181,7 @@ test('a spectator who switched vibration off still sees our goal, but is not buz
       () => expect(page.locator('.mud-dialog')).toBeVisible(),
     );
     const goalDialog = await openDialog(page);
-    await chooseOption(page, goalDialog, 'Scorer', 'Fixture');
-    await submitDialog(page, 'Add goal');
+    await pickPlayer(page, goalDialog, 'Fixture');
 
     await expect(watching.locator('.live-goal-flash')).toBeVisible();
 

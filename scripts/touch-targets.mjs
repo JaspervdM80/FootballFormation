@@ -339,7 +339,8 @@ const rx = (nl, en) => new RegExp(`${nl}|${en}`, 'i');
  * icon buttons on every card is the densest cluster of targets in the app. The trainings pair
  * followed: a row of a different shape, and the app's only switch. The last four are the chrome
  * every navigation goes through, the squad's own row geometry, and the two screens where the target
- * is a pitch chip sized by a clamp() rather than a button sized by a token.
+ * is a pitch chip sized by a clamp() rather than a button sized by a token. Then the live screen's
+ * goal and substitution dialogs, where the tap on a player is itself the action.
  */
 export async function auditTouchTargets({ browser, base, out, liveGame, onError = () => {} }) {
   // Named rather than defaulted: a missing path would quietly drop the two scenes that need it, and
@@ -559,10 +560,25 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     await scrollTo('.live-lineup .pitch');
     await audit('live match, line-up', '.app-main', ['pitch-player']);
 
+    // The seeded line-up leaves one player on the bench, so the substitution dialog has a pick to measure.
+    const cancel = () => clickFor(dialog.getByRole('button', { name: rx('annuleren', 'cancel') }),
+      async () => await dialog.count() === 0);
+
+    await clickFor(page.locator('.live-action-btn').first(), () => dialog.isVisible());
+    await waitForStableBox(dialog);
+    await audit('live goal dialog', '.mud-dialog', ['player-pick']);
+    await cancel();
+
+    await clickFor(page.locator('.live-lineup .pitch-player').first(), () => dialog.isVisible());
+    await waitForStableBox(dialog);
+    await scrollTo('.mud-dialog .player-picker');
+    await audit('live substitution dialog', '.mud-dialog', ['player-pick']);
+    await cancel();
+
     // Asserted, not logged: a scene that stopped running would otherwise say so only in a number
-    // nobody reads. The drawer is on every viewport now, so every viewport audits the same seventeen.
-    if (scenes !== 17)
-      throw new Error(`${viewport.name}: audited ${scenes} screens, expected 17`);
+    // nobody reads. The drawer is on every viewport now, so every viewport audits the same nineteen.
+    if (scenes !== 19)
+      throw new Error(`${viewport.name}: audited ${scenes} screens, expected 19`);
     console.log(`${viewport.name.padEnd(8)} audited ${scenes} screens`);
     await context.close();
   }

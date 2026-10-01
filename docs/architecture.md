@@ -60,6 +60,7 @@ Reporting/
                            periods × period length estimate before that; PlayingTimeRow.IsActual says
                            which. The per-period cells always come from the line-up being edited
   LiveMinutesReport.cs    — Exact minutes on the pitch during a live match
+  LiveCandidateOrder.cs   — The order the live goal and substitution dialogs offer players in
   SeasonStatsReport.cs    — Team totals + form for /stats (SeasonStats, GameResult)
   PlayerStatsReport.cs    — Per-player aggregates (PlayerStats, PositionStat, PlayerGameStat)
   PositionDevelopmentReport.cs — Pivots PlayerStats.Positions into a players × positions grid for
@@ -148,9 +149,9 @@ Pages/
   PositionDevelopment.razor(.cs) — /stats/positions — Admin-only: squad-wide players × positions grid
   MatchResult.razor(.cs)(.css)— /games/{id}/result — Score and goal entry
   LiveMatch.razor(.cs)(.css)  — /games/{id}/live — Sideline screen: clock, subs, goals; admin drives, others watch
-  LiveGoalDialog.razor(.cs)   — Dialog: scorer, assister, own-goal toggle
-  LiveSubDialog.razor(.cs)(.css) — Dialog: for a player tapped on the pitch, either a replacement
-                                from the bench or a position swap with someone already on
+  LiveGoalDialog.razor(.cs)   — Dialog: tap the scorer to add the goal; assister and own-goal set first
+  LiveSubDialog.razor(.cs)(.css) — Dialog: for a player tapped on the pitch, tap a replacement from
+                                the bench, or pick a position swap with someone already on
   PlannedChangesDialog.razor  — Dialog: the changes still planned for the middle of this half, as a
                                 reference to work through by tapping the pitch. Writes nothing
   SeasonDialog.razor(.cs)     — Dialog: season name, start date, end date
@@ -171,6 +172,7 @@ Components/
   Pitch.razor(.cs)(.css)            — The pitch. Read-only by default; Draggable for the builder,
                                       OnPlayerClicked for the live screen, Size for chip scale
   PlayerLabel.razor                 — A player as one line of text: "#7 Jasper"
+  PlayerPicker.razor(.css)          — A grid of shirt-number buttons where the tap is the choice (live dialogs)
   PlannedChangesList.razor(.css)    — What the next line-up does, as a team sheet, for the live
                                       screen's PlannedChangesDialog
   CancellableComponent.cs           — Base for any component that reads: owns the CancellationToken its
