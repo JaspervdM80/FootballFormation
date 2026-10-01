@@ -352,9 +352,9 @@
   <data name="Match finished" xml:space="preserve"><value>Wedstrijd afgesloten</value></data>
   <data name="End the match and save the final score? You can still edit the result afterwards." xml:space="preserve"><value>Wedstrijd afsluiten en de eindstand opslaan? Je kunt de uitslag daarna nog aanpassen.</value></data>
   <data name="Goal" xml:space="preserve"><value>Doelpunt</value></data>
-  <data name="Add goal" xml:space="preserve"><value>Doelpunt toevoegen</value></data>
   <data name="No assist" xml:space="preserve"><value>Geen assist</value></data>
   <data name="Who scored?" xml:space="preserve"><value>Wie scoorde?</value></data>
+  <data name="Set an assist or own goal before tapping the scorer." xml:space="preserve"><value>Kies een assist of eigen doelpunt voordat je de doelpuntenmaker aantikt.</value></data>
   <data name="Own goal" xml:space="preserve"><value>Eigen doelpunt</value></data>
   <data name="An own goal counts for the opponent." xml:space="preserve"><value>Een eigen doelpunt telt voor de tegenstander.</value></data>
   <data name="Opponent goal added" xml:space="preserve"><value>Tegendoelpunt toegevoegd</value></data>
@@ -384,7 +384,6 @@
   <data name="Which half" xml:space="preserve"><value>Welke helft</value></data>
   <data name="Goes off" xml:space="preserve"><value>Gaat eruit</value></data>
   <data name="She played on in a later half" xml:space="preserve"><value>Ze speelde daarna nog een helft</value></data>
-  <data name="Make substitution" xml:space="preserve"><value>Wissel doorvoeren</value></data>
   <data name="Comes on" xml:space="preserve"><value>Komt erin</value></data>
   <data name="Nobody is on the bench for this half." xml:space="preserve"><value>Er zit niemand op de bank voor deze helft.</value></data>
   <data name="Swaps position with" xml:space="preserve"><value>Wisselt van positie met</value></data>

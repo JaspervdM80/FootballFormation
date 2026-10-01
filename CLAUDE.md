@@ -94,7 +94,10 @@ These fail silently or expensively, so they are here rather than only in a skill
 
 ## Workflow
 
-- Work on a feature branch. `main` takes pull requests only, and the merge button stays disabled
+- Work on a branch named **`feature/…`**, **`bug/…`** or **`ci/…`** after what the change is — a new
+  or changed behaviour, a fix, or the build, workflows and tooling (e.g. `feature/two-tap-goals`).
+  Nothing else; a branch handed to you under another name is renamed before it is pushed.
+- `main` takes pull requests only, and the merge button stays disabled
   until **Build and test**, **Coverage**, **Playwright** and **Visual check** are all green, the
   branch is up to date with `main`, and every review thread is resolved.
 - **Merging to `main` releases**, straight onto the live volume, with no staging environment and

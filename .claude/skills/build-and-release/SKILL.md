@@ -63,6 +63,8 @@ The app **auto-migrates against the live volume on boot**, so a merge is also a 
 
 ## Conventions
 
+- Branches start with `feature/`, `bug/` or `ci/` — a behaviour change, a fix, or the build,
+  workflows and tooling. Rename any other branch before pushing it.
 - Commit messages are plain imperative sentences describing intent, not conventional-commit prefixes:
   *"Let a deploy recognise its own release, not just a live one"*.
 - Package versions live in `Directory.Packages.props`; csproj files list names only. A `Version=` in a

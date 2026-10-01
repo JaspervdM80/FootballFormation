@@ -1,4 +1,4 @@
-﻿namespace FootballFormation.UI.Pages;
+namespace FootballFormation.UI.Pages;
 
 /// A player standing on the pitch right now, with the position she is holding.
 public record PitchPlayer(Player Player, PlayerPosition Position);
@@ -7,8 +7,8 @@ public record PitchPlayer(Player Player, PlayerPosition Position);
 /// whoever comes on. <paramref name="PlayerId"/> is null only when nobody does.
 public record LiveSubChoice(int? PlayerId, bool IsPositionSwap, bool IsInjury);
 
-/// Picking a position swap clears the other two controls and marking her injured clears the swap, so the dialog answers with exactly one
-/// change. Like every dialog here it never calls a service; the page persists the choice.
+/// Tapping who comes on closes the dialog with that change. The footer button is for the two changes nobody comes on in: a position swap,
+/// and an injury with nobody to replace her. Like every dialog here it never calls a service; the page persists the choice.
 public partial class LiveSubDialog
 {
     [CascadingParameter]
@@ -34,36 +34,21 @@ public partial class LiveSubDialog
     /// line-up editing — only who comes on for whom applies.
     [Parameter] public bool AllowSwapAndInjury { get; set; } = true;
 
-    private int? _playerOnId;
     private int? _swapWithId;
     private bool _injured;
 
     /// Nullable so the select opens genuinely empty: an int binds to 0, which is nobody's id but still renders as a chosen value.
-    private int? PlayerOnId
-    {
-        get => _playerOnId;
-        set
-        {
-            _playerOnId = value;
-            if (value is not null) _swapWithId = null;
-        }
-    }
-
     private int? SwapWithId
     {
         get => _swapWithId;
         set
         {
             _swapWithId = value;
-            if (value is null) return;
-
-            _playerOnId = null;
-            _injured = false;
+            if (value is not null) _injured = false;
         }
     }
 
-    /// Why she is going off, not a third thing that can happen to her, so it leaves <see cref="PlayerOnId"/> alone. It does clear the
-    /// swap: a player being helped off is not trading positions with anyone.
+    /// A player being helped off is not trading positions with anyone, so it clears the swap.
     private bool Injured
     {
         get => _injured;
@@ -74,23 +59,17 @@ public partial class LiveSubDialog
         }
     }
 
-    /// The one button says what it is about to do, which is whichever control was used.
     private bool IsPositionSwap => _swapWithId is not null;
 
-    private bool HasChoice => _playerOnId is not null || _swapWithId is not null || _injured;
+    private void BringOn(Player playerOn) =>
+        MudDialog.Close(DialogResult.Ok(new LiveSubChoice(playerOn.Id, IsPositionSwap: false, IsInjury: _injured)));
 
     private void Submit()
     {
         if (_swapWithId is { } swapWith)
-        {
-            MudDialog.Close(DialogResult.Ok(
-                new LiveSubChoice(swapWith, IsPositionSwap: true, IsInjury: false)));
-            return;
-        }
-
-        if (_injured || _playerOnId is not null)
-            MudDialog.Close(DialogResult.Ok(
-                new LiveSubChoice(_playerOnId, IsPositionSwap: false, IsInjury: _injured)));
+            MudDialog.Close(DialogResult.Ok(new LiveSubChoice(swapWith, IsPositionSwap: true, IsInjury: false)));
+        else if (_injured)
+            MudDialog.Close(DialogResult.Ok(new LiveSubChoice(null, IsPositionSwap: false, IsInjury: true)));
     }
 
     private void Cancel() => MudDialog.Cancel();

@@ -1,0 +1,20 @@
+<div class="player-picker" role="group" aria-label="@Label">
+    @foreach (var player in Players)
+    {
+        <button type="button" class="player-pick" title="@player.DisplayName" @onclick="() => OnPick.InvokeAsync(player)">
+            <span class="player-pick-number">@player.ShirtNumber</span>
+            <span class="player-pick-name">@player.ShortName</span>
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Player> Players { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public string Label { get; set; } = "";
+
+    [Parameter, EditorRequired]
+    public EventCallback<Player> OnPick { get; set; }
+}

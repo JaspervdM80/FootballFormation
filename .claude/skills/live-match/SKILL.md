@@ -85,10 +85,12 @@ Half time is a **dashed rule across the timeline**, not an event.
 
 ## Substitutions
 
-Tapping a player offers two changes, one dropdown each (`LiveSubDialog`): someone comes on for them
-(`SubstituteAsync`), or they trade positions with a team-mate who stays on (`SwapPositionsAsync`).
-Choosing in either list clears the other, so the single action button always has exactly one change to
-make.
+**A goal and a substitution are two taps each.** `LiveGoalDialog` and `LiveSubDialog` show players as a
+`PlayerPicker` grid of shirt-number buttons, and **the tap is the submit** — so anything that qualifies
+the change (assist, own goal, injured) has to be set before it. Tapping a player on the pitch offers
+two changes: someone off the bench comes on (`SubstituteAsync`), or they trade positions with a
+team-mate who stays on (`SwapPositionsAsync`, still a dropdown, with a footer button that appears only
+once one is chosen).
 
 **A position swap writes no `GameSubstitution`** — nobody's minutes changed, and a row there would say
 they did. The price is the *split by position*: `GameMinutesReport` reads the lineup as it finally
@@ -142,8 +144,8 @@ cross rather than listed twice, and undoing it removes both rows. The standing
 `SeasonSquadMember.IsInjured` flag is a different thing — it has no date, so it can say nothing
 about a match.
 
-Each select's `Placeholder` is set **only** when its list is empty: MudSelect shows a placeholder
-whenever nothing is chosen, so a standing "nobody is on the bench" would greet a full bench.
+The swap select's `Placeholder` is set **only** when its list is empty: MudSelect shows a placeholder
+whenever nothing is chosen, so a standing "nobody else is on the pitch" would greet a full pitch.
 
 Detail: [docs/ui_components/](../../../docs/ui_components/live-match-screen.md) ·
 [docs/known_issues/](../../../docs/known_issues/live-match.md)

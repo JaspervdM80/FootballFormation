@@ -213,9 +213,11 @@ html, body {
    same thumb, and MudBlazor's own button is 36.5px tall, which is what "Annuleren" was when a tap
    aimed at it opened the dropdown above instead. 44px is the platform minimum touch target, and the
    width keeps the two buttons far enough apart that a thumb cannot take Opslaan while aiming for
-   Annuleren. Found by scripts/touch-targets.mjs, which measures this at 844x390. */
+   Annuleren. Found by scripts/touch-targets.mjs, which measures this at 844x390. .dialog-touchline
+   takes this floor without the sheet, for the short dialogs the live screen opens. */
 @media (max-width: 599.98px), (max-height: 559.98px) {
-    .mud-dialog.dialog-sheet .mud-dialog-actions .mud-button-root {
+    .mud-dialog.dialog-sheet .mud-dialog-actions .mud-button-root,
+    .mud-dialog.dialog-touchline .mud-dialog-actions .mud-button-root {
         min-height: 44px;
         min-width: 112px;
     }

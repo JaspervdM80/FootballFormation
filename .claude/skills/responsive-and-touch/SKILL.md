@@ -71,6 +71,9 @@ Below 600px it becomes a full-screen sheet: full width, `overflow: hidden` on th
 a stale layout), a real footer with a top border and the bottom safe-area inset, and the title taking
 over the top safe-area inset.
 
+A short dialog used mid-match (`LiveGoalDialog`, `LiveSubDialog`) carries `Class="dialog-touchline"`
+instead: the same 44px footer buttons, without the full-screen sheet.
+
 The sheet *layout* is deliberately width-only — a full-screen sheet 844px wide is not an improvement.
 The 44px button floor and the stepper rule live in their own `(max-width), (max-height)` query for the
 reason above.

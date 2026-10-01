@@ -1,6 +1,6 @@
-﻿@inject IStringLocalizer<Strings> L
+@inject IStringLocalizer<Strings> L
 
-<MudDialog>
+<MudDialog Class="dialog-touchline">
     <DialogContent>
         <div class="sub-off-line">
             <MudIcon Icon="@Icons.Material.Filled.PersonPin" Size="Size.Small" Color="Color.Primary" />
@@ -10,24 +10,29 @@
             <span class="sub-off-pos">@Position.ToString()</span>
         </div>
 
-        @* Two lists, never both: picking in one clears the other, so the button below always has
-           exactly one change to make. *@
-        @* The placeholder only ever explains an empty list. MudSelect shows it whenever nothing is
-           chosen, so a standing "nobody is on the bench" would greet a full bench too. *@
-        <MudSelect T="int?" @bind-Value="PlayerOnId" Label="@L["Comes on"]" Class="mt-4" Clearable="true"
-                   Placeholder="@(Bench.Count == 0 ? L["Nobody is on the bench for this half."].Value : null)"
-                   Disabled="@(Bench.Count == 0)">
-            @foreach (var player in Bench)
-            {
-                <MudSelectItem T="int?" Value="player.Id">
-                    <PlayerLabel Player="player" />
-                </MudSelectItem>
-            }
-        </MudSelect>
+        @if (AllowSwapAndInjury)
+        {
+            @* Above the bench, because tapping who comes on is what makes the change. *@
+            <MudSwitch @bind-Value="Injured" Color="Color.Error" Class="mt-3">@L["Injured"]</MudSwitch>
+            <MudText Typo="Typo.caption" Style="color: var(--ink-muted); display: block;">
+                @L["The rest of the match stops counting towards her playing time."]
+            </MudText>
+        }
+
+        <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">@L["Comes on"]</MudText>
+        @if (Bench.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">@L["Nobody is on the bench for this half."]</MudText>
+        }
+        else
+        {
+            <PlayerPicker Players="Bench" Label="@L["Comes on"]" OnPick="BringOn" />
+        }
 
         @if (AllowSwapAndInjury)
         {
-            <MudSelect T="int?" @bind-Value="SwapWithId" Label="@L["Swaps position with"]" Class="mt-4" Clearable="true"
+            <MudDivider Class="my-3" />
+            <MudSelect T="int?" @bind-Value="SwapWithId" Label="@L["Swaps position with"]" Clearable="true"
                        Placeholder="@(OnPitch.Count == 0 ? L["Nobody else is on the pitch."].Value : null)"
                        Disabled="@(OnPitch.Count == 0 || Injured)">
                 @foreach (var other in OnPitch)
@@ -41,20 +46,15 @@
             <MudText Typo="Typo.caption" Class="mt-2" Style="color: var(--ink-muted); display: block;">
                 @L["A position swap keeps both players on the pitch and is not a substitution."]
             </MudText>
-
-            @* Not a third list: it says why she is going off, so "Comes on" above still names her
-               replacement — or, with an empty bench, nobody. *@
-            <MudDivider Class="my-3" />
-            <MudSwitch @bind-Value="Injured" Color="Color.Error">@L["Injured"]</MudSwitch>
-            <MudText Typo="Typo.caption" Style="color: var(--ink-muted); display: block;">
-                @L["The rest of the match stops counting towards her playing time."]
-            </MudText>
         }
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="@(!HasChoice)" OnClick="Submit">
-            @(IsPositionSwap ? L["Swap positions"] : Injured ? L["Off injured"] : L["Make substitution"])
-        </MudButton>
+        @if (IsPositionSwap || Injured)
+        {
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">
+                @(IsPositionSwap ? L["Swap positions"] : L["Off injured"])
+            </MudButton>
+        }
     </DialogActions>
 </MudDialog>
