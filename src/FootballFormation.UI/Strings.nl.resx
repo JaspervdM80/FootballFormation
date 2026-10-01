@@ -682,8 +682,9 @@
   <data name="Available Players" xml:space="preserve"><value>Beschikbare spelers</value></data>
   <data name="All players assigned" xml:space="preserve"><value>Alle spelers ingedeeld</value></data>
   <data name="Substitutes" xml:space="preserve"><value>Wisselspelers</value></data>
-  <data name="Drop here to add as sub" xml:space="preserve"><value>Sleep hierheen om als wissel toe te voegen</value></data>
-  <data name="Drag players here to add as subs" xml:space="preserve"><value>Sleep spelers hierheen om ze als wissel toe te voegen</value></data>
+  <data name="Tap or drop here to add as sub" xml:space="preserve"><value>Tik of sleep hierheen om als wissel toe te voegen</value></data>
+  <data name="Drag or tap players here to add as subs" xml:space="preserve"><value>Sleep of tik spelers hierheen om ze als wissel toe te voegen</value></data>
+  <data name="{0}: tap a position or the bench" xml:space="preserve"><value>{0}: tik op een positie of de wissels</value></data>
 
   <!-- Install banner -->
   <data name="Install the {0} app" xml:space="preserve"><value>Installeer de {0} app</value></data>

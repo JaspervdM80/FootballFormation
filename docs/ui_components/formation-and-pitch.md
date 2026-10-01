@@ -82,16 +82,25 @@
 
 ## Drag & Drop (HTML5 API)
 - **Player list → Pitch**: Assigns player to position slot
-- **Player list → Sub bench**: Adds as substitute. The dashed "Drop here to add as sub" zone shows
-  mid-drag **only while the bench is empty** — once a sub is named it would only push the list down
+- **Player list → Sub bench**: Adds as substitute. The dashed "Tap or drop here to add as sub" zone
+  shows mid-drag **only while the bench is empty** — once a sub is named it would only push the list down
   under the cursor. A sub row covers most of the panel and stops the drop from reaching it, so
   `OnSwapFieldPlayerWithSub` falls through to `OnPlayerDroppedToSub` for a drag that started in the
   list (no `FromSlotIndex`): landing on a row adds to the bench rather than doing nothing at all
 - **Pitch → Pitch**: Swaps two players' slots (`Drag.FromSlotIndex` is set ⇒ the drop is a swap)
 - **Pitch → Sub bench**: Drop on empty bench area moves player to bench; drop **on a sub** swaps the two (`OnSwapFieldPlayerWithSub`)
 - **Sub bench → Pitch**: Sub takes the slot; the displaced starter goes to the bench
-- Click on assigned player = remove from position (only while `Draggable`; elsewhere a tap raises
-  `OnPlayerClicked`)
+- **Every move is also two taps**, because on a phone the squad sits more than a screen above the
+  keeper and the bench, and the touch shim never auto-scrolls a drag. A tap on a list player, a chip
+  or a sub picks them up (`LineupDragState` with `tapped: true`, so `IsTapSelection`); the next tap
+  on a slot, a sub or the bench panel goes through the very handler the matching drop would. A tap
+  on the same player again puts them down. Only a tap selection counts — a drag let go over nothing
+  leaves `Drag.PlayerId` set, and a later tap must not place that stale player
+- While a player is picked up, a sticky `.selection-bar` under the panels names them and offers
+  **Cancel**, plus **Remove** when they are on the pitch or the bench. A tap on a chip used to remove
+  the player outright, which was easy to hit by accident; removing is now only that button (or the
+  bench row's cross). Changing period, formation or suggesting a line-up drops the selection, since
+  it names a slot in the line-up on screen
 - `@ondragstart`/`@ondrop` sit on the **inner** element — the occupied chip `.pitch-player` and the
   empty slot `.pitch-empty` — never on the `.pitch-slot` wrapper, which carries only the
   coordinates. Relevant when scripting or testing a drag: a synthetic event aimed at the wrapper
@@ -131,7 +140,8 @@ there, so a lineup can never be laid out one way on one screen and another way o
 - `ConstrainHeight` caps the pitch at 65vh; the builder uses it.
 - `HidePositionFit` flattens every chip to `fit-preferred`; anonymous visitors get that.
 - `Draggable` turns on the builder behaviour: chips are draggable, empty slots are drop targets
-  with the pulsing white `drop-ready` highlight, and tapping a chip removes the player.
+  with the pulsing white `drop-ready` highlight, and a tap on any slot raises `OnSlotTapped`;
+  `SelectedSlotIndex` rings the chip picked up by a tap.
 - `OnPlayerClicked` is **optional**. Unset (and not draggable), the pitch is inert — which is what
   the overview and every spectator wants. Set, occupied slots gain `.pitch-clickable` (pointer
   cursor, press feedback) and tapping one raises the player id. The live match screen wires it only

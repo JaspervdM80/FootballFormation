@@ -2,19 +2,21 @@
 
 <MudPaper Class="pa-3" Elevation="2"
           @ondragover:preventDefault="true"
-          @ondrop="() => OnPlayerDroppedToSub.InvokeAsync()">
+          @ondrop="() => OnPlayerDroppedToSub.InvokeAsync()"
+          @onclick="OnBenchClicked">
     <MudText Typo="Typo.subtitle2" GutterBottom="true">@L["Substitutes"]</MudText>
 
     @{
         var subs = Lineup.Where(p => p.IsSubstitute).ToList();
     }
 
-    @* Empty bench only: with subs listed the zone would just push them down under the cursor mid-drag. *@
-    @if (DraggedPlayerId is not null && !ReadOnly && subs.Count == 0)
+    @* Mid-drag, empty bench only: with subs listed the zone would just push them down under the cursor. A tap has no cursor to dodge. *@
+    @if (!ReadOnly && (DraggedPlayerId is not null && subs.Count == 0
+                       || SelectedPlayerId is { } selected && subs.All(s => s.PlayerId != selected)))
     {
         <div class="sub-drop-zone">
             <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Size="Size.Small" />
-            <MudText Typo="Typo.caption">@L["Drop here to add as sub"]</MudText>
+            <MudText Typo="Typo.caption">@L["Tap or drop here to add as sub"]</MudText>
         </div>
     }
 
@@ -23,13 +25,15 @@
         <div class="sub-list">
             @foreach (var sub in subs)
             {
-                <div class="sub-item d-flex align-center justify-space-between"
+                <div class="sub-item d-flex align-center justify-space-between @(sub.PlayerId == SelectedPlayerId ? "selected" : "")"
                      draggable="@((!ReadOnly).ToString().ToLowerInvariant())"
                      @ondragstart="() => OnSubDragStart.InvokeAsync(sub.PlayerId)"
                      @ondragstart:stopPropagation="true"
                      @ondragover:preventDefault="true"
                      @ondrop="() => OnSwapWithSub.InvokeAsync(sub.PlayerId)"
                      @ondrop:stopPropagation="true"
+                     @onclick="() => OnSubClicked(sub.PlayerId)"
+                     @onclick:stopPropagation="true"
                      style="cursor: @(ReadOnly ? "default" : "grab"); padding: 4px 8px;">
                     <div>
                         <MudText Typo="Typo.body2">
@@ -41,8 +45,10 @@
                     </div>
                     @if (!ReadOnly)
                     {
-                        <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small"
-                                       OnClick="() => OnSubRemoved.InvokeAsync(sub)" />
+                        <span @onclick:stopPropagation="true">
+                            <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small"
+                                           OnClick="() => OnSubRemoved.InvokeAsync(sub)" />
+                        </span>
                     }
                 </div>
             }
@@ -50,6 +56,6 @@
     }
     else if (DraggedPlayerId is null && !ReadOnly)
     {
-        <MudText Typo="Typo.caption" Color="Color.Tertiary">@L["Drag players here to add as subs"]</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Tertiary">@L["Drag or tap players here to add as subs"]</MudText>
     }
 </MudPaper>

@@ -11,25 +11,35 @@ public class LineupDragState
     /// Set when the drag started from the substitute bench.
     public bool FromSub { get; private set; }
 
-    public void StartFromList(int playerId)
+    /// Picked up by a tap rather than a drag, so it stays in hand until a second tap places it.
+    public bool IsTapSelection { get; private set; }
+
+    public int? SelectedPlayerId => IsTapSelection ? PlayerId : null;
+
+    public int? SelectedSlotIndex => IsTapSelection ? FromSlotIndex : null;
+
+    public void StartFromList(int playerId, bool tapped = false)
     {
         PlayerId = playerId;
         FromSlotIndex = null;
         FromSub = false;
+        IsTapSelection = tapped;
     }
 
-    public void StartFromPitch(int playerId, int slotIndex)
+    public void StartFromPitch(int playerId, int slotIndex, bool tapped = false)
     {
         PlayerId = playerId;
         FromSlotIndex = slotIndex;
         FromSub = false;
+        IsTapSelection = tapped;
     }
 
-    public void StartFromSub(int playerId)
+    public void StartFromSub(int playerId, bool tapped = false)
     {
         PlayerId = playerId;
         FromSlotIndex = null;
         FromSub = true;
+        IsTapSelection = tapped;
     }
 
     public void Clear()
@@ -37,5 +47,6 @@ public class LineupDragState
         PlayerId = null;
         FromSlotIndex = null;
         FromSub = false;
+        IsTapSelection = false;
     }
 }
