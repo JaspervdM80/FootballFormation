@@ -41,6 +41,13 @@ test.describe('an anonymous visitor', () => {
     await expect(page.getByRole('link', { name: 'Trainings', exact: false })).toHaveCount(0);
   });
 
+  test('is not greeted on the start page as the coach', async ({ page }) => {
+    await gotoRendered(page, '/');
+
+    await expect(page.getByRole('heading', { name: 'GJS MO15-2', exact: false })).toBeVisible();
+    await expect(page.getByText('Plan your team\'s formations', { exact: false })).toHaveCount(0);
+  });
+
   test('reaches the settings for the language, and is offered none of the admin sections', async ({ page }) => {
     await gotoRendered(page, '/settings');
 
@@ -108,6 +115,11 @@ test.describe('an admin', () => {
     await gotoRendered(page, '/stats');
     await expect(page.getByText('Top scorers', { exact: false })).toBeVisible();
     await expect(page.getByText('Playing time', { exact: false })).toBeVisible();
+  });
+
+  test('is greeted on the start page with what the app is for', async ({ page }) => {
+    await gotoRendered(page, '/');
+    await expect(page.getByText('Plan your team\'s formations', { exact: false })).toBeVisible();
   });
 
   test('reaches the admin-only routes directly', async ({ page }) => {
