@@ -283,8 +283,14 @@ test('the coach\'s screen stays awake from kick-off to full time, and a spectato
     const watching = await visitor.newPage();
     await watching.addInitScript(fakeWakeLock);
     await gotoRendered(watching, `/games/${id}/live`);
-    // The score in the title is set on the same render that would have asked for the lock.
     await expect(watching).toHaveTitle(/^0 – 0 · .*FC Wakker/);
+
+    // Calls reach the browser in the order they were made, so once a later render's title lands, anything the first render sent has
+    // already run — whichever order the page makes them in.
+    await clickFor(
+      page.getByRole('button', { name: 'Goal against' }),
+      () => expect(watching).toHaveTitle(/^(0 – 1|1 – 0) · /),
+    );
     expect(await watching.evaluate(() => window.wakeLocks.requests)).toBe(0);
   } finally {
     await visitor.close();
