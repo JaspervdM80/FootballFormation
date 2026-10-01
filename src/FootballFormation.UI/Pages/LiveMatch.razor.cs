@@ -15,6 +15,7 @@ public partial class LiveMatch
     [Inject] private MatchSubstitutionService SubService { get; set; } = null!;
     [Inject] private PlayerService PlayerService { get; set; } = null!;
     [Inject] private SeasonSquadService SquadService { get; set; } = null!;
+    [Inject] private StatsService Stats { get; set; } = null!;
     [Inject] private LiveMatchNotifier Notifier { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
     [Inject] private NavigationTrail Trail { get; set; } = null!;
@@ -34,6 +35,7 @@ public partial class LiveMatch
     private Game? GameData { get; set; }
     private List<Player> AllPlayers { get; set; } = [];
     private SeasonSquad Squad { get; set; } = SeasonSquad.Empty;
+    private IReadOnlyDictionary<int, int> _seasonGoals = new Dictionary<int, int>();
     private bool _isAdmin;
 
     /// Per circuit and deliberately not stored — a glance-vs-detail choice made in the moment. Survives the live reloads because those
@@ -172,19 +174,17 @@ public partial class LiveMatch
         _ => "live-status"
     };
 
-    /// Ordered pitch, bench, rest of roster: a scorer is nearly always someone currently playing, and this puts them where a thumb lands first.
     private List<Player> GoalCandidates
     {
         get
         {
             if (GameData is null) return [];
 
-            var onPitch = OnPitch.Select(p => p.PlayerId).ToList();
-            var onBench = OnBench.Select(p => p.PlayerId).ToList();
+            var onPitch = OnPitch.Select(p => p.PlayerId).ToHashSet();
             var roster = GameData.SelectRoster(AllPlayers, Squad).Select(p => p.Id);
 
-            var ordered = onPitch.Concat(onBench).Concat(roster).Distinct();
-            return [.. ordered.Select(FindPlayer).OfType<Player>()];
+            var candidates = onPitch.Concat(roster).Distinct().Select(FindPlayer).OfType<Player>();
+            return LiveCandidateOrder.Scorers(candidates, onPitch, _seasonGoals, GameData);
         }
     }
 
@@ -234,6 +234,9 @@ public partial class LiveMatch
 
         var squadResult = await SquadService.GetSquadAsync(GameData!.SeasonId, Cancellation);
         Squad = squadResult.IsSuccess ? squadResult.Value! : SeasonSquad.Empty;
+
+        if (_isAdmin && (await Stats.GetSeasonAsync(GameData.SeasonId, Cancellation)) is { IsSuccess: true } stats)
+            _seasonGoals = stats.Value!.Stats.Players.DistinctBy(p => p.Player.Id).ToDictionary(p => p.Player.Id, p => p.Goals);
 
         Notifier.Changed += OnLiveChanged;
 
@@ -457,7 +460,7 @@ public partial class LiveMatch
             {
                 p.Add(x => x.Player, player);
                 p.Add(x => x.Position, tapped.Position);
-                p.Add(x => x.Bench, SubCandidates);
+                p.Add(x => x.Bench, LiveCandidateOrder.ForPosition(SubCandidates, tapped.Position));
                 p.Add(x => x.OnPitch, IsAtBreak ? [] : SwapCandidates(playerId));
                 p.Add(x => x.AllowSwapAndInjury, !IsAtBreak);
             });

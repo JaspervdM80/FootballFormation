@@ -37,7 +37,12 @@
     white-space: nowrap;
 }
 
-.player-pick:active {
+.player-pick:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.player-pick:active:not(:disabled) {
     background: color-mix(in srgb, var(--club-primary-bright) 12%, var(--surface-card));
 }
 
@@ -47,7 +52,7 @@
 }
 
 @media (hover: hover) {
-    .player-pick:hover {
+    .player-pick:hover:not(:disabled) {
         border-color: var(--club-primary-bright);
         background: color-mix(in srgb, var(--club-primary-bright) 6%, var(--surface-card));
     }

@@ -1,7 +1,8 @@
 <div class="player-picker" role="group" aria-label="@Label">
     @foreach (var player in Players)
     {
-        <button type="button" class="player-pick" title="@player.DisplayName" @onclick="() => OnPick.InvokeAsync(player)">
+        <button type="button" class="player-pick" title="@player.DisplayName" disabled="@Disabled"
+                @onclick="() => OnPick.InvokeAsync(player)">
             <span class="player-pick-number">@player.ShirtNumber</span>
             <span class="player-pick-name">@player.ShortName</span>
         </button>
@@ -17,4 +18,7 @@
 
     [Parameter, EditorRequired]
     public EventCallback<Player> OnPick { get; set; }
+
+    [Parameter]
+    public bool Disabled { get; set; }
 }

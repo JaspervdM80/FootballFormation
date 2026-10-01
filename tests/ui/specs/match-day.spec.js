@@ -138,6 +138,8 @@ test('tapping a player on the pitch offers a substitution and a position swap', 
   await expect(dialog.locator('.player-pick').first()).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Swap positions' })).toHaveCount(0);
   await chooseOption(page, dialog, 'Swaps position with', '#');
+  // A bench tap would otherwise make a substitution and drop the swap just chosen.
+  await expect(dialog.locator('.player-pick').first()).toBeDisabled();
   await submitDialog(page, 'Swap positions');
   await expect(page.getByText('Positions swapped', { exact: false })).toBeVisible();
 

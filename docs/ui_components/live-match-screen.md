@@ -77,8 +77,10 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
 - **Tapping a player offers two changes** (`LiveSubDialog`): someone comes on for them
   (`SubstituteAsync`), or they trade positions with a team-mate who stays on (`SwapPositionsAsync`).
   The bench is a grid of shirt-number buttons (`PlayerPicker`) and **tapping one makes the
-  substitution** — two taps from the pitch. The swap stays a dropdown, and only once one is chosen
-  does the footer grow a "Swap positions" button.
+  substitution** — two taps from the pitch. The bench is ordered by `LiveCandidateOrder.ForPosition`:
+  best `PositionFit` for the position being vacated, then name. The swap stays a dropdown, and only
+  once one is chosen does the footer grow a "Swap positions" button; while a swap is chosen the bench
+  buttons are disabled, so a tap there cannot quietly turn it into a substitution.
   The **"Injured" switch** sits above the bench and is not a third change: it says *why* she is going
   off, so a bench tap after it still names her replacement (`MarkInjuredAsync`). With the switch on
   and nobody tapped, the footer offers "Off injured" — the one way the dialog closes with nobody
@@ -223,11 +225,13 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   table (`.live-minutes-card`, `order: 2`) drop below the timeline under 600px. Both rules live in
   `app.css` — the classes sit on `MudPaper` roots, which scoped CSS cannot reach.
 - **A goal is two taps: "Goal", then the scorer** (`LiveGoalDialog`). The scorer is a grid of
-  shirt-number buttons (`PlayerPicker`, 64px tall), on-pitch players first, and tapping one adds the
-  goal. The assist and the own-goal switch sit under the grid and have to be set *before* the scorer
-  is tapped — the dialog says so — because there is no confirm step left to set them in. The assist
-  select binds `int?`, not `int`: an `int` binds to 0, which is nobody's id but still renders as a
-  chosen value.
+  shirt-number buttons (`PlayerPicker`, 64px tall), and tapping one adds the goal. The order is
+  `LiveCandidateOrder.Scorers`: on the pitch first, then the rest of the roster, each by season goals
+  (complete matches plus this one, own goals excluded) and then by name. The season figures are
+  loaded once, for an admin only. The assist and the own-goal switch sit under the grid and have to
+  be set *before* the scorer is tapped — the dialog says so — because there is no confirm step left to
+  set them in. The assist select binds `int?`, not `int`: an `int` binds to 0, which is nobody's id
+  but still renders as a chosen value.
 - **`/games` is two lists, not one** (`Games.Sections()`): fixtures still to play, soonest first,
   then results newest first — each list leads with the match you came to look at. A single list has
   to put one of them at the wrong end, and newest-first throughout put the *most distant* fixture at

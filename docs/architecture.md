@@ -60,6 +60,7 @@ Reporting/
                            periods × period length estimate before that; PlayingTimeRow.IsActual says
                            which. The per-period cells always come from the line-up being edited
   LiveMinutesReport.cs    — Exact minutes on the pitch during a live match
+  LiveCandidateOrder.cs   — The order the live goal and substitution dialogs offer players in
   SeasonStatsReport.cs    — Team totals + form for /stats (SeasonStats, GameResult)
   PlayerStatsReport.cs    — Per-player aggregates (PlayerStats, PositionStat, PlayerGameStat)
   PositionDevelopmentReport.cs — Pivots PlayerStats.Positions into a players × positions grid for

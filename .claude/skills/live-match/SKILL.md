@@ -87,10 +87,12 @@ Half time is a **dashed rule across the timeline**, not an event.
 
 **A goal and a substitution are two taps each.** `LiveGoalDialog` and `LiveSubDialog` show players as a
 `PlayerPicker` grid of shirt-number buttons, and **the tap is the submit** — so anything that qualifies
-the change (assist, own goal, injured) has to be set before it. Tapping a player on the pitch offers
-two changes: someone off the bench comes on (`SubstituteAsync`), or they trade positions with a
-team-mate who stays on (`SwapPositionsAsync`, still a dropdown, with a footer button that appears only
-once one is chosen).
+the change (assist, own goal, injured) has to be set before it. `LiveCandidateOrder` decides the
+order: scorers on the pitch first, then by season goals and name; the bench by position fit for the
+slot being vacated, then name. Tapping a player on the pitch offers two changes: someone off the
+bench comes on (`SubstituteAsync`), or they trade positions with a team-mate who stays on
+(`SwapPositionsAsync`, still a dropdown, with a footer button that appears only once one is chosen —
+and the bench disabled meanwhile, so a tap there cannot drop the swap).
 
 **A position swap writes no `GameSubstitution`** — nobody's minutes changed, and a row there would say
 they did. The price is the *split by position*: `GameMinutesReport` reads the lineup as it finally

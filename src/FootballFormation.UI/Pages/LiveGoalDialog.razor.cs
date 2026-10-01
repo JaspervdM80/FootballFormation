@@ -8,7 +8,7 @@ public partial class LiveGoalDialog
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = null!;
 
-    /// Players who can be credited, on-pitch first — see LiveMatch.GoalCandidates.
+    /// Players who can be credited, in the order LiveCandidateOrder.Scorers gives them.
     [Parameter, EditorRequired]
     public List<Player> Candidates { get; set; } = [];
 

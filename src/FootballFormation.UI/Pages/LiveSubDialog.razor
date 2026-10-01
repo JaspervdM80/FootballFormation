@@ -26,7 +26,8 @@
         }
         else
         {
-            <PlayerPicker Players="Bench" Label="@L["Comes on"]" OnPick="BringOn" />
+            @* Disabled rather than overriding: a tap here would otherwise drop the swap already chosen below. *@
+            <PlayerPicker Players="Bench" Label="@L["Comes on"]" OnPick="BringOn" Disabled="IsPositionSwap" />
         }
 
         @if (AllowSwapAndInjury)
