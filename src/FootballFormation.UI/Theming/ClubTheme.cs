@@ -1,4 +1,4 @@
-namespace FootballFormation.UI.Theming;
+﻿namespace FootballFormation.UI.Theming;
 
 /// The app styles through two systems — CSS custom properties and a <see cref="MudTheme"/> — and both derive from here, so re-skinning
 /// for another club means editing <see cref="Gjs"/> and nothing else. Shades are mixed where used, not stored per alpha level.
@@ -61,11 +61,11 @@ public sealed record ClubTheme
         LogoPath = "icons/icon-192.png",
         LogoBackground = "#ffffff",
 
-        SurfacePage = "#ffffff",
-        SurfaceCard = "#eef7f1",
-        SurfaceCardAlt = "#e0efe6",
+        SurfacePage = "#f3f6f4",
+        SurfaceCard = "#ffffff",
+        SurfaceCardAlt = "#ffffff",
         SurfaceAppbar = "#ffffff",
-        SurfaceAppbarAlt = "#e9f4ed",
+        SurfaceAppbarAlt = "#ffffff",
 
         Ink = "#182b1f",
         CornerRadius = "12px"
@@ -137,8 +137,28 @@ public sealed record ClubTheme
         LayoutProperties = new LayoutProperties
         {
             DefaultBorderRadius = CornerRadius
+        },
+        // MudBlazor defaults every level to Roboto, so the body's DM Sans alone left headings and buttons in a second typeface.
+        Typography = new Typography
+        {
+            Default = new DefaultTypography { FontFamily = FontStack },
+            H1 = new H1Typography { FontFamily = FontStack },
+            H2 = new H2Typography { FontFamily = FontStack },
+            H3 = new H3Typography { FontFamily = FontStack },
+            H4 = new H4Typography { FontFamily = FontStack, FontSize = "1.625rem", FontWeight = "700", LineHeight = "1.25", LetterSpacing = "-.01em" },
+            H5 = new H5Typography { FontFamily = FontStack, FontSize = "1.375rem", FontWeight = "700", LineHeight = "1.3", LetterSpacing = "-.005em" },
+            H6 = new H6Typography { FontFamily = FontStack, FontSize = "1.125rem", FontWeight = "700", LineHeight = "1.35" },
+            Subtitle1 = new Subtitle1Typography { FontFamily = FontStack },
+            Subtitle2 = new Subtitle2Typography { FontFamily = FontStack },
+            Body1 = new Body1Typography { FontFamily = FontStack },
+            Body2 = new Body2Typography { FontFamily = FontStack },
+            Button = new ButtonTypography { FontFamily = FontStack, FontWeight = "600", TextTransform = "none", LetterSpacing = "0" },
+            Caption = new CaptionTypography { FontFamily = FontStack },
+            Overline = new OverlineTypography { FontFamily = FontStack },
         }
     };
+
+    private static readonly string[] FontStack = ["DM Sans", "Helvetica Neue", "Helvetica", "Arial", "sans-serif"];
 
     /// The ink color at a given opacity, as <c>rgba(...)</c>.
     private string InkAt(double opacity)

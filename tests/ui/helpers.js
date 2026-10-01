@@ -286,9 +286,20 @@ export function gameRow(page, opponent) {
   return page.locator('.game-row', { hasText: opponent }).first();
 }
 
-/** Opens one of a match card's action buttons — they are titled, which is how a coach finds them. */
-export async function gameAction(page, opponent, title) {
-  await gameRow(page, opponent).getByTitle(title, { exact: false }).click();
+/**
+ * Runs one of a match card's actions: the row's one outright button when that is the action asked
+ * for, otherwise the entry of that name in the row's ⋮ menu.
+ */
+export async function gameAction(page, opponent, name) {
+  const row = gameRow(page, opponent);
+  const outright = row.locator('.action-labelled');
+  const title = (await outright.count()) ? await outright.first().getAttribute('title') : null;
+  if (title && (name instanceof RegExp ? name.test(title) : title.includes(name))) {
+    await outright.first().click();
+    return;
+  }
+  await row.locator('.game-more button').click();
+  await page.locator('.mud-popover-open .mud-menu-item', { hasText: name }).first().click();
 }
 
 /**
@@ -353,7 +364,7 @@ export async function chooseSeasonNamed(page, path, name) {
 /** Creates a match and returns its id, read from the URL its own formation button navigates to. */
 export async function matchWithId(page, opponent, options = {}) {
   await createMatch(page, { opponent, ...options });
-  await gameRow(page, opponent).getByTitle(/Formation|Add lineup/).click();
+  await gameAction(page, opponent, /Formation|Add lineup/);
   await page.waitForURL(/\/games\/\d+\/formation/);
   return Number(page.url().match(/\/games\/(\d+)\//)[1]);
 }

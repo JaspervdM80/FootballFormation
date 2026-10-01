@@ -840,6 +840,8 @@
   <data name="Sizing" xml:space="preserve"><value>Afmetingen</value></data>
   <data name="Next match" xml:space="preserve"><value>Volgende wedstrijd</value></data>
   <data name="Last result" xml:space="preserve"><value>Laatste uitslag</value></data>
+  <data name="Kick-off {0}" xml:space="preserve"><value>Aftrap {0}</value></data>
+  <data name="More actions" xml:space="preserve"><value>Meer acties</value></data>
   <data name="Goal difference: {0}" xml:space="preserve"><value>Doelsaldo: {0}</value></data>
   <data name="{0} and {1}" xml:space="preserve"><value>{0} en {1}</value></data>
   <data name="Who does what at each match." xml:space="preserve"><value>Wie wat doet bij elke wedstrijd.</value></data>

@@ -28,7 +28,7 @@ const SOURCE = join(import.meta.dirname, '../../../src');
 const SELECTORS = {
   'the games list': ['game-row', 'game-section', 'game-date', 'game-score', 'game-opponent',
                      'badge-venue-inline', 'badge-venue-home', 'badge-venue-away',
-                     'action-live', 'action-live-now'],
+                     'action-live', 'action-live-now', 'game-more', 'game-day', 'game-mon', 'action-labelled'],
   'a match still missing its lineup': ['nolineup-icon', 'action-needs-lineup'],
   'the formation builder': ['pitch', 'pitch-empty', 'pitch-player', 'pitch-number', 'draggable-player',
                             'subs-panel', 'sub-item', 'pitch-legend', 'legend-item',

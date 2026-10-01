@@ -179,8 +179,9 @@ await gotoRendered(page, `${BASE}/games/duties`);
 if (!(await page.locator('.duty-row').count())) {
   await goto(page, `${BASE}/games`);
   const dialog = page.locator('.mud-dialog');
-  await clickFor(page.locator('.game-row', { hasText: SEED_OPPONENT }).first().getByTitle(/bewerken|edit/i).first(),
-    () => dialog.isVisible());
+  await page.locator('.game-row', { hasText: SEED_OPPONENT }).first()
+    .locator('.game-more button').click();
+  await clickFor(page.locator('.mud-popover-open .mud-menu-item', { hasText: rx('bewerken', 'edit') }).first(), () => dialog.isVisible());
   await dialog.getByLabel(rx('vlaggendienst', 'flag duty')).first().fill('Vader van Anouk');
   await clickFor(dialog.getByRole('button', { name: rx('opslaan', 'save') }),
     async () => await page.locator('.mud-dialog').count() === 0, { settle: 10_000 });
@@ -195,8 +196,9 @@ if (!(await page.locator('.duty-row').count())) {
 await seedGameToday(SEED_LIVE_OPPONENT);
 await goto(page, `${BASE}/games`);
 const liveCard = page.locator('.game-row', { hasText: SEED_LIVE_OPPONENT }).first();
-// "Opstelling" or "Opstelling toevoegen", depending on whether it has a line-up yet.
-await liveCard.getByTitle(/opstelling|formation|add lineup/i).first().click();
+// On match day the card's own button is Live, so the line-up is reached through its menu.
+await liveCard.locator('.game-more button').click();
+await page.locator('.mud-popover-open .mud-menu-item', { hasText: /opstelling|formation|add lineup/i }).first().click();
 await page.waitForURL(/\/games\/\d+\/formation/);
 const gameId = page.url().match(/\/games\/(\d+)\//)[1];
 const LIVE_GAME = `/games/${gameId}/live`;

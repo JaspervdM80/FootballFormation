@@ -50,70 +50,83 @@
 </PageHeader>
 
 <div class="home-dashboard mb-6">
-    @if (_dashboard.NextGame is { } next)
-    {
-        <a class="home-card" href="@AppRoutes.Overview(next.Id)">
-            <div class="home-card-label">@L["Next match"]</div>
-            <div class="home-card-title">
-                <span class="home-card-opponent">@next.Opponent</span><VenueBadge IsHome="next.IsHomeGame" Inline="true" />
-            </div>
-            <div class="home-card-line">@CardDate(next)</div>
-            @if (MeetLine(next) is { } meet)
-            {
-                <div class="home-card-line">@meet</div>
-            }
-        </a>
-    }
-    else
-    {
-        <div class="home-card home-card-empty">
-            <div class="home-card-label">@L["Next match"]</div>
-            <div class="home-card-line">@NoNextGameText</div>
-        </div>
-    }
-
-    @if (_dashboard.LastGame is { } last)
-    {
-        <a class="home-card" href="@AppRoutes.Result(last.Id)">
-            <div class="home-card-label">@L["Last result"]</div>
-            <div class="home-card-title">
-                <span class="home-card-opponent">@last.Opponent</span><VenueBadge IsHome="last.IsHomeGame" Inline="true" />
-            </div>
-            <div class="home-card-result">
-                <span class="home-card-score">@last.ScoreboardOrder()</span>
-                <ResultPill Result="SeasonStatsReport.ResultOf(last)" />
-            </div>
-            <div class="home-card-line">@CardDate(last)</div>
-            @if (_dashboard.LastScorers.Count > 0)
-            {
-                <div class="home-card-line home-card-scorers">
-                    <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Size="Size.Small" />@Scorers
-                </div>
-            }
-        </a>
-    }
-    else
-    {
-        <div class="home-card home-card-empty">
-            <div class="home-card-label">@L["Last result"]</div>
-            <div class="home-card-line">@L["No matches played yet."]</div>
-        </div>
-    }
-
-    <a class="home-card" href="@AppRoutes.SeasonStats">
-        <div class="home-card-label">@RecordLabel</div>
-        @if (_dashboard.Record.Played > 0)
+    <section class="home-block">
+        <div class="card-label">@L["Next match"]</div>
+        @if (_dashboard.NextGame is { } next)
         {
-            <div class="home-card-caption">@L["W-D-L"]</div>
-            <div class="home-card-record">@($"{_dashboard.Record.Won}-{_dashboard.Record.Drawn}-{_dashboard.Record.Lost}")</div>
-            <div class="home-card-line">@L["Goal difference: {0}", GoalDifference]</div>
-            <FormGuide Form="_dashboard.Record.Form" />
+            <a class="home-card home-fixture" href="@AppRoutes.Overview(next.Id)">
+                <div class="home-date">
+                    <span class="home-date-dow">@next.Date.ToString("ddd")</span>
+                    <span class="home-date-day">@next.Date.Day</span>
+                    <span class="home-date-mon">@next.Date.ToString("MMM")</span>
+                </div>
+                <div class="home-fixture-body">
+                    <div class="home-card-title">
+                        <span class="home-card-opponent">@next.Opponent</span><VenueBadge IsHome="next.IsHomeGame" Inline="true" />
+                    </div>
+                    @if (FixtureLine(next) is { } line)
+                    {
+                        <div class="home-card-line">@line</div>
+                    }
+                    @if (Ground(next) is { } ground)
+                    {
+                        <div class="home-card-line home-card-icon-line">
+                            <MudIcon Icon="@Icons.Material.Filled.Place" Size="Size.Small" />@ground
+                        </div>
+                    }
+                </div>
+            </a>
         }
         else
         {
-            <div class="home-card-line">@L["No matches played yet."]</div>
+            <div class="home-card home-card-empty">@NoNextGameText</div>
         }
-    </a>
+    </section>
+
+    <section class="home-block">
+        <div class="card-label">@RecordLabel</div>
+        @if (_dashboard.Record.Played > 0)
+        {
+            <a class="home-card home-season" href="@AppRoutes.SeasonStats">
+                <div class="home-wdl">
+                    <div class="win"><b>@_dashboard.Record.Won</b><small>@L["Win"]</small></div>
+                    <div class="draw"><b>@_dashboard.Record.Drawn</b><small>@L["Draw"]</small></div>
+                    <div class="loss"><b>@_dashboard.Record.Lost</b><small>@L["Loss"]</small></div>
+                </div>
+                <FormGuide Form="_dashboard.Record.Form" />
+                <div class="home-card-line">@L["Goal difference: {0}", GoalDifference]</div>
+            </a>
+        }
+        else
+        {
+            <div class="home-card home-card-empty">@L["No matches played yet."]</div>
+        }
+    </section>
+
+    <section class="home-block">
+        <div class="card-label">@L["Last result"]</div>
+        @if (_dashboard.LastGame is { } last)
+        {
+            <a class="home-card" href="@AppRoutes.Result(last.Id)">
+                <div class="home-card-result">
+                    <span class="home-card-opponent">@last.Opponent</span><VenueBadge IsHome="last.IsHomeGame" Inline="true" />
+                    <span class="home-card-score">@last.ScoreboardOrder()</span>
+                    <ResultPill Result="SeasonStatsReport.ResultOf(last)" />
+                </div>
+                <div class="home-card-line">@CardDate(last)</div>
+                @if (_dashboard.LastScorers.Count > 0)
+                {
+                    <div class="home-card-line home-card-icon-line">
+                        <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Size="Size.Small" />@Scorers
+                    </div>
+                }
+            </a>
+        }
+        else
+        {
+            <div class="home-card home-card-empty">@L["No matches played yet."]</div>
+        }
+    </section>
 </div>
 
 @* Whole tiles are the target — a card with a single destination does not need a button
@@ -121,9 +134,9 @@
 <MudGrid Spacing="4">
     <MudItem xs="12" sm="6" md="4">
         <a class="home-tile-link" href="@AppRoutes.Players">
-            <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;">
-                <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Style="color: var(--club-primary-bright);" />
-                <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Selection"]</MudText>
+            <MudPaper Class="pa-4 home-tile" Elevation="1" Style="border-radius: 12px;">
+                <MudIcon Icon="@Icons.Material.Filled.People" Style="color: var(--club-primary-bright);" />
+                <MudText Typo="Typo.subtitle1" Style="color: var(--ink); font-weight: 700;">@L["Selection"]</MudText>
                 <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
                     <AuthorizeView Roles="@AppRoles.Admin">
                         <Authorized>@L["Add players with their positions and shirt numbers."]</Authorized>
@@ -136,9 +149,9 @@
 
     <MudItem xs="12" sm="6" md="4">
         <a class="home-tile-link" href="@AppRoutes.Games">
-            <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;">
-                <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Size="Size.Large" Style="color: var(--club-primary-bright);" />
-                <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Games & Formations"]</MudText>
+            <MudPaper Class="pa-4 home-tile" Elevation="1" Style="border-radius: 12px;">
+                <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Style="color: var(--club-primary-bright);" />
+                <MudText Typo="Typo.subtitle1" Style="color: var(--ink); font-weight: 700;">@L["Games & Formations"]</MudText>
                 <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
                     <AuthorizeView Roles="@AppRoles.Admin">
                         <Authorized>@L["Create games, build formations, and track results."]</Authorized>
@@ -151,9 +164,9 @@
 
     <MudItem xs="12" sm="6" md="4">
         <a class="home-tile-link" href="@AppRoutes.SeasonStats">
-            <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;">
-                <MudIcon Icon="@Icons.Material.Filled.BarChart" Size="Size.Large" Style="color: var(--club-primary-bright);" />
-                <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Season stats"]</MudText>
+            <MudPaper Class="pa-4 home-tile" Elevation="1" Style="border-radius: 12px;">
+                <MudIcon Icon="@Icons.Material.Filled.BarChart" Style="color: var(--club-primary-bright);" />
+                <MudText Typo="Typo.subtitle1" Style="color: var(--ink); font-weight: 700;">@L["Season stats"]</MudText>
                 <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
                     <AuthorizeView Roles="@AppRoles.Admin">
                         <Authorized>@L["See the team record, top scorers, and playing time."]</Authorized>
@@ -169,9 +182,9 @@
     <AuthorizeView Roles="@AppRoles.Admin">
         <MudItem xs="12" sm="6" md="4">
             <a class="home-tile-link" href="@AppRoutes.Trainings">
-                <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;">
-                    <MudIcon Icon="@Icons.Material.Filled.FitnessCenter" Size="Size.Large" Style="color: var(--club-primary-bright);" />
-                    <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Trainings"]</MudText>
+                <MudPaper Class="pa-4 home-tile" Elevation="1" Style="border-radius: 12px;">
+                    <MudIcon Icon="@Icons.Material.Filled.FitnessCenter" Style="color: var(--club-primary-bright);" />
+                    <MudText Typo="Typo.subtitle1" Style="color: var(--ink); font-weight: 700;">@L["Trainings"]</MudText>
                     <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
                         @L["Keep the training evenings, and note who was not there."]
                     </MudText>
@@ -181,9 +194,9 @@
 
         <MudItem xs="12" sm="6" md="4">
             <a class="home-tile-link" href="@AppRoutes.Preferences">
-                <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;">
-                    <MudIcon Icon="@Icons.Material.Filled.Tune" Size="Size.Large" Style="color: var(--club-primary-bright);" />
-                    <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Preferences"]</MudText>
+                <MudPaper Class="pa-4 home-tile" Elevation="1" Style="border-radius: 12px;">
+                    <MudIcon Icon="@Icons.Material.Filled.Tune" Style="color: var(--club-primary-bright);" />
+                    <MudText Typo="Typo.subtitle1" Style="color: var(--ink); font-weight: 700;">@L["Preferences"]</MudText>
                     <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
                         @L["Configure match duration, split type, and defaults."]
                     </MudText>
@@ -194,9 +207,9 @@
 
     <MudItem xs="12" sm="6" md="4">
         <a class="home-tile-link" href="@AppRoutes.Duties">
-            <MudPaper Class="pa-5 home-tile" Elevation="2" Style="border-radius: 16px;">
-                <MudIcon Icon="@Icons.Material.Filled.AssignmentInd" Size="Size.Large" Style="color: var(--club-primary-bright);" />
-                <MudText Typo="Typo.h6" Class="mt-3" Style="color: var(--ink);">@L["Duties"]</MudText>
+            <MudPaper Class="pa-4 home-tile" Elevation="1" Style="border-radius: 12px;">
+                <MudIcon Icon="@Icons.Material.Filled.AssignmentInd" Style="color: var(--club-primary-bright);" />
+                <MudText Typo="Typo.subtitle1" Style="color: var(--ink); font-weight: 700;">@L["Duties"]</MudText>
                 <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
                     @DutiesText
                 </MudText>

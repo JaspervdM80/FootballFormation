@@ -1,7 +1,7 @@
 // Picking nine-a-side in the match dialog, and the shorter pitch that follows it.
 import { test, expect } from '../fixtures.js';
 import {
-  chooseOption, clickFor, fillField, gameRow, goto, openDialog, submitDialog,
+  chooseOption, clickFor, fillField, gameAction, gameRow, goto, openDialog, submitDialog,
 } from '../helpers.js';
 
 /** Opens the match dialog on /games, already switched to the given format. */
@@ -38,9 +38,8 @@ test('a nine-a-side match is built on a pitch with nine slots', async ({ page })
   await submitDialog(page);
 
   await expect(gameRow(page, 'FC Negental')).toBeVisible();
-  await expect(gameRow(page, 'FC Negental').locator('.badge-gold')).toHaveText('3-3-2');
 
-  await gameRow(page, 'FC Negental').getByTitle(/Formation|Add lineup/).click();
+  await gameAction(page, 'FC Negental', /Formation|Add lineup/);
   await page.waitForURL(/\/games\/\d+\/formation/);
 
   await expect(page.locator('.pitch .pitch-slot')).toHaveCount(9);
@@ -54,7 +53,7 @@ test('switching an eleven-a-side match to nine benches the starters it has no sl
   await fillField(panel, 'Opponent', 'FC Omschakeling');
   await submitDialog(page);
 
-  await gameRow(page, 'FC Omschakeling').getByTitle(/Formation|Add lineup/).click();
+  await gameAction(page, 'FC Omschakeling', /Formation|Add lineup/);
   await page.waitForURL(/\/games\/\d+\/formation/);
 
   // Filled from the back of the pitch, so the first ones placed are the striker slots nine-a-side
@@ -76,12 +75,12 @@ test('switching an eleven-a-side match to nine benches the starters it has no sl
   );
 
   await goto(page, '/games');
-  await gameRow(page, 'FC Omschakeling').getByTitle('Edit', { exact: false }).click();
+  await gameAction(page, 'FC Omschakeling', 'Edit');
   const edit = await openDialog(page);
   await chooseOption(page, edit, 'Match Format', '9 vs 9');
   await submitDialog(page);
 
-  await gameRow(page, 'FC Omschakeling').getByTitle(/Formation|Add lineup/).click();
+  await gameAction(page, 'FC Omschakeling', /Formation|Add lineup/);
   await page.waitForURL(/\/games\/\d+\/formation/);
 
   await expect(page.locator('.pitch .pitch-slot')).toHaveCount(9);

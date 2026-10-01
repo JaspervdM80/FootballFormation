@@ -226,10 +226,10 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   (`Game.HasActualTimings`) — the numbers cannot say which they are, so the heading does. The rows
   are `MinutesPlayedList`, which `/games/{id}/result` shows admins too, under the score card; on a
   desktop the result page's timeline (`.result-timeline`, `app.css`) spans both rows to make room.
-- **Mobile reorders the column with flex `order`**: what just happened matters more at a touchline
-  than where everyone stands, so the line-up card (`.live-lineup`, `order: 1`) and the minutes
-  table (`.live-minutes-card`, `order: 2`) drop below the timeline under 600px. Both rules live in
-  `app.css` — the classes sit on `MudPaper` roots, which scoped CSS cannot reach.
+- **The column runs in source order at every width**: scoreboard, the Goal buttons, the line-up, then
+  the timeline. Everything a coach touches during a match — the score, the two goal buttons and the
+  pitch a substitution starts from — fits the first screen of a phone; the timeline is read, not
+  tapped, so it sits below. Only `.live-controls-foot` keeps an explicit `order` in `app.css`.
 - **A goal is two taps: "Goal", then the scorer** (`LiveGoalDialog`). The scorer is a grid of
   shirt-number buttons (`PlayerPicker`, 64px tall), and tapping one adds the goal. The order is
   `LiveCandidateOrder.Scorers`: on the pitch first, then the rest of the roster, each by season goals
@@ -247,43 +247,34 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   intended — the only thing to do with one is delete it, and the stale row is the prompt. Because
   `HasFinalScore` tests `MatchState` too, a game being played now stays among the fixtures instead
   of crossing over on its first goal. Either block disappears when empty.
-- **The Live button leads the action row and is always the crest red** (`.action-live`), which no
-  other action on a card wears — the leading position and the one colour are what a coach hits
-  without reading. `.action-live-now` adds the pulse, and only a match actually under way carries
-  it: **paint and state are separate classes**, because the first version put the red on the
-  in-progress class alone and the button everyone actually sees — on the day, before kick-off —
-  rendered grey.
+- **A row shows one action outright and keeps the rest in a ⋮ menu** (`Games.PrimaryAction`). The
+  outright one is **Live** — for everyone while a match is under way, for an admin on match day — or
+  otherwise **Opstelling** for an admin on a fixture; a settled result shows none, since the row
+  itself opens it. Share, the result, the line-up when it is not the outright one, edit and delete
+  are in the menu, so delete is never one slip away from edit. The row carries a date block, the
+  opponent, the venue and the kick-off time; the formation is deliberately not on it. Live is always
+  the crest red (`.action-live`), and `.action-live-now` adds the pulse only to a match actually
+  under way — paint and state are separate classes.
+- The menu's activator is an `ActivatorContent` icon button so it keeps its `aria-label`, and it has
+  to call `context.ToggleAsync` itself — see [MudBlazor notes](mudblazor-notes.md).
 - `/games` routes an `InProgress` game to `/live` for **everyone**, whatever the calendar says,
   since a match kicked off before midnight is still being played. For other games the Live action is
   admin-only **and match-day only** (`Games.IsMatchDay`, i.e. `game.Date.Date == Today`): the live
   screen runs a real clock and writes real substitution timings, so opening it on a fixture weeks
   out would bank minutes against a match nobody is playing. It disappears entirely once
-  `game.HasFinalScore` — a settled game has nothing left to run, so the Result button is the
-  way in and a row click opens `/result`.
-- **A fixture in the future carries no Result button** (`Games.IsFuture`, i.e.
+  `game.HasFinalScore` — a settled game has nothing left to run, and a row click opens `/result`.
+- **A fixture in the future has no Result entry** (`Games.IsFuture`, i.e.
   `game.Date.Date > Today`). There is no result to read and none to enter, and a score typed onto a
   match nobody has played turns a fixture into a result — `Sections()` splits on the scoreline. The
   page is not the enforcement: `MatchResult` applies the same rule, so an admin who arrives at
   `/games/{id}/result` by URL gets the score read-only, no **Save Score** and no add-goal form
   (a goal is a scoreline by another route — `AddGoalAsync` recounts it), under a line saying the
   match has not been played yet.
-- **The action row is a card of its own below 600px.** A game card carries four `.action-btn` icons
-  on a fixture and six on match day when Live joins them, and on a touch screen those are 44px each
-  — 264px, which no phone has to spare beside an opponent's name. So `Games.razor.css` wraps the
-  row onto its own full-width line under the match, at a fixed width and right-aligned, flush
-  against each other: a gap between two touch targets has to be nothing or at least 8px, and there
-  is nowhere to find five 8px gaps. Fixed rather than split evenly because the row's length varies
-  with both the game's state and who is looking — see [known_issues](../known_issues/index.md). The
-  card's horizontal padding drops to 12px there so the six still clear 44px on a 320px phone.
-  `scripts/touch-targets.mjs` measures all of it — see [testing](../testing/visual-and-touch-checks.md#touch-targets).
-- **Each of those buttons stops its own click.** One `@onclick:stopPropagation` on the row around
-  them costs nothing while that row hugs its buttons — and at phone width it is the whole card, so
-  it swallowed every tap in the empty stretch beside them. The card's own click, which opens the
-  match, is what those taps were meant for. See [known_issues](../known_issues/touch-pwa.md).
-- **The venue is a word, at every width.** A `<VenueBadge Inline="true" />` trails the opponent's
-  name and spells out *THUIS*/*UIT*, in the same green and blue the card's edge stripe uses. The
-  stripe had been saying it alone, which is a convention nobody reads off a stripe; now the colour
-  and the word are one signal. See [the badge](#venue-badge-componentsvenuebadgerazor) below.
+- **The actions stop the card's click as a group**, which is safe now that `.game-actions` hugs its
+  two buttons at every width. It once wrapped onto a full-width line on a phone and swallowed every
+  tap in the empty stretch beside them — see [known_issues](../known_issues/touch-pwa.md).
+- **The venue is a word, at every width.** A `<VenueBadge />` under the opponent's name spells out
+  *THUIS*/*UIT*. The card no longer has a coloured edge stripe; the word carries the venue on its own. See [the badge](#venue-badge-componentsvenuebadgerazor) below.
 - The page reads "today" from the injected `TimeProvider`, not `DateTime.Today`, the same way the
   services do — that is also what `IsIncomplete` (the missing-lineup flag) compares against.
 - `Game.HasFinalScore` checks `MatchState` **as well as** the score fields, and must:

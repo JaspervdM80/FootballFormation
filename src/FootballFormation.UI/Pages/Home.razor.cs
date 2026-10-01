@@ -86,6 +86,20 @@ public partial class Home
         ? null
         : $"{ClockText.Of(game.MeetTime)} {(game.IsHomeGame ? L["assemble"] : L["depart"])}";
 
+    private string? FixtureLine(Game game)
+    {
+        string?[] parts = [game.HasStartTime ? L["Kick-off {0}", game.Date.ToString("HH:mm")].Value : null, MeetLine(game)];
+        var shown = parts.OfType<string>().ToList();
+        return shown.Count == 0 ? null : string.Join(" · ", shown);
+    }
+
+    private static string? Ground(Game game)
+    {
+        string?[] parts = [game.SportsPark, game.City];
+        var shown = parts.Where(p => !string.IsNullOrWhiteSpace(p)).ToList();
+        return shown.Count == 0 ? null : string.Join(", ", shown);
+    }
+
     private string RecordLabel => SeasonState.SelectedSeason?.Name ?? L["All seasons"];
 
     private string Scorers => string.Join(", ", _dashboard.LastScorers.Select(s =>

@@ -104,6 +104,8 @@
   screenshot shows empty space. Each button stops its own click now (`Games.razor`), so the empty
   stretch belongs to the card again. `/trainings` never had it: its action row is content-sized and
   right-aligned with `margin-left: auto`, and a margin is not part of the box that swallows a tap.
+  Since the row became one outright action and a ⋮ menu, `.game-actions` hugs its two buttons at
+  every width and stops the click as a group again — safe only while nothing makes that box grow.
 - **iOS centres a time field's value where `text-align` cannot reach it.** "Aanvangst" reads centred
   on a phone and left-aligned everywhere else, because WebKit draws the value inside
   `::-webkit-date-and-time-value` and centres it there — the rule on the input styles a box whose

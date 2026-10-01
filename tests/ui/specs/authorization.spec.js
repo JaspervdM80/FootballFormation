@@ -32,8 +32,12 @@ test.describe('an anonymous visitor', () => {
 
     await gotoRendered(page, '/games');
     await expect(page.getByRole('button', { name: 'Add', exact: true })).toHaveCount(0);
-    await expect(page.getByTitle('Edit', { exact: false })).toHaveCount(0);
-    await expect(page.getByTitle('Delete', { exact: false })).toHaveCount(0);
+    // Edit and Delete live in each card's menu, so the menu has to be opened for their absence to mean anything.
+    await page.locator('.game-row').first().locator('.game-more button').click();
+    await expect(page.locator('.mud-popover-open .mud-menu-item', { hasText: 'Overview' })).toBeVisible();
+    await expect(page.locator('.mud-popover-open .mud-menu-item', { hasText: 'Edit' })).toHaveCount(0);
+    await expect(page.locator('.mud-popover-open .mud-menu-item', { hasText: 'Delete' })).toHaveCount(0);
+    await page.keyboard.press('Escape');
 
     // Trainings are admin-only outright, so the menu must not offer a link that would only bounce
     // the visitor to the login page. Both renderings of the menu — app bar and drawer — are on the
@@ -95,8 +99,9 @@ test.describe('an anonymous visitor', () => {
     await gotoRendered(page, '/games');
     const seeded = page.locator('.game-row', { hasText: FIXTURE_MATCH }).first();
 
+    await seeded.locator('.game-more button').click();
     await clickFor(
-      seeded.getByTitle('Overview', { exact: false }),
+      page.locator('.mud-popover-open .mud-menu-item', { hasText: 'Overview' }),
       options => expect(page).toHaveURL(/\/games\/\d+\/overview/, options));
     await expect(page.getByText(FIXTURE_MATCH, { exact: false }).first()).toBeVisible();
   });

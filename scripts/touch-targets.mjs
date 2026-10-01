@@ -403,12 +403,11 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     // Waited for rather than assumed, and counted rather than merely found. The header renders
     // before the games do, so measuring on arrival would sometimes measure a list that is still a
     // spinner — and a list with no card in it measures the Add button, finds nothing wrong, and
-    // passes. Six is the widest the row ever gets, and it only gets there on the day of the match.
+    // passes. The seeded game is dated today, so its row carries the Live button beside its menu.
     await waitUntil(page, async () =>
-      await page.locator('.game-cards .game-actions').first().locator('.action-btn').count() >= 6, {
-      what: "the seeded game's six match-day action buttons — visual-check.mjs seeds a game dated "
-        + 'today, and without that date the Live button never appears and the widest action row in '
-        + 'the app goes unmeasured',
+      await page.locator('.game-cards .game-actions').first().locator('.action-btn').count() >= 1, {
+      what: "the seeded game's Live button — visual-check.mjs seeds a game dated today, and without "
+        + 'that date the row carries no outright action and its widest state goes unmeasured',
     });
     await audit('games list', '.app-main');
 
