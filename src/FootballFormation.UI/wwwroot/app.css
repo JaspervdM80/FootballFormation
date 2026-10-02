@@ -1062,12 +1062,23 @@ a.action-btn {
 
 /* Home tiles. The whole card is a link — an anchor wrapping the MudPaper rather than a div with an
    @onclick, so it works with no circuit and the browser gives it keyboard activation for free. */
+.home-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px;
+}
+
 .home-tile-link {
-    display: block;
-    height: 100%;
-    color: inherit;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 64px;
+    padding: 12px 10px 12px 12px;
+    border-radius: 12px;
+    color: var(--ink);
     text-decoration: none;
-    border-radius: 16px;
+    background: color-mix(in srgb, var(--ink) 5%, var(--surface-page));
+    transition: background 120ms ease;
 }
 
 .home-tile-link:focus-visible {
@@ -1075,41 +1086,45 @@ a.action-btn {
     outline-offset: 2px;
 }
 
-.home-tile {
-    height: 100%;
+@media (hover: hover) {
+    .home-tile-link:hover {
+        background: color-mix(in srgb, var(--ink) 9%, var(--surface-page));
+    }
+}
+
+.home-tile-icon {
+    flex: none;
+    width: 40px;
+    height: 40px;
     display: grid;
-    grid-template-columns: auto 1fr;
-    column-gap: 14px;
-    align-items: start;
-    cursor: pointer;
-    transition: transform 120ms ease, box-shadow 120ms ease;
+    place-items: center;
+    border-radius: 10px;
+    color: var(--club-primary-bright);
+    background: color-mix(in srgb, var(--club-primary) 10%, var(--surface-card));
 }
 
-.home-tile > .mud-icon-root {
-    grid-row: span 2;
-    margin-top: 2px;
+.home-tile-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
 }
 
-.home-tile-link:hover .home-tile,
-.home-tile:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 8%, transparent) !important;
+.home-tile-title {
+    font-weight: 700;
+    font-size: 0.95rem;
 }
 
-.home-tile-link:active .home-tile,
-.home-tile:active {
-    transform: translateY(0);
+.home-tile-body {
+    font-size: 0.82rem;
+    line-height: 1.35;
+    color: var(--ink-muted);
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .home-tile {
-        transition: none;
-    }
-
-    .home-tile-link:hover .home-tile,
-    .home-tile:hover {
-        transform: none;
-    }
+.home-tile-chevron {
+    flex: none;
+    color: var(--ink-faint);
 }
 
 /* Page header styling */

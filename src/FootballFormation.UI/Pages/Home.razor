@@ -129,91 +129,63 @@
     </section>
 </div>
 
-@* Whole tiles are the target — a card with a single destination does not need a button
-   repeating it, and the larger hit area is what a thumb wants on a phone. *@
-<MudGrid Spacing="4">
-    <MudItem xs="12" sm="6" md="4">
-        <a class="home-tile-link" href="@AppRoutes.Players">
-            <MudPaper Class="pa-4 home-tile" Elevation="1" Style="border-radius: 12px;">
-                <MudIcon Icon="@Icons.Material.Filled.People" Style="color: var(--club-primary-bright);" />
-                <MudText Typo="Typo.subtitle1" Style="color: var(--ink); font-weight: 700;">@L["Selection"]</MudText>
-                <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
-                    <AuthorizeView Roles="@AppRoles.Admin">
-                        <Authorized>@L["Add players with their positions and shirt numbers."]</Authorized>
-                        <NotAuthorized>@L["The players in the squad, with their shirt numbers."]</NotAuthorized>
-                    </AuthorizeView>
-                </MudText>
-            </MudPaper>
-        </a>
-    </MudItem>
-
-    <MudItem xs="12" sm="6" md="4">
-        <a class="home-tile-link" href="@AppRoutes.Games">
-            <MudPaper Class="pa-4 home-tile" Elevation="1" Style="border-radius: 12px;">
-                <MudIcon Icon="@Icons.Material.Filled.SportsSoccer" Style="color: var(--club-primary-bright);" />
-                <MudText Typo="Typo.subtitle1" Style="color: var(--ink); font-weight: 700;">@L["Games & Formations"]</MudText>
-                <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
-                    <AuthorizeView Roles="@AppRoles.Admin">
-                        <Authorized>@L["Create games, build formations, and track results."]</Authorized>
-                        <NotAuthorized>@L["Fixtures, line-ups and results."]</NotAuthorized>
-                    </AuthorizeView>
-                </MudText>
-            </MudPaper>
-        </a>
-    </MudItem>
-
-    <MudItem xs="12" sm="6" md="4">
-        <a class="home-tile-link" href="@AppRoutes.SeasonStats">
-            <MudPaper Class="pa-4 home-tile" Elevation="1" Style="border-radius: 12px;">
-                <MudIcon Icon="@Icons.Material.Filled.BarChart" Style="color: var(--club-primary-bright);" />
-                <MudText Typo="Typo.subtitle1" Style="color: var(--ink); font-weight: 700;">@L["Season stats"]</MudText>
-                <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
-                    <AuthorizeView Roles="@AppRoles.Admin">
-                        <Authorized>@L["See the team record, top scorers, and playing time."]</Authorized>
-                        <NotAuthorized>@L["The team record, top scorers and goalkeepers."]</NotAuthorized>
-                    </AuthorizeView>
-                </MudText>
-            </MudPaper>
-        </a>
-    </MudItem>
+@* Shortcuts, not status: flat and tinted so they never read as another card in the dashboard above. Whole tiles are the target —
+   a single destination needs no button repeating it, and the larger hit area is what a thumb wants. *@
+<div class="home-tiles">
+    <a class="home-tile-link" href="@AppRoutes.Games">
+        <span class="home-tile-icon"><MudIcon Icon="@Icons.Material.Filled.SportsSoccer" /></span>
+        <span class="home-tile-text">
+            <span class="home-tile-title">@L["Games & Formations"]</span>
+            <span class="home-tile-body">
+            <AuthorizeView Roles="@AppRoles.Admin">
+                <Authorized>@L["Create games, build formations, and track results."]</Authorized>
+                <NotAuthorized>@L["Fixtures, line-ups and results."]</NotAuthorized>
+            </AuthorizeView>
+        </span>
+        </span>
+        <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Class="home-tile-chevron" />
+    </a>
+    <a class="home-tile-link" href="@AppRoutes.SeasonStats">
+        <span class="home-tile-icon"><MudIcon Icon="@Icons.Material.Filled.BarChart" /></span>
+        <span class="home-tile-text">
+            <span class="home-tile-title">@L["Season stats"]</span>
+            <span class="home-tile-body">
+            <AuthorizeView Roles="@AppRoles.Admin">
+                <Authorized>@L["See the team record, top scorers, and playing time."]</Authorized>
+                <NotAuthorized>@L["The team record, top scorers and goalkeepers."]</NotAuthorized>
+            </AuthorizeView>
+        </span>
+        </span>
+        <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Class="home-tile-chevron" />
+    </a>
 
     @* /trainings and /preferences are [Authorize]d, so a visitor tapping either tile only ever reached the
        login screen. Hide the whole tile rather than offer a door that is locked. *@
     <AuthorizeView Roles="@AppRoles.Admin">
-        <MudItem xs="12" sm="6" md="4">
-            <a class="home-tile-link" href="@AppRoutes.Trainings">
-                <MudPaper Class="pa-4 home-tile" Elevation="1" Style="border-radius: 12px;">
-                    <MudIcon Icon="@Icons.Material.Filled.FitnessCenter" Style="color: var(--club-primary-bright);" />
-                    <MudText Typo="Typo.subtitle1" Style="color: var(--ink); font-weight: 700;">@L["Trainings"]</MudText>
-                    <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
-                        @L["Keep the training evenings, and note who was not there."]
-                    </MudText>
-                </MudPaper>
-            </a>
-        </MudItem>
-
-        <MudItem xs="12" sm="6" md="4">
-            <a class="home-tile-link" href="@AppRoutes.Preferences">
-                <MudPaper Class="pa-4 home-tile" Elevation="1" Style="border-radius: 12px;">
-                    <MudIcon Icon="@Icons.Material.Filled.Tune" Style="color: var(--club-primary-bright);" />
-                    <MudText Typo="Typo.subtitle1" Style="color: var(--ink); font-weight: 700;">@L["Preferences"]</MudText>
-                    <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
-                        @L["Configure match duration, split type, and defaults."]
-                    </MudText>
-                </MudPaper>
-            </a>
-        </MudItem>
+        <a class="home-tile-link" href="@AppRoutes.Trainings">
+            <span class="home-tile-icon"><MudIcon Icon="@Icons.Material.Filled.FitnessCenter" /></span>
+            <span class="home-tile-text">
+                <span class="home-tile-title">@L["Trainings"]</span>
+                <span class="home-tile-body">@L["Keep the training evenings, and note who was not there."]</span>
+            </span>
+            <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Class="home-tile-chevron" />
+        </a>
+        <a class="home-tile-link" href="@AppRoutes.Preferences">
+            <span class="home-tile-icon"><MudIcon Icon="@Icons.Material.Filled.Tune" /></span>
+            <span class="home-tile-text">
+                <span class="home-tile-title">@L["Preferences"]</span>
+                <span class="home-tile-body">@L["Configure match duration, split type, and defaults."]</span>
+            </span>
+            <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Class="home-tile-chevron" />
+        </a>
     </AuthorizeView>
 
-    <MudItem xs="12" sm="6" md="4">
-        <a class="home-tile-link" href="@AppRoutes.Duties">
-            <MudPaper Class="pa-4 home-tile" Elevation="1" Style="border-radius: 12px;">
-                <MudIcon Icon="@Icons.Material.Filled.AssignmentInd" Style="color: var(--club-primary-bright);" />
-                <MudText Typo="Typo.subtitle1" Style="color: var(--ink); font-weight: 700;">@L["Duties"]</MudText>
-                <MudText Typo="Typo.body2" Style="color: var(--ink-muted);">
-                    @DutiesText
-                </MudText>
-            </MudPaper>
-        </a>
-    </MudItem>
-</MudGrid>
+    <a class="home-tile-link" href="@AppRoutes.Duties">
+        <span class="home-tile-icon"><MudIcon Icon="@Icons.Material.Filled.AssignmentInd" /></span>
+        <span class="home-tile-text">
+            <span class="home-tile-title">@L["Duties"]</span>
+            <span class="home-tile-body">@DutiesText</span>
+        </span>
+        <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Class="home-tile-chevron" />
+    </a>
+</div>
