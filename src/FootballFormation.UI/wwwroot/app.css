@@ -1094,13 +1094,11 @@ a.action-btn {
 
 .home-tile-icon {
     flex: none;
-    width: 40px;
+    width: 28px;
     height: 40px;
     display: grid;
     place-items: center;
-    border-radius: 10px;
     color: var(--club-primary-bright);
-    background: color-mix(in srgb, var(--club-primary) 10%, var(--surface-card));
 }
 
 .home-tile-text {
