@@ -121,10 +121,8 @@ public partial class Games
             OpenLive(game.Id);
         else if (game.HasFinalScore)
             OpenResult(game.Id);
-        else if (_isAdmin)
-            OpenFormation(game.Id);
         else
-            OpenOverview(game.Id);
+            Navigation.NavigateTo(AppRoutes.UpcomingGame(game.Id, _isAdmin));
     }
 
     /// MudMenu closes only once OnClick returns, so work that waits on a dialog runs detached and renders itself when done.

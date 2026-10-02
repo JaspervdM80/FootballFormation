@@ -31,8 +31,8 @@ public partial class SeasonStats
 
         _scorers = _stats.Players
             .Where(p => p.Goals > 0 || p.Assists > 0)
-            .OrderByDescending(p => p.Goals)
-            .ThenByDescending(p => p.Assists)
+            .OrderByDescending(p => p.GoalContributions)
+            .ThenByDescending(p => p.Goals)
             .ThenBy(p => p.Player.ShirtNumber ?? int.MaxValue)
             .ToList();
 
