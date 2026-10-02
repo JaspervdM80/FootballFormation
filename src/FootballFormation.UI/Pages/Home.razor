@@ -39,15 +39,7 @@
 
 <MatchNotifications />
 
-<PageHeader Class="mb-6 home-header" Title="@Team.DisplayName">
-    <SubtitleContent>
-        <AuthorizeView Roles="@AppRoles.Admin">
-            <MudText Typo="Typo.body2" Class="page-header-subtitle">
-                @L["Plan your team's formations, manage your squad, and organize game lineups."]
-            </MudText>
-        </AuthorizeView>
-    </SubtitleContent>
-</PageHeader>
+<PageHeader Class="home-header" Title="@Team.DisplayName" />
 
 <div class="home-dashboard mb-6">
     <section class="home-block">
@@ -55,11 +47,7 @@
         @if (_dashboard.NextGame is { } next)
         {
             <a class="home-card home-fixture" href="@AppRoutes.Overview(next.Id)">
-                <div class="home-date">
-                    <span class="home-date-dow">@next.Date.ToString("ddd")</span>
-                    <span class="home-date-day">@next.Date.Day</span>
-                    <span class="home-date-mon">@next.Date.ToString("MMM")</span>
-                </div>
+                <DateBlock Date="next.Date" />
                 <div class="home-fixture-body">
                     <div class="home-card-title">
                         <span class="home-card-opponent">@next.Opponent</span><VenueBadge IsHome="next.IsHomeGame" Inline="true" />
@@ -68,7 +56,7 @@
                     {
                         <div class="home-card-line">@line</div>
                     }
-                    @if (Ground(next) is { } ground)
+                    @if (MatchCalendarReport.LocationOf(next) is { } ground)
                     {
                         <div class="home-card-line home-card-icon-line">
                             <MudIcon Icon="@Icons.Material.Filled.Place" Size="Size.Small" />@ground

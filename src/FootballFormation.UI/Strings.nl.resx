@@ -39,9 +39,6 @@
   <data name="Back to {0}" xml:space="preserve"><value>Terug naar {0}</value></data>
 
   <!-- Home -->
-  <data name="Plan your team's formations, manage your squad, and organize game lineups." xml:space="preserve"><value>Plan je opstellingen, beheer je selectie en organiseer de wedstrijden.</value></data>
-  <data name="Selection" xml:space="preserve"><value>Selectie</value></data>
-  <data name="Add players with their positions and shirt numbers." xml:space="preserve"><value>Voeg spelers toe met hun posities en rugnummers.</value></data>
   <data name="Matches" xml:space="preserve"><value>Wedstrijden</value></data>
   <data name="Games &amp; Formations" xml:space="preserve"><value>Wedstrijden &amp; opstellingen</value></data>
   <data name="Create games, build formations, and track results." xml:space="preserve"><value>Maak wedstrijden aan, bouw opstellingen en houd uitslagen bij.</value></data>
@@ -848,7 +845,6 @@
   <data name="No matches left in this season." xml:space="preserve"><value>Geen wedstrijden meer in dit seizoen.</value></data>
   <data name="No match planned yet." xml:space="preserve"><value>Nog geen wedstrijd gepland.</value></data>
   <data name="No matches played yet." xml:space="preserve"><value>Nog geen wedstrijden gespeeld.</value></data>
-  <data name="The players in the squad, with their shirt numbers." xml:space="preserve"><value>De spelers in de selectie, met hun rugnummers.</value></data>
   <data name="Fixtures, line-ups and results." xml:space="preserve"><value>Programma, opstellingen en uitslagen.</value></data>
   <data name="The team record, top scorers and goalkeepers." xml:space="preserve"><value>De teamresultaten, topscorers en keepers.</value></data>
 </root>

@@ -67,11 +67,7 @@ else
                     var rowClass = IsIncomplete(game) ? "no-lineup" : "";
                     var primary = PrimaryAction(game);
                     <div class="game-row @rowClass" @onclick="() => OpenGame(game)">
-                        <div class="game-date">
-                            <span class="game-dow">@game.Date.ToString("ddd")</span>
-                            <span class="game-day">@game.Date.Day</span>
-                            <span class="game-mon">@game.Date.ToString("MMM")</span>
-                        </div>
+                        <DateBlock Date="game.Date" Class="game-date" />
                         <div class="game-primary">
                             <span class="game-opponent">@game.Opponent</span>
                             <div class="game-meta">

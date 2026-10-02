@@ -101,11 +101,11 @@
   to the left of the buttons hit that div and was stopped there: a fifth of the card for an admin on
   match day, and **most of it for a visitor**, who sees one button on a line 300px wide. Nothing is
   measurable about it — `elementFromPoint` reports the row, the buttons all clear 44px, and the
-  screenshot shows empty space. Each button stops its own click now (`Games.razor`), so the empty
-  stretch belongs to the card again. `/trainings` never had it: its action row is content-sized and
-  right-aligned with `margin-left: auto`, and a margin is not part of the box that swallows a tap.
-  Since the row became one outright action and a ⋮ menu, `.game-actions` hugs its two buttons at
-  every width and stops the click as a group again — safe only while nothing makes that box grow.
+  screenshot shows empty space. Each button stopped its own click until the row became one outright
+  action and a ⋮ menu; `.game-actions` now hugs both at every width and stops the click as a group —
+  safe only while nothing makes that box grow. `/trainings` never had it: its action row is
+  content-sized and right-aligned with `margin-left: auto`, and a margin is not part of the box that
+  swallows a tap.
 - **iOS centres a time field's value where `text-align` cannot reach it.** "Aanvangst" reads centred
   on a phone and left-aligned everywhere else, because WebKit draws the value inside
   `::-webkit-date-and-time-value` and centres it there — the rule on the input styles a box whose

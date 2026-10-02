@@ -292,6 +292,8 @@ export function gameRow(page, opponent) {
  */
 export async function gameAction(page, opponent, name) {
   const row = gameRow(page, opponent);
+  // The menu renders in the same pass as the outright button, so once it is up the count below is settled.
+  await expect(row.locator('.game-more')).toBeVisible();
   const outright = row.locator('.action-labelled');
   const title = (await outright.count()) ? await outright.first().getAttribute('title') : null;
   if (title && (name instanceof RegExp ? name.test(title) : title.includes(name))) {

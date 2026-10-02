@@ -229,7 +229,7 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
 - **The column runs in source order at every width**: scoreboard, the Goal buttons, the line-up, then
   the timeline. Everything a coach touches during a match — the score, the two goal buttons and the
   pitch a substitution starts from — fits the first screen of a phone; the timeline is read, not
-  tapped, so it sits below. Only `.live-controls-foot` keeps an explicit `order` in `app.css`.
+  tapped, so it sits below. Nothing in the column sets `order`.
 - **A goal is two taps: "Goal", then the scorer** (`LiveGoalDialog`). The scorer is a grid of
   shirt-number buttons (`PlayerPicker`, 64px tall), and tapping one adds the goal. The order is
   `LiveCandidateOrder.Scorers`: on the pitch first, then the rest of the roster, each by season goals

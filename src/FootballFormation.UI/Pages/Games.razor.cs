@@ -1,4 +1,4 @@
-﻿using FootballFormation.UI.State;
+using FootballFormation.UI.State;
 using Microsoft.AspNetCore.Components.Authorization;
 
 namespace FootballFormation.UI.Pages;

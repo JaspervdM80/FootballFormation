@@ -1,4 +1,4 @@
-﻿namespace FootballFormation.UI.Theming;
+namespace FootballFormation.UI.Theming;
 
 /// The app styles through two systems — CSS custom properties and a <see cref="MudTheme"/> — and both derive from here, so re-skinning
 /// for another club means editing <see cref="Gjs"/> and nothing else. Shades are mixed where used, not stored per alpha level.

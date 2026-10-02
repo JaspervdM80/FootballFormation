@@ -473,9 +473,7 @@ a.action-btn {
     }
 }
 
-/* Every way into the live screen wears the crest red — the one action on a game card with a colour
-   of its own, and it leads the row. Green was one of several greens on a card that already has a
-   green edge stripe. */
+/* Every way into the live screen wears the crest red — the one action on a game card with a colour of its own. */
 .action-btn.action-live {
     color: var(--club-on-primary);
     background: var(--club-primary);
@@ -1055,13 +1053,7 @@ a.action-btn {
     color: var(--color-danger-bright);
 }
 
-/* Last in source order is not last once a card above it has been reordered — kept explicit for that. */
-.live-controls-foot {
-    order: 3;
-}
-
-/* Home tiles. The whole card is a link — an anchor wrapping the MudPaper rather than a div with an
-   @onclick, so it works with no circuit and the browser gives it keyboard activation for free. */
+/* The whole tile is an anchor, not an @onclick div: it works with no circuit and gets keyboard activation for free. */
 .home-tiles {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -1194,6 +1186,37 @@ a.action-btn {
         color: color-mix(in srgb, var(--ink) 82%, transparent);
     }
 
+}
+
+/* Shared by the games list and the start page, which must show a date the same way. */
+.date-block {
+    flex: none;
+    width: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.date-block-dow {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-subtle);
+}
+
+.date-block-day {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.date-block-mon {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--ink-muted);
 }
 
 /* The app bar already names the team; visually hidden rather than display:none so the page keeps a heading to navigate by. */

@@ -93,13 +93,6 @@ public partial class Home
         return shown.Count == 0 ? null : string.Join(" · ", shown);
     }
 
-    private static string? Ground(Game game)
-    {
-        string?[] parts = [game.SportsPark, game.City];
-        var shown = parts.Where(p => !string.IsNullOrWhiteSpace(p)).ToList();
-        return shown.Count == 0 ? null : string.Join(", ", shown);
-    }
-
     private string RecordLabel => SeasonState.SelectedSeason?.Name ?? L["All seasons"];
 
     private string Scorers => string.Join(", ", _dashboard.LastScorers.Select(s =>

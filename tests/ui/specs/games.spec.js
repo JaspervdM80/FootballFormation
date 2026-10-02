@@ -93,10 +93,10 @@ test('only a match already played is flagged for its missing lineup', async ({ p
   // The card's own date block — the unambiguous check that the match really is in the past. The month
   // is part of it on purpose: day 8 of the wrong month reads the same and is not in the past.
   const month = new Date().toLocaleString('en-US', { month: 'short' });
-  await expect(played.locator('.game-day')).toHaveText(String(Number(day)));
-  await expect(played.locator('.game-mon')).toHaveText(new RegExp(`^${month}`, 'i'));
+  await expect(played.locator('.date-block-day')).toHaveText(String(Number(day)));
+  await expect(played.locator('.date-block-mon')).toHaveText(new RegExp(`^${month}`, 'i'));
   await expect(played.locator('.nolineup-icon')).toBeVisible();
-  // The action button changes shape rather than hiding: an empty grid means "this one needs you".
+  // The outright button turns amber and is titled "Add lineup" rather than hiding.
   await expect(played.getByTitle('Add lineup', { exact: false })).toBeVisible();
 });
 

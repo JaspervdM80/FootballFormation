@@ -405,9 +405,9 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     // spinner — and a list with no card in it measures the Add button, finds nothing wrong, and
     // passes. The seeded game is dated today, so its row carries the Live button beside its menu.
     await waitUntil(page, async () =>
-      await page.locator('.game-cards .game-actions').first().locator('.action-btn').count() >= 1, {
+      await page.locator('.game-cards .game-actions').first().locator('.action-live').count() >= 1, {
       what: "the seeded game's Live button — visual-check.mjs seeds a game dated today, and without "
-        + 'that date the row carries no outright action and its widest state goes unmeasured',
+        + 'that date the row carries Formation instead and the Live button goes unmeasured',
     });
     await audit('games list', '.app-main');
 

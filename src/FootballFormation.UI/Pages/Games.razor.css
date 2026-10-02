@@ -1,4 +1,4 @@
-﻿/* Fixtures and results are two lists on one page — the gap between them is what says so. */
+/* Fixtures and results are two lists on one page — the gap between them is what says so. */
 .game-section + .game-section {
     margin-top: 28px;
 }
@@ -34,36 +34,6 @@
     background: color-mix(in srgb, var(--color-warning) 12%, var(--surface-card));
 }
 
-.game-date {
-    flex: none;
-    width: 40px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    line-height: 1.1;
-    font-variant-numeric: tabular-nums;
-}
-
-.game-dow {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--ink-subtle);
-}
-
-.game-day {
-    font-size: 1.35rem;
-    font-weight: 700;
-    color: var(--ink);
-}
-
-.game-mon {
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: var(--ink-muted);
-}
-
 .game-primary {
     flex: 1;
     min-width: 0;
@@ -96,7 +66,8 @@
     font-variant-numeric: tabular-nums;
 }
 
-.nolineup-icon {
+/* ::deep, because MudIcon's svg carries no scope attribute of its own. */
+.game-meta ::deep .nolineup-icon {
     color: var(--color-warning-bright);
     font-size: 1.05rem !important;
 }

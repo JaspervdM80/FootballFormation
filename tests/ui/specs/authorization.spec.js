@@ -122,9 +122,10 @@ test.describe('an admin', () => {
     await expect(page.getByText('Playing time', { exact: false })).toBeVisible();
   });
 
-  test('is greeted on the start page with what the app is for', async ({ page }) => {
+  test('is offered the admin-only shortcuts on the start page', async ({ page }) => {
     await gotoRendered(page, '/');
-    await expect(page.getByText('Plan your team\'s formations', { exact: false })).toBeVisible();
+    await expect(page.locator('.home-tile-link', { hasText: 'Trainings' })).toBeVisible();
+    await expect(page.locator('.home-tile-link', { hasText: 'Preferences' })).toBeVisible();
   });
 
   test('reaches the admin-only routes directly', async ({ page }) => {
