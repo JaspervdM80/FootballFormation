@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using FootballFormation.Core.Reporting;
+using Microsoft.AspNetCore.Components.Authorization;
 
 namespace FootballFormation.UI.Pages;
 
@@ -13,6 +14,11 @@ public partial class Home
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
     [Inject] private State.TeamState Team { get; set; } = null!;
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; } = null!;
+
+    private bool _isAdmin;
 
     private Game? TodaysGame { get; set; }
 
@@ -42,6 +48,9 @@ public partial class Home
 
     protected override async Task OnInitializedCoreAsync()
     {
+        var authState = await AuthStateTask;
+        _isAdmin = authState.User.IsAdmin();
+
         await Team.EnsureLoadedAsync();
         await LoadTodaysGameAsync();
 

@@ -6,7 +6,7 @@
 // that should not be there is a bug even when pressing it would be refused.
 import { test, expect } from '../fixtures.js';
 import { VISITOR_STATE } from '../playwright.config.js';
-import { clickFor, goto, gotoRendered } from '../helpers.js';
+import { clickFor, createMatch, goto, gotoRendered } from '../helpers.js';
 import { FIXTURE_MATCH } from '../global-setup.js';
 
 test.describe('an anonymous visitor', () => {
@@ -126,6 +126,20 @@ test.describe('an admin', () => {
     await gotoRendered(page, '/');
     await expect(page.locator('.home-tile-link', { hasText: 'Trainings' })).toBeVisible();
     await expect(page.locator('.home-tile-link', { hasText: 'Preferences' })).toBeVisible();
+  });
+
+  test('opens the next match on the start page at its lineup, where a visitor gets the overview', async ({ page, browser }) => {
+    // A fixture of its own, so there is a next match even when the seeded one falls on today.
+    await createMatch(page, { opponent: 'FC Startpagina' });
+
+    await gotoRendered(page, '/');
+    await expect(page.locator('.home-fixture')).toHaveAttribute('href', /\/games\/\d+\/formation$/);
+
+    const visitor = await browser.newContext({ storageState: VISITOR_STATE });
+    const parent = await visitor.newPage();
+    await gotoRendered(parent, '/');
+    await expect(parent.locator('.home-fixture')).toHaveAttribute('href', /\/games\/\d+\/overview$/);
+    await visitor.close();
   });
 
   test('reaches the admin-only routes directly', async ({ page }) => {

@@ -46,7 +46,7 @@
         <div class="card-label">@L["Next match"]</div>
         @if (_dashboard.NextGame is { } next)
         {
-            <a class="home-card home-fixture" href="@AppRoutes.Overview(next.Id)">
+            <a class="home-card home-fixture" href="@AppRoutes.UpcomingGame(next.Id, _isAdmin)">
                 <DateBlock Date="next.Date" />
                 <div class="home-fixture-body">
                     <div class="home-card-title">
