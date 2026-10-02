@@ -2,14 +2,15 @@
 
 ## Formation Builder (`/games/{id}/formation`)
 3-panel layout: Player List | Pitch | Substitutes
-- Tabs for each period (2 halves or 4 quarters)
+- Tabs for each period (2 halves or 4 quarters); on a phone a row of buttons instead, each showing how many of
+  the shape's slots are filled (`11/11`), so an unfinished period stands out (`PeriodFill`)
 - Drag state lives in `LineupDragState` (`Drag.PlayerId` / `Drag.FromSlotIndex` / `Drag.FromSub`), cleared via `Drag.Clear()`
 - Pitch slots are index-based: `GamePlayerPosition.SlotIndex` is the source of truth,
   position matching is the fallback for legacy rows (see `BuildSlotAssignments`)
 - Page requires the Admin role (`[Authorize(Roles = AppRoles.Admin)]`); anonymous visitors get the
   read-only overview
 - The formation is chosen on this page and belongs to the whole game: a labelled `Formation:`
-  dropdown beside the tab strip on a desktop, and its own field above the period select on a phone.
+  dropdown beside the tab strip on a desktop, and its own field above the period buttons on a phone.
   Picking one calls `GameService.SaveFormationAsync`, which in **one** transaction sets the game's
   shape, clears every `GamePeriod.FormationTypeOverride` and moves each period's line-up into the
   new shape through `FormationSlots.Reshape` — everyone keeps her slot and her stored `Position`

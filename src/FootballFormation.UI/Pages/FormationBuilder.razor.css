@@ -15,6 +15,65 @@
     }
 }
 
+.period-segments {
+    display: flex;
+    border: 1px solid var(--club-primary-bright);
+    border-radius: var(--corner-radius);
+    overflow: hidden;
+}
+
+.period-segment {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    padding: 4px 2px;
+    border: none;
+    background: var(--surface-card);
+    color: var(--ink);
+    font: inherit;
+    cursor: pointer;
+}
+
+.period-segment + .period-segment {
+    border-left: 1px solid var(--club-primary-bright);
+}
+
+.period-segment-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.period-segment-fill {
+    font-size: 0.7rem;
+    color: var(--ink-muted);
+}
+
+.period-segment.incomplete .period-segment-fill {
+    color: var(--color-warning-bright);
+    font-weight: 700;
+}
+
+.period-segment.active {
+    background: var(--club-primary);
+    color: var(--club-on-primary);
+}
+
+.period-segment.active .period-segment-fill {
+    color: var(--club-on-primary);
+}
+
+@media (hover: hover) {
+    .period-segment:not(.active):hover {
+        background: var(--surface-card-alt);
+    }
+}
+
 /* The header row itself is PageHeader's now; .builder-opponent moved to app.css with it, since
    MudText renders that element. This span is written here, so it keeps this file's scope. */
 .builder-date {
