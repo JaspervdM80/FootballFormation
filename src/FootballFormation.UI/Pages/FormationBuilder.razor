@@ -82,15 +82,20 @@
             <MudSelectItem Value="formation">@L[formation.DisplayName()]</MudSelectItem>
         }
     </MudSelect>
-    <MudSelect T="int" @bind-Value="ActivePeriodIndex" Dense="true" Variant="Variant.Outlined"
-               Label="@L[GameData.SplitType.PeriodLabel()]" Class="period-select mb-3">
+    <div class="period-segments mb-3" role="group" aria-label="@L[GameData.SplitType.PeriodLabel()]">
         @for (var i = 0; i < orderedPeriods.Count; i++)
         {
             var index = i;
             var period = orderedPeriods[i];
-            <MudSelectItem Value="@index">@L[period.PeriodType.DisplayName()]</MudSelectItem>
+            var (filled, slots) = PeriodFill(period.Id);
+            <button type="button" aria-pressed="@(index == activeIndex ? "true" : "false")"
+                    class="period-segment @(index == activeIndex ? "active" : "") @(filled < slots ? "incomplete" : "")"
+                    @onclick="() => ActivePeriodIndex = index">
+                <span class="period-segment-name">@L[period.PeriodType.DisplayName()]</span>
+                <span class="period-segment-fill">@filled/@slots</span>
+            </button>
         }
-    </MudSelect>
+    </div>
 </div>
 
 @if (activePeriodPlayed)

@@ -1,9 +1,7 @@
 // The formation builder on a phone. Nothing else renders this page at a phone viewport — the visual
-// harness only passes through it to seed — so the rules below are markup and CSS with no other
-// cover: a legend that fits, a header that stacks, a table with no sort control, and a bench whose
-// drop target is where a thumb actually lets go.
+// harness only passes through it to seed — so the rules below are markup and CSS with no other cover.
 //
-// One match for the four of them, in order: every spec here shares one database, and a file that
+// One match for all of them, in order: every spec here shares one database, and a file that
 // adds a match per test pushes the last card on /games under the install banner — which is what the
 // neighbouring touchline spec taps.
 import { test, expect } from '../fixtures.js';
@@ -162,5 +160,33 @@ test.describe.serial('the formation builder on a phone', () => {
     await page.locator('.subs-panel .mud-typography-subtitle2').click();
     await expect(chips).toHaveCount(0);
     await expect(subs).toHaveCount(3);
+  });
+
+  test('the periods are buttons that each show how full their line-up is', async ({ page }) => {
+    await openBuilder(page);
+    const segments = page.locator('.builder-mobile .period-segment');
+    const chips = page.locator('.pitch .pitch-player');
+    // The match takes the default split, halves.
+    await expect(segments).toHaveCount(2);
+
+    const boxes = await segments.evaluateAll(els => els.map(el => el.getBoundingClientRect().toJSON()));
+    expect(new Set(boxes.map(b => Math.round(b.top))).size, 'every period should share one row').toBe(1);
+    for (const box of boxes) expect(box.height).toBeGreaterThanOrEqual(44);
+
+    await expect(segments.first()).toHaveAttribute('aria-pressed', 'true');
+    await expect(segments.first()).toHaveClass(/incomplete/);
+    const fill = segments.first().locator('.period-segment-fill');
+    const [, slots] = (await fill.innerText()).match(/^\d+\/(\d+)$/);
+
+    await page.locator('.draggable-player').first().click();
+    const keeper = page.locator('.pitch .pitch-empty', { hasText: 'GK' });
+    await keeper.evaluate(el => el.scrollIntoView({ block: 'center' }));
+    await keeper.click({ force: true });
+    await expect(chips).toHaveCount(1);
+    await expect(fill).toHaveText(`1/${slots}`);
+
+    await segments.nth(1).click();
+    await expect(segments.nth(1)).toHaveAttribute('aria-pressed', 'true');
+    await expect(segments.first()).toHaveAttribute('aria-pressed', 'false');
   });
 });
