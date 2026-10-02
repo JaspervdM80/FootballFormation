@@ -28,6 +28,8 @@ public static class AppRoutes
 
     public static string Overview(int gameId) => $"/games/{gameId}/overview";
 
+    public static string UpcomingGame(int gameId, bool isAdmin) => isAdmin ? Formation(gameId) : Overview(gameId);
+
     public static string Live(int gameId) => $"/games/{gameId}/live";
 
     public static string Result(int gameId) => $"/games/{gameId}/result";
