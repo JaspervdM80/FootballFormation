@@ -1,0 +1,11 @@
+<span class="date-block @Class">
+    <span class="date-block-dow">@Date.ToString("ddd")</span>
+    <span class="date-block-day">@Date.Day</span>
+    <span class="date-block-mon">@Date.ToString("MMM")</span>
+</span>
+
+@code {
+    [Parameter, EditorRequired] public DateTime Date { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+}

@@ -99,6 +99,21 @@ public partial class Games
         await LoadAsync();
     }
 
+    private enum RowAction
+    {
+        None,
+        Live,
+        Formation,
+    }
+
+    /// The one action a row shows outright; everything else is in its menu. A match under way is everyone's, the rest are an admin's.
+    private RowAction PrimaryAction(Game game)
+    {
+        if (game.MatchState == MatchState.InProgress) return RowAction.Live;
+        if (!_isAdmin || game.HasFinalScore) return RowAction.None;
+        return IsMatchDay(game) ? RowAction.Live : RowAction.Formation;
+    }
+
     /// A match under way beats everything; then finished games open the result; admins build formations; visitors get the overview.
     private void OpenGame(Game game)
     {
@@ -111,6 +126,13 @@ public partial class Games
         else
             OpenOverview(game.Id);
     }
+
+    /// MudMenu closes only once OnClick returns, so work that waits on a dialog runs detached and renders itself when done.
+    private void AfterMenuCloses(Func<Task> work) => _ = InvokeAsync(async () =>
+    {
+        await work();
+        StateHasChanged();
+    });
 
     private async Task DeleteGame(Game game)
     {

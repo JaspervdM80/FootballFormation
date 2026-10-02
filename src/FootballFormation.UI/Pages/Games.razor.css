@@ -12,76 +12,71 @@
 .game-row {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 14px 16px;
-    background: var(--gradient-card);
-    border: 1px solid color-mix(in srgb, var(--club-accent) 12%, transparent);
+    gap: 14px;
+    padding: 12px 8px 12px 14px;
+    background: var(--surface-card);
+    border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
     border-radius: 12px;
-    transition: all 0.15s;
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 6%, transparent);
+    transition: border-color 0.15s, box-shadow 0.15s;
     cursor: pointer;
 }
 
-.game-row:hover {
-    background: var(--surface-card-alt);
-    border-color: color-mix(in srgb, var(--club-accent) 22%, transparent);
+@media (hover: hover) {
+    .game-row:hover {
+        border-color: color-mix(in srgb, var(--ink) 18%, transparent);
+        box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 8%, transparent);
+    }
+}
+
+/* A played game with no lineup stays amber: it is the one row that needs the coach. */
+.game-row.no-lineup {
+    background: color-mix(in srgb, var(--color-warning) 12%, var(--surface-card));
 }
 
 .game-primary {
-    display: flex;
-    align-items: center;
-    gap: 16px;
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-left: 14px;
+    border-left: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.game-opponent {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .game-meta {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 6px;
+    font-size: 0.85rem;
+    color: var(--ink-muted);
 }
 
-/* Venue is shown as a coloured stripe down both edges of the card (replaces the T/U tag):
-   green for a home game, blue for away. */
-.game-row.home {
-    box-shadow: inset 4px 0 0 0 var(--club-accent-bright), inset -4px 0 0 0 var(--club-accent-bright);
+.game-time {
+    font-variant-numeric: tabular-nums;
 }
 
-.game-row.away {
-    box-shadow: inset 4px 0 0 0 var(--color-away), inset -4px 0 0 0 var(--color-away);
-}
-
-/* A played game with no lineup: tint the whole panel amber so it stands out at a glance. */
-.game-row.no-lineup {
-    background: color-mix(in srgb, var(--color-warning) 12%, var(--surface-card));
-}
-
-.game-row.no-lineup:hover {
-    background: color-mix(in srgb, var(--color-warning) 18%, var(--surface-card));
-}
-
-.nolineup-icon {
+/* ::deep, because MudIcon's svg carries no scope attribute of its own. */
+.game-meta ::deep .nolineup-icon {
     color: var(--color-warning-bright);
     font-size: 1.05rem !important;
 }
 
-.game-date {
-    font-size: 0.75rem;
-    color: var(--ink-muted);
-    min-width: 56px;
-    font-variant-numeric: tabular-nums;
-}
-
-.game-opponent {
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: var(--ink);
-    flex: 1;
-}
-
 .game-score {
+    flex: none;
     font-weight: 700;
-    font-size: 0.9rem;
-    min-width: 50px;
+    font-size: 1.1rem;
+    font-variant-numeric: tabular-nums;
     text-align: center;
 }
 
@@ -95,76 +90,24 @@
 }
 
 .game-actions {
+    flex: none;
     display: flex;
-    gap: 2px;
-}
-
-/* .badge-unavailable and the .action-btn family live in app.css — both are used by more than
-   this page, and a scoped rule reaches no other one. `.game-actions .action-btn` below is the
-   exception that proves it: .game-actions exists only here, so the rule cannot reach the season
-   rows on /settings even though it names the same class. */
-
-/* On a touch screen the buttons sit flush. A 2px gap between two targets is a dead gutter — too
-   narrow to see or aim around, wide enough to swallow a tap, and awarded by the browser to
-   whichever neighbour has the larger contact area. A gap has to be nothing or at least 8px, and
-   with six buttons on a card there is nowhere to find five 8px gaps. See
-   scripts/touch-targets.mjs. */
-@media (pointer: coarse) {
-    .game-actions {
-        gap: 0;
-    }
+    align-items: center;
+    gap: 8px;
 }
 
 @media (max-width: 599.98px) {
-    /* A phone has no room for everything on one line, so the actions get a line of their own
-       under the match they belong to. They used to share it, and on a 320px phone the opponent's
-       name ran underneath them: five 40px buttons left 42px for it. Six 44px buttons — match day,
-       when the Live button joins them — are 264px, which no phone can put beside a name at all. */
     .game-row {
         gap: 10px;
-        flex-wrap: wrap;
-        /* 16px each side left 260px inside the card on a 320px phone, four short of those six.
-           12px leaves 268px, so the narrowest phone the app supports still clears the floor. */
-        padding: 14px 12px;
+        padding: 10px 4px 10px 10px;
     }
 
-    /* Date on top of the opponent rather than side by side */
     .game-primary {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 2px;
+        padding-left: 10px;
     }
 
-    /* A line of its own, with the buttons at their own width and pushed to the right-hand edge.
-       They used to be split evenly across it, which made a button's width a function of how many
-       the card happened to carry — four on a fixture, six on match day, one on a card a visitor is
-       looking at — so no action kept a position down the list and a visitor's lone Overview button
-       read as a full-width bar. Fixed and right-aligned, Delete is under the same thumb on every
-       card and every other button counts in from the same edge. Flush, so the row is one continuous
-       surface with no gutter to lose a tap in. */
-    .game-actions {
-        flex-basis: 100%;
-        justify-content: flex-end;
-    }
-
-    /* Their own width is app.css's — 32px for a pointer, 44px for a finger. Six of the 44s are
-       264px against the 268px this card leaves inside its padding on a 320px phone, which is the
-       whole reason that padding is 12px rather than 16px. */
-    .game-actions .action-btn {
-        flex: 0 0 auto;
-    }
-
-    /* Formation, absentees and guests are secondary detail — hide them on mobile */
-    .badge-gold,
     .badge-unavailable,
     .badge-guest {
-        display: none;
-    }
-
-    /* Amber panel + amber formation button already flag a missing lineup; the icon
-       next to the date is redundant on a narrow card and just adds clutter. ::deep
-       is required because MudIcon renders the <svg> outside this component's scope. */
-    .game-meta ::deep .nolineup-icon {
         display: none;
     }
 }

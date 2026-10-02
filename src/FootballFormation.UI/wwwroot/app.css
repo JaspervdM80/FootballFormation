@@ -50,26 +50,16 @@ html, body {
    Excluding popovers and dialogs is the point of the selector, not a detail. .mud-paper is on
    every MudBlazor surface — cards, drawer, menus, dropdowns, dialogs — so styling it flat also
    restyled things that are not cards, and position:relative in particular broke every dropdown
-   into a full-width band across the page. Three separate patch rules used to undo that. Dialogs
-   get the same look from .mud-dialog below, which they carry themselves. */
+   into a full-width band across the page. Dialogs get the same look from .mud-dialog below. */
 .mud-paper:not(.mud-popover):not(.mud-dialog) {
-    background: var(--gradient-card) !important;
-    border: 1px solid color-mix(in srgb, var(--ink) 5%, transparent) !important;
+    background: var(--surface-card) !important;
+    border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent) !important;
     position: relative;
 }
 
-/* Accent top-line effect on elevated papers */
-.mud-paper.mud-elevation-2::before,
-.mud-paper.mud-elevation-1::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(to right, transparent, color-mix(in srgb, var(--club-accent) 30%, transparent), transparent);
-    pointer-events: none;
-    z-index: 1;
+.mud-paper.mud-elevation-1:not(.mud-popover):not(.mud-dialog),
+.mud-paper.mud-elevation-2:not(.mud-popover):not(.mud-dialog) {
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 6%, transparent), 0 2px 8px color-mix(in srgb, var(--ink) 4%, transparent) !important;
 }
 
 /* --- Stacked tables on a phone ---
@@ -104,11 +94,10 @@ html, body {
 
 /* Table overrides */
 .mud-table .mud-table-head .mud-table-row .mud-table-cell {
-    /* Full strength, not a 60% mix: this is 0.7rem uppercase text, and the mix measured about
-       3.0:1 on white — under AA for a label people actually have to read. */
-    color: var(--club-primary-bright) !important;
+    /* --ink-muted, not a lighter mix: at 0.7rem uppercase anything under AA stops being readable. */
+    color: var(--ink-muted) !important;
     font-size: 0.7rem;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
     border-bottom-color: color-mix(in srgb, var(--ink) 6%, transparent) !important;
@@ -484,9 +473,7 @@ a.action-btn {
     }
 }
 
-/* Every way into the live screen wears the crest red — the one action on a game card with a colour
-   of its own, and it leads the row. Green was one of several greens on a card that already has a
-   green edge stripe. */
+/* Every way into the live screen wears the crest red — the one action on a game card with a colour of its own. */
 .action-btn.action-live {
     color: var(--club-on-primary);
     background: var(--club-primary);
@@ -504,6 +491,26 @@ a.action-btn {
    being played today. Paint and pulse are separate classes so the colour is not also the state. */
 .action-btn.action-live-now {
     animation: action-live-pulse 2s ease-in-out infinite;
+}
+
+/* A row's one outright action carries its word, not just an icon; the rest sit in its menu. */
+.action-btn.action-labelled {
+    width: auto;
+    padding: 0 14px;
+    font: 600 0.875rem 'DM Sans', sans-serif;
+    color: var(--ink);
+    border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+    border-radius: 8px;
+}
+
+.action-btn.action-labelled.action-live {
+    color: var(--club-on-primary);
+    border-color: transparent;
+}
+
+.action-btn.action-labelled.action-needs-lineup {
+    color: var(--color-warning-bright);
+    border-color: color-mix(in srgb, var(--color-warning) 45%, transparent);
 }
 
 @keyframes action-live-pulse {
@@ -923,28 +930,29 @@ a.action-btn {
    the clock is running, a grid once the result is filed. */
 .score-name,
 .live-score-name {
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--ink-muted);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--ink);
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
+/* Both sides in ink: a red and a blue number read as good and bad rather than as two teams. */
 .score-value,
 .live-score-value {
-    font-size: 2.75rem;
-    font-weight: 800;
+    font-size: 3rem;
+    font-weight: 700;
     line-height: 1.1;
-    color: var(--club-primary);
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
 }
 
 .score-away,
 .live-score-away {
-    color: var(--color-away);
+    color: var(--ink);
 }
 
 .score-vs,
@@ -960,7 +968,7 @@ a.action-btn {
    root element. The rest of that page's styling is scoped as normal. */
 .live-scoreboard,
 .live-controls {
-    border-radius: 16px;
+    border-radius: 12px;
 }
 
 .live-scoreboard {
@@ -971,6 +979,8 @@ a.action-btn {
     flex: 1;
     /* Thumb-sized: pressed while watching the pitch, not the phone. */
     min-height: 56px;
+    border-radius: 12px !important;
+    white-space: nowrap;
 }
 
 /* The clock controls. A grid rather than a wrapping flex row: how many buttons the panel holds
@@ -1043,32 +1053,24 @@ a.action-btn {
     color: var(--color-danger-bright);
 }
 
-/* On a phone what just happened matters more than where everyone stands, so the line-up card
-   drops below the timeline, taking the minutes table with it. Every other child of .live-layout
-   keeps the default order of 0 and so stays in source order above them. */
-@media (max-width: 599.98px) {
-    .live-lineup {
-        order: 1;
-    }
-
-    .live-minutes-card {
-        order: 2;
-    }
-
-    /* Last in source order is not last once anything above it has been reordered. */
-    .live-controls-foot {
-        order: 3;
-    }
+/* The whole tile is an anchor, not an @onclick div: it works with no circuit and gets keyboard activation for free. */
+.home-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px;
 }
 
-/* Home tiles. The whole card is a link — an anchor wrapping the MudPaper rather than a div with an
-   @onclick, so it works with no circuit and the browser gives it keyboard activation for free. */
 .home-tile-link {
-    display: block;
-    height: 100%;
-    color: inherit;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 64px;
+    padding: 12px 10px 12px 12px;
+    border-radius: 12px;
+    color: var(--ink);
     text-decoration: none;
-    border-radius: 16px;
+    background: color-mix(in srgb, var(--ink) 5%, var(--surface-page));
+    transition: background 120ms ease;
 }
 
 .home-tile-link:focus-visible {
@@ -1076,34 +1078,43 @@ a.action-btn {
     outline-offset: 2px;
 }
 
-.home-tile {
-    height: 100%;
+@media (hover: hover) {
+    .home-tile-link:hover {
+        background: color-mix(in srgb, var(--ink) 9%, var(--surface-page));
+    }
+}
+
+.home-tile-icon {
+    flex: none;
+    width: 28px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    color: var(--club-primary-bright);
+}
+
+.home-tile-text {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
-    cursor: pointer;
-    transition: transform 120ms ease, box-shadow 120ms ease;
+    gap: 1px;
 }
 
-.home-tile-link:hover .home-tile,
-.home-tile:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px color-mix(in srgb, var(--club-primary) 22%, transparent);
+.home-tile-title {
+    font-weight: 700;
+    font-size: 0.95rem;
 }
 
-.home-tile-link:active .home-tile,
-.home-tile:active {
-    transform: translateY(0);
+.home-tile-body {
+    font-size: 0.82rem;
+    line-height: 1.35;
+    color: var(--ink-muted);
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .home-tile {
-        transition: none;
-    }
-
-    .home-tile-link:hover .home-tile,
-    .home-tile:hover {
-        transform: none;
-    }
+.home-tile-chevron {
+    flex: none;
+    color: var(--ink-faint);
 }
 
 /* Page header styling */
@@ -1175,15 +1186,47 @@ a.action-btn {
         color: color-mix(in srgb, var(--ink) 82%, transparent);
     }
 
-    /* The app bar already names the team; visually hidden rather than display:none so the page keeps a heading to navigate by. */
-    .home-header {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip-path: inset(50%);
-        white-space: nowrap;
-    }
+}
+
+/* Shared by the games list and the start page, which must show a date the same way. */
+.date-block {
+    flex: none;
+    width: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.date-block-dow {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-subtle);
+}
+
+.date-block-day {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.date-block-mon {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--ink-muted);
+}
+
+/* The app bar already names the team; visually hidden rather than display:none so the page keeps a heading to navigate by. */
+.home-header {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
 }
 
 /* --- The settings sections and the notification row ---
@@ -1254,11 +1297,11 @@ a.action-btn {
 
 /* Card label */
 .card-label {
-    font-size: 0.7rem;
-    font-weight: 600;
+    font-size: 0.72rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--club-primary-bright);
+    letter-spacing: 0.08em;
+    color: var(--ink-muted);
     margin-bottom: 16px;
 }
 
@@ -1613,9 +1656,9 @@ a.action-btn {
     color: #fff;
 }
 
-.form-pill.win { background: var(--color-success-bright); }
-.form-pill.draw { background: color-mix(in srgb, var(--ink) 38%, transparent); }
-.form-pill.loss { background: var(--color-danger-bright); }
+.form-pill.win { color: var(--color-success-deep); background: color-mix(in srgb, var(--color-success-bright) 14%, var(--surface-card)); }
+.form-pill.draw { color: var(--ink-muted); background: color-mix(in srgb, var(--ink) 8%, var(--surface-card)); }
+.form-pill.loss { color: var(--color-danger-bright); background: color-mix(in srgb, var(--color-danger) 12%, var(--surface-card)); }
 
 .stat-tiles {
     display: grid;

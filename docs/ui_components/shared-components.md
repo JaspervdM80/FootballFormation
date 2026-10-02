@@ -99,9 +99,8 @@ because the wording, the casing and the colour have to agree across all four and
 drifted once.
 
 - **The colours are the match overview's own**: `--club-accent` for home, `--color-away` for away,
-  tinted the way every other badge in `app.css` is — 12% fill, 20% border. Those are the two
-  colours a match card already stripes its edges with, so the stripe and the word are one
-  convention instead of two.
+  tinted the way every other badge in `app.css` is — 12% fill, 20% border. Match cards no longer
+  carry a venue stripe, so the badge carries the venue on its own.
 - **The text takes the deep end of each ramp**, `--club-accent-deep` and `--color-away-bright`, and
   this is the part that is easy to get wrong: contrast is against the badge's own 12% fill, not the
   card underneath, and that fill lightens the background more than it looks. The colours the larger

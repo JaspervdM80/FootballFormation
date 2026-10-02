@@ -4,7 +4,7 @@
 import { test, expect } from '../fixtures.js';
 import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
 import {
-  addPlayer, clickFor, createMatch, gameRow, gotoRendered, liveMatch, openDialog, playerMenuItem,
+  addPlayer, clickFor, createMatch, gameAction, gameRow, gotoRendered, liveMatch, openDialog, playerMenuItem,
   playerRow, submitDialog,
 } from '../helpers.js';
 
@@ -61,7 +61,7 @@ test('an injured player is left out of the line-up and shown in its own panel', 
   await setInjured(await openDialog(page), true);
 
   await createMatch(page, { opponent: 'FC Blessuretest' });
-  await gameRow(page, 'FC Blessuretest').getByTitle(/Formation|Add lineup/).click();
+  await gameAction(page, 'FC Blessuretest', /Formation|Add lineup/);
   await page.waitForURL(/\/games\/\d+\/formation/);
 
   // Not offered as a draggable player...
@@ -77,7 +77,7 @@ test('the unavailable-players picker leaves an injured player out, and says why'
   await setInjured(await openDialog(page), true);
 
   await createMatch(page, { opponent: 'FC Selectietest' });
-  await gameRow(page, 'FC Selectietest').getByTitle('Edit', { exact: false }).click();
+  await gameAction(page, 'FC Selectietest', 'Edit');
   const panel = await openDialog(page);
 
   const field = panel.locator('.mud-input-control', { has: page.getByText('Unavailable Players', { exact: false }) }).first();

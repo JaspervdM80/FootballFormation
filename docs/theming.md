@@ -17,8 +17,11 @@ They come from two places, and which one depends on whether the value is club br
   from the club tokens via `var()`. It travels with the Razor class library, is served at
   `_content/FootballFormation.UI/theme.css`, and loads **before** `app.css` in `App.razor`.
 
-The active theme is **GJS Gorinchem (light)**: white page, light-green sections, crest
-red primary, crest banner green accent. Colors were sampled from the club crest
+The active theme is **GJS Gorinchem (light)**: a soft green-grey page with flat white cards, crest
+red primary, crest banner green accent. Each colour has one job — red is the brand, the one primary
+action on a screen and a live match; green is the pitch, home and wins; labels, table headers and
+numbers are ink. DM Sans is set on every MudBlazor typography level in `ClubTheme.ToMudTheme`, since
+MudBlazor otherwise renders headings and buttons in Roboto, and buttons are sentence case. Colors were sampled from the club crest
 (`Web/wwwroot/icons/icon-512.png`).
 
 ## The token list is the app, not this page

@@ -64,7 +64,8 @@ test('a player page opens no circuit either', async ({ page }) => {
 test('a shared match report opens no circuit', async ({ page }) => {
   // The URL first, from the games list, because a match report is only ever reached by its link.
   await gotoRendered(page, '/games');
-  await page.locator('.game-row .action-btn[title="Overview"]').first().click();
+  await page.locator('.game-row').first().locator('.game-more button').click();
+  await page.locator('.mud-popover-open .mud-menu-item', { hasText: 'Overview' }).click();
   await expect(page).toHaveURL(/\/games\/\d+\/overview/);
   const overviewPath = new URL(page.url()).pathname;
 

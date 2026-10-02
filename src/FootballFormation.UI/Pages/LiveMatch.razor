@@ -82,11 +82,29 @@
         </AuthorizeView>
     }
 
+    @* Nothing is scored before kick-off or after the whistle, so the buttons go entirely rather than sit greyed out. A goal missed at
+       the time is added back on /result, where a finished match is corrected. *@
+    @if (GameData.MatchState == MatchState.InProgress)
+    {
+        <AuthorizeView Roles="@AppRoles.Admin">
+            <div class="live-actions">
+                <MudButton Variant="Variant.Filled" Class="btn-gold live-action-btn" Size="Size.Large"
+                           StartIcon="@Icons.Material.Filled.SportsSoccer" OnClick="AddGoal">
+                    @L["Goal"]
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Class="btn-ghost live-action-btn" Size="Size.Large"
+                           OnClick="AddOpponentGoal">
+                    @L["Goal against"]
+                </MudButton>
+            </div>
+        </AuthorizeView>
+    }
+
     @* An empty pitch and bench say nothing the formation screens are not already there to fix, so the card stays away until someone is
-       on it. .live-lineup drops it below the timeline on a phone — see app.css. *@
+       on it. *@
     @if (DisplayLineup.Count > 0)
     {
-        <MudPaper Class="pa-4 live-lineup" Elevation="2" Style="border-radius: 16px;">
+        <MudPaper Class="pa-4 live-lineup" Elevation="2" Style="border-radius: 12px;">
             @* The half's name and, for the coach only, the way into what the plan still holds for it.
                The button carries the count so the plan can be ignored at a glance when it is empty. *@
             <div class="live-card-head">
@@ -151,25 +169,7 @@
         </MudPaper>
     }
 
-    @* Nothing is scored before kick-off or after the whistle, so the buttons go entirely rather than sit greyed out. A goal missed at
-       the time is added back on /result, where a finished match is corrected. *@
-    @if (GameData.MatchState == MatchState.InProgress)
-    {
-        <AuthorizeView Roles="@AppRoles.Admin">
-            <div class="live-actions">
-                <MudButton Variant="Variant.Filled" Class="btn-gold live-action-btn" Size="Size.Large"
-                           StartIcon="@Icons.Material.Filled.SportsSoccer" OnClick="AddGoal">
-                    @L["Goal"]
-                </MudButton>
-                <MudButton Variant="Variant.Outlined" Class="btn-ghost live-action-btn" Size="Size.Large"
-                           OnClick="AddOpponentGoal">
-                    @L["Goal against"]
-                </MudButton>
-            </div>
-        </AuthorizeView>
-    }
-
-    <MudPaper Class="pa-4" Elevation="2" Style="border-radius: 16px;">
+    <MudPaper Class="pa-4" Elevation="2" Style="border-radius: 12px;">
         @* Rotation fills this list with swaps nobody is scrolling back for, so they fold away. The toggle rides the heading because it
            is a setting for the list, not the first thing in it. *@
         <div class="live-card-head">
@@ -227,7 +227,7 @@
     @if (MinutesPlayed.Count > 0)
     {
         <AuthorizeView Roles="@AppRoles.Admin">
-            <MudPaper Class="pa-4 live-minutes-card" Elevation="2" Style="border-radius: 16px;">
+            <MudPaper Class="pa-4 live-minutes-card" Elevation="2" Style="border-radius: 12px;">
                 <MinutesPlayedList Rows="MinutesPlayed" IsActual="GameData.HasActualTimings" />
             </MudPaper>
         </AuthorizeView>

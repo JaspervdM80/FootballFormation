@@ -181,7 +181,8 @@ Components/
   PlayerList.razor(.cs)(.css)       — Draggable player cards (HTML5 drag API)
   SubstituteBench.razor(.cs)(.css)  — Substitute drop zone with remove buttons
   SeasonPicker.razor(.cs)           — Global season filter; rendered in both the app bar and the drawer
-  VenueBadge.razor                  — THUIS/UIT, in the colours the games list stripes its cards with
+  VenueBadge.razor                  — THUIS/UIT, carrying the venue on its own wherever a match is listed
+  DateBlock.razor                   — Day of week, day and month stacked; the games list and the start page
   NavItems.razor(.cs)               — The main menu, from AppNav.Menu; rendered in both, ShowIcons for the drawer
   PageHeader.razor(.cs)             — Every page's title block: heading, subtitle, back arrow, actions
   BackButton.razor(.cs)             — The back arrow; its href is the fallback, js/back.js follows history

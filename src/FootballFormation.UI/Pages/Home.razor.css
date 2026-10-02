@@ -5,7 +5,7 @@
     gap: 12px;
     margin-bottom: 20px;
     padding: 12px 16px;
-    border-radius: 16px;
+    border-radius: 12px;
     /* An anchor, so it arrives with a colour and an underline of its own to override. */
     color: #fff;
     text-decoration: none;
@@ -39,10 +39,11 @@
 
 .home-live-dot {
     flex: none;
-    width: 10px;
-    height: 10px;
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
-    background: var(--color-success-bright);
+    background: #fff;
+    box-shadow: 0 0 0 4px color-mix(in srgb, #fff 25%, transparent);
     animation: home-live-pulse 1.6s ease-in-out infinite;
 }
 
@@ -79,8 +80,15 @@
     white-space: nowrap;
 }
 
+/* The venue chip's pale tint is unreadable on the red; white on a white wash is not. */
+.home-live-banner:not(.home-banner-upcoming):not(.home-banner-done) ::deep .badge-venue {
+    color: #fff;
+    background: color-mix(in srgb, #fff 20%, transparent);
+    border-color: transparent;
+}
+
 .home-live-score {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
 }
@@ -88,61 +96,79 @@
 
 .home-dashboard {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 4px 16px;
 }
 
-/* Status, not navigation: the club green sets these apart from the light action tiles below. */
+.home-block {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.home-block .card-label {
+    margin: 12px 2px 8px;
+}
+
 .home-card {
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 4px;
     min-width: 0;
-    padding: 16px 20px;
-    border-radius: 16px;
-    color: var(--club-on-primary);
+    padding: 14px 16px;
+    border-radius: 12px;
+    color: var(--ink);
     text-decoration: none;
-    background: var(--gradient-accent);
-    box-shadow: 0 2px 6px color-mix(in srgb, var(--club-accent-deep) 30%, transparent);
-    transition: box-shadow 120ms ease, filter 120ms ease;
+    background: var(--surface-card);
+    border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 6%, transparent), 0 2px 8px color-mix(in srgb, var(--ink) 4%, transparent);
+    transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 
 a.home-card:focus-visible {
-    outline: 2px solid var(--club-accent-bright);
+    outline: 2px solid var(--club-primary-bright);
     outline-offset: 2px;
 }
 
 @media (hover: hover) {
     a.home-card:hover {
-        filter: brightness(1.06);
-        box-shadow: 0 6px 20px color-mix(in srgb, var(--club-accent-deep) 40%, transparent);
+        border-color: color-mix(in srgb, var(--ink) 18%, transparent);
+        box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 8%, transparent);
     }
 }
 
 .home-card-empty {
+    justify-content: center;
+    color: var(--ink-muted);
+    font-size: 0.9rem;
     box-shadow: none;
+    background: transparent;
+    border-style: dashed;
 }
 
-.home-card-label {
-    font-size: 0.65rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    opacity: 0.85;
+.home-fixture {
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+}
+
+.home-fixture-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding-left: 14px;
+    border-left: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
 }
 
 .home-card-title {
     display: flex;
     align-items: center;
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     font-weight: 700;
     white-space: nowrap;
-}
-
-.home-card-result {
-    display: flex;
-    align-items: center;
-    gap: 10px;
 }
 
 /* The name gives way before the venue badge does. */
@@ -150,69 +176,90 @@ a.home-card:focus-visible {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-/* The venue badge's pale tint vanishes on green; a solid chip keeps its home/away colour readable. */
-.home-card-title ::deep .badge-venue {
-    flex: none;
-    background: var(--club-on-primary);
-    border-color: transparent;
-}
-
-.home-card-score,
-.home-card-record {
-    font-size: 1.5rem;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
-}
-
-.home-card-record {
-    line-height: 1.1;
-}
-
-.home-card-caption {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    opacity: 0.85;
+    white-space: nowrap;
 }
 
 .home-card-line {
     font-size: 0.875rem;
-    opacity: 0.9;
+    color: var(--ink-muted);
 }
 
-.home-card-scorers {
+.home-card-icon-line {
     display: flex;
     align-items: center;
     gap: 6px;
 }
 
 /* MudIcon's svg carries no scope attribute of its own. */
-.home-card-scorers ::deep svg {
+.home-card-icon-line ::deep svg {
     flex: none;
+    color: var(--ink-faint);
 }
 
-/* FormGuide and ResultPill carry no scope attribute either, and their pills are coloured for a light card:
-   a green win pill vanishes on the green one, so it turns white here. */
+.home-wdl {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.home-wdl div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 6px 0;
+    border-radius: 8px;
+}
+
+.home-wdl b {
+    font-size: 1.5rem;
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums;
+}
+
+.home-wdl small {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.home-wdl .win {
+    color: var(--color-success-deep);
+    background: color-mix(in srgb, var(--color-success-bright) 12%, var(--surface-card));
+}
+
+.home-wdl .draw {
+    color: var(--ink-muted);
+    background: color-mix(in srgb, var(--ink) 7%, var(--surface-card));
+}
+
+.home-wdl .loss {
+    color: var(--color-danger-bright);
+    background: color-mix(in srgb, var(--color-danger) 10%, var(--surface-card));
+}
+
 .home-card ::deep .form-row {
-    margin-top: 6px;
+    margin: 2px 0 4px;
 }
 
-.home-card ::deep .form-label {
-    color: inherit;
-    opacity: 0.85;
+.home-card-result {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.05rem;
+    font-weight: 700;
 }
 
-.home-card ::deep .form-pill.win {
-    color: var(--club-accent-deep);
-    background: var(--club-on-primary);
+.home-card-result .home-card-opponent {
+    flex: 0 1 auto;
 }
 
-.home-card ::deep .form-pill.draw {
-    background: color-mix(in srgb, var(--club-on-primary) 30%, transparent);
+.home-card-score {
+    margin-left: auto;
+    font-size: 1.35rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
 }
 
-.home-card ::deep .form-pill {
+.home-card-result ::deep .form-pill {
     flex: none;
 }

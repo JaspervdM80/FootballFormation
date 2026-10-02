@@ -61,7 +61,7 @@
     --fit-out-of-position-edge: #ef5350;
 
     /* Shared gradients, composed from the club tokens above */
-    --gradient-primary: linear-gradient(135deg, var(--club-primary), var(--club-primary-deep));
+    --gradient-primary: linear-gradient(135deg, var(--club-primary), var(--club-primary-bright));
     --gradient-accent: linear-gradient(135deg, var(--club-accent), var(--club-accent-deep));
     --gradient-card: linear-gradient(135deg, var(--surface-card), var(--surface-card-alt));
     --gradient-appbar: linear-gradient(to right, var(--surface-appbar), var(--surface-appbar-alt));

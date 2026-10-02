@@ -2,11 +2,11 @@
 // at a touchline.
 import { test, expect } from '../fixtures.js';
 import {
-  clickFor, confirmDialog, createMatch, fileScore, fillField, gameRow, goto, matchWithId,
+  clickFor, confirmDialog, createMatch, fileScore, fillField, gameAction, gameRow, goto, matchWithId,
   openDialog, submitDialog,
 } from '../helpers.js';
 
-test('a new match appears under Fixtures with its venue and formation', async ({ page }) => {
+test('a new match appears under Fixtures with its venue', async ({ page }) => {
   await createMatch(page, { opponent: 'FC Nieuwkomer', venue: 'Away' });
   await createMatch(page, { opponent: 'FC Thuisploeg', venue: 'Home' });
 
@@ -51,7 +51,7 @@ test('the form remembers the season defaults, so only the opponent is required',
 test('an edit is visible on the card it came from', async ({ page }) => {
   await createMatch(page, { opponent: 'FC Typefout' });
 
-  await gameRow(page, 'FC Typefout').getByTitle('Edit', { exact: false }).click();
+  await gameAction(page, 'FC Typefout', 'Edit');
   const panel = await openDialog(page);
   await fillField(panel, 'Opponent', 'FC Gecorrigeerd');
   await submitDialog(page);
@@ -63,12 +63,12 @@ test('an edit is visible on the card it came from', async ({ page }) => {
 test('deleting a match asks first, and the match survives a cancel', async ({ page }) => {
   await createMatch(page, { opponent: 'FC Bedenk Je' });
 
-  await gameRow(page, 'FC Bedenk Je').getByTitle('Delete', { exact: false }).click();
+  await gameAction(page, 'FC Bedenk Je', 'Delete');
   const panel = await openDialog(page);
   await panel.getByRole('button', { name: 'Cancel' }).click();
   await expect(gameRow(page, 'FC Bedenk Je')).toBeVisible();
 
-  await gameRow(page, 'FC Bedenk Je').getByTitle('Delete', { exact: false }).click();
+  await gameAction(page, 'FC Bedenk Je', 'Delete');
   await openDialog(page);
   await confirmDialog(page, 'Delete');
   await expect(page.locator('.game-row', { hasText: 'FC Bedenk Je' })).toHaveCount(0);
@@ -90,13 +90,13 @@ test('only a match already played is flagged for its missing lineup', async ({ p
   const day = await createMatch(page, { opponent: 'FC Gespeeld', past: true });
 
   const played = gameRow(page, 'FC Gespeeld');
-  // The card's own date, which the app formats as "dd MMM" whatever the culture is doing to the
-  // input above — so this is the unambiguous check that the match really is in the past. The month
+  // The card's own date block — the unambiguous check that the match really is in the past. The month
   // is part of it on purpose: day 8 of the wrong month reads the same and is not in the past.
   const month = new Date().toLocaleString('en-US', { month: 'short' });
-  await expect(played.locator('.game-date')).toHaveText(new RegExp(`^0?${day} ${month}$`, 'i'));
+  await expect(played.locator('.date-block-day')).toHaveText(String(Number(day)));
+  await expect(played.locator('.date-block-mon')).toHaveText(new RegExp(`^${month}`, 'i'));
   await expect(played.locator('.nolineup-icon')).toBeVisible();
-  // The action button changes shape rather than hiding: an empty grid means "this one needs you".
+  // The outright button turns amber and is titled "Add lineup" rather than hiding.
   await expect(played.getByTitle('Add lineup', { exact: false })).toBeVisible();
 });
 

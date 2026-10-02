@@ -90,7 +90,7 @@ immediately — the live screen's Goal buttons are below the fold in landscape t
 A scene is also only as good as what is on the page when it runs, and that is the seeding's job, not
 the audit's. The `/games` scene needs a game card to measure, so `visual-check.mjs` creates one through
 the dialog before the screenshots — **dated today**, because the Live button appears on match day
-only and that is the day the action row carries six buttons rather than five. The live screen needs
+only and that is the day the row carries its outright action beside the menu. The live screen needs
 more than that: a second game, a line-up dragged onto its pitch and the clock actually started,
 because before kick-off none of the controls the scene exists to measure are on the page at all.
 That seeding runs in the desktop context, since a line-up is built by dragging and the audit's own
