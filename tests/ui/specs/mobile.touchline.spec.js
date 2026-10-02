@@ -5,7 +5,7 @@
 // app-bar sections become a drawer, the squad table becomes a list of cards, and the match form
 // becomes a full-screen sheet.
 import { test, expect } from '../fixtures.js';
-import { clickFor, createMatch, fillField, gameRow, goto, gotoRendered, submitDialog } from '../helpers.js';
+import { clickFor, createMatch, fillField, gameRow, goto, gotoRendered, openDialog, playerMenuItem, playerRow, submitDialog } from '../helpers.js';
 
 test('the sections are behind the drawer, not the app bar', async ({ page }) => {
   // The drawer needs no circuit, and neither does anything else this test touches.
@@ -86,6 +86,22 @@ test('the squad reads as cards rather than a table squeezed sideways', async ({ 
   const overflow = await page.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow, 'the page should not scroll horizontally on a phone').toBeLessThanOrEqual(1);
+});
+
+test('a squad row is one line, with removing a player moved into its menu', async ({ page }) => {
+  await goto(page, '/players');
+
+  const row = playerRow(page, 'Fixture Defender');
+  const icon = row.getByLabel('Remove from squad');
+  await expect(icon).toBeAttached();
+  await expect(icon).toBeHidden();
+  const { height } = await row.boundingBox();
+  expect(height, 'name, position and ⋮ should share one line').toBeLessThan(70);
+
+  await playerMenuItem(page, 'Fixture Defender', 'Remove from squad');
+  await expect(await openDialog(page)).toContainText('Fixture Defender');
+  // Cancelled: the fixture squad is shared with every other spec.
+  await submitDialog(page, 'Cancel');
 });
 
 test('a tap on the card outside its buttons opens the match, rather than landing in nothing', async ({ page }) => {

@@ -1884,9 +1884,8 @@ a.action-btn {
 }
 
 /* Position abbreviations are two or three letters (GK, CB, CDM), and a badge that shrink-wraps
-   each one makes a column of ragged chips — the alternatives on the row below never line up with
-   the preferred position above them. Sized for the widest abbreviation instead, so every position
-   on the page is the same box. Only the squad table: elsewhere .badge-teal/.badge-gold carry
+   each one makes a column of ragged chips. Sized for the widest abbreviation instead, so every
+   position on the page is the same box. Only the squad table: elsewhere .badge-teal/.badge-gold carry
    words, which a min-width would only pad. */
 .players-table .cell-pref .badge-teal,
 .players-table .cell-alt .badge-gold {
@@ -1930,8 +1929,8 @@ a.action-btn {
 }
 
 /* The name links to that player's stats. The chevron sits right after it rather than at the far
-   edge of the row: on a phone the row is a two-column grid, and a right-aligned chevron would land
-   between the name and the position badge instead of at the end. */
+   edge of the row: on a phone a right-aligned chevron would land between the name and the position
+   badge instead of at the end. */
 .player-name-chevron {
     margin-left: 6px;
     font-weight: 700;
@@ -1962,17 +1961,13 @@ a.action-btn {
    so these rules and that layout switch together. */
 @media (max-width: 599.98px) {
     /* MudBlazor's stacked card prints the column label beside every cell, which on
-       this table is far more label than data. Lay each row out as a grid instead:
-       name + preferred position share the first line, alternatives get the second,
-       the row actions the third. The table parts have to stop being table boxes
-       for the row to become a grid container. */
+       this table is far more label than data. One line per player instead — name,
+       preferred position, ⋮ — so a squad of twenty is not a 3,000px page. */
     .players-table .mud-table-body .mud-table-row {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
+        display: flex;
         align-items: center;
-        column-gap: 8px;
-        row-gap: 6px;
-        padding: 10px 14px;
+        gap: 8px;
+        padding: 6px 4px 6px 14px;
     }
 
     /* Below its breakpoint MudBlazor replaces the sortable headers with a select above the rows.
@@ -2000,33 +1995,50 @@ a.action-btn {
     }
 
     .players-table .cell-name {
+        flex: 1 1 auto;
         min-width: 0;
     }
 
     /* Sized on the wrapper, not the cell: MudBlazor's dense-table rule for
        .mud-table-cell outspecifies a plain .cell-name selector */
     .players-table .cell-name .player-name-cell {
+        display: flex;
+        flex-wrap: nowrap;
+        max-width: 100%;
         font-size: 1rem;
     }
 
-    .players-table .cell-pref {
-        justify-content: flex-end;
+    .players-table .player-name-cell > * {
+        flex: none;
     }
 
-    /* Alternatives and the actions each take a full-width line of their own */
-    .players-table .cell-alt,
+    /* The status badges give way too, or a guest or archived player's name is all that shrinks */
+    .players-table .player-name-cell > .player-name,
+    .players-table .player-name-cell > .badge-guest,
+    .players-table .player-name-cell > .badge-archived {
+        flex: 0 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .players-table .cell-pref,
     .players-table .cell-actions {
-        grid-column: 1 / -1;
-        justify-content: flex-end;
-        flex-wrap: wrap;
-        gap: 4px;
+        flex: none;
     }
 
-    /* A player without alternatives should not get a blank line */
-    .players-table .cell-alt:not(:has(.badge-gold)) {
-        display: none;
+    /* Alternatives are still in Edit Player; removing moved into the ⋮ menu */
+    .players-table .cell-alt,
+    .players-table .row-remove {
+        display: none !important;
     }
+}
 
+@media not all and (max-width: 599.98px) {
+    .menu-remove-phone {
+        display: none !important;
+    }
 }
 
 /* --- Users table --- */
