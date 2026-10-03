@@ -95,7 +95,9 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   A position swap writes a `GamePositionSwap`, not a `GameSubstitution`: nobody's minutes changed,
   but the second it happened is what lets `GameMinutesReport` credit each player the position she
   held either side of it. It goes on the timeline with the substitutions, folds away with them, and
-  carries an `Undo`. Undoing a substitution still follows the slot rather than the recorded one:
+  carries an `Undo`. A swap within a minute of one of the two coming on is credited from the second
+  she came on, so the spot she entered in counts for nothing. Undoing a substitution still follows the
+  slot rather than the recorded one:
   older matches carry swaps with no minute, which can have moved it since.
   The swap select's `Placeholder` is set **only** when its list is empty — MudSelect shows a
   placeholder whenever nothing is chosen, so a standing "nobody else is on the pitch" would greet a

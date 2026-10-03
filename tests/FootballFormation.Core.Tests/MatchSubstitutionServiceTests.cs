@@ -800,6 +800,27 @@ public class MatchSubstitutionServiceTests : LiveMatchTestBase
     }
 
     [Fact]
+    public async Task A_substitute_moved_seconds_after_coming_on_is_never_credited_the_spot_she_came_on_in()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        // The keeper goes off; the substitute takes her place, and the coach puts players[1] in goal straight after.
+        Time.Advance(TimeSpan.FromMinutes(10));
+        Assert.True((await Subs.SubstituteAsync(game.Id, players[0].Id, players[2].Id)).IsSuccess);
+        Time.Advance(TimeSpan.FromSeconds(20));
+        Assert.True((await Subs.SwapPositionsAsync(game.Id, players[2].Id, players[1].Id)).IsSuccess);
+        Time.Advance(TimeSpan.FromMinutes(20));
+        await MatchClock.EndHalfAsync(game.Id);
+
+        var minutes = GameMinutesReport.Build(await LoadForMinutesAsync(game.Id));
+        Assert.Equal(new Dictionary<PlayerPosition, int> { [PlayerPosition.CM] = 1220 }, minutes.PositionsFor(players[2].Id));
+        Assert.Equal(new Dictionary<PlayerPosition, int> { [PlayerPosition.CM] = 600, [PlayerPosition.GK] = 1220 },
+            minutes.PositionsFor(players[1].Id));
+    }
+
+    [Fact]
     public async Task A_swap_added_afterwards_lasts_from_its_second_to_the_end_of_the_half()
     {
         var game = await PlayedMatchAsync();

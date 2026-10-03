@@ -13,6 +13,13 @@
   the player who left is now credited that spot rather than the one the substitution recorded — the
   position split of such a match changed for her when this shipped; totals did not. A test pins it
   (`A_swap_recorded_before_swaps_had_a_minute_credits_the_spot_moved_into_for_the_whole_half`).
+- **A substitute moved straight after coming on was never really in the spot she came on in.** The
+  live screen takes her off the bench into the slot of whoever left, and the coach then swaps her to
+  where she is meant to play — seconds later, but a second the walk would credit to the wrong
+  position (a field player showing a minute in goal). `HalfLineupWalk` therefore moves a swap made
+  within `ArrivalSettlingSeconds` (60) of a player coming on back to the second she came on, provided
+  that arrival is the last change either player was part of. Timeline and stored rows keep the real
+  second; only who is credited where changes.
 - **A timed swap is a change like any other, so a substitution cannot be rewound past one.**
   Undoing or editing a substitution whose player a later swap moved, or adding a forgotten one before
   a swap of either player, is refused with *"Undo the later position swap first"*: reversing it would

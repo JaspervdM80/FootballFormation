@@ -90,6 +90,116 @@ public class HalfLineupWalkTests
     }
 
     [Fact]
+    public void A_player_moved_within_a_minute_of_coming_on_is_credited_nothing_in_the_spot_she_came_on_in()
+    {
+        // The keeper (1) goes off for 3 at 10', and 3 trades places with 2 twenty seconds later: 2 is the one put in goal.
+        var game = TestData.Game();
+        var period = game.AddPeriod(PeriodType.FirstHalf,
+            TestData.Starter(2, PlayerPosition.GK, 0),
+            TestData.Starter(3, PlayerPosition.CM, 5),
+            TestData.Sub(1));
+        period.StartedAtSeconds = 0;
+        period.EndedAtSeconds = 1800;
+        TestData.Substitution(game, period, offId: 1, onId: 3, atSeconds: 600, position: PlayerPosition.GK, slot: 0);
+        TestData.Swap(game, period, 3, 2, atSeconds: 620);
+
+        var minutes = GameMinutesReport.Build(game);
+
+        Assert.Equal(new Dictionary<PlayerPosition, int> { [PlayerPosition.CM] = 1200 }, minutes.PositionsFor(3));
+        Assert.Equal(new Dictionary<PlayerPosition, int> { [PlayerPosition.CM] = 600, [PlayerPosition.GK] = 1200 }, minutes.PositionsFor(2));
+        Assert.Equal(new Dictionary<PlayerPosition, int> { [PlayerPosition.GK] = 600 }, minutes.PositionsFor(1));
+    }
+
+    [Fact]
+    public void A_swap_a_minute_or_more_after_she_came_on_still_counts_from_its_own_second()
+    {
+        var game = TestData.Game();
+        var period = game.AddPeriod(PeriodType.FirstHalf,
+            TestData.Starter(2, PlayerPosition.GK, 0),
+            TestData.Starter(3, PlayerPosition.CM, 5),
+            TestData.Sub(1));
+        period.StartedAtSeconds = 0;
+        period.EndedAtSeconds = 1800;
+        TestData.Substitution(game, period, offId: 1, onId: 3, atSeconds: 600, position: PlayerPosition.GK, slot: 0);
+        TestData.Swap(game, period, 3, 2, atSeconds: 660);
+
+        Assert.Equal(new Dictionary<PlayerPosition, int> { [PlayerPosition.GK] = 60, [PlayerPosition.CM] = 1140 },
+            GameMinutesReport.Build(game).PositionsFor(3));
+    }
+
+    [Fact]
+    public void A_swap_is_left_at_its_own_second_when_something_else_moved_her_after_she_came_on()
+    {
+        // 3 comes on for the keeper, swaps with 2, then with 4 — all inside the minute. Only the first swap follows the arrival.
+        var game = TestData.Game();
+        var period = game.AddPeriod(PeriodType.FirstHalf,
+            TestData.Starter(2, PlayerPosition.GK, 0),
+            TestData.Starter(4, PlayerPosition.ST, 9),
+            TestData.Starter(3, PlayerPosition.CM, 5),
+            TestData.Sub(1));
+        period.StartedAtSeconds = 0;
+        period.EndedAtSeconds = 1800;
+        TestData.Substitution(game, period, offId: 1, onId: 3, atSeconds: 600, position: PlayerPosition.GK, slot: 0);
+        TestData.Swap(game, period, 3, 2, atSeconds: 610);
+        TestData.Swap(game, period, 3, 4, atSeconds: 630);
+
+        var walk = HalfLineupWalk.Rewind(game, period).Walk(0, 1800);
+
+        Assert.Empty(walk.Skipped);
+        Assert.Equal(new[] { 600, 600, 630 }, HalfLineupWalk.Rewind(game, period).Changes.Select(c => c.AtSeconds).ToArray());
+        Assert.Equal(new PitchSpot(9, PlayerPosition.ST), HalfLineupWalk.At(walk, 620).OnPitch[3]);
+    }
+
+    [Fact]
+    public void A_swap_added_inside_the_minute_after_an_arrival_settles_the_way_the_stored_rows_will()
+    {
+        // 3 comes on for the keeper at 10' and swaps with 2 at 10:30, which settles to 10'. A swap with 4 is then added at 10:10.
+        var game = TestData.Game();
+        var period = game.AddPeriod(PeriodType.FirstHalf,
+            TestData.Starter(2, PlayerPosition.GK, 0),
+            TestData.Starter(3, PlayerPosition.CM, 5),
+            TestData.Starter(4, PlayerPosition.ST, 9),
+            TestData.Sub(1));
+        period.StartedAtSeconds = 0;
+        period.EndedAtSeconds = 1800;
+        TestData.Substitution(game, period, offId: 1, onId: 3, atSeconds: 600, position: PlayerPosition.GK, slot: 0);
+        TestData.Swap(game, period, 3, 2, atSeconds: 630);
+
+        var added = new LineupChange(LineupChangeKind.Swap, 610, DateTime.UnixEpoch.AddDays(1), 99, 3, 4);
+        var corrected = HalfLineupWalk.Rewind(game, period).With(added: added);
+
+        // What the next read of the stored rows will make of the half.
+        TestData.Swap(game, period, 3, 4, atSeconds: 610).RecordedAt = added.RecordedAt;
+        var stored = HalfLineupWalk.Rewind(game, period);
+
+        Assert.Equal(stored.Changes.Select(c => (c.Kind, c.AtSeconds, c.PlayerId, c.OtherPlayerId)),
+            corrected.Changes.Select(c => (c.Kind, c.AtSeconds, c.PlayerId, c.OtherPlayerId)));
+    }
+
+    [Fact]
+    public void A_settled_swap_follows_its_arrival_whatever_the_ids_of_the_rows_around_it()
+    {
+        // Rows written without a RecordedAt: the swap's id is lower than its arrival's, so only its place in the list keeps it after her.
+        var game = TestData.Game();
+        var period = game.AddPeriod(PeriodType.FirstHalf,
+            TestData.Starter(2, PlayerPosition.GK, 0),
+            TestData.Starter(3, PlayerPosition.CM, 5),
+            TestData.Starter(5, PlayerPosition.ST, 9),
+            TestData.Sub(1),
+            TestData.Sub(4));
+        period.StartedAtSeconds = 0;
+        period.EndedAtSeconds = 1800;
+        TestData.Substitution(game, period, offId: 4, onId: 5, atSeconds: 300, position: PlayerPosition.ST, slot: 9);
+        TestData.Substitution(game, period, offId: 1, onId: 3, atSeconds: 600, position: PlayerPosition.GK, slot: 0);
+        TestData.Swap(game, period, 3, 2, atSeconds: 620);
+
+        var walk = HalfLineupWalk.Rewind(game, period).Walk(0, 1800);
+
+        Assert.Empty(walk.Skipped);
+        Assert.Equal(new Dictionary<PlayerPosition, int> { [PlayerPosition.CM] = 1200 }, GameMinutesReport.Build(game).PositionsFor(3));
+    }
+
+    [Fact]
     public void Leaving_a_swap_out_walks_the_half_as_if_it_never_happened()
     {
         var game = TestData.Game();
