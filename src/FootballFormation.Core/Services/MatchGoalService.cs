@@ -2,8 +2,8 @@ using FootballFormation.Core.Reporting;
 
 namespace FootballFormation.Core.Services;
 
-/// Adds the one thing only a match in progress knows: the half being played and the reading on the clock. The write itself is delegated
-/// to <see cref="GameService"/>, so the goal and the recounted scoreline go in together rather than across two contexts.
+/// Adds the one thing only a match in progress knows: the half being played and the reading on the clock. A recount always runs on
+/// the same context and transaction as the goal's own write, never across two.
 public class MatchGoalService(
     IDbContextFactory<AppDbContext> dbFactory,
     GameService games,
@@ -46,11 +46,10 @@ public class MatchGoalService(
         }, change: LiveMatchEvent.Goal);
 
     /// Corrects a goal already on file — who scored it, who assisted, whether it was an own goal, and the minute it reads. Which side it
-    /// counts for is fixed: turning ours into theirs is a different goal, removed and logged again. The scoreline is left alone, as it is
-    /// when a goal is removed from the result page, so this writes here rather than delegating to <see cref="GameService"/>: there is no
-    /// recount that has to commit alongside the goal.
+    /// counts for is fixed: turning ours into theirs is a different goal, removed and logged again.
+    /// <inheritdoc cref="GameService.AddGoalAsync(GameGoal, bool, CancellationToken)" path="/param[@name='recountScoreline']"/>
     public Task<Result> EditGoalAsync(
-        int goalId, int? scorerId, int? assisterId, bool isOwnGoal, int minute,
+        int goalId, int? scorerId, int? assisterId, bool isOwnGoal, int minute, bool recountScoreline = false,
         CancellationToken cancellationToken = default) =>
         LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "correct the goal",
             cancellationToken, async () =>
@@ -78,7 +77,11 @@ public class MatchGoalService(
             goal.AssisterId = assisterId;
             goal.IsOwnGoal = isOwnGoal;
 
+            await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
             await db.SaveChangesAsync(cancellationToken);
+            if (recountScoreline)
+                await GameService.RecountScorelineAsync(db, goal.GameId, cancellationToken);
+            await tx.CommitAsync(cancellationToken);
 
             logger.LogInformation("Corrected goal {GoalId} of game {GameId} to scorer {ScorerId} at {Seconds}s / minute {Minute}",
                 goalId, goal.GameId, goal.ScorerId, goal.AtSeconds, goal.Minute);

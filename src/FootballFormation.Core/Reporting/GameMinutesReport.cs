@@ -58,9 +58,10 @@ public static class GameMinutesReport
 
             // The line-up records where everyone stands now, so rewinding this half's changes is the only way to recover the kick-off
             // line-up the forward walk below has to start from.
-            var onPitch = period.PlayerPositions
+            var atWhistle = period.PlayerPositions
                 .Where(p => !p.IsSubstitute)
                 .ToDictionary(p => p.PlayerId, p => p.Position);
+            var onPitch = new Dictionary<int, PlayerPosition>(atWhistle);
 
             for (var i = changes.Count - 1; i >= 0; i--)
             {
@@ -69,14 +70,17 @@ public static class GameMinutesReport
             }
 
             var cursor = start;
-            foreach (var change in changes)
+            for (var i = 0; i < changes.Count; i++)
             {
+                var change = changes[i];
                 CreditAll(seconds, onPitch, change.AtSeconds - cursor);
                 onPitch.Remove(change.PlayerOffId);
 
                 if (change.PlayerOnId is { } cameOn)
                 {
-                    onPitch[cameOn] = change.Position;
+                    // A swap after she came on moved her without a row, so a stint that lasts to the whistle takes the position she ended in.
+                    var staysOn = !changes.Skip(i + 1).Any(c => c.PlayerOffId == cameOn);
+                    onPitch[cameOn] = staysOn && atWhistle.TryGetValue(cameOn, out var final) ? final : change.Position;
                     known.Add(cameOn);
                 }
 

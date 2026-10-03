@@ -234,6 +234,42 @@ public class MatchGoalServiceTests : LiveMatchTestBase
     }
 
     [Fact]
+    public async Task Correcting_a_goal_at_the_touchline_into_an_own_goal_moves_it_across_the_scoreline()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        Time.Advance(TimeSpan.FromMinutes(10));
+        var logged = await Goals.LogGoalAsync(game.Id, players[1].Id, null, false, false);
+
+        var result = await Goals.EditGoalAsync(
+            logged.Value!.Id, players[1].Id, null, isOwnGoal: true, minute: 10, recountScoreline: true);
+
+        Assert.True(result.IsSuccess);
+        var reloaded = await ReloadAsync(game.Id);
+        Assert.Equal(0, reloaded.ScoreHome);
+        Assert.Equal(1, reloaded.ScoreAway);
+    }
+
+    [Fact]
+    public async Task Correcting_a_goal_on_the_result_page_leaves_the_typed_scoreline_alone()
+    {
+        var game = await SeedGameAsync();
+        var players = await PlayersAsync();
+        await Games.SaveScoreAsync(game.Id, 3, 1);
+        var added = await Games.AddGoalAsync(new GameGoal { GameId = game.Id, ScorerId = players[1].Id, Minute = 20 });
+
+        var result = await Goals.EditGoalAsync(added.Value!.Id, players[1].Id, players[0].Id, false, minute: 20);
+
+        Assert.True(result.IsSuccess);
+        var reloaded = await ReloadAsync(game.Id);
+        Assert.Equal(3, reloaded.ScoreHome);
+        Assert.Equal(1, reloaded.ScoreAway);
+        Assert.Equal(players[0].Id, (await GoalAsync(added.Value.Id)).AssisterId);
+    }
+
+    [Fact]
     public async Task An_opponent_goal_can_be_re_timed_but_never_becomes_an_own_goal()
     {
         var game = await SeedGameAsync();

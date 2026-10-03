@@ -15,7 +15,7 @@ everyone else watches the same URL read-only. Every control sits inside
 |---|---|
 | `LiveMatchService` | Reading — `GetLiveAsync`, `GetTodaysMatchAsync`. Public like every other read |
 | `MatchClockService` | Kick-off, half time, next half, final whistle, and `BankClock` |
-| `MatchGoalService` | The live minute a goal is stamped with; storage delegates to `GameService` |
+| `MatchGoalService` | The live minute a goal is stamped with; storage delegates to `GameService`, a correction recounts on its own context |
 | `MatchSubstitutionService` | The slot swap and its record, in one `SaveChanges`, an injury, and undo |
 
 A page injecting all four is expected. A **facade** over them is the signal the split was cut along
@@ -85,9 +85,12 @@ Half time is a **dashed rule across the timeline**, not an event.
 
 ## Substitutions
 
-**A goal and a substitution are two taps each.** `LiveGoalDialog` and `LiveSubDialog` show players as a
+**A substitution is two taps, a goal three.** `LiveGoalDialog` and `LiveSubDialog` show players as a
 `PlayerPicker` grid of shirt-number buttons, and **the tap is the submit** — so anything that qualifies
-the change (assist, own goal, injured) has to be set before it. `LiveCandidateOrder` decides the
+the change (own goal, injured) has to be set before it. The assist is the exception: set-it-first was
+missed in practice, so the goal dialog asks for it as a second grid after the scorer, with "No assist"
+beside it (an own goal skips that step). A goal is corrected from the live timeline too, with
+`recountScoreline: true` so an own-goal correction moves the score. `LiveCandidateOrder` decides the
 order: scorers on the pitch first, then by season goals and name; the bench by position fit for the
 slot being vacated, then name. Tapping a player on the pitch offers two changes: someone off the
 bench comes on (`SubstituteAsync`), or they trade positions with a team-mate who stays on
@@ -115,7 +118,9 @@ minutes earlier. Candidates come from the substitution's **own** half, not the o
 **Injured** switch keeps its `GameInjury` on the same second — `Game.WasReplaced` pairs them there.
 
 **A forgotten substitution is added afterwards** (`AddSubstitutionAsync`), laid over the half's final
-line-up — so refused when either player is in a later change there.
+line-up — so refused when either player is in a later change there. **A position swap is too**
+(`SwapPositionsInHalfAsync`), between two players on at that half's whistle; a player who came on is
+credited the position she ended in, not the slot her substitution recorded.
 
 Two substitutions in the same second settle by **id**, not just the clock.
 

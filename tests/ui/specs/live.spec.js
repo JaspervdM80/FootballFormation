@@ -9,7 +9,7 @@
 // that the screen driving it shows the banked figure rather than a clock that never stopped.
 import { test, expect } from '../fixtures.js';
 import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
-import { clickFor, finishMatch, goto, gotoRendered, liveMatch, openDialog, pickPlayer } from '../helpers.js';
+import { clickFor, finishMatch, goto, gotoRendered, liveMatch, openDialog, pickPlayer, scoreGoal, submitDialog } from '../helpers.js';
 
 // Shirt *and* short name, because a shirt number is not unique — nothing stops two players in a
 // squad wearing the same one, and this file's arithmetic would then credit a substitution to the
@@ -64,6 +64,40 @@ test('a substitution swaps the two chips over, and undoing it puts them back', a
   // leaving the squad sheet — she is on the bench now, which is where a substitute belongs.
   expect(await players(onPitch(page))).toEqual(pitchBefore);
   expect(await players(onBench(page))).toEqual(cameOn);
+});
+
+test('the assist is asked for after the scorer, and a goal is corrected without leaving the touchline', async ({ page }) => {
+  await liveMatch(page, 'FC Voorzet');
+
+  await clickFor(
+    page.getByRole('button', { name: 'Goal', exact: true }),
+    () => expect(page.locator('.mud-dialog')).toBeVisible(),
+  );
+  const dialog = await openDialog(page);
+  const picks = dialog.locator('.player-pick');
+  const scorer = await picks.first().getAttribute('title');
+  await clickFor(picks.first(), () => expect(dialog.getByRole('button', { name: 'No assist' })).toBeVisible(),
+    { settle: 10_000 });
+
+  await expect(dialog.locator(`.player-pick[title="${scorer}"]`)).toHaveCount(0);
+  const assister = await picks.first().getAttribute('title');
+  await pickPlayer(page, dialog, assister);
+
+  const event = page.locator('.live-event');
+  await expect(event.locator('.live-event-sub')).toHaveText(`↳ ${assister}`);
+  const ourScore = page.locator('.live-score-value:not(.live-score-away)');
+  const theirScore = page.locator('.live-score-value.live-score-away');
+  await expect(ourScore).toHaveText('1');
+
+  // An own goal changes sides, so the correction has to recount the scoreline the touchline shows.
+  await clickFor(event.getByRole('button', { name: 'Edit' }), () => expect(page.locator('.mud-dialog')).toBeVisible());
+  const edit = await openDialog(page);
+  await edit.locator('label.mud-switch', { hasText: 'Own goal' }).click();
+  await submitDialog(page, 'Save');
+
+  await expect(page.getByText('Goal updated')).toBeVisible();
+  await expect(ourScore).toHaveText('0');
+  await expect(theirScore).toHaveText('1');
 });
 
 test('the clock stops at half time and the second half picks up from the banked total', async ({ page }) => {
@@ -122,7 +156,7 @@ test('a spectator sees and feels our goal as it arrives, but not again on a relo
       () => expect(page.locator('.mud-dialog')).toBeVisible(),
     );
     const goalDialog = await openDialog(page);
-    await pickPlayer(page, goalDialog, 'Fixture');
+    await scoreGoal(page, goalDialog, 'Fixture');
 
     await expect(flash).toContainText('Fixture');
     await expect(watching.locator('.live-event-fresh')).toHaveCount(1);
@@ -181,7 +215,7 @@ test('a spectator who switched vibration off still sees our goal, but is not buz
       () => expect(page.locator('.mud-dialog')).toBeVisible(),
     );
     const goalDialog = await openDialog(page);
-    await pickPlayer(page, goalDialog, 'Fixture');
+    await scoreGoal(page, goalDialog, 'Fixture');
 
     await expect(watching.locator('.live-goal-flash')).toBeVisible();
 

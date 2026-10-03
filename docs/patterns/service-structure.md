@@ -19,7 +19,7 @@ is actually happening at the touchline rather than along a data-access seam:
 | --- | --- |
 | `LiveMatchService` | Reading: `GetLiveAsync` for the live screen, `GetTodaysMatchAsync` for the home banner. Both public, like every other read |
 | `MatchClockService` | Kick-off, half time, starting the next half, the final whistle — and `BankClock`, the only thing that moves seconds about. No pause: only half time stops the clock |
-| `MatchGoalService` | The live minute a goal is stamped with. Storing the goal, and recounting the scoreline in the same save, still delegates to `GameService` |
+| `MatchGoalService` | The live minute a goal is stamped with. Storing the goal, and recounting the scoreline in the same save, still delegates to `GameService`; a correction writes its own row and recounts through `GameService.RecountScorelineAsync` |
 | `MatchSubstitutionService` | The slot swap and the record of it, in one `SaveChanges`, and undoing the most recent one of a half |
 
 What made the cut worth making was not the line count: the clock arithmetic and the substitution

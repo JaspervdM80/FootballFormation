@@ -195,11 +195,14 @@
             <MatchTimeline Events="Timeline" Opponent="@GameData.Opponent" IsHomeGame="GameData.IsHomeGame"
                            ResolveName="PlayerLabel" ShowScore="true" Fresh="_freshEvents">
                 <AdminActions Context="entry">
-                    @if (entry.Goal is { } goalToRemove)
+                    @if (entry.Goal is { } loggedGoal)
                     {
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                       title="@L["Edit"]"
+                                       OnClick="() => EditGoal(loggedGoal)" />
                         <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small"
                                        title="@L["Remove"]"
-                                       OnClick="() => RemoveGoal(goalToRemove)" />
+                                       OnClick="() => RemoveGoal(loggedGoal)" />
                     }
                     else if (entry.Substitution is { } subToEdit)
                     {

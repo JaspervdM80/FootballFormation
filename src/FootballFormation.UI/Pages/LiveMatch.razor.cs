@@ -419,6 +419,38 @@ public partial class LiveMatch
         Snackbar.Report(L, logged, L["Opponent goal added"], Severity.Info);
     }
 
+    private async Task EditGoal(GameGoal goal)
+    {
+        if (GameData is null) return;
+
+        var candidates = GoalCandidates;
+        foreach (var credited in new[] { goal.AssisterId, goal.ScorerId })
+        {
+            if (credited is { } id && candidates.All(p => p.Id != id) && FindPlayer(id) is { } player)
+                candidates = [player, .. candidates];
+        }
+
+        var choice = await DialogService.PromptAsync<EditGoalDialog, EditGoalChoice>(
+            L["Edit goal"],
+            p =>
+            {
+                p.Add(x => x.Candidates, candidates);
+                p.Add(x => x.ScorerId, goal.ScorerId);
+                p.Add(x => x.AssisterId, goal.AssisterId);
+                p.Add(x => x.IsOwnGoal, goal.IsOwnGoal);
+                p.Add(x => x.IsOpponentGoal, goal.IsOpponentGoal);
+                p.Add(x => x.Opponent, GameData.Opponent);
+                p.Add(x => x.Minute, MatchClockReport.MinuteOf(GameData, goal)?.Minute ?? 1);
+                p.Add(x => x.MaxMinute, GameData.GameDurationMinutes);
+            });
+        if (choice is null) return;
+
+        Snackbar.Report(L,
+            await GoalService.EditGoalAsync(
+                goal.Id, choice.ScorerId, choice.AssisterId, choice.IsOwnGoal, choice.Minute, recountScoreline: true),
+            L["Goal updated"]);
+    }
+
     private async Task RemoveGoal(GameGoal goal) =>
         Snackbar.Report(L, await GoalService.RemoveGoalAsync(GameId, goal.Id), L["Goal removed"], Severity.Warning);
 

@@ -226,7 +226,7 @@ public class GameService(
 
     /// Must run on the caller's context and inside its transaction — one cannot span two — and only after its save, or two touchline
     /// devices logging a goal at once would both read-modify-write the same scoreline. See docs/patterns/transactions-and-writes.md.
-    private static async Task RecountScorelineAsync(
+    internal static async Task RecountScorelineAsync(
         AppDbContext db, int gameId, CancellationToken cancellationToken)
     {
         var game = await db.Games.FindAsync([gameId], cancellationToken);
