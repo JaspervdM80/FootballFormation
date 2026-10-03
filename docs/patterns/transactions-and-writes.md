@@ -39,6 +39,11 @@ second implementation of goal storage, which delegating to `GameService` exists 
 and records the goals whose scorer somebody remembered, so the list is allowed to be shorter than
 the scoreline and recounting would rewrite a 3-1 as 1-0. Both behaviours are pinned by a test.
 
+Correcting a goal (`MatchGoalService.EditGoalAsync`) is not storing one, so it writes its own row. The
+live screen asks it to recount too, because turning a goal into an own goal moves it across the
+scoreline: it saves and then calls `GameService.RecountScorelineAsync` — `internal` for this — on the
+same context, inside the same transaction, so the order above holds without a second context.
+
 **Recount, never increment.** `Game.CountScoreFrom(goals)` rewrites the scoreline from the goals
 rather than nudging it, so a score that did drift is repaired by the next goal logged and by
 `MatchClockService.FinishMatchAsync`, which recounts the same way at the final whistle. A derived

@@ -6,7 +6,7 @@ import { test, expect } from '../fixtures.js';
 import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
 import {
   clickFor, createMatch, fileScore, fillField, fillLineup, finishMatch, gameAction,
-  goto, gotoRendered, matchWithId, openDialog, pickPlayer, startMatch, submitDialog,
+  goto, gotoRendered, matchWithId, openDialog, scoreGoal, startMatch, submitDialog,
 } from '../helpers.js';
 
 test('the result page copies a scoreline, a goal and a public comment to the clipboard', async ({ page, context }) => {
@@ -80,7 +80,7 @@ test('a goal in each half puts a dashed break between them in the copied text', 
     () => expect(page.locator('.mud-dialog')).toBeVisible(),
   );
   let goalDialog = await openDialog(page);
-  await pickPlayer(page, goalDialog, 'Fixture');
+  await scoreGoal(page, goalDialog, 'Fixture');
   await expect(ourScore).toHaveText('1');
 
   const controls = page.locator('.live-controls');
@@ -98,7 +98,7 @@ test('a goal in each half puts a dashed break between them in the copied text', 
     () => expect(page.locator('.mud-dialog')).toBeVisible(),
   );
   goalDialog = await openDialog(page);
-  await pickPlayer(page, goalDialog, 'Fixture');
+  await scoreGoal(page, goalDialog, 'Fixture');
   await expect(ourScore).toHaveText('2');
 
   await finishMatch(page);

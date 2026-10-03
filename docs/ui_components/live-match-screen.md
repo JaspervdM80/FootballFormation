@@ -124,18 +124,19 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   in that half. An injury is refused for a player who played on in a later half — her minutes would
   exceed her availability.
 - **A goal can be corrected rather than removed and retyped** (`MatchGoalService.EditGoalAsync`,
-  `EditGoalDialog`, the `Edit` button beside the `×` in the result page's timeline): the scorer, the
-  assist, the own-goal flag and the minute. Which side it counts for is fixed — turning ours into
+  `EditGoalDialog`, the `Edit` button beside the `×` in the timeline on the result page and on the live
+  screen): the scorer, the assist, the own-goal flag and the minute. The live screen passes
+  `recountScoreline: true`, because an own goal changes sides and the touchline's scoreline is the
+  goals; the result page does not, since its scoreline is typed by hand. Which side it counts for is fixed — turning ours into
   theirs is a different goal, removed and logged again — so an opponent goal's dialog offers the minute
   alone. This exists because re-entering a goal on `/result` produces a row with only a scoreboard
   minute, losing the half and the clock reading the live one carried, which then sorts wrongly against
   anything in stoppage time. `EditGoalAsync` therefore keeps the shape the goal was recorded in: a live
   goal stays placed by the clock **inside its own half** (`ElapsedForMinute`, clamped to the half), a
   hand-typed one keeps its `Minute`. **A minute left as it was shown keeps the stored reading**, for
-  the same stoppage-time reason `ElapsedForEditedMinute` exists for substitutions. It leaves the
-  scoreline alone, exactly as removing a goal from the result page does — the scoreline there is typed,
-  not derived — which is also why it writes its own row rather than delegating to `GameService` the way
-  `LogGoalAsync` does: there is no recount that has to commit alongside the goal.
+  the same stoppage-time reason `ElapsedForEditedMinute` exists for substitutions. It writes its own
+  row rather than delegating to `GameService`, and when asked to recount it calls
+  `GameService.RecountScorelineAsync` on that same context, inside the same transaction.
 - **A half whistled off late is corrected on the result page** (`MatchClockService.AdjustHalfLengthsAsync`,
   `EditHalfLengthsDialog`, behind the half-lengths row under the timeline). It takes a length in minutes
   per half and writes **only `EndedAtSeconds`**: every goal, substitution and injury keeps the second it
@@ -230,14 +231,14 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   the timeline. Everything a coach touches during a match — the score, the two goal buttons and the
   pitch a substitution starts from — fits the first screen of a phone; the timeline is read, not
   tapped, so it sits below. Nothing in the column sets `order`.
-- **A goal is two taps: "Goal", then the scorer** (`LiveGoalDialog`). The scorer is a grid of
-  shirt-number buttons (`PlayerPicker`, 64px tall), and tapping one adds the goal. The order is
+- **A goal is three taps: "Goal", the scorer, then the assister or "No assist"** (`LiveGoalDialog`).
+  The scorer is a grid of shirt-number buttons (`PlayerPicker`, 64px tall); tapping one moves the
+  dialog on to the same grid for the assist, without the scorer, and tapping there adds the goal. The order is
   `LiveCandidateOrder.Scorers`: on the pitch first, then the rest of the roster, each by season goals
   (complete matches plus this one, own goals excluded) and then by name. The season figures are
-  loaded once, for an admin only. The assist and the own-goal switch sit under the grid and have to
-  be set *before* the scorer is tapped — the dialog says so — because there is no confirm step left to
-  set them in. The assist select binds `int?`, not `int`: an `int` binds to 0, which is nobody's id
-  but still renders as a chosen value.
+  loaded once, for an admin only. The assist used to be a select under the scorer grid that had to be
+  set *before* the scorer was tapped, and coaches tapped the scorer first and lost it — so it is a step
+  of its own. The own-goal switch sits above the scorer grid, and an own goal skips the assist step.
 - **`/games` is two lists, not one** (`Games.Sections()`): fixtures still to play, soonest first,
   then results newest first — each list leads with the match you came to look at. A single list has
   to put one of them at the wrong end, and newest-first throughout put the *most distant* fixture at

@@ -351,7 +351,8 @@
   <data name="Goal" xml:space="preserve"><value>Doelpunt</value></data>
   <data name="No assist" xml:space="preserve"><value>Geen assist</value></data>
   <data name="Who scored?" xml:space="preserve"><value>Wie scoorde?</value></data>
-  <data name="Set an assist or own goal before tapping the scorer." xml:space="preserve"><value>Kies een assist of eigen doelpunt voordat je de doelpuntenmaker aantikt.</value></data>
+  <data name="Who gave the assist for {0}'s goal?" xml:space="preserve"><value>Wie gaf de assist bij het doelpunt van {0}?</value></data>
+  <data name="Back" xml:space="preserve"><value>Terug</value></data>
   <data name="Own goal" xml:space="preserve"><value>Eigen doelpunt</value></data>
   <data name="An own goal counts for the opponent." xml:space="preserve"><value>Een eigen doelpunt telt voor de tegenstander.</value></data>
   <data name="Opponent goal added" xml:space="preserve"><value>Tegendoelpunt toegevoegd</value></data>

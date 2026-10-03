@@ -107,7 +107,8 @@ Services/
                             only half time stops it
   MatchGoalService.cs     — Goals logged live: the live minute added here, storage and the
                             recounted scoreline delegated to GameService, which writes the two in
-                            one save (see patterns/transactions-and-writes.md, "When two rows have to agree")
+                            one save (see patterns/transactions-and-writes.md, "When two rows have to agree");
+                            a correction writes its own row and recounts on that same context
   MatchSubstitutionService.cs — The slot swap and the record of it, in one SaveChanges, plus undoing
                             the most recent one of a half, plus SwapPositionsAsync — two players
                             already on trading slots, which writes no substitution row (so the undo
@@ -149,7 +150,7 @@ Pages/
   PositionDevelopment.razor(.cs) — /stats/positions — Admin-only: squad-wide players × positions grid
   MatchResult.razor(.cs)(.css)— /games/{id}/result — Score and goal entry
   LiveMatch.razor(.cs)(.css)  — /games/{id}/live — Sideline screen: clock, subs, goals; admin drives, others watch
-  LiveGoalDialog.razor(.cs)   — Dialog: tap the scorer to add the goal; assister and own-goal set first
+  LiveGoalDialog.razor(.cs)   — Dialog: tap the scorer, then the assister or "No assist"; own goal set first
   LiveSubDialog.razor(.cs)(.css) — Dialog: for a player tapped on the pitch, tap a replacement from
                                 the bench, or pick a position swap with someone already on
   PlannedChangesDialog.razor  — Dialog: the changes still planned for the middle of this half, as a

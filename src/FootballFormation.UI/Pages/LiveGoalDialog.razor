@@ -2,29 +2,31 @@
 
 <MudDialog Class="dialog-touchline">
     <DialogContent>
-        <MudText Typo="Typo.subtitle2" Class="mb-2">@L["Who scored?"]</MudText>
-        <PlayerPicker Players="Candidates" Label="@L["Who scored?"]" OnPick="Score" />
+        @if (Scorer is null)
+        {
+            <MudSwitch @bind-Value="IsOwnGoal" Color="Color.Error" Class="mb-1">@L["Own goal"]</MudSwitch>
+            <MudText Typo="Typo.caption" Class="mb-3" Style="color: var(--ink-muted); display: block;">
+                @L["An own goal counts for the opponent."]
+            </MudText>
 
-        <MudDivider Class="my-3" />
-        <MudText Typo="Typo.caption" Class="mb-2" Style="color: var(--ink-muted); display: block;">
-            @L["Set an assist or own goal before tapping the scorer."]
-        </MudText>
-        <MudSelect T="int?" @bind-Value="AssisterId" Label="@L["Assist"]" Class="mb-3"
-                   Placeholder="@L["No assist"]" Clearable="true">
-            @foreach (var player in Candidates)
-            {
-                <MudSelectItem T="int?" Value="player.Id">
-                    <PlayerLabel Player="player" />
-                </MudSelectItem>
-            }
-        </MudSelect>
-
-        <MudSwitch @bind-Value="IsOwnGoal" Color="Color.Error" Class="mb-1">@L["Own goal"]</MudSwitch>
-        <MudText Typo="Typo.caption" Style="color: var(--ink-muted); display: block;">
-            @L["An own goal counts for the opponent."]
-        </MudText>
+            <MudText Typo="Typo.subtitle2" Class="mb-2">@L["Who scored?"]</MudText>
+            <PlayerPicker Players="Candidates" Label="@L["Who scored?"]" OnPick="PickScorer" />
+        }
+        else
+        {
+            <MudText Typo="Typo.subtitle2" Class="mb-2">@L["Who gave the assist for {0}'s goal?", Scorer.ShortName]</MudText>
+            <PlayerPicker Players="Assisters" Label="@L["Assist"]" OnPick="PickAssister" />
+        }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        @if (Scorer is null)
+        {
+            <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        }
+        else
+        {
+            <MudButton OnClick="Back">@L["Back"]</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="NoAssist">@L["No assist"]</MudButton>
+        }
     </DialogActions>
 </MudDialog>
