@@ -124,6 +124,12 @@ public partial class FormationBuilder
     private GamePlayerPosition?[] BuildSlotAssignments(int periodId) =>
         FormationSlots.Assign(GetAllSlots(periodId), PeriodLineups.GetValueOrDefault(periodId, []));
 
+    private (int Filled, int Slots) PeriodFill(int periodId)
+    {
+        var assignments = BuildSlotAssignments(periodId);
+        return (assignments.Count(a => a is not null), assignments.Length);
+    }
+
     private void OnPlayerDragStart(int playerId) => Drag.StartFromList(playerId);
 
     private void OnSubDragStart(int playerId) => Drag.StartFromSub(playerId);
