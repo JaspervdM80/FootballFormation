@@ -382,6 +382,42 @@ public partial class MatchResult
             .ToList();
     }
 
+    private bool CanSwapPositions => CanAddSubstitution && SwapPositionsHalves().Count > 0;
+
+    private List<SwapPositionsHalf> SwapPositionsHalves()
+    {
+        if (GameData is null || AllPlayers is null) return [];
+
+        return new[] { PeriodType.FirstHalf, PeriodType.SecondHalf }
+            .Select(half => (Half: half, Period: GameData.PlayedHalf(half)))
+            .Where(entry => entry.Period is not null)
+            .Select(entry => new SwapPositionsHalf(entry.Half, entry.Period!.PlayerPositions
+                .Where(pp => !pp.IsSubstitute)
+                .OrderBy(pp => pp.SlotIndex)
+                .Select(pp => AllPlayers.FirstOrDefault(p => p.Id == pp.PlayerId) is { } player
+                    ? new SwapPositionsEntry(player, pp.Position)
+                    : null)
+                .OfType<SwapPositionsEntry>()
+                .ToList()))
+            .Where(half => half.OnPitch.Count > 1)
+            .ToList();
+    }
+
+    private async Task SwapPositions()
+    {
+        var halves = SwapPositionsHalves();
+        if (halves.Count == 0) return;
+
+        var choice = await DialogService.PromptAsync<SwapPositionsDialog, SwapPositionsChoice>(
+            L["Swap positions"], p => p.Add(x => x.Halves, halves));
+        if (choice is null) return;
+
+        var result = await SubService.SwapPositionsInHalfAsync(GameId, choice.Half, choice.PlayerAId, choice.PlayerBId);
+        if (!Snackbar.Report(L, result, L["Positions swapped"])) return;
+
+        await ReloadGame();
+    }
+
     private async Task RemoveInjury(GameInjury injury)
     {
         var result = await SubService.RemoveInjuryAsync(injury.Id);

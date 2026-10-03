@@ -119,6 +119,10 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   excludes anyone already on the pitch there, carrying a standing injury, or hurt in this match. The
   **Injured** switch keeps the `GameInjury` on the substitution's second, where `Game.WasReplaced`
   pairs them.
+- **Positions are corrected afterwards** from the result page ("Swap positions",
+  `SwapPositionsInHalfAsync`, `SwapPositionsDialog`): the same swap as the live one, made in a played
+  half's final line-up, between two players on the pitch at its whistle. Each is credited the new
+  position for all of her time on in that half. A player already taken off cannot be moved this way.
 - **A forgotten substitution is added afterwards** from the result page (`AddSubstitutionAsync`). It is
   laid over the line-up the half finished with, so it is refused when either player is in a later change
   in that half. An injury is refused for a player who played on in a later half — her minutes would
