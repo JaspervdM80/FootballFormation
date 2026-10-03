@@ -63,6 +63,10 @@ The app **auto-migrates against the live volume on boot**, so a merge is also a 
 
 ## Conventions
 
+- Start every change from the latest `main`: `git fetch origin main`, then
+  `git checkout -b feature/… origin/main` — or rebase existing commits onto `origin/main`. A
+  worktree can be several merges behind, and reading stale code leads to wrong answers as well as
+  conflicts.
 - Branches start with `feature/`, `bug/` or `ci/` — a behaviour change, a fix, or the build,
   workflows and tooling. Rename any other branch before pushing it.
 - Commit messages are plain imperative sentences describing intent, not conventional-commit prefixes:
