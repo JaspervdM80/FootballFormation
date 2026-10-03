@@ -8,7 +8,7 @@ import { test, expect } from '../fixtures.js';
 import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
 import {
   chooseOption, clickFor, fillLineup, finishMatch, gameRow, goto, gotoRendered, liveMatch,
-  matchWithId, openDialog, pickPlayer, saveLineup, startMatch, submitDialog,
+  matchWithId, openDialog, pickPlayer, saveLineup, scoreGoal, startMatch, submitDialog,
 } from '../helpers.js';
 
 test('a lineup dragged onto the pitch is still there after a reload', async ({ page }) => {
@@ -76,7 +76,7 @@ test('a match is run from the live screen and its score reaches the result', asy
     () => expect(page.locator('.mud-dialog')).toBeVisible(),
   );
   const goalDialog = await openDialog(page);
-  await pickPlayer(page, goalDialog, 'Fixture');
+  await scoreGoal(page, goalDialog, 'Fixture');
   await expect(ourScore).toHaveText('1');
 
   await clickFor(

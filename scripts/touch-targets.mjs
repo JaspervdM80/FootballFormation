@@ -566,6 +566,11 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     await clickFor(page.locator('.live-action-btn').first(), () => dialog.isVisible());
     await waitForStableBox(dialog);
     await audit('live goal dialog', '.mud-dialog', ['player-pick']);
+    const back = dialog.getByRole('button', { name: rx('terug', 'back') });
+    await clickFor(dialog.locator('.player-pick').first(), () => back.isVisible());
+    await waitForStableBox(dialog);
+    await audit('live goal dialog, assist', '.mud-dialog', ['player-pick']);
+    await clickFor(back, async () => !(await back.isVisible()));
     await cancel();
 
     await clickFor(page.locator('.live-lineup .pitch-player').first(), () => dialog.isVisible());
@@ -575,9 +580,9 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     await cancel();
 
     // Asserted, not logged: a scene that stopped running would otherwise say so only in a number
-    // nobody reads. The drawer is on every viewport now, so every viewport audits the same nineteen.
-    if (scenes !== 19)
-      throw new Error(`${viewport.name}: audited ${scenes} screens, expected 19`);
+    // nobody reads. The drawer is on every viewport now, so every viewport audits the same twenty.
+    if (scenes !== 20)
+      throw new Error(`${viewport.name}: audited ${scenes} screens, expected 20`);
     console.log(`${viewport.name.padEnd(8)} audited ${scenes} screens`);
     await context.close();
   }

@@ -12,16 +12,29 @@ public partial class LiveGoalDialog
     [Parameter, EditorRequired]
     public List<Player> Candidates { get; set; } = [];
 
-    /// Nullable so the select opens genuinely empty: an int binds to 0, which is nobody's id but still renders as a chosen value.
-    private int? AssisterId { get; set; }
-
     private bool IsOwnGoal { get; set; }
 
-    private void Score(Player scorer)
+    private Player? Scorer { get; set; }
+
+    private List<Player> Assisters => Candidates.Where(p => p.Id != Scorer?.Id).ToList();
+
+    // Nobody assists an own goal, so it is saved on the first tap.
+    private void PickScorer(Player scorer)
     {
-        var assister = AssisterId == scorer.Id ? null : AssisterId;
-        MudDialog.Close(DialogResult.Ok(new LiveGoalChoice(scorer.Id, assister, IsOwnGoal)));
+        if (IsOwnGoal)
+            Close(scorer, assister: null);
+        else
+            Scorer = scorer;
     }
+
+    private void PickAssister(Player assister) => Close(Scorer!, assister.Id);
+
+    private void NoAssist() => Close(Scorer!, assister: null);
+
+    private void Back() => Scorer = null;
+
+    private void Close(Player scorer, int? assister) =>
+        MudDialog.Close(DialogResult.Ok(new LiveGoalChoice(scorer.Id, assister, IsOwnGoal)));
 
     private void Cancel() => MudDialog.Cancel();
 }
