@@ -32,7 +32,7 @@ internal static class GameQueries
     /// GameMinutesReport reconstructs playing time from these; without them a live-tracked game reads as if the final line-up had been
     /// on the pitch from kick-off.
     internal static IQueryable<Game> WithSubstitutions(this IQueryable<Game> games) =>
-        games.Include(g => g.Substitutions);
+        games.Include(g => g.Substitutions).Include(g => g.PositionSwaps);
 
     /// Never compose this without <see cref="WithSubstitutions"/>: Game.WasReplaced needs those rows, and with none loaded every injury
     /// looks unreplaced, so GameMinutesReport walks a replaced player off the pitch twice.
@@ -44,5 +44,6 @@ internal static class GameQueries
             .Include(g => g.Substitutions)
                 .ThenInclude(s => s.PlayerOff)
             .Include(g => g.Substitutions)
-                .ThenInclude(s => s.PlayerOn);
+                .ThenInclude(s => s.PlayerOn)
+            .Include(g => g.PositionSwaps);
 }

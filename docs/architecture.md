@@ -15,6 +15,7 @@ Models/
   GameGoal.cs            — A goal: scorer (null for the opponent), assister, the half + clock reading it was
                            scored at, own/opponent flags
   GameSubstitution.cs    — A timestamped change made during a live match
+  GamePositionSwap.cs    — Two players on the pitch trading places at a second; nobody on or off
   MatchPreferences.cs    — Per-season game defaults (duration, split, formation, match day, training days
                            and the training period the last of those is walked inside)
   Training.cs            — A training session: date, who was unavailable, whether it went ahead, one
@@ -55,6 +56,9 @@ Data/
                            suite's DateInSqlInterceptor
 Reporting/
   GameMinutesReport.cs    — Playing time for one game: real timings when run live, plan otherwise
+  HalfLineupWalk.cs       — Who stood where through a played half: the final line-up rewound to the
+                           kick-off through its changes, then walked forward. GameMinutesReport and
+                           the result page's line-up per minute both read it
   PlayingTimeReport.cs    — The playing-time table (PlayingTimeRow, PeriodDetail, PeriodPlayStatus).
                            Minutes from GameMinutesReport once a game has been run live, the planned
                            periods × period length estimate before that; PlayingTimeRow.IsActual says
@@ -109,10 +113,10 @@ Services/
                             recounted scoreline delegated to GameService, which writes the two in
                             one save (see patterns/transactions-and-writes.md, "When two rows have to agree");
                             a correction writes its own row and recounts on that same context
-  MatchSubstitutionService.cs — The slot swap and the record of it, in one SaveChanges, plus undoing
-                            the most recent one of a half, plus SwapPositionsAsync — two players
-                            already on trading slots, which writes no substitution row (so the undo
-                            reads the slot back off the pitch, not off the row)
+  MatchSubstitutionService.cs — The slot swap and the record of it, in one SaveChanges, and undoing
+                            one, plus the position swaps — two players already on trading slots,
+                            written as a GamePositionSwap; one added or undone afterwards walks the
+                            half again and rewrites the slots after it
   LiveMatchOperation.cs   — The write shape those three share: RunAdminAsync plus, on success, one
                             LiveMatchNotifier call naming the game that changed
   LiveMatchQueries.cs     — The tracked load they all start from (the game with its planned
@@ -173,6 +177,9 @@ Components/
   Pitch.razor(.cs)(.css)            — The pitch. Read-only by default; Draggable for the builder,
                                       OnPlayerClicked for the live screen, Size for chip scale
   PlayerLabel.razor                 — A player as one line of text: "#7 Jasper"
+  LineupByMinute.razor(.cs)(.css)   — A played half on the pitch a minute at a time, on the result
+                                      page; two taps swap positions from that minute, a pitch and a
+                                      bench tap make a substitution
   PlayerPicker.razor(.css)          — A grid of shirt-number buttons where the tap is the choice (live dialogs)
   PlannedChangesList.razor(.css)    — What the next line-up does, as a team sheet, for the live
                                       screen's PlannedChangesDialog

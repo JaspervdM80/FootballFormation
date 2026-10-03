@@ -144,10 +144,16 @@ test('tapping a player on the pitch offers a substitution and a position swap', 
   await expect(page.getByText('Positions swapped', { exact: false })).toBeVisible();
 
   // Both are still on — a swap is not a substitution — and they have changed places, so the chip
-  // that was first now names the other player. Nothing reaches the timeline.
+  // that was first now names the other player. The timeline keeps the minute it happened, which is
+  // what the split by position is credited from.
   await expect(chips).toHaveCount(2);
   await expect(first).not.toHaveText(before);
-  await expect(page.locator('.live-event')).toHaveCount(0);
+  const event = page.locator('.live-event');
+  await expect(event).toHaveCount(1);
+  await expect(event).toContainText('Swapped positions');
+
+  await clickFor(event.getByRole('button', { name: 'Undo' }), () => expect(event).toHaveCount(0));
+  await expect(first).toHaveText(before);
 });
 
 test('a quarters half keeps its changes in a pop-up and is run as one half', async ({ page }) => {

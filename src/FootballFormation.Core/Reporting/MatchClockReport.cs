@@ -51,6 +51,9 @@ public static class MatchClockReport
     public static MatchMinute MinuteOf(Game game, GameInjury injury) =>
         MinuteAt(game, injury.GamePeriodId, injury.AtSeconds);
 
+    public static MatchMinute MinuteOf(Game game, GamePositionSwap swap) =>
+        MinuteAt(game, swap.GamePeriodId, swap.AtSeconds);
+
     /// Derived from the half timings rather than stored, so correcting a half corrects its goals with it. Null when a goal has neither a
     /// clock reading nor a typed minute, which the result page allows.
     public static MatchMinute? MinuteOf(Game game, GameGoal goal) => goal switch

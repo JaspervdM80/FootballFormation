@@ -66,6 +66,8 @@ public class Game
 
     public List<GameInjury> Injuries { get; set; } = [];
 
+    public List<GamePositionSwap> PositionSwaps { get; set; } = [];
+
     /// Never eager-load these: GameService.GetCommentsAsync is the one place the public/private split is applied.
     public List<GameComment> Comments { get; set; } = [];
 

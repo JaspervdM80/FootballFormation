@@ -73,6 +73,22 @@ internal static class TestData
         return sub;
     }
 
+    public static GamePositionSwap Swap(Game game, GamePeriod period, int playerAId, int playerBId, int atSeconds)
+    {
+        var swap = new GamePositionSwap
+        {
+            Id = game.PositionSwaps.Count + 1,
+            GameId = game.Id,
+            GamePeriodId = period.Id,
+            PlayerAId = playerAId,
+            PlayerBId = playerBId,
+            AtSeconds = atSeconds
+        };
+
+        game.PositionSwaps.Add(swap);
+        return swap;
+    }
+
     /// <summary>Pair it with a <see cref="Substitution"/> at the same second to describe an injury
     /// somebody came on for.</summary>
     public static GameInjury Injury(

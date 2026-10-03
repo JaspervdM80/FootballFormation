@@ -117,6 +117,59 @@ test('the corrections are offered to an admin and to nobody else', async ({ page
   await visitor.close();
 });
 
+test('positions are swapped at a minute on the result page, and only from that minute on', async ({ page }) => {
+  await playedMatch(page, 'FC Minuutje');
+  // The halves ran for seconds; real lengths give the line-up minutes to step through.
+  await correctHalfLengths(page, 37, 38);
+
+  const card = page.locator('.lineup-minute');
+  const chips = card.locator('.pitch-player');
+  const range = card.locator('.lineup-minute-range');
+  await expect(chips).toHaveCount(2);
+
+  await range.fill('10');
+  await expect(card.locator('.lineup-minute-label')).toHaveText("10'");
+  const before = await chips.allTextContents();
+
+  await chips.nth(0).click();
+  await expect(chips.nth(0)).toHaveClass(/pitch-selected/);
+  await chips.nth(1).click();
+  await expect(page.getByText('Positions swapped')).toBeVisible();
+
+  // The two have traded places from the 10th minute, and the 9th is as it was.
+  await expect(chips).toHaveText([before[1], before[0]]);
+  await range.fill('9');
+  await expect(chips).toHaveText(before);
+
+  // The change list jumps to the first minute the swap shows at.
+  await card.locator('.lineup-minute-change').click();
+  await expect(card.locator('.lineup-minute-label')).toHaveText("10'");
+  await expect(chips).toHaveText([before[1], before[0]]);
+
+  // Folded away with the substitutions on the timeline, and undone from there.
+  const events = page.locator('.live-event', { hasText: 'Swapped positions' });
+  await clickFor(page.locator('.live-timeline-toggle input[type=checkbox]'), () => expect(events).toHaveCount(1));
+  await clickFor(events.getByRole('button', { name: 'Undo' }), () => expect(events).toHaveCount(0));
+  await expect(card.locator('.lineup-minute-change')).toHaveCount(0);
+  await range.fill('10');
+  await expect(chips).toHaveText(before);
+});
+
+test('the line-up per minute is shown to an admin and to nobody else', async ({ page, browser }) => {
+  const id = await playedMatch(page, 'FC Minuutloos');
+  await expect(page.locator('.lineup-minute')).toBeVisible();
+
+  const visitor = await browser.newContext({ storageState: VISITOR_STATE });
+  const visitorPage = await visitor.newPage();
+  await gotoRendered(visitorPage, `/games/${id}/result`);
+
+  // Stepping through a half would read off the playing minutes a visitor is not shown.
+  await expect(visitorPage.locator('.live-event')).toHaveCount(1);
+  await expect(visitorPage.locator('.lineup-minute')).toHaveCount(0);
+
+  await visitor.close();
+});
+
 // scripts/visual-check.sh measures touch targets, but its seeded match is still under way and this
 // row only appears after the final whistle — so the floor is checked here instead, on a context that
 // reports a coarse pointer the way a phone does.

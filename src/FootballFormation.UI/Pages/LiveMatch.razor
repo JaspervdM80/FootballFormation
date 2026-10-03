@@ -214,6 +214,12 @@
                                        title="@L["Undo"]"
                                        OnClick="() => RemoveSubstitution(subToEdit)" />
                     }
+                    else if (entry.Swap is { } swapToRemove)
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.Undo" Size="Size.Small"
+                                       title="@L["Undo"]"
+                                       OnClick="() => RemovePositionSwap(swapToRemove)" />
+                    }
                     else if (entry.Injury is { } injuryToRemove)
                     {
                         <MudIconButton Icon="@Icons.Material.Filled.Undo" Size="Size.Small"

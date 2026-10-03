@@ -63,6 +63,7 @@ public abstract class LiveMatchTestBase : ServiceTestBase
             .Include(g => g.Periods).ThenInclude(p => p.PlayerPositions)
             .Include(g => g.Substitutions)
             .Include(g => g.Injuries)
+            .Include(g => g.PositionSwaps)
             .FirstAsync(g => g.Id == gameId);
     }
 

@@ -54,42 +54,18 @@ public static class GameMinutesReport
             var isLive = game.LivePeriodId == period.Id;
             var end = period.EndedAtSeconds ?? (isLive ? elapsedSeconds : start);
 
-            var changes = ChangesIn(game, period);
+            var walk = HalfLineupWalk.Rewind(game, period).Walk(start, end);
 
-            // The line-up records where everyone stands now, so rewinding this half's changes is the only way to recover the kick-off
-            // line-up the forward walk below has to start from.
-            var atWhistle = period.PlayerPositions
-                .Where(p => !p.IsSubstitute)
-                .ToDictionary(p => p.PlayerId, p => p.Position);
-            var onPitch = new Dictionary<int, PlayerPosition>(atWhistle);
-
-            for (var i = changes.Count - 1; i >= 0; i--)
+            foreach (var stretch in walk.Stretches)
             {
-                if (changes[i].PlayerOnId is { } cameOn) onPitch.Remove(cameOn);
-                onPitch[changes[i].PlayerOffId] = changes[i].Position;
-            }
-
-            var cursor = start;
-            for (var i = 0; i < changes.Count; i++)
-            {
-                var change = changes[i];
-                CreditAll(seconds, onPitch, change.AtSeconds - cursor);
-                onPitch.Remove(change.PlayerOffId);
-
-                if (change.PlayerOnId is { } cameOn)
+                foreach (var (playerId, spot) in stretch.OnPitch)
                 {
-                    // A swap after she came on moved her without a row, so a stint that lasts to the whistle takes the position she ended in.
-                    var staysOn = !changes.Skip(i + 1).Any(c => c.PlayerOffId == cameOn);
-                    onPitch[cameOn] = staysOn && atWhistle.TryGetValue(cameOn, out var final) ? final : change.Position;
-                    known.Add(cameOn);
+                    known.Add(playerId);
+                    Credit(seconds, playerId, spot.Position, stretch.ToSeconds - stretch.FromSeconds);
                 }
-
-                cursor = change.AtSeconds;
             }
 
-            CreditAll(seconds, onPitch, end - cursor);
-
-            if (isLive) onPitchNow = [.. onPitch.Keys];
+            if (isLive) onPitchNow = [.. walk.AtWhistle.Keys];
         }
 
         return new GameMinutes
@@ -101,37 +77,6 @@ public static class GameMinutesReport
             OnPitchNow = onPitchNow,
             IsActual = isActual
         };
-    }
-
-    /// A substitution is both halves of this; an injury nobody came on for has a null <paramref name="PlayerOnId"/>.
-    private readonly record struct LineupChange(
-        int AtSeconds, int Id, int PlayerOffId, int? PlayerOnId, PlayerPosition Position);
-
-    /// An injury a substitution already accounts for is left out, or the rewind would take the same player off twice. The id breaks ties
-    /// because two changes in one second are routine and RecordedAt can match too.
-    private static List<LineupChange> ChangesIn(Game game, GamePeriod period)
-    {
-        var subs = game.Substitutions
-            .Where(s => s.GamePeriodId == period.Id)
-            .Select(s => new LineupChange(s.AtSeconds, s.Id, s.PlayerOffId, s.PlayerOnId, s.Position));
-
-        var unreplaced = game.Injuries
-            .Where(i => i.GamePeriodId == period.Id && !game.WasReplaced(i))
-            .Select(i => new LineupChange(i.AtSeconds, i.Id, i.PlayerId, null, i.Position));
-
-        return [.. subs.Concat(unreplaced).OrderBy(c => c.AtSeconds).ThenBy(c => c.Id)];
-    }
-
-    /// Non-positive spans are ignored — two substitutions in the same second are normal and must not subtract time.
-    private static void CreditAll(
-        Dictionary<int, Dictionary<PlayerPosition, int>> seconds,
-        Dictionary<int, PlayerPosition> onPitch,
-        int span)
-    {
-        if (span <= 0) return;
-
-        foreach (var (playerId, position) in onPitch)
-            Credit(seconds, playerId, position, span);
     }
 
     private static void Credit(

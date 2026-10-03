@@ -75,3 +75,27 @@ internal sealed class GameInjuryConfiguration : IEntityTypeConfiguration<GameInj
         entity.HasIndex(i => new { i.GameId, i.PlayerId }).IsUnique();
     }
 }
+
+internal sealed class GamePositionSwapConfiguration : IEntityTypeConfiguration<GamePositionSwap>
+{
+    public void Configure(EntityTypeBuilder<GamePositionSwap> entity)
+    {
+        entity.HasKey(s => s.Id);
+
+        entity.HasOne<GamePeriod>()
+            .WithMany()
+            .HasForeignKey(s => s.GamePeriodId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Restrict on both legs, for the reason GameSubstitution gives.
+        entity.HasOne<Player>()
+            .WithMany()
+            .HasForeignKey(s => s.PlayerAId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        entity.HasOne<Player>()
+            .WithMany()
+            .HasForeignKey(s => s.PlayerBId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}
