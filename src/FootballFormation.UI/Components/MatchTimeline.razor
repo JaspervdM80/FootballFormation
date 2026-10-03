@@ -38,6 +38,11 @@
                     <div class="live-event-main">@ResolveName(sub.PlayerOnId)</div>
                     <div class="live-event-sub">↔ @ResolveName(sub.PlayerOffId)</div>
                 }
+                else if (entry.Swap is { } swap)
+                {
+                    <div class="live-event-main">@ResolveName(swap.PlayerAId) ⇄ @ResolveName(swap.PlayerBId)</div>
+                    <div class="live-event-sub">@L["Swapped positions"]</div>
+                }
                 else if (entry.Injury is { } injury)
                 {
                     @* Only ever an injury nobody came on for. *@
@@ -84,10 +89,11 @@
     [Parameter] public RenderFragment<MatchEvent>? AdminActions { get; set; }
 
     /// The cross wins over the swap arrows on a substitution made for an injury: what happened there was the injury.
-    private static string EventIcon(MatchEvent entry) => entry switch
+    internal static string EventIcon(MatchEvent entry) => entry switch
     {
         { Goal: not null } => Icons.Material.Filled.SportsSoccer,
         { Injury: not null } => Icons.Material.Filled.MedicalServices,
+        { Swap: not null } => Icons.Material.Filled.SyncAlt,
         _ => Icons.Material.Filled.SwapHoriz
     };
 

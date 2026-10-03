@@ -273,7 +273,12 @@ public class MatchClockService(
             .Select(i => new { PeriodId = i.GamePeriodId, Seconds = i.AtSeconds })
             .ToListAsync(cancellationToken);
 
-        return goals.Concat(substitutions).Concat(injuries)
+        var swaps = await db.GamePositionSwaps
+            .Where(s => s.GameId == gameId)
+            .Select(s => new { PeriodId = s.GamePeriodId, Seconds = s.AtSeconds })
+            .ToListAsync(cancellationToken);
+
+        return goals.Concat(substitutions).Concat(injuries).Concat(swaps)
             .GroupBy(e => e.PeriodId)
             .ToDictionary(g => g.Key, g => g.Max(e => e.Seconds));
     }

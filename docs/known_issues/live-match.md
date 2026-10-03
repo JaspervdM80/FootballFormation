@@ -1,16 +1,25 @@
 # Live match
 
 - **A change to the pitch that writes no row is invisible to everything that reads the rows.**
-  `SwapPositionsAsync` moves two players between slots without a `GameSubstitution`, which is right
-  — nobody left the pitch — but two readers assumed the rows were the whole story.
-  `RemoveSubstitutionAsync` handed back the slot the *substitution* recorded, so subbing into slot
-  5, swapping that player to slot 0 and then undoing seated two players in slot 5 and emptied
-  slot 0; it now reads the slot off the player coming off instead. And `GameMinutesReport` seeds
-  from the lineup as it finally stands, so a swap credits **the position moved into** for the whole
-  half, earlier minutes included — the opposite of what its comment used to claim. A player who
-  came on is credited the same way for a stint that lasts to the whistle: her position at the end,
-  not the slot the substitution recorded, or a swap after she came on would change nothing. Totals
-  are right either way; only the split by position is affected, and a test pins it.
+  Position swaps used to be exactly that: `SwapPositionsAsync` moved two players between slots and
+  wrote nothing — right as far as minutes go, nobody left the pitch — but two readers assumed the
+  rows were the whole story. `RemoveSubstitutionAsync` handed back the slot the *substitution*
+  recorded, so subbing into slot 5, swapping that player to slot 0 and then undoing seated two
+  players in slot 5 and emptied slot 0; it now reads the slot off the player coming off instead. And
+  `GameMinutesReport` could only credit **the position moved into** for the whole half. A swap now
+  writes a `GamePositionSwap` at its second and `HalfLineupWalk` splits the half there, but
+  **matches from before still carry swaps with no minute**, baked into the final line-up. Rewinding a
+  substitution follows the slot the incoming player ended in, the rule undoing one already used, so
+  the player who left is now credited that spot rather than the one the substitution recorded — the
+  position split of such a match changed for her when this shipped; totals did not. A test pins it
+  (`A_swap_recorded_before_swaps_had_a_minute_credits_the_spot_moved_into_for_the_whole_half`).
+- **A timed swap is a change like any other, so a substitution cannot be rewound past one.**
+  Undoing or editing a substitution whose player a later swap moved, or adding a forgotten one before
+  a swap of either player, is refused with *"Undo the later position swap first"*: reversing it would
+  hand back a slot she no longer holds and leave the swap naming someone who was never on. Adding or
+  undoing a swap afterwards is the other way round. It never changes who is on the pitch, only who
+  holds which slot, so `AddPositionSwapAsync`/`RemovePositionSwapAsync` walk the whole half again and
+  rewrite the line-up and every later substitution's recorded slot to match.
 - **A quarters match only ever kicks off two of its four periods.** The live match knows halves
   and nothing else: `Game.NextHalf()` skips a line-up whose half has already been played, so the
   second half opens at Q3. Q2 and Q4 keep their planned line-ups and never get `StartedAtSeconds`,

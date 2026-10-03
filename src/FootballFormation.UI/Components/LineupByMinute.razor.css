@@ -1,0 +1,151 @@
+.lineup-minute-halves {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.lineup-minute-half {
+    flex: 1;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ink-muted);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.lineup-minute-half.is-active {
+    border-color: var(--club-primary);
+    background: var(--club-primary);
+    color: var(--club-on-primary);
+}
+
+/* Prev and next sit flush against the slider: two 44px targets with nothing between them to miss into. */
+.lineup-minute-scrubber {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.lineup-minute-step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex: none;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+}
+
+.lineup-minute-step:disabled {
+    color: var(--ink-faint);
+    cursor: default;
+}
+
+.lineup-minute-range {
+    flex: 1;
+    min-width: 0;
+    height: 44px;
+    margin: 0;
+    accent-color: var(--club-primary);
+    cursor: pointer;
+}
+
+.lineup-minute-label {
+    min-width: 72px;
+    padding-left: 8px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    color: var(--ink);
+}
+
+.lineup-minute-body {
+    display: grid;
+    grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+    gap: 20px;
+    margin-top: 12px;
+    align-items: start;
+}
+
+.lineup-minute-bench,
+.lineup-minute-changes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.lineup-minute-sub {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ink) 7%, transparent);
+    color: var(--ink);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+button.lineup-minute-sub {
+    cursor: pointer;
+}
+
+.lineup-minute-sub.is-selected {
+    border-color: var(--club-primary);
+    background: color-mix(in srgb, var(--club-primary) 14%, transparent);
+}
+
+.lineup-minute-empty {
+    font-size: 0.85rem;
+    color: var(--ink-subtle);
+}
+
+.lineup-minute-hint {
+    margin: 12px 0 0;
+    font-size: 0.8rem;
+    color: var(--ink-muted);
+}
+
+.lineup-minute-change {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ink);
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.lineup-minute-change-min {
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (hover: hover) {
+    .lineup-minute-half:not(.is-active):hover,
+    .lineup-minute-step:not(:disabled):hover,
+    button.lineup-minute-sub:not(.is-selected):hover,
+    .lineup-minute-change:hover {
+        background: color-mix(in srgb, var(--ink) 10%, transparent);
+    }
+}
+
+@media (max-width: 700px) {
+    .lineup-minute-body {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

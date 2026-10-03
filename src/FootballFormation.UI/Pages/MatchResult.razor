@@ -141,6 +141,12 @@
                                        title="@L["Undo"]"
                                        OnClick="() => RemoveSubstitution(subToEdit)" />
                     }
+                    else if (entry.Swap is { } swapToRemove)
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.Undo" Size="Size.Small"
+                                       title="@L["Undo"]"
+                                       OnClick="() => RemovePositionSwap(swapToRemove)" />
+                    }
                     else if (entry.Injury is { } injuryToRemove)
                     {
                         <MudIconButton Icon="@Icons.Material.Filled.Undo" Size="Size.Small"
@@ -162,14 +168,6 @@
             <MudButton Variant="Variant.Text" Color="Color.Primary" Class="mt-2"
                        StartIcon="@Icons.Material.Filled.SwapHoriz" OnClick="AddSubstitution">
                 @L["Add substitution"]
-            </MudButton>
-        }
-
-        @if (CanSwapPositions)
-        {
-            <MudButton Variant="Variant.Text" Color="Color.Primary" Class="mt-2"
-                       StartIcon="@Icons.Material.Filled.SyncAlt" OnClick="SwapPositions">
-                @L["Swap positions"]
             </MudButton>
         }
 
@@ -238,6 +236,16 @@
     {
         <MudPaper Class="pa-5" Elevation="2" Style="border-radius: 16px;">
             <MinutesPlayedList Rows="MinutesPlayed" IsActual="GameData.HasActualTimings" />
+        </MudPaper>
+    }
+
+    @* Admin-only like the minutes card: stepping through a half would read the minutes off it. *@
+    @if (CanAddSubstitution)
+    {
+        <MudPaper Class="pa-5 result-lineup" Elevation="2" Style="border-radius: 16px;">
+            <div class="card-label">@L["Line-up per minute"]</div>
+            <LineupByMinute Game="GameData" FindPlayer="FindPlayer" ElapsedSeconds="ElapsedNow" CanEdit="true"
+                            OnSwap="SwapAt" OnSubstitute="SubstituteAt" />
         </MudPaper>
     }
 

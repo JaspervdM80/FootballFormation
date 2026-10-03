@@ -388,8 +388,21 @@
   <data name="A position swap keeps both players on the pitch and is not a substitution." xml:space="preserve"><value>Bij een positiewissel blijven beide spelers op het veld; het is geen wissel.</value></data>
   <data name="Swap positions" xml:space="preserve"><value>Posities wisselen</value></data>
   <data name="Positions swapped" xml:space="preserve"><value>Posities gewisseld</value></data>
-  <data name="Each of them is credited the new position for all of their time on in that half." xml:space="preserve"><value>Beiden krijgen de nieuwe positie voor al hun speeltijd in die helft.</value></data>
-  <data name="correct the positions" xml:space="preserve"><value>posities corrigeren</value></data>
+  <data name="Swapped positions" xml:space="preserve"><value>Wisselden van positie</value></data>
+  <data name="Position swap undone" xml:space="preserve"><value>Positiewissel ongedaan gemaakt</value></data>
+  <data name="Line-up per minute" xml:space="preserve"><value>Opstelling per minuut</value></data>
+  <data name="Start of half" xml:space="preserve"><value>Begin helft</value></data>
+  <data name="Previous minute" xml:space="preserve"><value>Vorige minuut</value></data>
+  <data name="Next minute" xml:space="preserve"><value>Volgende minuut</value></data>
+  <data name="Tap two players to swap their positions from this minute, or a player and a sub for a substitution." xml:space="preserve"><value>Tik op twee spelers om ze vanaf deze minuut van positie te laten wisselen, of op een speler en een wisselspeler voor een wissel.</value></data>
+  <data name="Now tap the player who goes off." xml:space="preserve"><value>Tik nu op de speler die eruit gaat.</value></data>
+  <data name="Now tap a team-mate to swap positions, or a sub to bring on." xml:space="preserve"><value>Tik nu op een teamgenoot om van positie te wisselen, of op een wisselspeler die erin komt.</value></data>
+  <data name="Changes" xml:space="preserve"><value>Wijzigingen</value></data>
+  <data name="add the position swap" xml:space="preserve"><value>positiewissel toevoegen</value></data>
+  <data name="undo the position swap" xml:space="preserve"><value>positiewissel ongedaan maken</value></data>
+  <data name="Undo the later position swap first" xml:space="preserve"><value>Maak eerst de latere positiewissel ongedaan</value></data>
+  <data name="Position swap not found" xml:space="preserve"><value>Positiewissel niet gevonden</value></data>
+  <data name="This half's changes no longer add up" xml:space="preserve"><value>De wijzigingen in deze helft kloppen niet meer met de opstelling</value></data>
   <data name="The rest of the match stops counting towards her playing time." xml:space="preserve"><value>De rest van de wedstrijd telt niet meer mee voor haar speeltijd.</value></data>
   <data name="Off injured" xml:space="preserve"><value>Geblesseerd naar de kant</value></data>
   <data name="Off injured, not replaced" xml:space="preserve"><value>Geblesseerd naar de kant, niet vervangen</value></data>

@@ -92,12 +92,11 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   and nobody tapped, the footer offers "Off injured" — the one way the dialog closes with nobody
   named: a bench with nothing left on it, and the team plays a player short. Turning it on clears
   the swap; picking a swap clears it.
-  A position swap writes no `GameSubstitution`: nobody's minutes changed, and a row there would say
-  they did. The price is the *split by position* — `GameMinutesReport` reads the lineup as it finally
-  stands, so after a swap the whole half is credited to the position each player moved **into**
-  (pinned by `A_position_change_with_no_substitution_credits_the_position_it_ended_in`). Totals are
-  unaffected. Undoing a substitution therefore follows the slot rather than the recorded one: a swap
-  can have moved it since, and handing the recorded slot back would seat two players in it.
+  A position swap writes a `GamePositionSwap`, not a `GameSubstitution`: nobody's minutes changed,
+  but the second it happened is what lets `GameMinutesReport` credit each player the position she
+  held either side of it. It goes on the timeline with the substitutions, folds away with them, and
+  carries an `Undo`. Undoing a substitution still follows the slot rather than the recorded one:
+  older matches carry swaps with no minute, which can have moved it since.
   The swap select's `Placeholder` is set **only** when its list is empty — MudSelect shows a
   placeholder whenever nothing is chosen, so a standing "nobody else is on the pitch" would greet a
   full pitch. An empty bench is a line of text in place of the grid.
@@ -119,14 +118,19 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   excludes anyone already on the pitch there, carrying a standing injury, or hurt in this match. The
   **Injured** switch keeps the `GameInjury` on the substitution's second, where `Game.WasReplaced`
   pairs them.
-- **Positions are corrected afterwards** from the result page ("Swap positions",
-  `SwapPositionsInHalfAsync`, `SwapPositionsDialog`): the same swap as the live one, made in a played
-  half's final line-up, between two players on the pitch at its whistle. Each is credited the new
-  position for all of her time on in that half. A player already taken off cannot be moved this way.
-- **A forgotten substitution is added afterwards** from the result page (`AddSubstitutionAsync`). It is
-  laid over the line-up the half finished with, so it is refused when either player is in a later change
-  in that half. An injury is refused for a player who played on in a later half — her minutes would
-  exceed her availability.
+- **The line-up per minute** (`LineupByMinute`, on the result page) draws a played half on the pitch a
+  minute at a time, from `HalfLineupWalk`. It is admin-only like the minutes card: stepping through a
+  half would read off the minutes a visitor is not shown. Step 0 is the half's first second; step *n*
+  is the **end** of its *n*th minute, so everything the timeline files under a minute is already on
+  the pitch when that minute is shown, and a change made there lands in it. Two taps on the pitch swap
+  those players from that second (`AddPositionSwapAsync`) until a later change moves either; a pitch
+  player and a bench player make a substitution. The half's changes are listed beside the bench, and a
+  tap jumps to the minute each first shows at.
+- **A forgotten substitution is added afterwards** from the result page (`AddSubstitutionAsync`, which
+  takes the elapsed second — the dialog converts its minute through `MatchClockReport.ElapsedForMinute`).
+  It is laid over the line-up the half finished with, so it is refused when either player is in a later
+  change in that half, a position swap included. An injury is refused for a player who played on in a
+  later half — her minutes would exceed her availability.
 - **A goal can be corrected rather than removed and retyped** (`MatchGoalService.EditGoalAsync`,
   `EditGoalDialog`, the `Edit` button beside the `×` in the result page's timeline): the scorer, the
   assist, the own-goal flag and the minute. Which side it counts for is fixed — turning ours into

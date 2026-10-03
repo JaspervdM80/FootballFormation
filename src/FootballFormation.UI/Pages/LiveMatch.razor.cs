@@ -218,8 +218,8 @@ public partial class LiveMatch
     private List<LiveMinutesRow> MinutesPlayed =>
         GameData is null ? [] : LiveMinutesReport.Build(GameData, ElapsedSeconds, FindPlayer);
 
-    /// Counts only the two kinds <see cref="ShowSubstitutions"/> can hide, so an empty timeline can be told apart from a filtered one.
-    private bool HasEvents => GameData is { } game && (game.Goals.Count > 0 || game.Substitutions.Count > 0);
+    /// Counts only the kinds <see cref="ShowSubstitutions"/> can hide, and the goals, so an empty timeline can be told apart from a filtered one.
+    private bool HasEvents => GameData is { } game && (game.Goals.Count > 0 || game.Substitutions.Count > 0 || game.PositionSwaps.Count > 0);
 
     /// Newest first, the way the live screen reads. Substitutions can be filtered out because heavy rotation buries the goals among them.
     private List<MatchEvent> Timeline =>
@@ -425,6 +425,10 @@ public partial class LiveMatch
     private async Task RemoveSubstitution(GameSubstitution sub) =>
         Snackbar.Report(L, await SubService.RemoveSubstitutionAsync(sub.Id),
             L["Substitution undone"], Severity.Warning);
+
+    private async Task RemovePositionSwap(GamePositionSwap swap) =>
+        Snackbar.Report(L, await SubService.RemovePositionSwapAsync(swap.Id),
+            L["Position swap undone"], Severity.Warning);
 
     private async Task EditSubstitution(GameSubstitution sub)
     {

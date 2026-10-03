@@ -1,4 +1,5 @@
 using FootballFormation.Core.Reporting;
+using FootballFormation.UI.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 
 namespace FootballFormation.UI.Pages;
@@ -90,7 +91,7 @@ public partial class MatchResult
     private bool ShowSubstitutions { get; set; }
 
     /// The toggle only earns its place when there is something for it to hide; an unreplaced injury shows either way.
-    private bool HasSubstitutions => GameData?.Substitutions.Count > 0;
+    private bool HasSubstitutions => GameData is { } game && (game.Substitutions.Count > 0 || game.PositionSwaps.Count > 0);
 
     /// Kick-off first here, the way a finished match reads back — the opposite of the live screen.
     private List<MatchEvent> Timeline =>
@@ -347,8 +348,8 @@ public partial class MatchResult
             L["Add substitution"], p => p.Add(x => x.Halves, halves));
         if (choice is null) return;
 
-        var result = await SubService.AddSubstitutionAsync(
-            GameId, choice.Half, choice.PlayerOffId, choice.PlayerOnId, choice.Minute, choice.Injured);
+        var result = await SubService.AddSubstitutionAsync(GameId, choice.Half, choice.PlayerOffId, choice.PlayerOnId,
+            MatchClockReport.ElapsedForMinute(GameData, choice.Minute), choice.Injured);
         if (!Snackbar.Report(L, result, L["Substitution added"])) return;
 
         await ReloadGame();
@@ -382,38 +383,32 @@ public partial class MatchResult
             .ToList();
     }
 
-    private bool CanSwapPositions => CanAddSubstitution && SwapPositionsHalves().Count > 0;
+    private Player? FindPlayer(int playerId) => AllPlayers?.FirstOrDefault(p => p.Id == playerId);
 
-    private List<SwapPositionsHalf> SwapPositionsHalves()
+    private int ElapsedNow => GameData?.ElapsedSecondsAt(Time.GetUtcNow().UtcDateTime) ?? 0;
+
+    private async Task SwapAt(PitchSwapRequest request)
     {
-        if (GameData is null || AllPlayers is null) return [];
+        var result = await SubService.AddPositionSwapAsync(
+            GameId, request.Half, request.PlayerAId, request.PlayerBId, request.AtSeconds);
+        if (!Snackbar.Report(L, result, L["Positions swapped"])) return;
 
-        return new[] { PeriodType.FirstHalf, PeriodType.SecondHalf }
-            .Select(half => (Half: half, Period: GameData.PlayedHalf(half)))
-            .Where(entry => entry.Period is not null)
-            .Select(entry => new SwapPositionsHalf(entry.Half, entry.Period!.PlayerPositions
-                .Where(pp => !pp.IsSubstitute)
-                .OrderBy(pp => pp.SlotIndex)
-                .Select(pp => AllPlayers.FirstOrDefault(p => p.Id == pp.PlayerId) is { } player
-                    ? new SwapPositionsEntry(player, pp.Position)
-                    : null)
-                .OfType<SwapPositionsEntry>()
-                .ToList()))
-            .Where(half => half.OnPitch.Count > 1)
-            .ToList();
+        await ReloadGame();
     }
 
-    private async Task SwapPositions()
+    private async Task SubstituteAt(PitchSubstitutionRequest request)
     {
-        var halves = SwapPositionsHalves();
-        if (halves.Count == 0) return;
+        var result = await SubService.AddSubstitutionAsync(
+            GameId, request.Half, request.PlayerOffId, request.PlayerOnId, request.AtSeconds, injured: false);
+        if (!Snackbar.Report(L, result, L["Substitution added"])) return;
 
-        var choice = await DialogService.PromptAsync<SwapPositionsDialog, SwapPositionsChoice>(
-            L["Swap positions"], p => p.Add(x => x.Halves, halves));
-        if (choice is null) return;
+        await ReloadGame();
+    }
 
-        var result = await SubService.SwapPositionsInHalfAsync(GameId, choice.Half, choice.PlayerAId, choice.PlayerBId);
-        if (!Snackbar.Report(L, result, L["Positions swapped"])) return;
+    private async Task RemovePositionSwap(GamePositionSwap swap)
+    {
+        var result = await SubService.RemovePositionSwapAsync(swap.Id);
+        if (!Snackbar.Report(L, result, L["Position swap undone"], Severity.Warning)) return;
 
         await ReloadGame();
     }

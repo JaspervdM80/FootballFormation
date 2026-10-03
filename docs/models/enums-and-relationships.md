@@ -32,6 +32,8 @@ GamePeriod 1──* GameSubstitution (the half it was made in — cascade)
 Game 1──* GameSubstitution *──1 Player (off, on — both Restrict)
 GamePeriod 1──* GameInjury (the half it happened in — cascade)
 Game 1──* GameInjury *──1 Player (Restrict; unique on GameId + PlayerId)
+GamePeriod 1──* GamePositionSwap (the half it was made in — cascade)
+Game 1──* GamePositionSwap *──1 Player (a, b — both Restrict)
 Game 1──* GameComment *──1 AppUser (author — SetNull)
 ```
 

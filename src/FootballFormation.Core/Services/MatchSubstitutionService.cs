@@ -103,8 +103,8 @@ public class MatchSubstitutionService(
             return Result.Success(gameId);
         });
 
-    /// Writes no <see cref="GameSubstitution"/> — nobody enters or leaves. The cost is that GameMinutesReport rewinds substitutions
-    /// only, so after a swap each player is credited the position she moved into for all of her time on in that half. Totals are unaffected.
+    /// Writes a <see cref="GamePositionSwap"/>, not a <see cref="GameSubstitution"/>: nobody enters or leaves, but the second is what lets
+    /// GameMinutesReport credit each player the position she held before it.
     public Task<Result> SwapPositionsAsync(
         int gameId, int playerAId, int playerBId, CancellationToken cancellationToken = default) =>
         LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "swap the positions",
@@ -127,6 +127,16 @@ public class MatchSubstitutionService(
             var swapped = Swap(half, playerAId, playerBId);
             if (swapped.IsFailure) return swapped.To<int>();
 
+            db.GamePositionSwaps.Add(new GamePositionSwap
+            {
+                GameId = gameId,
+                GamePeriodId = half.Id,
+                PlayerAId = playerAId,
+                PlayerBId = playerBId,
+                AtSeconds = game.ElapsedSecondsAt(UtcNow),
+                RecordedAt = UtcNow
+            });
+
             await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Game {GameId}: {A} and {B} swapped positions in the {Half}",
@@ -135,35 +145,145 @@ public class MatchSubstitutionService(
             return Result.Success(gameId);
         });
 
-    /// Swaps in the line-up the half finished with, so it is credited like a live swap — see SwapPositionsAsync.
-    public Task<Result> SwapPositionsInHalfAsync(
-        int gameId, PeriodType half, int playerAId, int playerBId, CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "correct the positions",
+    /// A swap entered afterwards at the minute it happened. It lasts until a later change moves either player, so the rest of the half is
+    /// walked again and the line-up, and the slots the later changes record, are rewritten to match.
+    public Task<Result<GamePositionSwap>> AddPositionSwapAsync(
+        int gameId, PeriodType half, int playerAId, int playerBId, int atSeconds, CancellationToken cancellationToken = default) =>
+        LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "add the position swap",
             cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             if (playerAId == playerBId)
-                return Result.Failure<int>("A player cannot swap positions with themselves");
+                return Result.Failure<GamePositionSwap>("A player cannot swap positions with themselves");
 
             var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
-            if (game is null) return LiveMatchQueries.GameNotFound<int>(gameId);
+            if (game is null) return LiveMatchQueries.GameNotFound<GamePositionSwap>(gameId);
 
-            if (game.PlayedHalf(half) is not { } period)
-                return Result.Failure<int>("That half was never played");
+            if (game.PlayedHalf(half) is not { StartedAtSeconds: { } start } period)
+                return Result.Failure<GamePositionSwap>("That half was never played");
 
-            await db.Entry(period).Collection(p => p.PlayerPositions).LoadAsync(cancellationToken);
+            await LoadChangesAsync(db, game, period, cancellationToken);
 
-            var swapped = Swap(period, playerAId, playerBId);
-            if (swapped.IsFailure) return swapped.To<int>();
+            var end = period.EndedAtSeconds ?? game.ElapsedSecondsAt(UtcNow);
+            atSeconds = Math.Clamp(atSeconds, start, Math.Max(start, end));
+
+            // Ids are per table, so across kinds only RecordedAt orders two changes in one second — and this one is the latest.
+            var rewound = HalfLineupWalk.Rewind(game, period);
+            if (!AddsUp(period, rewound.Walk(start, end)))
+                return Result.Failure<GamePositionSwap>("This half's changes no longer add up");
+
+            var change = new LineupChange(LineupChangeKind.Swap, atSeconds, UtcNow, int.MaxValue, playerAId, playerBId);
+            var walk = rewound.With(added: change).Walk(start, end);
+            if (walk.Skipped.Contains(change))
+                return Result.Failure<GamePositionSwap>("Both players have to be on the pitch to swap positions");
+
+            WriteBack(game, period, walk);
+
+            var swap = new GamePositionSwap
+            {
+                GameId = gameId,
+                GamePeriodId = period.Id,
+                PlayerAId = playerAId,
+                PlayerBId = playerBId,
+                AtSeconds = atSeconds,
+                RecordedAt = UtcNow
+            };
+            db.GamePositionSwaps.Add(swap);
 
             await db.SaveChangesAsync(cancellationToken);
 
-            logger.LogInformation("Game {GameId}: corrected {A} and {B} to each other's positions in the {Half}",
-                gameId, playerAId, playerBId, half.Half());
+            logger.LogInformation("Game {GameId}: added {A} and {B} swapping positions at {Seconds}s in the {Half}",
+                gameId, playerAId, playerBId, atSeconds, half.Half());
 
-            return Result.Success(gameId);
+            return Result.Success(swap);
         });
+
+    /// Walks the half again without the swap, so whoever a later change brought on takes the slot she would have had.
+    public Task<Result> RemovePositionSwapAsync(int swapId, CancellationToken cancellationToken = default) =>
+        LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "undo the position swap",
+            cancellationToken, async () =>
+        {
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            var swap = await db.GamePositionSwaps.FindAsync([swapId], cancellationToken);
+            if (swap is null || !await db.GameInScopeAsync(swap.GameId, cancellationToken))
+                return Result.Failure<int>("Position swap not found");
+
+            var game = await db.LoadWithPeriodsAsync(swap.GameId, cancellationToken);
+            if (game?.Periods.FirstOrDefault(p => p.Id == swap.GamePeriodId) is not { } period)
+                return Result.Failure<int>("Position swap not found");
+
+            await LoadChangesAsync(db, game, period, cancellationToken);
+
+            var start = period.StartedAtSeconds ?? 0;
+            var end = period.EndedAtSeconds ?? game.ElapsedSecondsAt(UtcNow);
+            var walk = HalfLineupWalk.Rewind(game, period);
+            if (!AddsUp(period, walk.Walk(start, end)))
+                return Result.Failure<int>("This half's changes no longer add up");
+
+            var change = walk.Changes.Single(c => c.Kind == LineupChangeKind.Swap && c.Id == swapId);
+
+            WriteBack(game, period, walk.With(removed: change).Walk(start, end));
+
+            db.GamePositionSwaps.Remove(swap);
+            await db.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation("Undid position swap {SwapId} in game {GameId}", swapId, swap.GameId);
+            return Result.Success(swap.GameId);
+        });
+
+    /// WriteBack trusts the walk, so a half whose changes no longer reproduce its line-up is refused rather than rewritten from them.
+    private static bool AddsUp(GamePeriod period, HalfWalkResult walk)
+    {
+        var onPitch = period.PlayerPositions.Where(pp => !pp.IsSubstitute).ToList();
+
+        return walk.Skipped.Count == 0
+               && onPitch.Count == walk.AtWhistle.Count
+               && onPitch.All(pp => walk.AtWhistle.TryGetValue(pp.PlayerId, out var spot)
+                                    && spot == new PitchSpot(pp.SlotIndex, pp.Position));
+    }
+
+    private static async Task LoadChangesAsync(AppDbContext db, Game game, GamePeriod period, CancellationToken cancellationToken)
+    {
+        await db.Entry(game).Collection(g => g.Substitutions).LoadAsync(cancellationToken);
+        await db.Entry(game).Collection(g => g.Injuries).LoadAsync(cancellationToken);
+        await db.Entry(game).Collection(g => g.PositionSwaps).LoadAsync(cancellationToken);
+        await db.Entry(period).Collection(p => p.PlayerPositions).LoadAsync(cancellationToken);
+    }
+
+    /// A swap moves nobody on or off, so only who holds which slot changes — at the whistle, and on every change that took a slot over.
+    private static void WriteBack(Game game, GamePeriod period, HalfWalkResult walk)
+    {
+        foreach (var entry in period.PlayerPositions)
+        {
+            if (walk.AtWhistle.TryGetValue(entry.PlayerId, out var spot))
+                (entry.SlotIndex, entry.Position) = (spot.SlotIndex, spot.Position);
+        }
+
+        foreach (var sub in game.Substitutions.Where(s => s.GamePeriodId == period.Id))
+        {
+            if (walk.SpotOf.TryGetValue((LineupChangeKind.Substitution, sub.Id), out var spot))
+                (sub.SlotIndex, sub.Position) = (spot.SlotIndex, spot.Position);
+        }
+
+        foreach (var injury in game.Injuries.Where(i => i.GamePeriodId == period.Id))
+        {
+            var key = game.Substitutions.FirstOrDefault(s => game.InjuryFor(s) == injury) is { } replacedBy
+                ? (LineupChangeKind.Substitution, replacedBy.Id)
+                : (LineupChangeKind.Injury, injury.Id);
+            if (walk.SpotOf.TryGetValue(key, out var spot))
+                (injury.SlotIndex, injury.Position) = (spot.SlotIndex, spot.Position);
+        }
+    }
+
+    /// A later swap moved her without a substitution, so reversing a change that involves her would hand back a slot she no longer holds.
+    private static Task<bool> SwappedSinceAsync(
+        AppDbContext db, int periodId, int atSeconds, int[] playerIds, CancellationToken cancellationToken) =>
+        db.GamePositionSwaps.AnyAsync(
+            s => s.GamePeriodId == periodId && s.AtSeconds >= atSeconds
+                 && (playerIds.Contains(s.PlayerAId) || playerIds.Contains(s.PlayerBId)),
+            cancellationToken);
 
     private static Result Swap(GamePeriod half, int playerAId, int playerBId)
     {
@@ -297,10 +417,8 @@ public class MatchSubstitutionService(
             return Result.Success(injury.GameId);
         });
 
-    /// Any substitution can go, so long as the player it brought on is still on the pitch: while she is, undoing follows her to wherever she
-    /// stands now and hands that slot back, no matter how many other changes came after on other slots. Once a later change has taken her
-    /// off again, that later one has to be undone first, or the rewind would fight it. An injury recorded for the same player at the same
-    /// second goes with the substitution — one tap wrote both.
+    /// Hands back the slot the player it brought on holds now — refused while she is off, the player it took off is back on, or a timed
+    /// swap has moved her since. An injury recorded for the same player at the same second goes with it: one tap wrote both.
     public Task<Result> RemoveSubstitutionAsync(int subId, CancellationToken cancellationToken = default) =>
         LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "undo the substitution",
             cancellationToken, async () =>
@@ -315,6 +433,9 @@ public class MatchSubstitutionService(
                 .Include(p => p.PlayerPositions)
                 .FirstOrDefaultAsync(p => p.Id == sub.GamePeriodId, cancellationToken);
             if (half is null) return Result.Failure<int>("Substitution not found");
+
+            if (await SwappedSinceAsync(db, half.Id, sub.AtSeconds, [sub.PlayerOnId], cancellationToken))
+                return Result.Failure<int>("Undo the later position swap first");
 
             var reversed = ReverseLineup(half, sub);
             if (reversed.IsFailure) return reversed.To<int>();
@@ -336,7 +457,7 @@ public class MatchSubstitutionService(
     /// A substitution forgotten at the touchline, entered afterwards into a half already kicked off. Laid over the line-up as it stands now,
     /// so it is refused when either player takes part in a later change in that half — rewinding past it would put her in two places.
     public Task<Result<GameSubstitution>> AddSubstitutionAsync(
-        int gameId, PeriodType half, int playerOffId, int playerOnId, int minute, bool injured,
+        int gameId, PeriodType half, int playerOffId, int playerOnId, int atSeconds, bool injured,
         CancellationToken cancellationToken = default) =>
         LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "add the substitution",
             cancellationToken, async () =>
@@ -356,13 +477,16 @@ public class MatchSubstitutionService(
             await db.Entry(game).Collection(g => g.Injuries).LoadAsync(cancellationToken);
 
             var end = period.EndedAtSeconds ?? game.ElapsedSecondsAt(UtcNow);
-            var atSeconds = Math.Clamp(MatchClockReport.ElapsedForMinute(game, minute), start, Math.Max(start, end));
+            atSeconds = Math.Clamp(atSeconds, start, Math.Max(start, end));
 
             var involved = new[] { playerOffId, playerOnId };
             if (game.Substitutions.Any(s => s.GamePeriodId == period.Id && s.AtSeconds > atSeconds
                                             && (involved.Contains(s.PlayerOffId) || involved.Contains(s.PlayerOnId)))
                 || game.Injuries.Any(i => i.GamePeriodId == period.Id && i.AtSeconds > atSeconds && involved.Contains(i.PlayerId)))
                 return Result.Failure<GameSubstitution>("Undo the later substitution first");
+
+            if (await SwappedSinceAsync(db, period.Id, atSeconds + 1, involved, cancellationToken))
+                return Result.Failure<GameSubstitution>("Undo the later position swap first");
 
             if (injured && game.Injuries.Any(i => i.PlayerId == playerOffId))
                 return Result.Failure<GameSubstitution>("That player is already marked injured");
@@ -444,6 +568,11 @@ public class MatchSubstitutionService(
 
             if (injured && await PlaysInALaterHalfAsync(db, game, half, playerOffId, cancellationToken))
                 return Result.Failure<int>("She played on in a later half");
+
+            if (await SwappedSinceAsync(
+                    db, half.Id, Math.Min(sub.AtSeconds, atSeconds), [sub.PlayerOnId, playerOnId], cancellationToken)
+                || await SwappedSinceAsync(db, half.Id, atSeconds + 1, [sub.PlayerOffId, playerOffId], cancellationToken))
+                return Result.Failure<int>("Undo the later position swap first");
 
             await db.Entry(half).Collection(p => p.PlayerPositions).LoadAsync(cancellationToken);
 

@@ -5,10 +5,16 @@ namespace FootballFormation.Core.Reporting;
 public record MatchEvent(
     int AtSeconds, MatchMinute? Minute, PeriodType Half, DateTime RecordedAt, int Id,
     GameGoal? Goal, GameSubstitution? Substitution, GameInjury? Injury = null,
-    MatchScore? Score = null, bool HalfTimeAbove = false)
+    MatchScore? Score = null, bool HalfTimeAbove = false, GamePositionSwap? Swap = null)
 {
     /// Stable across a reload, unlike the record's own equality, which compares the entities by reference.
-    public string Key => Goal is not null ? $"goal-{Id}" : Substitution is not null ? $"sub-{Id}" : $"injury-{Id}";
+    public string Key => this switch
+    {
+        { Goal: not null } => $"goal-{Id}",
+        { Substitution: not null } => $"sub-{Id}",
+        { Swap: not null } => $"swap-{Id}",
+        _ => $"injury-{Id}"
+    };
 }
 
 /// The goals, substitutions and injuries of a match on one clock — built once here so the live screen and the finished-match result page
@@ -40,6 +46,15 @@ public static class MatchTimelineReport
                 s.RecordedAt, s.Id, null, s, game.InjuryFor(s)))
             : [];
 
+        // A swap folds away with the substitutions: the same rotation that fills the list with one fills it with the other.
+        IEnumerable<MatchEvent> swaps = includeSubstitutions
+            ? game.PositionSwaps.Select(s => new MatchEvent(
+                s.AtSeconds,
+                MatchClockReport.MinuteOf(game, s),
+                MatchClockReport.HalfOf(game, s.GamePeriodId, s.AtSeconds),
+                s.RecordedAt, s.Id, null, null, Swap: s))
+            : [];
+
         // Only the injuries nobody came on for; the rest are on their substitution's line.
         var injuries = game.Injuries
             .Where(i => !game.WasReplaced(i))
@@ -51,7 +66,7 @@ public static class MatchTimelineReport
 
         // A goal and the sub that followed it commonly share a second, so the entry time orders them as they happened. The id then
         // settles a double substitution, keeping the newest-first top entry the one an undo will remove.
-        IEnumerable<MatchEvent> chronological = goals.Concat(subs).Concat(injuries)
+        IEnumerable<MatchEvent> chronological = goals.Concat(subs).Concat(swaps).Concat(injuries)
             .OrderBy(e => e.AtSeconds)
             .ThenBy(e => e.RecordedAt)
             .ThenBy(e => e.Id);

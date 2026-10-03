@@ -30,6 +30,7 @@ real SignalR circuit.
 | `session.spec.js` | Staying signed in: the auth cookie carrying a real expiry rather than being a session cookie, surviving a link followed in from another site, a deleted account losing its authority on an open circuit without anyone reloading, and an admin who changes their own password being signed out and back in |
 | `live.spec.js` | The live screen past kick-off: a substitution swapping the pitch chip for a bench one and undoing back, the clock stopping at half time and the second half resuming from the banked total, and a spectator's inert pitch |
 | `result.spec.js` | The result page: the private/public comment split a visitor must not see through, an own goal counting for the opponent, a scorer and assister reaching their own statistics, and the scoreline printed in venue order |
+| `result-corrections.spec.js` | Correcting a finished match from `/result`: half lengths that survive a reload, a goal re-timed rather than retyped, and two players swapped at a minute on the line-up per minute and undone from the timeline — all offered to an admin and to nobody else |
 | `upcoming-season.spec.js` | The season ahead: copying last season's squad forward once and never twice, the archived left behind, a member removed and re-added as a guest, and a season window that would leave a gap being refused |
 | `selectors.spec.js` | A test for the tests — see below |
 

@@ -71,6 +71,7 @@ Season 1──* Game 1──* GamePeriod 1──* GamePlayerPosition *──1 Pl
 Season 1──* SeasonSquadMember *──1 Player
 Game 1──* GameGoal *──1 Player (scorer, assister — both SetNull)
 Game 1──* GameSubstitution *──1 Player (off, on — both Restrict)
+Game 1──* GamePositionSwap *──1 Player (a, b — both Restrict)
 Game 1──* GameComment *──1 AppUser (author — SetNull)
 ```
 

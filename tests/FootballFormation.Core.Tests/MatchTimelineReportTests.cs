@@ -196,19 +196,33 @@ public class MatchTimelineReportTests
         Assert.Empty(MatchTimelineReport.Build(game, includeSubstitutions: false, newestFirst: false));
     }
 
-    /// Ids come from three tables, so a goal, a substitution and an injury can share one — and the live screen would then take a new
-    /// substitution for the goal it already showed.
+    /// Ids come from four tables, so a goal, a substitution, a swap and an injury can share one — and the live screen would then take a
+    /// new substitution for the goal it already showed.
     [Fact]
     public void Entries_of_different_kinds_sharing_an_id_still_have_different_keys()
     {
         var game = HalvesGame();
         Goal(game, id: 1, periodId: 1, atSeconds: 300, recordedSecond: 300);
         Sub(game, id: 1, periodId: 1, offId: 5, onId: 9, atSeconds: 600, recordedSecond: 600);
+        TestData.Swap(game, game.Periods[0], 9, 6, atSeconds: 700);
         Injury(game, id: 1, periodId: 1, playerId: 7, atSeconds: 900, recordedSecond: 900);
 
         var keys = MatchTimelineReport.Build(game, includeSubstitutions: true, newestFirst: false).Select(e => e.Key);
 
-        Assert.Equal(["goal-1", "sub-1", "injury-1"], keys);
+        Assert.Equal(["goal-1", "sub-1", "swap-1", "injury-1"], keys);
+    }
+
+    [Fact]
+    public void A_position_swap_folds_away_with_the_substitutions()
+    {
+        var game = HalvesGame();
+        var swap = TestData.Swap(game, game.Periods[0], 5, 6, atSeconds: 650);
+
+        var shown = Assert.Single(MatchTimelineReport.Build(game, includeSubstitutions: true, newestFirst: false));
+        Assert.Equal(swap, shown.Swap);
+        Assert.Equal(new MatchMinute(11, 0), shown.Minute);
+
+        Assert.Empty(MatchTimelineReport.Build(game, includeSubstitutions: false, newestFirst: false));
     }
 
     [Fact]

@@ -343,6 +343,28 @@ public class MatchClockServiceTests : LiveMatchTestBase
     }
 
     [Fact]
+    public async Task A_half_cannot_be_whistled_off_before_a_position_swap_it_already_contains()
+    {
+        var game = await PlayedWithTheClockLeftRunningAsync();
+        var players = await PlayersAsync();
+
+        await Db.GamePositionSwaps.AddAsync(new GamePositionSwap
+        {
+            GameId = game.Id,
+            GamePeriodId = (await ReloadAsync(game.Id)).Periods.Single(p => p.PeriodType == PeriodType.FirstHalf).Id,
+            PlayerAId = players[0].Id,
+            PlayerBId = players[1].Id,
+            AtSeconds = 40 * 60
+        });
+        await Db.SaveChangesAsync();
+
+        var result = await MatchClock.AdjustHalfLengthsAsync(game.Id, firstHalfMinutes: 30, secondHalfMinutes: null);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("That half still has something recorded after {0} minutes", result.ErrorKey);
+    }
+
+    [Fact]
     public async Task A_half_cannot_be_stretched_past_the_restart_of_the_next()
     {
         var game = await PlayedWithTheClockLeftRunningAsync();

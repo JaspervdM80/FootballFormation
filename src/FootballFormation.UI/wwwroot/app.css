@@ -1133,9 +1133,10 @@ a.action-btn {
     font-weight: 500;
 }
 
-/* The comments span the whole width below the score and timeline: comment bodies are prose, and the scoreboard's column is not a column for prose.
+/* The comments and the per-minute line-up span the whole width below the score and timeline: prose and a pitch beside its bench both need it.
    Global rather than scoped because it lands on a MudPaper, whose root element carries no scope attribute for the page's stylesheet. */
-.result-comments {
+.result-comments,
+.result-lineup {
     grid-column: 1 / -1;
 }
 

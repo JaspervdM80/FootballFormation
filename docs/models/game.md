@@ -31,6 +31,7 @@
 | LivePeriodId | int? | The line-up on the pitch — the row that opened the half being played. Null before kick-off, at half time and after full time |
 | Substitutions | List\<GameSubstitution\> | Cascade delete |
 | Injuries | List\<GameInjury\> | Cascade delete. Players hurt during this match |
+| PositionSwaps | List\<GamePositionSwap\> | Cascade delete. Two players on the pitch trading places |
 | Comments | List\<GameComment\> | Cascade delete. Never eager-loaded — see GameComment |
 
 The nine **match-day** columns have two readers, `MatchInfoTextBuilder` and `MatchCalendarReport`,
@@ -239,6 +240,24 @@ writes only the injury, and the team plays on a player short. `Game.WasReplaced(
 Undoing an unreplaced injury (`RemoveInjuryAsync`) puts her back in the slot she left, and refuses
 if anything is standing in it — which nothing should be, since a swap needs two players already on
 and a substitution reuses the slot of whoever it takes off.
+
+## GamePositionSwap
+| Property | Type | Notes |
+|---|---|---|
+| Id | int | PK |
+| GameId | int | FK → Game (cascade delete) |
+| GamePeriodId | int | FK → GamePeriod (cascade delete) |
+| PlayerAId, PlayerBId | int | FK → Player, both **Restrict**, for the same reason as `GameSubstitution`'s legs |
+| AtSeconds | int | Match-clock second the two traded places |
+| RecordedAt | DateTime | UTC entry time — orders it against changes in the same second |
+
+Two players on the pitch trading places, from `AtSeconds` until a later change moves either. It
+moves nobody on or off, so it carries no slot of its own: where each stood is whatever the half's
+walk says they held at that second. `HalfLineupWalk` rewinds a half's final line-up through its
+substitutions, unreplaced injuries and swaps to the kick-off, then walks them forward again — the
+walk `GameMinutesReport` credits and the result page's line-up per minute draws. Swaps made before
+this table existed changed the line-up alone and have no row; see
+[known_issues](../known_issues/live-match.md).
 
 ## GameComment
 | Property | Type | Notes |

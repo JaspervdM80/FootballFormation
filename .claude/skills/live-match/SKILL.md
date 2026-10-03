@@ -94,10 +94,11 @@ bench comes on (`SubstituteAsync`), or they trade positions with a team-mate who
 (`SwapPositionsAsync`, still a dropdown, with a footer button that appears only once one is chosen —
 and the bench disabled meanwhile, so a tap there cannot drop the swap).
 
-**A position swap writes no `GameSubstitution`** — nobody's minutes changed, and a row there would say
-they did. The price is the *split by position*: `GameMinutesReport` reads the lineup as it finally
-stands, so after a swap the whole half is credited to the position each player moved **into**. Totals
-are unaffected.
+**A position swap writes a `GamePositionSwap`, not a `GameSubstitution`** — nobody's minutes changed,
+but its second is what lets `GameMinutesReport` split the half there. `HalfLineupWalk` is the one walk
+through a half (rewind the final line-up to the kick-off, then forward); the result page's line-up per
+minute draws from it too. Matches from before carry swaps with no minute, and for those the whole
+half is still credited to the position moved **into**.
 
 **Undoing a substitution follows the slot, not the recorded one** — a swap can have moved it since,
 and handing the recorded slot back would seat two players in it.
@@ -115,9 +116,10 @@ minutes earlier. Candidates come from the substitution's **own** half, not the o
 **Injured** switch keeps its `GameInjury` on the same second — `Game.WasReplaced` pairs them there.
 
 **A forgotten substitution is added afterwards** (`AddSubstitutionAsync`), laid over the half's final
-line-up — so refused when either player is in a later change there. **A position swap is too**
-(`SwapPositionsInHalfAsync`), between two players on at that half's whistle; a player who came on is
-credited the position she ended in, not the slot her substitution recorded.
+line-up — so refused when either player is in a later change there. **So is a position swap, at any
+minute** (`AddPositionSwapAsync`, from the line-up per minute): it moves nobody on or off, so the half
+is walked again and the line-up and later substitutions' slots rewritten. A substitution whose player
+a later swap moved cannot be undone, edited or added before it — *"Undo the later position swap first"*.
 
 Two substitutions in the same second settle by **id**, not just the clock.
 

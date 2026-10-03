@@ -1,0 +1,104 @@
+@if (Period is null)
+{
+    return;
+}
+
+<div class="lineup-minute">
+    @if (Halves.Count > 1)
+    {
+        <div class="lineup-minute-halves" role="group">
+            @foreach (var half in Halves)
+            {
+                <button type="button" class="lineup-minute-half @(half == _half ? "is-active" : "")"
+                        aria-pressed="@(half == _half ? "true" : "false")" @onclick="() => ChooseHalf(half)">
+                    @L[half.DisplayName()]
+                </button>
+            }
+        </div>
+    }
+
+    <div class="lineup-minute-scrubber">
+        <button type="button" class="lineup-minute-step" title="@L["Previous minute"]" aria-label="@L["Previous minute"]"
+                disabled="@(_step == 0)" @onclick="() => StepTo(_step - 1)">
+            <MudIcon Icon="@Icons.Material.Filled.ChevronLeft" />
+        </button>
+        <input type="range" class="lineup-minute-range" min="0" max="@MaxStep" step="1" value="@_step"
+               aria-label="@L["Minute"]" aria-valuetext="@StepLabel" @oninput="OnSliderInput" />
+        <button type="button" class="lineup-minute-step" title="@L["Next minute"]" aria-label="@L["Next minute"]"
+                disabled="@(_step == MaxStep)" @onclick="() => StepTo(_step + 1)">
+            <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+        </button>
+        <span class="lineup-minute-label">@StepLabel</span>
+    </div>
+
+    <div class="lineup-minute-body">
+        <div class="lineup-minute-pitch">
+            <Pitch Formation="Formation" Positions="PitchPositions" SelectedSlotIndex="SelectedSlot"
+                   OnPlayerClicked="@(CanEdit ? EventCallback.Factory.Create<int>(this, OnPitchPlayerClicked) : default)" />
+        </div>
+
+        <div class="lineup-minute-side">
+            <div class="card-label">@L["Subs"]</div>
+            <div class="lineup-minute-bench">
+                @if (Bench.Count == 0)
+                {
+                    <span class="lineup-minute-empty">@L["No subs"]</span>
+                }
+                @foreach (var player in Bench)
+                {
+                    @if (CanEdit)
+                    {
+                        <button type="button" class="lineup-minute-sub @(_selectedId == player.Id ? "is-selected" : "")"
+                                @onclick="() => OnBenchPlayerClicked(player.Id)">
+                            <PlayerLabel Player="player" />
+                        </button>
+                    }
+                    else
+                    {
+                        <span class="lineup-minute-sub"><PlayerLabel Player="player" /></span>
+                    }
+                }
+            </div>
+
+            @if (CanEdit)
+            {
+                <p class="lineup-minute-hint">
+                    @(_selectedId is null
+                        ? L["Tap two players to swap their positions from this minute, or a player and a sub for a substitution."]
+                        : BenchSelected
+                            ? L["Now tap the player who goes off."]
+                            : L["Now tap a team-mate to swap positions, or a sub to bring on."])
+                </p>
+            }
+
+            @if (Changes.Count > 0)
+            {
+                <div class="card-label mt-3">@L["Changes"]</div>
+                <div class="lineup-minute-changes">
+                    @foreach (var change in Changes)
+                    {
+                        <button type="button" class="lineup-minute-change" @onclick="() => JumpTo(change)">
+                            <span class="lineup-minute-change-min">@(change.Minute is { } at ? $"{at}'" : "—")</span>
+                            <MudIcon Size="Size.Small" Icon="@MatchTimeline.EventIcon(change)" />
+                            <span>@Describe(change)</span>
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
+
+    private string Describe(MatchEvent change) => change switch
+    {
+        { Substitution: { } sub } => $"{Name(sub.PlayerOnId)} ↔ {Name(sub.PlayerOffId)}",
+        { Swap: { } swap } => $"{Name(swap.PlayerAId)} ⇄ {Name(swap.PlayerBId)}",
+        { Injury: { } injury } => Name(injury.PlayerId),
+        _ => ""
+    };
+
+    private string Name(int playerId) => FindPlayer(playerId)?.ShortName ?? L["Player {0}", playerId].Value;
+}
