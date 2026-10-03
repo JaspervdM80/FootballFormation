@@ -165,6 +165,14 @@
             </MudButton>
         }
 
+        @if (CanSwapPositions)
+        {
+            <MudButton Variant="Variant.Text" Color="Color.Primary" Class="mt-2"
+                       StartIcon="@Icons.Material.Filled.SyncAlt" OnClick="SwapPositions">
+                @L["Swap positions"]
+            </MudButton>
+        }
+
         @if (CanEditTimings)
         {
             <div class="half-lengths">

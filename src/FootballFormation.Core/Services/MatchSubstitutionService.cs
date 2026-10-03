@@ -104,7 +104,7 @@ public class MatchSubstitutionService(
         });
 
     /// Writes no <see cref="GameSubstitution"/> — nobody enters or leaves. The cost is that GameMinutesReport rewinds substitutions
-    /// only, so after a swap each player is credited the position she moved into for the whole half. Totals are unaffected.
+    /// only, so after a swap each player is credited the position she moved into for all of her time on in that half. Totals are unaffected.
     public Task<Result> SwapPositionsAsync(
         int gameId, int playerAId, int playerBId, CancellationToken cancellationToken = default) =>
         LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "swap the positions",
@@ -124,14 +124,8 @@ public class MatchSubstitutionService(
 
             await db.Entry(half).Collection(p => p.PlayerPositions).LoadAsync(cancellationToken);
 
-            var a = half.PlayerPositions.FirstOrDefault(pp => pp.PlayerId == playerAId);
-            var b = half.PlayerPositions.FirstOrDefault(pp => pp.PlayerId == playerBId);
-
-            if (a is null || a.IsSubstitute || b is null || b.IsSubstitute)
-                return Result.Failure<int>("Both players have to be on the pitch to swap positions");
-
-            (a.SlotIndex, b.SlotIndex) = (b.SlotIndex, a.SlotIndex);
-            (a.Position, b.Position) = (b.Position, a.Position);
+            var swapped = Swap(half, playerAId, playerBId);
+            if (swapped.IsFailure) return swapped.To<int>();
 
             await db.SaveChangesAsync(cancellationToken);
 
@@ -140,6 +134,50 @@ public class MatchSubstitutionService(
 
             return Result.Success(gameId);
         });
+
+    /// Swaps in the line-up the half finished with, so it is credited like a live swap — see SwapPositionsAsync.
+    public Task<Result> SwapPositionsInHalfAsync(
+        int gameId, PeriodType half, int playerAId, int playerBId, CancellationToken cancellationToken = default) =>
+        LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "correct the positions",
+            cancellationToken, async () =>
+        {
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            if (playerAId == playerBId)
+                return Result.Failure<int>("A player cannot swap positions with themselves");
+
+            var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
+            if (game is null) return LiveMatchQueries.GameNotFound<int>(gameId);
+
+            if (game.PlayedHalf(half) is not { } period)
+                return Result.Failure<int>("That half was never played");
+
+            await db.Entry(period).Collection(p => p.PlayerPositions).LoadAsync(cancellationToken);
+
+            var swapped = Swap(period, playerAId, playerBId);
+            if (swapped.IsFailure) return swapped.To<int>();
+
+            await db.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation("Game {GameId}: corrected {A} and {B} to each other's positions in the {Half}",
+                gameId, playerAId, playerBId, half.Half());
+
+            return Result.Success(gameId);
+        });
+
+    private static Result Swap(GamePeriod half, int playerAId, int playerBId)
+    {
+        var a = half.PlayerPositions.FirstOrDefault(pp => pp.PlayerId == playerAId);
+        var b = half.PlayerPositions.FirstOrDefault(pp => pp.PlayerId == playerBId);
+
+        if (a is null || a.IsSubstitute || b is null || b.IsSubstitute)
+            return Result.Failure("Both players have to be on the pitch to swap positions");
+
+        (a.SlotIndex, b.SlotIndex) = (b.SlotIndex, a.SlotIndex);
+        (a.Position, b.Position) = (b.Position, a.Position);
+
+        return Result.Success();
+    }
 
     /// The recorded minute is what stops the rest of the match counting towards her availability — see <see cref="Game.AvailableMinutesFor"/>.
     /// A null <paramref name="replacementPlayerId"/> means the team plays on a player short.

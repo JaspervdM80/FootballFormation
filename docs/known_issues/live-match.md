@@ -7,8 +7,10 @@
   5, swapping that player to slot 0 and then undoing seated two players in slot 5 and emptied
   slot 0; it now reads the slot off the player coming off instead. And `GameMinutesReport` seeds
   from the lineup as it finally stands, so a swap credits **the position moved into** for the whole
-  half, earlier minutes included — the opposite of what its comment used to claim. Totals are
-  right either way; only the split by position is affected, and a test pins it.
+  half, earlier minutes included — the opposite of what its comment used to claim. A player who
+  came on is credited the same way for a stint that lasts to the whistle: her position at the end,
+  not the slot the substitution recorded, or a swap after she came on would change nothing. Totals
+  are right either way; only the split by position is affected, and a test pins it.
 - **A quarters match only ever kicks off two of its four periods.** The live match knows halves
   and nothing else: `Game.NextHalf()` skips a line-up whose half has already been played, so the
   second half opens at Q3. Q2 and Q4 keep their planned line-ups and never get `StartedAtSeconds`,
