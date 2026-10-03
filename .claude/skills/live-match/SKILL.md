@@ -118,7 +118,9 @@ minutes earlier. Candidates come from the substitution's **own** half, not the o
 **Injured** switch keeps its `GameInjury` on the same second — `Game.WasReplaced` pairs them there.
 
 **A forgotten substitution is added afterwards** (`AddSubstitutionAsync`), laid over the half's final
-line-up — so refused when either player is in a later change there.
+line-up — so refused when either player is in a later change there. **A position swap is too**
+(`SwapPositionsInHalfAsync`), between two players on at that half's whistle; a player who came on is
+credited the position she ended in, not the slot her substitution recorded.
 
 Two substitutions in the same second settle by **id**, not just the clock.
 

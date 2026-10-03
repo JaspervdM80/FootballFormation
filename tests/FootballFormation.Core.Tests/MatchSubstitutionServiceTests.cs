@@ -769,6 +769,80 @@ public class MatchSubstitutionServiceTests : LiveMatchTestBase
         Assert.Equal("A player cannot be substituted for themselves", result.Error);
     }
 
+    [Fact]
+    public async Task Positions_are_swapped_afterwards_in_the_half_named_and_only_there()
+    {
+        var game = await PlayedMatchAsync();
+        var players = await PlayersAsync();
+
+        var swapped = await Subs.SwapPositionsInHalfAsync(game.Id, PeriodType.FirstHalf, players[0].Id, players[1].Id);
+        Assert.True(swapped.IsSuccess);
+
+        var loaded = await LoadForMinutesAsync(game.Id);
+        var firstHalf = loaded.PlayedHalf(PeriodType.FirstHalf)!;
+        Assert.Equal(PlayerPosition.CM, firstHalf.PlayerPositions.Single(p => p.PlayerId == players[0].Id).Position);
+        Assert.Equal(0, firstHalf.PlayerPositions.Single(p => p.PlayerId == players[1].Id).SlotIndex);
+        Assert.Empty(loaded.Substitutions);
+
+        var minutes = GameMinutesReport.Build(loaded);
+        Assert.Equal(1800, minutes.PositionsFor(players[0].Id)[PlayerPosition.CM]);
+        Assert.Equal(1800, minutes.PositionsFor(players[0].Id)[PlayerPosition.GK]);
+    }
+
+    [Fact]
+    public async Task A_player_who_came_on_and_was_swapped_afterwards_is_credited_the_position_she_ended_in()
+    {
+        var game = await PlayedMatchAsync();
+        var players = await PlayersAsync();
+
+        Assert.True((await Subs.AddSubstitutionAsync(
+            game.Id, PeriodType.FirstHalf, players[1].Id, players[2].Id, minute: 11, injured: false)).IsSuccess);
+        Assert.True((await Subs.SwapPositionsInHalfAsync(
+            game.Id, PeriodType.FirstHalf, players[2].Id, players[0].Id)).IsSuccess);
+
+        var minutes = GameMinutesReport.Build(await LoadForMinutesAsync(game.Id));
+
+        Assert.Equal(new Dictionary<PlayerPosition, int> { [PlayerPosition.GK] = 1200 }, minutes.PositionsFor(players[2].Id));
+        Assert.Equal(600 + 1800, minutes.PositionsFor(players[1].Id)[PlayerPosition.CM]);
+    }
+
+    [Fact]
+    public async Task Positions_cannot_be_swapped_in_a_half_that_was_never_played()
+    {
+        var game = await SeedGameAsync();
+        await MatchClock.StartMatchAsync(game.Id);
+        var players = await PlayersAsync();
+
+        var result = await Subs.SwapPositionsInHalfAsync(game.Id, PeriodType.SecondHalf, players[0].Id, players[1].Id);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("That half was never played", result.Error);
+    }
+
+    [Fact]
+    public async Task A_swap_afterwards_is_refused_for_a_player_who_finished_the_half_on_the_bench()
+    {
+        var game = await PlayedMatchAsync();
+        var players = await PlayersAsync();
+
+        var result = await Subs.SwapPositionsInHalfAsync(game.Id, PeriodType.FirstHalf, players[0].Id, players[2].Id);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("Both players have to be on the pitch to swap positions", result.Error);
+    }
+
+    [Fact]
+    public async Task A_player_cannot_be_swapped_afterwards_with_themselves()
+    {
+        var game = await PlayedMatchAsync();
+        var players = await PlayersAsync();
+
+        var result = await Subs.SwapPositionsInHalfAsync(game.Id, PeriodType.FirstHalf, players[0].Id, players[0].Id);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("A player cannot swap positions with themselves", result.Error);
+    }
+
     private async Task<Game> PlayedMatchAsync()
     {
         var game = await SeedGameAsync();
