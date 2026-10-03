@@ -150,6 +150,21 @@ export async function pickPlayer(page, scope, name = '') {
   await clickFor(button, () => expect(page.locator('.mud-dialog')).toHaveCount(0), { settle: 10_000 });
 }
 
+/**
+ * Logs a goal through the live goal dialog: the scorer, then the assister — or "No assist" when
+ * `assist` is left empty. Both names match the start of the full name, as in pickPlayer.
+ */
+export async function scoreGoal(page, scope, scorer = '', assist = '') {
+  const noAssist = scope.getByRole('button', { name: 'No assist' });
+  const button = scope.locator(scorer ? `.player-pick[title^="${scorer}"]` : '.player-pick').first();
+  await clickFor(button, () => expect(noAssist).toBeVisible(), { settle: 10_000 });
+  if (assist) {
+    await pickPlayer(page, scope, assist);
+    return;
+  }
+  await clickFor(noAssist, () => expect(page.locator('.mud-dialog')).toHaveCount(0), { settle: 10_000 });
+}
+
 /** Answers the app's ConfirmDialog. `action` is the confirming button's label. */
 export async function confirmDialog(page, action) {
   await submitDialog(page, action);
