@@ -94,6 +94,10 @@ These fail silently or expensively, so they are here rather than only in a skill
 
 ## Workflow
 
+- **Start from the latest `main` before writing any code**: `git fetch origin main`, then branch
+  from `origin/main` (`git checkout -b feature/… origin/main`). A checkout or worktree handed to you
+  can be several merges behind, and the change you are asked about may already be on `main`. If you
+  already have commits, rebase them onto `origin/main` instead.
 - Work on a branch named **`feature/…`**, **`bug/…`** or **`ci/…`** after what the change is — a new
   or changed behaviour, a fix, or the build, workflows and tooling (e.g. `feature/two-tap-goals`).
   Nothing else; a branch handed to you under another name is renamed before it is pushed.
