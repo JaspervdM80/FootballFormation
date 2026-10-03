@@ -24,9 +24,13 @@ public sealed record HalfLineupWalk
     public required IReadOnlyDictionary<int, PitchSpot> KickOff { get; init; }
     public required IReadOnlyList<LineupChange> Changes { get; init; }
 
+    /// The changes at the seconds they were stored at. A correction settles from these: settling twice could cross swaps it must not.
+    private IReadOnlyList<LineupChange> Recorded { get; init; } = [];
+
     public static HalfLineupWalk Rewind(Game game, GamePeriod period)
     {
-        var changes = ChangesIn(game, period);
+        var recordedChanges = ChangesIn(game, period);
+        var changes = SettleArrivals([.. recordedChanges]);
         var onPitch = period.PlayerPositions
             .Where(p => !p.IsSubstitute)
             .ToDictionary(p => p.PlayerId, p => new PitchSpot(p.SlotIndex, p.Position));
@@ -54,16 +58,17 @@ public sealed record HalfLineupWalk
             }
         }
 
-        return new HalfLineupWalk { KickOff = onPitch, Changes = changes };
+        return new HalfLineupWalk { KickOff = onPitch, Changes = changes, Recorded = recordedChanges };
     }
 
     /// The walk with one change added or left out — what a correction would make of the half — rather than the one on file.
     public HalfLineupWalk With(LineupChange? added = null, LineupChange? removed = null)
     {
-        var changes = Changes.Where(c => c != removed).ToList();
-        if (added is not null) changes.Add(added);
+        var recorded = Recorded.Where(c => removed is null || (c.Kind, c.Id) != (removed.Kind, removed.Id)).ToList();
+        if (added is not null) recorded.Add(added);
 
-        return this with { Changes = Ordered(changes) };
+        var sorted = Sorted(recorded);
+        return this with { Changes = SettleArrivals([.. sorted]), Recorded = sorted };
     }
 
     public HalfWalkResult Walk(int startSeconds, int endSeconds)
@@ -126,12 +131,40 @@ public sealed record HalfLineupWalk
             .Where(s => s.GamePeriodId == period.Id)
             .Select(s => new LineupChange(LineupChangeKind.Swap, s.AtSeconds, s.RecordedAt, s.Id, s.PlayerAId, s.PlayerBId));
 
-        return Ordered(subs.Concat(unreplaced).Concat(swaps));
+        return Sorted(subs.Concat(unreplaced).Concat(swaps));
     }
 
+    /// A swap this soon after a player came on is where she was put to play — the spot she entered in was only the way onto the pitch.
+    public const int ArrivalSettlingSeconds = 60;
+
     /// The order MatchTimelineReport reads them in. Ids are per table, so across kinds only RecordedAt settles two changes in one second.
-    private static List<LineupChange> Ordered(IEnumerable<LineupChange> changes) =>
+    private static List<LineupChange> Sorted(IEnumerable<LineupChange> changes) =>
         [.. changes.OrderBy(c => c.AtSeconds).ThenBy(c => c.RecordedAt).ThenBy(c => c.Id)];
+
+    /// Only when the arrival is the last change either player was part of: anything between would be walked out of order. Placed straight
+    /// after the arrival rather than re-sorted, so the order never rests on the RecordedAt of rows written without one.
+    private static List<LineupChange> SettleArrivals(List<LineupChange> changes)
+    {
+        for (var i = 0; i < changes.Count; i++)
+        {
+            var swap = changes[i];
+            if (swap.Kind != LineupChangeKind.Swap) continue;
+
+            var latest = changes.Take(i).LastOrDefault(c =>
+                c.PlayerId == swap.PlayerId || c.OtherPlayerId == swap.PlayerId
+                || c.PlayerId == swap.OtherPlayerId || c.OtherPlayerId == swap.OtherPlayerId);
+
+            if (latest is { Kind: LineupChangeKind.Substitution, OtherPlayerId: { } cameOn }
+                && (cameOn == swap.PlayerId || cameOn == swap.OtherPlayerId)
+                && swap.AtSeconds - latest.AtSeconds < ArrivalSettlingSeconds)
+            {
+                changes.RemoveAt(i);
+                changes.Insert(changes.IndexOf(latest) + 1, swap with { AtSeconds = latest.AtSeconds });
+            }
+        }
+
+        return changes;
+    }
 
     private static Dictionary<LineupChange, PitchSpot> RecordedSpots(Game game, GamePeriod period)
     {

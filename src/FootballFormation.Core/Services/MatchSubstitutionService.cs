@@ -175,7 +175,7 @@ public class MatchSubstitutionService(
 
             var change = new LineupChange(LineupChangeKind.Swap, atSeconds, UtcNow, int.MaxValue, playerAId, playerBId);
             var walk = rewound.With(added: change).Walk(start, end);
-            if (walk.Skipped.Contains(change))
+            if (walk.Skipped.Any(c => c.Kind == LineupChangeKind.Swap && c.Id == change.Id))
                 return Result.Failure<GamePositionSwap>("Both players have to be on the pitch to swap positions");
 
             WriteBack(game, period, walk);

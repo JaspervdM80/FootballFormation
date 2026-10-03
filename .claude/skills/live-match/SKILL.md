@@ -100,8 +100,9 @@ and the bench disabled meanwhile, so a tap there cannot drop the swap).
 **A position swap writes a `GamePositionSwap`, not a `GameSubstitution`** — nobody's minutes changed,
 but its second is what lets `GameMinutesReport` split the half there. `HalfLineupWalk` is the one walk
 through a half (rewind the final line-up to the kick-off, then forward); the result page's line-up per
-minute draws from it too. Matches from before carry swaps with no minute, and for those the whole
-half is still credited to the position moved **into**.
+minute draws from it too. A swap within a minute of a player coming on counts from her arrival, so the
+spot she came on in is credited nothing. Matches from before carry swaps with no minute, and for those
+the whole half is still credited to the position moved **into**.
 
 **Undoing a substitution follows the slot, not the recorded one** — a swap can have moved it since,
 and handing the recorded slot back would seat two players in it.
