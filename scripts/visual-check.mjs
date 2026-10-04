@@ -20,9 +20,7 @@ const BASE = process.env.VISUAL_BASE_URL ?? 'http://127.0.0.1:5228';
 const OUT = process.env.VISUAL_OUT_DIR ?? 'artifacts/visual';
 
 // A Claude Code web container ships a Chromium at this path, at a revision that will not match
-// whatever `playwright` resolves to — so use the one that is there, and fall back to Playwright's
-// own everywhere else. `undefined` is the fallback on purpose: it means "resolve it yourself",
-// which is what a CI runner needs after `npx playwright install chromium`.
+// whatever `playwright` resolves to — so use the one that is there, and Playwright's own elsewhere.
 const PREINSTALLED = '/opt/pw-browsers/chromium';
 const CHROME = process.env.VISUAL_CHROMIUM ?? (existsSync(PREINSTALLED) ? PREINSTALLED : undefined);
 
@@ -62,7 +60,9 @@ const rx = (nl, en) => new RegExp(`${nl}|${en}`, 'i');
 
 mkdirSync(OUT, { recursive: true });
 
-const browser = await chromium.launch({ executablePath: CHROME });
+// The full build, never the headless shell Playwright defaults to: the shell denies notifications,
+// so the opt-in row is never drawn, and it shapes text differently from the Chrome a phone runs.
+const browser = await chromium.launch(CHROME ? { executablePath: CHROME } : { channel: 'chromium' });
 const context = await browser.newContext({
   viewport: { width: 1440, height: 900 },
   deviceScaleFactor: 2,
@@ -110,6 +110,8 @@ await goto(page, `${BASE}/players`);
 if (!(await page.getByText(SEED_PLAYERS[0][0]).count())) {
   const dialog = page.locator('.mud-dialog');
   for (const [first, last, shirt] of SEED_PLAYERS) {
+    // A fresh load clears the last save's snackbars, which stack over the Add player button.
+    await goto(page, `${BASE}/players`);
     // MudMenu items are not menuitem-role elements — they render as .mud-menu-item-text.
     const newPlayer = page.locator('.mud-popover-open').getByText(rx('nieuwe speler', 'new player'));
     await clickFor(page.getByRole('button', { name: rx('speler toevoegen', 'add player') }),
@@ -252,8 +254,9 @@ for (const [name, path] of PAGES) {
   // rather than something to sleep through.
   await goto(page, BASE + path);
   await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true });
-  const heading = await page.locator('h1, h4, .mud-typography-h4').first().textContent().catch(() => '');
-  console.log(`${name.padEnd(9)} ${path.padEnd(10)} ${(heading ?? '').trim().slice(0, 40)}`);
+  // Read, not waited for: a locator that matches nothing waits out the 30s default before failing.
+  const heading = await page.evaluate(() => document.querySelector('h1, h2, h3, h4, h5, h6')?.textContent ?? '');
+  console.log(`${name.padEnd(9)} ${path.padEnd(10)} ${heading.trim().slice(0, 40)}`);
 }
 
 console.log('\nMeasuring touch targets...');

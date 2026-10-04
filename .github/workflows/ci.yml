@@ -283,7 +283,8 @@ jobs:
       - run: npm ci --no-audit --no-fund
         working-directory: scripts
 
-      - run: npx playwright install --with-deps chromium
+      # The full build only: visual-check.mjs launches channel 'chromium', never the headless shell.
+      - run: npx playwright install --with-deps --no-shell chromium
         working-directory: scripts
 
       # The script owns its own throwaway database and exits non-zero on a browser error or a touch
