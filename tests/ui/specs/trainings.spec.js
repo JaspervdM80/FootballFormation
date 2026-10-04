@@ -6,7 +6,7 @@
 import { test, expect } from '../fixtures.js';
 import {
   addPlayer, chooseSeasonNamed, clickFor, confirmDialog, currentSeasonName, fillField, goto,
-  nextSeasonName, openDialog, pickEarlierThisMonth, pickNextSeasonAugust, playerMenuItem,
+  nextSeasonName, noEarlierDayThisSeason, openDialog, pickDaysAgo, pickNextSeasonAugust, playerMenuItem,
   submitDialog,
 } from '../helpers.js';
 import { SQUAD } from '../global-setup.js';
@@ -52,8 +52,8 @@ async function clearInjured(page, panel) {
   // count read in that gap cleared nothing.
   const injuredCaption = panel.locator('.mud-typography-caption', { hasText: /^Injured:/ });
   await expect(async () => {
-    const remaining = await selected.count();
-    if (remaining > 0) {
+    // All of them before the caption check: it stays up until the last one goes, so a check per click times out every time.
+    for (let remaining = await selected.count(); remaining > 0; remaining--) {
       await selected.first().click();
       // Each click waits for its own round trip: the next one otherwise lands on the option just cleared and selects it again.
       await expect(selected).toHaveCount(remaining - 1);
@@ -90,7 +90,7 @@ async function addTraining(page, { note, absentee, injured, cancelled, past } = 
 
   await openDialog(page);
   // Before the absentees: changing the date reloads the season's squad behind the picker.
-  if (past) await pickEarlierThisMonth(page, panel, 1, { allowUnchanged: true });
+  if (past) await pickDaysAgo(page, panel, 1, { allowUnchanged: true });
   if (!cancelled) await clearInjured(page, panel);
   if (absentee) await markUnavailable(page, panel, absentee);
   if (injured) await markInjured(page, panel, injured);
@@ -324,17 +324,13 @@ async function attendanceOf(page, playerName) {
 // Every figure below is read as a difference rather than as a number: the specs share one database,
 // so the season already holds whatever the tests before this one entered.
 //
-// Every session here is dated into the past. Only sessions that have already been held count, so one
-// added on today's date would move nothing — and `pickEarlierThisMonth` stays inside the current
-// month, because the season is derived from the date and a jump back could file it under last one.
-// On the 1st there is no earlier day in the month to use, which is what `noPastDayThisMonth` skips.
+// Every session here is dated into the past: only sessions that have already been held count, so one
+// added on today's date would move nothing.
 //
 // The dialog does not open on today — it opens on the next training date, which is already yesterday
 // once a training period has been saved — so the pick is allowed to leave the field as it found it.
-const noPastDayThisMonth = () => new Date().getDate() === 1;
-
 test('a session that did not take place is left out of the attendance', async ({ page }) => {
-  test.skip(noPastDayThisMonth(), 'no earlier day this month to hold a session on');
+  test.skip(noEarlierDayThisSeason(), 'the season opened today — no earlier day in it to hold a session on');
 
   await addTraining(page, { note: 'Opkomst: gehouden', past: true });
   const before = await sessionsHeld(page);
@@ -350,7 +346,7 @@ test('a session that did not take place is left out of the attendance', async ({
 });
 
 test('a session the whole squad turned up to says so', async ({ page }) => {
-  test.skip(noPastDayThisMonth(), 'no earlier day this month to hold a session on');
+  test.skip(noEarlierDayThisSeason(), 'the season opened today — no earlier day in it to hold a session on');
 
   await addTraining(page, { note: 'Opkomst: iedereen er', past: true });
 
@@ -360,7 +356,7 @@ test('a session the whole squad turned up to says so', async ({ page }) => {
 });
 
 test('a player opened from the register comes back to the register', async ({ page }) => {
-  test.skip(noPastDayThisMonth(), 'no earlier day this month to hold a session on');
+  test.skip(noEarlierDayThisSeason(), 'the season opened today — no earlier day in it to hold a session on');
 
   await addTraining(page, { note: 'Opkomst: en terug', past: true });
   const panel = await openAttendance(page);
@@ -376,7 +372,7 @@ test('a player opened from the register comes back to the register', async ({ pa
 });
 
 test('a player marked unavailable loses that session from her attendance', async ({ page }) => {
-  test.skip(noPastDayThisMonth(), 'no earlier day this month to hold a session on');
+  test.skip(noEarlierDayThisSeason(), 'the season opened today — no earlier day in it to hold a session on');
 
   await addTraining(page, { note: 'Opkomst: nulmeting', past: true });
   const absenteeBefore = await attendanceOf(page, ABSENTEE);

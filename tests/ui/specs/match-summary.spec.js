@@ -1,16 +1,17 @@
 // The copyable match summary (#107): a button on the result page and on the shareable formation
 // overview that hands the scoreline, the goals and any public comment to the clipboard as plain
 // text — the thing someone actually pastes into the group chat, as opposed to the screenshot the
-// overview page already offered.
+// overview page already offered. That a visitor is offered neither is in result.spec.js.
 import { test, expect } from '../fixtures.js';
-import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
+import { BASE_URL } from '../playwright.config.js';
 import {
-  clickFor, createMatch, fileScore, fillField, fillLineup, finishMatch, gameAction,
-  goto, gotoRendered, matchWithId, openDialog, scoreGoal, startMatch, submitDialog,
+  clickFor, createMatch, fileScore, fillField, fillLineup, finishMatch, gameAction, goto, halfTime,
+  logGoal, matchWithId, noEarlierDayThisSeason, openDialog, openOverview, startMatch, startSecondHalf,
+  submitDialog,
 } from '../helpers.js';
 
 test('the result page copies a scoreline, a goal and a public comment to the clipboard', async ({ page, context }) => {
-  test.skip(new Date().getDate() === 1, 'no earlier day in the current month to date a match to');
+  test.skip(noEarlierDayThisSeason(), 'the season opened today — no earlier day in it to date a match to');
 
   await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE_URL });
 
@@ -54,7 +55,7 @@ test('the result page copies a scoreline, a goal and a public comment to the cli
 
   // The shareable overview composes the same text server-side and offers it through a plain
   // onclick, since that page renders with no circuit to hand a string to a script through.
-  await gotoRendered(page, `/games/${id}/overview`);
+  await goto(page, `/games/${id}/overview`);
   const summaryText = await page.locator('#match-summary-text').textContent();
   expect(summaryText).toContain('Fixture Defender');
   expect(summaryText).toContain('Great team performance');
@@ -75,30 +76,13 @@ test('a goal in each half puts a dashed break between them in the copied text', 
   await startMatch(page);
 
   const ourScore = page.locator('.live-score-value:not(.live-score-away)');
-  await clickFor(
-    page.getByRole('button', { name: 'Goal', exact: true }),
-    () => expect(page.locator('.mud-dialog')).toBeVisible(),
-  );
-  let goalDialog = await openDialog(page);
-  await scoreGoal(page, goalDialog, 'Fixture');
+  await logGoal(page, 'Fixture');
   await expect(ourScore).toHaveText('1');
 
-  const controls = page.locator('.live-controls');
-  await clickFor(
-    controls.getByRole('button', { name: 'Half time' }),
-    () => expect(controls.getByRole('button', { name: 'Start 2nd Half' })).toBeVisible(),
-  );
-  await clickFor(
-    controls.getByRole('button', { name: 'Start 2nd Half' }),
-    () => expect(controls.getByRole('button', { name: 'Half time' })).toHaveCount(0),
-  );
+  await halfTime(page);
+  await startSecondHalf(page);
 
-  await clickFor(
-    page.getByRole('button', { name: 'Goal', exact: true }),
-    () => expect(page.locator('.mud-dialog')).toBeVisible(),
-  );
-  goalDialog = await openDialog(page);
-  await scoreGoal(page, goalDialog, 'Fixture');
+  await logGoal(page, 'Fixture');
   await expect(ourScore).toHaveText('2');
 
   await finishMatch(page);
@@ -124,30 +108,6 @@ test('a goal in each half puts a dashed break between them in the copied text', 
   expect(breakIndex).toBeLessThan(lines.indexOf(goalLines[1]));
 });
 
-test('a visitor reads the score but is not offered the copy button', async ({ page, browser }) => {
-  test.skip(new Date().getDate() === 1, 'no earlier day in the current month to date a match to');
-
-  const id = await matchWithId(page, 'FC Bezoeker', { past: true });
-  await fileScore(page, id, 2, 1);
-
-  const visitor = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
-  const visitorPage = await visitor.newPage();
-  await gotoRendered(visitorPage, `/games/${id}/result`);
-
-  await expect(visitorPage.locator('.score-value:not(.score-away)')).toHaveText('2');
-  await expect(visitorPage.getByRole('button', { name: 'Copy match result' })).toHaveCount(0);
-  await expect(visitorPage.locator('#match-summary-text')).toHaveCount(0);
-
-  // The shareable overview is the same rule, and the page a visitor is most likely to be sent: the
-  // match is still readable there, the summary is not composed at all.
-  await gotoRendered(visitorPage, `/games/${id}/overview`);
-  await expect(visitorPage.getByText('FC Bezoeker', { exact: false }).first()).toBeVisible();
-  await expect(visitorPage.getByRole('button', { name: 'Copy match result' })).toHaveCount(0);
-  await expect(visitorPage.locator('#match-summary-text')).toHaveCount(0);
-
-  await visitor.close();
-});
-
 test('a kick-off time set on the game dialog shows up on the result page', async ({ page }) => {
   await createMatch(page, { opponent: 'FC Aftrap' });
 
@@ -158,12 +118,8 @@ test('a kick-off time set on the game dialog shows up on the result page', async
 
   // A newly created fixture is dated for the next match day, so the row offers no Result button
   // yet — Overview is the one action every game gets, whatever the calendar says.
-  await gameAction(page, 'FC Aftrap', 'Overview');
-  await page.waitForURL(/\/games\/(\d+)\/overview/);
-  const id = Number(page.url().match(/\/games\/(\d+)\//)[1]);
+  const id = await openOverview(page, 'FC Aftrap');
 
-  // A future fixture's result page shows no score form and no copy button — nothing MudBlazor of
-  // its own to wait a handler on — so this is the one page here that needs gotoRendered.
-  await gotoRendered(page, `/games/${id}/result`);
+  await goto(page, `/games/${id}/result`);
   await expect(page.locator('.result-subtitle')).toContainText('19:30');
 });

@@ -5,44 +5,20 @@
 // wired to nothing. Screenshot it and you capture a half-built page; click it and the click is
 // swallowed with no error anywhere.
 //
-// The two obvious signals for "it is ready now" are both wrong. Measured on /settings in this app:
-//
-//   domcontentloaded, window.Blazor already true   0 of 12 buttons have handlers
-//   the circuit's first WebSocket frame            still 0 — that frame is the handshake
-//   a _bl_ attribute is present                    15 handlers bound, ~230ms in
-//
-// Blazor's client renderer writes `_bl_<guid>` onto every element it attaches an event to, so that
-// attribute is the signal, and it is the one these helpers wait for.
-//
 // tests/ui/helpers.js carries the same rule for the Playwright suite. The two are deliberately not
 // shared: they are separate npm packages with different dependencies, and a dozen lines duplicated
 // beats a cross-package import. Change one, look at the other.
 
-/** True once Blazor has bound handlers on this page — see the note above. It only ever sees
-    MudBlazor's own controls: Blazor writes the attribute for handlers it registers on the element,
-    and a plain `<button @onclick>` of ours never gets one. */
-const HANDLERS_BOUND = () => [...document.querySelectorAll('button,a,input')]
-  .some(el => el.getAttributeNames().some(name => name.startsWith('_bl_')));
+// InteractiveShell's marker reads "pending" in the prerender and "live" once the circuit's first render, handlers and all, has landed.
+// An interactive page without the shell has no marker, so its inert prerender would pass as ready.
+const READY = () => !document.querySelector('[data-circuit="pending"]');
 
-/** Navigates and waits for the page to be interactive rather than merely painted. */
+/** Navigates and waits for the page to be interactive rather than merely painted. A page with no circuit is ready once loaded. */
 export async function goto(page, url) {
-  await page.goto(url, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(HANDLERS_BOUND, null, { timeout: 30_000 });
-}
-
-/**
- * Navigates and waits for the markup only, for a page with no handler to wait for: one rendered
- * without a circuit, or one whose only handlers are splatted onto MudBlazor components. Blazor
- * stamps `_bl_` on handlers declared on an HTML element and nowhere else, so `goto` would wait
- * thirty seconds on those pages for a signal that never arrives.
- */
-export async function gotoRendered(page, url) {
-  await page.goto(url, { waitUntil: 'domcontentloaded' });
-  // Until the page stops fetching, not merely until it paints. A page that does open a circuit
-  // starts negotiating during this window, and navigating away mid-handshake aborts it — which
-  // surfaces as a "Failed to complete negotiation" console error and fails the run. WebSockets do
-  // not count towards networkidle, so an established circuit does not hold this open.
-  await page.waitForLoadState('networkidle');
+  await page.goto(url, { waitUntil: 'load' });
+  await page.waitForFunction(READY, null, { timeout: 30_000 });
+  // A layout measured straight after the load would otherwise be measured in the fallback font.
+  await page.evaluate(() => document.fonts.ready.then(() => true));
 }
 
 /**

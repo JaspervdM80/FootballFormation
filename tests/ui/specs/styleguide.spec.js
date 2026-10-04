@@ -7,7 +7,7 @@
 // page: it covers ClubTheme's head block and theme.css in a single pass, with no list of its own to
 // maintain.
 import { test, expect } from '../fixtures.js';
-import { gotoRendered } from '../helpers.js';
+import { goto } from '../helpers.js';
 
 /**
  * Every `--custom-property` declared by a `:root` rule in any same-origin stylesheet, minus
@@ -36,8 +36,8 @@ async function declaredTokens(page) {
   });
 }
 
-test('every token the stylesheets declare has a swatch on the style guide', async ({ page }) => {
-  await gotoRendered(page, '/styleguide');
+test('every token the stylesheets declare has a swatch on the style guide, and every swatch a token', async ({ page }) => {
+  await goto(page, '/styleguide');
   await expect(page.getByRole('heading', { name: 'Style Guide', exact: false }).first()).toBeVisible();
 
   const declared = await declaredTokens(page);
@@ -47,22 +47,15 @@ test('every token the stylesheets declare has a swatch on the style guide', asyn
 
   const shown = await page.locator('.sg-token').allInnerTexts();
   const missing = declared.filter(token => !shown.includes(token));
-
-  expect(missing, `tokens with no swatch — add them to DesignTokens.Groups: ${missing.join(', ')}`).toEqual([]);
-});
-
-test('the style guide draws no token the stylesheets have dropped', async ({ page }) => {
-  await gotoRendered(page, '/styleguide');
-
-  const declared = await declaredTokens(page);
-  const shown = await page.locator('.sg-token').allInnerTexts();
   const orphaned = shown.filter(token => !declared.includes(token));
 
-  expect(orphaned, `swatches for tokens nothing declares: ${orphaned.join(', ')}`).toEqual([]);
+  // Soft, so a run with both kinds of drift reports both lists rather than the first.
+  expect.soft(missing, `tokens with no swatch — add them to DesignTokens.Groups: ${missing.join(', ')}`).toEqual([]);
+  expect.soft(orphaned, `swatches for tokens nothing declares: ${orphaned.join(', ')}`).toEqual([]);
 });
 
 test('the shared component classes still paint', async ({ page }) => {
-  await gotoRendered(page, '/styleguide');
+  await goto(page, '/styleguide');
 
   // A scoped-CSS mistake renders these as unstyled markup rather than failing, so assert a property
   // each class is the only source of — see .claude/skills/styling-and-css.

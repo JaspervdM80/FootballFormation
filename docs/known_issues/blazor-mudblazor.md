@@ -69,7 +69,7 @@
 - **The date picker's month header slides, so it reads the month you just left.** The element is a
   `.mud-picker-slide-transition`, and for a moment after *Previous month* it still reports the old
   text. A loop that clicks and then immediately re-reads therefore spends a second click on a month
-  it had already stepped past — `pickEarlierThisMonth` walked to July while asserting August, on a
+  it had already stepped past — the picker helper (now `pickDaysAgo`) walked to July while asserting August, on a
   loaded CI runner only. Wait for the header text to *change* after each click before reading it
   again, and choose the direction from that settled value so an overshoot walks back instead of
   spiralling. Anything that steps a MudBlazor picker has this shape.

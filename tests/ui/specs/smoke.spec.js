@@ -3,27 +3,28 @@
 // The cheapest test in the suite and the one most likely to catch a real breakage: a component that
 // throws on first render takes its whole page down, and nothing else in the repo notices.
 import { test, expect } from '../fixtures.js';
-import { goto, gotoRendered } from '../helpers.js';
+import { goto } from '../helpers.js';
 
-// `bare` marks a page that renders no MudBlazor control, so there is nothing for `goto` to wait on
-// — see gotoRendered. It says nothing about whether the page has a circuit: / does, /stats does not.
+// Signed in as an admin, so the admin-only routes among these are reached rather than bounced to /login.
 const PAGES = [
-  { path: '/', heading: 'GJS MO15-2', bare: true },
+  { path: '/', heading: 'GJS MO15-2' },
   { path: '/players', heading: 'Squad' },
   { path: '/games', heading: 'Games' },
-  { path: '/stats', heading: 'Statistics', bare: true },
+  { path: '/stats', heading: 'Statistics' },
+  { path: '/trainings', heading: 'Trainings' },
   { path: '/users', heading: 'Users' },
   { path: '/teams', heading: 'Teams' },
   { path: '/preferences', heading: 'Match Preferences' },
   { path: '/settings', heading: 'Settings' },
-  { path: '/stats/positions', heading: 'Position Development', bare: true },
-  { path: '/styleguide', heading: 'Style Guide', bare: true },
+  { path: '/stats/positions', heading: 'Position Development' },
+  { path: '/styleguide', heading: 'Style Guide' },
 ];
 
-for (const { path, heading, bare } of PAGES) {
+for (const { path, heading } of PAGES) {
   test(`${path} renders and is interactive`, async ({ page }) => {
-    await (bare ? gotoRendered : goto)(page, path);
+    await goto(page, path);
 
+    await expect(page).toHaveURL(new RegExp(`${path}$`));
     await expect(page.getByRole('heading', { name: heading, exact: false }).first()).toBeVisible();
     // A spinner still on screen after the circuit connected means the page never finished loading.
     await expect(page.locator('.mud-progress-circular')).toHaveCount(0);
@@ -31,7 +32,7 @@ for (const { path, heading, bare } of PAGES) {
 }
 
 test('the app bar offers every section to an admin', async ({ page }) => {
-  await gotoRendered(page, '/');
+  await goto(page, '/');
 
   for (const section of ['Squad', 'Games', 'Season', 'Preferences', 'Settings', 'Users', 'Teams']) {
     await expect(page.locator('.mud-appbar').getByText(section, { exact: false }).first()).toBeVisible();

@@ -20,7 +20,7 @@ UI is Dutch by default with English available.
 dotnet build -c Release        # what CI builds — warnings are errors here
 dotnet test                    # xUnit v3, real SQLite
 cd src/FootballFormation.Web && dotnet run     # http://localhost:5228
-cd tests/ui && npm test        # Playwright, ~1 min (npm install first)
+cd tests/ui && npm test        # Playwright, ~4 min (npm ci first)
 scripts/visual-check.sh        # screenshots every page, then measures every touch target
 scripts/dev-db.sh              # replace the local database with a copy of the live one
 scripts/test-db.sh             # load gjs-meiden-test.fly.dev with an anonymised copy of the live one

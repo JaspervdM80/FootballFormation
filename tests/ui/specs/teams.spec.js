@@ -3,7 +3,7 @@
 // from one page view, which is why it needs a browser: break the cookie and the app still works, it
 // just quietly shows the wrong team, or forgets which one you picked.
 import { test, expect } from '../fixtures.js';
-import { goto, gotoRendered, openDialog, submitDialog, confirmDialog, fillField } from '../helpers.js';
+import { confirmDialog, fillField, goto, openDialog, submitDialog } from '../helpers.js';
 
 const COOKIE = 'ff.team';
 const A_YEAR = 365 * 24 * 60 * 60;
@@ -41,6 +41,8 @@ async function showTeam(page, name) {
 const cookie = async page => (await page.context().cookies()).find(c => c.name === COOKIE);
 
 test('a visit is remembered as the team it was about, even without choosing one', async ({ page }) => {
+  // The saved state already carries one from global setup's first request, and this visit has to write its own.
+  await page.context().clearCookies({ name: COOKIE });
   await goto(page, '/games');
 
   // Nobody has picked anything, so this is the fallback being written down: the point is that the
@@ -53,7 +55,7 @@ test('choosing a team moves the app onto it, and keeps it there', async ({ page 
   await ensureSecondTeam(page);
 
   // Proves the switch is telling us something: the app does not start on the second team.
-  await gotoRendered(page, '/');
+  await goto(page, '/');
   await expect(heading(page, SEEDED_TEAM)).toBeVisible();
 
   await goto(page, '/teams');
@@ -62,7 +64,7 @@ test('choosing a team moves the app onto it, and keeps it there', async ({ page 
   // The badge is the page's own answer; the heading on / is the chrome's, read off a later request.
   await expect(teamRow(page, SECOND_TEAM)).toContainText('Selected');
 
-  await gotoRendered(page, '/');
+  await goto(page, '/');
   await expect(heading(page, `GJS ${SECOND_TEAM}`)).toBeVisible();
 });
 

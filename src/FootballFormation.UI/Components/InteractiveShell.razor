@@ -9,6 +9,9 @@
 <MudDialogProvider />
 <MudSnackbarProvider />
 
+@* The browser tests' readiness signal: "live" arrives in the circuit's first render, with every handler in that render attached. *@
+<span hidden data-circuit="@(RendererInfo.IsInteractive ? "live" : "pending")"></span>
+
 @* AuthorizeRouteView still guards the route, but it lives in the static router and is evaluated once per request — this is the same
    NotAuthorized branch inside the island, which goes on hearing the revalidating provider. *@
 @if (RequiresRole is not null)

@@ -23,7 +23,9 @@ cannot show "Reconnecting…", cannot force a reload, and survives a phone suspe
 `<InteractiveShell RequiresRole="@AppRoles.Admin" />` where it also has an `[Authorize(Roles = ...)]`).
 That carries the MudBlazor providers and the revocation gate, which the layout can no longer supply:
 `MainLayout` renders **statically for every page**, because `RouteView` applies it outside the
-island and a layout cannot carry a render mode at all.
+island and a layout cannot carry a render mode at all. It also renders the hidden `data-circuit`
+marker the browser tests wait on: an interactive page without it passes as ready on its inert
+prerender, and its tests click into nothing.
 
 **On a static page:**
 - `ISnackbar` reports into nothing. Use `PageNotice` + `<InlineNotice Notice="_notice" />`.

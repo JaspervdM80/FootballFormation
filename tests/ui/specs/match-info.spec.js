@@ -2,8 +2,8 @@
 // the days before a fixture. Beside match-summary.spec.js, which covers the message that replaces it
 // once the game has been played.
 import { test, expect } from '../fixtures.js';
-import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
-import { clickFor, createMatch, gameAction, gotoRendered, openDialog, submitDialog } from '../helpers.js';
+import { BASE_URL } from '../playwright.config.js';
+import { clickFor, createMatch, gameAction, goto, openDialog, openOverview, submitDialog } from '../helpers.js';
 
 // "Dressing room" is a prefix of "Dressing room duty", so the substring match `fillField` uses would
 // fill the wrong one of the two.
@@ -29,13 +29,11 @@ test('the match-day arrangements typed into the game dialog become a copyable me
   await fill(panel, 'Kit wash duty', 'Ouder van Seb');
   await submitDialog(page);
 
-  await gameAction(page, 'FC Wedstrijdinfo', 'Overview');
-  await page.waitForURL(/\/games\/(\d+)\/overview/);
-  const id = Number(page.url().match(/\/games\/(\d+)\//)[1]);
+  const id = await openOverview(page, 'FC Wedstrijdinfo');
 
   // The overview renders without a circuit, so the text is composed server-side into the match-info
   // card and copied from a plain onclick — same shape as the match summary.
-  await gotoRendered(page, `/games/${id}/overview`);
+  await goto(page, `/games/${id}/overview`);
   const message = await page.locator('#match-info-text').textContent();
   // Our own side is named from TeamState, which is the club the app was seeded with — an away game,
   // so the opponent leads and we follow.
@@ -59,7 +57,7 @@ test('the match-day arrangements typed into the game dialog become a copyable me
   expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('Sportpark De Watertoren');
 });
 
-test('a visitor reads the arrangements on the overview, and takes them to a calendar or a map', async ({ page, browser }) => {
+test('a visitor reads the arrangements on the overview, and takes them to a calendar or a map', async ({ page, visitor: parent }) => {
   await createMatch(page, { opponent: 'FC Agenda', venue: 'Away' });
 
   await gameAction(page, 'FC Agenda', 'Edit');
@@ -71,13 +69,9 @@ test('a visitor reads the arrangements on the overview, and takes them to a cale
   await fill(panel, 'Flag duty', 'Vader van Agenda');
   await submitDialog(page);
 
-  await gameAction(page, 'FC Agenda', 'Overview');
-  await page.waitForURL(/\/games\/(\d+)\/overview/);
-  const id = Number(page.url().match(/\/games\/(\d+)\//)[1]);
+  const id = await openOverview(page, 'FC Agenda');
 
-  const visitor = await browser.newContext({ storageState: VISITOR_STATE });
-  const parent = await visitor.newPage();
-  await gotoRendered(parent, `/games/${id}/overview`);
+  await goto(parent, `/games/${id}/overview`);
 
   const card = parent.locator('.match-info');
   await expect(card).toContainText('10:45 depart');
@@ -98,8 +92,6 @@ test('a visitor reads the arrangements on the overview, and takes them to a cale
   expect(body).toMatch(/DTSTART;TZID=Europe\/Amsterdam:\d{8}T104500/);
   expect(body).toContain('SUMMARY:FC Agenda – GJS MO15-2');
   expect(body).toContain('LOCATION:Sportpark De Agenda\\, Gorinchem');
-
-  await visitor.close();
 });
 
 test('the time fields settle on a 24-hour clock, whatever language the browser is in', async ({ page }) => {
@@ -149,11 +141,9 @@ test('the time fields settle on a 24-hour clock, whatever language the browser i
   await expect(page.locator('.mud-dialog')).toBeVisible();
   await submitDialog(page, 'Cancel');
 
-  await gameAction(page, 'FC Klok', 'Overview');
-  await page.waitForURL(/\/games\/(\d+)\/overview/);
-  const id = Number(page.url().match(/\/games\/(\d+)\//)[1]);
+  const id = await openOverview(page, 'FC Klok');
 
-  await gotoRendered(page, `/games/${id}/overview`);
+  await goto(page, `/games/${id}/overview`);
   const message = await page.locator('#match-info-text').textContent();
   expect(message).toContain('09:30 assemble');
   expect(message).toContain('12:00 kick-off');
@@ -163,11 +153,9 @@ test('the time fields settle on a 24-hour clock, whatever language the browser i
 test('a fixture with no arrangements filled in still offers the message, without empty lines', async ({ page }) => {
   await createMatch(page, { opponent: 'FC Kaal' });
 
-  await gameAction(page, 'FC Kaal', 'Overview');
-  await page.waitForURL(/\/games\/(\d+)\/overview/);
-  const id = Number(page.url().match(/\/games\/(\d+)\//)[1]);
+  const id = await openOverview(page, 'FC Kaal');
 
-  await gotoRendered(page, `/games/${id}/overview`);
+  await goto(page, `/games/${id}/overview`);
   const message = await page.locator('#match-info-text').textContent();
   const lines = message.split(/\r?\n/).filter(line => line.length > 0);
 

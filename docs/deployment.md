@@ -36,9 +36,9 @@ That is affordable because the weight sits at the other end — every check has 
 branch up to date with `main` before the merge button unlocks, so merging and releasing are the same
 decision. See [Only a green build can be merged](#only-a-green-build-can-be-merged).
 
-Pull requests are gated by a **separate** workflow, `ci.yml`, running four jobs: `Build and test`
-(restore, a Release build where warnings are errors, the suite), `Coverage`, `Playwright` and
-`Visual check`. It holds no deploy job and no Fly token, so a pull request cannot reach the volume
+Pull requests are gated by a **separate** workflow, `ci.yml`, reporting four required checks:
+`Build and test` (restore, a Release build where warnings are errors, the suite), `Coverage`,
+`Playwright` (green when both of its shards are) and `Visual check`. It holds no deploy job and no Fly token, so a pull request cannot reach the volume
 even in principle. Nothing re-runs on `main` afterwards — those four checks are the last word on the
 commit that reaches the volume.
 

@@ -4,8 +4,8 @@
 
 ```bash
 cd tests/ui
-npm install          # first time only
-npm test             # everything, ~1 minute
+npm ci               # first time, and after the lockfile moves
+npm test             # everything, ~4 minutes
 npm test -- squad    # specs matching "squad"
 npm run test:headed  # watch it happen
 npm run report       # the HTML report from the last run
@@ -29,8 +29,8 @@ real SignalR circuit.
 | `reconnect.spec.js` | Losing the circuit and getting it back: the retry schedule a suspended phone rejoins on, and the rejoined page still being interactive |
 | `session.spec.js` | Staying signed in: the auth cookie carrying a real expiry rather than being a session cookie, surviving a link followed in from another site, a deleted account losing its authority on an open circuit without anyone reloading, and an admin who changes their own password being signed out and back in |
 | `live.spec.js` | The live screen past kick-off: a substitution swapping the pitch chip for a bench one and undoing back, the assist asked for after the scorer and a goal corrected into an own goal from the live timeline, the clock stopping at half time and the second half resuming from the banked total, and a spectator's inert pitch |
-| `result.spec.js` | The result page: the private/public comment split a visitor must not see through, an own goal counting for the opponent, a scorer and assister reaching their own statistics, and the scoreline printed in venue order |
-| `result-corrections.spec.js` | Correcting a finished match from `/result`: half lengths that survive a reload, a goal re-timed rather than retyped, and two players swapped at a minute on the line-up per minute and undone from the timeline — all offered to an admin and to nobody else |
+| `result.spec.js` | The result page: what a visitor is shown of a finished match — the score and the public note, and none of the coach's parts (minutes, half lengths, the line-up per minute, the summary, every edit and correction) — an own goal counting for the opponent, a scorer and assister reaching their own statistics, and the scoreline printed in venue order |
+| `result-corrections.spec.js` | Correcting a finished match from `/result`: half lengths that survive a reload, a goal re-timed rather than retyped, and two players swapped at a minute on the line-up per minute and undone from the timeline — all as an admin; `result.spec.js` holds that a visitor is offered none of it |
 | `upcoming-season.spec.js` | The season ahead: copying last season's squad forward once and never twice, the archived left behind, a member removed and re-added as a guest, and a season window that would leave a gap being refused |
 | `selectors.spec.js` | A test for the tests — see below |
 
@@ -47,10 +47,14 @@ of the viewport and then in it). But pairing is a convention, not a guard. `sele
 guard: every app-owned class name the suite reaches for has to still exist somewhere in `src`. It
 reads the source rather than the browser, because putting the app into the state each class appears
 in is most of the rest of this directory, and a rename is the thing that actually happens. MudBlazor's
-own classes are deliberately not in the list — those are not ours to rename, and an upgrade that
-drops one shows up as a spec failing for real.
+own classes are deliberately left out — those are not ours to rename, and an upgrade that drops one
+shows up as a spec failing for real.
 
-Adding a spec that leans on a new app class means adding it to `SELECTORS` too.
+**The class names are read out of the tests themselves**, from the string literals in every spec and
+in `helpers.js`, `fixtures.js` and `global-setup.js`. It used to be a hand-kept list, and that list
+had drifted to under two thirds of the classes the specs used while still naming eleven no test did.
+There is nothing to add by hand any more. What it cannot see is a class name assembled at run time
+from a variable, so write selectors as literals.
 
 ### Breaking the circuit on purpose
 
@@ -74,13 +78,22 @@ an afternoon to find:
 
 ### One pipeline, one compile
 
-Everything lives in `.github/workflows/ci.yml`, in four jobs on one chain, all four required checks:
+Everything lives in `.github/workflows/ci.yml`, on one chain whose four required checks are
+`Build and test`, `Coverage`, `Playwright` and `Visual check`:
 
 ```
 Build and test ──┬── Coverage
-                 ├── Playwright
+                 ├── Playwright 1/2 ──┬── Playwright
+                 ├── Playwright 2/2 ──┘
                  └── Visual check
 ```
+
+**The Playwright run is two shards**, each on its own runner with its own app and database, and
+`Playwright` itself is a tiny job that is green only when both are. That keeps the required check's
+name while halving the slowest job. It runs with `if: always()` on purpose: a skipped required check
+counts as passed, so a failed build or shard has to report there as red rather than as skipped.
+Playwright splits by whole spec file, in sorted order and balanced by test count, so the boundary
+moves as tests are added: a spec creates what it reads rather than relying on one before it.
 
 **`Build and test`** restores, builds Release, runs `dotnet test`, then publishes `--no-build`, so it
 hands on exactly what the unit tests ran against rather than compiling the commit a second time. The
@@ -107,9 +120,12 @@ Three details are deliberate:
 - **The `runtimes/` prune.** 84MB of the 104MB published is SQLitePCLRaw's native library for every
   architecture it supports. Keeping only `linux-x64` takes the artifact to 23MB.
 
-`npx playwright install` still runs on a cache hit: it is a no-op when the revision is already there,
-and it is what fetches a new one when a patch release moves the browser revision without moving
-`package.json`.
+**Both `package-lock.json` files are committed** (`tests/ui/` and `scripts/`), CI installs with
+`npm ci`, and both caches are keyed on the lockfile. Without one, `^1.56.1` let CI move to every new
+Playwright release on its own, while the browser cache, keyed on an unchanged `package.json`, kept
+restoring the old browser — so every run downloaded Chrome and never saved it. Moving Playwright is
+now a lockfile change in a pull request. `npx playwright install` still runs on a cache hit and is a
+no-op there.
 
 ### The one spec that needs the published app
 
@@ -142,8 +158,9 @@ one; one more commit, or the dispatch, recovers it.
 
 ### Is it stable enough for CI?
 
-Measured, not assumed: eleven consecutive full runs green, including three pinned to two cores with
-busy loops competing, which stretched a run to 2.2–2.5 minutes and changed nothing else. That is the
+Measured, not assumed, when the suite was about a minute long: eleven consecutive full runs green,
+including three pinned to two cores with busy loops competing, which stretched a run to 2.2–2.5
+minutes and changed nothing else. That is the
 retry-on-outcome design doing its job — `clickFor` absorbs a slow circuit instead of failing on it.
 
 A red run holds the merge, and so does a flake — re-run the job from the run's page, because the
@@ -151,9 +168,10 @@ ruleset grants no bypass. `trace: 'retain-on-failure'` means a failing test can 
 `npx playwright show-trace`, and `CI=true` turns on one retry so a test that only passes on the retry
 is reported as flaky rather than quietly green.
 
-One test is calendar-dependent and skips rather than guesses: dating a match earlier in the current
-month has nothing to pick on the 1st, and stepping back a month could cross the season boundary the
-date decides the season from.
+A test that dates a match in the past (`createMatch(page, { past: true })`, `pickDaysAgo`) carries
+`test.skip(noEarlierDayThisSeason(), …)`. The season is chosen from the date, so on 1 July "yesterday"
+is last season and the match would drop out of the list the test is about to read. That is the one
+day a year it skips; it used to be the 1st of every month.
 
 ### The one thing to know before writing a test here
 
@@ -168,32 +186,37 @@ Two obvious readiness signals are both wrong, measured on `/settings`:
 | --- | --- |
 | `domcontentloaded`, `window.Blazor` is already true | 0 of 12 buttons |
 | the circuit's first WebSocket frame | still 0 — that frame is the handshake |
-| a `_bl_*` attribute is present | 15, about 230ms in |
 
-Blazor's renderer writes `_bl_<guid>` onto every element it wires an event to, so that attribute is
-the signal. `goto()` waits for it, and `waitForHandlers()` waits for one specific element. This is
-why there is not a single fixed sleep in the directory, and adding one is how the suite starts
-failing on a slow machine.
+**The signal is a marker the app renders for the tests.** `InteractiveShell`, which every interactive
+page opens with, carries `<span hidden data-circuit="…">`: `pending` in the prerender, `live` from
+`RendererInfo.IsInteractive` in the circuit's first render — and a render arrives with every handler
+in it attached. `goto()` waits until no marker reads `pending`, so a page with no circuit at all
+(`/stats`, `/games/{id}/overview`, `/login`) is ready once it has loaded, and an interactive one once
+its circuit has drawn. It then waits for the web fonts, so nothing is measured in the fallback.
+`settle()` is the same wait for a page reached some other way — signing in through the form lands on
+the interactive start page, and navigating away mid-handshake logs "Failed to complete negotiation",
+which the console-error check fails. Both hold after a full load only: after an in-app navigation the
+previous page's `live` marker stays in the DOM until the new markup lands.
 
-**What it does not see, and the second helper that exists because of it.** Blazor writes that
-attribute for handlers it registers on the element itself, which in practice means MudBlazor's own
-controls — a plain `<button @onclick>` or a `<div @onclick>` of ours never gets one, measured on
-`/games`. So the signal really means *MudBlazor has rendered an interactive control*, and a page
-that renders none for the current visitor satisfies it never. That used to be impossible, because
-the chrome carried a `MudIconButton` on every page; the chrome renders statically since the
-render-mode split, so it is the page's own controls or nothing. Two kinds of page now have none: one
-with no circuit at all (`/stats`, `/players/{id}/stats`, `/games/{id}/overview`), and an interactive
-one whose every control sits behind `AuthorizeView` with the visitor signed out (`/players`,
-`/games`). Those call sites use **`gotoRendered`**, which waits for the page to stop fetching rather
-than for a handler — past the point where a circuit would have negotiated, which is also what keeps
-it from aborting a handshake on the way out. It is not a way to make a flaky click pass: on a page
-that does bind handlers, waiting for them is the whole point.
+That replaced Blazor's own `_bl_<guid>` attributes, which turned out to be written only for handlers
+on MudBlazor's controls: a page that drew none for the visitor (`/players` and `/games` signed out)
+never showed one, so it needed a second helper, `gotoRendered`, that waited for the network to go
+quiet instead — at least half a second on each of about 115 navigations. One `goto` now covers every
+page. There is no `gotoRendered` or `waitForHandlers` any more, and nothing should bring them back.
+
+**The marker fails open.** An interactive page without its `<InteractiveShell />` has no marker, so
+`goto` takes its inert prerender as ready and the clicks race the circuit again — intermittently, with
+nothing timing out to say why. A `goto` that *does* time out means a marker never left `pending`: the
+circuit never drew, as in the published-app trap in `docs/known_issues/general.md`.
+
+There is not a single fixed sleep in the directory, and adding one is how the suite starts failing
+on a slow machine.
 
 `rendermode.spec.js` is where the render-mode split is pinned — that `/stats`, the player pages and
 the match report open no WebSocket at all, and that `/games` still does, so the probe cannot rot
 into passing on a listener that stopped working.
 
-The same rule now holds in `scripts/`, where `blazor.mjs` carries `goto`, `clickFor`,
+The same rule holds in `scripts/`, where `blazor.mjs` carries `goto`, `clickFor`,
 `waitForStableBox` and `waitUntil` for the visual harness. That harness was written before any of
 this was understood and was built on fourteen fixed sleeps; replacing them with waits on the thing
 itself took a local run from **123s to 67s** and made it steadier rather than less safe — verified
@@ -222,7 +245,22 @@ and a visitor one that carries the language cookie and nothing else, so an anony
 also a Dutch test.
 
 Specs share one app and one database and run in a single worker, so they stay out of each other's
-way by naming what they create after themselves rather than by counting rows.
+way by naming what they create after themselves rather than by counting rows. A CI shard is a second
+app and database, never a second worker on the same one.
+
+**A second browser comes from a fixture, never from `browser.newContext()`.** `visitor` is a
+signed-out English page and `openPage(options)` any other — a parent watching, a phone. Both are held
+to the same console-error check as `page` and closed when the test ends, pass or fail. A context
+opened by hand skips that check, so its "nothing is shown here" assertions pass just as well on a page
+that failed to render; twenty of them did.
+
+**Build the common states with the helpers in `helpers.js`**, not inline — `playedMatch`, for one, is
+a match run through both halves with a goal against and left on its result page. The same click
+sequences used to be pasted five to seven times over, and fixing a step meant finding every copy.
+
+**Tests that read different things off the same state share it.** The visitor's view of a finished
+match is one test asserting every admin-only part is missing, not five that each play a match first;
+the result corrections run as a `test.describe.serial` group on one played match.
 
 Runs on every pull request as a required check — see "Is it stable enough for CI?" above.
 

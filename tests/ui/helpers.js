@@ -11,67 +11,22 @@
 // how the suite starts failing on a slow machine.
 import { expect } from '@playwright/test';
 
-// Blazor's client renderer writes a `_bl_<guid>` attribute onto every element it has wired an event
-// handler to. Nothing else in the DOM distinguishes a hydrated page from its prerender, and the two
-// obvious candidates are both wrong — measured on /settings in this app:
-//
-//   domcontentloaded   window.Blazor is already true, 0 of 12 buttons have handlers
-//   first circuit frame   still 0 of 12 — that frame is the handshake, not a render
-//   _bl_ attributes present   15 handlers bound, ~230ms in
-//
-// So `window.Blazor` says the script loaded, not that anything works. Waiting on it is why the
-// seeded-password step filled three inputs the server never heard about and then submitted the
-// form it was prerendered with.
-//
-// **What it does not see.** Blazor writes that attribute for handlers it has to register on the
-// element itself, which in practice means MudBlazor's own controls — a plain `<button @onclick>`
-// or a `<div @onclick>` of ours never gets one, measured on /games. So this is really "MudBlazor
-// has rendered an interactive control", and a page that renders none for the current visitor
-// satisfies it never. That used to be impossible, because the chrome carried a MudIconButton on
-// every page; the chrome renders statically now, so it is the page's own controls or nothing —
-// and for an anonymous visitor several pages have none. Those call sites use gotoRendered.
-const HANDLERS_BOUND = () => [...document.querySelectorAll('button,a,input')]
-  .some(el => el.getAttributeNames().some(name => name.startsWith('_bl_')));
+// InteractiveShell's marker reads "pending" in the prerender and "live" once the circuit's first render, handlers and all, has landed.
+// An interactive page without the shell has no marker, so its inert prerender would pass as ready.
+const READY = () => !document.querySelector('[data-circuit="pending"]');
 
-/** Navigates, and waits for the page to be *interactive* rather than merely painted. */
+/** Waits for a page reached by a full load — goto, a form post, a redirect — to be interactive rather than merely painted. */
+export async function settle(page) {
+  await page.waitForLoadState('load');
+  await page.waitForFunction(READY, null, { timeout: 30_000 });
+  // A layout measured straight after the load would otherwise be measured in the fallback font.
+  await page.evaluate(() => document.fonts.ready.then(() => true));
+}
+
+/** Navigates, and waits for the page to be interactive. A page with no circuit is ready once loaded. */
 export async function goto(page, path) {
-  await page.goto(path, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(HANDLERS_BOUND, null, { timeout: 30_000 });
-}
-
-/**
- * Navigates and waits for the markup only, for a page with no handler to wait for.
- *
- * Two kinds of page qualify, and neither is broken:
- *   - a page rendered without a circuit at all;
- *   - a page that *is* interactive but whose only handlers are splatted onto MudBlazor components
- *     (`@onclick` on a MudPaper, `OnRowClick` on a MudTable). Those work — the click navigates —
- *     but Blazor stamps `_bl_` only on handlers declared on an HTML element, so `goto` would wait
- *     thirty seconds for a signal that is never coming.
- *
- * Do not reach for this to make a flaky click pass: on a page that does bind handlers, waiting for
- * them is the whole point, and skipping the wait puts the click back in the prerender window.
- */
-export async function gotoRendered(page, path) {
-  await page.goto(path, { waitUntil: 'domcontentloaded' });
-  // Until the page stops fetching, not merely until it paints. A page that does open a circuit
-  // starts negotiating during this window, and navigating away mid-handshake aborts it — which
-  // surfaces as a "Failed to complete negotiation" console error and fails the run. WebSockets do
-  // not count towards networkidle, so an established circuit does not hold this open.
-  await page.waitForLoadState('networkidle');
-}
-
-/**
- * Waits for one element to have its handlers attached.
- *
- * Only needed for the first render of a page — anything the circuit draws afterwards (a dialog, a
- * popover) arrives with its handlers in the same batch, so its existence is proof enough.
- */
-export async function waitForHandlers(locator) {
-  await expect.poll(
-    () => locator.evaluate(el => el.getAttributeNames().some(name => name.startsWith('_bl_'))),
-    { timeout: 30_000 },
-  ).toBe(true);
+  await page.goto(path);
+  await settle(page);
 }
 
 /**
@@ -150,21 +105,6 @@ export async function pickPlayer(page, scope, name = '') {
   await clickFor(button, () => expect(page.locator('.mud-dialog')).toHaveCount(0), { settle: 10_000 });
 }
 
-/**
- * Logs a goal through the live goal dialog: the scorer, then the assister — or "No assist" when
- * `assist` is left empty. Both names match the start of the full name, as in pickPlayer.
- */
-export async function scoreGoal(page, scope, scorer = '', assist = '') {
-  const noAssist = scope.getByRole('button', { name: 'No assist' });
-  const button = scope.locator(scorer ? `.player-pick[title^="${scorer}"]` : '.player-pick').first();
-  await clickFor(button, () => expect(noAssist).toBeVisible(), { settle: 10_000 });
-  if (assist) {
-    await pickPlayer(page, scope, assist);
-    return;
-  }
-  await clickFor(noAssist, () => expect(page.locator('.mud-dialog')).toHaveCount(0), { settle: 10_000 });
-}
-
 /** Answers the app's ConfirmDialog. `action` is the confirming button's label. */
 export async function confirmDialog(page, action) {
   await submitDialog(page, action);
@@ -211,75 +151,80 @@ export async function playerMenuItem(page, name, item) {
 }
 
 /**
- * Creates a match through GameDialog and returns the day-of-month it was filed under. Find it by
- * opponent, which is what the list is keyed on visually. Only the opponent is required; the rest of
- * the form is already filled in from the season's preferences, which is the point of those defaults.
+ * Creates a match through GameDialog and returns the date it was filed under, or null when that is
+ * the dialog's own default. Find it by opponent, which is what the list is keyed on visually. Only
+ * the opponent is required; the rest of the form is already filled in from the season's preferences,
+ * which is the point of those defaults.
  *
- * `past: true` moves the date back through the picker, which is what a match with a result needs —
+ * `past: true` dates it yesterday through the picker, which is what a match with a result needs —
  * the dialog defaults to the *next* match day, and the result page refuses a score on a fixture
- * still to be played. Callers using it need `test.skip(new Date().getDate() === 1, …)`; see
- * pickEarlierThisMonth. `past` also takes a day count (e.g. `2`) for a caller that needs two past
- * matches on two distinct dates, ordered against each other.
+ * still to be played. Callers using it need `test.skip(noEarlierDayThisSeason(), …)`. `past` also
+ * takes a day count (e.g. `2`) for a caller that needs two past matches on two distinct dates.
  */
-export async function createMatch(page, { opponent, venue, matchType, split, past } = {}) {
+export async function createMatch(page, { opponent, venue, matchType, format, split, past } = {}) {
   await goto(page, '/games');
   const panel = page.locator('.mud-dialog');
-  await clickFor(page.getByRole('button', { name: 'Add' }).first(), () => expect(panel).toBeVisible());
+  // Exact, as authorization.spec.js asserts its absence for a visitor: this click is what proves an admin has it.
+  await clickFor(page.getByRole('button', { name: 'Add', exact: true }).first(), () => expect(panel).toBeVisible());
 
   await fillField(panel, 'Opponent', opponent);
+  if (format) await chooseOption(page, panel, 'Match Format', format);
   if (venue) await chooseOption(page, panel, 'Venue', venue);
   if (matchType) await chooseOption(page, panel, 'Match Type', matchType);
   // "Quarters" is the split that gives a half two line-ups, and so the only one whose live screen
   // has changes to list partway through a half.
   if (split) await chooseOption(page, panel, 'Game Split', split);
-  const day = past ? await pickEarlierThisMonth(page, panel, past === true ? 1 : past) : null;
+  const date = past ? await pickDaysAgo(page, panel, past === true ? 1 : past) : null;
   await submitDialog(page);
 
   await expect(gameRow(page, opponent)).toBeVisible();
-  return day;
+  return date;
 }
 
+function daysBefore(days) {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() - days);
+  return date;
+}
+
+/** Whether `daysAgo` days back is last season, where a record dated by the date picker drops out of this season's lists. */
+export const noEarlierDayThisSeason = (daysAgo = 1) =>
+  daysBefore(daysAgo) < new Date(currentSeasonStartYear(), 6, 1);
+
 /**
- * Moves the open match dialog's date to a day earlier in the current month, through the picker
- * rather than by typing — the field's format follows the culture, and the picker is what a coach
- * uses anyway.
- *
- * Staying inside the current month is deliberate: the season is chosen from the date ("Auto (by
- * date)"), so a jump to a previous month could file the match under last season and take it out of
- * the list the test is about to look at.
+ * Moves the open dialog's date `daysAgo` days back, through the picker rather than by typing — the
+ * field's format follows the culture, and the picker is what a coach uses anyway. Returns the date.
  */
-export async function pickEarlierThisMonth(page, scope, daysAgo = 1, { allowUnchanged = false } = {}) {
+export async function pickDaysAgo(page, scope, daysAgo = 1, { allowUnchanged = false } = {}) {
   const popover = page.locator('.mud-picker-popover.mud-popover-open');
   const field = scope.getByLabel('Date', { exact: false }).first();
   const before = await field.inputValue();
   await clickFor(scope.locator('.mud-input-adornment button').first(), () => expect(popover).toBeVisible());
 
-  // The picker opens on the match's current date, which is the *next* match day and can be in a
-  // later month — so walk back to this one first. Without this the helper picks day N of whatever
-  // month it happened to open on, which is how a "match already played" ended up in the future
-  // while every assertion about it still passed.
+  // The picker opens on the field's current date, which is the *next* match day and can be in
+  // another month — so walk to the target's month first.
   // The header *slides* rather than swapping its text — the element is a
   // .mud-picker-slide-transition — so for a moment after a click it still reads the month just
   // left. Reading again straight away spends a second click on a month already stepped past, which
   // is how this walked to July while asking for August. Each step therefore waits for the text to
   // actually change before the next one reads it, and picks its direction from that settled value
   // so an overshoot walks back rather than spiralling away from the target.
+  const target = daysBefore(daysAgo);
   const header = popover.locator('.mud-picker-calendar-header-transition');
-  const thisMonth = new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' });
+  const targetMonth = target.toLocaleString('en-US', { month: 'long', year: 'numeric' });
   for (let step = 0; step < 24; step++) {
     const shown = (await header.innerText()).trim();
-    if (shown.toLowerCase() === thisMonth.toLowerCase()) break;
-    const goBack = new Date(`1 ${shown}`) > new Date(`1 ${thisMonth}`);
+    if (shown.toLowerCase() === targetMonth.toLowerCase()) break;
+    const goBack = new Date(`1 ${shown}`) > new Date(`1 ${targetMonth}`);
     await popover.getByLabel(goBack ? /^Previous month/ : /^Next month/).click();
     await expect(header).not.toHaveText(shown, { timeout: 5_000 });
   }
-  await expect(header).toHaveText(thisMonth, { ignoreCase: true });
+  await expect(header).toHaveText(targetMonth, { ignoreCase: true });
 
-  const today = new Date().getDate();
-  const day = today > daysAgo ? today - daysAgo : 1;
   // Days spilling in from the neighbouring months carry .mud-hidden and are not clickable.
   await popover.locator('.mud-picker-calendar .mud-day:not(.mud-hidden)')
-    .filter({ hasText: new RegExp(`^${day}$`) }).first().click();
+    .filter({ hasText: new RegExp(`^${target.getDate()}$`) }).first().click();
   await expect(popover).toBeHidden();
 
   // Prove the pick landed in the field before anything is submitted — a picker that silently kept
@@ -293,7 +238,7 @@ export async function pickEarlierThisMonth(page, scope, daysAgo = 1, { allowUnch
   // did not land in the past moves no attendance figure.
   if (!allowUnchanged) await expect(field).not.toHaveValue(before);
 
-  return day;
+  return target;
 }
 
 /** The card for one match in the games list. */
@@ -317,6 +262,13 @@ export async function gameAction(page, opponent, name) {
   }
   await row.locator('.game-more button').click();
   await page.locator('.mud-popover-open .mud-menu-item', { hasText: name }).first().click();
+}
+
+/** Opens a match's report from its card and returns the match's id, which the card itself does not carry. */
+export async function openOverview(page, opponent) {
+  await gameAction(page, opponent, 'Overview');
+  await page.waitForURL(/\/games\/\d+\/overview/);
+  return Number(page.url().match(/\/games\/(\d+)\//)[1]);
 }
 
 /**
@@ -427,6 +379,21 @@ export async function startMatch(page) {
   );
 }
 
+/** Blows for half time; the controls then offer the second half. */
+export async function halfTime(page) {
+  const controls = page.locator('.live-controls');
+  await clickFor(
+    controls.getByRole('button', { name: 'Half time' }),
+    () => expect(controls.getByRole('button', { name: 'Start 2nd Half' })).toBeVisible(),
+  );
+}
+
+/** Kicks off the second half, after which it is no longer on offer. */
+export async function startSecondHalf(page) {
+  const start = page.locator('.live-controls').getByRole('button', { name: 'Start 2nd Half' });
+  await clickFor(start, () => expect(start).toHaveCount(0));
+}
+
 /**
  * Blows the final whistle. The confirming button carries the same words as the one that opened it,
  * so the first click is scoped to the control panel or the locator matches both.
@@ -448,6 +415,55 @@ export async function liveMatch(page, opponent, { placed = 2, ...options } = {})
   await goto(page, `/games/${id}/live`);
   await startMatch(page);
   return id;
+}
+
+/** A match played through both halves with one opponent goal in the first, whistled off and left on its result page. */
+export async function playedMatch(page, opponent) {
+  const id = await liveMatch(page, opponent);
+  await clickFor(
+    page.getByRole('button', { name: 'Goal against' }),
+    () => expect(page.locator('.live-event')).toHaveCount(1),
+  );
+  await halfTime(page);
+  await startSecondHalf(page);
+  await finishMatch(page);
+
+  await goto(page, `/games/${id}/result`);
+  return id;
+}
+
+/** Logs a goal of ours from the live screen, unassisted. `scorer` matches the start of the full name, as in pickPlayer. */
+export async function logGoal(page, scorer = '') {
+  await clickFor(
+    page.getByRole('button', { name: 'Goal', exact: true }),
+    () => expect(page.locator('.mud-dialog')).toBeVisible(),
+  );
+  const panel = await openDialog(page);
+  const noAssist = panel.getByRole('button', { name: 'No assist' });
+  const pick = panel.locator(scorer ? `.player-pick[title^="${scorer}"]` : '.player-pick').first();
+  await clickFor(pick, () => expect(noAssist).toBeVisible(), { settle: 10_000 });
+  await clickFor(noAssist, () => expect(page.locator('.mud-dialog')).toHaveCount(0), { settle: 10_000 });
+}
+
+/** Taps the first player on the live pitch and returns the dialog that opens for her. */
+export async function tapOnPitch(page) {
+  await clickFor(
+    page.locator('.live-lineup .pitch-player').first(),
+    () => expect(page.locator('.mud-dialog')).toBeVisible(),
+  );
+  return openDialog(page);
+}
+
+/** Takes the first player on the live pitch off for whoever the dialog offers first. */
+export async function substitute(page) {
+  await pickPlayer(page, await tapOnPitch(page));
+}
+
+/** Takes the first player on the live pitch off injured, with nobody coming on for her. */
+export async function offInjured(page) {
+  const panel = await tapOnPitch(page);
+  await panel.locator('label.mud-switch', { hasText: 'Injured' }).click();
+  await submitDialog(page, 'Off injured');
 }
 
 /**

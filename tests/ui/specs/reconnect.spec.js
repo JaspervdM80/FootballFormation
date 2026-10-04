@@ -45,27 +45,19 @@ test('a dropped circuit is retried every second, not every five', async ({ page 
   await dropConnection(page);
   await expect(page.locator(MODAL)).toBeVisible();
 
-  // Wait for an outcome rather than a duration: the eleventh attempt is the first one Blazor's
-  // default schedule puts a wait in front of, so reaching it is what makes the assertion below
-  // mean something. Under that default it arrives within milliseconds — ten attempts fired
-  // back-to-back with no delay at all — and announces a five-second wait as it does.
-  await expect
-    .poll(async () => (await recorded(page)).some(e => e.currentAttempt >= 11 || e.secondsToNextAttempt > 1),
-      { timeout: 30_000 })
-    .toBe(true);
+  const waits = async () => (await recorded(page))
+    .filter(e => e.state === 'retrying' && e.secondsToNextAttempt > 0)
+    .map(e => e.secondsToNextAttempt);
+
+  // Three announced waits, not a duration: Blazor's default fires ten attempts back-to-back, then counts a five-second wait down
+  // as 5, 4, 3. A reload empties the record, which is why the length is checked again before every() — of nothing, it is true.
+  await expect.poll(async () => (await waits()).length, { timeout: 30_000 }).toBeGreaterThanOrEqual(3);
+  const announced = await waits();
+  expect(announced.length, 'the recorded events went missing — did the page reload?').toBeGreaterThanOrEqual(3);
+  expect(announced.every(seconds => seconds === 1), `waits between attempts, in seconds: ${announced}`).toBe(true);
 
   await page.unroute(NEGOTIATE);
   await expect(page.locator(MODAL)).toBeHidden({ timeout: 20_000 });
-
-  const waits = (await recorded(page))
-    .filter(e => e.state === 'retrying')
-    .map(e => e.secondsToNextAttempt);
-
-  // Before reading the waits, prove there are some. A reload — pwa.js's, or Blazor's own on a
-  // rejected circuit — takes `window.__reconnectEvents` with it, and `Math.max()` of nothing is
-  // -Infinity, which would sail through the assertion below with nothing measured at all.
-  expect(waits.length, 'no reconnect attempts were recorded — did the page reload?').toBeGreaterThan(0);
-  expect(Math.max(...waits), `waits between attempts, in seconds: ${waits}`).toBeLessThanOrEqual(1);
 });
 
 test('the page is live again after a rejoin, not merely repainted', async ({ page }) => {

@@ -18,7 +18,7 @@ import { chromium, expect } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { ADMIN_STATE, BASE_URL, CHROMIUM_PATH, VISITOR_STATE } from './playwright.config.js';
-import { addPlayer, createMatch, goto, waitForHandlers } from './helpers.js';
+import { addPlayer, createMatch, goto } from './helpers.js';
 
 const SEED_PASSWORD = 'admin';
 
@@ -80,9 +80,6 @@ async function clearSeededPassword(page) {
   if (!(await notice.isVisible().catch(() => false))) return;
 
   const fields = page.locator('input[type="password"]');
-  // These three are on the first render of the page, so they are the one case that has to prove the
-  // handlers are attached before typing — see waitForHandlers.
-  await waitForHandlers(fields.first());
   await fields.nth(0).fill(SEED_PASSWORD);
   await fields.nth(1).fill(NEW_PASSWORD);
   await fields.nth(2).fill(NEW_PASSWORD);

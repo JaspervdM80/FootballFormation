@@ -10,7 +10,7 @@
 // it drops is in the drawer. Neither is visible from a unit test, and another section would
 // otherwise break both again with every check green.
 import { test, expect } from '../fixtures.js';
-import { clickFor, gotoRendered } from '../helpers.js';
+import { clickFor, goto } from '../helpers.js';
 
 // Signed in as an admin, which is the case that overflowed: every section rather than three, plus
 // the account name and the sign-out button. The two shapes the issue named, and one with room.
@@ -23,7 +23,7 @@ const SHAPES = [
 for (const [shape, width, height] of SHAPES) {
   test(`the season picker and sign out stay on the bar on ${shape}`, async ({ page }) => {
     await page.setViewportSize({ width, height });
-    await gotoRendered(page, '/players');
+    await goto(page, '/players');
 
     // In the viewport, not merely in the DOM — being in the DOM is exactly what the clipped ones were.
     await expect(page.locator('.mud-appbar .season-picker')).toBeInViewport();
@@ -41,7 +41,7 @@ for (const [shape, width, height] of SHAPES) {
 test('a section the bar has no room for is in the drawer rather than nowhere', async ({ page }) => {
   // 844x390 leaves room for one nav link, so the rest are the drop this is about.
   await page.setViewportSize({ width: 844, height: 390 });
-  await gotoRendered(page, '/players');
+  await goto(page, '/players');
 
   const { shown, all } = await page.evaluate(() => {
     const nav = document.querySelector('.topbar-nav');
@@ -75,7 +75,7 @@ test('a section the bar has no room for is in the drawer rather than nowhere', a
 // showed, which is why this sets a width: the mobile project's Pixel 7 is 412 and never reproduced it.
 test('a user card keeps the name, the "You" badge and the role in their own columns', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
-  await gotoRendered(page, '/users');
+  await goto(page, '/users');
 
   const row = page.locator('.users-table .mud-table-body .mud-table-row').first();
   await expect(row).toBeVisible();

@@ -83,9 +83,13 @@ test.describe.serial('the formation builder on a phone', () => {
     await expect(page.locator('.playtime-table')).toBeVisible();
     // MudBlazor hides the header row at this width and offers a "Sort by" select in its place. That
     // select is the phone's only sort control, so no sorting means it is not on screen — it is still
-    // in the DOM, because the rule that takes it away is a `display: none` in app.css.
-    await expect(page.locator('.playtime-table .mud-table-smalldevices-sortselect')).toBeHidden();
-    await expect(page.locator('.playtime-table .mud-table-head .mud-table-row')).toBeHidden();
+    // in the DOM, because the rule that takes it away is a `display: none` in app.css. Attached first,
+    // because a hidden check on a class MudBlazor renamed would pass on nothing.
+    for (const hidden of ['.mud-table-smalldevices-sortselect', '.mud-table-head .mud-table-row']) {
+      const control = page.locator(`.playtime-table ${hidden}`);
+      await expect(control.first()).toBeAttached();
+      await expect(control).toBeHidden();
+    }
   });
 
   test('the bench offers its drop zone only while empty, and still takes a drop on a sub', async ({ page }) => {

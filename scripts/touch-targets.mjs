@@ -30,7 +30,7 @@
 // catches the button, and the report below prints the measured gap above every target so the
 // numbers those doc entries argue from stay in front of whoever reads the artifact next.
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { clickFor, goto, gotoRendered, waitForStableBox, waitUntil } from './blazor.mjs';
+import { clickFor, goto, waitForStableBox, waitUntil } from './blazor.mjs';
 
 export const MIN_TARGET = 44;
 
@@ -365,7 +365,7 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     page.on('console', m => { if (m.type() === 'error') onError(`[console ${viewport.name}] ${m.text()}`); });
     page.on('pageerror', e => onError(`[pageerror ${viewport.name}] ${e.message}`));
 
-    await gotoRendered(page, `${base}/dev/login`);
+    await goto(page, `${base}/dev/login`);
     await goto(page, `${base}/games`);
 
     let scenes = 0;
@@ -484,12 +484,7 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     // The home page, which had no scene here at all until the notification opt-in put a button on it —
     // and a button whose sizing came from a scoped stylesheet that never reached it, which is exactly
     // what this harness exists to catch and could not, because nothing measured this page.
-    //
-    // gotoRendered, as visual-check.mjs already marks this page: every tile is a plain anchor and the
-    // opt-in carries no handler of ours, so there is no `_bl_` for goto to wait on. The one that does
-    // appear is MudBlazor's own, inside a button that is only drawn where push works at all — which
-    // made `goto` pass on a developer's Chromium and time out on CI's headless shell.
-    await gotoRendered(page, `${base}/`);
+    await goto(page, `${base}/`);
 
     // Best-effort, and deliberately not a required target. The row is drawn only after the circuit has
     // asked push.js, and on GitHub's runners it does not appear at all — reproducibly there, while
