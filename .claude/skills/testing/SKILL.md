@@ -30,6 +30,28 @@ description: Writing or changing an xUnit test in tests/FootballFormation.Core.T
 Pure domain logic on a model or in `Core/Reporting` needs no fixture — those are pure functions.
 Anything touching the database inherits `ServiceTestBase`: `Db` arranges and asserts, and `Read()`
 gives a fresh context for reading back what a service wrote without tracking interference.
+`LiveMatchTestBase` adds a match in progress on top.
+
+## Teams and admins in a test
+
+Every context the fixture hands out is **team-scoped**, exactly as in the app, and follows
+`CurrentTeam` live. The seed helpers put a default team in scope on first use; `SeedTeam("Club B",
+"MO17-1")` seeds and switches to another. To arrange or assert across teams, read past the filter
+with `IgnoreQueryFilters()` — a plain `Read()` sees only the team in scope.
+
+`FakeCurrentUser` is an admin **and** application admin of every team unless a test says otherwise,
+so tests about something else read as though authorization were not there. Set `IsAdmin = false`,
+`IsApplicationAdmin = false` or `AdminTeamId` to test a refusal. Write guards are pinned in
+`AuthorizationTests`; that every read stays within its team, in `TeamDataScopingTests`.
+
+## Tests that read the repository
+
+`WriteGuardTests`, `TeamScopeModelTests`, `InstructionReferenceTests` and `UiHarnessRulesTests` judge
+the source, the EF model or the instructions rather than run behaviour, and each asserts an absence —
+so each is only as good as its scan. One of these comes in three parts: the rule; **a presence twin**
+showing the scan found what it judges (a count floor, or a known case it must see), because a scan
+that matches nothing passes every rule; and, where it has an exemption list, **a stale-exemption
+test**, each entry carrying its reason. Plant a violation before trusting a new one.
 
 **There are no component tests and no bUnit, by design.** A Razor component is never rendered in
 isolation. Do not ask for one — the UI is covered by `tests/ui` and `scripts/visual-check.sh`.

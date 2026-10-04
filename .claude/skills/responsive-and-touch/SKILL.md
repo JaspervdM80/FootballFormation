@@ -16,7 +16,9 @@ description: Anything that a thumb touches or that changes at a breakpoint — t
 
 **Always `599.98`, never `599` or `600`.** `600` fires *at* the boundary MudBlazor is switching on;
 `599` leaves a fractional gap reachable by browser zoom where half the page has restacked and half has
-not. Both have been real bugs here.
+not. Both have been real bugs here. The one `max-width: 600px` in `app.css` tracks a MudBlazor
+*reveal* query rather than the stacking one, and says so beside it. A `min-width` complement is the
+next hundredth up — `(min-width: 700.02px)` against `(max-width: 700px)`.
 
 ## Do not add a section to the app bar and expect a number to keep up
 
@@ -61,10 +63,15 @@ The `pointer: coarse` blocks grow tap targets on a touch screen; `@media (hover:
 hover states so they do not stick after a tap. **Keep both halves** — every plain `<button>` in this
 app has needed them.
 
+**Two quick taps are two taps.** `app.css` gives every button, link and input
+`touch-action: manipulation` through a zero-specificity `:where()`, so a double tap on a stepper is
+not eaten as a zoom while pinch zoom still works. Do not raise its specificity — the `[draggable]`
+rules below have to win over it.
+
 ## Dialogs on a phone (`.dialog-sheet`)
 
 Every dialog goes through `DialogPrompts` with `UiFeedback.LockedDialog` (no backdrop-click close). A
-**long form** additionally carries `Class="dialog-sheet"` — currently only `GameDialog`.
+**long form** additionally carries `Class="dialog-sheet"` — `GameDialog` and `TrainingDialog`.
 
 Below 600px it becomes a full-screen sheet: full width, `overflow: hidden` on the dialog so
 `.mud-dialog-content` is the **one** scroller (a tap during momentum scrolling cannot resolve against

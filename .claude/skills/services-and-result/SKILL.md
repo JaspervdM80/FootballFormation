@@ -1,6 +1,6 @@
 ---
 name: services-and-result
-description: Writing or changing a service in Core/Services — the Result type, ServiceOperation.RunAsync/RunAdminAsync, the admin write guard, cancellation, and how a page consumes a Result. Use when adding a service method, handling a failure message, or wiring a call site that reads Result.Value.
+description: Writing or changing a service in Core/Services or Core/Security — the Result type, ServiceOperation.RunAsync/RunAdminAsync/RunApplicationAdminAsync, the per-team admin guard and its deliberate exceptions, cancellation, registration, and how a page consumes a Result. Use when adding a service method, handling a failure message, or wiring a call site that reads Result.Value.
 ---
 
 # Services and Result
@@ -41,9 +41,23 @@ Every mutation goes through `RunAdminAsync`. `<AuthorizeView Roles="@AppRoles.Ad
 in the render tree only and stops holding the moment a service is reached another way. Reads stay
 open — squad, fixtures and statistics are public.
 
-The one exception: `GameService.GetCommentsAsync(gameId, includePrivate)` re-confirms its own flag
-against `ICurrentUser` rather than trusting the caller. A read with something to hide is not where a
-boolean argument gets believed.
+**Admin means admin of the team in scope.** `ICurrentUser.IsAdminAsync()` asks about `ICurrentTeam`
+(the `ff.team` cookie — a view choice anyone can make, never authority), and
+`TeamAuthority.GrantsAdminOf` is the whole rule. Where a write's subject is another team than the one
+in scope, ask about that team: `IsAdminOfAsync(teamId)`, which `UserService` uses for an account on
+another team. **`RunApplicationAdminAsync`** is the rung above, for `TeamService`'s writes; the
+`ApplicationAdmin` role itself, granted *or* revoked, is checked by `UserService.MayChangeAsync`
+asking `IsApplicationAdminAsync()`, because an ordinary admin passes the `RunAdminAsync` around it.
+
+The exceptions, each deliberate:
+
+- **Reads with something to hide are guarded at the service.** `GameService.GetCommentsAsync`
+  re-confirms its `includePrivate` flag against `ICurrentUser` — a boolean argument is not believed.
+  `TrainingService.GetAllAsync` runs under `RunAdminAsync`: the training register is not public, and
+  `StatsService`'s attendance reads lean on it as their guard, which is why they are not cached.
+- **`PushSubscriptionService` is the one anonymous write.** Nobody signs in to follow a match, so it
+  uses `RunAsync`, validates every field itself and sits behind the `"push"` rate limiter. It is not
+  a precedent for a second one.
 
 `ICurrentUser` answers false for an account still on its seeded password, so the first-login gate is a
 real restriction rather than a navigable redirect.
@@ -94,13 +108,19 @@ being queryable in the log files.
 ## No interfaces for services
 
 Services are injected as concrete types. Do not add `IPlayerService` unless a second implementation
-exists. `ICurrentUser` is the deliberate exception — it is the seam the write guard needs.
+exists. `ICurrentUser` and `ICurrentTeam` are the deliberate exceptions — the seams the write guard
+and the team scope need, supplied by the host from its own request.
+
+A new service is registered in `CoreServiceRegistration.AddFootballFormationCore`, not `Program.cs`;
+`CoreServiceRegistrationTests` resolves every one with the host's lifetimes. Anything shared across
+circuits (`LiveMatchNotifier`, `StatsCache`) is a singleton and must not take a scoped service.
 
 ## When a service gets long, split by use case, not into layers
 
 The live match is the worked example: one 514-line service became four, cut along what happens at the
 touchline (the clock, the goals, the substitutions), never into a data-access layer. Pure helpers over
-an entity move **onto the entity**; shared setup gets **named once** (`LiveMatchQueries`); anything
+an entity move **onto the entity**; shared setup gets **named once** (`LiveMatchQueries`,
+`ScopeQueries`); anything
 every method had to remember becomes **part of the operation shape** (`LiveMatchOperation.RunAdminAsync`
 makes the notify call itself). A page injecting all four is expected. A *facade* over them is the
 signal the split was cut along the wrong line.

@@ -109,13 +109,17 @@ the club pool and a girl who moves between the club's teams must keep one histor
 those from `ICurrentTeam` before handing a context over. So a query that forgets to mention the team
 still returns only the team in scope, and one that somehow escapes the factory (a null stamp) returns
 *nothing* rather than another team's rows. The raw factory that makes an unstamped context is taken
-by exactly two things: `CurrentTeam`, which must resolve the team without asking a context which team
-it is, and `SeasonService`'s boot loops, which stamp each team by hand to walk them all.
+only where there is no team in scope to ask: `CurrentTeam`, which must resolve the team without
+asking a context which team it is; `SeasonService`'s boot loops, which stamp each team by hand to walk
+them all; and `MatchAudienceQuery` and `MatchCalendarQuery`, which stamp the team they were given
+(below).
 
-**The one trap the filter does not cover is `FindAsync`, which bypasses global query filters.** A
-`db.Games.FindAsync(id)` returns another team's game; the scoped services use
-`FirstOrDefaultAsync(x => x.Id == id)` on the filtered set instead, and a write reaching a game's
-child by the child's own id (a goal, a comment) gates on `AppDbContext.GameInScopeAsync` first.
+**The one gap the filter leaves is the children of a game**, which carry no filter of their own: a
+`db.GameGoals.FindAsync(id)` returns another team's goal. A write reaching a game's child by the
+child's own id (a goal, a comment, an injury) gates on `AppDbContext.GameInScopeAsync` first. A
+`FindAsync` on a filtered root such as `Games` is filtered when it queries the database and skips
+the filter only for an entity the context already tracks; the scoped services use
+`FirstOrDefaultAsync(x => x.Id == id)` on the filtered set anyway.
 `TeamDataScopingTests` is the read-side counterpart to `AuthorizationTests`: it seeds two teams and
 asserts every public read returns only the team in scope, so a forgotten filter fails there.
 

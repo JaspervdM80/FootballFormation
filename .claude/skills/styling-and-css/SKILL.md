@@ -43,7 +43,11 @@ swatch — that is a red Playwright run, not a silent gap, and it is why the tok
 out in `docs/theming.md` any more.
 
 If the page colour changes, the `theme-color` meta in `App.razor` and `theme_color`/`background_color`
-in `manifest.webmanifest` must change with it, or the PWA chrome keeps the old brand.
+in the `/manifest.webmanifest` endpoint (generated in `Web/ServiceExtensions/Routing.cs`, not a file
+under `wwwroot`) must change with it, or the PWA chrome keeps the old brand.
+
+The design-system bundle in `.design-sync/` carries a copy of `theme.css` and of `ClubTheme.Gjs`, so
+a change to either needs re-copying there — `.design-sync/NOTES.md` says how.
 
 `.badge-gold` / `.btn-gold` are historical names from the old amber theme — they are club-primary
 (red) now, left un-renamed to keep diffs small.

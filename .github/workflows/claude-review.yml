@@ -1,0 +1,50 @@
+name: Claude review
+
+# On the `claude-review` label rather than every push, which would be noise and cost; not a required check, because a review
+# informs the merge rather than gating it. Needs the CLAUDE_CODE_OAUTH_TOKEN secret (`claude setup-token`). See docs/deployment.md.
+
+on:
+  pull_request:
+    types: [labeled]
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    name: Claude review
+    if: github.event.label.name == 'claude-review'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Review pull request #${{ github.event.pull_request.number }} with the code-reviewer agent defined in
+            .claude/agents/code-reviewer.md, against origin/main (`git diff origin/main...HEAD`). Report only: change no files.
+            This job does not build or run tests — the Build and test and Coverage checks on this pull request do, so read
+            their results with `gh pr checks` instead of running them, and say so under "What I checked".
+            Post the whole report as a single comment with `gh pr comment ${{ github.event.pull_request.number }} --body-file`.
+          claude_args: >-
+            --allowedTools "Read,Grep,Glob,Task,Write,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(gh pr view:*),Bash(gh pr checks:*),Bash(gh pr diff:*),Bash(gh pr comment:*)"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Take the label off, so adding it again asks for a fresh review
+        if: always()
+        run: gh pr edit ${{ github.event.pull_request.number }} --remove-label claude-review
+        env:
+          GH_TOKEN: ${{ github.token }}

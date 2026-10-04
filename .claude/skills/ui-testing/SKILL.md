@@ -59,6 +59,14 @@ checking that `/games` still opens one.
 **There is not a single fixed sleep in `tests/ui` or `scripts/`. Do not introduce one** — it is how the
 suite starts failing on a slow machine.
 
+`UiHarnessRulesTests` holds the rules here that a reading of the source can: no sleep, a harness wait
+only as the tick of a `while (Date.now() < deadline)` poll, `networkidle` and `newContext` only where
+they are allowed, the removed readiness waits staying removed, one `READY` and one `IGNORED` list across
+both harnesses, every interactive page carrying `InteractiveShell`, and the lockfile and gate-job
+rules below. It runs in **Build and test**, so a broken rule fails in seconds. The rest — a name that
+claims more than it proves, an absence with no presence, a timeout as the expected path — is the
+reviewer's.
+
 ## The helpers, and when each applies
 
 - **`clickFor(locator, expectation)`** clicks, checks for the outcome, and clicks again if it has not
@@ -67,9 +75,10 @@ suite starts failing on a slow machine.
   password that is no longer current. **The expectation must still be false before the click**: one
   that already holds confirms nothing and never retries. `startSecondHalf` once waited for "Half time"
   to go, which it already had at the break; it waits for its own button to go now.
-- **`waitForStableBox`** — MudBlazor scales a dialog and a popover in, so anything measured the moment
-  it becomes visible is measured mid-animation (a full-width sheet reads about 86% of its width). Two
-  identical bounding boxes a frame apart is the exact answer.
+- **`waitForStableBox`** (`scripts/blazor.mjs`, for the touch-target harness) — MudBlazor scales a
+  dialog and a popover in, so anything measured the moment it becomes visible is measured
+  mid-animation (a full-width sheet reads about 86% of its width). Two identical bounding boxes a
+  frame apart is the exact answer. A spec that ever measures geometry should borrow it, not guess.
 - **`openDialog()`** asserts visibility and waits. Prefer it over a manual check.
 - **The states a test starts from have helpers — use them, never an inline copy**: `matchWithId`,
   `liveMatch`, `playedMatch` (both halves, one goal against, on its result page), `halfTime`,
@@ -77,9 +86,9 @@ suite starts failing on a slow machine.
   click sequences were once pasted five to seven times over. A sequence a third spec needs becomes a
   helper; a second copy of an existing one is a review finding.
 
-`scripts/blazor.mjs` carries its own copy of `goto`/`clickFor`/`waitForStableBox`/`waitUntil` for the
-visual harness. The duplication is deliberate — `scripts/` and `tests/ui/` are separate npm packages —
-so change one and look at the other.
+`scripts/blazor.mjs` carries its own copy of `goto`, `clickFor` and `READY` for the visual harness,
+plus `waitForStableBox` and `waitUntil`, which only it needs. The duplication is deliberate —
+`scripts/` and `tests/ui/` are separate npm packages — so change one and look at the other.
 
 ## Keeping it fast
 

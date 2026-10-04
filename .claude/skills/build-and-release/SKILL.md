@@ -17,6 +17,11 @@ cd src/FootballFormation.Web && dotnet run     # http://localhost:5228
 clean can still fail CI. Local Debug stays quick to iterate on; Release is what stops a warning
 landing.
 
+`.claude/hooks/release-gate.sh` holds this for an agent: a `git push` is refused until
+`dotnet build -c Release` passes on the working tree being pushed, untracked files included, and the
+errors come back as the reason. It remembers the tree it built, so pushing the same one again costs
+nothing. With no SDK installed it lets the push through and says nothing was built.
+
 The one exception is **`MSB3568`** (duplicate resource name), promoted via `MSBuildWarningsAsErrors`
 in *every* configuration. `TreatWarningsAsErrors` is a compiler property and does not cover
 `MSB####` codes from the MSBuild engine, so a colliding resx key warned and built green even in
@@ -47,6 +52,11 @@ pull request pending forever rather than mergeable, so "skip CI for docs" would 
 PR. If a job is renamed, the ruleset's `context` must be renamed in the same change.
 
 A flaky browser job is **re-run, not merged past**.
+
+`claude-review.yml` is deliberately **not** a required check: the `claude-review` label runs the
+`code-reviewer` agent on the pull request and posts its report as one comment, then takes the label
+off so adding it again asks for a fresh review. It needs the `CLAUDE_CODE_OAUTH_TOKEN` repository secret,
+and it reads the four checks' results rather than building anything itself.
 
 ## Merging to `main` releases
 

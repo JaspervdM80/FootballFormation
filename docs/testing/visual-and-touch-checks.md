@@ -34,7 +34,24 @@ Two things it has to work around, both of them the app behaving correctly:
   it. The script signs in again afterwards, or it would browse as an anonymous visitor.
 
 It signs in through `/dev/login` — mapped only outside Production and only for loopback callers —
-so no password is typed into the login form.
+so no password is typed into the login form. `signInAsAdmin` in `scripts/blazor.mjs` does it, and
+changes a freshly seeded admin's password only when told the database is a throwaway one.
+
+Booting the app is `scripts/app-boot.sh`, sourced by both harnesses: `ensure_playwright`, then
+`boot_app`, which starts it on a temporary database and waits for it to stop again before deleting
+that database — on Windows the files stay locked until it has.
+
+## The verify matrix
+
+`scripts/verify-matrix.sh` is the verify-ui skill's matrix as a command: each route at 1280×800 and
+375×812, as a visitor and as an admin. The routes come from the `@page` directives, so a new page is in
+it the day it exists; give routes as arguments to narrow it, and `VERIFY_BASE_URL` to run it against
+an app already running with data, which a route with an id needs. Per cell it reports where the page
+landed, console errors (the same short ignore list as `tests/ui/fixtures.js`), and horizontal
+overflow, with a screenshot in `artifacts/verify/`; then, per route and width, the controls an admin
+sees that a visitor does not, with the chrome's share printed once. It exits non-zero on an error, an
+overflow or an admin turned away. It is a tool to run, not a CI job: the admin-only list needs a
+reader to say which of it is right.
 
 ## Touch targets
 

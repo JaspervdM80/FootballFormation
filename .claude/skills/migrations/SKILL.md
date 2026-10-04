@@ -22,8 +22,8 @@ not the plan.
 ## The base migration's id is load-bearing
 
 `Migrations/` starts at **`20260322100416_InitialCreate`**, which carries the whole schema: the
-twenty that grew it were folded into it once every database that exists had them all applied. Three
-ordinary migrations have been added on top of it since, in August 2026.
+twenty that grew it were folded into it once every database that exists had them all applied.
+Everything after it in the folder is an ordinary migration added on top.
 
 **That id is the original `InitialCreate`'s, not the timestamp of the scaffold that wrote the file,
 and that is what makes the fold safe.** The live volume already lists it in `__EFMigrationsHistory`,
@@ -63,6 +63,11 @@ Reads happen before drops.
 `migrationBuilder.Sql(...)` in `Up()`. `__EFMigrationsHistory` runs it exactly once, and it is the only
 place a new required FK column can be populated *before* the constraint is added. `AddSeasons` and
 `ConsolidatePlayerPositions` were written that way.
+
+**`ScopeSeasonDataToTeams` is the one still on disk to copy**: it adds a `TeamId` to five tables,
+fills each from the season its rows hang off, falls back to the lowest team for a database restored
+from before teams existed, and only then indexes and constrains. A new season-scoped table needs the
+same backfill — a `TeamId` left at `0` fails the FK, or matches no team's query filter and vanishes.
 
 ## A SQLite migration is not atomic
 

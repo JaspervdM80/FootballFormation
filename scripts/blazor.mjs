@@ -70,3 +70,43 @@ export async function waitUntil(page, predicate, { timeout = 15_000, what = 'con
   }
   throw new Error(`timed out waiting for ${what}`);
 }
+
+/** Both languages, because the UI is Dutch by default and English is a resource-key fallback. */
+export const rx = (nl, en) => new RegExp(`${nl}|${en}`, 'i');
+
+// The seeded admin's own password. Only ever changed on a throwaway database.
+const SEED_PASSWORD = 'admin';
+const NEW_PASSWORD = 'visualcheck123';
+
+/**
+ * Signs in as admin through /dev/login — Development-only, loopback-only, and minting the same principal /auth/login does.
+ *
+ * A freshly seeded admin still holds the password it was created with, which locks every other route to /settings until it
+ * changes. `changeSeededPassword` gets past that, and is only for a throwaway database: against anybody's real one it throws
+ * instead of changing their password.
+ */
+export async function signInAsAdmin(page, base, { changeSeededPassword = false } = {}) {
+  await goto(page, `${base}/dev/login`);
+  await goto(page, `${base}/settings`);
+
+  const notice = page.getByText(rx('wachtwoord waarmee het is aangemaakt', 'still uses the password'));
+  if (!(await notice.count())) return;
+  if (!changeSeededPassword) {
+    throw new Error('The admin is still on the seeded password, which pins every page to /settings. Change it in the app first.');
+  }
+
+  const passwordFields = page.locator('input[type="password"]');
+  await passwordFields.nth(0).fill(SEED_PASSWORD);
+  await passwordFields.nth(1).fill(NEW_PASSWORD);
+  await passwordFields.nth(2).fill(NEW_PASSWORD);
+  // Clicked once, deliberately: changing a password is not idempotent, so a retry would be made
+  // with a password that is no longer the current one.
+  await page.getByRole('button', { name: rx('wachtwoord wijzigen', 'change password') }).click();
+  // Waited for the landing, not for the notice to go: the notice clears on re-render, before the
+  // circuit drops onto /login, and signing in on that signal has Playwright abandon our navigation
+  // for the circuit's ("Navigation to /dev/login is interrupted by another navigation to /login").
+  await page.waitForURL(/\/login(\?|$)/, { timeout: 20_000 });
+
+  await goto(page, `${base}/dev/login`);
+  console.log('changed the seeded admin password and signed back in');
+}

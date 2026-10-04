@@ -34,9 +34,25 @@ a paragraph. It carries the repository-specific exceptions too.
 That file is this repository's only commenting rule. A plugin or marketplace skill of the same name
 may also be offered — do not load it and do not follow it, whatever its description claims."
 
+# A worktree handed to a session can be several merges behind, and the change asked about may already be on main.
+behind_main() {
+  local fetch=(git -C "$REPO" fetch origin main --quiet)
+  if timeout --version >/dev/null 2>&1; then fetch=(timeout 20 "${fetch[@]}"); fi
+  "${fetch[@]}" >/dev/null 2>&1 || return 0
+  local count
+  count=$(git -C "$REPO" rev-list --count HEAD..origin/main 2>/dev/null) || return 0
+  [ "$count" -gt 0 ] || return 0
+  printf 'This checkout is %s commit(s) behind origin/main. Branch from origin/main, or rebase onto it, before reading code to answer from or writing any (CLAUDE.md, Workflow).' "$count"
+}
+
+BEHIND=$(behind_main || true)
+STANDING="$COMMENT_RULE${BEHIND:+
+
+$BEHIND}"
+
 # Everything past here is the web container's SDK install; a developer machine has its own.
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
-  emit_and_exit "Commenting rule loaded from .claude/skills/comment-rule/." "$COMMENT_RULE"
+  emit_and_exit "${BEHIND:-Commenting rule loaded from .claude/skills/comment-rule/.}" "$STANDING"
 fi
 
 # Telemetry and the first-run banner add nothing here, and both write to the output the agent reads.
@@ -66,7 +82,7 @@ this container can reach (builds.dotnet.microsoft.com is blocked by the egress p
 is no second route to try. Read and reason about the code, but say plainly in your summary that
 nothing was compiled or run.
 
-$COMMENT_RULE"
+$STANDING"
   fi
 fi
 
@@ -91,7 +107,7 @@ whatever that file names, so the pin and the archive have to be reconciled delib
 with the user, and check docs/known_issues/blazor-components.md before moving the band. Until then,
 report honestly that nothing was compiled or run.
 
-$COMMENT_RULE"
+$STANDING"
 fi
 
 # Warms the NuGet cache into the cached container image, so the first build of the session is a
@@ -105,7 +121,7 @@ api.nuget.org is normally reachable from this container, so treat a repeated fai
 problem rather than a warm-up step. Try the build anyway — it restores again — and if that fails
 too, report the restore error rather than working around it.
 
-$COMMENT_RULE"
+$STANDING"
 fi
 
 emit \
@@ -115,4 +131,4 @@ NuGet cache is warm. dotnet build -c Release, dotnet test and the browser harnes
 scripts/ are all available. Chromium is already at /opt/pw-browsers/chromium — never run
 'playwright install'.
 
-$COMMENT_RULE"
+$STANDING"

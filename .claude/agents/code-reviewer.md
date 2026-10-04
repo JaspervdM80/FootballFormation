@@ -29,7 +29,7 @@ context. If the diff is empty, say so and stop; don't invent a review.
 
 Then read, in this order: `CLAUDE.md`, the **`.claude/skills/` skill for each area the diff touches**
 (they hold the working rules — services, EF Core, migrations, the domain model, Razor pages, the live
-match, styling, touch, localization, testing, UI testing, build and release), and
+match, push and the PWA, styling, touch, localization, testing, UI testing, build and release), and
 `docs/known_issues/` for anything the change could re-break. A finding that contradicts a
 documented, deliberate decision is not a finding — it is a misread.
 
@@ -65,7 +65,7 @@ Duplication is **not** a finding when the copies merely look alike today:
 
 Before proposing an extraction, name the caller that will use it. Two callers is a helper; one
 caller is premature. Prefer the repository's own moves: pure logic over an entity goes **onto the
-entity** (`Game.LivePeriod()`), shared setup gets **named once** (`LiveMatchQueries`), and anything
+entity** (`Game.LiveHalf()`), shared setup gets **named once** (`LiveMatchQueries`, `ScopeQueries`), and anything
 every method has to remember becomes **part of the operation shape** (`ServiceOperation`,
 `LiveMatchOperation`'s notify) rather than a line each method repeats.
 
@@ -92,8 +92,9 @@ explicit choices; a review that fights them is wrong, not principled.
 - **Interface segregation** — applies to component parameter surfaces as much as to types. A
   component taking eight parameters where two callers use disjoint halves is two components.
 - **Dependency inversion** — **do not ask for interfaces.** This codebase injects concrete
-  services on purpose; `ICurrentUser` is the deliberate exception because it genuinely has two
-  implementations. "Extract `IPlayerService` for testability" is a wrong finding here. What *does*
+  services on purpose; `ICurrentUser` and `ICurrentTeam` are the deliberate exceptions — the host
+  supplies them from its own request, and the tests fake them. "Extract `IPlayerService` for
+  testability" is a wrong finding here. What *does*
   apply: depend on the injected `TimeProvider` rather than `DateTime.UtcNow`/`Today`, take
   `IDbContextFactory` rather than a shared `AppDbContext`, and pass a value object
   (`SeasonSquad`) rather than relying on a navigation being `.Include`d.
@@ -114,6 +115,14 @@ the entry.** Read the file before reviewing; the ones that come back most often:
   than overriding its `position` back.
 - `.count()` in a Playwright test — the one locator call that does not wait, and it fails open.
 - A relative database path, or starting a published app from the wrong working directory.
+- A team-scope hole: a new season-scoped entity with no `TeamId` or no `HasQueryFilter`, a write
+  reaching a goal, injury, swap or comment by its own id without `GameInScopeAsync`, an
+  `IgnoreQueryFilters()` that is not a deliberate cross-team read, or a service taking
+  `IRawDbContextFactory`. `TeamDataScopingTests` is where the two-team assertion belongs.
+- A write that skips `SaveChanges` (`ExecuteUpdate`, `ExecuteDelete`, raw SQL) against data a
+  statistics page reads — `StatsCacheInvalidator` never sees it, so the stats stay stale.
+- Playing minutes in anything a visitor receives — a page cell outside the admin branch, the
+  copyable match summary, a push payload.
 
 If the change fixes a bug whose cause was non-obvious, the review expects a new entry in that file
 in the same commit.
@@ -125,10 +134,11 @@ are cross-user, not per-page:
 
 - Every `+=` needs its `-=` in `Dispose`, and the component must actually implement `IDisposable`.
   `LiveMatchNotifier` is a **singleton** — a handler that is never removed keeps a dead circuit's
-  component alive and re-entered for every future match. `SeasonPicker`, `MainLayout` and
-  `SeasonAwarePage` are the patterns to copy.
-- A callback arriving from outside the circuit (`LiveMatchNotifier`, `SeasonState.OnChanged`) must
-  re-enter through `InvokeAsync` before touching component state or calling `StateHasChanged`.
+  component alive and re-entered for every future match. `Home` and `LiveMatch`, the two that
+  subscribe, are the patterns to copy.
+- A callback arriving from outside the circuit (`LiveMatchNotifier`, a timer) must re-enter through
+  `InvokeAsync` before touching component state or calling `StateHasChanged`. The chrome renders
+  statically and subscribes to nothing; a season or team change is a navigation, not an event.
 - Each service operation opens its own short-lived context from `IDbContextFactory`. A shared
   scoped `AppDbContext` throws *"A second operation was started on this context"* the moment two
   components on a page query at once.
@@ -144,7 +154,8 @@ happened:
   the bool for exactly this). Reading a failed value throws by design.
 - **`IsCancelled` checked before `Trail.Redirect(...)`.** A cancelled load that redirects throws
   the visitor off the page they just navigated to. `MatchResult`, `FormationBuilder`,
-  `FormationOverview` and `PlayerStats` carry the check; a fifth page that forgets it is a bug.
+  `FormationOverview`, `PlayerStats` and `LiveMatch` carry the check; a page that redirects without
+  it is a bug.
 - `Result.To<T>()` dropping the cancellation when a result is handed up between services — it
   arrives at the page as a messageless failure, which renders as an empty red snackbar.
 - Failure messages built by interpolation. The English template *is* the resource key, so
@@ -199,6 +210,15 @@ there, and each is a finding:
 - Not a finding: repeated `Arrange` within one spec when the copies set up different states, or the
   duplicated helpers between `tests/ui/helpers.js` and `scripts/blazor.mjs` — that pair is deliberate.
 
+`UiHarnessRulesTests` fails the build on the mechanical half of the Blocking list. A change that
+widens one of its allow-lists (where `networkidle` or `newContext` may appear) or loosens a pattern is
+**Blocking** unless the reason is the one the list states.
+
+**A test that reads the repository** — Roslyn over the source, the EF model, the instructions, the
+specs — is **Blocking** without a presence twin proving its scan found what it judges, and **Should
+fix** without a stale-exemption test when it carries an exemption list. An exemption added without a
+reason, or to make a new violation pass, is **Blocking**.
+
 **Coverage of the change must be at least 80%.** Run it:
 
 ```bash
@@ -228,14 +248,17 @@ Never state a coverage figure you did not measure. If the run fails, say so with
 ## 10. The rest of the house rules
 
 Verify the ones the diff actually touches; the `.claude/skills/` skill for each area holds them in
-full, and `CLAUDE.md` carries the five that fail silently.
+full, and `CLAUDE.md` carries the ones that fail silently.
 
-- **Writes**: every mutation through `RunAdminAsync`. `<AuthorizeView>` alone is enforcement in the
-  render tree only.
+- **Writes**: every mutation through `RunAdminAsync`, or `RunApplicationAdminAsync` for clubs and
+  teams; a change to the `ApplicationAdmin` role, either way, goes through `UserService.MayChangeAsync`.
+  `<AuthorizeView>` alone is enforcement in the render tree only. A write whose
+  subject is another team than the one in scope asks `IsAdminOfAsync(teamId)` (`UserService`).
+  `PushSubscriptionService` is the one anonymous write, and it is not a precedent.
 - **Anonymous surface**: call out explicitly anything that changes what a signed-out visitor can
-  see — the pull request template asks for it. A read with something to hide must confirm its own
-  argument against `ICurrentUser` rather than trusting the caller (`GetCommentsAsync` is the
-  precedent).
+  see — the pull request template asks for it. A read with something to hide is guarded at the
+  service, not trusted to the caller: `GetCommentsAsync` re-confirms its `includePrivate` flag, and
+  `TrainingService.GetAllAsync` runs under `RunAdminAsync`.
 - **Queries**: `AsNoTracking` on reads; the `CancellationToken` threaded to *every* EF call
   underneath, not just the outermost; `Include` sufficient for everything the caller reads.
 - **Navigation and markup**: URLs from `AppRoutes`; every page opens with `<PageHeader>`; a base
@@ -274,8 +297,8 @@ A review that cries wolf gets skimmed, and then the real finding is missed too. 
 misses one a human has to add, the correction belongs *here* — a note in a pull request thread is
 lost by the next branch. Noise tightens the do-not-flag list above; a miss becomes a bullet in
 whichever section should have owned it; a comment this agent wanted to delete and shouldn't have
-becomes a new **keep** example in §2, quoted verbatim. Issue #72 tracks that loop until the report
-needs no correction two branches running.
+becomes a new **keep** example in §2, quoted verbatim. Issue #72 set that loop up; it does not end
+because the issue closed.
 
 ## 12. Report
 

@@ -1,12 +1,13 @@
 # EF Core
 
-- **`FindAsync` bypasses global query filters** — the team scope in `AppDbContext` (`HasQueryFilter`
-  on `Season`, `Game`, `Training`, `MatchPreferences`, `SeasonSquadMember` and `Player`) is applied to
-  LINQ queries, not to `Find`/`FindAsync`, which go straight to the primary key. So
-  `db.Games.FindAsync(id)` returns another team's game and a write against it leaks across the scope.
-  Use `FirstOrDefaultAsync(x => x.Id == id, ct)` on the filtered set instead; the season-scoped
-  services all do. A write reaching a game's **child** by the child's own id (a goal, a comment, an
-  injury — the children carry no filter) gates on `AppDbContext.GameInScopeAsync(gameId)` first.
+- **The team filter is on the roots, not on their children** — `AppDbContext` filters `Season`,
+  `Game`, `Training`, `MatchPreferences`, `SeasonSquadMember`, `PushSubscription` and `Player`, but a
+  goal, substitution, injury, swap or comment carries no filter of its own. So
+  `db.GameGoals.FindAsync(goalId)` returns another team's goal and a write against it leaks across
+  the scope. A write reaching a game's **child** by the child's own id gates on
+  `AppDbContext.GameInScopeAsync(gameId)` first. (`FindAsync` on a filtered *root* is filtered when it
+  queries, and skips the filter only for an entity the context already tracks;
+  `FirstOrDefaultAsync(x => x.Id == id, ct)` still reads more honestly.)
   `TeamDataScopingTests` pins the read side, seeding two teams and asserting every public read is
   scoped. See [authorization-and-auth](../patterns/authorization-and-auth.md).
 - **The team query filter reads a context instance member, so an unstamped context sees nothing** —
