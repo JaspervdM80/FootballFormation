@@ -18,7 +18,6 @@
     color: var(--ink);
     font: inherit;
     cursor: pointer;
-    touch-action: manipulation;
 }
 
 .player-pick-number {

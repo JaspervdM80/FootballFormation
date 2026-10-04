@@ -28,6 +28,12 @@ html, body {
     color-scheme: light;
 }
 
+/* Two quick taps on a stepper must be two taps, not a double-tap zoom; pinch zoom stays.
+   :where() keeps it at zero specificity so the [draggable] touch-action rules still win. */
+:where(button, a, input, select, label, summary, [role="button"]) {
+    touch-action: manipulation;
+}
+
 /* === Club Theme Overrides === */
 
 /* MudBlazor AppBar customization */

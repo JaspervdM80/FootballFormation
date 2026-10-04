@@ -136,6 +136,12 @@
 - **HTML5 drag events never fire from touch input**: iOS Safari and Android Chrome require the
   shim in `UI/wwwroot/js/drag-drop-touch.js`, plus `touch-action: none` on `[draggable="true"]`
   (in app.css) so the browser doesn't claim the gesture for scrolling.
+- **Two quick taps on a stepper zoomed the page instead.** Reported on the minute arrows of
+  "Opstelling per minuut": the browser read the second tap as a double-tap zoom. `app.css` gives
+  every button, link and form control `touch-action: manipulation`, which drops double-tap zoom and
+  keeps pinch zoom. It is wrapped in `:where()` so it has no specificity and the `[draggable="true"]`
+  rules above still win. **Do not reach for `user-scalable=no` instead** — iOS Safari ignores it,
+  and it takes zoom away from anyone who needs it.
 
 - **White page after switching apps**: a suspended PWA loses its SignalR circuit. Two
   causes, both fixed: the page background came only from the MudBlazor theme (now also
