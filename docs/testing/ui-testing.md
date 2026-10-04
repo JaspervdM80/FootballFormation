@@ -124,8 +124,8 @@ Three details are deliberate:
 `npm ci`, and both caches are keyed on the lockfile. Without one, `^1.56.1` let CI move to every new
 Playwright release on its own, while the browser cache, keyed on an unchanged `package.json`, kept
 restoring the old browser — so every run downloaded Chrome and never saved it. Moving Playwright is
-now a lockfile change in a pull request. `npx playwright install` still runs on a cache hit and is a
-no-op there.
+now a lockfile change in a pull request. `npx playwright install` still runs on a cache hit: the
+download is a no-op there, but `--with-deps` still spends about 16 seconds in apt.
 
 ### The one spec that needs the published app
 

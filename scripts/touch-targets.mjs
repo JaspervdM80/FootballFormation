@@ -484,19 +484,18 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     // The home page, which had no scene here at all until the notification opt-in put a button on it —
     // and a button whose sizing came from a scoped stylesheet that never reached it, which is exactly
     // what this harness exists to catch and could not, because nothing measured this page.
+    // The start page invites from push.js's first answer only, and a worker still installing answers
+    // "unsupported" — see docs/known_issues/touch-pwa.md.
+    await waitUntil(page, () => page.evaluate(async () =>
+      Boolean((await navigator.serviceWorker.getRegistration())?.active)), {
+      what: 'the service worker to activate',
+    });
     await goto(page, `${base}/`);
-
-    // Best-effort, and deliberately not a required target. The row is drawn only after the circuit has
-    // asked push.js, and on GitHub's runners it does not appear at all — reproducibly there, while
-    // push.js itself reports push working, and never on a developer's machine, including with the
-    // worker stubbed to fail. Requiring it blocked the branch three times while measuring nothing,
-    // so the button's floor is enforced where it can be observed and its absence is only reported.
-    // See docs/known_issues/touch-pwa.md.
-    const button = page.locator('.notify-button');
-    await waitUntil(page, async () => await button.count() > 0, { timeout: 10_000 })
-      .catch(() => console.log(`${viewport.name}  the opt-in row was not drawn; measuring the rest of home`));
-
-    await audit('home', '.app-main', await button.count() > 0 ? ['notify-button'] : []);
+    await waitUntil(page, async () => await page.locator('.notify-button').count() > 0, {
+      what: 'the notification opt-in row — drawn only where Notification.permission is "default", '
+        + "which Playwright's headless shell never is",
+    });
+    await audit('home', '.app-main', ['notify-button']);
 
     // The settings page: the language rows are the only target in the app reached by a thumb on a
     // link rather than a button, and it carries the notification switch a follower comes back to.

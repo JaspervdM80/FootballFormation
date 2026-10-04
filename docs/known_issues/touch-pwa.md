@@ -227,14 +227,14 @@
   worker finishes. CI found this before a user did, twice, because a cold runner activates a worker
   far slower than a laptop does — a browser check that passes locally and fails on CI is worth
   reading as a race rather than as an environment quirk.
-- **The opt-in row does not render on GitHub's runners, and nothing reproduces it here.** (It is
-  `Components/MatchNotifications.razor` now, on `/` and on `/settings`, but the harness measures it
-  on `/` as before.) The touch
-  harness measures it locally at 260.4x44 every time, including with the service worker stubbed to
-  never become ready — but on CI it never appears, while the harness's own probe of
-  `matchNotifications.status()` on the same page reports push working. Three pushes went into
-  hypotheses (the `_bl_` wait, a short readiness timeout, a slow worker) and each was a real bug
-  worth fixing, but none was this. The scene therefore **reports** the row's absence rather than
-  failing on it: requiring it blocked the branch three times while measuring nothing. **The button's
-  44px floor is consequently enforced only where the row is drawn** — if you change its sizing,
-  check `artifacts/visual/touch/report.md` from a local run rather than trusting a green CI.
+- **Playwright's default Chromium denies notifications, so the opt-in row is never drawn in it.**
+  Launched headless with no channel, Playwright picks `chromium-headless-shell`, whose
+  `Notification.permission` is `"denied"` — `push.js` answers `blocked`, and the start page has
+  nothing to invite. The web container's `/opt/pw-browsers/chromium` is the full build and answers
+  `"default"`, which is why the row was measured locally at 260.4x44 every time and never on CI, and
+  why three pushes chasing a slow worker each fixed a real bug but not this one. The visual harness
+  now launches the full build everywhere (`channel: 'chromium'` on CI, installed with `--no-shell`)
+  and **requires** the button on the home scene. The Playwright suite still runs the shell, which is
+  why `authorization.spec.js` leaves the notification section alone. The two builds also shape text
+  slightly differently: at 844x390 the full build has no room for "Wedstrijden" on the app bar and
+  the shell does, so the shell was measuring a layout no phone shows.

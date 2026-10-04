@@ -160,6 +160,11 @@ nearest neighbour is either zero or at least **8px** — anything between is a d
 awards to whichever neighbour has the larger contact area. Where the geometry provably cannot reach
 44px the number is in `RECORDED_FLOORS` with its reason, and **a recorded floor is still a floor**.
 
+**The harness runs Chromium's full build (`channel: 'chromium'`), never the headless shell** Playwright
+picks by default. The shell denies notifications, so the home scene's required opt-in button is never
+drawn, and it lays text out differently from the Chrome on a phone. The Playwright suite still uses
+the shell.
+
 Both browser jobs are required checks; a red run holds the merge.
 
 Detail: [docs/testing/](../../../docs/testing/ui-testing.md#ui-tests-testsui)

@@ -15,9 +15,16 @@ It runs on every pull request as the `visual` job in `ci.yml` — required, like
 beside it, so a page that stops rendering stops the merge. That job uploads `artifacts/visual/`
 whether it passed or not: the
 measurements are the part that can fail, but the screenshots are worth a look on a pull request that
-changed a page, and nothing else in CI produces one. Locally the harness drives the Chromium in a
-Claude Code web container; everywhere else `visual-check.mjs` lets Playwright resolve its own, which
-is what makes the job possible at all.
+changed a page, and nothing else in CI produces one. Whether each page renders at all is
+`smoke.spec.js`'s to assert; the page loop here exists for the screenshots, so nothing in it should
+wait on a page's contents — a heading lookup that matched nothing on three pages once cost 90 seconds
+a run.
+
+Locally the harness drives the Chromium in a Claude Code web container; everywhere else
+`visual-check.mjs` launches Playwright's **full** Chromium build (`channel: 'chromium'`), which CI
+installs with `--no-shell`. Never the headless shell Playwright picks by default: it denies
+notifications, so the start page's opt-in row is never drawn, and it shapes text differently from
+the Chrome a phone runs — see [touch-pwa.md](../known_issues/touch-pwa.md).
 
 Two things it has to work around, both of them the app behaving correctly:
 
@@ -35,10 +42,11 @@ The same run then stops looking and starts measuring. `scripts/touch-targets.mjs
 in three phone-sized touch contexts — **320×568**, **360×640** and **844×390** landscape, the sizes
 [known_issues](../known_issues/index.md) argues from — and walks every screen a thumb reaches: the games
 list, the new-match dialog at the top and scrolled to the bottom, the picker's day, month and year
-views, the trainings list and its dialog, the app bar, the drawer, `/players`, the formation builder
-and the live screen of a match under way. Fifteen screens per size — fourteen in landscape, where the
-sections fit on the bar itself and there is no drawer to open — screenshotted into
-`artifacts/visual/touch/` with every measurement written to `report.md` beside them.
+views, the trainings list and its dialog, the start page with its notification opt-in, `/settings`,
+the app bar, `/players`, the drawer, the formation builder and its pitch, and the live screen of a
+match under way — its controls, its line-up, and the goal and substitution dialogs. Twenty screens
+per size, a count `auditTouchTargets` asserts, screenshotted into `artifacts/visual/touch/` with
+every measurement written to `report.md` beside them.
 
 It exists because `../known_issues/touch-pwa.md` is the longest section in `docs/known_issues/`, every
 entry in it was reported from a touchline — twice — and all of them are held in place by CSS that
