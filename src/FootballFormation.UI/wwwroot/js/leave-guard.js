@@ -1,6 +1,5 @@
 // Loaded ahead of back.js: a capturing listener on window runs in the order it was added, and this one has to be able to stop that one.
 // Native confirm() rather than a MudBlazor dialog, because only a synchronous answer can hold a click before enhanced navigation acts on it.
-// A page arms it by rendering [data-leave-guard] with the question, so the guard changes in the same render batch as the page.
 (() => {
     let released = null;
 

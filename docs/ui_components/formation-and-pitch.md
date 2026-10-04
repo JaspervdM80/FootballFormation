@@ -77,7 +77,10 @@
   `navigation.traverseTo`. It catches link clicks with a capturing listener on `window` — loaded
   ahead of `back.js` so it can stop that one — and asks with a native `confirm()`, because only a
   synchronous answer can hold the click; plus `beforeunload`, and a cancellable `traverse` for the
-  browser's own back where the Navigation API allows it. It stands down once the circuit has failed,
+  browser's own back where the Navigation API allows it. That last one is not a promise: a traversal
+  is cancellable only once per interaction with the page, so a second swipe back straight after
+  Cancel leaves without asking — and, being same-document, raises no `beforeunload` either. Known,
+  not a regression. It stands down once the circuit has failed,
   since the edits are gone and `pwa.js` is about to reload. A formation change keeps a clean page
   clean: the service reshapes the stored line-ups the same way for every half not yet played, the only
   ones compared
