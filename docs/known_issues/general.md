@@ -7,8 +7,9 @@
   answers healthy, the page renders complete and correct — and `blazor.web.js` comes back
   `Content-Length: 0`, so `window.Blazor` is never defined, no circuit connects, and nothing is
   interactive. There is no error anywhere: not in the app log, not in the browser console, not in
-  the network panel, where every request is a green 200. It surfaces only as every `_bl_*` wait in
-  the UI harnesses timing out. Both places that start a published app (`ci.yml`'s browser jobs, via
+  the network panel, where every request is a green 200. It surfaces only as every `goto` to an
+  interactive page in the UI harnesses timing out, its `data-circuit` marker stuck at `pending`;
+  static pages still pass. Both places that start a published app (`ci.yml`'s browser jobs, via
   `UI_TEST_APP_DLL` and `VISUAL_APP_DLL`) `cd` into the artifact first.
 - **Editing a file in the publish output does not change what the app serves.** `MapStaticAssets`
   answers from the manifest baked at publish time — content length and ETag included — and reads the

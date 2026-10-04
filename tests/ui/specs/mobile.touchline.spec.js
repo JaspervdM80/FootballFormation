@@ -5,11 +5,13 @@
 // app-bar sections become a drawer, the squad table becomes a list of cards, and the match form
 // becomes a full-screen sheet.
 import { test, expect } from '../fixtures.js';
-import { clickFor, createMatch, fillField, gameRow, goto, gotoRendered, openDialog, playerMenuItem, playerRow, submitDialog } from '../helpers.js';
+import {
+  clickFor, createMatch, fillField, gameRow, goto, openDialog, playerMenuItem, playerRow,
+  submitDialog,
+} from '../helpers.js';
 
 test('the sections are behind the drawer, not the app bar', async ({ page }) => {
-  // The drawer needs no circuit, and neither does anything else this test touches.
-  await gotoRendered(page, '/');
+  await goto(page, '/');
 
   // The horizontal nav is hidden at this width; the hamburger is the way through.
   await expect(page.locator('.topbar-nav')).toBeHidden();
@@ -29,7 +31,7 @@ test('the sections are behind the drawer, not the app bar', async ({ page }) => 
 });
 
 test('the start page opens on the next match, not a second copy of the team name', async ({ page }) => {
-  await gotoRendered(page, '/');
+  await goto(page, '/');
 
   await expect(page.locator('.app-title-text').first()).toBeVisible();
   // Visually hidden, not removed: a screen reader still finds the page's heading.
@@ -39,7 +41,7 @@ test('the start page opens on the next match, not a second copy of the team name
 });
 
 test('the install banner does not sit on the sections at the foot of the drawer', async ({ page }) => {
-  await gotoRendered(page, '/');
+  await goto(page, '/');
 
   // Shown by hand rather than waited for: pwa.js decides from the user agent, the display mode and a
   // localStorage dismissal, and the bug is about the banner being up at all — not about which of

@@ -5,12 +5,12 @@
 // checked in a browser that a note the coach wrote for herself stays off a parent's screen.
 //
 // match-summary.spec.js already covers the copyable text this page composes. This is the page's own
-// arithmetic — whose goal counts for whom, and a scorer's figures reaching her statistics — and the
-// comment split.
+// arithmetic — whose goal counts for whom, and a scorer's figures reaching her statistics — and what
+// of a finished match stays the coach's.
 import { test, expect } from '../fixtures.js';
-import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
 import {
-  clickFor, fileScore, fillField, fillLineup, gameRow, goto, gotoRendered, matchWithId,
+  clickFor, fileScore, fillField, fillLineup, gameRow, goto, matchWithId, noEarlierDayThisSeason,
+  playedMatch,
 } from '../helpers.js';
 
 const PUBLIC_NOTE = 'Sterk gespeeld, complimenten';
@@ -79,7 +79,7 @@ const statTile = (page, label) => page
  * everyone else, tiles and all.
  */
 async function statFor(page, playerName, label) {
-  await gotoRendered(page, '/stats');
+  await goto(page, '/stats');
   await page.locator('.pt-row', { hasText: playerName }).first().click();
   await page.waitForURL(/\/players\/\d+\/stats/);
   return {
@@ -88,18 +88,14 @@ async function statFor(page, playerName, label) {
   };
 }
 
-test('a private comment is the coach\'s alone, and a public one is the parents\' too', async ({ page, browser }) => {
-  test.skip(new Date().getDate() === 1, 'no earlier day in the current month to date a match to');
-
-  const id = await matchWithId(page, 'FC Opmerking', { past: true });
-  await fillLineup(page, 2);
-  await fileScore(page, id, 3, 1);
-
+test('a finished match shows a visitor the score and the public note, and nothing that is the coach\'s', async ({ page, visitor }) => {
+  // Run from the touchline, because only that match carries every admin-only part at once: the
+  // minutes, the half lengths and the line-up per minute all read its clock.
+  const id = await playedMatch(page, 'FC Ouderavond');
   await addComment(page, PUBLIC_NOTE, { isPublic: true });
   await addComment(page, PRIVATE_NOTE);
 
-  // The admin's own copy first, so the absence below is a rule rather than a comment that was never
-  // written — the same pairing selectors.spec.js exists to enforce.
+  // The admin's own copy first, so each absence below is a rule rather than something never drawn.
   const entries = page.locator('.result-comments .comment-entry');
   await expect(entries).toHaveCount(2);
   await expect(entries.filter({ hasText: PRIVATE_NOTE }).locator('.comment-visibility'))
@@ -107,62 +103,44 @@ test('a private comment is the coach\'s alone, and a public one is the parents\'
   await expect(entries.filter({ hasText: PUBLIC_NOTE }).locator('.comment-visibility'))
     .toHaveText('Public');
 
-  const visitor = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
-  try {
-    const anon = await visitor.newPage();
-    await gotoRendered(anon, `/games/${id}/result`);
+  const coachOnly = ['.live-minutes-row', '.half-lengths', '.lineup-minute', '#match-summary-text',
+    '.result-comments .btn-add-goal'];
+  for (const selector of coachOnly) await expect(page.locator(selector).first()).toBeAttached();
+  await expect(goalEvents(page).getByRole('button', { name: 'Edit' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Copy match result' })).toBeVisible();
 
-    // Scoped to the card: the copyable summary is a hidden <pre> on this page and carries the public
-    // note too, so an unscoped search matches twice.
-    await expect(anon.locator('.result-comments').getByText(PUBLIC_NOTE, { exact: false })).toBeVisible();
-    await expect(anon.getByText(PRIVATE_NOTE, { exact: false })).toHaveCount(0);
-    // The card counts what it holds, so a private note reaching the visitor's copy and merely being
-    // hidden by CSS would still say so here.
-    await expect(anon.locator('.result-comments .card-label')).toContainText('(1)');
-    await expect(anon.locator('.result-comments .btn-add-goal')).toHaveCount(0);
-
-    // The overview is the artefact that gets shared, so a visitor has to get the whole of it — the
-    // line-up on the pitch included, which is the half a private comment must not travel with.
-    await gotoRendered(anon, `/games/${id}/overview`);
-    await expect(anon.locator('.overview-period-card .pitch-player').first()).toBeVisible();
-    await expect(anon.getByText(PRIVATE_NOTE, { exact: false })).toHaveCount(0);
-  } finally {
-    await visitor.close();
+  await goto(visitor, `/games/${id}/result`);
+  await expect(visitor.locator('.score-value:not(.score-away)')).toHaveText('0');
+  await expect(visitor.locator('.score-value.score-away')).toHaveText('1');
+  await expect(visitor.locator('.live-event')).toHaveCount(1);
+  await expect(visitor.locator('.result-comments').getByText(PUBLIC_NOTE, { exact: false })).toBeVisible();
+  await expect(visitor.getByText(PRIVATE_NOTE, { exact: false })).toHaveCount(0);
+  // The card counts what it holds, so a private note reaching the visitor's copy and merely being
+  // hidden by CSS would still say so here.
+  await expect(visitor.locator('.result-comments .card-label')).toContainText('(1)');
+  for (const selector of coachOnly) {
+    await expect(visitor.locator(selector), `${selector} reached a visitor`).toHaveCount(0);
   }
-});
+  await expect(visitor.getByRole('button', { name: 'Edit' })).toHaveCount(0);
+  await expect(visitor.getByRole('button', { name: 'Copy match result' })).toHaveCount(0);
 
-test('the minutes each player got are the coach\'s to read, not a visitor\'s', async ({ page, browser }) => {
-  test.skip(new Date().getDate() === 1, 'no earlier day in the current month to date a match to');
-
-  const id = await matchWithId(page, 'FC Speeltijd', { past: true });
-  await fillLineup(page, 2);
-  await fileScore(page, id, 2, 0);
-
-  // Nobody kicked this one off, so these are the line-up's planned minutes and the heading says so.
-  const rows = page.locator('.live-minutes-row');
-  await expect(rows.first()).toBeVisible();
-  await expect(page.locator('.card-label', { hasText: 'Planned minutes' })).toBeVisible();
-
-  const visitor = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
-  try {
-    const anon = await visitor.newPage();
-    await gotoRendered(anon, `/games/${id}/result`);
-
-    // The scoreboard first, so the absence below is a rendered page rather than one still loading.
-    await expect(anon.locator('.score-value').first()).toBeVisible();
-    await expect(anon.locator('.live-minutes-row')).toHaveCount(0);
-    await expect(anon.getByText('Planned minutes', { exact: false })).toHaveCount(0);
-  } finally {
-    await visitor.close();
-  }
+  // The overview is the artefact that gets shared, so a visitor has to get the whole of it — the
+  // line-up on the pitch included, which is the half a private comment must not travel with.
+  await goto(visitor, `/games/${id}/overview`);
+  await expect(visitor.locator('.overview-period-card .pitch-player').first()).toBeVisible();
+  await expect(visitor.getByText(PRIVATE_NOTE, { exact: false })).toHaveCount(0);
+  await expect(visitor.getByRole('button', { name: 'Copy match result' })).toHaveCount(0);
+  await expect(visitor.locator('#match-summary-text')).toHaveCount(0);
 });
 
 test('an own goal is the opponent\'s, and does not tick one of ours off the list', async ({ page }) => {
-  test.skip(new Date().getDate() === 1, 'no earlier day in the current month to date a match to');
+  test.skip(noEarlierDayThisSeason(), 'the season opened today — no earlier day in it to date a match to');
 
   const id = await matchWithId(page, 'FC Eigen Doelpunt', { past: true });
   await fillLineup(page, 2);
   await fileScore(page, id, 1, 1);
+  // Nobody kicked this one off, so the minutes are the line-up's plan and the heading says so.
+  await expect(page.locator('.card-label', { hasText: 'Planned minutes' })).toBeVisible();
 
   // Both scored by our own squad, so the switch is the only thing telling the two goals apart.
   const [ourScorer, theirGift] = (await scorerOptions(page).allInnerTexts()).slice(1);
@@ -182,14 +160,14 @@ test('an own goal is the opponent\'s, and does not tick one of ours off the list
 
   // And the summary shared into the group chat lists ours only: the own goal is already in the
   // scoreline and needs no line of its own.
-  await gotoRendered(page, `/games/${id}/overview`);
+  await goto(page, `/games/${id}/overview`);
   const summary = await page.locator('#match-summary-text').textContent();
   expect(summary).toContain(nameOf(ourScorer));
   expect(summary).not.toContain(nameOf(theirGift));
 });
 
 test('a scorer and her assister both reach the statistics the squad reads', async ({ page }) => {
-  test.skip(new Date().getDate() === 1, 'no earlier day in the current month to date a match to');
+  test.skip(noEarlierDayThisSeason(), 'the season opened today — no earlier day in it to date a match to');
 
   const id = await matchWithId(page, 'FC Statistiek', { past: true });
   await fillLineup(page, 2);
@@ -206,15 +184,15 @@ test('a scorer and her assister both reach the statistics the squad reads', asyn
   await goto(page, `/games/${id}/result`);
   await addGoal(page, { minute: 15, scorer: 1, assist: 1 });
 
-  await gotoRendered(page, scorer.path);
+  await goto(page, scorer.path);
   await expect(statTile(page, 'Goals').locator('.stat-value')).toHaveText(String(scorer.value + 1));
 
-  await gotoRendered(page, assister.path);
+  await goto(page, assister.path);
   await expect(statTile(page, 'Assists').locator('.stat-value')).toHaveText(String(assister.value + 1));
 });
 
 test('a filed score reads home side first on the card, whichever side we were', async ({ page }) => {
-  test.skip(new Date().getDate() === 1, 'no earlier day in the current month to date a match to');
+  test.skip(noEarlierDayThisSeason(), 'the season opened today — no earlier day in it to date a match to');
 
   // Away, because that is the case a scoreboard printed as "ours – theirs" gets wrong: ScoreHome and
   // ScoreAway always mean us and them, and only the display order follows the venue.

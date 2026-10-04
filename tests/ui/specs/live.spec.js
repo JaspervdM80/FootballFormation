@@ -8,8 +8,11 @@
 // LiveMatchServiceTests covers the banking arithmetic at the service. What only a browser can say is
 // that the screen driving it shows the banked figure rather than a clock that never stopped.
 import { test, expect } from '../fixtures.js';
-import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
-import { clickFor, finishMatch, goto, gotoRendered, liveMatch, openDialog, pickPlayer, scoreGoal, submitDialog } from '../helpers.js';
+import { VISITOR_STATE } from '../playwright.config.js';
+import {
+  clickFor, finishMatch, goto, halfTime, liveMatch, logGoal, openDialog, pickPlayer,
+  startSecondHalf, submitDialog, substitute,
+} from '../helpers.js';
 
 // Shirt *and* short name, because a shirt number is not unique — nothing stops two players in a
 // squad wearing the same one, and this file's arithmetic would then credit a substitution to the
@@ -28,6 +31,12 @@ async function clockSeconds(page) {
   return minutes * 60 + seconds;
 }
 
+// Stands in for the phone's motor: records the patterns rather than needing a tap first, as Chrome's real one does.
+const fakeVibration = () => {
+  window.buzzes = [];
+  navigator.vibrate = (pattern) => { window.buzzes.push(pattern); return true; };
+};
+
 test('a substitution swaps the two chips over, and undoing it puts them back', async ({ page }) => {
   await liveMatch(page, 'FC Wisselbank');
 
@@ -36,10 +45,7 @@ test('a substitution swaps the two chips over, and undoing it puts them back', a
   // none, and "Comes on" then offers the rest of the roster instead — which is the ordinary case.
   expect(await players(onBench(page))).toEqual([]);
 
-  await clickFor(page.locator('.live-lineup .pitch-player').first(),
-    () => expect(page.locator('.mud-dialog')).toBeVisible());
-  const dialog = await openDialog(page);
-  await pickPlayer(page, dialog);
+  await substitute(page);
 
   const event = page.locator('.live-event');
   await expect(event).toHaveCount(1);
@@ -107,11 +113,7 @@ test('the clock stops at half time and the second half picks up from the banked 
   // rather than two zeroes. Waited for on the app's own tick, not slept through.
   await expect.poll(() => clockSeconds(page), { timeout: 20_000 }).toBeGreaterThan(1);
 
-  const controls = page.locator('.live-controls');
-  await clickFor(
-    controls.getByRole('button', { name: 'Half time' }),
-    () => expect(controls.getByRole('button', { name: 'Start 2nd Half' })).toBeVisible(),
-  );
+  await halfTime(page);
   const banked = await clockSeconds(page);
 
   // A reload rather than a wait: it takes seconds of real time, which is exactly what a clock that
@@ -119,165 +121,118 @@ test('the clock stops at half time and the second half picks up from the banked 
   await goto(page, `/games/${id}/live`);
   expect(await clockSeconds(page), 'the clock kept running through half time').toBe(banked);
 
-  await clickFor(
-    controls.getByRole('button', { name: 'Start 2nd Half' }),
-    () => expect(controls.getByRole('button', { name: 'Half time' })).toHaveCount(0),
-  );
+  await startSecondHalf(page);
 
   // Forwards from the banked total. A second half starting at nought reads lower, not higher, so
   // this is the assertion that tells the two apart.
   await expect.poll(() => clockSeconds(page), { timeout: 20_000 }).toBeGreaterThan(banked);
 });
 
-test('a spectator sees and feels our goal as it arrives, but not again on a reload', async ({ page, browser }) => {
+test('a spectator sees and feels our goal as it arrives, but not again on a reload', async ({ page, visitor }) => {
   const id = await liveMatch(page, 'FC Juichen');
 
-  const visitor = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
-  try {
-    const watching = await visitor.newPage();
-    // Stands in for the phone's motor: records the patterns rather than needing a tap first, as Chrome's real one does.
-    await watching.addInitScript(() => {
-      window.buzzes = [];
-      navigator.vibrate = (pattern) => { window.buzzes.push(pattern); return true; };
-    });
-    await gotoRendered(watching, `/games/${id}/live`);
+  await visitor.addInitScript(fakeVibration);
+  await goto(visitor, `/games/${id}/live`);
 
-    const flash = watching.locator('.live-goal-flash');
-    await expect(watching).toHaveTitle(/^0 – 0 · .*FC Juichen/);
-    await expect(flash).toHaveCount(0);
+  const flash = visitor.locator('.live-goal-flash');
+  await expect(visitor).toHaveTitle(/^0 – 0 · .*FC Juichen/);
+  await expect(flash).toHaveCount(0);
 
-    await page.evaluate(() => {
-      window.buzzes = [];
-      navigator.vibrate = (pattern) => { window.buzzes.push(pattern); return true; };
-    });
+  await page.evaluate(fakeVibration);
 
-    await clickFor(
-      page.getByRole('button', { name: 'Goal', exact: true }),
-      () => expect(page.locator('.mud-dialog')).toBeVisible(),
-    );
-    const goalDialog = await openDialog(page);
-    await scoreGoal(page, goalDialog, 'Fixture');
+  await logGoal(page, 'Fixture');
 
-    await expect(flash).toContainText('Fixture');
-    await expect(watching.locator('.live-event-fresh')).toHaveCount(1);
-    await expect(watching).toHaveTitle(/^(1 – 0|0 – 1) · /);
-    await expect.poll(() => watching.evaluate(() => window.buzzes.length)).toBe(1);
-    // The coach tapped the button; the buzz is for the people who did not.
-    expect(await page.evaluate(() => window.buzzes)).toEqual([]);
+  await expect(flash).toContainText('Fixture');
+  await expect(visitor.locator('.live-event-fresh')).toHaveCount(1);
+  await expect(visitor).toHaveTitle(/^(1 – 0|0 – 1) · /);
+  await expect.poll(() => visitor.evaluate(() => window.buzzes.length)).toBe(1);
+  // The coach tapped the button; the buzz is for the people who did not.
+  expect(await page.evaluate(() => window.buzzes)).toEqual([]);
 
-    // It stands down by itself, and a reload mid-match must not replay it.
-    await expect(flash).toHaveCount(0, { timeout: 15_000 });
-    await gotoRendered(watching, `/games/${id}/live`);
-    await expect(watching.locator('.live-score-value').first()).toBeVisible();
-    await expect(flash).toHaveCount(0);
-    await expect(watching.locator('.live-event-fresh')).toHaveCount(0);
+  // It stands down by itself, and a reload mid-match must not replay it.
+  await expect(flash).toHaveCount(0, { timeout: 15_000 });
+  await goto(visitor, `/games/${id}/live`);
+  await expect(visitor.locator('.live-score-value').first()).toBeVisible();
+  await expect(flash).toHaveCount(0);
+  await expect(visitor.locator('.live-event-fresh')).toHaveCount(0);
 
-    // A goal against is news, not a party: a buzz and the new row, no banner.
-    await clickFor(
-      page.getByRole('button', { name: 'Goal against' }),
-      () => expect(watching.locator('.live-event')).toHaveCount(2),
-    );
-    await expect(watching.locator('.live-event-fresh')).toHaveCount(1);
-    await expect.poll(() => watching.evaluate(() => window.buzzes.length)).toBe(1);
-    await expect(flash).toHaveCount(0);
-  } finally {
-    await visitor.close();
-  }
+  // A goal against is news, not a party: a buzz and the new row, no banner.
+  await clickFor(
+    page.getByRole('button', { name: 'Goal against' }),
+    () => expect(visitor.locator('.live-event')).toHaveCount(2),
+  );
+  await expect(visitor.locator('.live-event-fresh')).toHaveCount(1);
+  await expect.poll(() => visitor.evaluate(() => window.buzzes.length)).toBe(1);
+  await expect(flash).toHaveCount(0);
 });
 
-test('a spectator who switched vibration off still sees our goal, but is not buzzed for it', async ({ page, browser }) => {
+test('a spectator who switched vibration off still sees our goal, but is not buzzed for it', async ({ page, visitor }) => {
   const id = await liveMatch(page, 'FC Stiltezone');
 
-  const visitor = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
-  try {
-    const watching = await visitor.newPage();
-    await watching.addInitScript(() => {
-      window.buzzes = [];
-      navigator.vibrate = (pattern) => { window.buzzes.push(pattern); return true; };
-    });
+  await visitor.addInitScript(fakeVibration);
 
-    // Drawn only once the browser has answered, so its button arrives with its handler already bound. Clicked once on purpose: a
-    // retried click on a toggle switches it straight back.
-    await gotoRendered(watching, '/settings');
-    const setting = watching.locator('.notify-row', { hasText: 'Vibrate on match events' });
-    await setting.getByRole('button', { name: 'Turn off' }).click();
-    await expect(setting).toContainText('Off in this browser');
+  // Drawn only once the browser has answered, so its button arrives with its handler already bound. Clicked once on purpose: a
+  // retried click on a toggle switches it straight back.
+  await goto(visitor, '/settings');
+  const setting = visitor.locator('.notify-row', { hasText: 'Vibrate on match events' });
+  await setting.getByRole('button', { name: 'Turn off' }).click();
+  await expect(setting).toContainText('Off in this browser');
 
-    // Kept by the browser, not the circuit.
-    await gotoRendered(watching, '/settings');
-    await expect(setting.getByRole('button', { name: 'Turn on' })).toBeVisible();
+  // Kept by the browser, not the circuit.
+  await goto(visitor, '/settings');
+  await expect(setting.getByRole('button', { name: 'Turn on' })).toBeVisible();
 
-    await gotoRendered(watching, `/games/${id}/live`);
-    await expect(watching.locator('.live-score-value').first()).toBeVisible();
+  await goto(visitor, `/games/${id}/live`);
+  await expect(visitor.locator('.live-score-value').first()).toBeVisible();
 
-    await clickFor(
-      page.getByRole('button', { name: 'Goal', exact: true }),
-      () => expect(page.locator('.mud-dialog')).toBeVisible(),
-    );
-    const goalDialog = await openDialog(page);
-    await scoreGoal(page, goalDialog, 'Fixture');
+  await logGoal(page, 'Fixture');
 
-    await expect(watching.locator('.live-goal-flash')).toBeVisible();
+  await expect(visitor.locator('.live-goal-flash')).toBeVisible();
 
-    // The circuit asks for its buzz after drawing the banner, so the banner proves nothing about it. Asking the same function directly
-    // and awaiting it does: whatever the page asked for, the switch has had to refuse.
-    expect(await watching.evaluate(async () => {
-      await window.vibration.buzz([100]);
-      return window.buzzes;
-    })).toEqual([]);
-  } finally {
-    await visitor.close();
-  }
+  // The circuit asks for its buzz after drawing the banner, so the banner proves nothing about it. Asking the same function directly
+  // and awaiting it does: whatever the page asked for, the switch has had to refuse.
+  expect(await visitor.evaluate(async () => {
+    await window.vibration.buzz([100]);
+    return window.buzzes;
+  })).toEqual([]);
 });
 
-test('an installed iPhone app is pointed at its own settings instead of offered a switch it would ignore', async ({ browser }) => {
-  const iphone = await browser.newContext({
+test('an installed iPhone app is pointed at its own settings instead of offered a switch it would ignore', async ({ openPage }) => {
+  const iphone = await openPage({
     storageState: VISITOR_STATE,
-    baseURL: BASE_URL,
     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
   });
-  try {
-    const page = await iphone.newPage();
-    // Safari has no Vibration API at all, which is what the page reads — the user agent alone would leave Chromium's in place. And
-    // installed, the only way the app has an entry in the iPhone's settings to point at.
-    await page.addInitScript(() => {
-      delete Navigator.prototype.vibrate;
-      Object.defineProperty(Navigator.prototype, 'standalone', { get: () => true });
-    });
-    await gotoRendered(page, '/settings');
+  // Safari has no Vibration API at all, which is what the page reads — the user agent alone would leave Chromium's in place. And
+  // installed, the only way the app has an entry in the iPhone's settings to point at.
+  await iphone.addInitScript(() => {
+    delete Navigator.prototype.vibrate;
+    Object.defineProperty(Navigator.prototype, 'standalone', { get: () => true });
+  });
+  await goto(iphone, '/settings');
 
-    const setting = page.locator('.notify-row', { hasText: 'Vibrate on match events' });
-    await expect(setting).toContainText('Settings → Notifications');
-    await expect(setting.getByRole('button')).toHaveCount(0);
-  } finally {
-    await iphone.close();
-  }
+  const setting = iphone.locator('.notify-row', { hasText: 'Vibrate on match events' });
+  await expect(setting).toContainText('Settings → Notifications');
+  await expect(setting.getByRole('button')).toHaveCount(0);
 });
 
-test('a spectator watching the same match is given a pitch that does nothing', async ({ page, browser }) => {
+test('a spectator watching the same match is given a pitch that does nothing', async ({ page, visitor }) => {
   const id = await liveMatch(page, 'FC Toeschouwer');
 
-  const visitor = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
-  try {
-    const watching = await visitor.newPage();
-    await gotoRendered(watching, `/games/${id}/live`);
+  await goto(visitor, `/games/${id}/live`);
 
-    // The scoreboard is the point of the page for a parent, so it has to be there before anything
-    // is asserted to be missing.
-    await expect(watching.locator('.live-score-value').first()).toBeVisible();
-    await expect(watching.locator('.live-lineup .pitch-player')).not.toHaveCount(0);
+  // The scoreboard is the point of the page for a parent, so it has to be there before anything
+  // is asserted to be missing.
+  await expect(visitor.locator('.live-score-value').first()).toBeVisible();
+  await expect(visitor.locator('.live-lineup .pitch-player')).not.toHaveCount(0);
 
-    for (const name of ['Goal', 'Goal against', 'Finish match', 'Half time']) {
-      await expect(watching.getByRole('button', { name, exact: true })).toHaveCount(0);
-    }
-
-    // OnPlayerClicked is left unset for a spectator, so the chip is inert rather than guarded —
-    // a tap on it has to open nothing at all.
-    await watching.locator('.live-lineup .pitch-player').first().click();
-    await expect(watching.locator('.mud-dialog')).toHaveCount(0);
-  } finally {
-    await visitor.close();
+  for (const name of ['Goal', 'Goal against', 'Finish match', 'Half time']) {
+    await expect(visitor.getByRole('button', { name, exact: true })).toHaveCount(0);
   }
+
+  // OnPlayerClicked is left unset for a spectator, so the chip is inert rather than guarded —
+  // a tap on it has to open nothing at all.
+  await visitor.locator('.live-lineup .pitch-player').first().click();
+  await expect(visitor.locator('.mud-dialog')).toHaveCount(0);
 });
 
 // Stands in for the Screen Wake Lock API, counting what is held: headless Chromium refuses the real one.
@@ -299,7 +254,7 @@ const fakeWakeLock = () => {
   });
 };
 
-test('the coach\'s screen stays awake from kick-off to full time, and a spectator\'s is left alone', async ({ page, browser }) => {
+test('the coach\'s screen stays awake from kick-off to full time, and a spectator\'s is left alone', async ({ page, visitor }) => {
   await page.addInitScript(fakeWakeLock);
   const id = await liveMatch(page, 'FC Wakker');
   const held = (on) => on.evaluate(() => window.wakeLocks.held.length);
@@ -312,23 +267,17 @@ test('the coach\'s screen stays awake from kick-off to full time, and a spectato
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
   await expect.poll(() => held(page)).toBe(1);
 
-  const visitor = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
-  try {
-    const watching = await visitor.newPage();
-    await watching.addInitScript(fakeWakeLock);
-    await gotoRendered(watching, `/games/${id}/live`);
-    await expect(watching).toHaveTitle(/^0 – 0 · .*FC Wakker/);
+  await visitor.addInitScript(fakeWakeLock);
+  await goto(visitor, `/games/${id}/live`);
+  await expect(visitor).toHaveTitle(/^0 – 0 · .*FC Wakker/);
 
-    // Calls reach the browser in the order they were made, so once a later render's title lands, anything the first render sent has
-    // already run — whichever order the page makes them in.
-    await clickFor(
-      page.getByRole('button', { name: 'Goal against' }),
-      () => expect(watching).toHaveTitle(/^(0 – 1|1 – 0) · /),
-    );
-    expect(await watching.evaluate(() => window.wakeLocks.requests)).toBe(0);
-  } finally {
-    await visitor.close();
-  }
+  // Calls reach the browser in the order they were made, so once a later render's title lands, anything the first render sent has
+  // already run — whichever order the page makes them in.
+  await clickFor(
+    page.getByRole('button', { name: 'Goal against' }),
+    () => expect(visitor).toHaveTitle(/^(0 – 1|1 – 0) · /),
+  );
+  expect(await visitor.evaluate(() => window.wakeLocks.requests)).toBe(0);
 
   // Leaving in-app keeps the window, the listener and the lock with it, so only the page letting go releases it. The marker proves this
   // was not a full load, which would release it whatever the page did.

@@ -14,7 +14,7 @@
 import { chromium } from 'playwright';
 import { existsSync, mkdirSync } from 'node:fs';
 import { auditTouchTargets } from './touch-targets.mjs';
-import { clickFor, goto, gotoRendered, waitUntil } from './blazor.mjs';
+import { clickFor, goto, waitUntil } from './blazor.mjs';
 
 const BASE = process.env.VISUAL_BASE_URL ?? 'http://127.0.0.1:5228';
 const OUT = process.env.VISUAL_OUT_DIR ?? 'artifacts/visual';
@@ -42,21 +42,19 @@ const SEED_LIVE_OPPONENT = 'VV Kievit';
 const SEED_TRAINING_NOTE = 'Positiespel en afwerken';
 const SEED_CANCELLED_NOTE = 'Vorst — veld gesloten';
 
-// The third entry marks a page that renders no MudBlazor control, so there is nothing for goto to
-// wait on — see gotoRendered in blazor.mjs. It says nothing about whether the page has a circuit.
 const PAGES = [
-  ['home', '/', true],
+  ['home', '/'],
   ['players', '/players'],
   ['games', '/games'],
-  ['duties', '/games/duties', true],
+  ['duties', '/games/duties'],
   ['trainings', '/trainings'],
-  ['stats', '/stats', true],
-  ['position-development', '/stats/positions', true],
+  ['stats', '/stats'],
+  ['position-development', '/stats/positions'],
   ['users', '/users'],
   ['teams', '/teams'],
   ['preferences', '/preferences'],
   ['settings', '/settings'],
-  ['styleguide', '/styleguide', true],
+  ['styleguide', '/styleguide'],
 ];
 
 // Both languages, because the UI is Dutch by default and English is a resource-key fallback.
@@ -75,10 +73,8 @@ const errors = [];
 page.on('console', m => { if (m.type() === 'error') errors.push(`[console] ${m.text()}`); });
 page.on('pageerror', e => errors.push(`[pageerror] ${e.message}`));
 
-// Development-only, loopback-only route that mints the same principal /auth/login does. It lands
-// on the start page, which binds no handler to wait for — see gotoRendered. The next goto does the
-// waiting that matters.
-const signIn = () => gotoRendered(page, `${BASE}/dev/login`);
+// Development-only, loopback-only route that mints the same principal /auth/login does.
+const signIn = () => goto(page, `${BASE}/dev/login`);
 
 await signIn();
 
@@ -175,7 +171,7 @@ async function seedGameToday(opponent) {
 await seedGameToday(SEED_OPPONENT);
 
 // With no duty entered anywhere, /games/duties is its empty-state paragraph rather than the table.
-await gotoRendered(page, `${BASE}/games/duties`);
+await goto(page, `${BASE}/games/duties`);
 if (!(await page.locator('.duty-row').count())) {
   await goto(page, `${BASE}/games`);
   const dialog = page.locator('.mud-dialog');
@@ -249,12 +245,12 @@ if (!(await page.locator('.training-row').count())) {
   console.log('seeded two trainings, one of them cancelled');
 }
 
-for (const [name, path, bare] of PAGES) {
+for (const [name, path] of PAGES) {
   // A Blazor Server page renders twice: static prerender, then again once the circuit connects.
   // Screenshotting between the two catches a half-built page, so goto waits for the second — see
   // blazor.mjs. A page that is still loading its data says so with a spinner, which is a finding
   // rather than something to sleep through.
-  await (bare ? gotoRendered : goto)(page, BASE + path);
+  await goto(page, BASE + path);
   await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true });
   const heading = await page.locator('h1, h4, .mud-typography-h4').first().textContent().catch(() => '');
   console.log(`${name.padEnd(9)} ${path.padEnd(10)} ${(heading ?? '').trim().slice(0, 40)}`);

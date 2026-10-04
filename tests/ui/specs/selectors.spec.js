@@ -6,10 +6,8 @@
 // rename in the app turns "an anonymous visitor is offered no Delete button" into a sentence that is
 // true because nothing is called that any more, and the suite stays green while the check is gone.
 //
-// Most of those assertions are already paired with a positive one — the same spec proves the class
-// matches something when it should, a page or two earlier — but pairing is a convention, and a
-// convention is not a guard. This is the guard: every class name the suite reaches for has to still
-// exist in the app's own markup or stylesheets.
+// This is the guard: every app class a selector in this directory names has to still exist in the
+// app's own source. The names are read out of the tests rather than kept in a list, which drifts.
 //
 // It reads the source rather than the browser on purpose. Checking in a browser would mean putting
 // the app into the exact state each class appears in, which is most of the rest of this directory;
@@ -17,61 +15,85 @@
 // milliseconds. What it deliberately does not prove is that the class still renders where the test
 // looks for it — that is what the specs themselves are for.
 import { readdirSync, readFileSync } from 'node:fs';
-import { extname, join } from 'node:path';
+import { basename, extname, join } from 'node:path';
 import { test, expect } from '../fixtures.js';
 
+const UI_TESTS = join(import.meta.dirname, '..');
 const SOURCE = join(import.meta.dirname, '../../../src');
 
-// Only the app's own classes. A MudBlazor class (.mud-dialog, .mud-table-row) is not in here: it is
-// not ours to rename, and a MudBlazor upgrade that drops one is caught by the specs going red for
-// real rather than by this list.
-const SELECTORS = {
-  'the games list': ['game-row', 'game-section', 'game-date', 'game-score', 'game-opponent',
-                     'badge-venue-inline', 'badge-venue-home', 'badge-venue-away',
-                     'action-live', 'action-live-now', 'game-more', 'date-block-day', 'date-block-mon', 'action-labelled'],
-  'a match still missing its lineup': ['nolineup-icon', 'action-needs-lineup'],
-  'the formation builder': ['pitch', 'pitch-empty', 'pitch-player', 'pitch-number', 'draggable-player',
-                            'subs-panel', 'sub-item', 'pitch-legend', 'legend-item',
-                            'sub-drop-zone', 'builder-opponent', 'builder-date'],
-  'the playing-time table': ['playtime-table', 'pt-total', 'playtime-note'],
-  'the live screen': ['live-lineup', 'live-controls', 'live-score-value', 'live-score-away',
-                      'live-event', 'live-event-score', 'live-event-break', 'live-event-min',
-                      'live-bench', 'live-bench-number', 'live-clock', 'live-actions',
-                      'live-timeline-toggle', 'live-timeline',
-                      'live-minutes-card', 'card-label', 'planned-row'],
-  'the result page': ['result-comments', 'comment-entry', 'comment-visibility', 'comment-add-row',
-                      'live-event', 'live-event-against', 'live-event-tag', 'og-check', 'add-row',
-                      'btn-add-goal', 'score-big-input', 'score-value', 'score-away',
-                      'stat-tile', 'stat-value', 'live-minutes-row'],
-  'season and squad management': ['list-row', 'list-row-meta', 'players-table', 'badge-guest',
-                                  'season-menu-item', 'training-row'],
-  // The minutes checks are counts of zero against a signed-out visitor, so a rename here is exactly
-  // the case this spec exists for: the assertions would keep passing with nothing left to hide.
-  'the statistics screens': ['stat-label', 'stat-tiles', 'stat-tiles-3', 'game-head', 'g-num',
-                             'game-list', 'game-list-no-minutes', 'game-note', 'g-opp-name',
-                             'position-meta', 'pt-row', 'badge-venue'],
-  // The availability view is two sets of markup with CSS choosing between them, so a rename here
-  // shows up as a switch that appears to do nothing rather than as a test going red.
-  'the availability bar': ['availability-switch', 'availability-toggle', 'pt-legend', 'pt-split',
-                           'pt-seg', 'pt-played', 'pt-meta-share', 'pt-meta-max', 'position-fill'],
-  'the phone layout': ['dialog-sheet', 'stacked-table', 'topbar-nav'],
-  // The chrome the specs drive without a circuit: the drawer is a checkbox and the season picker is
-  // a <details> disclosure, so these names are the only handle the tests have on them.
-  'the chrome': ['app-drawer', 'nav-hamburger', 'season-picker', 'season-menu-all',
-                 'season-picker-label', 'nav-group-admin'],
-  'the settings page': ['settings-section', 'settings-language-option'],
-  // The markup that replaced a handler with a link, or a snackbar with a line on the page.
-  'the pages without a circuit': ['inline-notice', 'home-tile-link', 'overview-capture', 'overview-period-card',
-                                  'pd-name-cell', 'player-name-cell', 'rank-row', 'action-btn'],
-  'the squad': ['badge-archived', 'injured-mark'],
-};
+/** The string literals in a script, past its comments and regular expressions — either can hold a stray quote. */
+function stringsIn(code) {
+  const strings = [];
+  let previous = '';
+  for (let i = 0; i < code.length; i++) {
+    const c = code[i];
+    if (c === '/' && code[i + 1] === '/') {
+      i = code.indexOf('\n', i);
+      if (i < 0) break;
+    } else if (c === '/' && code[i + 1] === '*') {
+      i = code.indexOf('*/', i + 2) + 1;
+    } else if (c === '/' && (previous === '' || '(,=:[!&|?{};'.includes(previous))) {
+      for (let inClass = false, done = false; !done && ++i < code.length;) {
+        if (code[i] === '\\') i++;
+        else if (code[i] === '[') inClass = true;
+        else if (code[i] === ']') inClass = false;
+        else if (code[i] === '/' && !inClass) done = true;
+      }
+      previous = '/';
+    } else if (c === '\'' || c === '"' || c === '`') {
+      let text = '';
+      for (i++; i < code.length && code[i] !== c; i++) {
+        if (code[i] === '\\') {
+          text += code[++i];
+        } else if (c === '`' && code[i] === '$' && code[i + 1] === '{') {
+          for (let depth = 0; i < code.length; i++) {
+            if (code[i] === '{') depth++;
+            else if (code[i] === '}' && --depth === 0) break;
+          }
+        } else {
+          text += code[i];
+        }
+      }
+      strings.push(text);
+      previous = c;
+    } else if (!/\s/.test(c)) {
+      previous = c;
+    }
+  }
+  return strings;
+}
 
-/** Every .razor, .razor.css and .css file in the app, read once. */
+// A class in a selector follows the start, a combinator, a bracket, or a tag name: `ff.auth` is a cookie, `label.mud-switch` a selector.
+const CLASS_CHAIN = /(?:^|[\s>+~,(]|\b(?:a|button|input|label|details|summary|select|option|div|span|li|ul|table|tr|td|th|form|textarea|img|svg|nav|main|header|section|p|pre|h[1-6]))((?:\.[a-z][\w-]*)+)/g;
+
+/** Every app-owned class the tests name. MudBlazor's are not ours to rename, and an upgrade that drops one fails a spec for real. */
+function classesTheTestsUse() {
+  const files = [...readdirSync(join(UI_TESTS, 'specs')).map(name => join('specs', name)), 'helpers.js', 'fixtures.js',
+    'global-setup.js'].filter(file => extname(file) === '.js' && basename(file) !== 'selectors.spec.js');
+
+  const names = new Set();
+  for (const file of files) {
+    const code = readFileSync(join(UI_TESTS, file), 'utf8');
+    for (const text of stringsIn(code)) {
+      for (const [, list] of text.matchAll(/class="([^"]+)"/g)) list.split(/\s+/).forEach(name => names.add(name));
+      // Attribute values and paths go first: a slash outside a bracket is a URL or a file, not a selector.
+      const selector = text.replace(/\[[^\]]*\]/g, '[]');
+      if (selector.includes('/')) continue;
+      for (const [, chain] of selector.matchAll(CLASS_CHAIN)) chain.split('.').filter(Boolean).forEach(name => names.add(name));
+    }
+    for (const [, name] of code.matchAll(/toHaveClass\(\/([a-z][\w-]*)\//g)) names.add(name);
+  }
+  return [...names].filter(name => !name.startsWith('mud-')).sort();
+}
+
+/** Every markup, code, stylesheet and script file in the app, read once. */
 function appSource() {
-  const wanted = new Set(['.razor', '.css']);
+  const wanted = new Set(['.razor', '.cs', '.css', '.js']);
   return readdirSync(SOURCE, { recursive: true, withFileTypes: true })
     .filter(entry => entry.isFile() && wanted.has(extname(entry.name)))
-    .map(entry => readFileSync(join(entry.parentPath ?? entry.path, entry.name), 'utf8'))
+    .map(entry => join(entry.parentPath ?? entry.path, entry.name))
+    .filter(path => !/[\\/](bin|obj|node_modules)[\\/]/.test(path))
+    .map(path => readFileSync(path, 'utf8'))
     .join('\n');
 }
 
@@ -79,16 +101,13 @@ test('every class name these tests rely on still exists in the app', () => {
   const source = appSource();
   expect(source.length, 'the app source should have been found and read').toBeGreaterThan(1000);
 
-  const missing = [];
-  for (const [area, classes] of Object.entries(SELECTORS)) {
-    for (const name of classes) {
-      // Bounded on both sides, so `pitch` does not match `pitch-empty` and call itself present —
-      // and a hyphen counts as part of the name, or `score-value` would answer for
-      // `live-score-value` on another page and the rename it exists to catch would sail through.
-      if (!new RegExp(`(?<![\\w-])${name}\\b`).test(source)) missing.push(`${name} (${area})`);
-    }
-  }
+  const used = classesTheTestsUse();
+  // Guards the reader itself: a regression in it would otherwise leave nothing to check, and pass.
+  expect(used.length, 'no class names were read out of the tests').toBeGreaterThan(100);
 
-  expect(missing, 'renamed or removed in the app — the tests naming them now assert nothing')
-    .toEqual([]);
+  // Bounded on both sides by anything that cannot continue a class name, so `pitch` does not answer
+  // for `pitch-empty`, nor `score-value` for `live-score-value`.
+  const missing = used.filter(name => !new RegExp(`(?<![\\w-])${name}(?![\\w-])`).test(source));
+
+  expect(missing, 'renamed or removed in the app — the tests naming them now assert nothing').toEqual([]);
 });

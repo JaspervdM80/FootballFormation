@@ -1,11 +1,10 @@
-﻿// Injury, in both the senses the app knows. The standing squad status: an injured player is never
+// Injury, in both the senses the app knows. The standing squad status: an injured player is never
 // offered a slot, and is shown separately from one merely unavailable for a fixture. And the one
 // that happens on the day: a player marked injured mid-match leaves the pitch.
 import { test, expect } from '../fixtures.js';
-import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
 import {
-  addPlayer, clickFor, createMatch, gameAction, gameRow, gotoRendered, liveMatch, openDialog, playerMenuItem,
-  playerRow, submitDialog,
+  addPlayer, clickFor, createMatch, gameAction, goto, liveMatch, matchWithId, offInjured, openDialog,
+  playerMenuItem, playerRow, submitDialog,
 } from '../helpers.js';
 
 /** Toggles the Injured switch in the open Edit Player dialog and saves. */
@@ -34,25 +33,19 @@ test('marking a player injured marks the row, and clearing it removes the mark',
   await expect(row.locator('.injured-mark')).toHaveCount(0);
 });
 
-test('who is injured is admin-only — a visitor sees the player but not the mark', async ({ page, browser }) => {
+test('who is injured is admin-only — a visitor sees the player but not the mark', async ({ page, visitor }) => {
   await addPlayer(page, { firstName: 'Injury', surname: 'Secret', shirt: 84 });
   await playerMenuItem(page, 'Injury Secret', 'Edit Player');
   await setInjured(await openDialog(page), true);
 
   await expect(playerRow(page, 'Injury Secret').locator('.injured-mark')).toBeVisible();
 
-  const visitor = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
-  try {
-    const anon = await visitor.newPage();
-    await gotoRendered(anon, '/players');
+  await goto(visitor, '/players');
 
-    // The squad is public, so the player is on the page; the injury against their name is not.
-    const anonRow = playerRow(anon, 'Injury Secret');
-    await expect(anonRow).toBeVisible();
-    await expect(anonRow.locator('.injured-mark')).toHaveCount(0);
-  } finally {
-    await visitor.close();
-  }
+  // The squad is public, so the player is on the page; the injury against their name is not.
+  const anonRow = playerRow(visitor, 'Injury Secret');
+  await expect(anonRow).toBeVisible();
+  await expect(anonRow.locator('.injured-mark')).toHaveCount(0);
 });
 
 test('an injured player is left out of the line-up and shown in its own panel', async ({ page }) => {
@@ -60,9 +53,7 @@ test('an injured player is left out of the line-up and shown in its own panel', 
   await playerMenuItem(page, 'Injury Lineup', 'Edit Player');
   await setInjured(await openDialog(page), true);
 
-  await createMatch(page, { opponent: 'FC Blessuretest' });
-  await gameAction(page, 'FC Blessuretest', /Formation|Add lineup/);
-  await page.waitForURL(/\/games\/\d+\/formation/);
+  await matchWithId(page, 'FC Blessuretest');
 
   // Not offered as a draggable player...
   await expect(page.locator('.draggable-player', { hasText: 'Injury Lineup' })).toHaveCount(0);
@@ -95,12 +86,8 @@ test('a player marked injured mid-match leaves the pitch and can be put back', a
   const chips = page.locator('.live-lineup .pitch-player');
   await expect(chips).toHaveCount(2);
 
-  await clickFor(chips.first(), () => expect(page.locator('.mud-dialog')).toBeVisible());
-  const dialog = await openDialog(page);
-
   // The switch alone is a complete answer: nobody has to come on.
-  await dialog.locator('label.mud-switch', { hasText: 'Injured' }).click();
-  await submitDialog(page, 'Off injured');
+  await offInjured(page);
   // Scoped to the snackbar: the timeline entry below says "Off injured" too.
   await expect(page.locator('.mud-snackbar-content-message', { hasText: 'off injured' })).toBeVisible();
 

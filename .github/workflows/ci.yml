@@ -30,10 +30,10 @@ permissions:
   contents: read
 
 jobs:
-  # All four jobs here are required checks, and `main`'s ruleset names each of them by the `name:`
-  # it declares — so renaming one means editing .github/rulesets/main-every-check-green.json in the
-  # same change, or the merge button waits forever on a check nothing reports. See
-  # docs/deployment.md.
+  # Four of the jobs here are required checks — every one but the Playwright shards, which the
+  # `Playwright` job stands for — and `main`'s ruleset names each by the `name:` it declares, so
+  # renaming one means editing .github/rulesets/main-every-check-green.json in the same change, or
+  # the merge button waits forever on a check nothing reports. See docs/deployment.md.
   build:
     name: Build and test
     runs-on: ubuntu-latest
@@ -148,16 +148,24 @@ jobs:
           COVERAGE_BASE: origin/${{ github.event.pull_request.base.ref || github.event.repository.default_branch }}
 
   # What the app does: the public/admin split, the dialogs, the match-day journey, both languages,
-  # the phone layout. See docs/testing.md.
+  # the phone layout. See docs/testing/ui-testing.md.
   #
   # Blocking. Merging is now the release, and nothing re-tests on main afterwards, so a browser
   # failure is dealt with here or not at all. The cost is that a flake holds the merge: re-run the
-  # job from the Actions page, because the ruleset grants no bypass to anyone.
-  playwright:
-    name: Playwright
+  # failed shard from the Actions page, because the ruleset grants no bypass to anyone.
+  #
+  # Two shards, each with its own runner, app and database. Split by whole spec file and balanced by
+  # test count, so the boundary moves as tests are added: a spec creates what it reads.
+  playwright-shard:
+    name: Playwright ${{ matrix.shard }}/2
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      # Both finish, so one red shard does not hide what the other would have said.
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     steps:
       - uses: actions/checkout@v7
 
@@ -180,26 +188,22 @@ jobs:
           name: app
           path: artifacts/app
 
-      # No lockfile: tests/ui/package-lock.json is git-ignored, the same as scripts/'s — so the
-      # cache is keyed on the manifest that decides what npm resolves, and ~/.npm is the download
-      # cache rather than node_modules, which npm still has to link on every run.
+      # Keyed on the lockfile, which pins the Playwright release. ~/.npm is the download cache rather
+      # than node_modules, which npm still has to link on every run.
       - uses: actions/cache@v6
         with:
           path: ~/.npm
-          key: npm-${{ runner.os }}-ui-${{ hashFiles('tests/ui/package.json') }}
+          key: npm-${{ runner.os }}-ui-${{ hashFiles('tests/ui/package-lock.json') }}
           restore-keys: npm-${{ runner.os }}-ui-
 
-      # The browser download, which is most of the install step below — about 10 seconds of it on a
-      # hit. `playwright install` still runs: it is a no-op when the revision is already there, and
-      # it is what fetches a new one when a patch release moves the revision without moving
-      # package.json.
+      # Keyed on the lockfile: the release fixes the browser revision, and a key that outlived one never saved the new browser.
       - uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-ui-${{ hashFiles('tests/ui/package.json') }}
+          key: playwright-${{ runner.os }}-ui-${{ hashFiles('tests/ui/package-lock.json') }}
           restore-keys: playwright-${{ runner.os }}-ui-
 
-      - run: npm install --no-audit --no-fund
+      - run: npm ci --no-audit --no-fund
         working-directory: tests/ui
 
       # Only Chromium. The suite runs one browser, and --with-deps brings the system libraries the
@@ -211,7 +215,7 @@ jobs:
       # against it, and both are cleaned up when this exits. UI_TEST_APP_DLL is what points that
       # webServer at the artifact instead of compiling its own. CI=true is already set, which turns
       # on one retry — a test that only passes on that retry is reported as flaky, not quietly green.
-      - run: npm test
+      - run: npm test -- --shard=${{ matrix.shard }}/2
         working-directory: tests/ui
         env:
           UI_TEST_APP_DLL: ${{ github.workspace }}/artifacts/app/FootballFormation.Web.dll
@@ -220,11 +224,24 @@ jobs:
       - if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.shard }}
           path: |
             tests/ui/playwright-report/
             tests/ui/test-results/
           retention-days: 7
+
+  # The required check, standing for both shards: green only when both are. `always()` so that a
+  # failed build or shard reports here as red rather than as skipped, which a ruleset counts as passed.
+  playwright:
+    name: Playwright
+    needs: playwright-shard
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: test "$SHARDS" = success
+        env:
+          SHARDS: ${{ needs.playwright-shard.result }}
 
   # Whether it renders at all, and whether a thumb can hit it. This is the only thing holding the
   # Touch / PWA fixes in docs/known_issues.md in place — every one of them is CSS, and a MudBlazor
@@ -254,16 +271,16 @@ jobs:
       - uses: actions/cache@v6
         with:
           path: ~/.npm
-          key: npm-${{ runner.os }}-scripts-${{ hashFiles('scripts/package.json') }}
+          key: npm-${{ runner.os }}-scripts-${{ hashFiles('scripts/package-lock.json') }}
           restore-keys: npm-${{ runner.os }}-scripts-
 
       - uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-scripts-${{ hashFiles('scripts/package.json') }}
+          key: playwright-${{ runner.os }}-scripts-${{ hashFiles('scripts/package-lock.json') }}
           restore-keys: playwright-${{ runner.os }}-scripts-
 
-      - run: npm install --no-audit --no-fund
+      - run: npm ci --no-audit --no-fund
         working-directory: scripts
 
       - run: npx playwright install --with-deps chromium

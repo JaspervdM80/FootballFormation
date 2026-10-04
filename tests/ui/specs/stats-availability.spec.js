@@ -7,7 +7,7 @@
 // matching, the page would simply never switch.
 import { test, expect } from '../fixtures.js';
 import {
-  addPlayer, fileScore, fillLineup, gotoRendered, matchWithId, openDialog, playerMenuItem,
+  addPlayer, fileScore, fillLineup, goto, matchWithId, noEarlierDayThisSeason, openDialog, playerMenuItem,
   submitDialog,
 } from '../helpers.js';
 
@@ -16,7 +16,7 @@ test('the availability switch swaps the fairness bar for the four-colour split',
   // whatever the specs before it left behind.
   await addPlayer(page, { firstName: 'Beschikbaar', surname: 'Balk', shirt: 84 });
 
-  await gotoRendered(page, '/stats');
+  await goto(page, '/stats');
 
   const row = page.locator('.pt-row', { hasText: 'Beschikbaar' }).first();
   const legend = page.locator('.pt-legend');
@@ -42,7 +42,7 @@ test('the availability switch swaps the fairness bar for the four-colour split',
 });
 
 test('a match missed injured is coloured injured once the result is in', async ({ page }) => {
-  test.skip(new Date().getDate() === 1, 'no earlier day in the current month to date a match to');
+  test.skip(noEarlierDayThisSeason(), 'the season opened today — no earlier day in it to date a match to');
 
   await addPlayer(page, { firstName: 'Blessure', surname: 'Balk', shirt: 85 });
   await playerMenuItem(page, 'Blessure Balk', 'Edit Player');
@@ -59,7 +59,7 @@ test('a match missed injured is coloured injured once the result is in', async (
 
   await fileScore(page, id, 2, 1);
 
-  await gotoRendered(page, '/stats');
+  await goto(page, '/stats');
   await page.locator('label.availability-switch').click();
   const row = page.locator('.pt-row', { hasText: 'Blessure Balk' }).first();
 

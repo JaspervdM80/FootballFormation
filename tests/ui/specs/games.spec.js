@@ -3,7 +3,7 @@
 import { test, expect } from '../fixtures.js';
 import {
   clickFor, confirmDialog, createMatch, fileScore, fillField, gameAction, gameRow, goto, matchWithId,
-  openDialog, submitDialog,
+  noEarlierDayThisSeason, openDialog, submitDialog,
 } from '../helpers.js';
 
 test('a new match appears under Fixtures with its venue', async ({ page }) => {
@@ -75,10 +75,7 @@ test('deleting a match asks first, and the match survives a cancel', async ({ pa
 });
 
 test('only a match already played is flagged for its missing lineup', async ({ page }) => {
-  // On the first of the month there is no earlier day to pick, and stepping back a month would risk
-  // crossing the season boundary that the date decides the season from. Skipping one day in thirty
-  // beats a test that fails on the 1st and passes on the 2nd.
-  test.skip(new Date().getDate() === 1, 'no earlier day in the current month to date a match to');
+  test.skip(noEarlierDayThisSeason(), 'the season opened today — no earlier day in it to date a match to');
 
   // A future fixture is legitimately empty — the lineup is built on the day — so the warning is
   // about a match that has been played and whose playing time can therefore never be recovered.
@@ -87,13 +84,13 @@ test('only a match already played is flagged for its missing lineup', async ({ p
   await expect(upcoming.locator('.action-needs-lineup')).toHaveCount(0);
   await expect(upcoming.locator('.nolineup-icon')).toHaveCount(0);
 
-  const day = await createMatch(page, { opponent: 'FC Gespeeld', past: true });
+  const date = await createMatch(page, { opponent: 'FC Gespeeld', past: true });
 
   const played = gameRow(page, 'FC Gespeeld');
   // The card's own date block — the unambiguous check that the match really is in the past. The month
   // is part of it on purpose: day 8 of the wrong month reads the same and is not in the past.
-  const month = new Date().toLocaleString('en-US', { month: 'short' });
-  await expect(played.locator('.date-block-day')).toHaveText(String(Number(day)));
+  const month = date.toLocaleString('en-US', { month: 'short' });
+  await expect(played.locator('.date-block-day')).toHaveText(String(date.getDate()));
   await expect(played.locator('.date-block-mon')).toHaveText(new RegExp(`^${month}`, 'i'));
   await expect(played.locator('.nolineup-icon')).toBeVisible();
   // The outright button turns amber and is titled "Add lineup" rather than hiding.
@@ -103,7 +100,7 @@ test('only a match already played is flagged for its missing lineup', async ({ p
 test('the Results section leads with the most recent match, not the oldest', async ({ page }) => {
   // Two distinct past dates, not just two rows: the tie-break on equal dates sorts by id, which
   // would pass a test that only checked insertion order and hide a regression to oldest-first.
-  test.skip(new Date().getDate() <= 2, 'not enough earlier days in the current month for two dates');
+  test.skip(noEarlierDayThisSeason(2), 'the season is not yet two days old — no two earlier dates in it');
 
   const olderId = await matchWithId(page, 'FC Eerder', { past: 2 });
   await fileScore(page, olderId, 1, 0);

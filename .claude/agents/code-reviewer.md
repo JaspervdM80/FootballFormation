@@ -171,6 +171,34 @@ sleep. And the negatives matter as much: **do not ask for a component test** —
 by design; the UI is covered by `tests/ui` and `scripts/visual-check.sh` — and do not touch the
 `xUnit1051` suppression.
 
+**A change to `tests/ui` or `scripts/` is reviewed against `.claude/skills/ui-testing/SKILL.md`.**
+The suite was once 7.8 minutes in CI and full of tests that could not fail; these are what put it
+there, and each is a finding:
+
+- **Blocking**: a fixed sleep — a `waitForTimeout`/`setTimeout` that is the wait itself, not the
+  tick of a deadline-bounded poll; `gotoRendered`, `waitForHandlers`, a `_bl_` wait or a
+  `networkidle` wait brought back as readiness — `goto`/`settle` and `InteractiveShell`'s
+  `data-circuit` marker are the one signal; a `READY` changed in `tests/ui/helpers.js` but not in
+  `scripts/blazor.mjs`, or the reverse; an interactive page that does not open with
+  `<InteractiveShell />` — the marker fails open, so its tests click into the prerender; a test whose
+  name claims what it does not set up or assert (it cannot fail); an absence assertion with no
+  presence twin in the suite of the same name and exactness (a helper's click counts); a second
+  browser from `browser.newContext()` instead of the `visitor`/`openPage` fixture; a lockfile
+  git-ignored again, `npm install` in CI, a cache keyed on `package.json`, or the `Playwright` gate
+  job renamed or losing `if: always()`.
+- **Should fix**: a wait whose timeout is the expected path — acting, then waiting for a condition
+  that only the *last* action makes true (name the per-test cost); a `clickFor` expectation that
+  already holds before the click, which confirms nothing and never retries; a step that lands on an
+  interactive page without `goto` or `settle` and then navigates on — leaving mid-handshake logs
+  "Failed to complete negotiation"; a whole match, line-up or score built only to read one thing that
+  an existing test's state already shows; an inline copy of a sequence `tests/ui/helpers.js` owns
+  (the ui-testing skill lists them); a page loop or circuit probe repeated outside `smoke.spec.js` /
+  `rendermode.spec.js`; a class selector assembled from a variable, which `selectors.spec.js` cannot
+  read; a past-dated match without `test.skip(noEarlierDayThisSeason(), …)`; a spec that only passes
+  because an earlier spec file created its data (shards split by file).
+- Not a finding: repeated `Arrange` within one spec when the copies set up different states, or the
+  duplicated helpers between `tests/ui/helpers.js` and `scripts/blazor.mjs` — that pair is deliberate.
+
 **Coverage of the change must be at least 80%.** Run it:
 
 ```bash

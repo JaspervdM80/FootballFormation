@@ -3,13 +3,13 @@
 // itself still looks right, which is how a broken button went unnoticed. Waiting for the file is
 // therefore the whole test.
 import { test, expect } from '../fixtures.js';
-import { fillLineup, gotoRendered, matchWithId } from '../helpers.js';
+import { fillLineup, goto, matchWithId } from '../helpers.js';
 
 test('the overview exports the line-up as an image', async ({ page }) => {
   const id = await matchWithId(page, 'FC Schermafdruk');
   await fillLineup(page, 2);
 
-  await gotoRendered(page, `/games/${id}/overview`);
+  await goto(page, `/games/${id}/overview`);
   await expect(page.locator('.overview-period-card .pitch-player').first()).toBeVisible();
 
   const download = page.waitForEvent('download');

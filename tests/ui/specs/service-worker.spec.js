@@ -2,7 +2,7 @@
 // never is, and that a `no-cache` script is passed over despite being the same kind of request.
 import { test, expect } from '../fixtures.js';
 import { PUBLISHED_APP, VISITOR_STATE } from '../playwright.config.js';
-import { gotoRendered } from '../helpers.js';
+import { goto } from '../helpers.js';
 
 test.use({ storageState: VISITOR_STATE });
 
@@ -33,13 +33,13 @@ function cachedUrls(page) {
 
 test('the worker keeps the fingerprinted assets, and nothing that is not one', async ({ page }) => {
   // Registers the worker; its own requests were already in flight, so this fills nothing.
-  await gotoRendered(page, '/stats');
+  await goto(page, '/stats');
   await page.evaluate(() => navigator.serviceWorker.ready);
 
   // A second document, not a reload: Chromium can serve a reload's subresources from the replaced
   // document's memory cache, firing no fetch event — failing on a worker that works.
   const controlled = await page.context().newPage();
-  await gotoRendered(controlled, '/stats');
+  await goto(controlled, '/stats');
 
   // Polled: the worker writes without the page waiting on it.
   await expect.poll(async () => (await cachedUrls(controlled)).length).toBeGreaterThan(0);

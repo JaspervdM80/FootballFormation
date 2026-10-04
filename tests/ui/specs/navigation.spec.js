@@ -1,6 +1,6 @@
 // The back arrow through back.js. The static page whose fallback is not where it came from is in trainings.spec.js.
 import { test, expect } from '../fixtures.js';
-import { createMatch, gameRow, goto, gotoRendered } from '../helpers.js';
+import { createMatch, gameRow, goto } from '../helpers.js';
 
 const backArrow = (page) => page.locator('a.back-button').first();
 
@@ -25,16 +25,16 @@ test('an interactive page goes back to where the tab came from, not to its fallb
 });
 
 test('a page the app cannot name is stepped past', async ({ page }) => {
-  await gotoRendered(page, '/games');
-  await gotoRendered(page, '/login');
-  await gotoRendered(page, '/stats/positions');
+  await goto(page, '/games');
+  await goto(page, '/login');
+  await goto(page, '/stats/positions');
 
   await backArrow(page).click();
   await expect(page).toHaveURL(/\/games$/);
 });
 
 test('a page opened cold falls back, having nothing behind it', async ({ page }) => {
-  await gotoRendered(page, '/stats/positions');
+  await goto(page, '/stats/positions');
 
   await expect(backArrow(page)).toHaveAttribute('title', 'Back to Season');
   await backArrow(page).click();

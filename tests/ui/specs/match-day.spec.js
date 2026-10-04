@@ -5,10 +5,10 @@
 // against each other — a goal logged on the live screen has to reach the result page, and a lineup
 // built in the formation builder has to be the lineup the live screen substitutes from.
 import { test, expect } from '../fixtures.js';
-import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
 import {
-  chooseOption, clickFor, fillLineup, finishMatch, gameRow, goto, gotoRendered, liveMatch,
-  matchWithId, openDialog, pickPlayer, saveLineup, scoreGoal, startMatch, submitDialog,
+  chooseOption, clickFor, fillLineup, finishMatch, gameRow, goto, halfTime, liveMatch, logGoal,
+  matchWithId, noEarlierDayThisSeason, offInjured, openDialog, pickPlayer, saveLineup, startMatch,
+  startSecondHalf, submitDialog, substitute, tapOnPitch,
 } from '../helpers.js';
 
 test('a lineup dragged onto the pitch is still there after a reload', async ({ page }) => {
@@ -71,12 +71,7 @@ test('a match is run from the live screen and its score reaches the result', asy
   await expect(page.locator('.live-lineup .pitch-player')).toHaveCount(placed);
 
   // One for us and one for them, so the scoreline is not symmetrical and a swapped side would show.
-  await clickFor(
-    page.getByRole('button', { name: 'Goal', exact: true }),
-    () => expect(page.locator('.mud-dialog')).toBeVisible(),
-  );
-  const goalDialog = await openDialog(page);
-  await scoreGoal(page, goalDialog, 'Fixture');
+  await logGoal(page, 'Fixture');
   await expect(ourScore).toHaveText('1');
 
   await clickFor(
@@ -98,7 +93,7 @@ test('a match is run from the live screen and its score reaches the result', asy
   await expect(gameRow(page, 'FC Uitslag').locator('.game-score')).toHaveText(/1\s*.\s*1/);
 });
 
-test('a match being played leads its card, in a colour nothing else there uses', async ({ page }) => {
+test('a match being played leads its card, in the club colour', async ({ page }) => {
   await liveMatch(page, 'FC Bezig');
 
   await goto(page, '/games');
@@ -130,8 +125,7 @@ test('tapping a player on the pitch offers a substitution and a position swap', 
   const first = chips.first();
   const before = await first.textContent();
 
-  await clickFor(first, () => expect(page.locator('.mud-dialog')).toBeVisible());
-  const dialog = await openDialog(page);
+  const dialog = await tapOnPitch(page);
 
   // Tapping a substitute would make the change, so a swap is the only one waiting on a button — and
   // that button is not there until a team-mate is chosen.
@@ -199,12 +193,8 @@ test('a quarters half keeps its changes in a pop-up and is run as one half', asy
 
   // The clock runs in halves however the line-ups were planned, so the control on offer during the
   // first quarter is already half time — the second quarter is never a period the clock stops for.
-  const controls = page.locator('.live-controls');
-  await expect(controls.getByRole('button', { name: 'Next line-up' })).toHaveCount(0);
-  await clickFor(
-    controls.getByRole('button', { name: 'Half time' }),
-    () => expect(controls.getByRole('button', { name: 'Start 2nd Half' })).toBeVisible(),
-  );
+  await expect(page.locator('.live-controls').getByRole('button', { name: 'Next line-up' })).toHaveCount(0);
+  await halfTime(page);
 });
 
 test('the timeline can be narrowed to the goals', async ({ page }) => {
@@ -215,12 +205,7 @@ test('the timeline can be narrowed to the goals', async ({ page }) => {
   // One of each kind, so the filter has something to keep and something to drop.
   await clickFor(page.getByRole('button', { name: 'Goal against' }), () => expect(events).toHaveCount(1));
 
-  await clickFor(
-    page.locator('.live-lineup .pitch-player').first(),
-    () => expect(page.locator('.mud-dialog')).toBeVisible(),
-  );
-  const dialog = await openDialog(page);
-  await pickPlayer(page, dialog);
+  await substitute(page);
   await expect(events).toHaveCount(2);
 
   // Only a goal carries a scoreline, so what is left is the goal rather than the substitution.
@@ -234,28 +219,21 @@ test('the timeline can be narrowed to the goals', async ({ page }) => {
   await expect(page.locator('.live-bench')).toBeVisible();
 });
 
-test('a substitution and an injury reach the result page, where only the sub waits behind the toggle', async ({ page }) => {
+test('a substitution and an injury reach the result page, the sub folded away, and both are undone there', async ({ page }) => {
   const id = await liveMatch(page, 'FC Naspel');
 
-  const chips = page.locator('.live-lineup .pitch-player');
-
   // A substitution — somebody off the roster comes on for a player on the pitch.
-  await clickFor(chips.first(), () => expect(page.locator('.mud-dialog')).toBeVisible());
-  let dialog = await openDialog(page);
-  await pickPlayer(page, dialog);
+  await substitute(page);
   await expect(page.locator('.live-event')).toHaveCount(1);
 
   // And an injury nobody came on for — the switch alone, no replacement, so it stands as its own row.
-  await clickFor(chips.first(), () => expect(page.locator('.mud-dialog')).toBeVisible());
-  dialog = await openDialog(page);
-  await dialog.locator('label.mud-switch', { hasText: 'Injured' }).click();
-  await submitDialog(page, 'Off injured');
+  await offInjured(page);
   await expect(page.locator('.live-event', { hasText: 'not replaced' })).toHaveCount(1);
 
   await finishMatch(page);
 
   // The result page opens with substitutions folded away, but never the injury — the one change nobody came on for.
-  await gotoRendered(page, `/games/${id}/result`);
+  await goto(page, `/games/${id}/result`);
   const events = page.locator('.live-event');
   await expect(events).toHaveCount(1);
   const injuryRow = events.filter({ hasText: 'not replaced' });
@@ -265,39 +243,12 @@ test('a substitution and an injury reach the result page, where only the sub wai
     page.locator('.live-timeline-toggle input[type=checkbox]'),
     () => expect(events).toHaveCount(2),
   );
-  await expect(injuryRow).toHaveCount(1);
-});
-
-test('a substitution and an injury entered wrong are undone from the result page', async ({ page }) => {
-  const id = await liveMatch(page, 'FC Foutje');
-  const chips = page.locator('.live-lineup .pitch-player');
-
-  // A substitution and an injury nobody came on for, both entered live — the two to be undone later.
-  await clickFor(chips.first(), () => expect(page.locator('.mud-dialog')).toBeVisible());
-  let dialog = await openDialog(page);
-  await pickPlayer(page, dialog);
-  await expect(page.locator('.live-event')).toHaveCount(1);
-
-  await clickFor(chips.first(), () => expect(page.locator('.mud-dialog')).toBeVisible());
-  dialog = await openDialog(page);
-  await dialog.locator('label.mud-switch', { hasText: 'Injured' }).click();
-  await submitDialog(page, 'Off injured');
-  await expect(page.locator('.live-event', { hasText: 'not replaced' })).toHaveCount(1);
-
-  await finishMatch(page);
 
   // The result page is where a finished match is corrected, so the undo the live screen offers has
   // to be here too — a goal carries the × it always did, a change carries an undo.
-  await gotoRendered(page, `/games/${id}/result`);
-  const events = page.locator('.live-event');
-  await clickFor(
-    page.locator('.live-timeline-toggle input[type=checkbox]'),
-    () => expect(events).toHaveCount(2),
-  );
   await expect(events.getByRole('button', { name: 'Undo' })).toHaveCount(2);
 
   // The injury goes on its own; the substitution is untouched by it.
-  const injuryRow = events.filter({ hasText: 'not replaced' });
   await clickFor(injuryRow.getByRole('button', { name: 'Undo' }), () => expect(events).toHaveCount(1));
 
   // And the substitution, the last thing left, goes too.
@@ -306,11 +257,8 @@ test('a substitution and an injury entered wrong are undone from the result page
 
 test('a substitution carries an edit that opens pre-filled and round-trips through the service', async ({ page }) => {
   const id = await liveMatch(page, 'FC Correctie');
-  const chips = page.locator('.live-lineup .pitch-player');
 
-  await clickFor(chips.first(), () => expect(page.locator('.mud-dialog')).toBeVisible());
-  const dialog = await openDialog(page);
-  await pickPlayer(page, dialog);
+  await substitute(page);
   const event = page.locator('.live-event');
   await expect(event).toHaveCount(1);
   const cameOn = (await event.locator('.live-event-main').textContent()).trim();
@@ -318,7 +266,7 @@ test('a substitution carries an edit that opens pre-filled and round-trips throu
   await finishMatch(page);
 
   // The correction lives beside the undo the result page already offers.
-  await gotoRendered(page, `/games/${id}/result`);
+  await goto(page, `/games/${id}/result`);
   await clickFor(
     page.locator('.live-timeline-toggle input[type=checkbox]'),
     () => expect(event).toHaveCount(1),
@@ -345,29 +293,22 @@ test('the timeline draws half time between the two halves', async ({ page }) => 
   await liveMatch(page, 'FC Rust');
 
   const events = page.locator('.live-event');
-  const halfTime = page.locator('.live-event-break');
+  const halfTimeBreak = page.locator('.live-event-break');
 
   // One goal in each half. Until the second one there is only one half on the list, and a break
   // above the only thing on it would be a line drawn through nothing.
   await clickFor(page.getByRole('button', { name: 'Goal against' }), () => expect(events).toHaveCount(1));
-  await expect(halfTime).toHaveCount(0);
+  await expect(halfTimeBreak).toHaveCount(0);
 
-  const controls = page.locator('.live-controls');
-  await clickFor(
-    controls.getByRole('button', { name: 'Half time' }),
-    () => expect(controls.getByRole('button', { name: 'Start 2nd Half' })).toBeVisible(),
-  );
-  await clickFor(
-    controls.getByRole('button', { name: 'Start 2nd Half' }),
-    () => expect(controls.getByRole('button', { name: 'Half time' })).toHaveCount(0),
-  );
+  await halfTime(page);
+  await startSecondHalf(page);
 
   await clickFor(page.getByRole('button', { name: 'Goal against' }), () => expect(events).toHaveCount(2));
 
   // Exactly one break, and it sits between the two — the list runs newest first, so the second
   // half's goal is above it and the first half's below.
-  await expect(halfTime).toHaveCount(1);
-  await expect(halfTime).toHaveText('Half time');
+  await expect(halfTimeBreak).toHaveCount(1);
+  await expect(halfTimeBreak).toHaveText('Half time');
   await expect(page.locator('.live-timeline > *')).toHaveCount(3);
   await expect(page.locator('.live-timeline > *').nth(1)).toHaveClass(/live-event-break/);
 });
@@ -375,21 +316,13 @@ test('the timeline draws half time between the two halves', async ({ page }) => 
 test('a half-time change is set on the pitch at the break and recorded when the half kicks off', async ({ page }) => {
   await liveMatch(page, 'FC Rustwissel');
 
-  const controls = page.locator('.live-controls');
   const events = page.locator('.live-event');
 
   // End the first half — the break opens on the second half, carried over from whoever just finished.
-  await clickFor(
-    controls.getByRole('button', { name: 'Half time' }),
-    () => expect(controls.getByRole('button', { name: 'Start 2nd Half' })).toBeVisible(),
-  );
+  await halfTime(page);
 
   // A tap at the break offers only who comes on: the half is not being played, so there is no position swap or injury to make.
-  await clickFor(
-    page.locator('.live-lineup .pitch-player').first(),
-    () => expect(page.locator('.mud-dialog')).toBeVisible(),
-  );
-  const dialog = await openDialog(page);
+  const dialog = await tapOnPitch(page);
   await expect(dialog.getByText('Swaps position with')).toHaveCount(0);
   await expect(dialog.locator('label.mud-switch', { hasText: 'Injured' })).toHaveCount(0);
   await pickPlayer(page, dialog);
@@ -400,10 +333,8 @@ test('a half-time change is set on the pitch at the break and recorded when the 
   await expect(page.locator('.live-halftime-plan .planned-row')).toHaveCount(1);
 
   // Kicking off the second half turns the change into a real substitution on the timeline.
-  await clickFor(
-    controls.getByRole('button', { name: 'Start 2nd Half' }),
-    () => expect(events).toHaveCount(1),
-  );
+  await startSecondHalf(page);
+  await expect(events).toHaveCount(1);
 });
 
 test('the playing-time table drops its estimate once the match has been run', async ({ page }) => {
@@ -438,8 +369,8 @@ test('the playing-time table drops its estimate once the match has been run', as
 const trackCount = locator =>
   locator.evaluate(el => getComputedStyle(el).gridTemplateColumns.split(/\s+/).length);
 
-test('the statistics give an admin the minutes and a visitor only the split', async ({ page, browser }) => {
-  test.skip(new Date().getDate() === 1, 'no earlier day in the current month to date a match to');
+test('the statistics give an admin the minutes and a visitor only the split', async ({ page, visitor }) => {
+  test.skip(noEarlierDayThisSeason(), 'the season opened today — no earlier day in it to date a match to');
 
   // Played on paper rather than from the touchline: a match with a line-up and a final score that
   // nobody ran live is complete, so the report counts it, and its minutes are the line-up's
@@ -462,7 +393,7 @@ test('the statistics give an admin the minutes and a visitor only the split', as
     () => expect(page.getByText('saved', { exact: false }).first()).toBeVisible(),
   );
 
-  await gotoRendered(page, '/stats');
+  await goto(page, '/stats');
   const row = page.locator('.pt-row', {
     has: page.locator('.r-shirt', { hasText: new RegExp(`^${shirt}$`) }),
   }).first();
@@ -482,35 +413,29 @@ test('the statistics give an admin the minutes and a visitor only the split', as
   // was one line-up in one position, so their row carries the "single position" flag. Finding the
   // row at all is most of the assertion: the grid falls back to an empty-state card with no table
   // whenever it has nothing to pivot, so a broken pivot fails here before the badge check does.
-  await gotoRendered(page, '/stats/positions');
+  await goto(page, '/stats/positions');
   const gridRow = page.locator('.mud-table-body .mud-table-row', {
     has: page.locator('.pd-num', { hasText: new RegExp(`^${shirt}$`) }),
   }).first();
   await expect(gridRow).toBeVisible();
   await expect(gridRow.locator('.badge-warning')).toHaveText('Single position');
 
-  const visitor = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
-  try {
-    const anon = await visitor.newPage();
-    await gotoRendered(anon, playerPath);
+  await goto(visitor, playerPath);
 
-    // Same page, same player — the positions card proves it rendered before anything is asserted
-    // to be missing, and it still says how they divided the time they got.
-    await expect(anon.getByText('Positions', { exact: false })).toBeVisible();
-    await expect(anon.locator('.position-meta').first()).toHaveText(/^\d+%$/);
+  // Same page, same player — the positions card proves it rendered before anything is asserted
+  // to be missing, and it still says how they divided the time they got.
+  await expect(visitor.getByText('Positions', { exact: false })).toBeVisible();
+  await expect(visitor.locator('.position-meta').first()).toHaveText(/^\d+%$/);
 
-    await expect(anon.locator('.stat-label', { hasText: /^Minutes$/ })).toHaveCount(0);
-    await expect(anon.locator('.game-head .g-num').first()).toHaveText('G');
-    await expect(anon.locator('.game-note')).toHaveCount(0);
-    await expect(anon.locator('.g-opp-name .badge-venue').first()).toHaveText(/HOME|AWAY/);
+  await expect(visitor.locator('.stat-label', { hasText: /^Minutes$/ })).toHaveCount(0);
+  await expect(visitor.locator('.game-head .g-num').first()).toHaveText('G');
+  await expect(visitor.locator('.game-note')).toHaveCount(0);
+  await expect(visitor.locator('.g-opp-name .badge-venue').first()).toHaveText(/HOME|AWAY/);
 
-    // The cell is gone, and so is its track — a four-track grid with three cells slides goals and
-    // assists out from under their headers, and every assertion above would still pass.
-    expect(await trackCount(anon.locator('.game-list .game-row').first())).toBe(3);
-    expect(await trackCount(anon.locator('.stat-tiles'))).toBe(3);
-  } finally {
-    await visitor.close();
-  }
+  // The cell is gone, and so is its track — a four-track grid with three cells slides goals and
+  // assists out from under their headers, and every assertion above would still pass.
+  expect(await trackCount(visitor.locator('.game-list .game-row').first())).toBe(3);
+  expect(await trackCount(visitor.locator('.stat-tiles'))).toBe(3);
 });
 
 test('a half already played is no longer edited in the builder', async ({ page }) => {

@@ -7,9 +7,7 @@
 import { test, expect } from '../fixtures.js';
 import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
 import { ADMIN_PASSWORD, ADMIN_USERNAME } from '../global-setup.js';
-import {
-  clickFor, confirmDialog, fillField, goto, gotoRendered, openDialog, submitDialog, waitForHandlers,
-} from '../helpers.js';
+import { clickFor, confirmDialog, fillField, goto, openDialog, settle, submitDialog } from '../helpers.js';
 
 const AUTH_COOKIE = 'ff.auth';
 
@@ -20,16 +18,9 @@ const userRow = (page, username) =>
 /**
  * Signs in through the form a person actually uses — /dev/login mints the same principal, but only
  * /auth/login issues the cookie this file is about.
- *
- * `goto`, not `page.goto`, even though the form itself is plain `method="post"` HTML that needs no
- * circuit to submit: the page *around* it is a Blazor component, and the render that arrives when
- * the circuit connects resets the inputs. Filling the prerender and submitting therefore posts two
- * empty strings, the app answers `/login?error=true`, and the sign-in silently does nothing —
- * intermittently, because whether the re-render lands between the fill and the click depends on how
- * busy the machine is. Waiting for handlers puts the typing after that render instead.
  */
 async function signInThroughTheForm(page, username = ADMIN_USERNAME, password = ADMIN_PASSWORD) {
-  await gotoRendered(page, '/login');
+  await goto(page, '/login');
   await page.fill('input[name="username"]', username);
   await page.fill('input[name="password"]', password);
   await page.click('button[type="submit"]');
@@ -38,12 +29,14 @@ async function signInThroughTheForm(page, username = ADMIN_USERNAME, password = 
   // still /login, so `waitForURL` would spend its whole timeout and then report a navigation that
   // never happened instead of the credentials that were rejected.
   await expect(page).not.toHaveURL(/\/login/, { timeout: 20_000 });
+  // The start page it lands on opens a circuit, and leaving mid-handshake logs "Failed to complete negotiation".
+  await settle(page);
 }
 
 test.describe('signing in', () => {
   test.use({ storageState: VISITOR_STATE });
 
-  test('leaves a cookie the browser will keep after it closes', async ({ page, context }) => {
+  test('leaves a cookie the browser keeps after it closes, and sends back from another site', async ({ page, context }) => {
     await signInThroughTheForm(page);
 
     const cookie = (await context.cookies(BASE_URL)).find(c => c.name === AUTH_COOKIE);
@@ -59,14 +52,9 @@ test.describe('signing in', () => {
     expect(daysFromNow).toBeLessThan(15);
 
     expect(cookie.httpOnly, 'script must not be able to read it').toBe(true);
-  });
-
-  test('leaves a cookie that survives arriving from another site', async ({ page, context }) => {
-    await signInThroughTheForm(page);
 
     // Strict is the value that fails this: it withholds the cookie on any cross-site navigation,
-    // including the plain link click below.
-    const cookie = (await context.cookies(BASE_URL)).find(c => c.name === AUTH_COOKIE);
+    // including the plain link click the next test follows.
     expect(cookie.sameSite).toBe('Lax');
   });
 });
@@ -122,36 +110,30 @@ async function addAdmin(page, name) {
 // it is exercised: `Auth__RevalidationIntervalSeconds` is two seconds here against five minutes in
 // production (see playwright.config.js).
 test.describe('an account revoked while its owner is looking at the app', () => {
-  test('loses its authority without anyone reloading anything', async ({ page, browser }) => {
+  test('loses its authority without anyone reloading anything', async ({ page, visitor: theirPage }) => {
     const { username, password } = await addAdmin(page, 'revoked');
     // A second admin on the team, or the delete below is refused for leaving the team without one.
     await addAdmin(page, 'stays');
 
     // A second browser, signed in as that account and sitting on an admin page.
-    const theirContext = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
-    try {
-      const theirPage = await theirContext.newPage();
-      await signInThroughTheForm(theirPage, username, password);
+    await signInThroughTheForm(theirPage, username, password);
 
-      await goto(theirPage, '/users');
-      await expect(theirPage.getByRole('heading', { name: 'Users', exact: false }).first()).toBeVisible();
+    await goto(theirPage, '/users');
+    await expect(theirPage.getByRole('heading', { name: 'Users', exact: false }).first()).toBeVisible();
 
-      // Delete the account from the first browser. Nothing in the second one makes a request
-      // through any of this — its circuit is open and idle, which is the whole scenario.
-      await goto(page, '/users');
-      const menu = userRow(page, username).locator('.mud-menu button').first();
-      const entry = page.locator('.mud-popover-open').getByText('Delete User', { exact: true });
-      await clickFor(menu, () => expect(entry).toBeVisible());
-      await entry.click();
-      await confirmDialog(page, 'Delete');
-      await expect(userRow(page, username)).toHaveCount(0);
+    // Delete the account from the first browser. Nothing in the second one makes a request
+    // through any of this — its circuit is open and idle, which is the whole scenario.
+    await goto(page, '/users');
+    const menu = userRow(page, username).locator('.mud-menu button').first();
+    const entry = page.locator('.mud-popover-open').getByText('Delete User', { exact: true });
+    await clickFor(menu, () => expect(entry).toBeVisible());
+    await entry.click();
+    await confirmDialog(page, 'Delete');
+    await expect(userRow(page, username)).toHaveCount(0);
 
-      // The circuit notices on its own and RedirectToLogin force-loads — which is also the request
-      // that finally clears the cookie, since a circuit has no response to clear it on.
-      await theirPage.waitForURL(/\/login/, { timeout: 30_000 });
-    } finally {
-      await theirContext.close();
-    }
+    // The circuit notices on its own and RedirectToLogin force-loads — which is also the request
+    // that finally clears the cookie, since a circuit has no response to clear it on.
+    await theirPage.waitForURL(/\/login/, { timeout: 30_000 });
   });
 });
 
@@ -160,40 +142,31 @@ test.describe('an account revoked while its owner is looking at the app', () => 
 // here on purpose, because a regression would otherwise surface as every spec in the directory going
 // red at once with a message about none of this.
 test.describe('an admin who changes their own password', () => {
-  test('is signed out of the session that changed it, and back in with the new one', async ({ page, browser }) => {
+  test('is signed out of the session that changed it, and back in with the new one', async ({ page, visitor: theirPage }) => {
     const { username, password } = await addAdmin(page, 'rotated');
     const replacement = `${password}-2`;
 
-    const theirContext = await browser.newContext({ storageState: VISITOR_STATE, baseURL: BASE_URL });
-    try {
-      const theirPage = await theirContext.newPage();
-      await signInThroughTheForm(theirPage, username, password);
-      await goto(theirPage, '/settings');
+    await signInThroughTheForm(theirPage, username, password);
+    await goto(theirPage, '/settings');
 
-      // The only password inputs on the page, and the one place in this suite that has to prove its
-      // handlers are attached before typing — see waitForHandlers.
-      const fields = theirPage.locator('input[type="password"]');
-      await waitForHandlers(fields.first());
-      await fields.nth(0).fill(password);
-      await fields.nth(1).fill(replacement);
-      await fields.nth(2).fill(replacement);
+    const fields = theirPage.locator('input[type="password"]');
+    await fields.nth(0).fill(password);
+    await fields.nth(1).fill(replacement);
+    await fields.nth(2).fill(replacement);
 
-      // Clicked exactly once, deliberately: a second attempt would be made with a password that is
-      // no longer the current one. And waited on the navigation rather than on the form clearing —
-      // the re-render lands before the cookie is dropped, and signing in on that signal starts a
-      // navigation while the circuit's own is still in flight.
-      await theirPage.getByRole('button', { name: 'Change password', exact: false }).click();
-      await theirPage.waitForURL(/\/login/, { timeout: 30_000 });
+    // Clicked exactly once, deliberately: a second attempt would be made with a password that is
+    // no longer the current one. And waited on the navigation rather than on the form clearing —
+    // the re-render lands before the cookie is dropped, and signing in on that signal starts a
+    // navigation while the circuit's own is still in flight.
+    await theirPage.getByRole('button', { name: 'Change password', exact: false }).click();
+    await theirPage.waitForURL(/\/login/, { timeout: 30_000 });
 
-      await signInThroughTheForm(theirPage, username, replacement);
-      await goto(theirPage, '/settings');
-      // The password card, not the page: /settings is open to visitors too, and only the card
-      // behind its AuthorizeView says the new password signed anyone in.
-      await expect(theirPage.getByRole('button', { name: 'Change password', exact: false }))
-        .toBeVisible();
-    } finally {
-      await theirContext.close();
-    }
+    await signInThroughTheForm(theirPage, username, replacement);
+    await goto(theirPage, '/settings');
+    // The password card, not the page: /settings is open to visitors too, and only the card
+    // behind its AuthorizeView says the new password signed anyone in.
+    await expect(theirPage.getByRole('button', { name: 'Change password', exact: false }))
+      .toBeVisible();
   });
 });
 
@@ -201,8 +174,7 @@ test.describe('an anonymous visitor', () => {
   test.use({ storageState: VISITOR_STATE });
 
   test('carries no auth cookie at all', async ({ page, context }) => {
-    // A visitor is offered no control on /players, so there is no handler to wait on.
-    await gotoRendered(page, '/players');
+    await goto(page, '/players');
 
     const cookie = (await context.cookies(BASE_URL)).find(c => c.name === AUTH_COOKIE);
     expect(cookie, 'reading is public and should mint nothing').toBeUndefined();

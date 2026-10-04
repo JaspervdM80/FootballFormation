@@ -145,14 +145,15 @@ once — see [docs/deployment.md](docs/deployment.md#only-a-green-build-can-be-m
 ### UI tests
 
 ```bash
-cd tests/ui && npm install && npm test
+cd tests/ui && npm ci && npm test
 ```
 
 Playwright, driving the real app in a browser against a database that exists only for the run: the
 public/admin split, the squad and match dialogs, the full match-day journey from dragging a lineup
-to blowing the final whistle, both languages, and the phone layout. About a minute, 34 tests. Runs
-on every pull request as the `Playwright` job in `.github/workflows/ci.yml`, against the app that
-workflow published — one of the four checks the merge waits for. See [docs/testing/](docs/testing/ui-testing.md#ui-tests-testsui).
+to blowing the final whistle, both languages, and the phone layout. About four minutes, 150-odd
+tests. Runs on every pull request as two shards behind the `Playwright` job in
+`.github/workflows/ci.yml`, against the app that workflow published — one of the four checks the
+merge waits for. See [docs/testing/](docs/testing/ui-testing.md#ui-tests-testsui).
 
 ### Visual checks
 

@@ -7,14 +7,10 @@
 //
 // Signed out on purpose. The parents watching from the touchline are most of the traffic and never
 // sign in, so theirs is the session that has to stay cheap.
-//
-// gotoRendered throughout, never goto: a visitor is offered no MudBlazor control on any of these,
-// so there is no `_bl_` for goto to wait on. What it waits for instead — the page to stop fetching
-// — is past the point where a circuit would have negotiated, which is what makes an empty list of
-// sockets an absence rather than a race.
 import { test, expect } from '../fixtures.js';
 import { VISITOR_STATE } from '../playwright.config.js';
-import { gotoRendered } from '../helpers.js';
+import { goto } from '../helpers.js';
+import { FIXTURE_MATCH } from '../global-setup.js';
 
 test.use({ storageState: VISITOR_STATE });
 
@@ -25,25 +21,29 @@ function watchSockets(page) {
   return sockets;
 }
 
+/** Opens a page and waits past where a circuit would have negotiated, so an empty socket list is an absence rather than a race. */
+async function openSettled(page, path) {
+  await goto(page, path);
+  await page.waitForLoadState('networkidle');
+}
+
 test('the season statistics open no circuit at all', async ({ page }) => {
   const sockets = watchSockets(page);
 
-  await gotoRendered(page, '/stats');
+  await openSettled(page, '/stats');
   await expect(page.getByRole('heading', { name: 'Statistics', exact: false }).first()).toBeVisible();
   expect(sockets, 'the season statistics opened a circuit').toEqual([]);
 
   // Not a listener that never fires: /games is still interactive, so the same probe on the same
   // page object has to see one there. Without this the assertion above would keep passing after a
   // rename broke the listener entirely.
-  await gotoRendered(page, '/games');
+  await goto(page, '/games');
   await expect(page.getByRole('heading', { name: 'Games', exact: false }).first()).toBeVisible();
   expect(sockets.length, 'no circuit on /games either — is the probe working?').toBeGreaterThan(0);
 });
 
-test('a player page opens no circuit either', async ({ page }) => {
-  const sockets = watchSockets(page);
-
-  await gotoRendered(page, '/players');
+test('a player page opens no circuit either', async ({ page, visitor }) => {
+  await goto(page, '/players');
   // The name, because that is the anchor — the row itself carries no handler. A row click used to,
   // and dispatching it re-rendered the table on the way out, which is what conjured MudTable's
   // small-devices sort select and left its popover reaching for a provider this page has not got.
@@ -53,28 +53,25 @@ test('a player page opens no circuit either', async ({ page }) => {
 
   // Reached cold, the way a shared link is. Arriving from /players would carry that page's circuit
   // into the count and prove nothing.
-  const fresh = await page.context().newPage();
-  const freshSockets = watchSockets(fresh);
-  await gotoRendered(fresh, playerPath);
-  await expect(fresh.getByRole('heading').first()).toBeVisible();
-  expect(freshSockets, 'the player statistics opened a circuit').toEqual([]);
-  await fresh.close();
+  const sockets = watchSockets(visitor);
+  await openSettled(visitor, playerPath);
+  await expect(visitor.getByRole('heading').first()).toBeVisible();
+  expect(sockets, 'the player statistics opened a circuit').toEqual([]);
 });
 
-test('a shared match report opens no circuit', async ({ page }) => {
+test('a shared match report opens no circuit', async ({ page, visitor }) => {
   // The URL first, from the games list, because a match report is only ever reached by its link.
-  await gotoRendered(page, '/games');
-  await page.locator('.game-row').first().locator('.game-more button').click();
+  await goto(page, '/games');
+  await page.locator('.game-row', { hasText: FIXTURE_MATCH }).first().locator('.game-more button').click();
   await page.locator('.mud-popover-open .mud-menu-item', { hasText: 'Overview' }).click();
   await expect(page).toHaveURL(/\/games\/\d+\/overview/);
   const overviewPath = new URL(page.url()).pathname;
 
   // Then cold, which is how a link shared into a group chat is opened.
-  const shared = await page.context().newPage();
-  const sockets = watchSockets(shared);
-  await gotoRendered(shared, overviewPath);
-  await expect(shared.locator('#formation-overview')).toBeVisible();
-  await expect(shared.getByRole('button', { name: 'Save as image' })).toHaveCount(0);
+  const sockets = watchSockets(visitor);
+  await openSettled(visitor, overviewPath);
+  await expect(visitor.locator('#formation-overview')).toBeVisible();
+  await expect(visitor.getByText(FIXTURE_MATCH, { exact: false }).first()).toBeVisible();
+  await expect(visitor.getByRole('button', { name: 'Save as image' })).toHaveCount(0);
   expect(sockets, 'the match report opened a circuit').toEqual([]);
-  await shared.close();
 });

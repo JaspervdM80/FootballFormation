@@ -1,21 +1,12 @@
 // Picking nine-a-side in the match dialog, and the shorter pitch that follows it.
 import { test, expect } from '../fixtures.js';
-import {
-  chooseOption, clickFor, fillField, gameAction, gameRow, goto, openDialog, submitDialog,
-} from '../helpers.js';
+import { chooseOption, clickFor, gameAction, goto, matchWithId, openDialog, saveLineup, submitDialog } from '../helpers.js';
 
-/** Opens the match dialog on /games, already switched to the given format. */
-async function openDialogInFormat(page, format) {
+test('the match format picks the shapes the formation picker offers', async ({ page }) => {
   await goto(page, '/games');
   const panel = page.locator('.mud-dialog');
   await clickFor(page.getByRole('button', { name: 'Add' }).first(), () => expect(panel).toBeVisible());
-
-  await chooseOption(page, panel, 'Match Format', format);
-  return panel;
-}
-
-test('the match format picks the shapes the formation picker offers', async ({ page }) => {
-  const panel = await openDialogInFormat(page, '9 vs 9');
+  await chooseOption(page, panel, 'Match Format', '9 vs 9');
 
   // Switching format leaves a shape that fields nine, not the eleven-a-side one the season defaults to.
   const formation = panel.locator('.mud-input-control', { hasText: 'Formation' }).first();
@@ -33,28 +24,14 @@ test('the match format picks the shapes the formation picker offers', async ({ p
 });
 
 test('a nine-a-side match is built on a pitch with nine slots', async ({ page }) => {
-  const panel = await openDialogInFormat(page, '9 vs 9');
-  await fillField(panel, 'Opponent', 'FC Negental');
-  await submitDialog(page);
-
-  await expect(gameRow(page, 'FC Negental')).toBeVisible();
-
-  await gameAction(page, 'FC Negental', /Formation|Add lineup/);
-  await page.waitForURL(/\/games\/\d+\/formation/);
+  await matchWithId(page, 'FC Negental', { format: '9 vs 9' });
 
   await expect(page.locator('.pitch .pitch-slot')).toHaveCount(9);
   await expect(page.locator('.pitch .pitch-empty .pitch-label').first()).toHaveText('GK');
 });
 
 test('switching an eleven-a-side match to nine benches the starters it has no slot for', async ({ page }) => {
-  await goto(page, '/games');
-  const panel = page.locator('.mud-dialog');
-  await clickFor(page.getByRole('button', { name: 'Add' }).first(), () => expect(panel).toBeVisible());
-  await fillField(panel, 'Opponent', 'FC Omschakeling');
-  await submitDialog(page);
-
-  await gameAction(page, 'FC Omschakeling', /Formation|Add lineup/);
-  await page.waitForURL(/\/games\/\d+\/formation/);
+  const id = await matchWithId(page, 'FC Omschakeling');
 
   // Filled from the back of the pitch, so the first ones placed are the striker slots nine-a-side
   // drops — the point is that nobody ends up a starter with nowhere to stand. Capped at the slots
@@ -68,11 +45,7 @@ test('switching an eleven-a-side match to nine benches the starters it has no sl
     await available.first().dragTo(emptySlots.last());
     await expect(page.locator('.pitch .pitch-player')).toHaveCount(i + 1);
   }
-  await clickFor(
-    page.getByRole('button', { name: /^Save( All Lineups)?$/ }).first(),
-    () => expect(page.getByText('All lineups saved', { exact: false })).toBeVisible(),
-    { settle: 10_000 },
-  );
+  await saveLineup(page);
 
   await goto(page, '/games');
   await gameAction(page, 'FC Omschakeling', 'Edit');
@@ -80,9 +53,7 @@ test('switching an eleven-a-side match to nine benches the starters it has no sl
   await chooseOption(page, edit, 'Match Format', '9 vs 9');
   await submitDialog(page);
 
-  await gameAction(page, 'FC Omschakeling', /Formation|Add lineup/);
-  await page.waitForURL(/\/games\/\d+\/formation/);
-
+  await goto(page, `/games/${id}/formation`);
   await expect(page.locator('.pitch .pitch-slot')).toHaveCount(9);
   // Nobody was dropped from the line-up: whoever the smaller pitch has no slot for is on the bench.
   const onPitch = await page.locator('.pitch .pitch-player').count();
@@ -90,12 +61,13 @@ test('switching an eleven-a-side match to nine benches the starters it has no sl
   expect(onPitch + onBench).toBe(placed);
 });
 
-test('the season preferences pick a format for every match that follows', async ({ page }) => {
+test('choosing nine-a-side in the preferences moves the default formation to a nine-a-side shape', async ({ page }) => {
   await goto(page, '/preferences');
   // The page itself: there is no dialog to scope to here, and MudAppBar is a MudPaper too, so
   // `.mud-paper` first is the chrome rather than the preferences card.
   const prefs = page.locator('body');
 
+  // Left unsaved on purpose: a nine-a-side default would reach every match the specs after this one create.
   await chooseOption(page, prefs, 'Default Match Format', '9 vs 9');
   await expect(prefs.locator('.mud-input-control', { hasText: 'Default Formation' }).first()).toContainText('3-3-2');
 });
