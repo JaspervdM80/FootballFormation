@@ -359,7 +359,7 @@ public partial class FormationBuilder
         var result = await GameService.SaveFormationAsync(GameId, formation);
         if (!Snackbar.ReportFailure(L, result)) return;
 
-        // The service has just reshaped the stored line-ups the same way, so a page with nothing pending still has nothing pending.
+        // The service reshaped every unplayed half the same way, so a page with nothing pending still has nothing pending.
         var hadUnsavedChanges = HasUnsavedChanges;
         ReshapeCachedLineups(formation);
         if (!hadUnsavedChanges) RememberSavedLineups();

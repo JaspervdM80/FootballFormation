@@ -5,7 +5,7 @@
 // adds a match per test pushes the last card on /games under the install banner — which is what the
 // neighbouring touchline spec taps.
 import { test, expect } from '../fixtures.js';
-import { goto, matchWithId, saveLineup } from '../helpers.js';
+import { clickFor, goto, matchWithId, saveLineup } from '../helpers.js';
 
 // The install banner is fixed to the bottom of a phone screen and covers the last card on /games —
 // which is the match this file just added. Playwright then clicks the banner instead of the card's
@@ -38,10 +38,10 @@ const dropOn = (page, selector) => page.evaluate(sel => {
 
 // An empty slot pulses while a player is in hand, so it never passes Playwright's stability check — and
 // forced, a click at the bottom of the screen lands on the selection bar instead.
-const tapKeeper = async (page) => {
-  const keeper = page.locator('.pitch .pitch-empty', { hasText: 'GK' });
-  await keeper.evaluate(el => el.scrollIntoView({ block: 'center' }));
-  await keeper.click({ force: true });
+const tapSlot = async (page, position) => {
+  const slot = page.locator('.pitch .pitch-empty', { hasText: position });
+  await slot.evaluate(el => el.scrollIntoView({ block: 'center' }));
+  await slot.click({ force: true });
 };
 
 test.describe.serial('the formation builder on a phone', () => {
@@ -139,7 +139,7 @@ test.describe.serial('the formation builder on a phone', () => {
     await expect(first).toHaveClass(/selected/);
     await expect(bar).toBeVisible();
 
-    await tapKeeper(page);
+    await tapSlot(page, 'GK');
     await expect(chips).toHaveCount(1);
     await expect(bar).toHaveCount(0);
 
@@ -159,7 +159,7 @@ test.describe.serial('the formation builder on a phone', () => {
     await expect(page.locator('.draggable-player', { hasText: name })).toHaveCount(1);
 
     await page.locator('.draggable-player').first().click();
-    await tapKeeper(page);
+    await tapSlot(page, 'GK');
     await expect(chips).toHaveCount(1);
     await chips.first().click();
     await page.locator('.subs-panel .mud-typography-subtitle2').click();
@@ -184,7 +184,7 @@ test.describe.serial('the formation builder on a phone', () => {
     const [, slots] = (await fill.innerText()).match(/^\d+\/(\d+)$/);
 
     await page.locator('.draggable-player').first().click();
-    await tapKeeper(page);
+    await tapSlot(page, 'GK');
     await expect(chips).toHaveCount(1);
     await expect(fill).toHaveText(`1/${slots}`);
 
@@ -195,15 +195,22 @@ test.describe.serial('the formation builder on a phone', () => {
 
   // Overview reads the saved line-up, so leaving for it with changes pending would lose them.
   test('leaving with an unsaved line-up asks first, and leaving a saved one does not', async ({ page }) => {
+    // From /games, so the back arrow has an entry to step back to rather than its fallback.
+    await goto(page, '/games');
     await openBuilder(page);
     const unsaved = page.locator('.unsaved-bar');
     const overview = page.locator('.builder-mobile a[href$="/overview"]');
+    const back = page.locator('.builder-mobile a.back-button');
     await expect(overview).toBeVisible();
     await expect(unsaved).toHaveCount(0);
 
     await page.locator('.draggable-player').first().click();
-    await tapKeeper(page);
+    await tapSlot(page, 'GK');
     await expect(unsaved).toBeVisible();
+    // Off the keeper's slot too, or the formation change below would leave the line-up exactly as it was.
+    await page.locator('.draggable-player').first().click();
+    await tapSlot(page, 'LB');
+    await expect(page.locator('.pitch .pitch-player')).toHaveCount(2);
 
     const asked = [];
     page.on('dialog', dialog => {
@@ -216,10 +223,22 @@ test.describe.serial('the formation builder on a phone', () => {
     await expect(page).toHaveURL(/\/formation$/);
     await expect(unsaved).toBeVisible();
 
+    // back.js traverses on the same click, so this only holds while leave-guard.js loads ahead of it.
+    await back.click();
+    await expect.poll(() => asked).toEqual(['confirm', 'confirm']);
+    await expect(page).toHaveURL(/\/formation$/);
+
     await saveLineup(page);
     await expect(unsaved).toHaveCount(0);
+
+    await clickFor(page.locator('.builder-mobile .formation-select'),
+      () => expect(page.locator('.mud-popover-open [role="option"]').first()).toBeVisible());
+    await page.locator('.mud-popover-open [role="option"]', { hasText: '3-4-2-1' }).click();
+    await expect(page.getByText('Formation changed to 3-4-2-1')).toBeVisible();
+    await expect(unsaved).toHaveCount(0);
+
     await overview.click();
     await page.waitForURL(/\/overview$/);
-    expect(asked).toEqual(['confirm']);
+    expect(asked).toEqual(['confirm', 'confirm']);
   });
 });

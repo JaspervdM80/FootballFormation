@@ -79,7 +79,8 @@
   synchronous answer can hold the click; plus `beforeunload`, and a cancellable `traverse` for the
   browser's own back where the Navigation API allows it. It stands down once the circuit has failed,
   since the edits are gone and `pwa.js` is about to reload. A formation change keeps a clean page
-  clean: the service reshapes the stored line-ups exactly as the page reshapes its copy
+  clean: the service reshapes the stored line-ups the same way for every half not yet played, the only
+  ones compared
 - Playing time table is built by `PlayingTimeReport.Build(...)`, not by the page; it renders
   whenever there are players (it does not wait for every period to be filled)
 - Its totals read the match clock once the game has been run live, and are the planned
