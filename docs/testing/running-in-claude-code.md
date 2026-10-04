@@ -35,3 +35,19 @@ makes a green local run that CI does not share. `rollForward` is `latestPatch`, 
 Ubuntu's archive is absorbed silently and anything that still reaches this branch is a *feature
 band* difference — which is exactly what the pin exists to refuse. See
 [known_issues](../known_issues/blazor-components.md).
+
+## The other hooks
+
+`.claude/settings.json` wires these on every machine, not only the web containers:
+
+- **Session start** also fetches `origin/main` and says how many commits behind it the checkout is,
+  because a worktree handed to a session can be several merges old.
+- **`release-gate.sh`**, before any `git push`: runs `dotnet build -c Release` on the working tree and
+  refuses the push with the errors if it fails. The tree it built is remembered, so a second push of
+  the same one is instant.
+- **`resx-duplicates.sh`**, after an edit to a `.resx`: reports keys that differ only in case, which
+  MSB3568 fails the build on but only when the resources are regenerated.
+- **`skill-gate.sh`** and **`comment-rule-reminder.sh`**, before an edit: the skill for the area, and
+  the commenting rule.
+- Bare `git stash` and `git stash pop` are denied: worktrees share one stash, so either can take
+  another session's work. `git stash push -u -m <tag>` and `git stash apply <sha>` stay allowed.

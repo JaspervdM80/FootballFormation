@@ -1,6 +1,6 @@
 ---
 name: domain-model
-description: The entities, enums and cascade rules, and where domain logic belongs. Use when adding or changing a property on Player, Season, Game, GamePeriod, GameGoal or GameSubstitution, when a rule needs a new computed member, or when a delete/cascade decision is involved.
+description: The entities, enums and cascade rules, the team every season belongs to, and where domain logic belongs. Use when adding or changing a property or entity under Club, Team, Season, Game, Training or Player, when a rule needs a new computed member, or when a delete/cascade decision is involved.
 ---
 
 # Domain model
@@ -51,10 +51,31 @@ correctly in each.
 - **`GamePlayerPosition.SlotIndex` is the source of truth for pitch placement**, not `Position`.
   `(GamePeriodId, PlayerId)` is unique: a player appears once per period, pitch or bench, never both.
 
+## Every season belongs to a team
+
+`Club 1──* Team 1──* Season`. `Season.TeamId` is the source of truth; `Game`, `Training`,
+`MatchPreferences` and `SeasonSquadMember` carry a **denormalised copy**, set from the season at
+creation, so `AppDbContext`'s query filter scopes a read by one column without a join.
+`PushSubscription` carries one too. **`Player` belongs to the club** (`ClubId`), not a team: a
+season's squad draws from the club pool, and a girl moving between the club's teams keeps one history.
+`Season.IsCurrent` is one row per team, and the season gap/overlap rules run within a team.
+
+A new entity hanging off a season gets the same treatment in the same change: a `TeamId`, a
+`HasQueryFilter` in `AppDbContext.OnModelCreating`, a `Restrict` FK to `Team`, and a migration that
+backfills the column from the season (`ScopeSeasonDataToTeams` is the worked example). A child of a
+`Game` (a goal, an injury) gets none of that — it is reached through the filtered game, and a write
+by its own id gates on `GameInScopeAsync` (see the `ef-core-and-queries` skill).
+
 ## Enums
 
-`PlayerPosition` (16), `FormationType` (13), `MatchType` (3, descriptive only — nothing in the reports
-branches on it), `MatchState`, `GameSplitType`, `PeriodType`, `UserRole`.
+`PlayerPosition` (16), `FormationType` (17 — eleven-a-side, then the nine-a-side four appended),
+`MatchType` (3, descriptive only — nothing in the reports branches on it), `MatchState`,
+`GameSplitType`, `PeriodType`, `UserRole` (`Admin`, `ApplicationAdmin` — the second implies the
+first). **Never renumber a member**: the numbers are in the database, which is why new formations
+are appended rather than filed beside the shapes they resemble.
+
+**`MatchFormat` is never stored.** `FormationType.Format()` reads it back off the shape, the way
+`PeriodCount` is read off the period table, so a game cannot claim one format and field another.
 
 **Duplicate positions in a formation are the design.** `F442.DefaultPositions()` returns two CBs and
 two STs; which slot a player occupies comes from `SlotIndex` (ordered by `FormationSlots.OrdinalOf`).
@@ -67,21 +88,29 @@ back would give the pitch two ways to say the same thing.
 ## Cascades
 
 ```
-Season 1──* Game 1──* GamePeriod 1──* GamePlayerPosition *──1 Player
+Club 1──* Team 1──* Season 1──* Game 1──* GamePeriod 1──* GamePlayerPosition *──1 Player *──1 Club
 Season 1──* SeasonSquadMember *──1 Player
+Season 1──* Training (Restrict — no navigation either way)
+Season 1──1 MatchPreferences
 Game 1──* GameGoal *──1 Player (scorer, assister — both SetNull)
 Game 1──* GameSubstitution *──1 Player (off, on — both Restrict)
+Game 1──* GameInjury *──1 Player (Restrict)
 Game 1──* GamePositionSwap *──1 Player (a, b — both Restrict)
 Game 1──* GameComment *──1 AppUser (author — SetNull)
 ```
 
-Cascading throughout **except Season → Game, which is `Restrict`**: deleting a season must never take
-a year of games, lineups and goals with it. `SeasonService.DeleteAsync` refuses with a readable
-message rather than letting the caller hit a raw `DbUpdateException`.
+Cascading throughout **except Season → Game and Season → Training, which are `Restrict`**: deleting a
+season must never take a year of games, lineups, goals or attendance with it. `SeasonService.DeleteAsync`
+refuses with a readable message rather than letting the caller hit a raw `DbUpdateException`. Every
+FK to `Club` or `Team` is `Restrict` too, so a team delete has no silent path through its data — bar
+`PushSubscription`, a browser's opt-in with no history, which goes with its team.
 
-`SeasonSquadMember` and `MatchPreferences` cascade from *both* parents — pure membership and pure
-configuration, with no history of their own, so they must not make a person or a game-free season
-undeletable.
+`SeasonSquadMember` cascades from both the season and the player, and `MatchPreferences` from its
+season — pure membership and pure configuration, with no history of their own, so they must not make
+a person or a game-free season undeletable.
+
+A `Training` names no player by foreign key: who missed it is a list of ids in a text column, like
+`Game.UnavailablePlayerIds`. It is also the one record that is **not a public read**.
 
 Players are **archived, not deleted**, where a delete would take history with it.
 

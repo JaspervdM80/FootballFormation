@@ -77,6 +77,14 @@ request and this repository has one collaborator — whom an assistant's pull re
 authored by. What is enabled instead is **`required_review_thread_resolution`**, which does bite with
 one account: every review thread must be resolved before the merge button unlocks.
 
+**`claude-review.yml` is the one workflow that is not a gate.** Adding the `claude-review` label to a
+pull request runs the `code-reviewer` agent over it and posts the report as a single comment, then
+removes the label so adding it again asks for a fresh review. It builds nothing — it reads the four
+checks' results. It needs the `CLAUDE_CODE_OAUTH_TOKEN` repository secret, made with
+`claude setup-token`: a review then counts against the Claude subscription rather than API credits,
+and runs as that account. A finding a person has to overrule belongs in the agent's own calibration
+section, as that file says.
+
 ## Only one person can deploy
 
 **`FLY_API_TOKEN` is an *environment* secret on `production`, not a repository secret**, and

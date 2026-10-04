@@ -74,8 +74,9 @@ delegates to it, so every write in the app really does pass through — but the 
 (`StatsCacheInvalidator`, registered on the context factory in `Program.cs`) sits lower and needs no
 argument threaded through forty call sites. The difference that matters is that there is nothing
 left to remember: a new write method invalidates *by writing*. The one way around it is a write that
-never reaches `SaveChanges` — `ExecuteUpdate`, `ExecuteDelete` or raw SQL, none of which this app
-uses outside the migrations. Adding one would go behind the interceptor's back.
+never reaches `SaveChanges` — `ExecuteUpdate`, `ExecuteDelete` or raw SQL. Outside the migrations
+only the push subscriptions use one (`ExecuteDelete`), and no statistic reads them; one against
+anything a report reads would go behind the interceptor's back.
 
 **Cache the report, never `GetAllWithDetailsAsync`.** `Games.razor` and `FormationBuilder` hand a
 loaded `Game` straight back to `GameService.UpdateAsync`, which attaches it with

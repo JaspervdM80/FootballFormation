@@ -40,14 +40,16 @@ So it buys nothing a `//` does not, and the rule against docstrings with section
 full. Where a signature genuinely hides something — what null means, the failure mode, who owns the
 lifetime — one line above the member says it.
 
-**Check `<inheritdoc cref=…>` before deleting the doc it points at.** Four exist:
-`ServiceOperation.cs`, `GameService.cs` and `MatchGoalService.cs` (both XPath into `AddGoalAsync`'s `recountScoreline` `<param>`) and `MatchGoalServiceTests.cs`. With no documentation file generated, 
+**Check `<inheritdoc cref=…>` before deleting the doc it points at** — `grep -rn "inheritdoc cref" src
+tests` lists them (`ServiceOperation.cs`, `Teams.razor.cs`, `MatchGoalServiceTests.cs`, and
+`GameService.cs`/`MatchGoalService.cs`, which XPath into `AddGoalAsync`'s `recountScoreline`
+`<param>`). With no documentation file generated,
 a broken one fails silently. The bare `<inheritdoc />` in the migrations is scaffolded and points at nothing.
 
 ## Conventions already have a canonical home
 
 `TimeProvider` injection, context-per-operation, dates-as-TEXT and English-message-is-the-resx-key
-are explained once each — in `MatchClockService`, `Program.cs`, `QueryTags` and `Result`. Elsewhere
+are explained once each — in `BannedSymbols.txt`, `Program.cs`, `QueryTags` and `Result`. Elsewhere
 they are a pointer or nothing. The same goes for `docs/` and the other skills: point at them, never
 paraphrase, or the two drift and both have to be edited together.
 

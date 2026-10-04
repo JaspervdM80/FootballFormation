@@ -30,19 +30,20 @@ case "$FILE_PATH" in
 esac
 case "$FILE_PATH" in
   *.resx) skills+=(localization) ;;
-  */FootballFormation.Core/Models/*) skills+=(domain-model) ;;
+  */FootballFormation.Core/Models/*|*/FootballFormation.Core/Reporting/*) skills+=(domain-model) ;;
   */FootballFormation.Core/Data/*|*Queries.cs) skills+=(ef-core-and-queries) ;;
 esac
 case "$FILE_PATH" in
   */MatchClockService.cs|*/MatchGoalService.cs|*/MatchSubstitutionService.cs|*/LiveMatch*|*/MatchClockReport*) skills+=(live-match) ;;
+  */Push/*|*/PushSubscriptionService.cs|*/MatchAudienceQuery.cs|*/service-worker.js|*/wwwroot/js/push*.js|*/wwwroot/js/pwa.js) skills+=(push-and-pwa) ;;
 esac
 case "$FILE_PATH" in
-  */FootballFormation.Core/Services/*) skills+=(services-and-result) ;;
-  *.razor|*.razor.cs) skills+=(razor-pages-and-circuit) ;;
+  */FootballFormation.Core/Services/*|*/FootballFormation.Core/Security/*) skills+=(services-and-result) ;;
+  *.razor|*.razor.cs|*/FootballFormation.UI/wwwroot/js/*) skills+=(razor-pages-and-circuit) ;;
   *.css) skills+=(styling-and-css) ;;
   */tests/ui/*|*/scripts/*.mjs) skills+=(ui-testing) ;;
   */tests/FootballFormation.Core.Tests/*) skills+=(testing) ;;
-  */global.json|*/.github/workflows/*|*/Dockerfile|*/Directory.Build.props|*/Directory.Packages.props) skills+=(build-and-release) ;;
+  */global.json|*/.github/*|*/Dockerfile|*/.dockerignore|*/fly*.toml|*/BannedSymbols.txt|*/Directory.Build.props|*/Directory.Packages.props) skills+=(build-and-release) ;;
 esac
 
 [ ${#skills[@]} -gt 0 ] || exit 0

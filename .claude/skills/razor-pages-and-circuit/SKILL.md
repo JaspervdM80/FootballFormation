@@ -13,14 +13,18 @@ a dialog, a snackbar, `@bind`, JS interop, a timer, a `LiveMatchNotifier` subscr
 is not a reason: an anchor does that with no circuit at all.
 
 Today's split: `/`, `/games`, `/players`, `/games/{id}/formation`, `/games/{id}/live`,
-`/games/{id}/result`, `/preferences`, `/settings` and `/users` are interactive. `/settings` is the
-one open to everyone: its admin sections are behind an `AuthorizeView`, not an `[Authorize]` route. `/stats`, `/stats/positions`,
-`/players/{id}/stats`, `/games/{id}/overview`, `/games/duties`, `/login`, `/Error` and `/not-found`
-are not, and `rendermode.spec.js` and `duties.spec.js` assert they open no WebSocket. That is the whole point: a page with no circuit
-cannot show "Reconnecting…", cannot force a reload, and survives a phone suspending the app.
+`/games/{id}/result`, `/trainings`, `/preferences`, `/settings`, `/users` and `/teams` are
+interactive. `/settings` is the one of the administration pages open to everyone: its admin sections
+are behind an `AuthorizeView`, not an `[Authorize]` route. `/stats`, `/stats/positions`,
+`/players/{id}/stats`, `/games/{id}/overview`, `/games/duties`, `/styleguide`, `/login`, `/Error` and
+`/not-found` are not, and `rendermode.spec.js` and `duties.spec.js` assert they open no WebSocket.
+That is the whole point: a page with no circuit cannot show "Reconnecting…", cannot force a reload,
+and survives a phone suspending the app. An `[Authorize]` attribute works on a static page too —
+`/stats/positions` and `/styleguide` are admin-only without a circuit.
 
 **A page that declares a render mode opens with `<InteractiveShell />`** (or
-`<InteractiveShell RequiresRole="@AppRoles.Admin" />` where it also has an `[Authorize(Roles = ...)]`).
+`<InteractiveShell RequiresRole="..." />` naming the same role as its `[Authorize(Roles = ...)]` —
+`ApplicationAdmin` on `/teams`).
 That carries the MudBlazor providers and the revocation gate, which the layout can no longer supply:
 `MainLayout` renders **statically for every page**, because `RouteView` applies it outside the
 island and a layout cannot carry a render mode at all. It also renders the hidden `data-circuit`
@@ -91,7 +95,8 @@ _games = Snackbar.ReportFailure(L, result) ? result.Value : [];
 - **Check `IsCancelled` before anything the visitor would notice — a redirect above all.**
   `if (result.IsCancelled) return;` goes *ahead of* the not-found branch. Without it, abandoning a
   load bounces the visitor off the page they just navigated to. `/games/{id}/result`,
-  `/games/{id}/formation`, `/games/{id}/overview` and `/players/{id}/stats` carry the check.
+  `/games/{id}/formation`, `/games/{id}/overview`, `/games/{id}/live` and `/players/{id}/stats`
+  carry the check.
 - **Overriding `Dispose` means calling `base.Dispose()`**, or the reads outlive the component again.
 
 ## Circuit-lifecycle leaks are cross-user, not per-page
@@ -112,8 +117,9 @@ A circuit outlives a request and a singleton outlives the circuit.
 since the render-mode split **a page has two scopes**: the static render of the chrome, and the
 circuit behind an interactive page's island.
 
-- Both read `RequestContext`, which the host fills in from the **cookies** on the request that
-  created the scope. That works in either scope for the season, because a circuit is created
+- Both come from `RequestContext` — `SeasonState` directly (`ff.season`), `TeamState` through
+  `TeamService` and `ICurrentTeam` (`ff.team`) — which the host fills in from the **cookies** on the
+  request that created the scope. That works in either scope, because a circuit is created
   *during* the `/_blazor` request, which carries the same ones. **Never reach for the `Referer`
   header**: enhanced navigation pushes the destination into history before it fetches, so the
   referrer names the page being loaded.
@@ -125,9 +131,10 @@ circuit behind an interactive page's island.
 - Loading is a **memoized task** (`EnsureLoadedAsync() => _loading ??= LoadAsync()`), because a scoped
   service cannot load in its constructor and the layout and page both need the data during their own
   `OnInitializedAsync`.
-- **Choosing a season is a navigation, not an event** — a link to `/season/set`, which stores the
-  cookie and redirects back. There is no `OnChanged` to subscribe to; `SeasonAwarePage` exists only
-  to await the load before the page's first query.
+- **Choosing a season or a team is a navigation, not an event** — a link to `/season/set` or
+  `/team/set` (`AppRoutes.SetTeam`), which stores the cookie and redirects back. There is no
+  `OnChanged` to subscribe to; `SeasonAwarePage` exists only to await the load before the page's
+  first query.
 - Any link that changes per-request state needs `data-enhance-nav="false"`, or an island that is
   already up keeps the old value while the chrome around it shows the new one.
 - The state holds a **view** choice and never writes shared data — the picker is reachable by

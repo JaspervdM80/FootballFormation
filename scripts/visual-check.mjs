@@ -14,7 +14,7 @@
 import { chromium } from 'playwright';
 import { existsSync, mkdirSync } from 'node:fs';
 import { auditTouchTargets } from './touch-targets.mjs';
-import { clickFor, goto, waitUntil } from './blazor.mjs';
+import { clickFor, goto, rx, signInAsAdmin, waitUntil } from './blazor.mjs';
 
 const BASE = process.env.VISUAL_BASE_URL ?? 'http://127.0.0.1:5228';
 const OUT = process.env.VISUAL_OUT_DIR ?? 'artifacts/visual';
@@ -23,10 +23,6 @@ const OUT = process.env.VISUAL_OUT_DIR ?? 'artifacts/visual';
 // whatever `playwright` resolves to — so use the one that is there, and Playwright's own elsewhere.
 const PREINSTALLED = '/opt/pw-browsers/chromium';
 const CHROME = process.env.VISUAL_CHROMIUM ?? (existsSync(PREINSTALLED) ? PREINSTALLED : undefined);
-
-// The seeded admin's own password. Only ever used against a throwaway database.
-const SEED_PASSWORD = 'admin';
-const NEW_PASSWORD = 'visualcheck123';
 
 const SEED_PLAYERS = [
   ['Anouk', 'de Vries', 7],
@@ -55,9 +51,6 @@ const PAGES = [
   ['styleguide', '/styleguide'],
 ];
 
-// Both languages, because the UI is Dutch by default and English is a resource-key fallback.
-const rx = (nl, en) => new RegExp(`${nl}|${en}`, 'i');
-
 mkdirSync(OUT, { recursive: true });
 
 // The full build, never the headless shell Playwright defaults to: the shell denies notifications,
@@ -73,36 +66,7 @@ const errors = [];
 page.on('console', m => { if (m.type() === 'error') errors.push(`[console] ${m.text()}`); });
 page.on('pageerror', e => errors.push(`[pageerror] ${e.message}`));
 
-// Development-only, loopback-only route that mints the same principal /auth/login does.
-const signIn = () => goto(page, `${BASE}/dev/login`);
-
-await signIn();
-
-// A freshly seeded admin still holds the password it was created with, and that locks every other
-// route to /settings until it changes. Get past it, or every screenshot is the same page.
-await goto(page, `${BASE}/settings`);
-const notice = page.getByText(rx('wachtwoord waarmee het is aangemaakt', 'still uses the password'));
-if (await notice.count()) {
-  const passwordFields = page.locator('input[type="password"]');
-  await passwordFields.nth(0).fill(SEED_PASSWORD);
-  await passwordFields.nth(1).fill(NEW_PASSWORD);
-  await passwordFields.nth(2).fill(NEW_PASSWORD);
-  // Clicked once, deliberately: changing a password is not idempotent, so a retry would be made
-  // with a password that is no longer the current one. Waited on rather than slept through — the
-  // change rotates the security stamp, OnValidatePrincipal rejects the cookie issued before it, and
-  // the circuit is dropped onto the login page, which is the observable outcome.
-  await page.getByRole('button', { name: rx('wachtwoord wijzigen', 'change password') }).click();
-  // Waited for the landing, not for the notice to go. Both follow the same change, but the notice
-  // clears the moment the component re-renders and the drop onto /login happens after that — so
-  // signing in on the notice signal starts a navigation to /dev/login while the circuit's own
-  // navigation is still in flight, and Playwright abandons ours: "Navigation to /dev/login is
-  // interrupted by another navigation to /login". That kills the run before its first screenshot.
-  // The URL is the only signal that says the drop has finished rather than that it is coming.
-  await page.waitForURL(/\/login(\?|$)/, { timeout: 20_000 });
-
-  await signIn();
-  console.log('changed the seeded admin password and signed back in');
-}
+await signInAsAdmin(page, BASE, { changeSeededPassword: true });
 
 // Seed through the UI rather than the database, so the captures show real rendered rows and the
 // seeding itself exercises the dialogs.

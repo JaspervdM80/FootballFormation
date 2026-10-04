@@ -9,10 +9,12 @@ match live from the touchline, and reporting on minutes and results. It runs as 
 container on **https://gjs-meiden.nl** with SQLite on one persistent volume, and it **auto-migrates
 on boot** — that fact drives most of the caution elsewhere.
 
-Reading is public; every change requires an admin sign-in, enforced at the service boundary as well
-as in the markup. One thing a public read holds back: **playing-minute figures are admin-only** — a
-visitor sees the counts and the position split, not the minutes or the utilisation behind them. The
-UI is Dutch by default with English available.
+One deployment serves every team of every club on it: a season and everything under it belongs to a
+team, and every read is filtered to the team in scope. Reading is public; every change requires an
+admin of that team, enforced at the service boundary as well as in the markup. Two things a public
+read holds back: **playing-minute figures** are hidden in the render — a visitor sees the counts and
+the position split, not the minutes or the utilisation behind them — and **the training register**
+is refused at the service. The UI is Dutch by default with English available.
 
 ## Commands
 
@@ -22,6 +24,7 @@ dotnet test                    # xUnit v3, real SQLite
 cd src/FootballFormation.Web && dotnet run     # http://localhost:5228
 cd tests/ui && npm test        # Playwright, ~4 min (npm ci first)
 scripts/visual-check.sh        # screenshots every page, then measures every touch target
+scripts/verify-matrix.sh       # every route × desktop/phone × visitor/admin: errors, overflow, admin-only controls
 scripts/dev-db.sh              # replace the local database with a copy of the live one
 scripts/test-db.sh             # load gjs-meiden-test.fly.dev with an anonymised copy of the live one
 scripts/coverage.sh            # coverage of the lines this branch changed, 80% floor
@@ -33,7 +36,7 @@ clean can still fail CI.
 ## Layout
 
 ```
-src/FootballFormation.Core/   Models, Data (EF Core), Reporting, Services, Result — no UI references
+src/FootballFormation.Core/   Models, Data (EF Core), Reporting, Services, Security, Push, Result — no UI references
 src/FootballFormation.UI/     Razor Class Library: pages, components, navigation, state, theming,
                               wwwroot (app.css, theme.css, the fonts and the components' own JS)
 src/FootballFormation.Web/    Host: Program.cs, App.razor, Routes.razor, wwwroot (the PWA and icons)
@@ -46,7 +49,8 @@ Dependencies point one way: `Web → UI → Core`. **UI is a separate RCL for fu
 reuse** — that is why report builders live in `Core/Reporting/` as pure static functions rather than
 in the pages. Keep new domain and reporting logic out of the Razor project, and put an asset a
 component needs in `UI/wwwroot/` (served at `_content/FootballFormation.UI/`) rather than the host's.
-The host's `wwwroot` is for what is a web concern alone: the service worker, `pwa.js` and the icons.
+The host's `wwwroot` is for what is a web concern alone: the service worker, `pwa.js`, `push.js` and
+the icons.
 
 Solution file is `FootballFormation.slnx`. Package versions are centralized in
 `Directory.Packages.props`; csproj files list names only.
@@ -54,26 +58,34 @@ Solution file is `FootballFormation.slnx`. Package versions are centralized in
 ## Where the rules live
 
 `.claude/skills/` holds the working rules, one skill per area — services and `Result`, EF Core and
-queries, migrations, the domain model, Razor pages and the circuit, the live match, styling, touch
-and breakpoints, localization, testing, UI testing, verifying a UI change, build and release. **Load
-the skill for the area you are touching before changing it**; each one ends with a pointer into
-`docs/` for the full story. `.claude/hooks/skill-gate.sh` refuses the first edit in a mapped area until
+queries, migrations, the domain model, Razor pages and the circuit, the live match, push and the PWA,
+styling, touch and breakpoints, localization, testing, UI testing, verifying a UI change, build and
+release, and `pre-pr` for getting a finished change ready. **Load the skill for the area you are
+touching before changing it**; each one ends with a pointer into `docs/` for the full story. `.claude/hooks/skill-gate.sh` refuses the first edit in a mapped area until
 its skill has been loaded that session, and lets a retry through.
 **`comment-rule` applies to every change**, whatever else it touches: default to no comments, write
 one only for a non-obvious *why*, and never a paragraph. The one in `.claude/skills/` is the rule
 here — a plugin or marketplace skill of the same name is not this repository's, so don't load it.
 
+**Skills state rules, not inventories.** No counts and no exhaustive lists the code can grow — "four
+exist", "all eight columns" and hand-kept route lists are what went stale first; give the `grep` that
+produces the list instead. `InstructionReferenceTests` fails CI on any file or code name quoted in
+backticks here, in a skill or in an agent that no longer exists, and on any `@page` route missing
+from the verify-ui table or the render-mode split.
+
 `docs/` is the detailed reference and the incident record. `docs/known_issues/` in particular is
 not a changelog — it is a list of traps that already cost someone hours. Add to it when you find a
 new one, and **update the doc for an area in the same change that alters its behaviour**.
 
-## The six that must not wait for a skill to load
+## The seven that must not wait for a skill to load
 
 These fail silently or expensively, so they are here rather than only in a skill:
 
-1. **Every write goes through `ServiceOperation.RunAdminAsync`.** Hiding a control behind
-   `<AuthorizeView Roles="@AppRoles.Admin">` is enforcement in the render tree only. Reads stay
-   open — the squad, fixtures and statistics are public.
+1. **Every write goes through `ServiceOperation.RunAdminAsync`** (`RunApplicationAdminAsync` for
+   clubs and teams). Hiding a control behind `<AuthorizeView Roles="@AppRoles.Admin">` is
+   enforcement in the render tree only. Reads stay open — the squad, fixtures and statistics are
+   public. The one write that is not an admin's is `PushSubscriptionService`: anonymous, so every
+   field is validated and the endpoint is rate-limited.
 2. **Never order or compare a `DateTime` inside a query.** SQLite stores dates as TEXT, so
    `ORDER BY Date` sorts the string the value happened to be written as. Materialise first, then use
    `GameOrdering` / `SeasonOrdering`.
@@ -86,11 +98,16 @@ These fail silently or expensively, so they are here rather than only in a skill
    case-insensitive, so a lowercase service action phrase can collide with a button label.
 5. **Most pages have no circuit, and the layout never has one.** `@rendermode InteractiveServer` is
    per page; `/stats`, `/stats/positions`, `/players/{id}/stats`, `/games/{id}/overview`,
-   `/games/duties` and the login and error pages are plain server HTML. On those, `ISnackbar`
+   `/games/duties`, `/styleguide` and the login and error pages are plain server HTML. On those, `ISnackbar`
    reports into nothing and `OnAfterRenderAsync` never runs — use `PageNotice` + `<InlineNotice>`, and give JS work to a
    plain `onclick`. A page that *does* declare a render mode opens with `<InteractiveShell />`,
    because `MainLayout` renders statically even for it.
 6. **Build Release before pushing.** Warnings are errors only there.
+7. **The team scope is applied for you — don't step around it.** Services take
+   `IDbContextFactory<AppDbContext>`, which stamps the team in scope, and `AppDbContext`'s query
+   filters do the rest. A new season-scoped entity needs a `TeamId` and a filter; child rows (goals,
+   injuries, comments) carry none, so a write reaching one by its own id gates on `GameInScopeAsync`.
+   Get either wrong and another team's rows come back looking completely normal.
 
 ## Workflow
 
@@ -113,7 +130,13 @@ These fail silently or expensively, so they are here rather than only in a skill
   prefixes: *"Split the games list on the scoreline, not the calendar"*.
 - `.editorconfig` codifies the existing style (CRLF, 4 spaces, file-scoped namespaces, `_camelCase`
   private fields, braces on their own line). Don't let a formatter reformat files you didn't change.
-- Before opening a pull request, run the **`code-reviewer`** agent over the change.
+- Before opening a pull request, work through the **`pre-pr`** skill — it ends with the
+  **`code-reviewer`** agent over the change. Adding the `claude-review` label to a pull request runs
+  the same agent in CI and posts its report as a comment.
+- Hooks hold some of this for you: the session start says how far behind `origin/main` the checkout
+  is, a `git push` waits for a green Release build of the working tree, and a resx edit that collides
+  with an existing key is reported at once. Bare `git stash` and `git stash pop` are denied, because
+  worktrees share one stash.
 
 ## Environment notes
 

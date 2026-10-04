@@ -11,7 +11,7 @@ INPUT=$(cat)
 FILE_PATH=$(printf '%s' "$INPUT" | grep -o '"file_path"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed -e 's/.*:[[:space:]]*"//' -e 's/"$//')
 
 case "$FILE_PATH" in
-  *.cs|*.razor|*.css|*.js|*.sh|*.ps1) ;;
+  *.cs|*.razor|*.css|*.js|*.mjs|*.sh|*.ps1) ;;
   *) exit 0 ;;
 esac
 
