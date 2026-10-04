@@ -334,7 +334,8 @@
 }
 
 /* Sticky rather than fixed: once the coach scrolls down to the bench it settles under the panels instead of covering them. */
-.selection-bar {
+.selection-bar,
+.unsaved-bar {
     position: sticky;
     bottom: 0;
     z-index: 5;
@@ -349,7 +350,8 @@
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.selection-text {
+.selection-text,
+.unsaved-text {
     flex: 1;
     min-width: 0;
     font-size: 0.8rem;

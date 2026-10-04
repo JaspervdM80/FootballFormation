@@ -27,6 +27,9 @@ public partial class FormationBuilder
     private Dictionary<int, List<GamePlayerPosition>> PeriodLineups { get; } = [];
     private LineupDragState Drag { get; } = new();
 
+    /// Each period's line-up as it was last loaded or saved. Compared by value, because a drop moves the same entry objects around.
+    private Dictionary<int, string> SavedLineups { get; } = [];
+
     private int ActivePeriodIndex
     {
         get;
@@ -68,6 +71,25 @@ public partial class FormationBuilder
 
         Logger.LogDebug("Loaded formation builder for game {GameId} vs {Opponent}",
             GameId, GameData.Opponent);
+    }
+
+    /// A played half is left out: the touchline owns it, and the save skips it.
+    private bool HasUnsavedChanges =>
+        GameData is not null
+        && GameData.Periods.Any(p => !p.HasKickedOff
+            && PeriodLineups.TryGetValue(p.Id, out var lineup)
+            && LineupSignature(lineup) != SavedLineups.GetValueOrDefault(p.Id));
+
+    private static string LineupSignature(IEnumerable<GamePlayerPosition> lineup) =>
+        string.Join(';', lineup
+            .OrderBy(p => p.PlayerId)
+            .Select(p => $"{p.PlayerId}:{p.IsSubstitute}:{p.SlotIndex}:{p.Position}"));
+
+    private void RememberSavedLineups()
+    {
+        SavedLineups.Clear();
+        foreach (var (periodId, lineup) in PeriodLineups)
+            SavedLineups[periodId] = LineupSignature(lineup);
     }
 
     /// Injury is filtered here rather than in <see cref="Game.IsInRoster"/>, which also judges games already played — where a status set
@@ -337,7 +359,10 @@ public partial class FormationBuilder
         var result = await GameService.SaveFormationAsync(GameId, formation);
         if (!Snackbar.ReportFailure(L, result)) return;
 
+        // The service reshaped every unplayed half the same way, so a page with nothing pending still has nothing pending.
+        var hadUnsavedChanges = HasUnsavedChanges;
         ReshapeCachedLineups(formation);
+        if (!hadUnsavedChanges) RememberSavedLineups();
         Drag.Clear();
         Snackbar.Add(L["Formation changed to {0}", L[formation.DisplayName()].Value], Severity.Success);
     }
@@ -487,6 +512,7 @@ public partial class FormationBuilder
 
         Snackbar.Add(L["All lineups saved!"], Severity.Success);
         Logger.LogInformation("Saved all lineups for game {GameId}", GameId);
+        RememberSavedLineups();
 
         // Reload so the cached entries carry the database-generated ids.
         var gameResult = await GameService.GetByIdAsync(GameId, Cancellation);
@@ -505,6 +531,8 @@ public partial class FormationBuilder
         {
             PeriodLineups[period.Id] = period.PlayerPositions.ToList();
         }
+
+        RememberSavedLineups();
     }
 
     private List<PlayingTimeRow> GetPlayingTimeData()

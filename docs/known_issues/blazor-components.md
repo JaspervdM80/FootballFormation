@@ -68,4 +68,9 @@
   indistinguishable from the user pressing Cancel, so one returning a value type needs its own
   helper handing back `TValue?` — there was a `PromptValueAsync` doing exactly that until its last
   caller went, and adding another value-typed dialog means writing it again.
-
+- **`NavigationLock` never fires for a link in this app.** `<Routes>` has no render mode, so an
+  in-app link is an enhanced navigation the circuit never sees, and the back arrow is `back.js`
+  calling `navigation.traverseTo`. A page that must hold the visitor renders a hidden
+  `[data-leave-guard]` holding the question, and `js/leave-guard.js` — a capturing click listener
+  loaded ahead of `back.js` — asks with `confirm()`. See
+  [formation-and-pitch](../ui_components/formation-and-pitch.md).

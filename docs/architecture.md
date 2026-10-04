@@ -244,16 +244,19 @@ wwwroot/                      — Served to any host at _content/FootballFormati
                                 color-mix() in the clone first (see docs/known_issues/general.md)
   js/clipboard.js             — Copies a match summary; called from a plain onclick, not a circuit
   js/back.js                  — Turns the back arrow into a step back through the tab's history
+  js/leave-guard.js           — Asks before leaving a page that renders [data-leave-guard] (links, back, unload)
+  js/live-match.js            — The live screen's tab title and wake lock
+  js/vibration.js             — The match-event buzz and its setting
   js/drag-drop-touch.js       — Touch → HTML5 drag event shim for the formation builder on phones
   js/vendor/html2canvas.min.js
 ```
 
 **The assets a component needs live here, not in the host.** A rule in `app.css`, the DM Sans faces
-and the three scripts the pages call into are as much part of this library as the markup that needs
+and the scripts the pages call into are as much part of this library as the markup that needs
 them; a second host would otherwise have to re-supply them by hand. `App.razor` names them under
 `_content/FootballFormation.UI/`, the same prefix it uses for MudBlazor's own — `theme.css` and
 `app.css` through `@Assets[]`, so they are fingerprinted and the service worker can cache them, the
-three scripts and the fonts as plain paths. The host keeps only what is a *web* concern — the
+scripts and the fonts as plain paths. The host keeps only what is a *web* concern — the
 service worker, `js/pwa.js`, the manifest, the icons — see the Web section below.
 
 Report builders live in **Core** (`Core/Reporting/`), not the UI: minutes played, utilisation and

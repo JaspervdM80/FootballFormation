@@ -212,7 +212,8 @@ if (!(await chips.count())) {
     await waitUntil(page, async () => await chips.count() === i + 1, { what: `chip ${i + 1} on the pitch` });
   }
   await clickFor(page.getByRole('button', { name: /opslaan|save/i }).first(),
-    async () => await page.getByText(/opgeslagen|lineups saved/i).count() > 0,
+    async () => await page.locator('.unsaved-bar').count() === 0
+      && await page.getByText(/alle opstellingen opgeslagen|all lineups saved/i).count() > 0,
     { settle: 10_000 });
 }
 

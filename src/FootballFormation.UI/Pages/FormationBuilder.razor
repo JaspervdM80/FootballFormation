@@ -23,6 +23,11 @@
     var activePeriodPlayed = activePeriod.HasKickedOff;
 }
 
+@if (HasUnsavedChanges)
+{
+    <span hidden data-leave-guard="@L["Leave without saving? The changes to this line-up are lost."]"></span>
+}
+
 <div class="builder-desktop">
     <PageHeader BackFallback="@AppRoutes.Games" TitleTypo="Typo.h6" Class="mb-2"
                 Title="@($"vs {GameData.Opponent}")">
@@ -82,7 +87,8 @@
             <MudSelectItem Value="formation">@L[formation.DisplayName()]</MudSelectItem>
         }
     </MudSelect>
-    <div class="period-segments mb-3" role="group" aria-label="@L[GameData.SplitType.PeriodLabel()]">
+    <div class="period-segments mb-3" role="group"
+         aria-label="@(GameData.SplitType == GameSplitType.Halves ? L["Halves"] : L["Quarters"])">
         @for (var i = 0; i < orderedPeriods.Count; i++)
         {
             var index = i;
@@ -207,6 +213,16 @@
         }
         <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="Drag.Clear">
             @L["Cancel"]
+        </MudButton>
+    </div>
+}
+else if (HasUnsavedChanges)
+{
+    <div class="unsaved-bar" role="status">
+        <span class="unsaved-text">@L["Line-up not saved"]</span>
+        <MudButton Variant="Variant.Filled" Class="btn-gold" Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.Save" OnClick="SaveAll">
+            @L["Save"]
         </MudButton>
     </div>
 }
