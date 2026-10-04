@@ -36,6 +36,14 @@ const dropOn = (page, selector) => page.evaluate(sel => {
   }
 }, selector);
 
+// An empty slot pulses while a player is in hand, so it never passes Playwright's stability check — and
+// forced, a click at the bottom of the screen lands on the selection bar instead.
+const tapKeeper = async (page) => {
+  const keeper = page.locator('.pitch .pitch-empty', { hasText: 'GK' });
+  await keeper.evaluate(el => el.scrollIntoView({ block: 'center' }));
+  await keeper.click({ force: true });
+};
+
 test.describe.serial('the formation builder on a phone', () => {
   let gameId;
 
@@ -123,13 +131,6 @@ test.describe.serial('the formation builder on a phone', () => {
     const chips = page.locator('.pitch .pitch-player');
     const subs = page.locator('.subs-panel .sub-item');
     const bar = page.locator('.selection-bar');
-    const keeper = page.locator('.pitch .pitch-empty', { hasText: 'GK' });
-    // An empty slot pulses while a player is in hand, so it never passes Playwright's stability
-    // check — and forced, a click at the bottom of the screen lands on the selection bar instead.
-    const tapKeeper = async () => {
-      await keeper.evaluate(el => el.scrollIntoView({ block: 'center' }));
-      await keeper.click({ force: true });
-    };
     await expect(chips).toHaveCount(0);
     await expect(subs).toHaveCount(2);
 
@@ -138,7 +139,7 @@ test.describe.serial('the formation builder on a phone', () => {
     await expect(first).toHaveClass(/selected/);
     await expect(bar).toBeVisible();
 
-    await tapKeeper();
+    await tapKeeper(page);
     await expect(chips).toHaveCount(1);
     await expect(bar).toHaveCount(0);
 
@@ -158,7 +159,7 @@ test.describe.serial('the formation builder on a phone', () => {
     await expect(page.locator('.draggable-player', { hasText: name })).toHaveCount(1);
 
     await page.locator('.draggable-player').first().click();
-    await tapKeeper();
+    await tapKeeper(page);
     await expect(chips).toHaveCount(1);
     await chips.first().click();
     await page.locator('.subs-panel .mud-typography-subtitle2').click();
@@ -183,14 +184,42 @@ test.describe.serial('the formation builder on a phone', () => {
     const [, slots] = (await fill.innerText()).match(/^\d+\/(\d+)$/);
 
     await page.locator('.draggable-player').first().click();
-    const keeper = page.locator('.pitch .pitch-empty', { hasText: 'GK' });
-    await keeper.evaluate(el => el.scrollIntoView({ block: 'center' }));
-    await keeper.click({ force: true });
+    await tapKeeper(page);
     await expect(chips).toHaveCount(1);
     await expect(fill).toHaveText(`1/${slots}`);
 
     await segments.nth(1).click();
     await expect(segments.nth(1)).toHaveAttribute('aria-pressed', 'true');
     await expect(segments.first()).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  // Overview reads the saved line-up, so leaving for it with changes pending would lose them.
+  test('leaving with an unsaved line-up asks first, and leaving a saved one does not', async ({ page }) => {
+    await openBuilder(page);
+    const unsaved = page.locator('.unsaved-bar');
+    const overview = page.locator('.builder-mobile a[href$="/overview"]');
+    await expect(overview).toBeVisible();
+    await expect(unsaved).toHaveCount(0);
+
+    await page.locator('.draggable-player').first().click();
+    await tapKeeper(page);
+    await expect(unsaved).toBeVisible();
+
+    const asked = [];
+    page.on('dialog', dialog => {
+      asked.push(dialog.type());
+      dialog.dismiss();
+    });
+
+    await overview.click();
+    await expect.poll(() => asked).toEqual(['confirm']);
+    await expect(page).toHaveURL(/\/formation$/);
+    await expect(unsaved).toBeVisible();
+
+    await saveLineup(page);
+    await expect(unsaved).toHaveCount(0);
+    await overview.click();
+    await page.waitForURL(/\/overview$/);
+    expect(asked).toEqual(['confirm']);
   });
 });

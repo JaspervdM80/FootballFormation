@@ -863,4 +863,8 @@
   <data name="No matches played yet." xml:space="preserve"><value>Nog geen wedstrijden gespeeld.</value></data>
   <data name="Fixtures, line-ups and results." xml:space="preserve"><value>Programma, opstellingen en uitslagen.</value></data>
   <data name="The team record, top scorers and goalkeepers." xml:space="preserve"><value>De teamresultaten, topscorers en keepers.</value></data>
+  <data name="Halves" xml:space="preserve"><value>Helften</value></data>
+  <data name="Quarters" xml:space="preserve"><value>Kwarten</value></data>
+  <data name="Line-up not saved" xml:space="preserve"><value>Opstelling niet opgeslagen</value></data>
+  <data name="Leave without saving? The changes to this line-up are lost." xml:space="preserve"><value>Weggaan zonder op te slaan? De wijzigingen in deze opstelling gaan verloren.</value></data>
 </root>

@@ -66,6 +66,20 @@
   from a **fresh read** rather than from its own cached game: a builder left open since before
   kick-off still has every half down as a plan, and would otherwise be refused one period at a time
   by `GameService.SavePeriodLineupAsync`
+- **Nothing is saved until Save, so leaving with changes pending asks first.** `SavedLineups` holds
+  each period's line-up by value as last loaded or saved, and `HasUnsavedChanges` compares the
+  page's copy against it (played halves left out). While it holds, a sticky `.unsaved-bar` offers
+  **Save** whenever the `.selection-bar` is not showing, and the page renders a hidden
+  `[data-leave-guard]` carrying the question — in the same render batch as the bar, so the guard is
+  never a round trip behind the screen. `js/leave-guard.js` reads it at the moment of leaving. That
+  guard is **in the browser, not a `NavigationLock`**: the router is static, so an in-app link
+  is an enhanced navigation the circuit never sees, and the back arrow is `back.js` calling
+  `navigation.traverseTo`. It catches link clicks with a capturing listener on `window` — loaded
+  ahead of `back.js` so it can stop that one — and asks with a native `confirm()`, because only a
+  synchronous answer can hold the click; plus `beforeunload`, and a cancellable `traverse` for the
+  browser's own back where the Navigation API allows it. It stands down once the circuit has failed,
+  since the edits are gone and `pwa.js` is about to reload. A formation change keeps a clean page
+  clean: the service reshapes the stored line-ups exactly as the page reshapes its copy
 - Playing time table is built by `PlayingTimeReport.Build(...)`, not by the page; it renders
   whenever there are players (it does not wait for every period to be filled)
 - Its totals read the match clock once the game has been run live, and are the planned
