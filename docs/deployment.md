@@ -12,7 +12,7 @@ create` / `fly volumes create` / `fly certs add`, and A/AAAA/CNAME records at th
 | File | Purpose |
 |------|---------|
 | `Dockerfile` | Multi-stage build (SDK → aspnet runtime), listens on 8080 |
-| `global.json` | Pins the SDK for CI and web containers. `.dockerignore` keeps it out of the image, which builds on `sdk:10.0` — see [known_issues](known_issues/index.md) |
+| `global.json` | Pins the SDK for CI and web containers, and puts `dotnet test` on Microsoft.Testing.Platform. `.dockerignore` keeps it out of the image, which builds on `sdk:10.0` and runs no tests — see [known_issues](known_issues/index.md) |
 | `fly.toml` | App `gjs-meiden`, volume `data` mounted at `/data` with 30-day snapshot retention, suspend-when-idle enabled |
 | `Program.cs` | `APP_DATA_DIR` env var overrides the data folder (DB, logs, data-protection keys); maps `/health` |
 

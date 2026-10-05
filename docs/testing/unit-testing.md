@@ -79,13 +79,13 @@ by driving the real app in a real browser, which is what `tests/ui` (behaviour) 
 ## Coverage
 
 ```bash
-scripts/coverage.sh                        # run the suite with the collector, judge this branch
+scripts/coverage.sh                        # run the suite with coverlet, judge this branch
 COVERAGE_BASE=HEAD~1 scripts/coverage.sh   # against another base
 COVERAGE_THRESHOLD=90 scripts/coverage.sh
 COVERAGE_SKIP_TEST=1 scripts/coverage.sh   # re-judge the last run without re-running the suite
 ```
 
-`coverlet.collector` writes a Cobertura report into `artifacts/coverage/`, and `coverage.mjs`
+`coverlet.MTP` writes a Cobertura report into `artifacts/coverage/`, and `coverage.mjs`
 answers the only question a review can act on: **is the code this branch changed covered?** The
 floor is **80% of the changed lines**, and the script exits non-zero under it, which is exactly how
 CI runs it — see [the Coverage job](#one-pipeline-one-compile).
@@ -96,11 +96,12 @@ diff — the number would move by tenths. The script takes the added and rewritt
 `git diff --unified=0` against the merge base (uncommitted work included), keeps the ones the
 instrumenter counted as coverable, and reports per file with the uncovered line numbers.
 
-### What the collector may count
+### What coverlet may count
 
-`coverage.runsettings` at the repository root is what decides, and both `scripts/coverage.sh` and
-CI's test step pass it, so a local number and a pipeline number mean the same thing. Everything
-below is out of the report entirely — not merely out of the judgement:
+`tests/FootballFormation.Core.Tests/testconfig.json` is what decides. It is copied next to the test
+executable and read whenever a run passes `--coverlet`, so `scripts/coverage.sh` and CI's test step
+judge the same set of lines without either naming the file. Everything below is out of the report
+entirely — not merely out of the judgement:
 
 - **`UI` and `Web`**, by module (`[FootballFormation.UI]*`, `[FootballFormation.Web]*`) and by
   file (`**/*.razor`, `**/*.razor.cs`). The test project references `Core` alone, so nothing from
@@ -122,6 +123,12 @@ below is out of the report entirely — not merely out of the judgement:
   every service call goes through — and most of `DatabaseSafety` out of the report along with the
   scaffolding. A change that silently stopped judging the admin check would be worse than the
   scaffolding problem this file exists to fix.
+
+**The file being there is what keeps `CompilerGeneratedAttribute` counted.** With no config file,
+coverlet.MTP merges its own defaults into every run, and those defaults *include*
+`CompilerGeneratedAttribute`. With one, the file is authoritative and nothing is merged — which is
+also why it names `[coverlet.*]`, `[xunit.*]` and `[Microsoft.*]` itself. Delete or rename it and
+the run still succeeds, with a report that has quietly stopped judging every `async` body.
 
 `coverage.mjs` still recognises migrations and `DesignTimeDbContextFactory` by name, and treats any
 other changed `Core` file the report never mentions the same way: named under the table as excluded

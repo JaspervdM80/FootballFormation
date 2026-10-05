@@ -35,6 +35,10 @@ here that cannot be chosen — so bumping it follows the archive rather than lea
 `.dockerignore` keeps `global.json` out of the image on purpose: no container image exists for the
 pinned build, so the deploy builds on `sdk:10.0`.
 
+`global.json` also carries `"test": { "runner": "Microsoft.Testing.Platform" }`, which puts
+`dotnet test` in MTP mode. Take it out and the test step fails on VSTest before running a test —
+see the `testing` skill. The image runs no tests, so its missing `global.json` does not matter here.
+
 Claude Code web containers ship no .NET SDK, so `.claude/hooks/session-start.sh` installs
 `dotnet-sdk-10.0` from **Ubuntu's own archive** — it has to be Ubuntu's, because the container's
 egress policy blocks `builds.dotnet.microsoft.com` and `dotnet-install.sh` 403s. Chromium is already

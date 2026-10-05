@@ -1,0 +1,13 @@
+{
+  // Read only when a run passes --coverlet. Present at all, it replaces coverlet's defaults —
+  // which is wanted: those include CompilerGeneratedAttribute. See docs/testing/unit-testing.md.
+  "platformOptions": {
+    "Coverlet": {
+      "format": "cobertura",
+      "exclude": "[coverlet.*]*,[xunit.*]*,[Microsoft.*]*,[FootballFormation.UI]*,[FootballFormation.Web]*",
+      "excludeByFile": "**/Migrations/*.cs,**/DesignTimeDbContextFactory.cs,**/*.razor,**/*.razor.cs,**/*.g.cs,**/*.designer.cs",
+      "excludeByAttribute": "Obsolete,GeneratedCodeAttribute,ExcludeFromCodeCoverageAttribute",
+      "excludeAssembliesWithoutSources": "MissingAll"
+    }
+  }
+}
