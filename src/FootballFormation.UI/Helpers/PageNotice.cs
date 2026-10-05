@@ -20,4 +20,7 @@ public sealed class PageNotice
         Severity = Severity.Error;
         return false;
     }
+
+    /// For a component that loads more than once: a failure the next load got past is not still true.
+    public void Clear() => Message = null;
 }

@@ -1,14 +1,15 @@
+using FootballFormation.UI.Pages;
 using FootballFormation.UI.State;
 using Microsoft.AspNetCore.Components.Authorization;
 
-namespace FootballFormation.UI.Pages;
+namespace FootballFormation.UI.Components;
 
-public partial class Games
+/// The games list: static HTML for a visitor, who can only read it, and an interactive island for an admin — see Games.razor.
+public partial class GameBoard
 {
     [Inject] private GameService GameService { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
-    [Inject] private NavigationManager Navigation { get; set; } = null!;
     [Inject] private TeamState Team { get; set; } = null!;
     [Inject] private TimeProvider Time { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
@@ -16,11 +17,16 @@ public partial class Games
     [CascadingParameter]
     private Task<AuthenticationState> AuthStateTask { get; set; } = null!;
 
+    private readonly PageNotice _notice = new();
+
     private bool _isAdmin;
 
     private int? _teamId;
 
     private List<Game>? _games;
+
+    /// True in the prerender of the admin's island as well, which is what lets InteractiveShell's marker read "pending" there.
+    private bool Interactive => AssignedRenderMode is not null;
 
     protected override async Task OnInitializedCoreAsync()
     {
@@ -33,9 +39,11 @@ public partial class Games
 
     protected override async Task LoadAsync()
     {
+        _notice.Clear();
+
         // The details variant loads the period line-ups, which is what lets a game missing one be flagged.
         var result = await GameService.GetAllWithDetailsAsync(SeasonId, Cancellation);
-        _games = Snackbar.ReportFailure(L, result) ? result.Value : [];
+        _games = _notice.ReportFailure(L, result) ? result.Value : [];
     }
 
     private DateTime Today => Time.GetLocalNow().Date;
@@ -115,15 +123,10 @@ public partial class Games
     }
 
     /// A match under way beats everything; then finished games open the result; admins build formations; visitors get the overview.
-    private void OpenGame(Game game)
-    {
-        if (game.MatchState == MatchState.InProgress)
-            OpenLive(game.Id);
-        else if (game.HasFinalScore)
-            OpenResult(game.Id);
-        else
-            Navigation.NavigateTo(AppRoutes.UpcomingGame(game.Id, _isAdmin));
-    }
+    private string OpenUrl(Game game) =>
+        game.MatchState == MatchState.InProgress ? AppRoutes.Live(game.Id)
+        : game.HasFinalScore ? AppRoutes.Result(game.Id)
+        : AppRoutes.UpcomingGame(game.Id, _isAdmin);
 
     /// MudMenu closes only once OnClick returns, so work that waits on a dialog runs detached and renders itself when done.
     private void AfterMenuCloses(Func<Task> work) => _ = InvokeAsync(async () =>
@@ -143,14 +146,6 @@ public partial class Games
         Snackbar.Report(L, result, L["Game vs {0} deleted", game.Opponent], Severity.Warning);
         await LoadAsync();
     }
-
-    private void OpenFormation(int gameId) => Navigation.NavigateTo(AppRoutes.Formation(gameId));
-
-    private void OpenOverview(int gameId) => Navigation.NavigateTo(AppRoutes.Overview(gameId));
-
-    private void OpenResult(int gameId) => Navigation.NavigateTo(AppRoutes.Result(gameId));
-
-    private void OpenLive(int gameId) => Navigation.NavigateTo(AppRoutes.Live(gameId));
 
     /// Null when the dialog was cancelled.
     private async Task<Game?> ShowGameDialogAsync(string title, Game? game = null)

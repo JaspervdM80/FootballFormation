@@ -139,10 +139,10 @@ Result.cs                — Result and Result<T>: success/failure with a transl
 ## UI (`src/FootballFormation.UI/`) — Razor Class Library
 ```
 Pages/
-  Players.razor(.cs)          — /players — Season-scoped squad management (add/remove, edit, copy forward)
+  Players.razor               — /players — No circuit of its own: SquadBoard, interactive for an admin only
   PlayerDialog.razor(.cs)     — Dialog: first name, surname, shirt #, positions (no guest switch — that's per season)
   SquadMemberDialog.razor(.cs)— Dialog: add someone already on file to this season's squad
-  Games.razor(.cs)            — /games — Game list with formation builder link
+  Games.razor                 — /games — No circuit of its own: GameBoard, interactive for an admin only
   Duties.razor(.cs)(.css)     — /games/duties — Public: the season's dressing-room, flag and kit-wash
                                 duties, one row per game, opened on the next match
   Trainings.razor(.cs)(.css)  — /trainings — Admin-only: the season's training sessions, grouped by ISO week
@@ -186,6 +186,9 @@ Components/
   CancellableComponent.cs           — Base for any component that reads: owns the CancellationToken its
                                       service reads take, tripped when the component is disposed
   SeasonAwarePage.cs                — Base for pages that follow the season picker (a CancellableComponent)
+  GameBoard.razor(.cs)(.css)        — The games list, rendered by /games: static for a visitor, an island
+                                      for an admin, whose Add, Edit and Delete need one
+  SquadBoard.razor(.cs)             — The season's squad, rendered by /players the same way
   PlayerList.razor(.cs)(.css)       — Draggable player cards (HTML5 drag API)
   SubstituteBench.razor(.cs)(.css)  — Substitute drop zone with remove buttons
   SeasonPicker.razor(.cs)           — Global season filter; rendered in both the app bar and the drawer
@@ -268,9 +271,16 @@ season, and a report may walk games spanning several of them.
 
 ## Render modes: most pages have no circuit
 `@rendermode InteractiveServer` is declared **per page**, never on `<Routes>` or `<HeadOutlet>`.
-Nine pages carry it — the start page, the games list, the squad and the trainings list, the four
-game screens, and settings and users. Everything else is plain server HTML: `/stats`, `/stats/positions`,
-`/players/{id}/stats`, `/games/{id}/overview`, `/games/duties`, `/login`, `/Error` and `/not-found`.
+It is on the start page, the trainings list, the three interactive game screens (formation, live,
+result), preferences, settings, users and teams. Everything else is plain server HTML: `/stats`,
+`/stats/positions`, `/players/{id}/stats`, `/games/{id}/overview`, `/games/duties`, `/login`, `/Error`
+and `/not-found`.
+
+**`/games` and `/players` are split by who is looking.** Each page declares no render mode and renders
+its board — `GameBoard`, `SquadBoard` — inside an `AuthorizeView`: with `@rendermode="InteractiveServer"`
+at the call site for an admin, plainly for everyone else. A board tells the two apart by
+`AssignedRenderMode`, and renders `<InteractiveShell />` and its MudBlazor-only controls (the card's
+`MudMenu`, the table's sort labels) only in the island; a visitor's card menu is a `<details>` of links.
 
 The reason is a phone. Backgrounding an installed PWA suspends the tab and kills the circuit's
 WebSocket; coming back puts up a blocking overlay and, past the retention window, forces a reload

@@ -6,7 +6,7 @@ const backArrow = (page) => page.locator('a.back-button').first();
 
 test('an interactive page goes back to where the tab came from, not to its fallback', async ({ page }) => {
   await createMatch(page, { opponent: 'FC Kruimelpad' });
-  await gameRow(page, 'FC Kruimelpad').locator('.game-opponent').click();
+  await gameRow(page, 'FC Kruimelpad').locator('.game-open').click();
   await expect(page).toHaveURL(/\/games\/\d+\/formation/);
   const formation = page.url();
 

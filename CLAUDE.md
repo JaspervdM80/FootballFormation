@@ -98,7 +98,8 @@ These fail silently or expensively, so they are here rather than only in a skill
    case-insensitive, so a lowercase service action phrase can collide with a button label.
 5. **Most pages have no circuit, and the layout never has one.** `@rendermode InteractiveServer` is
    per page; `/stats`, `/stats/positions`, `/players/{id}/stats`, `/games/{id}/overview`,
-   `/games/duties`, `/styleguide` and the login and error pages are plain server HTML. On those, `ISnackbar`
+   `/games/duties`, `/styleguide` and the login and error pages are plain server HTML, and so are
+   `/games` and `/players` for a visitor — an admin gets their board as an island. On those, `ISnackbar`
    reports into nothing and `OnAfterRenderAsync` never runs — use `PageNotice` + `<InlineNotice>`, and give JS work to a
    plain `onclick`. A page that *does* declare a render mode opens with `<InteractiveShell />`,
    because `MainLayout` renders statically even for it.
