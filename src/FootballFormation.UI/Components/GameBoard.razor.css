@@ -19,7 +19,7 @@
     border-radius: 12px;
     box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 6%, transparent);
     transition: border-color 0.15s, box-shadow 0.15s;
-    cursor: pointer;
+    position: relative;
 }
 
 @media (hover: hover) {
@@ -68,6 +68,9 @@
 
 /* ::deep, because MudIcon's svg carries no scope attribute of its own. */
 .game-meta ::deep .nolineup-icon {
+    /* Above the card's link, or its title never shows on hover. */
+    position: relative;
+    z-index: 1;
     color: var(--color-warning-bright);
     font-size: 1.05rem !important;
 }
@@ -89,11 +92,59 @@
     font-weight: 600;
 }
 
+.game-open {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+}
+
 .game-actions {
+    position: relative;
+    z-index: 1;
     flex: none;
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+/* Lifted over the rows below it, whose actions would otherwise paint over the open menu. */
+.game-row:has(.game-more-static[open]) {
+    z-index: 2;
+}
+
+.game-more-static {
+    position: relative;
+}
+
+.game-more-static > summary {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: var(--ink-muted);
+    cursor: pointer;
+    list-style: none;
+}
+
+.game-more-static > summary::-webkit-details-marker {
+    display: none;
+}
+
+@media (hover: hover) {
+    .game-more-static > summary:hover {
+        background: color-mix(in srgb, var(--ink) 4%, transparent);
+    }
+}
+
+.game-more-item {
+    gap: 12px;
+    white-space: nowrap;
+}
+
+.game-more-item ::deep svg {
+    color: var(--ink-muted);
 }
 
 @media (max-width: 599.98px) {

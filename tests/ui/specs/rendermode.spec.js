@@ -9,7 +9,7 @@
 // sign in, so theirs is the session that has to stay cheap.
 import { test, expect } from '../fixtures.js';
 import { VISITOR_STATE } from '../playwright.config.js';
-import { goto } from '../helpers.js';
+import { goto, openOverview } from '../helpers.js';
 import { FIXTURE_MATCH } from '../global-setup.js';
 
 test.use({ storageState: VISITOR_STATE });
@@ -34,13 +34,24 @@ test('the season statistics open no circuit at all', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Statistics', exact: false }).first()).toBeVisible();
   expect(sockets, 'the season statistics opened a circuit').toEqual([]);
 
-  // Not a listener that never fires: /games is still interactive, so the same probe on the same
-  // page object has to see one there. Without this the assertion above would keep passing after a
-  // rename broke the listener entirely.
-  await goto(page, '/games');
-  await expect(page.getByRole('heading', { name: 'Games', exact: false }).first()).toBeVisible();
-  expect(sockets.length, 'no circuit on /games either — is the probe working?').toBeGreaterThan(0);
+  // Not a listener that never fires: the home page is still interactive, so the same probe on the
+  // same page object has to see one there. Without this the assertion above would keep passing
+  // after a rename broke the listener entirely.
+  await goto(page, '/');
+  expect(sockets.length, 'no circuit on the home page either — is the probe working?').toBeGreaterThan(0);
 });
+
+// The fixture list and the squad are what a parent opens most; only an admin gets their island.
+for (const [path, heading, content] of [['/games', 'Games', '.game-row'], ['/players', 'Squad', '.player-name-cell']]) {
+  test(`${path} opens no circuit for a visitor`, async ({ page }) => {
+    const sockets = watchSockets(page);
+
+    await openSettled(page, path);
+    await expect(page.getByRole('heading', { name: heading, exact: false }).first()).toBeVisible();
+    await expect(page.locator(content).first()).toBeVisible();
+    expect(sockets, `${path} opened a circuit for a visitor`).toEqual([]);
+  });
+}
 
 test('a player page opens no circuit either', async ({ page, visitor }) => {
   await goto(page, '/players');
@@ -51,8 +62,7 @@ test('a player page opens no circuit either', async ({ page, visitor }) => {
   await expect(page).toHaveURL(/\/players\/\d+\/stats/);
   const playerPath = new URL(page.url()).pathname;
 
-  // Reached cold, the way a shared link is. Arriving from /players would carry that page's circuit
-  // into the count and prove nothing.
+  // Reached cold, the way a shared link is, so nothing the list did can be counted against this page.
   const sockets = watchSockets(visitor);
   await openSettled(visitor, playerPath);
   await expect(visitor.getByRole('heading').first()).toBeVisible();
@@ -62,9 +72,7 @@ test('a player page opens no circuit either', async ({ page, visitor }) => {
 test('a shared match report opens no circuit', async ({ page, visitor }) => {
   // The URL first, from the games list, because a match report is only ever reached by its link.
   await goto(page, '/games');
-  await page.locator('.game-row', { hasText: FIXTURE_MATCH }).first().locator('.game-more button').click();
-  await page.locator('.mud-popover-open .mud-menu-item', { hasText: 'Overview' }).click();
-  await expect(page).toHaveURL(/\/games\/\d+\/overview/);
+  await openOverview(page, FIXTURE_MATCH);
   const overviewPath = new URL(page.url()).pathname;
 
   // Then cold, which is how a link shared into a group chat is opened.

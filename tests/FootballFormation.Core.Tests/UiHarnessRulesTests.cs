@@ -29,6 +29,9 @@ public partial class UiHarnessRulesTests
     [GeneratedRegex(@"/[^/\n]+/i")]
     private static partial Regex RegexLiteral();
 
+    [GeneratedRegex(@"<(\w+)\s+@rendermode=")]
+    private static partial Regex CallSiteRenderMode();
+
     [Fact]
     public void No_spec_or_helper_sleeps()
     {
@@ -112,11 +115,15 @@ public partial class UiHarnessRulesTests
     public void Every_interactive_page_opens_with_the_readiness_marker()
     {
         // The marker fails open: a page without it has none left pending, so goto takes its inert prerender as ready.
-        var pages = Repository.FilesUnder("src", ".razor").Where(path => File.ReadAllText(path).Contains("@rendermode")).ToList();
-        var unmarked = pages.Where(path => !File.ReadAllText(path).Contains("<InteractiveShell ")).Select(Path.GetFileName).ToList();
+        var razor = Repository.FilesUnder("src", ".razor").Select(path => (Path: path, Text: File.ReadAllText(path))).ToList();
+        var pages = razor.Where(file => file.Text.Contains("@rendermode ")).ToList();
+        var islandNames = razor.SelectMany(file => CallSiteRenderMode().Matches(file.Text)).Select(match => match.Groups[1].Value).ToHashSet();
+        var islands = razor.Where(file => islandNames.Contains(Path.GetFileNameWithoutExtension(file.Path))).ToList();
+        var unmarked = pages.Concat(islands).Where(file => !file.Text.Contains("<InteractiveShell ")).Select(file => Path.GetFileName(file.Path)).ToList();
 
         Assert.True(pages.Count > 5, $"Only {pages.Count} interactive pages found — has the scan stopped matching?");
-        Assert.True(unmarked.Count == 0, $"Interactive pages without <InteractiveShell />: {string.Join(", ", unmarked)}");
+        Assert.True(islands.Count >= 2, $"Only {islands.Count} interactive islands found — has the scan stopped matching?");
+        Assert.True(unmarked.Count == 0, $"Interactive pages or islands without <InteractiveShell />: {string.Join(", ", unmarked)}");
     }
 
     [Fact]

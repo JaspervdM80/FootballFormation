@@ -78,7 +78,7 @@ never reaches `SaveChanges` — `ExecuteUpdate`, `ExecuteDelete` or raw SQL. Out
 only the push subscriptions use one (`ExecuteDelete`), and no statistic reads them; one against
 anything a report reads would go behind the interceptor's back.
 
-**Cache the report, never `GetAllWithDetailsAsync`.** `Games.razor` and `FormationBuilder` hand a
+**Cache the report, never `GetAllWithDetailsAsync`.** `GameBoard` and `FormationBuilder` hand a
 loaded `Game` straight back to `GameService.UpdateAsync`, which attaches it with
 `db.Entry(game).State = EntityState.Modified` — so caching at the service level would put a shared
 mutable graph into a `DbContext` and let a rename corrupt what another reader sees. The statistics

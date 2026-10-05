@@ -1,7 +1,9 @@
-namespace FootballFormation.UI.Pages;
+using FootballFormation.UI.Pages;
+
+namespace FootballFormation.UI.Components;
 
 /// Follows the season picker rather than listing everyone on file, because the squad is what decides who can be picked for this season.
-public partial class Players
+public partial class SquadBoard
 {
     [Inject] private PlayerService PlayerService { get; set; } = null!;
     [Inject] private SeasonSquadService SquadService { get; set; } = null!;
@@ -9,14 +11,19 @@ public partial class Players
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
+    private readonly PageNotice _notice = new();
+
     private SeasonSquad? _squad;
     private Season? _previousSeason;
     private bool _loaded;
+
+    private bool Interactive => AssignedRenderMode is not null;
 
     private string SeasonName => SeasonState.SelectedSeason?.Name ?? "";
 
     protected override async Task LoadAsync()
     {
+        _notice.Clear();
         _loaded = false;
         _squad = null;
         _previousSeason = null;
@@ -29,7 +36,7 @@ public partial class Players
         }
 
         var squadResult = await SquadService.GetSquadAsync(seasonId, Cancellation);
-        _squad = Snackbar.ReportFailure(L, squadResult) ? squadResult.Value! : SeasonSquad.Empty;
+        _squad = _notice.ReportFailure(L, squadResult) ? squadResult.Value! : SeasonSquad.Empty;
 
         var previousResult = await SquadService.FindPreviousSeasonAsync(seasonId, Cancellation);
         if (previousResult.IsSuccess) _previousSeason = previousResult.Value;

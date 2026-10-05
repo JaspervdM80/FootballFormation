@@ -623,7 +623,9 @@ a.action-btn {
     background: color-mix(in srgb, var(--ink) 4%, transparent);
 }
 
-.season-picker-menu {
+/* A <details> menu of links: what a page with no circuit has instead of MudMenu. The season picker and a
+   visitor's game card menu. */
+.disclosure-menu {
     position: absolute;
     top: 100%;
     right: 0;
@@ -637,8 +639,7 @@ a.action-btn {
     box-shadow: 0 4px 16px color-mix(in srgb, var(--ink) 18%, transparent);
 }
 
-/* Menu rows pair the season name with its "current" pill */
-.season-menu-item {
+.disclosure-menu-item {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -651,7 +652,7 @@ a.action-btn {
     text-decoration: none;
 }
 
-.season-menu-item:hover {
+.disclosure-menu-item:hover {
     background: var(--surface-card-alt);
 }
 

@@ -12,10 +12,10 @@
         </summary>
         @* A real page load, not enhanced navigation: the season is read off the request that creates a scope, so an island already up
            would keep the old one while the chrome showed the new. See RequestContext. *@
-        <div class="season-picker-menu" data-enhance-nav="false">
+        <div class="season-picker-menu disclosure-menu" data-enhance-nav="false">
             @foreach (var season in SeasonState.Seasons)
             {
-                <a href="@SetUrl(season.Id)" class="season-menu-item">
+                <a href="@SetUrl(season.Id)" class="season-menu-item disclosure-menu-item">
                     <span>@season.Name</span>
                     @if (season.IsCurrent)
                     {
@@ -23,7 +23,7 @@
                     }
                 </a>
             }
-            <a href="@SetUrl(null)" class="season-menu-item season-menu-all">@L["All seasons"]</a>
+            <a href="@SetUrl(null)" class="season-menu-item disclosure-menu-item season-menu-all">@L["All seasons"]</a>
         </div>
     </details>
 }

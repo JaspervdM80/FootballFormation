@@ -12,7 +12,7 @@ description: Building or changing a Razor page, dialog or component in FootballF
 a dialog, a snackbar, `@bind`, JS interop, a timer, a `LiveMatchNotifier` subscription. Navigation
 is not a reason: an anchor does that with no circuit at all.
 
-Today's split: `/`, `/games`, `/players`, `/games/{id}/formation`, `/games/{id}/live`,
+Today's split: `/`, `/games/{id}/formation`, `/games/{id}/live`,
 `/games/{id}/result`, `/trainings`, `/preferences`, `/settings`, `/users` and `/teams` are
 interactive. `/settings` is the one of the administration pages open to everyone: its admin sections
 are behind an `AuthorizeView`, not an `[Authorize]` route. `/stats`, `/stats/positions`,
@@ -21,6 +21,13 @@ are behind an `AuthorizeView`, not an `[Authorize]` route. `/stats`, `/stats/pos
 That is the whole point: a page with no circuit cannot show "Reconnecting…", cannot force a reload,
 and survives a phone suspending the app. An `[Authorize]` attribute works on a static page too —
 `/stats/positions` and `/styleguide` are admin-only without a circuit.
+
+**A page read by everyone but edited by an admin is split by who is looking.** `/games` and `/players`
+declare no render mode; each renders its board (`GameBoard`, `SquadBoard`) inside an `AuthorizeView`,
+with `@rendermode="InteractiveServer"` at the call site for an admin and plainly for a visitor. The
+board reads `AssignedRenderMode` to choose `<InteractiveShell />` and its MudBlazor-only controls (a
+`MudMenu`, a sort label) or their static stand-ins (a `<details>` of links). A call-site island needs
+the shell too — `UiHarnessRulesTests` holds both.
 
 **A page that declares a render mode opens with `<InteractiveShell />`** (or
 `<InteractiveShell RequiresRole="..." />` naming the same role as its `[Authorize(Roles = ...)]` —

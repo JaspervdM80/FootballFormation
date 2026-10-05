@@ -54,7 +54,7 @@ markup lands.
   `scripts/blazor.mjs` in the same commit.
 
 `rendermode.spec.js` is where "this page has no circuit" is asserted, and it proves its own probe by
-checking that `/games` still opens one.
+checking that `/` still opens one.
 
 **There is not a single fixed sleep in `tests/ui` or `scripts/`. Do not introduce one** — it is how the
 suite starts failing on a slow machine.

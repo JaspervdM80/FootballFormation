@@ -213,7 +213,8 @@ There is not a single fixed sleep in the directory, and adding one is how the su
 on a slow machine.
 
 `rendermode.spec.js` is where the render-mode split is pinned — that `/stats`, the player pages and
-the match report open no WebSocket at all, and that `/games` still does, so the probe cannot rot
+the match report, and `/games` and `/players` for a visitor, open no WebSocket at all, and that `/`
+still does, so the probe cannot rot
 into passing on a listener that stopped working.
 
 The same rule holds in `scripts/`, where `blazor.mjs` carries `goto`, `clickFor`,

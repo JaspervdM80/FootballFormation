@@ -260,6 +260,12 @@ export async function gameAction(page, opponent, name) {
     await outright.first().click();
     return;
   }
+  // A visitor's list has no circuit, so its menu is a <details> of plain links rather than a MudMenu.
+  if (await row.locator('.game-more-static').count()) {
+    await row.locator('.game-more-static > summary').click();
+    await row.locator('.game-more-item', { hasText: name }).first().click();
+    return;
+  }
   await row.locator('.game-more button').click();
   await page.locator('.mud-popover-open .mud-menu-item', { hasText: name }).first().click();
 }
@@ -335,6 +341,9 @@ export async function matchWithId(page, opponent, options = {}) {
   await createMatch(page, { opponent, ...options });
   await gameAction(page, opponent, /Formation|Add lineup/);
   await page.waitForURL(/\/games\/\d+\/formation/);
+  // The URL moves before the markup lands, so the pitch says the list's "live" marker is gone and settle() can wait on the new one.
+  await expect(page.locator('.pitch').first()).toBeVisible();
+  await settle(page);
   return Number(page.url().match(/\/games\/(\d+)\//)[1]);
 }
 
