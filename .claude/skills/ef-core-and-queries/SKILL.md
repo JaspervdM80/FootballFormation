@@ -74,8 +74,9 @@ logging a goal in the same moment would each write *n+1* behind two goal rows.
 it. A derived value that is recomputed heals; one that is incremented accumulates.
 
 Two rejected alternatives, worth not re-proposing: passing a context or transaction between services
-(breaks the short-lived context rule), and letting `MatchGoalService` store goals itself (a second
-implementation of goal storage).
+(breaks the short-lived context rule), and letting `MatchGoalService` log or remove a goal itself (a
+second implementation of goal storage). `EditGoalAsync` is the one goal write it owns, and it does
+the recount the same way: in its own transaction, through `GameService.RecountScorelineAsync`.
 
 ## Include chains are named, not respelled
 

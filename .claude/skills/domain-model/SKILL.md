@@ -46,8 +46,9 @@ correctly in each.
 - `Game.CountOurGoals`/`CountTheirGoals` are the one place the scoreline rule lives: an own goal
   counts for the opponent. `CountScoreFrom` is a **recount**, not an increment — see the
   `ef-core-and-queries` skill.
-- **A goal's minute is derived, not stored.** `GameGoal.Minute` is a scoreboard reading, not elapsed
-  time — convert with `MatchClockReport.ElapsedOf` before ordering on it.
+- **A goal's shown minute is derived, not stored.** A live goal keeps `AtSeconds` and
+  `MatchClockReport.MinuteOf` derives the minute; `Minute` is stored only for a typed-in or legacy goal
+  and is a scoreboard reading, not elapsed time — order on `MatchClockReport.ElapsedOf`.
 - **`GamePlayerPosition.SlotIndex` is the source of truth for pitch placement**, not `Position`.
   `(GamePeriodId, PlayerId)` is unique: a player appears once per period, pitch or bench, never both.
 

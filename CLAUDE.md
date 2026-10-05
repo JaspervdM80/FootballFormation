@@ -41,8 +41,9 @@ src/FootballFormation.UI/     Razor Class Library: pages, components, navigation
                               wwwroot (app.css, theme.css, the fonts and the components' own JS)
 src/FootballFormation.Web/    Host: Program.cs, App.razor, Routes.razor, wwwroot (the PWA and icons)
 tests/FootballFormation.Core.Tests/   xUnit v3
+tests/ui/                     Playwright browser tests
 docs/                         Detailed reference and the incident record
-scripts/                      visual-check.sh + its Playwright driver
+scripts/                      The shell entry points above and the Playwright drivers behind them
 ```
 
 Dependencies point one way: `Web → UI → Core`. **UI is a separate RCL for future MAUI Blazor Hybrid

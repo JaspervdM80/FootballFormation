@@ -58,6 +58,9 @@ The exceptions, each deliberate:
 - **`PushSubscriptionService` is the one anonymous write.** Nobody signs in to follow a match, so it
   uses `RunAsync`, validates every field itself and sits behind the `"push"` rate limiter. It is not
   a precedent for a second one.
+- **`SeasonService`'s boot-time repair steps** (`EnsureEveryTeamHasCurrentSeasonAsync`,
+  `CloseSeasonGapsForEveryTeamAsync`) use `RunAsync`: `Program.cs` runs them before anyone has signed
+  in, on the raw context factory, and no request can reach them.
 
 `ICurrentUser` answers false for an account still on its seeded password, so the first-login gate is a
 real restriction rather than a navigable redirect.
@@ -66,7 +69,7 @@ real restriction rather than a navigable redirect.
 
 Every public method takes a trailing `CancellationToken cancellationToken = default` and hands it to
 every EF call underneath — not just the outermost. `RunAsync` catches `OperationCanceledException`
-*ahead of* the general handler and returns `Result.Cancelled()`: no log, no stack trace, no
+*ahead of* the general handler and returns `Result.Cancelled()`: nothing above Debug, no stack trace, no
 "Failed to load games" on the page the visitor just moved to.
 
 `Result.Cancelled()` is still `IsFailure` — every "did that work?" check reads it as no. What sets it
@@ -99,7 +102,7 @@ those three to match the convention.
 
 ## Logging levels
 
-Serilog writes to the console and to `%LOCALAPPDATA%\FootballFormation\logs\`. Follow the levels
+Serilog writes to the console and to a `logs` folder beside the database (`APP_DATA_DIR`, else `%LOCALAPPDATA%\FootballFormation\`). Follow the levels
 already in use: `LogDebug` for a read, `LogInformation` for a mutation including the entity id,
 `LogWarning` for an expected miss. `LogError` belongs to `ServiceOperation` — do not raise one
 yourself. Always structured placeholders (`{PlayerId}`), never interpolation, or the properties stop
@@ -117,12 +120,12 @@ circuits (`LiveMatchNotifier`, `StatsCache`) is a singleton and must not take a 
 
 ## When a service gets long, split by use case, not into layers
 
-The live match is the worked example: one 514-line service became four, cut along what happens at the
+The live match is the worked example: one large service became several, cut along what happens at the
 touchline (the clock, the goals, the substitutions), never into a data-access layer. Pure helpers over
 an entity move **onto the entity**; shared setup gets **named once** (`LiveMatchQueries`,
 `ScopeQueries`); anything
 every method had to remember becomes **part of the operation shape** (`LiveMatchOperation.RunAdminAsync`
-makes the notify call itself). A page injecting all four is expected. A *facade* over them is the
+makes the notify call itself). A page injecting all of them is expected. A *facade* over them is the
 signal the split was cut along the wrong line.
 
 Full detail, including the rejected alternatives: [docs/patterns/](../../../docs/patterns/index.md)
