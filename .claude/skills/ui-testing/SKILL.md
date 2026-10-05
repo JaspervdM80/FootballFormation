@@ -11,8 +11,9 @@ npm ci               # first time, and after the lockfile moves
 npm test             # everything
 npm test -- squad    # specs matching "squad"
 npm run test:headed  # watch it happen
-scripts/visual-check.sh   # screenshots every page, then measures every touch target
 ```
+
+From the repository root, `scripts/visual-check.sh` screenshots every page, then measures every touch target.
 
 `run.mjs` makes a throwaway data directory, Playwright's `webServer` starts the app against it, and it
 is deleted afterwards — no run can touch a real database. Nothing is stubbed: real dialogs, real

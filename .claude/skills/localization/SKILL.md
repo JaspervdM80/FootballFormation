@@ -46,8 +46,10 @@ changed.
 - Comments and resource keys are English, even though the UI ships Dutch first.
 - The language switcher is the Language card on `/settings` → `/culture/set` → culture cookie → full
   page reload. Circuit culture is fixed at startup, so it cannot be swapped in place.
-- `UiFeedback.Translate` looks up both the message template and its arguments — a service states its
-  error in English and the page translates it with `L`.
+- `UiFeedback.Translate` translates the message template with `L` — a service states its
+  error in English and the page translates it. Only the action phrase of the unexpected-failure and
+  not-allowed messages is translated as an argument; every other argument is data, so a player named
+  "Start" stays "Start".
 
 Detail: [docs/ui_components/](../../../docs/ui_components/index.md) ·
 [docs/known_issues/](../../../docs/known_issues/localization.md)

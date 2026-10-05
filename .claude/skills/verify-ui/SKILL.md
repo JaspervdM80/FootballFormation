@@ -82,7 +82,7 @@ document.querySelector('form[action="/auth/logout"] button').click()
 | `/games/duties` | yes | no circuit; an empty duty column is left out; below 599.98px each row becomes a card |
 | `/games/{id}/overview` | yes | the share/read-only view; two pitch columns collapse at 959.98px |
 | `/games/{id}/result` | yes | score entry; the minutes card and the line-up per minute are admin-only |
-| `/games/{id}/live` | yes, read-only | **the risky one** — per-second timer, six `AuthorizeView` blocks, its own mobile flex-`order` reflow. Admin drives the clock, goals and substitutions |
+| `/games/{id}/live` | yes, read-only | **the risky one** — per-second timer, many `AuthorizeView` blocks, its own mobile flex-`order` reflow. Admin drives the clock, goals and substitutions |
 | `/games/{id}/formation` | **no** — `[Authorize(Roles = Admin)]` | drag & drop; anonymous is redirected to `/login` |
 | `/trainings` | **no** — `[Authorize(Roles = Admin)]` | the training register; long-form dialog is a `.dialog-sheet` |
 | `/preferences` | **no** — `[Authorize(Roles = Admin)]` | the per-season match defaults |

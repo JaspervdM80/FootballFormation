@@ -73,7 +73,7 @@ isolation. Do not ask for one — the UI is covered by `tests/ui` and `scripts/v
 
 - **`xUnit1051`** is suppressed in the csproj. The analyzer wants
   `TestContext.Current.CancellationToken` on every EF call; against in-memory SQLite that is noise on
-  hundreds of call sites buying no responsiveness. Production request lifetime is a different
+  every call site, buying no responsiveness. Production request lifetime is a different
   question, answered by the token every service method takes — `CancellationTests` passes those
   explicitly, which is the point.
 - **`DateInSqlInterceptor`** is registered on the context factory by `ServiceTestBase`, so any query
@@ -94,7 +94,7 @@ COVERAGE_SKIP_TEST=1 scripts/coverage.sh   # re-judge the last run
 ```
 
 The floor is **80% of the lines this branch added or rewrote**, per file, with the uncovered line
-numbers listed. The gate is the change, not the repository — Core is above 96%, so a solution-wide
+numbers listed. The gate is the change, not the repository — a solution-wide
 gate would pass with an entirely untested new service in the diff. If you quote a number, quote the
 changed-line one, and never quote one you did not measure.
 

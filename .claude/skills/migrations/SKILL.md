@@ -22,14 +22,14 @@ not the plan.
 ## The base migration's id is load-bearing
 
 `Migrations/` starts at **`20260322100416_InitialCreate`**, which carries the whole schema: the
-twenty that grew it were folded into it once every database that exists had them all applied.
+migrations that grew it were folded into it once every database that exists had them all applied.
 Everything after it in the folder is an ordinary migration added on top.
 
 **That id is the original `InitialCreate`'s, not the timestamp of the scaffold that wrote the file,
 and that is what makes the fold safe.** The live volume already lists it in `__EFMigrationsHistory`,
 so production boots with nothing pending and never applies the file. A fresh id would make the entire
 schema pending against a database that already has it — the boot would `CREATE TABLE` over a season
-of results and fail the deploy. The nineteen rows below it in that history name migrations the
+of results and fail the deploy. The rows below it in that history name migrations the
 assembly no longer has, which EF ignores: pending work is what the assembly holds and the history
 does not.
 
@@ -84,7 +84,7 @@ SELECT name FROM sqlite_master WHERE name LIKE 'ef_temp%';   -- must be empty
 ```
 
 **`DropColumn` rebuilds the whole table.** When that table is a *parent* (other tables hold FKs into
-it — `Players` has three), check afterwards that its row count is unchanged and no `ef_temp_*` table
+it — `Players` has several), check afterwards that its row count is unchanged and no `ef_temp_*` table
 survived.
 
 ## Where the database is
