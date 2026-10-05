@@ -17,7 +17,7 @@ const REPORT_DIR = process.env.COVERAGE_DIR ?? join(REPO, 'artifacts/coverage');
 
 // Scaffolded or design-time only, named ahead of the report rather than discovered from it — see
 // the `!files.has(key)` check below for the general case, which catches everything else
-// coverage.runsettings excludes.
+// the test project's testconfig.json excludes.
 const EXCLUDED = [/^Migrations\//, /^Data\/DesignTimeDbContextFactory\.cs$/];
 
 const git = (...args) => execFileSync('git', args, { cwd: REPO, encoding: 'utf8' });
@@ -25,7 +25,8 @@ const git = (...args) => execFileSync('git', args, { cwd: REPO, encoding: 'utf8'
 function findReports(dir) {
     if (!existsSync(dir)) return [];
     return readdirSync(dir, { recursive: true, withFileTypes: true })
-        .filter(e => e.isFile() && e.name === 'coverage.cobertura.xml')
+        // coverlet.MTP stamps each report: coverage.cobertura.<ddMMyyHHmmssfff>.xml.
+        .filter(e => e.isFile() && /^coverage\.cobertura(\.\d+)?\.xml$/.test(e.name))
         .map(e => join(e.parentPath ?? e.path, e.name));
 }
 
@@ -103,7 +104,7 @@ function addedLines(base) {
 
 const reports = findReports(REPORT_DIR);
 if (reports.length === 0) {
-    console.error(`No coverage.cobertura.xml under ${relative(REPO, REPORT_DIR)}. Run scripts/coverage.sh.`);
+    console.error(`No coverage.cobertura*.xml under ${relative(REPO, REPORT_DIR)}. Run scripts/coverage.sh.`);
     process.exit(2);
 }
 
@@ -126,10 +127,10 @@ for (const [path, added] of byFile) {
         excluded.push(path);
         continue;
     }
-    // A file coverage.runsettings excludes by attribute or by a pattern EXCLUDED does not know
+    // A file testconfig.json excludes by attribute or by a pattern EXCLUDED does not know
     // about (a new generated-code shape, say) never appears in the report at all. That is
     // different from a file that IS in the report but whose particular added lines all landed on
-    // a brace, a using, a blank: only the first is worth naming, so a changed file the runsettings
+    // a brace, a using, a blank: only the first is worth naming, so a changed file testconfig.json
     // dropped is never mistaken for one this diff simply didn't touch anywhere coverable.
     if (!files.has(key)) {
         excluded.push(path);
@@ -179,7 +180,7 @@ if (unmeasured.length) {
     for (const p of unmeasured) console.log(`    ${p}`);
 }
 if (excluded.length) {
-    console.log(`\n  Excluded from the report (coverage.runsettings):`);
+    console.log(`\n  Excluded from the report (testconfig.json):`);
     for (const p of excluded) console.log(`    ${p}`);
 }
 
@@ -225,7 +226,7 @@ if (process.env.GITHUB_STEP_SUMMARY) {
             ...paths.map(p => `- \`${p}\``), '', '</details>', ''] : [];
     md.push(
         ...details('Not measured here — no unit tests by design, see <code>tests/ui</code> and <code>scripts/visual-check.sh</code>', unmeasured),
-        ...details('Excluded from the report — see coverage.runsettings', excluded),
+        ...details('Excluded from the report — see testconfig.json', excluded),
         `**${verdict}**`,
     );
 

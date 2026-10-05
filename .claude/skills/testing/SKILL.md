@@ -5,7 +5,20 @@ description: Writing or changing an xUnit test in tests/FootballFormation.Core.T
 
 # Testing
 
-`dotnet test` from the repo root. xUnit v3.
+`dotnet test` from the repo root. xUnit v3 on **Microsoft.Testing.Platform**, not VSTest.
+
+## The runner
+
+- **`global.json` opts `dotnet test` into MTP mode** (`"test": { "runner": "Microsoft.Testing.Platform" }`).
+  xUnit v3 4.x refuses the VSTest target on the .NET 10 SDK, so without it every run fails before a
+  test starts. Arguments are MTP's: `--coverlet`, `--results-directory`, `--solution`/`--project`
+  instead of a positional path. `--filter` still works through xUnit's own support; so do
+  `--filter-class` and `--filter-method`.
+- **There is no `Microsoft.NET.Test.Sdk`, `xunit.runner.visualstudio` or `coverlet.collector`**, and
+  `--collect`/`--settings` mean nothing here. Do not add them back for an IDE.
+- **The test csproj sets `OutputType` `Exe` and `IsTestProject` itself.** The test SDK used to set
+  both; without `IsTestProject`, `Directory.Build.props` puts the wall-clock ban on the tests and
+  every `DateTime.UtcNow` in them fails the Release build.
 
 ## Conventions
 
@@ -84,6 +97,11 @@ The floor is **80% of the lines this branch added or rewrote**, per file, with t
 numbers listed. The gate is the change, not the repository — Core is above 96%, so a solution-wide
 gate would pass with an entirely untested new service in the diff. If you quote a number, quote the
 changed-line one, and never quote one you did not measure.
+
+`coverlet.MTP` collects it, and `tests/FootballFormation.Core.Tests/testconfig.json` decides what it
+counts. **That file is authoritative**: present, it replaces coverlet's defaults, which would
+otherwise exclude `CompilerGeneratedAttribute` — every `async` body. Removing it fails nothing and
+quietly shrinks what the number judges. Reports are named `coverage.cobertura.<timestamp>.xml`.
 
 `UI` and `Web` are not measured and that is not a gap: they have no unit tests on purpose, and a
 change there is answered by `tests/ui` or `visual-check.sh`. Migrations and

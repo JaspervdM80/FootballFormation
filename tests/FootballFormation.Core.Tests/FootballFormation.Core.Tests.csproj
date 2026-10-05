@@ -1,6 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- Microsoft.NET.Test.Sdk used to set this; Directory.Build.props keys the wall-clock ban off it. -->
+    <IsTestProject>true</IsTestProject>
     <IsPackable>false</IsPackable>
     <!-- xUnit1051 wants TestContext.Current.CancellationToken threaded through every EF call.
          These tests run against an in-memory SQLite database in milliseconds; the token would be
@@ -9,12 +12,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="coverlet.MTP" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit.v3" />
-    <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
 
   <ItemGroup>

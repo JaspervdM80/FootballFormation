@@ -64,14 +64,12 @@ jobs:
       - run: dotnet restore
       - run: dotnet build --no-restore --configuration Release
 
-      # The collector rides along with the run this gate already does — one test run, not a second
-      # one for the number. coverage.runsettings decides which files it may count (the same file
-      # scripts/coverage.sh passes), and the Coverage job below is what judges the report.
+      # The test project's testconfig.json decides which files coverlet counts; the Coverage job
+      # below judges the report.
       - name: Test, with the coverage collector attached
         run: >-
-          dotnet test --no-build --configuration Release --verbosity normal
-          --collect:"XPlat Code Coverage" --settings coverage.runsettings
-          --results-directory artifacts/coverage
+          dotnet test --no-build --configuration Release
+          --coverlet --results-directory artifacts/coverage
 
       # Handed to the Coverage job below, and kept for the week a reviewer might want to open the
       # Cobertura report itself rather than the summary that job writes.

@@ -97,7 +97,7 @@ moves as tests are added: a spec creates what it reads rather than relying on on
 
 **`Build and test`** restores, builds Release, runs `dotnet test`, then publishes `--no-build`, so it
 hands on exactly what the unit tests ran against rather than compiling the commit a second time. The
-test step carries `--collect:"XPlat Code Coverage"`, so the report comes out of the run that is
+test step carries `--coverlet`, so the report comes out of the run that is
 already the gate. This replaced a second workflow that compiled the commit twice more, plus a third
 time inside Playwright's `dotnet run`: four compiles of one commit became one.
 

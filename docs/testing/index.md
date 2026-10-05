@@ -1,6 +1,8 @@
 # Testing
 
-`tests/FootballFormation.Core.Tests` — xUnit v3. Run with `dotnet test` from the repo root.
+`tests/FootballFormation.Core.Tests` — xUnit v3 on Microsoft.Testing.Platform, which `global.json`
+selects for `dotnet test`. Run with `dotnet test` from the repo root; VSTest arguments such as
+`--collect` and `--settings` are not accepted.
 
 CI runs `dotnet build -c Release` and `dotnet test` as a **gate on the merge**: it is one of the four
 checks that have to be green before a pull request can land, and since landing is what deploys, a
