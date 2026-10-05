@@ -64,11 +64,8 @@ jobs:
       - run: dotnet restore
       - run: dotnet build --no-restore --configuration Release
 
-      # The collector rides along with the run this gate already does — one test run, not a second
-      # one for the number. The test project's testconfig.json decides which files it may count (the
-      # same file scripts/coverage.sh reads), and the Coverage job below is what judges the report.
-      # global.json puts `dotnet test` on Microsoft.Testing.Platform, so these are its options, not
-      # VSTest's.
+      # The test project's testconfig.json decides which files coverlet counts; the Coverage job
+      # below judges the report.
       - name: Test, with the coverage collector attached
         run: >-
           dotnet test --no-build --configuration Release
