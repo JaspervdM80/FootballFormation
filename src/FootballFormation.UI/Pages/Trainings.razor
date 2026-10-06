@@ -95,14 +95,40 @@ else if (_trainings.Count == 0)
 }
 else
 {
-    @foreach (var week in Weeks())
+    var weeks = Weeks();
+    @foreach (var week in weeks.Next)
     {
-        @if (week.OpensThePast)
+        @RenderWeek(week)
+    }
+    @if (weeks.Later.Count > 0)
+    {
+        <details class="training-later">
+            <summary>
+                <span>@L["Show all planned trainings"]</span>
+                <span class="training-later-count">@(weeks.LaterCount == 1 ? L["{0} training", weeks.LaterCount] : L["{0} trainings", weeks.LaterCount])</span>
+                <MudIcon Icon="@Icons.Material.Filled.ExpandMore" Size="Size.Small" />
+            </summary>
+            @foreach (var week in weeks.Later)
+            {
+                @RenderWeek(week)
+            }
+        </details>
+    }
+    @if (weeks.Past.Count > 0)
+    {
+        <div class="training-earlier">@L["Earlier"]</div>
+        @foreach (var week in weeks.Past)
         {
-            <div class="training-earlier">@L["Earlier"]</div>
+            @RenderWeek(week)
         }
+    }
+}
+
+@code {
+    private RenderFragment RenderWeek(TrainingWeek week) => __builder =>
+    {
         <div class="training-week">
-            <div class="card-label">@week.Title</div>
+            <div class="card-label">@WeekTitle(week)</div>
             <div class="training-rows">
                 @foreach (var training in week.Trainings)
                 {
@@ -141,5 +167,5 @@ else
                 }
             </div>
         </div>
-    }
+    };
 }

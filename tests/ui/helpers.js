@@ -192,6 +192,10 @@ function daysBefore(days) {
 export const noEarlierDayThisSeason = (daysAgo = 1) =>
   daysBefore(daysAgo) < new Date(currentSeasonStartYear(), 6, 1);
 
+/** Whether `daysAhead` days on is already next season, where a record dated by the date picker drops out of this season's lists. */
+export const noLaterDayThisSeason = (daysAhead) =>
+  daysBefore(-daysAhead) >= new Date(currentSeasonStartYear() + 1, 6, 1);
+
 /**
  * Moves the open dialog's date `daysAgo` days back, through the picker rather than by typing — the
  * field's format follows the culture, and the picker is what a coach uses anyway. Returns the date.

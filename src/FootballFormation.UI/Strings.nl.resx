@@ -182,6 +182,7 @@
   <data name="{0} trainings" xml:space="preserve"><value>{0} trainingen</value></data>
   <data name="Week {0}" xml:space="preserve"><value>Week {0}</value></data>
   <data name="Earlier" xml:space="preserve"><value>Eerder</value></data>
+  <data name="Show all planned trainings" xml:space="preserve"><value>Toon alle geplande trainingen</value></data>
   <data name="Cancelled" xml:space="preserve"><value>Vervallen</value></data>
   <data name="{0} cancelled" xml:space="preserve"><value>{0} vervallen</value></data>
   <data name="No trainings in {0} yet." xml:space="preserve"><value>Nog geen trainingen in {0}.</value></data>

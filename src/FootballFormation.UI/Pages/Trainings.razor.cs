@@ -47,28 +47,11 @@ public partial class Trainings
             .Where(player => playerIds.Contains(player.Id))
             .Select(player => player.DisplayName));
 
-    private sealed record TrainingWeek(string Title, bool OpensThePast, List<Training> Trainings);
+    private TrainingWeeks Weeks() => TrainingWeekReport.Build(_trainings ?? [], Today);
 
-    /// Grouped the way the team actually plans: by the week the session falls in, in the order TrainingService hands them over — this
-    /// week and the weeks ahead first, the weeks already over below them. ISO weeks, because a week here runs Monday to Sunday.
-    private List<TrainingWeek> Weeks()
-    {
-        if (_trainings is null) return [];
-
-        var thisMonday = TrainingOrdering.MondayOf(Today);
-        var weeks = _trainings
-            .GroupBy(t => TrainingOrdering.MondayOf(t.Date))
-            .Select(week => (Monday: week.Key, Trainings: week.ToList()))
-            .ToList();
-
-        // No past week leaves this at MinValue, which no Monday matches — so the divider simply never renders.
-        var firstPast = weeks.FirstOrDefault(week => week.Monday < thisMonday).Monday;
-
-        return [.. weeks.Select(week => new TrainingWeek(
-            $"{L["Week {0}", ISOWeek.GetWeekOfYear(week.Monday)]} · {week.Monday:dd MMM} – {week.Monday.AddDays(6):dd MMM}",
-            week.Monday == firstPast,
-            week.Trainings))];
-    }
+    // ISO weeks, because a week here runs Monday to Sunday.
+    private string WeekTitle(TrainingWeek week) =>
+        $"{L["Week {0}", ISOWeek.GetWeekOfYear(week.Monday)]} · {week.Monday:dd MMM} – {week.Monday.AddDays(6):dd MMM}";
 
     private async Task OpenAddDialog()
     {
