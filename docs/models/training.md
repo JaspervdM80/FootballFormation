@@ -21,6 +21,11 @@ and the weeks ahead first, ascending, and the weeks already over below them, mos
 whole ISO weeks on both counts, so a Tuesday session does not drop to the foot of the page on the
 Wednesday.
 
+`TrainingWeekReport.Build` groups that order into weeks for the page: the first two planned weeks
+with sessions in them are shown, the rest of the planned season is folded behind *"Toon alle geplande
+trainingen"*, and the weeks already over follow straight after — so the evenings whose register gets
+corrected are not a season's scroll away on a phone.
+
 `TrainingConfiguration` names the FK with `HasOne<Season>()` rather than a navigation, the way
 `GameInjury` does — nothing reads the season off a session, and a nav nobody includes is a null
 waiting to be trusted.

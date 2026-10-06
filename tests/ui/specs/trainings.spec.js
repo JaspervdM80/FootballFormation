@@ -6,7 +6,7 @@
 import { test, expect } from '../fixtures.js';
 import {
   addPlayer, chooseSeasonNamed, clickFor, confirmDialog, currentSeasonName, fillField, goto,
-  nextSeasonName, noEarlierDayThisSeason, openDialog, pickDaysAgo, pickNextSeasonAugust, playerMenuItem,
+  nextSeasonName, noEarlierDayThisSeason, noLaterDayThisSeason, openDialog, pickDaysAgo, pickNextSeasonAugust, playerMenuItem,
   submitDialog,
 } from '../helpers.js';
 import { SQUAD } from '../global-setup.js';
@@ -83,14 +83,15 @@ const cancelledSwitch = (panel) => panel.locator('.mud-switch', { hasText: 'Did 
  * so a note is all it needs — except for the attendance tests, which pass `past` to put the session
  * behind us, because only a session that has been and gone counts towards the figure.
  */
-async function addTraining(page, { note, absentee, injured, cancelled, past } = {}) {
+async function addTraining(page, { note, absentee, injured, cancelled, past, daysAhead } = {}) {
   await goto(page, '/trainings');
   const panel = page.locator('.mud-dialog');
   await clickFor(page.getByRole('button', { name: 'Add' }).first(), () => expect(panel).toBeVisible());
 
   await openDialog(page);
   // Before the absentees: changing the date reloads the season's squad behind the picker.
-  if (past) await pickDaysAgo(page, panel, 1, { allowUnchanged: true });
+  if (past) await pickDaysAgo(page, panel, past === true ? 1 : past, { allowUnchanged: true });
+  if (daysAhead) await pickDaysAgo(page, panel, -daysAhead);
   if (!cancelled) await clearInjured(page, panel);
   if (absentee) await markUnavailable(page, panel, absentee);
   if (injured) await markInjured(page, panel, injured);
@@ -98,7 +99,9 @@ async function addTraining(page, { note, absentee, injured, cancelled, past } = 
   if (cancelled) await cancelledSwitch(panel).click();
   await submitDialog(page);
 
-  await expect(trainingRow(page, note)).toBeVisible();
+  // Far enough ahead, a session lands in the folded part of the season, which keeps its rows in the DOM but out of sight.
+  if (daysAhead) await expect(trainingRow(page, note)).toBeAttached();
+  else await expect(trainingRow(page, note)).toBeVisible();
 }
 
 /** The unavailable-players select in the open dialog, and the options it is offering. */
@@ -290,6 +293,32 @@ test('a session entered by mistake can be deleted', async ({ page }) => {
   await confirmDialog(page, 'Delete');
 
   await expect(page.locator('.training-row', { hasText: 'Ging niet door' })).toHaveCount(0);
+});
+
+test('the planned season past the next two weeks is folded, with the weeks already over straight after it', async ({ page }) => {
+  test.skip(noLaterDayThisSeason(42), 'six weeks on is already next season');
+
+  // Two planned weeks of their own ahead of it, so the third is folded whatever the season's schedule holds.
+  await addTraining(page, { note: 'Vouw: over vier weken', daysAhead: 28 });
+  await addTraining(page, { note: 'Vouw: over vijf weken', daysAhead: 35 });
+  await addTraining(page, { note: 'Vouw: over zes weken', daysAhead: 42 });
+  // Eight days back is always an earlier ISO week; yesterday can still be this one.
+  const earlier = !noEarlierDayThisSeason(8);
+  if (earlier) await addTraining(page, { note: 'Vouw: al geweest', past: 8 });
+
+  const fold = page.locator('details.training-later');
+  const folded = fold.locator('.training-row', { hasText: 'Vouw: over zes weken' });
+  await expect(folded).toBeAttached();
+  await expect(folded).toBeHidden();
+
+  // The evenings already held are the ones whose register gets corrected — they must not sit below the rest of the season.
+  if (earlier) {
+    await expect(fold.locator('xpath=following-sibling::*[1]')).toHaveClass(/training-earlier/);
+  }
+
+  // Not clickFor: a second click would fold it away again.
+  await fold.locator('summary').click();
+  await expect(folded).toBeVisible();
 });
 
 /**

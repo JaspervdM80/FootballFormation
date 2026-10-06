@@ -145,7 +145,7 @@ Pages/
   Games.razor                 — /games — No circuit of its own: GameBoard, interactive for an admin only
   Duties.razor(.cs)(.css)     — /games/duties — Public: the season's dressing-room, flag and kit-wash
                                 duties, one row per game, opened on the next match
-  Trainings.razor(.cs)(.css)  — /trainings — Admin-only: the season's training sessions, grouped by ISO week
+  Trainings.razor(.cs)(.css)  — /trainings — Admin-only: the season's training sessions, grouped by ISO week, the first two planned weeks shown and the rest folded
   TrainingDialog.razor(.cs)   — Dialog: date, unavailable players, note, did-not-take-place
   GameDialog.razor(.cs)       — Dialog: opponent, date, season, formation, split, duration, unavailable players
   FormationBuilder.razor(.cs) — /games/{id}/formation — Pitch + player list + subs + playing time overview

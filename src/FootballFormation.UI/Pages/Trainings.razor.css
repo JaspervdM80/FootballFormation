@@ -191,9 +191,58 @@
         order: 3;
     }
 
+    .training-notes:empty {
+        display: none;
+    }
+
     .training-actions {
         margin-left: auto;
     }
+}
+
+/* The planned weeks after the next two. Quieter than the attendance card: it hides rows, it does not report on them. */
+.training-later {
+    margin-top: 28px;
+}
+
+.training-later > summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 8px 16px;
+    border: 1px dashed color-mix(in srgb, var(--club-accent) 22%, transparent);
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink-muted);
+    cursor: pointer;
+    list-style: none;
+}
+
+.training-later > summary::-webkit-details-marker {
+    display: none;
+}
+
+@media (hover: hover) {
+    .training-later > summary:hover {
+        background: var(--surface-card-alt);
+    }
+}
+
+.training-later-count {
+    flex: 1;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--ink-faint);
+}
+
+.training-later[open] > summary ::deep .mud-icon-root {
+    transform: rotate(180deg);
+}
+
+.training-later > .training-week {
+    margin-top: 28px;
 }
 
 /* Where the weeks turn from ahead of us to behind us. A rule with the word on it, rather than a heading: the weeks below carry their
