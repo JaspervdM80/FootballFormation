@@ -162,6 +162,10 @@ watches the same URL read-only. Every control sits in an `<AuthorizeView Roles="
   scoreboard's order — home side first. It is counted forwards over the whole match and looked up
   by goal id, because the timeline itself runs newest first and a total accumulated while rendering
   would count down.
+- **An opponent's goal is one line on the timeline** (`.live-event-opponent`), ellipsised. It is named
+  after the opponent, and a club name like "Sportvereniging Hardinxveld-Giessendam MO15-3" wrapped on
+  every one stacked four lines deep at phone width and pinched the score beside it. An own goal keeps
+  wrapping, because its "(OG)" tag sits at the end of the line, where an ellipsis would cut it off.
 - **Events are shown as a `MatchMinute` — 35, or 35+2 in stoppage time — and ordered on the elapsed
   match clock.** The two are different scales and that is the point: the scoreboard reading stops at
   the end of the half, so a goal two minutes into first-half stoppage and one just after the restart

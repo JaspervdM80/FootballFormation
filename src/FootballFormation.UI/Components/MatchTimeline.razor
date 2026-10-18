@@ -21,7 +21,7 @@
             <div class="live-event-body">
                 @if (entry.Goal is { } goal)
                 {
-                    <div class="live-event-main">
+                    <div class="live-event-main @(goal.IsOpponentGoal ? "live-event-opponent" : "")">
                         @(goal.Scorer?.DisplayName ?? Opponent)
                         @if (goal.IsOwnGoal)
                         {

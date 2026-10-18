@@ -103,3 +103,10 @@
 .live-event-against .live-event-main {
     color: var(--color-away);
 }
+
+/* One line, so a long club name cannot stack on every goal. Not an own goal, whose (OG) tag sits at the end of the line. */
+.live-event-opponent {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
