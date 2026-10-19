@@ -281,9 +281,7 @@ public class SeasonService(
             return newest;
         }
 
-        var season = Season.CreateFor(time.GetLocalNow().Date);
-        season.TeamId = db.CurrentTeamId!.Value;
-        season.IsCurrent = true;
+        var season = Season.FirstFor(db.CurrentTeamId!.Value, time.GetLocalNow().Date);
         db.Seasons.Add(season);
         await db.SaveChangesAsync(cancellationToken);
 

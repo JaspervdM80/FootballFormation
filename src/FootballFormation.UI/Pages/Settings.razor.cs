@@ -38,9 +38,11 @@ public partial class Settings
 
     /// The account is still on the seeded password, and MainLayout has pinned them to this page.
     private bool _mustChangePassword;
+    private bool _signedIn;
 
-    private string Subtitle => _isAdmin
-        ? L["The language, the seasons, the training schedule, your own password, and the notifications."]
+    private string Subtitle =>
+        _isAdmin ? L["The language, the seasons, the training schedule, your own password, and the notifications."]
+        : _signedIn ? L["The language, your own password, and the notifications."]
         : L["The language the app speaks, and the notifications for match day."];
 
     protected override async Task OnInitializedAsync()
@@ -48,6 +50,7 @@ public partial class Settings
         var user = (await AuthStateTask).User;
         _isAdmin = user.IsAdmin();
         _mustChangePassword = user.MustChangePassword();
+        _signedIn = user.Identity?.IsAuthenticated == true;
 
         if (!_isAdmin) return;
 

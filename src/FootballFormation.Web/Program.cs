@@ -110,6 +110,8 @@ try
         {
             options.LoginPath = "/login";
             options.LogoutPath = "/auth/logout";
+            // Signed in but refused: an admin looking at a team they do not run, or a team admin at /teams. See TeamScopedAdminRole.
+            options.AccessDeniedPath = "/";
 
             options.ExpireTimeSpan = TimeSpan.FromDays(14);
             options.SlidingExpiration = true;
@@ -135,6 +137,7 @@ try
             };
         });
     builder.Services.AddAuthorization();
+    builder.Services.AddScoped<IClaimsTransformation, TeamScopedAdminRole>();
     builder.Services.AddCascadingAuthenticationState();
 
     // Must be registered after AddInteractiveServerComponents to beat the stock provider, which reads the principal once per circuit and
@@ -147,6 +150,7 @@ try
             new RevalidatingUserAuthenticationStateProvider(
                 sp.GetRequiredService<ILoggerFactory>(),
                 sp.GetRequiredService<IServiceScopeFactory>(),
+                sp.GetRequiredService<ICurrentTeam>(),
                 revalidationInterval));
 
     builder.Services.AddSingleton<KeepAliveTracker>();
@@ -154,10 +158,11 @@ try
     // FLY_APP_NAME, not !IsDevelopment(): a published build run from a laptop is Production too, and must not start pinging the live site
     // every two minutes. See KeepAlivePingService.
     if (Environment.GetEnvironmentVariable("FLY_APP_NAME") is { Length: > 0 }
-        && builder.Configuration.GetValue("KeepAlive:Enabled", true))
+        && builder.Configuration.GetValue("KeepAlive:Enabled", true)
+        && builder.Configuration["KeepAlive:PingUrl"] is { Length: > 0 } pingUrl)
     {
         builder.Services.AddHttpClient("KeepAlive", client => client.Timeout = TimeSpan.FromSeconds(15));
-        builder.Services.AddHostedService<KeepAlivePingService>();
+        builder.Services.AddHostedService(sp => ActivatorUtilities.CreateInstance<KeepAlivePingService>(sp, new Uri(pingUrl)));
     }
 
     builder.Services.AddHsts(options => options.MaxAge = TimeSpan.FromDays(365));
@@ -307,11 +312,35 @@ try
     app.UseRateLimiter();
     app.UseAntiforgery();
 
+    // A first visit with more than one team to choose from asks which, rather than opening on whichever comes first in the database. Pages
+    // only: an endpoint, an asset or a calendar feed is never a visit. Signing in selects the account's own team, so a session never asks.
+    app.Use(async (context, next) =>
+    {
+        if (HttpMethods.IsGet(context.Request.Method)
+            && context.User.Identity?.IsAuthenticated != true
+            && TeamPreference.Parse(context.Request.Cookies[TeamPreference.CookieName]) is null
+            && context.GetEndpoint()?.Metadata.GetMetadata<Microsoft.AspNetCore.Components.Endpoints.ComponentTypeMetadata>() is not null
+            && !Routing.SkipsTeamChoice(context.Request.Path))
+        {
+            var teams = await context.RequestServices.GetRequiredService<TeamService>().GetTeamsAsync(context.RequestAborted);
+            if (teams.IsSuccess && teams.Value!.Count > 1)
+            {
+                context.Response.Redirect(AppRoutes.ChooseTeamThen(context.Request.PathBase + context.Request.Path + context.Request.QueryString));
+                return;
+            }
+        }
+
+        await next();
+    });
+
     // Which team the visit was about, so the next one opens on it rather than on whichever team comes first in the database.
     app.Use(async (context, next) =>
     {
         context.Response.OnStarting(async () =>
         {
+            // Asking which team is the one page that must not answer it on the visitor's behalf.
+            if (context.Request.Path.StartsWithSegments(AppRoutes.ChooseTeam)) return;
+
             // A page only: a redirect, an asset and a JSON endpoint are not a team anyone looked at. Asked
             // here rather than before the response, so nothing but a page pays for the answer — and a page has already asked for it,
             // so by now CurrentTeam has one memoized.

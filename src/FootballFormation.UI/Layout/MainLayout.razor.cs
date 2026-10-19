@@ -23,6 +23,8 @@ public partial class MainLayout
     /// then steps past.
     private string? PageName => AppNav.PageNameKey(CurrentPath) is { } key ? L[key].Value : null;
 
+    private bool ChoosingTeam => CurrentPath.StartsWith(AppRoutes.ChooseTeam, StringComparison.OrdinalIgnoreCase);
+
     private string CurrentPath => "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
 
     /// The visible half of the rule only: such a session is not an admin as far as the services are concerned either (see ICurrentUser).
@@ -35,5 +37,7 @@ public partial class MainLayout
     }
 
     // The same ClubTheme record that emits the CSS custom properties, so MudBlazor and the hand-written styles cannot drift apart.
-    private static readonly MudTheme Theme = ClubTheme.Current.ToMudTheme();
+    private static readonly Dictionary<ClubTheme, MudTheme> MudThemes = ClubTheme.All.ToDictionary(t => t, t => t.ToMudTheme());
+
+    private static MudTheme MudThemeFor(ClubTheme theme) => MudThemes[theme];
 }

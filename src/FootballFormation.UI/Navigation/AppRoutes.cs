@@ -21,6 +21,9 @@ public static class AppRoutes
     public const string Teams = "/teams";
     public const string StyleGuide = "/styleguide";
     public const string Login = "/login";
+    public const string ChooseTeam = "/team/choose";
+
+    public static string ChooseTeamThen(string returnUrl) => $"{ChooseTeam}?redirectUri={Uri.EscapeDataString(returnUrl)}";
 
     public static string PlayerStats(int playerId) => $"/players/{playerId}/stats";
 
@@ -38,11 +41,18 @@ public static class AppRoutes
 
     public static string TeamCalendar(int teamId) => $"/calendar/team/{teamId}.ics";
 
+    /// An endpoint that opens the app on this team; what /teams hands out for a team to share.
+    public static string TeamLink(int teamId) => $"/team/{teamId}";
+
     /// Endpoints, not pages: the culture, the season and the team are all fixed for the lifetime of a render — the circuit's culture at
     /// startup, the other two off the request — so each writes a cookie and sends the visitor back where they were.
     public static string SetCulture(string culture, string returnUrl) => $"/culture/set?culture={culture}&redirectUri={Uri.EscapeDataString(returnUrl)}";
 
     public static string SetSeason(int? seasonId, string returnUrl) => $"/season/set?season={SeasonPreference.Format(seasonId)}&redirectUri={Uri.EscapeDataString(returnUrl)}";
+
+    /// A path on this app. "//host" and "/\host" are refused: browsers read both as another site.
+    public static bool IsLocal(string? url) =>
+        url is { Length: > 0 } && url[0] == '/' && !url.StartsWith("//") && !url.StartsWith("/\\");
 
     public static string SetTeam(int teamId, string returnUrl) => $"/team/set?team={TeamPreference.Format(teamId)}&redirectUri={Uri.EscapeDataString(returnUrl)}";
 }

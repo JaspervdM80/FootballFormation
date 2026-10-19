@@ -40,9 +40,10 @@ Two columns, but authorization has more states than that:
 
 - **Application admin** — `ApplicationAdmin` implies `Admin`, and adds `/teams` and the Teams entry
   in the drawer's Administration group. A change there needs both kinds of admin checked.
-- **An admin looking at a team they do not run** — every button renders (the role claim is `Admin`),
-  and every write is refused at the service. Signing in selects the account's own team to keep
-  this rare; it is reachable through `/team/set`.
+- **An admin looking at a team they do not run** — sees what a visitor sees, with sign-out kept:
+  `TeamScopedAdminRole` drops the `Admin` role per request while the team in scope is not theirs,
+  and an admin-only route sends them to `/`. The service still refuses the write on its own.
+  Reachable through `/team/set`.
 - **An account still on its seeded password** — it can sign in and is pinned to `/settings` until
   the password changes.
 
@@ -51,8 +52,8 @@ exactly this trap (`IsAdmin()`, never `Identity.IsAuthenticated`).
 
 ## Signing in
 
-`GET /dev/login` signs in with no credentials — as the account named `admin`, else the first admin —
-and selects that account's team. It is mapped only when the environment is Development *and* the
+`GET /dev/login` signs in with no credentials — as the account named `admin`, else the first admin,
+or as the admin named in `?user=` — and selects that account's team. It is mapped only when the environment is Development *and* the
 caller is loopback (`Web/ServiceExtensions/Routing.cs`, right after `/auth/logout`).
 
 ```
@@ -86,10 +87,11 @@ document.querySelector('form[action="/auth/logout"] button').click()
 | `/games/{id}/formation` | **no** — `[Authorize(Roles = Admin)]` | drag & drop; anonymous is redirected to `/login` |
 | `/trainings` | **no** — `[Authorize(Roles = Admin)]` | the training register; long-form dialog is a `.dialog-sheet` |
 | `/preferences` | **no** — `[Authorize(Roles = Admin)]` | the per-season match defaults |
-| `/settings` | yes | a visitor is shown the language card and the match notifications and nothing else; the season list, training schedule and password form are behind an `AuthorizeView` |
+| `/settings` | yes | a visitor is shown the language card and the match notifications and nothing else; the season list and training schedule are behind an admin `AuthorizeView`, the password form behind any session |
 | `/users` | **no** — `[Authorize(Roles = Admin)]` | account management |
 | `/teams` | **no** — `[Authorize(Roles = ApplicationAdmin)]` | clubs and teams; a team admin is refused too |
 | `/styleguide` | **no** — `[Authorize(Roles = Admin)]` | no circuit; draws every design token |
+| `/team/choose` | yes | no circuit; where a first visit lands while more than one team exists. The app bar names no team here |
 | `/login`, `/not-found`, `/Error` | yes | no circuit; all localized; easy to forget when sweeping for English text |
 
 Check the pages your change can reach, not all of them — but if you touched `app.css`,

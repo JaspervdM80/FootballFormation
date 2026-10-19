@@ -493,3 +493,75 @@ export async function fileScore(page, id, us, them) {
     () => expect(page.getByText('saved', { exact: false }).first()).toBeVisible(),
   );
 }
+
+/** One account's row in the users table. */
+export const userRow = (page, username) =>
+  page.locator('.users-table .mud-table-body .mud-table-row', { hasText: username }).first();
+
+/**
+ * Signs in as the admin named, through the Development-only, loopback-only /dev/login, which selects
+ * that account's own team. Not the form: /auth/login allows five sign-ins a minute, and session.spec.js
+ * is the one spec whose subject is the form.
+ */
+export async function signInAs(page, username) {
+  await goto(page, `/dev/login?user=${encodeURIComponent(username)}`);
+  expect(new URL(page.url()).pathname, `/dev/login did not sign in as ${username}`).toBe('/');
+}
+
+/** Creates an admin of the team `page` is showing, through the real dialog, and returns what it can sign in with. */
+export async function addAdmin(page, name) {
+  // Named per attempt, not per test: Playwright's CI retry re-runs this against the database the
+  // failed attempt left behind, and a username is unique — a fixed one would fail the retry on
+  // "already exists" rather than on whatever went wrong. See docs/known_issues/authentication.md.
+  const username = `${name}-${Date.now()}`;
+  const password = `${name}-admin-1`;
+
+  await goto(page, '/users');
+  await clickFor(
+    page.getByRole('button', { name: 'Add User' }),
+    () => expect(page.locator('.mud-dialog')).toBeVisible());
+
+  const dialog = await openDialog(page);
+  await fillField(dialog, 'Name', `${name} admin`);
+  await fillField(dialog, 'Username', username);
+  await dialog.getByLabel('Password', { exact: false }).first().fill(password);
+  await dialog.getByLabel('Confirm password', { exact: false }).first().fill(password);
+  await submitDialog(page);
+  await expect(userRow(page, username)).toBeVisible();
+
+  return { username, password };
+}
+
+export const MODAL = '#components-reconnect-modal';
+
+/**
+ * Records Blazor's own reconnect events, which it dispatches on the dialog element as
+ * `components-reconnect-state-changed`: `show`, then one per second of waiting carrying the attempt
+ * number and `secondsToNextAttempt`, then `hide`. That last field is the schedule, as applied.
+ */
+export async function recordReconnectEvents(page) {
+  await page.evaluate((selector) => {
+    window.__reconnectEvents = [];
+    document.querySelector(selector).addEventListener(
+      'components-reconnect-state-changed',
+      (event) => window.__reconnectEvents.push(event.detail));
+  }, MODAL);
+}
+
+export const recorded = (page) => page.evaluate(() => window.__reconnectEvents ?? []);
+
+/** Drops the circuit's connection the way Blazor's own end-to-end tests do. */
+export const dropConnection = (page) => page.evaluate(() => Blazor._internal.forceCloseConnection());
+
+/** Drops the circuit and waits for it to be rejoined — the same circuit, not a reload onto a new one. */
+export async function dropAndRejoin(page) {
+  await recordReconnectEvents(page);
+
+  // Waiting on the overlay would be a race worth losing: with the network right there, the rejoin
+  // lands on the first immediate attempt and the overlay can come and go between two polls. The
+  // event stream is the same story without the flicker, and `hide` is specifically not `rejected`.
+  await dropConnection(page);
+  await expect
+    .poll(async () => (await recorded(page)).map(e => e.state), { timeout: 20_000 })
+    .toContain('hide');
+}

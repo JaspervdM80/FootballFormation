@@ -80,7 +80,9 @@ Three pieces carry it:
   absent on an application admin — so a missing claim reads as "every team" in one place only.
   **Signing in also writes `ff.team` from it** (`Routing.SelectOwnTeam`, on both sign-in routes), or
   an admin of any team but the lowest-numbered one would land on a team they cannot change — every
-  button rendered, every write refused — with no way back, since `/teams` is a rung above them.
+  button rendered, every write refused. They can still reach that state on purpose, through the
+  drawer's team picker or a team link, and the picker is the way back — see
+  [one-deployment-many-teams](one-deployment-many-teams.md).
 - **`ICurrentTeam`**, the team the request is about. `CurrentTeam` (Core/Security) resolves the
   `ff.team` cookie while it still names a team, and otherwise the first team in the database.
   Registered by hand in `Program.cs` because the cookie is the host's to read; it takes the id, so

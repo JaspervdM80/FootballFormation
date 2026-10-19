@@ -41,6 +41,15 @@ test('the season statistics open no circuit at all', async ({ page }) => {
   expect(sockets.length, 'no circuit on the home page either — is the probe working?').toBeGreaterThan(0);
 });
 
+// Where a parent lands first while there is more than one team: no socket before they have even chosen. The probe is proven above.
+test('the team chooser opens no circuit', async ({ page }) => {
+  const sockets = watchSockets(page);
+
+  await openSettled(page, '/team/choose');
+  await expect(page.getByRole('heading', { name: 'Choose your team', exact: false }).first()).toBeVisible();
+  expect(sockets, 'the team chooser opened a circuit').toEqual([]);
+});
+
 // The fixture list and the squad are what a parent opens most; only an admin gets their island.
 for (const [path, heading, content] of [['/games', 'Games', '.game-row'], ['/players', 'Squad', '.player-name-cell']]) {
   test(`${path} opens no circuit for a visitor`, async ({ page }) => {

@@ -562,6 +562,7 @@
 
   <!-- Settings -->
   <data name="The language, the seasons, the training schedule, your own password, and the notifications." xml:space="preserve"><value>De taal, de seizoenen, het trainingsschema, je eigen wachtwoord en de meldingen.</value></data>
+  <data name="The language, your own password, and the notifications." xml:space="preserve"><value>De taal, je eigen wachtwoord en de meldingen.</value></data>
   <data name="The language the app speaks, and the notifications for match day." xml:space="preserve"><value>De taal waarin de app spreekt, en de meldingen op wedstrijddag.</value></data>
   <data name="The app is shown in this language for this browser. Choosing one reloads the page." xml:space="preserve"><value>De app wordt in deze taal getoond in deze browser. Een taal kiezen herlaadt de pagina.</value></data>
   <data name="Season Settings" xml:space="preserve"><value>Seizoensinstellingen</value></data>
@@ -640,6 +641,10 @@
   <data name="Logo" xml:space="preserve"><value>Logo</value></data>
   <data name="Selected" xml:space="preserve"><value>GESELECTEERD</value></data>
   <data name="Show this team" xml:space="preserve"><value>Dit team tonen</value></data>
+  <data name="Copy team link" xml:space="preserve"><value>Teamlink kopiëren</value></data>
+  <data name="Switch team" xml:space="preserve"><value>Ander team</value></data>
+  <data name="Choose your team" xml:space="preserve"><value>Kies je team</value></data>
+  <data name="Which team do you follow? This device remembers your choice." xml:space="preserve"><value>Welk team volg je? Dit apparaat onthoudt je keuze.</value></data>
   <data name="{0} team" xml:space="preserve"><value>{0} team</value></data>
   <data name="{0} teams" xml:space="preserve"><value>{0} teams</value></data>
   <data name="No clubs yet. Add one to get started." xml:space="preserve"><value>Nog geen clubs. Voeg er een toe om te beginnen.</value></data>
@@ -667,6 +672,7 @@
   <data name="{0} already has a team named {1}" xml:space="preserve"><value>{0} heeft al een team met de naam {1}</value></data>
   <data name="Club {0} still has {1} teams" xml:space="preserve"><value>Club {0} heeft nog {1} teams</value></data>
   <data name="Team {0} still has {1} accounts" xml:space="preserve"><value>Team {0} heeft nog {1} accounts</value></data>
+  <data name="Team {0} still has games, trainings or players" xml:space="preserve"><value>Team {0} heeft nog wedstrijden, trainingen of spelers</value></data>
   <data name="{0} is the team the app is showing" xml:space="preserve"><value>{0} is het team dat de app laat zien</value></data>
   <data name="The logo must be a path inside the app, like icons/icon-192.png" xml:space="preserve"><value>Het logo moet een pad binnen de app zijn, bijvoorbeeld icons/icon-192.png</value></data>
   <data name="Club with ID {0} not found" xml:space="preserve"><value>Club met ID {0} niet gevonden</value></data>

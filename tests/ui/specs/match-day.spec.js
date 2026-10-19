@@ -460,3 +460,23 @@ test('a half already played is no longer edited in the builder', async ({ page }
   await page.locator('.draggable-player').first().dragTo(page.locator('.pitch .pitch-empty').first());
   await expect(page.locator('.pitch .pitch-player')).toHaveCount(1);
 });
+
+// The banner listens for its team's changes rather than one game's, so it is the one listener a team filter could
+// silence. Whichever match it shows is the one scored in: earlier specs leave matches running, and the oldest wins.
+test('the start page banner follows its match as it is played, without a reload', async ({ page, visitor }) => {
+  const id = await liveMatch(page, 'FC Startpagina');
+
+  await goto(visitor, '/');
+  const banner = visitor.locator('.home-live-banner').filter({ hasText: 'Live now' });
+  // textContent, as toHaveText reads it: innerText would bring the label's CSS upper-casing and never match.
+  const before = (await banner.textContent()).replace(/\s+/g, ' ').trim();
+
+  // Clicked once: a goal is not idempotent, and goto has already waited for the circuit.
+  await goto(page, await banner.getAttribute('href'));
+  await page.getByRole('button', { name: 'Goal against' }).click();
+
+  await expect(banner).not.toHaveText(before);
+
+  await goto(page, `/games/${id}/live`);
+  await finishMatch(page);
+});

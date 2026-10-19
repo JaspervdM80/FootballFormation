@@ -63,5 +63,17 @@ public static class AppNav
         _ => false,
     };
 
+    /// A route naming one game or player belongs to the team being left, so switching from it starts over at home. The query is dropped
+    /// for the same reason: a filter can name a player too. So does the choice page, which would only ask again.
+    public static string AfterTeamChange(string path)
+    {
+        var segments = Segments(path);
+        var target = "/" + string.Join('/', segments);
+
+        return segments.Any(s => s.All(char.IsAsciiDigit)) || target.Equals(AppRoutes.ChooseTeam, StringComparison.OrdinalIgnoreCase)
+            ? AppRoutes.Home
+            : target;
+    }
+
     private static string[] Segments(string? path) => (path ?? "").Split('?')[0].Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
 }

@@ -1,0 +1,28 @@
+@page "/team/choose"
+@using FootballFormation.UI.Theming
+@attribute [AllowAnonymous]
+
+<PageTitle>@L["Choose your team"]</PageTitle>
+
+<PageHeader Class="mb-6" Title="@L["Choose your team"]"
+            Subtitle="@L["Which team do you follow? This device remembers your choice."]" />
+
+@foreach (var club in _clubs)
+{
+    <MudPaper Class="pa-6 mb-6" MaxWidth="560px" Elevation="2" Style="border-radius: 16px;">
+        <div class="choose-club">
+            <img src="@ClubTheme.LogoFor(club.Club)" alt="" class="choose-crest" />
+            <span class="card-label">@club.Club.Name</span>
+        </div>
+        <div class="list-rows">
+            @foreach (var team in club.Teams)
+            {
+                @* A real page load: the team is read off the request that creates a scope. See RequestContext. *@
+                <a class="list-row choose-team" href="@AppRoutes.SetTeam(team.Id, ReturnUrl)" data-enhance-nav="false">
+                    <span class="list-row-name">@team.FullName</span>
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" />
+                </a>
+            }
+        </div>
+    </MudPaper>
+}

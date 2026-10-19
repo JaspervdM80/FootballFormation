@@ -1,8 +1,17 @@
 @inject NavigationManager Navigation
 
 @code {
-    protected override void OnInitialized()
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    // Signed in but refused (another team's admin, a team admin at /teams): signing in again would not help.
+    protected override async Task OnInitializedAsync()
     {
+        if (AuthState is not null && (await AuthState).User.Identity?.IsAuthenticated == true)
+        {
+            Navigation.NavigateTo(AppRoutes.Home, forceLoad: true);
+            return;
+        }
+
         Navigation.NavigateTo($"{AppRoutes.Login}?returnUrl={Uri.EscapeDataString(Navigation.Uri)}", forceLoad: true);
     }
 }

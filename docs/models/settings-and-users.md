@@ -99,7 +99,9 @@ is `SetNull`, so deleting a user leaves their comments in place, unattributed.
 projection (id, name, username, role, team), never the entity — the `/users` page and its dialog have no use for `PasswordHash` or `SecurityStamp`, and a
 read that returned them would put credential material one careless log line from disclosure.
 `/dev/login` is the exception that still needs the whole entity, for the stamp its cookie carries,
-so it has its own `FindDevLoginAdminAsync` rather than widening the list read.
+so it has its own `FindDevLoginAdminAsync` rather than widening the list read. `?user=` names the
+admin to sign in as — the browser tests use it for a team admin, because the sign-in form allows five
+attempts a minute — and names nobody rather than falling back when there is no such admin.
 
 **There are two rungs, and the upper one implies the lower.** `Admin` runs **one** team — the team in
 `TeamId`, and its squad, fixtures and live match. `ApplicationAdmin` decides which clubs and teams the
@@ -159,11 +161,9 @@ changed password survives, and seeds its account as an `ApplicationAdmin` — ot
 would have nobody who could reach `/teams`.
 
 ## Club and Team (tables `Clubs`, `Teams`)
-The first thing in this app that sits **above** a season. Nothing hangs off them yet: seasons, games
-and players still belong to the deployment, and `TeamService.GetCurrentAsync()` always answers with
-the first team there is. It exists as the seam a chosen team will come from — see
-[#108](https://github.com/JaspervdM80/FootballFormation/issues/108) for the fork that decides whether
-that ever becomes a real choice.
+The first thing in this app that sits **above** a season: every season belongs to a team, and every
+player to a club. One deployment serves every team on it — the decision, and what it commits the
+code to, is [one-deployment-many-teams](../patterns/one-deployment-many-teams.md).
 
 | Property | Type | Notes |
 |---|---|---|

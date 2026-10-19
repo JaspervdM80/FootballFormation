@@ -322,7 +322,7 @@ public class MatchGoalServiceTests : LiveMatchTestBase
     private MatchGoalService GoalsOver(IDbContextFactory<AppDbContext> factory) =>
         new(factory,
             new GameService(factory, Seasons, CurrentUser, Time, NullLogger<GameService>.Instance),
-            Notifier, Time, CurrentUser, NullLogger<MatchGoalService>.Instance);
+            Notifier, CurrentTeam, Time, CurrentUser, NullLogger<MatchGoalService>.Instance);
 
     /// EF raises this for the transaction it opens around a lone SaveChanges as well as for an explicit one, so two saves that commit
     /// once count once.

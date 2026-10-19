@@ -39,12 +39,12 @@ public abstract class ServiceTestBase : IDisposable
         Preferences = new MatchPreferencesService(DbFactory, Time, CurrentUser, NullLogger<MatchPreferencesService>.Instance);
         Live = new LiveMatchService(DbFactory, Time, NullLogger<LiveMatchService>.Instance);
 
-        MatchClock = new MatchClockService(DbFactory, Notifier, Time, CurrentUser, NullLogger<MatchClockService>.Instance);
-        Goals = new MatchGoalService(DbFactory, Games, Notifier, Time, CurrentUser, NullLogger<MatchGoalService>.Instance);
-        Subs = new MatchSubstitutionService(DbFactory, Notifier, Time, CurrentUser, NullLogger<MatchSubstitutionService>.Instance);
+        MatchClock = new MatchClockService(DbFactory, Notifier, CurrentTeam, Time, CurrentUser, NullLogger<MatchClockService>.Instance);
+        Goals = new MatchGoalService(DbFactory, Games, Notifier, CurrentTeam, Time, CurrentUser, NullLogger<MatchGoalService>.Instance);
+        Subs = new MatchSubstitutionService(DbFactory, Notifier, CurrentTeam, Time, CurrentUser, NullLogger<MatchSubstitutionService>.Instance);
 
         Users = new UserService(DbFactory, CurrentUser, CurrentTeam, NullLogger<UserService>.Instance);
-        TeamsAndClubs = new TeamService(DbFactory, CurrentUser, CurrentTeam, NullLogger<TeamService>.Instance);
+        TeamsAndClubs = new TeamService(DbFactory, CurrentUser, CurrentTeam, Time, NullLogger<TeamService>.Instance);
 
         Stats = new StatsService(Games, Squads, Trainings, CurrentTeam, Time, StatsCache, NullLogger<StatsService>.Instance);
     }

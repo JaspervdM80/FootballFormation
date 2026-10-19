@@ -1,0 +1,29 @@
+﻿@inject IStringLocalizer<Strings> L
+
+@if (Team.Teams.Count > 1)
+{
+    @* A <details> of links for the reason SeasonPicker is one: it renders in the static layout. *@
+    <div class="drawer-picker">
+        <details class="team-picker">
+            <summary>
+                <MudIcon Icon="@Icons.Material.Filled.SwapHoriz" Size="Size.Small" />
+                <span>@L["Switch team"]</span>
+                <MudIcon Icon="@Icons.Material.Filled.ExpandMore" Size="Size.Small" />
+            </summary>
+            @* A real page load: the team is read off the request that creates a scope. See RequestContext. *@
+            <div class="team-picker-menu disclosure-menu" data-enhance-nav="false">
+                @foreach (var team in Team.Teams)
+                {
+                    var selected = team.Id == Team.Current?.Id;
+                    <a href="@SetUrl(team.Id)" class="disclosure-menu-item team-menu-item" aria-current="@(selected ? "true" : null)">
+                        <span>@team.FullName</span>
+                        @if (selected)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" />
+                        }
+                    </a>
+                }
+            </div>
+        </details>
+    </div>
+}

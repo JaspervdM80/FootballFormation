@@ -258,14 +258,14 @@ public partial class LiveMatch
     }
 
     /// Reloads rather than patches, so every viewer shows exactly what is stored no matter which browser made the change.
-    private void OnLiveChanged(int gameId, LiveMatchEvent change)
+    private void OnLiveChanged(LiveMatchChange change)
     {
-        if (gameId != GameId) return;
+        if (change.GameId != GameId) return;
 
         _ = InvokeAsync(async () =>
         {
             var before = EventKeys();
-            var buzz = await ReloadAsync() ? MarkTheMoment(change, before) : null;
+            var buzz = await ReloadAsync() ? MarkTheMoment(change.Event, before) : null;
             StateHasChanged();
 
             if (buzz is not null) await BrowserAsync("vibration.buzz", buzz);

@@ -50,6 +50,15 @@ public class Season
             EndDate = new DateTime(startYear + 1, StartMonth, 1).AddDays(-1)
         };
     }
+
+    /// The season a team with none opens on: the one covering <paramref name="today"/>, already current.
+    public static Season FirstFor(int teamId, DateTime today)
+    {
+        var season = CreateFor(today);
+        season.TeamId = teamId;
+        season.IsCurrent = true;
+        return season;
+    }
 }
 
 /// In memory, the same rule as <see cref="GameOrdering"/>. The table holds one row a year, so SeasonService reads it whole and keeps its

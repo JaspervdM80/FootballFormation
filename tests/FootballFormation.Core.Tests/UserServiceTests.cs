@@ -450,6 +450,17 @@ public class UserServiceTests : ServiceTestBase
         Assert.Equal(first.Value!.Id, picked?.Id);
     }
 
+    [Fact]
+    public async Task Dev_login_signs_in_as_the_admin_it_names_and_as_nobody_for_a_name_it_does_not_know()
+    {
+        await Users.EnsureAdminSeededAsync();
+        var coach = await Users.CreateAsync("Coach", "coach", GoodPassword, UserRole.Admin);
+
+        Assert.Equal(coach.Value!.Id, (await Users.FindDevLoginAdminAsync("coach"))?.Id);
+        // Null rather than the fallback admin: a test naming an account must not quietly run as another.
+        Assert.Null(await Users.FindDevLoginAdminAsync("nobody"));
+    }
+
     // The cookie handler and the circuit's revalidation loop both ask "is this session still good" from a ClaimsPrincipal, and share
     // this overload so they cannot answer it differently.
 

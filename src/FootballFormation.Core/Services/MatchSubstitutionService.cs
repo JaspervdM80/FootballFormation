@@ -7,6 +7,7 @@ namespace FootballFormation.Core.Services;
 public class MatchSubstitutionService(
     IDbContextFactory<AppDbContext> dbFactory,
     LiveMatchNotifier notifier,
+    ICurrentTeam currentTeam,
     TimeProvider time,
     ICurrentUser currentUser,
     ILogger<MatchSubstitutionService> logger)
@@ -15,7 +16,7 @@ public class MatchSubstitutionService(
 
     public Task<Result<GameSubstitution>> SubstituteAsync(
         int gameId, int playerOffId, int playerOnId, CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "make the substitution",
+        LiveMatchOperation.RunAdminAsync(notifier, currentTeam, gameId, currentUser, logger, "make the substitution",
             cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -69,7 +70,7 @@ public class MatchSubstitutionService(
     /// finished. Refused once that half has kicked off, when a change is a recorded substitution again.
     public Task<Result> PlanBreakSubstitutionAsync(
         int gameId, int playerOffId, int playerOnId, CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "change the half-time line-up",
+        LiveMatchOperation.RunAdminAsync(notifier, currentTeam, currentUser, logger, "change the half-time line-up",
             cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -107,7 +108,7 @@ public class MatchSubstitutionService(
     /// GameMinutesReport credit each player the position she held before it.
     public Task<Result> SwapPositionsAsync(
         int gameId, int playerAId, int playerBId, CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "swap the positions",
+        LiveMatchOperation.RunAdminAsync(notifier, currentTeam, currentUser, logger, "swap the positions",
             cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -149,7 +150,7 @@ public class MatchSubstitutionService(
     /// walked again and the line-up, and the slots the later changes record, are rewritten to match.
     public Task<Result<GamePositionSwap>> AddPositionSwapAsync(
         int gameId, PeriodType half, int playerAId, int playerBId, int atSeconds, CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "add the position swap",
+        LiveMatchOperation.RunAdminAsync(notifier, currentTeam, gameId, currentUser, logger, "add the position swap",
             cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -201,7 +202,7 @@ public class MatchSubstitutionService(
 
     /// Walks the half again without the swap, so whoever a later change brought on takes the slot she would have had.
     public Task<Result> RemovePositionSwapAsync(int swapId, CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "undo the position swap",
+        LiveMatchOperation.RunAdminAsync(notifier, currentTeam, currentUser, logger, "undo the position swap",
             cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -304,7 +305,7 @@ public class MatchSubstitutionService(
     public Task<Result<GameInjury>> MarkInjuredAsync(
         int gameId, int playerId, int? replacementPlayerId = null,
         CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "record the injury",
+        LiveMatchOperation.RunAdminAsync(notifier, currentTeam, gameId, currentUser, logger, "record the injury",
             cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -376,7 +377,7 @@ public class MatchSubstitutionService(
 
     /// Only restores the slot when nobody came on: a replaced injury is undone through its substitution, which takes the injury with it.
     public Task<Result> RemoveInjuryAsync(int injuryId, CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "undo the injury",
+        LiveMatchOperation.RunAdminAsync(notifier, currentTeam, currentUser, logger, "undo the injury",
             cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -420,7 +421,7 @@ public class MatchSubstitutionService(
     /// Hands back the slot the player it brought on holds now — refused while she is off, the player it took off is back on, or a timed
     /// swap has moved her since. An injury recorded for the same player at the same second goes with it: one tap wrote both.
     public Task<Result> RemoveSubstitutionAsync(int subId, CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "undo the substitution",
+        LiveMatchOperation.RunAdminAsync(notifier, currentTeam, currentUser, logger, "undo the substitution",
             cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -459,7 +460,7 @@ public class MatchSubstitutionService(
     public Task<Result<GameSubstitution>> AddSubstitutionAsync(
         int gameId, PeriodType half, int playerOffId, int playerOnId, int atSeconds, bool injured,
         CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "add the substitution",
+        LiveMatchOperation.RunAdminAsync(notifier, currentTeam, gameId, currentUser, logger, "add the substitution",
             cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -543,7 +544,7 @@ public class MatchSubstitutionService(
     public Task<Result> EditSubstitutionAsync(
         int subId, int playerOffId, int playerOnId, int atSeconds, bool injured,
         CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "edit the substitution",
+        LiveMatchOperation.RunAdminAsync(notifier, currentTeam, currentUser, logger, "edit the substitution",
             cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);

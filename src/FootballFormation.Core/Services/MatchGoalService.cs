@@ -8,6 +8,7 @@ public class MatchGoalService(
     IDbContextFactory<AppDbContext> dbFactory,
     GameService games,
     LiveMatchNotifier notifier,
+    ICurrentTeam currentTeam,
     TimeProvider time,
     ICurrentUser currentUser,
     ILogger<MatchGoalService> logger)
@@ -18,7 +19,7 @@ public class MatchGoalService(
     public Task<Result<GameGoal>> LogGoalAsync(
         int gameId, int? scorerId, int? assisterId, bool isOwnGoal, bool isOpponentGoal,
         CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "log the goal",
+        LiveMatchOperation.RunAdminAsync(notifier, currentTeam, gameId, currentUser, logger, "log the goal",
             cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -51,7 +52,7 @@ public class MatchGoalService(
     public Task<Result> EditGoalAsync(
         int goalId, int? scorerId, int? assisterId, bool isOwnGoal, int minute, bool recountScoreline = false,
         CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "correct the goal",
+        LiveMatchOperation.RunAdminAsync(notifier, currentTeam, currentUser, logger, "correct the goal",
             cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -108,7 +109,7 @@ public class MatchGoalService(
     /// Removes a goal and pulls the scoreline back in step with what is left.
     public Task<Result> RemoveGoalAsync(
         int gameId, int goalId, CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, currentUser, logger, "remove the goal",
+        LiveMatchOperation.RunAdminAsync(notifier, currentTeam, currentUser, logger, "remove the goal",
             cancellationToken, async () =>
         {
             var removed = await games.RemoveGoalAsync(goalId, recountScoreline: true, cancellationToken);

@@ -22,8 +22,8 @@ viewport with their labels clipped.
 showing. `_selectedClubId` is page state, not the URL and not a cookie: this page is admin-only and
 nobody deep-links into it.
 
-**Switching the app onto a team is the eye button on a team row**, and it is the only thing that
-does. It is an `<a href>` to `/team/set` with `data-enhance-nav="false"`, exactly as the season
+**Switching the app onto a team is the eye button on a team row** here, and the team picker in the
+drawer for everyone else (see [shared-components](shared-components.md)). The eye button is an `<a href>` to `/team/set` with `data-enhance-nav="false"`, exactly as the season
 picker links to `/season/set` and for the same reason: the team is read off the request that creates
 a scope, so an island already up would keep the old one while the chrome showed the new. The row the
 app is currently showing wears the `Selected` badge and offers no button.
@@ -34,8 +34,8 @@ app is currently showing wears the `Selected` badge and offers no button.
 team id. `TeamService.GetCurrentAsync()`, `TeamState` and the write guard all read that one answer,
 memoized per scope.
 
-`ff.team` is written three ways — at sign-in from the account's own team, by `/team/set` when
-someone picks one, and by a middleware in `Program.cs` that stamps the resolved team onto every HTML
+`ff.team` is written four ways — at sign-in from the account's own team, by `/team/set` when
+someone picks one, by the team link `/team/{id}` a team shares with its parents, and by a middleware in `Program.cs` that stamps the resolved team onto every HTML
 page response, so "the last team you looked at" is remembered without anyone having to choose. The
 sign-in one is what stops an admin of any team but the first landing somewhere they cannot change
 anything: this page, where a team is picked, is a rung of authority above them. A year, not the season cookie's eight
@@ -44,9 +44,27 @@ because it is a view choice and not authority — what an account may *change* c
 `team_id` claim, never from this cookie. See
 [authorization-and-auth](../patterns/authorization-and-auth.md).
 
+**A first visit is asked, not guessed for.** While the deployment serves more than one team, a page
+request from a visitor with no `ff.team` cookie and no session is redirected to `/team/choose`, which
+lists every team by club and hands the choice to `/team/set` with the page they asked for as the way
+back. It is a middleware in `Program.cs`, ahead of the stamping one, and it only fires on a Razor
+component endpoint — never an asset, an endpoint or a calendar feed — and never on the pages
+`Routing.SkipsTeamChoice` names. The stamping middleware skips `/team/choose` itself: stamping the
+fallback team there would answer the question before the visitor had, and for the same reason
+`MainLayout` leaves the team's name, the nav and the whole drawer off that page. With one team nothing asks, and
+the app looks exactly as it did before teams existed. A team link `/team/{id}` sets the cookie, so
+parents arriving through one never see the question.
+
 `DeleteTeamAsync` still refuses the lowest-id team, because that is what every visitor who has chosen
 nothing falls back to — and it refuses a team accounts are still on, which the `Restrict` FK would
 otherwise report as a raw `DbUpdateException`.
+
+`CreateTeamAsync` opens a new team on a current season covering today (`Season.FirstFor`), in the
+same transaction, so its admin lands on a working app rather than on pages with no season to hang off;
+its match defaults are the model's own, seeded on first read like any season's. Because `Season → Team`
+is `Restrict` too, `DeleteTeamAsync` takes a team's seasons and preferences with it **only while they
+hold nothing** — a game, a training or a squad member anywhere in the team refuses the delete with a
+readable message instead.
 
 The selection is resolved, not stored: `_selectedClubId` is a component field, so it holds across the
 page's own `Reload()` after a write and is gone on a browser reload, which starts again from the club
@@ -87,5 +105,13 @@ name and crest against what it was rendered beside; only when they actually move
 `NavigateTo(..., forceLoad: true)`. Reloading after every edit would be the easy version and a worse
 one — most edits here do not touch the app's own identity.
 
-Context for why this page exists at all, and what it deliberately does *not* do yet, is in
-[#108](https://github.com/JaspervdM80/FootballFormation/issues/108).
+## Each team row copies its team link
+
+The link button copies `/team/{id}` as an absolute URL, for a coach to send the team's parents. It
+is a plain `onclick` into `js/clipboard.js` rather than a Blazor handler, for the reason the result
+page's copy button gives: the clipboard call has to run inside the click's own task. The link
+endpoint answers 404 for a team that no longer exists, so a link sent before a team was deleted does
+not quietly open another one.
+
+Why one deployment serves many teams at all is
+[one-deployment-many-teams](../patterns/one-deployment-many-teams.md).

@@ -118,7 +118,7 @@ Services/
                             written as a GamePositionSwap; one added or undone afterwards walks the
                             half again and rewrites the slots after it
   LiveMatchOperation.cs   — The write shape those three share: RunAdminAsync plus, on success, one
-                            LiveMatchNotifier call naming the game that changed
+                            LiveMatchNotifier call naming the game that changed and its team
   LiveMatchQueries.cs     — The tracked load they all start from (the game with its planned
                             line-ups, via GameQueries) and the one "game not found" message
   LiveMatchNotifier.cs    — Singleton: fans live match changes out to every open circuit
@@ -162,9 +162,11 @@ Pages/
   SeasonDialog.razor(.cs)     — Dialog: season name, start date, end date
   Preferences.razor(.cs)      — /preferences — The per-season match defaults: duration, split,
                                 format, formation, match day (Admin only)
-  Settings.razor(.cs)(.css)   — /settings — Language and match notifications (everyone), and behind
-                                an AuthorizeView the season list, the training schedule and the
-                                own-password form
+  Settings.razor(.cs)(.css)   — /settings — Language and match notifications (everyone), the
+                                own-password form (any session), and behind an admin AuthorizeView
+                                the season list and the training schedule
+  ChooseTeam.razor(.cs)(.css) — /team/choose — No circuit: a first visit picks its team while there
+                                is more than one
   Users.razor(.cs)            — /users — Accounts: add, edit, reset password, delete (Admin only)
   UserDialog.razor(.cs)       — Dialog: name, login, role, password — also the reset-password form
                                 (PasswordOnly), since the fields are the same
@@ -192,6 +194,7 @@ Components/
   PlayerList.razor(.cs)(.css)       — Draggable player cards (HTML5 drag API)
   SubstituteBench.razor(.cs)(.css)  — Substitute drop zone with remove buttons
   SeasonPicker.razor(.cs)           — Global season filter; rendered in both the app bar and the drawer
+  TeamPicker.razor(.cs)             — Which team to follow; in the drawer, and only once there are two
   VenueBadge.razor                  — THUIS/UIT, carrying the venue on its own wherever a match is listed
   DateBlock.razor                   — Day of week, day and month stacked; the games list and the start page
   NavItems.razor(.cs)               — The main menu, from AppNav.Menu; rendered in both, ShowIcons for the drawer
@@ -210,8 +213,9 @@ State/
   SeasonPreference.cs         — That choice in a cookie for 8h, so a deploy's dropped circuit
                                 does not reset it. Writes it; App.razor/Routes read it
   TeamState.cs                — Scoped: the club and team the app says it is, for the chrome
-  TeamPreference.cs           — The team in a cookie for a year. /team/set writes it on a choice;
-                                Program.cs stamps the resolved team on every page served
+  TeamPreference.cs           — The team in a cookie for a year. /team/set writes it on a choice and
+                                /team/{id} from a shared link; Program.cs stamps the resolved team
+                                on every page served
   RequestContext.cs           — The two cookies a scope was created with, so the static render and
                                 the circuit cannot disagree about them
 Helpers/
@@ -306,7 +310,9 @@ Components/
 Security/
   RevalidatingUserAuthenticationStateProvider.cs
                           — Re-checks a circuit's principal on a timer and signs it out when the
-                            account is gone; the circuit-side half of OnValidatePrincipal
+                            account is gone; the circuit-side half of OnValidatePrincipal. Also
+                            scopes the Admin role to the circuit's own team on a rejoin
+  TeamScopedAdminRole.cs  — Drops the Admin role while the team in scope is not the account's own
 KeepAlive/
   KeepAliveTracker.cs     — Thread-safe timestamp of the last real request
   KeepAlivePingService.cs — Pings the public /health endpoint for 30 minutes after the last visitor,

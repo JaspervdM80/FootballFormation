@@ -97,7 +97,7 @@ public static class Routing
 
             SelectOwnTeam(context, user);
 
-            return Results.Redirect(IsLocalUrl(returnUrl) ? returnUrl : "/");
+            return Results.Redirect(AppRoutes.IsLocal(returnUrl) ? returnUrl : "/");
         })
         .RequireRateLimiting("login");
 
@@ -122,13 +122,13 @@ public static class Routing
         // refuses non-loopback callers. Do NOT relax either. See docs/testing/ui-testing.md.
         if (app.Environment.IsDevelopment())
         {
-            app.MapGet("/dev/login", async (HttpContext context, UserService userService) =>
+            app.MapGet("/dev/login", async (HttpContext context, UserService userService, string? user) =>
             {
                 var remote = context.Connection.RemoteIpAddress;
                 if (remote is null || !IPAddress.IsLoopback(remote))
                     return Results.NotFound();
 
-                var admin = await userService.FindDevLoginAdminAsync(context.RequestAborted);
+                var admin = await userService.FindDevLoginAdminAsync(user, context.RequestAborted);
                 if (admin is null) return Results.NotFound();
 
                 await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, PrincipalFor(admin), PersistentSession());
@@ -157,8 +157,8 @@ public static class Routing
                 scope = "/",
                 display = "standalone",
                 orientation = "portrait",
-                background_color = "#ffffff",
-                theme_color = "#ffffff",
+                background_color = team.Theme.SurfaceAppbar,
+                theme_color = team.Theme.SurfaceAppbar,
                 icons = new[]
                 {
                     new { src = "icons/icon-192.png", sizes = "192x192", type = "image/png", purpose = "any" },
@@ -269,6 +269,16 @@ public static class Routing
 
             return Results.LocalRedirect($"~/{redirectUri.TrimStart('/')}");
         });
+
+        // The link a team hands its parents. Unlike /team/set it checks the team exists: a stale link should say so, not open another team.
+        app.MapGet("/team/{teamId:int}", async (int teamId, TeamService teams, HttpContext context) =>
+        {
+            var result = await teams.GetTeamsAsync(context.RequestAborted);
+            if (result.IsFailure || result.Value!.All(t => t.Id != teamId)) return Results.NotFound();
+
+            context.Response.Cookies.Append(TeamPreference.CookieName, TeamPreference.Format(teamId), TeamCookie());
+            return Results.Redirect(AppRoutes.Home);
+        }).AllowAnonymous();
     }
 
     /// Signing in puts you on the team you run, or an admin of any team but the lowest-numbered one would land on a team they cannot
@@ -290,11 +300,20 @@ public static class Routing
             calendar.TeamFullName,
             calendar.Games,
             game => MatchInfoTextBuilder.Build(game, calendar.TeamFullName, localizer),
-            game => origin + AppRoutes.Overview(game.Id),
+            // Through /team/set: a calendar app opens a browser with no ff.team cookie, which the chooser would ask, and could answer wrong.
+            game => origin + AppRoutes.SetTeam(game.TeamId, AppRoutes.Overview(game.Id)),
             time.GetUtcNow().UtcDateTime);
 
         return Results.File(Encoding.UTF8.GetBytes(ics), "text/calendar; charset=utf-8", fileName);
     }
+
+    /// The pages a first visit reaches without being asked for a team: the question itself, signing in, which picks the account's own,
+    /// and the error pages.
+    public static bool SkipsTeamChoice(PathString path) =>
+        path.StartsWithSegments(AppRoutes.ChooseTeam)
+        || path.StartsWithSegments(AppRoutes.Login)
+        || path.StartsWithSegments("/not-found")
+        || path.StartsWithSegments("/Error");
 
     /// Secure is left off so this works over the plain http:// of a local `dotnet run` — a team id is not a credential.
     public static CookieOptions TeamCookie() => new()
@@ -334,15 +353,6 @@ public static class Routing
     /// Without IsPersistent the cookie carries no Expires, and a phone reclaiming a backgrounded tab drops it — a coach putting their
     /// phone away at half time. A new instance per sign-in, because the cookie handler stamps IssuedUtc onto the object it is handed.
     static AuthenticationProperties PersistentSession() => new() { IsPersistent = true };
-
-    static bool IsLocalUrl(string? url)
-    {
-        if (string.IsNullOrEmpty(url)) return false;
-        if (url.StartsWith("//") || url.StartsWith("/\\")) return false;
-        if (url.StartsWith('/')) return true;
-        return false;
-    }
-
 }
 
 /// What pushManager.subscribe() hands the browser, flattened. Every field is checked in PushSubscriptionService, not here.

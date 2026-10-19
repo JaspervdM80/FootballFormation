@@ -5,7 +5,8 @@
 import { test, expect } from '../fixtures.js';
 import { goto } from '../helpers.js';
 
-// No storage state at all — not even the language cookie the other specs carry.
+// No storage state at all — not even the language cookie the other specs carry. Nor a team cookie, so this needs the one seeded
+// team: sorted before teams.spec.js it runs before the second team exists, and with two every page sends it to /team/choose.
 test.use({ storageState: { cookies: [], origins: [] } });
 
 test('a first visit is in Dutch', async ({ page }) => {

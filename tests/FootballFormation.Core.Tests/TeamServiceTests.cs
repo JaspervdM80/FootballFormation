@@ -221,6 +221,75 @@ public class TeamServiceTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task A_new_team_opens_on_a_current_season_covering_today()
+    {
+        var club = (await TeamsAndClubs.CreateClubAsync(new Club { Name = "GJS" })).Value!;
+
+        var team = (await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "MO15-2" })).Value!;
+
+        var season = Read().Seasons.IgnoreQueryFilters().Single(s => s.TeamId == team.Id);
+        Assert.True(season.IsCurrent);
+        Assert.Equal("2025/26", season.Name);
+        Assert.True(season.Contains(Now));
+    }
+
+    [Fact]
+    public async Task A_team_whose_seasons_hold_nothing_is_deleted_with_them()
+    {
+        var club = (await TeamsAndClubs.CreateClubAsync(new Club { Name = "GJS" })).Value!;
+        var first = (await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "MO15-2" })).Value!;
+        var second = (await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "MO17-1" })).Value!;
+        var season = Read().Seasons.IgnoreQueryFilters().Single(s => s.TeamId == second.Id);
+        Db.MatchPreferences.Add(new MatchPreferences { SeasonId = season.Id, TeamId = second.Id });
+        await Db.SaveChangesAsync();
+        CurrentTeam.Id = first.Id;
+
+        var deleted = await TeamsAndClubs.DeleteTeamAsync(second.Id);
+
+        Assert.True(deleted.IsSuccess);
+        Assert.DoesNotContain(Read().Seasons.IgnoreQueryFilters(), s => s.TeamId == second.Id);
+        Assert.DoesNotContain(Read().MatchPreferences.IgnoreQueryFilters(), p => p.TeamId == second.Id);
+    }
+
+    [Fact]
+    public async Task A_team_with_a_season_in_use_is_refused_and_keeps_it()
+    {
+        var club = (await TeamsAndClubs.CreateClubAsync(new Club { Name = "GJS" })).Value!;
+        var first = (await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "MO15-2" })).Value!;
+        var second = (await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "MO17-1" })).Value!;
+        var season = Read().Seasons.IgnoreQueryFilters().Single(s => s.TeamId == second.Id);
+        Db.Trainings.Add(new Training { Date = Now, SeasonId = season.Id, TeamId = second.Id });
+        await Db.SaveChangesAsync();
+        CurrentTeam.Id = first.Id;
+
+        var deleted = await TeamsAndClubs.DeleteTeamAsync(second.Id);
+
+        Assert.True(deleted.IsFailure);
+        Assert.Single(Read().Seasons.IgnoreQueryFilters(), s => s.TeamId == second.Id);
+    }
+
+    [Fact]
+    public async Task A_team_whose_season_has_a_squad_is_refused_and_keeps_it()
+    {
+        var club = (await TeamsAndClubs.CreateClubAsync(new Club { Name = "GJS" })).Value!;
+        var first = (await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "MO15-2" })).Value!;
+        var second = (await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "MO17-1" })).Value!;
+        var season = Read().Seasons.IgnoreQueryFilters().Single(s => s.TeamId == second.Id);
+        var player = new Player { ClubId = club.Id, FirstName = "Sanne" };
+        Db.Players.Add(player);
+        await Db.SaveChangesAsync();
+        Db.SeasonSquadMembers.Add(new SeasonSquadMember { SeasonId = season.Id, TeamId = second.Id, PlayerId = player.Id });
+        await Db.SaveChangesAsync();
+        CurrentTeam.Id = first.Id;
+
+        // The squad cascades from its season, so no foreign key would stop this delete taking the squad with it.
+        var deleted = await TeamsAndClubs.DeleteTeamAsync(second.Id);
+
+        Assert.True(deleted.IsFailure);
+        Assert.Single(Read().SeasonSquadMembers.IgnoreQueryFilters(), m => m.TeamId == second.Id);
+    }
+
+    [Fact]
     public async Task A_team_with_accounts_on_it_is_refused_rather_than_left_to_the_foreign_key()
     {
         var club = (await TeamsAndClubs.CreateClubAsync(new Club { Name = "GJS" })).Value!;

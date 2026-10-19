@@ -29,8 +29,10 @@ a name.
 
 ## Colours come from tokens
 
-`ClubTheme.Gjs` is the single palette for both styling systems — the MudBlazor palette it builds and
-the CSS custom properties in `theme.css`. `theme.css` keeps only what is *not* club branding: the
+Each `ClubTheme` preset in `ClubTheme.All` is the whole palette for both styling systems — the
+MudBlazor palette it builds and the CSS custom properties in `theme.css` — and the club in scope picks
+one through `TeamState.Theme`. A preset is code, never a database row: its values are written into
+the page head unescaped. `theme.css` keeps only what is *not* club branding: the
 semantic status colours, the five position-fit tiers, and gradients composed from the club tokens via
 `var()`.
 
