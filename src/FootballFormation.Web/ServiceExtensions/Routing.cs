@@ -157,8 +157,8 @@ public static class Routing
                 scope = "/",
                 display = "standalone",
                 orientation = "portrait",
-                background_color = "#ffffff",
-                theme_color = "#ffffff",
+                background_color = team.Theme.SurfaceAppbar,
+                theme_color = team.Theme.SurfaceAppbar,
                 icons = new[]
                 {
                     new { src = "icons/icon-192.png", sizes = "192x192", type = "image/png", purpose = "any" },
@@ -269,6 +269,16 @@ public static class Routing
 
             return Results.LocalRedirect($"~/{redirectUri.TrimStart('/')}");
         });
+
+        // The link a team hands its parents. Unlike /team/set it checks the team exists: a stale link should say so, not open another team.
+        app.MapGet("/team/{teamId:int}", async (int teamId, TeamService teams, HttpContext context) =>
+        {
+            var result = await teams.GetTeamsAsync(context.RequestAborted);
+            if (result.IsFailure || result.Value!.All(t => t.Id != teamId)) return Results.NotFound();
+
+            context.Response.Cookies.Append(TeamPreference.CookieName, TeamPreference.Format(teamId), TeamCookie());
+            return Results.Redirect(AppRoutes.Home);
+        }).AllowAnonymous();
     }
 
     /// Signing in puts you on the team you run, or an admin of any team but the lowest-numbered one would land on a team they cannot

@@ -375,9 +375,11 @@ for a match being played (opponent, live score, tap through to `/games/{id}/live
 `home-banner-upcoming` before kick-off and `home-banner-done` after full time. It is visible to
 everyone, since the people most likely to land on the home page on match day are spectators.
 
-It subscribes to **every** `LiveMatchNotifier.Changed` event rather than filtering by game id, the
-way the live screen does: the banner has no game of its own until it loads one, so a match being
-started is exactly the event it must not miss. That is what makes it appear on an already-open home
+It listens to **every one of its team's** `LiveMatchNotifier.Changed` events rather than filtering by
+game id, the way the live screen does: the banner has no game of its own until it loads one, so a
+match being started is exactly the event it must not miss. The team is what `LiveMatchChange`
+carries it for — one deployment serves many teams, and without it every team's goal reloaded every
+other team's start page. That is what makes it appear on an already-open home
 page without a refresh.
 
 The same event reloads the cards below the banner (`HomeDashboardReport`), on every change rather

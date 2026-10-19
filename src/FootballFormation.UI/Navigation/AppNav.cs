@@ -63,5 +63,13 @@ public static class AppNav
         _ => false,
     };
 
+    /// A route naming one game or player belongs to the team being left, so switching from it starts over at home. The query is dropped
+    /// for the same reason: a filter can name a player too.
+    public static string AfterTeamChange(string path)
+    {
+        var segments = Segments(path);
+        return segments.Any(s => s.All(char.IsAsciiDigit)) ? AppRoutes.Home : "/" + string.Join('/', segments);
+    }
+
     private static string[] Segments(string? path) => (path ?? "").Split('?')[0].Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
 }

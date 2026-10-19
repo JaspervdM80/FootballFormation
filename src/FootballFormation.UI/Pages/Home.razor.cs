@@ -54,8 +54,8 @@ public partial class Home
         await Team.EnsureLoadedAsync();
         await LoadTodaysGameAsync();
 
-        // Any live-match change, not just this game's: the banner has no game of its own until it loads one, and a match starting is
-        // exactly the event it must not miss.
+        // Any of this team's live-match changes, not just one game's: the banner has no game of its own until it loads one, and a match
+        // starting is exactly the event it must not miss.
         Notifier.Changed += OnLiveChanged;
     }
 
@@ -73,14 +73,19 @@ public partial class Home
         TodaysGame = result.IsSuccess ? result.Value : null;
     }
 
-    private void OnLiveChanged(int gameId, LiveMatchEvent change) => _ = InvokeAsync(async () =>
+    private void OnLiveChanged(LiveMatchChange change)
     {
-        await LoadTodaysGameAsync();
+        if (change.TeamId != Team.Current?.Id) return;
 
-        // Every change, not just full time: a goal corrected after the whistle changes the last result too.
-        await LoadAsync();
-        StateHasChanged();
-    });
+        _ = InvokeAsync(async () =>
+        {
+            await LoadTodaysGameAsync();
+
+            // Every change, not just full time: a goal corrected after the whistle changes the last result too.
+            await LoadAsync();
+            StateHasChanged();
+        });
+    }
 
     /// The live screen while there is still a match to follow — before kick-off too, and for spectators as much as the coach — then the result.
     private string TodaysMatchUrl => TodaysGame is null

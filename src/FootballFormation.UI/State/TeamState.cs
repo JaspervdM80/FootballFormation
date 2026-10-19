@@ -14,10 +14,15 @@ public class TeamState(TeamService teams)
 
     public Team? Current { get; private set; }
 
+    /// Every team the deployment serves, for the picker. Empty when the load failed, which hides the picker rather than the page.
+    public List<Team> Teams { get; private set; } = [];
+
     /// "GJS MO15-2".
     public string DisplayName => Current?.FullName ?? Unnamed;
 
     public string LogoUrl => ClubTheme.LogoFor(Current?.Club);
+
+    public ClubTheme Theme => ClubTheme.Named(Current?.Club?.ThemeName);
 
     public Task EnsureLoadedAsync() => _loading ??= LoadAsync();
 
@@ -30,10 +35,12 @@ public class TeamState(TeamService teams)
 
     private async Task LoadAsync()
     {
-        var result = await teams.GetCurrentAsync();
+        var current = await teams.GetCurrentAsync();
+        var all = await teams.GetTeamsAsync();
 
         // Swallowed on purpose, as in SeasonState: the service has already logged it, and the chrome falls back to a name rather than
         // failing to render.
-        if (result.IsSuccess) Current = result.Value;
+        if (current.IsSuccess) Current = current.Value;
+        Teams = all.IsSuccess ? all.Value! : [];
     }
 }

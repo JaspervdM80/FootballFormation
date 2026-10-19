@@ -154,10 +154,11 @@ try
     // FLY_APP_NAME, not !IsDevelopment(): a published build run from a laptop is Production too, and must not start pinging the live site
     // every two minutes. See KeepAlivePingService.
     if (Environment.GetEnvironmentVariable("FLY_APP_NAME") is { Length: > 0 }
-        && builder.Configuration.GetValue("KeepAlive:Enabled", true))
+        && builder.Configuration.GetValue("KeepAlive:Enabled", true)
+        && builder.Configuration["KeepAlive:PingUrl"] is { Length: > 0 } pingUrl)
     {
         builder.Services.AddHttpClient("KeepAlive", client => client.Timeout = TimeSpan.FromSeconds(15));
-        builder.Services.AddHostedService<KeepAlivePingService>();
+        builder.Services.AddHostedService(sp => ActivatorUtilities.CreateInstance<KeepAlivePingService>(sp, new Uri(pingUrl)));
     }
 
     builder.Services.AddHsts(options => options.MaxAge = TimeSpan.FromDays(365));

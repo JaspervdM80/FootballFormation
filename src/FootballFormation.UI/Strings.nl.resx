@@ -640,6 +640,8 @@
   <data name="Logo" xml:space="preserve"><value>Logo</value></data>
   <data name="Selected" xml:space="preserve"><value>GESELECTEERD</value></data>
   <data name="Show this team" xml:space="preserve"><value>Dit team tonen</value></data>
+  <data name="Copy team link" xml:space="preserve"><value>Teamlink kopiëren</value></data>
+  <data name="Switch team" xml:space="preserve"><value>Ander team</value></data>
   <data name="{0} team" xml:space="preserve"><value>{0} team</value></data>
   <data name="{0} teams" xml:space="preserve"><value>{0} teams</value></data>
   <data name="No clubs yet. Add one to get started." xml:space="preserve"><value>Nog geen clubs. Voeg er een toe om te beginnen.</value></data>

@@ -6,11 +6,13 @@ public class LiveMatchNotificationTests : LiveMatchTestBase
 {
     private readonly List<int> _announced = [];
     private readonly List<LiveMatchEvent> _kinds = [];
+    private readonly List<int> _teams = [];
 
-    public LiveMatchNotificationTests() => Notifier.Changed += (gameId, change) =>
+    public LiveMatchNotificationTests() => Notifier.Changed += change =>
     {
-        _announced.Add(gameId);
-        _kinds.Add(change);
+        _announced.Add(change.GameId);
+        _kinds.Add(change.Event);
+        _teams.Add(change.TeamId);
     };
 
     [Fact]
@@ -60,6 +62,25 @@ public class LiveMatchNotificationTests : LiveMatchTestBase
             [LiveMatchEvent.KickOff, LiveMatchEvent.Goal, LiveMatchEvent.Other, LiveMatchEvent.Other,
              LiveMatchEvent.Other, LiveMatchEvent.FullTime],
             _kinds);
+    }
+
+    [Fact]
+    public async Task Every_announcement_names_the_team_whose_match_it_was()
+    {
+        SeedTeam("Club B", "MO17-1");
+        var other = await SeedGameAsync();
+        var otherTeam = CurrentTeam.Id!.Value;
+
+        var team = SeedTeam("GJS", "MO15-2");
+        var game = await SeedGameAsync();
+
+        Assert.True((await MatchClock.StartMatchAsync(game.Id)).IsSuccess);
+
+        SeedTeam("Club B", "MO17-1");
+        Assert.True((await MatchClock.StartMatchAsync(other.Id)).IsSuccess);
+
+        Assert.Equal([game.Id, other.Id], _announced);
+        Assert.Equal([team.Id, otherTeam], _teams);
     }
 
     [Fact]

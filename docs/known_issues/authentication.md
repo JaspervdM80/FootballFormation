@@ -53,4 +53,11 @@
   to force the give-up path and leaving it open for a clean rejoin; both reloaded, while
   `reconnect.spec.js` shows a *valid* cookie rejoining cleanly and staying live. So the stale window
   is the revalidation interval on a connected idle circuit, and nothing more.
+- **An admin's buttons that do nothing are a team admin looking at another team.** `AuthorizeView
+  Roles="@AppRoles.Admin"` checks the role claim, and an admin of MO15-2 carries it on every team, so
+  after switching through the drawer's team picker or a team link they see every edit, delete and
+  Trainings control — and every write comes back refused. That is the service guard holding, not a
+  broken session: `ICurrentUser.IsAdminAsync()` asks about the team in scope. Switching back in the
+  drawer, or signing in again (`Routing.SelectOwnTeam`), puts them on their own team. Why it is
+  accepted rather than hidden: [one-deployment-many-teams](../patterns/one-deployment-many-teams.md).
 

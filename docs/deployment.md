@@ -328,7 +328,9 @@ curl https://gjs-meiden.nl/health                       # does it serve? ("healt
   never suspend at all. Registered only when `FLY_APP_NAME` is set — the platform sets it on every
   machine, and it's absent everywhere else — so a `dotnet run`, or even a published build run from a
   laptop, never calls out to the live site. `KeepAlive:Enabled=false` turns it off on a Fly
-  machine too; the test app sets it, see [Test site](#test-site).
+  machine too; the test app sets it, see [Test site](#test-site). The hostname it pings is
+  `KeepAlive:PingUrl`, production's in `appsettings.json`: a deployment on another hostname sets
+  `KeepAlive__PingUrl` to its own, or it keeps production awake instead of itself.
 - **Do not** scale to more than one machine: SQLite lives on one volume; a second machine would get
   its own empty volume and a split-brain database.
 - Where going idle still shows up in the app, so nobody hunts it as a bug: a *stopped* machine — a

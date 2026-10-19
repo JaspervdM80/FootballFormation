@@ -586,18 +586,20 @@ a.action-btn {
     display: none;
 }
 
-/* --- Season picker ---
-   Not scoped CSS: it renders from both the app bar and the mobile drawer, and isolation would force
-   a duplicate stylesheet for the second placement.
+/* --- Season and team pickers ---
+   Not scoped CSS: the season picker renders from both the app bar and the mobile drawer, and isolation
+   would force a duplicate stylesheet for the second placement. The team picker shares its look.
 
    A <details> disclosure rather than MudMenu. It renders in the layout, which is statically
    rendered on every page, so there is no circuit to open a popover from — and the browser gives
    keyboard and screen-reader behaviour for a disclosure for free. */
-.season-picker {
+.season-picker,
+.team-picker {
     position: relative;
 }
 
-.season-picker > summary {
+.season-picker > summary,
+.team-picker > summary {
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -614,17 +616,18 @@ a.action-btn {
 }
 
 /* Safari draws its own triangle through a pseudo-element the standard property does not reach. */
-.season-picker > summary::-webkit-details-marker {
+.season-picker > summary::-webkit-details-marker,
+.team-picker > summary::-webkit-details-marker {
     display: none;
 }
 
-.season-picker > summary:hover {
+.season-picker > summary:hover,
+.team-picker > summary:hover {
     color: color-mix(in srgb, var(--ink) 80%, transparent);
     background: color-mix(in srgb, var(--ink) 4%, transparent);
 }
 
-/* A <details> menu of links: what a page with no circuit has instead of MudMenu. The season picker and a
-   visitor's game card menu. */
+/* A <details> menu of links: what a page with no circuit has instead of MudMenu. */
 .disclosure-menu {
     position: absolute;
     top: 100%;
@@ -664,13 +667,13 @@ a.action-btn {
     border-radius: 0 0 6px 6px;
 }
 
-/* In the drawer the picker is a block row under the title, not an app-bar chip */
-.drawer-season-picker {
+/* In the drawer a picker is a block row under the title, not an app-bar chip */
+.drawer-picker {
     padding: 0 8px 8px;
 }
 
 /* In the drawer there is no room to the right, so the menu opens under the summary in flow. */
-.drawer-season-picker .season-picker-menu {
+.drawer-picker .disclosure-menu {
     position: static;
     box-shadow: none;
     background: none;
@@ -1583,7 +1586,7 @@ a.action-btn {
 
     /* The app bar is already crowded on a phone; the drawer copy of the picker is the
        one that stays. Targets only the app-bar instance — the drawer one sits outside
-       .mud-appbar, in .drawer-season-picker. */
+       .mud-appbar, in .drawer-picker. */
     .mud-appbar .season-picker {
         display: none !important;
     }

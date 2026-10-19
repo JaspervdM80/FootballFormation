@@ -35,5 +35,7 @@ public partial class MainLayout
     }
 
     // The same ClubTheme record that emits the CSS custom properties, so MudBlazor and the hand-written styles cannot drift apart.
-    private static readonly MudTheme Theme = ClubTheme.Current.ToMudTheme();
+    private static readonly Dictionary<ClubTheme, MudTheme> MudThemes = ClubTheme.All.ToDictionary(t => t, t => t.ToMudTheme());
+
+    private static MudTheme MudThemeFor(ClubTheme theme) => MudThemes[theme];
 }

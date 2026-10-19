@@ -118,7 +118,7 @@ Services/
                             written as a GamePositionSwap; one added or undone afterwards walks the
                             half again and rewrites the slots after it
   LiveMatchOperation.cs   — The write shape those three share: RunAdminAsync plus, on success, one
-                            LiveMatchNotifier call naming the game that changed
+                            LiveMatchNotifier call naming the game that changed and its team
   LiveMatchQueries.cs     — The tracked load they all start from (the game with its planned
                             line-ups, via GameQueries) and the one "game not found" message
   LiveMatchNotifier.cs    — Singleton: fans live match changes out to every open circuit
@@ -192,6 +192,7 @@ Components/
   PlayerList.razor(.cs)(.css)       — Draggable player cards (HTML5 drag API)
   SubstituteBench.razor(.cs)(.css)  — Substitute drop zone with remove buttons
   SeasonPicker.razor(.cs)           — Global season filter; rendered in both the app bar and the drawer
+  TeamPicker.razor(.cs)             — Which team to follow; in the drawer, and only once there are two
   VenueBadge.razor                  — THUIS/UIT, carrying the venue on its own wherever a match is listed
   DateBlock.razor                   — Day of week, day and month stacked; the games list and the start page
   NavItems.razor(.cs)               — The main menu, from AppNav.Menu; rendered in both, ShowIcons for the drawer
@@ -210,8 +211,9 @@ State/
   SeasonPreference.cs         — That choice in a cookie for 8h, so a deploy's dropped circuit
                                 does not reset it. Writes it; App.razor/Routes read it
   TeamState.cs                — Scoped: the club and team the app says it is, for the chrome
-  TeamPreference.cs           — The team in a cookie for a year. /team/set writes it on a choice;
-                                Program.cs stamps the resolved team on every page served
+  TeamPreference.cs           — The team in a cookie for a year. /team/set writes it on a choice and
+                                /team/{id} from a shared link; Program.cs stamps the resolved team
+                                on every page served
   RequestContext.cs           — The two cookies a scope was created with, so the static render and
                                 the circuit cannot disagree about them
 Helpers/

@@ -103,6 +103,12 @@
                                     <MudIcon Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" />
                                 </a>
                             }
+                            @* A plain onclick into js/clipboard.js, for the same lost-gesture reason as the result page's copy button. *@
+                            <button type="button" class="action-btn" title="@L["Copy team link"]" aria-label="@L["Copy team link"]"
+                                    onclick="copyElementText('team-link-@(team.Id)', 'team-link-copied', 'team-link-failed')">
+                                <MudIcon Icon="@Icons.Material.Filled.Link" Size="Size.Small" />
+                            </button>
+                            <span id="team-link-@(team.Id)" hidden>@TeamLinkUrl(team.Id)</span>
                             <button class="action-btn" title="@L["Edit Team"]" aria-label="@L["Edit Team"]"
                                     @onclick="() => OpenEditTeamDialog(team)">
                                 <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
@@ -114,6 +120,12 @@
                         </div>
                     </div>
                 }
+            </div>
+            <div id="team-link-copied" class="inline-notice inline-notice-success mt-3" role="status" hidden>
+                @L["Copied to clipboard"]
+            </div>
+            <div id="team-link-failed" class="inline-notice inline-notice-warning mt-3" role="alert" hidden>
+                @L["Couldn't copy — try again"]
             </div>
         }
     </MudPaper>

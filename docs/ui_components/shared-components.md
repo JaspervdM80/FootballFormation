@@ -151,7 +151,7 @@ The global season filter, backed by the scoped `SeasonState` (see
   (`Season.ShortName`) while the drawer shows the full "2025/26".
 - **Below 700px only the drawer copy shows** — `.mud-appbar .season-picker` is hidden, because the
   app bar is already carrying the hamburger, title and login on a phone. The rule
-  targets `.mud-appbar` specifically; the drawer instance lives in `.drawer-season-picker`.
+  targets `.mud-appbar` specifically; the drawer instance lives in `.drawer-picker`.
 - **A `<details>` disclosure of plain links, not a `MudMenu`.** It renders in the layout, which is
   statically rendered on every page, so there is no circuit to open a popover from and no handler to
   dispatch a click to — and a disclosure arrives keyboard- and screen-reader-correct for free.
@@ -173,6 +173,22 @@ The global season filter, backed by the scoped `SeasonState` (see
   visitors, and `IsCurrent` is shared state owned by the admin on `/settings`. It goes in a cookie
   for eight hours instead, which is per-browser, which is the scope a view choice belongs at — see
   [patterns](../patterns/ui-state-and-navigation.md#ui-state-services).
+
+## Team picker (`Components/TeamPicker.razor`)
+The same `<details>` of links as the season picker, for the same static-layout reason, listing every
+team from `TeamState.Teams`. Each entry links to `/team/set`.
+
+- **Drawer only.** The drawer is on every width, so it is reachable everywhere, and the app bar has
+  no room left on a phone. Someone following one team never needs it, so it is not worth a chip.
+- **Hidden while there is one team**, so a deployment serving one team looks exactly as it did
+  before there was anything to choose.
+- **It keeps the page you were on, unless that page names a game or a player** —
+  `AppNav.AfterTeamChange` sends those to the start page, because they belong to the team being
+  left. The query string goes too, since a filter can name a player. A season cookie naming the
+  other team's season needs nothing: `SeasonState` already falls back when the remembered season is
+  not in the list.
+- The way in for a parent who has never chosen is the team link, not this — see
+  [one-deployment-many-teams](../patterns/one-deployment-many-teams.md).
 
 
 ## Navigation: routes, menu, page headers
@@ -196,10 +212,11 @@ the auto margin has room to push into). The app bar has one row and renders the 
 order. The group is never empty, because settings is the one entry in it open to everyone.
 
 ### The app's own name comes from the current team
-`TeamState` (scoped, memoized like `SeasonState`) reads `TeamService.GetCurrentAsync()` once per
-request and hands out two things: `DisplayName` — `Club.Name` + `Team.Name`, "GJS MO15-2" — and
-`LogoUrl`, the club's crest or its theme's when it has none (`ClubTheme.LogoFor`, the one place that
-fallback lives).
+`TeamState` (scoped, memoized like `SeasonState`) reads `TeamService.GetCurrentAsync()` and
+`GetTeamsAsync()` once per request. It hands out `DisplayName` — `Club.Name` + `Team.Name`,
+"GJS MO15-2" — and `LogoUrl`, the club's crest or its theme's when it has none (`ClubTheme.LogoFor`,
+the one place that fallback lives), plus `Theme`, the club's preset, and `Teams`, which the team
+picker lists.
 
 Six places used to spell the name out and now read it from there: the app-bar title, the drawer
 title, `/`'s `<PageTitle>` and its `PageHeader`, the install banner, and

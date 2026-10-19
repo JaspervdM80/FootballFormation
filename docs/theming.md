@@ -17,7 +17,12 @@ They come from two places, and which one depends on whether the value is club br
   from the club tokens via `var()`. It travels with the Razor class library, is served at
   `_content/FootballFormation.UI/theme.css`, and loads **before** `app.css` in `App.razor`.
 
-The active theme is **GJS Gorinchem (light)**: a soft green-grey page with flat white cards, crest
+**Each club picks its theme**, by name: `TeamState.Theme` resolves the club in scope's `ThemeName`
+through `ClubTheme.Named`, and both `App.razor`'s custom properties and `MainLayout`'s MudBlazor theme
+read it. A new club look is a new preset in `ClubTheme.All` — never a database row, because the
+values are written into the page head unescaped.
+
+The only theme so far is **GJS Gorinchem (light)**: a soft green-grey page with flat white cards, crest
 red primary, crest banner green accent. Each colour has one job — red is the brand, the one primary
 action on a screen and a live match; green is the pitch, home and wins; labels, table headers and
 numbers are ink. DM Sans is set on every MudBlazor typography level in `ClubTheme.ToMudTheme`, since
@@ -81,9 +86,11 @@ position-fit tiers, and the gradients composed from the club tokens via `var()`.
 
 ## Re-theming for another club
 
-`ClubTheme.Gjs` is the whole palette for both systems. The coupling worth knowing: if the page color
-changes, the `theme-color` meta in `App.razor` and `theme_color`/`background_color` in
-`manifest.webmanifest` must change with it, or the PWA chrome keeps the old brand.
+A new look is a new preset in `ClubTheme.All`, which the club then names on `/teams`; each preset is
+the whole palette for both systems. The PWA chrome follows it too: the `theme-color` meta in
+`App.razor` and `theme_color`/`background_color` in the generated `/manifest.webmanifest` read the
+preset's `SurfaceAppbar` through `TeamState.Theme`. A manifest is read when the app is installed, so
+a phone keeps the colours of the team it was installed from.
 
 ## Breakpoints
 

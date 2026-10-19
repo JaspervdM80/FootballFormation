@@ -26,6 +26,10 @@ reloads on any change. Push cannot work that way: a slot swap would wake every p
 match. `LiveMatchEvent` names the three worth waking for and leaves everything else `Other`, which is
 **the default**, so a call site that says nothing can never send a notification by accident.
 
+It carries the team too, for the start page's banner, which has no game to filter on — see
+[one-deployment-many-teams](one-deployment-many-teams.md). Push ignores it: the game already decides
+the audience.
+
 Widening the event rather than subscribing at three call sites keeps the guarantee
 `LiveMatchOperation` exists for — the notification is part of the write shape, not a line each
 service has to remember.

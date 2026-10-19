@@ -1,7 +1,7 @@
 namespace FootballFormation.UI.Theming;
 
-/// The app styles through two systems — CSS custom properties and a <see cref="MudTheme"/> — and both derive from here, so re-skinning
-/// for another club means editing <see cref="Gjs"/> and nothing else. Shades are mixed where used, not stored per alpha level.
+/// The app styles through two systems — CSS custom properties and a <see cref="MudTheme"/> — and both derive from here, so a club's
+/// look is one preset in <see cref="All"/>, chosen by the club in scope. Shades are mixed where used, not stored per alpha level.
 public sealed record ClubTheme
 {
     /// What a <see cref="FootballFormation.Core.Models.Club"/> stores instead of the styles, which are not editable.
@@ -71,7 +71,6 @@ public sealed record ClubTheme
         CornerRadius = "12px"
     };
 
-    public static ClubTheme Current { get; } = Gjs;
 
     /// Every theme a club can be put on. Adding one is a code change by design — see the type comment.
     public static readonly IReadOnlyList<ClubTheme> All = [Gjs];

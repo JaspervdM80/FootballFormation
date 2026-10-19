@@ -7,6 +7,7 @@ namespace FootballFormation.Core.Services;
 public class MatchClockService(
     IDbContextFactory<AppDbContext> dbFactory,
     LiveMatchNotifier notifier,
+    ICurrentTeam currentTeam,
     TimeProvider time,
     ICurrentUser currentUser,
     ILogger<MatchClockService> logger)
@@ -16,7 +17,7 @@ public class MatchClockService(
     private DateTime UtcNow => time.GetUtcNow().UtcDateTime;
 
     public Task<Result<Game>> StartMatchAsync(int gameId, CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "start the match",
+        LiveMatchOperation.RunAdminAsync(notifier, currentTeam, gameId, currentUser, logger, "start the match",
             cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -45,7 +46,7 @@ public class MatchClockService(
 
     /// The clock stops and no half is live until the next kicks off.
     public Task<Result<Game>> EndHalfAsync(int gameId, CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "end the half",
+        LiveMatchOperation.RunAdminAsync(notifier, currentTeam, gameId, currentUser, logger, "end the half",
             cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -93,7 +94,7 @@ public class MatchClockService(
 
     /// <see cref="Game.NextHalf"/> decides which line-up opens it, skipping any planned for the middle of the half just played.
     public Task<Result<Game>> StartNextHalfAsync(int gameId, CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "start the next half",
+        LiveMatchOperation.RunAdminAsync(notifier, currentTeam, gameId, currentUser, logger, "start the next half",
             cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -160,7 +161,7 @@ public class MatchClockService(
     }
 
     public Task<Result<Game>> FinishMatchAsync(int gameId, CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "finish the match",
+        LiveMatchOperation.RunAdminAsync(notifier, currentTeam, gameId, currentUser, logger, "finish the match",
             cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -197,7 +198,7 @@ public class MatchClockService(
     /// actually restarted. A null length leaves that half as it stands.
     public Task<Result<Game>> AdjustHalfLengthsAsync(
         int gameId, int? firstHalfMinutes, int? secondHalfMinutes, CancellationToken cancellationToken = default) =>
-        LiveMatchOperation.RunAdminAsync(notifier, gameId, currentUser, logger, "correct the half lengths",
+        LiveMatchOperation.RunAdminAsync(notifier, currentTeam, gameId, currentUser, logger, "correct the half lengths",
             cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);

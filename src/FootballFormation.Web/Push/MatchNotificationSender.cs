@@ -66,11 +66,11 @@ public sealed class MatchNotificationSender(
 
     /// Raised inside the touchline write, so this only ever hands the work over: a subscriber that blocks would make an admin's tap wait
     /// on a push service, and one that throws would fail the write itself. See LiveMatchOperation.
-    private void Enqueue(int gameId, LiveMatchEvent change)
+    private void Enqueue(LiveMatchChange change)
     {
-        if (change is LiveMatchEvent.Other) return;
+        if (change.Event is LiveMatchEvent.Other) return;
 
-        _queue.Writer.TryWrite(new Queued(gameId, change));
+        _queue.Writer.TryWrite(new Queued(change.GameId, change.Event));
     }
 
     private async Task SendAsync(Queued queued, CancellationToken cancellationToken)

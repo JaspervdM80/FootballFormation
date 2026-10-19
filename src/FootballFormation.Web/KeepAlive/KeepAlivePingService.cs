@@ -3,6 +3,7 @@ namespace FootballFormation.Web.KeepAlive;
 /// Fly suspends this machine after roughly five minutes idle and exposes no way to lengthen that. The ping must reach the public
 /// hostname, because only traffic through Fly's edge counts as load. See docs/deployment.md.
 public sealed class KeepAlivePingService(
+    Uri pingUrl,
     IHttpClientFactory httpClientFactory,
     KeepAliveTracker tracker,
     TimeProvider time,
@@ -12,8 +13,6 @@ public sealed class KeepAlivePingService(
 
     // Comfortably under Fly's ~5-minute idle sweep, so the proxy never sees a gap long enough to suspend the machine.
     private static readonly TimeSpan PollInterval = TimeSpan.FromMinutes(2);
-
-    private const string PingUrl = "https://gjs-meiden.nl/health";
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -26,14 +25,14 @@ public sealed class KeepAlivePingService(
             try
             {
                 using var client = httpClientFactory.CreateClient("KeepAlive");
-                using var response = await client.GetAsync(PingUrl, stoppingToken);
+                using var response = await client.GetAsync(pingUrl, stoppingToken);
 
                 if (!response.IsSuccessStatusCode)
-                    logger.LogWarning("Keep-alive ping to {Url} returned {StatusCode}", PingUrl, response.StatusCode);
+                    logger.LogWarning("Keep-alive ping to {Url} returned {StatusCode}", pingUrl, response.StatusCode);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                logger.LogWarning(ex, "Keep-alive ping to {Url} failed", PingUrl);
+                logger.LogWarning(ex, "Keep-alive ping to {Url} failed", pingUrl);
             }
         }
     }

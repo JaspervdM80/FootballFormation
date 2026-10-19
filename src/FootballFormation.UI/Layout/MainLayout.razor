@@ -3,7 +3,7 @@
 
 @* Only the theme provider. The other three moved into the pages that need them — see
    InteractiveShell — this layout renders statically on every page, and they do not work there. *@
-<MudThemeProvider Theme="Theme" IsDarkMode="false" />
+<MudThemeProvider Theme="@MudThemeFor(Team.Theme)" IsDarkMode="false" />
 
 <MudLayout>
     @* A checkbox, not component state: the layout renders statically, so there is no circuit to hold a bool or handle a click. It has to
@@ -53,7 +53,8 @@
             <img class="app-title-logo" src="@Team.LogoUrl" alt="" />
             <span class="app-title-text">@Team.DisplayName</span>
         </a>
-        <div class="drawer-season-picker">
+        <TeamPicker />
+        <div class="drawer-picker">
             <SeasonPicker />
         </div>
         <MudNavMenu>
