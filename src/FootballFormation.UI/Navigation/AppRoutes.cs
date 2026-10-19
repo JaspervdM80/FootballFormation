@@ -21,6 +21,9 @@ public static class AppRoutes
     public const string Teams = "/teams";
     public const string StyleGuide = "/styleguide";
     public const string Login = "/login";
+    public const string ChooseTeam = "/team/choose";
+
+    public static string ChooseTeamThen(string returnUrl) => $"{ChooseTeam}?redirectUri={Uri.EscapeDataString(returnUrl)}";
 
     public static string PlayerStats(int playerId) => $"/players/{playerId}/stats";
 

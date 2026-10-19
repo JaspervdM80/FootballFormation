@@ -90,6 +90,7 @@ document.querySelector('form[action="/auth/logout"] button').click()
 | `/users` | **no** — `[Authorize(Roles = Admin)]` | account management |
 | `/teams` | **no** — `[Authorize(Roles = ApplicationAdmin)]` | clubs and teams; a team admin is refused too |
 | `/styleguide` | **no** — `[Authorize(Roles = Admin)]` | no circuit; draws every design token |
+| `/team/choose` | yes | no circuit; where a first visit lands while more than one team exists. The app bar names no team here |
 | `/login`, `/not-found`, `/Error` | yes | no circuit; all localized; easy to forget when sweeping for English text |
 
 Check the pages your change can reach, not all of them — but if you touched `app.css`,

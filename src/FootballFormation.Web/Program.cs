@@ -308,11 +308,35 @@ try
     app.UseRateLimiter();
     app.UseAntiforgery();
 
+    // A first visit with more than one team to choose from asks which, rather than opening on whichever comes first in the database. Pages
+    // only: an endpoint, an asset or a calendar feed is never a visit. Signing in selects the account's own team, so a session never asks.
+    app.Use(async (context, next) =>
+    {
+        if (HttpMethods.IsGet(context.Request.Method)
+            && context.User.Identity?.IsAuthenticated != true
+            && TeamPreference.Parse(context.Request.Cookies[TeamPreference.CookieName]) is null
+            && context.GetEndpoint()?.Metadata.GetMetadata<Microsoft.AspNetCore.Components.Endpoints.ComponentTypeMetadata>() is not null
+            && !Routing.SkipsTeamChoice(context.Request.Path))
+        {
+            var teams = await context.RequestServices.GetRequiredService<TeamService>().GetTeamsAsync(context.RequestAborted);
+            if (teams.IsSuccess && teams.Value!.Count > 1)
+            {
+                context.Response.Redirect(AppRoutes.ChooseTeamThen(context.Request.PathBase + context.Request.Path + context.Request.QueryString));
+                return;
+            }
+        }
+
+        await next();
+    });
+
     // Which team the visit was about, so the next one opens on it rather than on whichever team comes first in the database.
     app.Use(async (context, next) =>
     {
         context.Response.OnStarting(async () =>
         {
+            // Asking which team is the one page that must not answer it on the visitor's behalf.
+            if (context.Request.Path.StartsWithSegments(AppRoutes.ChooseTeam)) return;
+
             // A page only: a redirect, an asset and a JSON endpoint are not a team anyone looked at. Asked
             // here rather than before the response, so nothing but a page pays for the answer — and a page has already asked for it,
             // so by now CurrentTeam has one memoized.

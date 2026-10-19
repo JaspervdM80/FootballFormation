@@ -642,6 +642,8 @@
   <data name="Show this team" xml:space="preserve"><value>Dit team tonen</value></data>
   <data name="Copy team link" xml:space="preserve"><value>Teamlink kopiëren</value></data>
   <data name="Switch team" xml:space="preserve"><value>Ander team</value></data>
+  <data name="Choose your team" xml:space="preserve"><value>Kies je team</value></data>
+  <data name="Which team do you follow? This device remembers your choice." xml:space="preserve"><value>Welk team volg je? Dit apparaat onthoudt je keuze.</value></data>
   <data name="{0} team" xml:space="preserve"><value>{0} team</value></data>
   <data name="{0} teams" xml:space="preserve"><value>{0} teams</value></data>
   <data name="No clubs yet. Add one to get started." xml:space="preserve"><value>Nog geen clubs. Voeg er een toe om te beginnen.</value></data>

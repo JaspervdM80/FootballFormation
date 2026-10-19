@@ -23,6 +23,8 @@ public partial class MainLayout
     /// then steps past.
     private string? PageName => AppNav.PageNameKey(CurrentPath) is { } key ? L[key].Value : null;
 
+    private bool ChoosingTeam => CurrentPath.StartsWith(AppRoutes.ChooseTeam, StringComparison.OrdinalIgnoreCase);
+
     private string CurrentPath => "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
 
     /// The visible half of the rule only: such a session is not an admin as far as the services are concerned either (see ICurrentUser).

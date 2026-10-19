@@ -14,16 +14,23 @@
         <label for="nav-drawer" class="nav-hamburger" aria-hidden="true">
             <MudIcon Icon="@Icons.Material.Filled.Menu" />
         </label>
-        @* The title is the home link — which is why the menu has no Start item, in either rendering *@
-        <a href="@AppRoutes.Home" class="app-title-link ml-2 mr-8" aria-label="@L["Start"]">
-            <img class="app-title-logo" src="@Team.LogoUrl" alt="" />
-            <span class="app-title-text">@Team.DisplayName</span>
-        </a>
-        <div class="d-flex gap-1 topbar-nav">
-            <NavItems />
-        </div>
+        @* Before a team is chosen there is none to name, only the fallback the question is there to avoid. *@
+        @if (!ChoosingTeam)
+        {
+            @* The title is the home link — which is why the menu has no Start item, in either rendering *@
+            <a href="@AppRoutes.Home" class="app-title-link ml-2 mr-8" aria-label="@L["Start"]">
+                <img class="app-title-logo" src="@Team.LogoUrl" alt="" />
+                <span class="app-title-text">@Team.DisplayName</span>
+            </a>
+            <div class="d-flex gap-1 topbar-nav">
+                <NavItems />
+            </div>
+        }
         <MudSpacer />
-        <SeasonPicker Compact="true" />
+        @if (!ChoosingTeam)
+        {
+            <SeasonPicker Compact="true" />
+        }
         <AuthorizeView Roles="@AppRoles.Admin">
             <Authorized>
                 <div class="d-flex align-center gap-2">

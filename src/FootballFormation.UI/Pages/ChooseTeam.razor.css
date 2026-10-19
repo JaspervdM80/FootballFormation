@@ -1,0 +1,29 @@
+.choose-club {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.choose-club .card-label {
+    margin-bottom: 0;
+}
+
+.choose-crest {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.choose-team {
+    min-height: 48px;
+    text-decoration: none;
+    color: var(--ink);
+}
+
+@media (hover: hover) {
+    .choose-team:hover {
+        background: color-mix(in srgb, var(--ink) 7%, transparent);
+    }
+}

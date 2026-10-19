@@ -306,6 +306,14 @@ public static class Routing
         return Results.File(Encoding.UTF8.GetBytes(ics), "text/calendar; charset=utf-8", fileName);
     }
 
+    /// The pages a first visit reaches without being asked for a team: the question itself, signing in, which picks the account's own,
+    /// and the error pages.
+    public static bool SkipsTeamChoice(PathString path) =>
+        path.StartsWithSegments(AppRoutes.ChooseTeam)
+        || path.StartsWithSegments(AppRoutes.Login)
+        || path.StartsWithSegments("/not-found")
+        || path.StartsWithSegments("/Error");
+
     /// Secure is left off so this works over the plain http:// of a local `dotnet run` — a team id is not a credential.
     public static CookieOptions TeamCookie() => new()
     {

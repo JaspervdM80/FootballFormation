@@ -44,6 +44,16 @@ because it is a view choice and not authority — what an account may *change* c
 `team_id` claim, never from this cookie. See
 [authorization-and-auth](../patterns/authorization-and-auth.md).
 
+**A first visit is asked, not guessed for.** While the deployment serves more than one team, a page
+request from a visitor with no `ff.team` cookie and no session is redirected to `/team/choose`, which
+lists every team by club and hands the choice to `/team/set` with the page they asked for as the way
+back. It is a middleware in `Program.cs`, ahead of the stamping one, and it only fires on a Razor
+component endpoint — never an asset, an endpoint or a calendar feed — and never on the pages
+`Routing.SkipsTeamChoice` names. The stamping middleware skips `/team/choose` itself: stamping the
+fallback team there would answer the question before the visitor had. With one team nothing asks, and
+the app looks exactly as it did before teams existed. A team link `/team/{id}` sets the cookie, so
+parents arriving through one never see the question.
+
 `DeleteTeamAsync` still refuses the lowest-id team, because that is what every visitor who has chosen
 nothing falls back to — and it refuses a team accounts are still on, which the `Restrict` FK would
 otherwise report as a raw `DbUpdateException`.
