@@ -5,21 +5,26 @@ using Microsoft.AspNetCore.Authentication;
 
 namespace FootballFormation.Web.Security;
 
-/// The Admin role an account signed in with means admin of its own team, but every AuthorizeView and [Authorize(Roles)] reads the role
-/// alone — so an admin looking at another team was shown that team's admin pages and controls. Dropped here, per request, while the team
-/// in scope is not the account's, so the render tree asks the same question TeamAuthority answers for the services.
+/// Drops the Admin role while the team in scope is not the account's own, so AuthorizeView and [Authorize(Roles)] agree with TeamAuthority.
 public sealed class TeamScopedAdminRole(ICurrentTeam currentTeam) : IClaimsTransformation
 {
-    public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
+    public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal) =>
+        For(principal, await currentTeam.GetIdAsync());
+
+    /// Either way round: a circuit hands back the role a request on another team took away. See RevalidatingUserAuthenticationStateProvider.
+    public static ClaimsPrincipal For(ClaimsPrincipal principal, int? teamId)
     {
-        if (!principal.IsAdmin() || principal.IsApplicationAdmin()) return principal;
+        var isAdmin = principal.IsAdmin();
+        if (!isAdmin && !principal.HasClaim(AppClaims.AdminElsewhere, "true")) return principal;
+        if (principal.IsApplicationAdmin()) return principal;
 
-        if (TeamAuthority.GrantsAdminOf(false, principal.AdminTeamId(), await currentTeam.GetIdAsync())) return principal;
+        var grants = TeamAuthority.GrantsAdminOf(false, principal.AdminTeamId(), teamId);
+        if (grants == isAdmin) return principal;
 
-        var identity = new ClaimsIdentity(
-            principal.Claims.Where(c => !(c.Type == ClaimTypes.Role && c.Value == AppRoles.Admin)),
-            principal.Identity?.AuthenticationType);
+        var claims = principal.Claims
+            .Where(c => !(c.Type == ClaimTypes.Role && c.Value == AppRoles.Admin) && c.Type != AppClaims.AdminElsewhere)
+            .Append(grants ? new Claim(ClaimTypes.Role, AppRoles.Admin) : new Claim(AppClaims.AdminElsewhere, "true"));
 
-        return new ClaimsPrincipal(identity);
+        return new ClaimsPrincipal(new ClaimsIdentity(claims, principal.Identity?.AuthenticationType));
     }
 }

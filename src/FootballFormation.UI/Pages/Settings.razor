@@ -10,7 +10,8 @@
 
 <PageHeader Class="mb-6" Title="@L["Settings"]" Subtitle="@Subtitle" />
 
-<AuthorizeView Roles="@AppRoles.Admin" Context="admin">
+@* Any session, not the Admin role: an admin looking at another team has it dropped, and still owns a password. *@
+<AuthorizeView Context="account">
     @if (_mustChangePassword)
     {
         <MudAlert Severity="Severity.Warning" Class="mb-6" Style="max-width: 500px;">
@@ -172,7 +173,10 @@
             }
         </MudPaper>
     </section>
+    </Authorized>
+</AuthorizeView>
 
+<AuthorizeView Context="account">
     <section class="settings-section">
         <h2 class="settings-section-title">@L["Account"]</h2>
 
@@ -193,7 +197,6 @@
             </MudButton>
         </MudPaper>
     </section>
-    </Authorized>
 </AuthorizeView>
 
 @* Last, and not only because a follower's section belongs under the admin's: whether it renders at all is the browser's answer, which

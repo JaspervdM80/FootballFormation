@@ -104,9 +104,10 @@ public class UserService(
             return Result.Success(users);
         });
 
-    /// The account /dev/login signs in as — the seeded "admin" if present, otherwise the lowest-numbered admin, so adding a user never
-    /// changes who it picks. Hands back the whole entity, not the list projection, because the principal it mints carries the stamp.
-    public async Task<AppUser?> FindDevLoginAdminAsync(CancellationToken cancellationToken = default)
+    /// The account /dev/login signs in as — the admin named <paramref name="username"/>, else the seeded "admin" if present, otherwise the
+    /// lowest-numbered admin, so adding a user never changes who it picks. Hands back the whole entity, because the principal it mints
+    /// carries the stamp.
+    public async Task<AppUser?> FindDevLoginAdminAsync(string? username = null, CancellationToken cancellationToken = default)
     {
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
@@ -114,6 +115,8 @@ public class UserService(
             .AsNoTracking()
             .Where(u => u.Role == UserRole.Admin || u.Role == UserRole.ApplicationAdmin)
             .ToListAsync(cancellationToken);
+
+        if (username is not null) return admins.FirstOrDefault(u => u.Username == username);
 
         return admins.FirstOrDefault(u => u.Username == "admin") ?? admins.OrderBy(u => u.Id).FirstOrDefault();
     }

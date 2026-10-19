@@ -59,5 +59,9 @@
   Users pages — with every write refused at the service. `TeamScopedAdminRole` now drops the claim
   per request on any team but the account's own. Anything that needs the account's standing role
   regardless of the team in view has to read `AppClaims.TeamId` and the user record, not
-  `IsInRole`. See [one-deployment-many-teams](../patterns/one-deployment-many-teams.md).
+  `IsInRole` — the own-password form on `/settings` is behind a plain `AuthorizeView` for this
+  reason, or an account still on its seeded password that opened a parent's team link was held on
+  `/settings` with no form to leave by. And a circuit rejoining after another tab switched team was
+  handed the reconnecting request's principal, so its own team's controls vanished mid-match; the
+  circuit's provider now re-scopes it. See [one-deployment-many-teams](../patterns/one-deployment-many-teams.md).
 

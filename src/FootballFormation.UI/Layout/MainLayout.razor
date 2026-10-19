@@ -11,12 +11,12 @@
     <input type="checkbox" id="nav-drawer" class="nav-drawer-toggle" aria-label="@L["Menu"]" />
 
     <MudAppBar Elevation="0" Fixed="true" Dense="true" Style="background: var(--gradient-appbar); border-bottom: 1px solid color-mix(in srgb, var(--ink) 5%, transparent); padding-top: env(safe-area-inset-top, 0px);">
-        <label for="nav-drawer" class="nav-hamburger" aria-hidden="true">
-            <MudIcon Icon="@Icons.Material.Filled.Menu" />
-        </label>
-        @* Before a team is chosen there is none to name, only the fallback the question is there to avoid. *@
+        @* Before a team is chosen there is none to name, only the fallback the question is there to avoid — in the bar or the drawer. *@
         @if (!ChoosingTeam)
         {
+            <label for="nav-drawer" class="nav-hamburger" aria-hidden="true">
+                <MudIcon Icon="@Icons.Material.Filled.Menu" />
+            </label>
             @* The title is the home link — which is why the menu has no Start item, in either rendering *@
             <a href="@AppRoutes.Home" class="app-title-link ml-2 mr-8" aria-label="@L["Start"]">
                 <img class="app-title-logo" src="@Team.LogoUrl" alt="" />
@@ -56,22 +56,25 @@
         </AuthorizeView>
     </MudAppBar>
 
-    @* Dismisses the drawer by tapping outside it — the label is the checkbox's second control. *@
-    <label for="nav-drawer" class="drawer-scrim" aria-hidden="true"></label>
+    @if (!ChoosingTeam)
+    {
+        @* Dismisses the drawer by tapping outside it — the label is the checkbox's second control. *@
+        <label for="nav-drawer" class="drawer-scrim" aria-hidden="true"></label>
 
-    <aside class="app-drawer" style="padding-top: env(safe-area-inset-top, 0px);">
-        <a href="@AppRoutes.Home" class="app-title-link pa-4" aria-label="@L["Start"]">
-            <img class="app-title-logo" src="@Team.LogoUrl" alt="" />
-            <span class="app-title-text">@Team.DisplayName</span>
-        </a>
-        <TeamPicker />
-        <div class="drawer-picker">
-            <SeasonPicker />
-        </div>
-        <MudNavMenu>
-            <NavItems ShowIcons="true" />
-        </MudNavMenu>
-    </aside>
+        <aside class="app-drawer" style="padding-top: env(safe-area-inset-top, 0px);">
+            <a href="@AppRoutes.Home" class="app-title-link pa-4" aria-label="@L["Start"]">
+                <img class="app-title-logo" src="@Team.LogoUrl" alt="" />
+                <span class="app-title-text">@Team.DisplayName</span>
+            </a>
+            <TeamPicker />
+            <div class="drawer-picker">
+                <SeasonPicker />
+            </div>
+            <MudNavMenu>
+                <NavItems ShowIcons="true" />
+            </MudNavMenu>
+        </aside>
+    }
 
     @* A clamp rather than a flat 24px, which left a 320px phone only 272px of content. The safe-area insets matter too: viewport-fit=cover
        means landscape on a notched phone would otherwise run content under the notch. *@

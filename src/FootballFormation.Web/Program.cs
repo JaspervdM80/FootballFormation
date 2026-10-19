@@ -150,6 +150,7 @@ try
             new RevalidatingUserAuthenticationStateProvider(
                 sp.GetRequiredService<ILoggerFactory>(),
                 sp.GetRequiredService<IServiceScopeFactory>(),
+                sp.GetRequiredService<ICurrentTeam>(),
                 revalidationInterval));
 
     builder.Services.AddSingleton<KeepAliveTracker>();

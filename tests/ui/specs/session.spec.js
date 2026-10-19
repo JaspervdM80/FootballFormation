@@ -7,13 +7,9 @@
 import { test, expect } from '../fixtures.js';
 import { BASE_URL, VISITOR_STATE } from '../playwright.config.js';
 import { ADMIN_PASSWORD, ADMIN_USERNAME } from '../global-setup.js';
-import { clickFor, confirmDialog, fillField, goto, openDialog, settle, submitDialog } from '../helpers.js';
+import { addAdmin, clickFor, confirmDialog, goto, settle, userRow } from '../helpers.js';
 
 const AUTH_COOKIE = 'ff.auth';
-
-/** One account's row in the users table. */
-const userRow = (page, username) =>
-  page.locator('.users-table .mud-table-body .mud-table-row', { hasText: username }).first();
 
 /**
  * Signs in through the form a person actually uses — /dev/login mints the same principal, but only
@@ -79,30 +75,6 @@ test.describe('an admin who is already signed in', () => {
       .toBeVisible();
   });
 });
-
-/** Creates an admin account through the real dialog and returns what it can sign in with. */
-async function addAdmin(page, name) {
-  // Named per attempt, not per test: Playwright's CI retry re-runs this against the database the
-  // failed attempt left behind, and a username is unique — a fixed one would fail the retry on
-  // "already exists" rather than on whatever went wrong. See docs/known_issues/authentication.md.
-  const username = `${name}-${Date.now()}`;
-  const password = `${name}-admin-1`;
-
-  await goto(page, '/users');
-  await clickFor(
-    page.getByRole('button', { name: 'Add User' }),
-    () => expect(page.locator('.mud-dialog')).toBeVisible());
-
-  const dialog = await openDialog(page);
-  await fillField(dialog, 'Name', `${name} admin`);
-  await fillField(dialog, 'Username', username);
-  await dialog.getByLabel('Password', { exact: false }).first().fill(password);
-  await dialog.getByLabel('Confirm password', { exact: false }).first().fill(password);
-  await submitDialog(page);
-  await expect(userRow(page, username)).toBeVisible();
-
-  return { username, password };
-}
 
 // The circuit half of revocation. A Blazor Server tab makes almost no HTTP requests after its first
 // page load, so `OnValidatePrincipal` — which runs per request — is not what takes authority away

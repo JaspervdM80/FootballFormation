@@ -45,6 +45,9 @@ async function visit(width, asAdmin) {
   const context = await browser.newContext({ viewport: WIDTHS[width] });
   const page = await context.newPage();
   if (asAdmin) await signInAsAdmin(page, BASE, { changeSeededPassword: FRESH });
+  // With two teams a visitor with no team cookie is sent to /team/choose from every page, which leaves no visitor page to compare.
+  // /login never asks and stamps the fallback team, the same one the admin's session falls back to.
+  else await goto(page, `${BASE}/login`);
 
   const cells = [];
   for (const route of routes) {
@@ -100,7 +103,8 @@ for (const cell of cells) {
   console.log(`${cell.route.padEnd(22)} ${cell.width.padEnd(8)} ${cell.who.padEnd(8)} ${redirected.padEnd(12)} ${notes.join('; ') || 'ok'}`);
 
   const turnedAway = cell.who === 'admin' && cell.landed.startsWith('/login') && !cell.route.startsWith('/login');
-  if (notes.length || turnedAway) problems.push(cell);
+  const askedForTeam = cell.landed === '/team/choose' && cell.route !== '/team/choose';
+  if (notes.length || turnedAway || askedForTeam) problems.push(cell);
 }
 
 // What only an admin is shown — the list to read for anything that should not be there, or should be. The chrome's share is

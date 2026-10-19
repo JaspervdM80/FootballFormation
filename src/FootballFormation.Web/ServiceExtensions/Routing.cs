@@ -97,7 +97,7 @@ public static class Routing
 
             SelectOwnTeam(context, user);
 
-            return Results.Redirect(IsLocalUrl(returnUrl) ? returnUrl : "/");
+            return Results.Redirect(AppRoutes.IsLocal(returnUrl) ? returnUrl : "/");
         })
         .RequireRateLimiting("login");
 
@@ -122,13 +122,13 @@ public static class Routing
         // refuses non-loopback callers. Do NOT relax either. See docs/testing/ui-testing.md.
         if (app.Environment.IsDevelopment())
         {
-            app.MapGet("/dev/login", async (HttpContext context, UserService userService) =>
+            app.MapGet("/dev/login", async (HttpContext context, UserService userService, string? user) =>
             {
                 var remote = context.Connection.RemoteIpAddress;
                 if (remote is null || !IPAddress.IsLoopback(remote))
                     return Results.NotFound();
 
-                var admin = await userService.FindDevLoginAdminAsync(context.RequestAborted);
+                var admin = await userService.FindDevLoginAdminAsync(user, context.RequestAborted);
                 if (admin is null) return Results.NotFound();
 
                 await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, PrincipalFor(admin), PersistentSession());
@@ -352,15 +352,6 @@ public static class Routing
     /// Without IsPersistent the cookie carries no Expires, and a phone reclaiming a backgrounded tab drops it — a coach putting their
     /// phone away at half time. A new instance per sign-in, because the cookie handler stamps IssuedUtc onto the object it is handed.
     static AuthenticationProperties PersistentSession() => new() { IsPersistent = true };
-
-    static bool IsLocalUrl(string? url)
-    {
-        if (string.IsNullOrEmpty(url)) return false;
-        if (url.StartsWith("//") || url.StartsWith("/\\")) return false;
-        if (url.StartsWith('/')) return true;
-        return false;
-    }
-
 }
 
 /// What pushManager.subscribe() hands the browser, flattened. Every field is checked in PushSubscriptionService, not here.

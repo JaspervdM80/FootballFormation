@@ -162,9 +162,11 @@ Pages/
   SeasonDialog.razor(.cs)     — Dialog: season name, start date, end date
   Preferences.razor(.cs)      — /preferences — The per-season match defaults: duration, split,
                                 format, formation, match day (Admin only)
-  Settings.razor(.cs)(.css)   — /settings — Language and match notifications (everyone), and behind
-                                an AuthorizeView the season list, the training schedule and the
-                                own-password form
+  Settings.razor(.cs)(.css)   — /settings — Language and match notifications (everyone), the
+                                own-password form (any session), and behind an admin AuthorizeView
+                                the season list and the training schedule
+  ChooseTeam.razor(.cs)(.css) — /team/choose — No circuit: a first visit picks its team while there
+                                is more than one
   Users.razor(.cs)            — /users — Accounts: add, edit, reset password, delete (Admin only)
   UserDialog.razor(.cs)       — Dialog: name, login, role, password — also the reset-password form
                                 (PasswordOnly), since the fields are the same
@@ -308,7 +310,9 @@ Components/
 Security/
   RevalidatingUserAuthenticationStateProvider.cs
                           — Re-checks a circuit's principal on a timer and signs it out when the
-                            account is gone; the circuit-side half of OnValidatePrincipal
+                            account is gone; the circuit-side half of OnValidatePrincipal. Also
+                            scopes the Admin role to the circuit's own team on a rejoin
+  TeamScopedAdminRole.cs  — Drops the Admin role while the team in scope is not the account's own
 KeepAlive/
   KeepAliveTracker.cs     — Thread-safe timestamp of the last real request
   KeepAlivePingService.cs — Pings the public /health endpoint for 30 minutes after the last visitor,

@@ -138,9 +138,7 @@ public class TeamService(
             await db.SaveChangesAsync(cancellationToken);
 
             // Every page hangs off a current season, so a team opens on the one covering today; its match defaults seed on first read.
-            var season = Season.CreateFor(time.GetLocalNow().Date);
-            season.TeamId = created.Id;
-            season.IsCurrent = true;
+            var season = Season.FirstFor(created.Id, time.GetLocalNow().Date);
             db.Seasons.Add(season);
             await db.SaveChangesAsync(cancellationToken);
 
@@ -317,7 +315,7 @@ public class TeamService(
     private static string? Blank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     /// The crest renders into an img on every page for every visitor, so an absolute URL here would have the whole audience fetching a
-    /// third party. Same two prefixes Routing.IsLocalUrl refuses, for the same reason.
+    /// third party. Same two prefixes AppRoutes.IsLocal refuses, for the same reason.
     private static bool IsAppPath(string path) =>
         !path.StartsWith("//") && !path.StartsWith("/\\") && Uri.TryCreate(path, UriKind.Relative, out _);
 

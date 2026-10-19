@@ -12,7 +12,7 @@ public partial class ChooseTeam
     private List<(Club Club, List<Team> Teams)> _clubs = [];
 
     private string ReturnUrl =>
-        RedirectUri is { } uri && uri.StartsWith('/') && !uri.StartsWith("//")
+        RedirectUri is { } uri && AppRoutes.IsLocal(uri)
             && !uri.StartsWith(AppRoutes.ChooseTeam, StringComparison.OrdinalIgnoreCase)
             ? uri
             : AppRoutes.Home;

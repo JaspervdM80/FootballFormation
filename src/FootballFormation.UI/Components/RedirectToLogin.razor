@@ -3,7 +3,7 @@
 @code {
     [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
 
-    // Signed in but refused is an admin looking at a team they do not run (see TeamScopedAdminRole); signing in again would not help them.
+    // Signed in but refused (another team's admin, a team admin at /teams): signing in again would not help.
     protected override async Task OnInitializedAsync()
     {
         if (AuthState is not null && (await AuthState).User.Identity?.IsAuthenticated == true)

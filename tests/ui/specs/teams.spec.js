@@ -3,31 +3,16 @@
 // from one page view, which is why it needs a browser: break the cookie and the app still works, it
 // just quietly shows the wrong team, or forgets which one you picked.
 import { test, expect } from '../fixtures.js';
-import { clickFor, confirmDialog, fillField, goto, openDialog, submitDialog } from '../helpers.js';
+import {
+  SECOND_TEAM, addAdmin, clickFor, confirmDialog, dropAndRejoin, ensureSecondTeam, goto, settle, signInAs, teamRow,
+} from '../helpers.js';
 
 const COOKIE = 'ff.team';
 const A_YEAR = 365 * 24 * 60 * 60;
 
-const SECOND_TEAM = 'MO17-Uitest';
 const SEEDED_TEAM = 'GJS MO15-2';
 
-const teamRow = (page, name) => page.locator('.list-row', { hasText: name });
-
 const heading = (page, name) => page.getByRole('heading', { name, exact: false }).first();
-
-/** Adds the second team this file needs, unless a previous test in the file already did. */
-async function ensureSecondTeam(page) {
-  await goto(page, '/teams');
-  if (await teamRow(page, SECOND_TEAM).count() > 0) return;
-
-  await page.locator('.teams-head .action-add').click();
-  const dialog = await openDialog(page);
-  // The field is labelled "Team" — the dialog names the thing, not the property.
-  await fillField(dialog, 'Team', SECOND_TEAM);
-  await submitDialog(page);
-
-  await expect(teamRow(page, SECOND_TEAM)).toHaveCount(1);
-}
 
 /**
  * Switching team is a link to /team/set and a real page load, not a click to retry — pressing again
@@ -154,4 +139,66 @@ test('the team the app falls back to cannot be deleted, however many others ther
   await expect(page.locator('.mud-snackbar-content-message', { hasText: 'the team the app is showing' }))
     .toBeVisible();
   await expect(teamRow(page, 'MO15-2')).toHaveCount(1);
+});
+
+test('a first visit while there are two teams is asked which one, then sent on to where it was going', async ({ page, visitor }) => {
+  await ensureSecondTeam(page);
+  await visitor.context().clearCookies({ name: COOKIE });
+
+  await goto(visitor, '/games');
+  expect(new URL(visitor.url()).pathname).toBe('/team/choose');
+  // No team to name yet, so no drawer offering the fallback the question is there to avoid.
+  await expect(visitor.locator('label.nav-hamburger')).toHaveCount(0);
+
+  await visitor.locator('a.choose-team', { hasText: SECOND_TEAM }).click();
+  await visitor.waitForURL(url => url.pathname === '/games');
+  await settle(visitor);
+
+  await expect(appTitle(visitor)).toHaveText(`GJS ${SECOND_TEAM}`);
+  await expect(visitor.locator('label.nav-hamburger')).toHaveCount(1);
+});
+
+test('an admin of one team is shown another as a visitor is, and keeps their own password', async ({ page, visitor: theirPage }) => {
+  await ensureSecondTeam(page);
+  const { username } = await addAdmin(page, 'oneteam');
+  await signInAs(theirPage, username);
+
+  // Their own team first, so the absences below are the team's doing and not the account's.
+  const add = theirPage.getByRole('button', { name: 'Add', exact: true });
+  await goto(theirPage, '/games');
+  await expect(appTitle(theirPage)).toHaveText(SEEDED_TEAM);
+  await expect(add.first()).toBeVisible();
+
+  await pickTeamInDrawer(theirPage, SECOND_TEAM);
+  await theirPage.waitForURL(url => url.pathname === '/games');
+  await settle(theirPage);
+  await expect(appTitle(theirPage)).toHaveText(`GJS ${SECOND_TEAM}`);
+  await expect(add).toHaveCount(0);
+  await expect(theirPage.locator('.logout-btn')).toBeVisible();
+
+  // Home, not the login page: signing in again would change nothing.
+  await theirPage.goto('/trainings');
+  await theirPage.waitForURL(url => url.pathname === '/');
+  await settle(theirPage);
+
+  await goto(theirPage, '/settings');
+  await expect(theirPage.getByRole('button', { name: 'Change password', exact: false })).toBeVisible();
+  await expect(theirPage.getByRole('heading', { name: 'Season Settings', exact: true })).toHaveCount(0);
+});
+
+test('a circuit rejoining after another tab switched team still answers for its own team', async ({ page, visitor: theirPage }) => {
+  await ensureSecondTeam(page);
+  const link = await teamLink(page, SECOND_TEAM);
+  const { username } = await addAdmin(page, 'rejoin');
+  await signInAs(theirPage, username);
+
+  const add = theirPage.getByRole('button', { name: 'Add', exact: true });
+  await goto(theirPage, '/games');
+  await expect(add.first()).toBeVisible();
+
+  // The same browser opening a parent's link elsewhere: the cookie moves, and the rejoin is made with it.
+  await theirPage.request.get(new URL(link).pathname);
+  await dropAndRejoin(theirPage);
+
+  await clickFor(add.first(), () => expect(theirPage.locator('.mud-dialog')).toBeVisible());
 });

@@ -29,4 +29,7 @@ public static class AppClaims
     /// Changing the password rolls the security stamp, which invalidates the cookie carrying this claim — so it cannot outlive the
     /// condition it describes.
     public const string MustChangePassword = "must_change_password";
+
+    /// Stands in for the Admin role while an admin looks at a team that is not theirs, so a circuit can give the role back on its own team.
+    public const string AdminElsewhere = "admin_elsewhere";
 }

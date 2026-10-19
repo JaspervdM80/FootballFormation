@@ -50,7 +50,8 @@ lists every team by club and hands the choice to `/team/set` with the page they 
 back. It is a middleware in `Program.cs`, ahead of the stamping one, and it only fires on a Razor
 component endpoint — never an asset, an endpoint or a calendar feed — and never on the pages
 `Routing.SkipsTeamChoice` names. The stamping middleware skips `/team/choose` itself: stamping the
-fallback team there would answer the question before the visitor had. With one team nothing asks, and
+fallback team there would answer the question before the visitor had, and for the same reason
+`MainLayout` leaves the team's name, the nav and the whole drawer off that page. With one team nothing asks, and
 the app looks exactly as it did before teams existed. A team link `/team/{id}` sets the cookie, so
 parents arriving through one never see the question.
 
@@ -58,7 +59,7 @@ parents arriving through one never see the question.
 nothing falls back to — and it refuses a team accounts are still on, which the `Restrict` FK would
 otherwise report as a raw `DbUpdateException`.
 
-`CreateTeamAsync` opens a new team on a current season covering today (`Season.CreateFor`), in the
+`CreateTeamAsync` opens a new team on a current season covering today (`Season.FirstFor`), in the
 same transaction, so its admin lands on a working app rather than on pages with no season to hang off;
 its match defaults are the model's own, seeded on first read like any season's. Because `Season → Team`
 is `Restrict` too, `DeleteTeamAsync` takes a team's seasons and preferences with it **only while they

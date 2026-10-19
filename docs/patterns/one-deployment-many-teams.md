@@ -33,8 +33,13 @@ one container, one volume and one migration, and moves the cost into code, where
 ## How a visitor reaches their team
 
 The team in scope is a view choice in the `ff.team` cookie, never authority — see
-[clubs-and-teams](../ui_components/clubs-and-teams.md). A visitor who has chosen nothing gets the
-lowest-numbered team, which is the app exactly as it looked before there was a second team.
+[clubs-and-teams](../ui_components/clubs-and-teams.md). With one team, a visitor who has chosen
+nothing gets it, which is the app exactly as it looked before there was a second team.
+
+- **A first visit is asked.** While there is more than one team, a page request with no `ff.team`
+  cookie and no session is sent to `/team/choose`, which lists every team by club and hands the
+  choice to `/team/set` with the page asked for as the way back. Nothing is guessed for them, and the
+  bar and the drawer name no team until they choose.
 
 - **The team link**, `/team/{id}` (`AppRoutes.TeamLink`), is what a team hands its parents. It
   writes the cookie and opens the start page; an id that names no team answers 404, so a stale link
@@ -60,8 +65,15 @@ is a visitor with a sign-out button. `TeamScopedAdminRole`, an `IClaimsTransform
 `Admin` role claim on every request whose team in scope is not the account's own, by the same
 `TeamAuthority` rule the services use — so every `AuthorizeView`, every `[Authorize(Roles)]` route
 and the drawer's admin entries follow it without each one being told. An application admin keeps the
-role everywhere. A circuit inherits the principal of the `/_blazor` request, which carries the same
-`ff.team` cookie, and switching team is a full page load, so the two never disagree.
+role everywhere.
+
+A circuit is judged against its own team, not the request's. It keeps the team it resolved when it
+started, but a rejoin after a phone suspends hands it the principal of the *reconnecting* request,
+transformed against whatever `ff.team` says by then — another tab may have moved it. So the circuit's
+`RevalidatingUserAuthenticationStateProvider` runs every principal it is handed back through
+`TeamScopedAdminRole.For` with the circuit's team: a dropped role carries `AppClaims.AdminElsewhere`
+in its place, so it can be given back. Without that, a coach's live screen lost its controls on
+rejoin, and every goal was refused until a reload.
 
 A refused route sends a signed-in session to `/` rather than the login page — the cookie handler's
 `AccessDeniedPath`, and `RedirectToLogin` inside the router — because signing in again would not
