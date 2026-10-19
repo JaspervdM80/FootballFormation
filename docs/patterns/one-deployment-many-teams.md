@@ -56,11 +56,17 @@ first.
 ## An admin can look at a team they do not run
 
 The picker and the team link are open to everyone, team admins included. On another team an admin
-sees every edit button — `AuthorizeView` asks about the role, not the team — and every write is
-refused at the service, which is the guard that holds. It is the state signing in steers away from
-(`Routing.SelectOwnTeam`), and it is accepted here rather than hidden: the picker is also the way
-back, and keying the chrome off team authority instead of the role would touch every
-`AuthorizeView` in the app. See [authentication](../known_issues/authentication.md).
+is a visitor with a sign-out button. `TeamScopedAdminRole`, an `IClaimsTransformation`, drops the
+`Admin` role claim on every request whose team in scope is not the account's own, by the same
+`TeamAuthority` rule the services use — so every `AuthorizeView`, every `[Authorize(Roles)]` route
+and the drawer's admin entries follow it without each one being told. An application admin keeps the
+role everywhere. A circuit inherits the principal of the `/_blazor` request, which carries the same
+`ff.team` cookie, and switching team is a full page load, so the two never disagree.
+
+A refused route sends a signed-in session to `/` rather than the login page — the cookie handler's
+`AccessDeniedPath`, and `RedirectToLogin` inside the router — because signing in again would not
+make them an admin of this team. The service guard still stands on its own behind all of this. See
+[authentication](../known_issues/authentication.md).
 
 ## A second deployment is still possible
 

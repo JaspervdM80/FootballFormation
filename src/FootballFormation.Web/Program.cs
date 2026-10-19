@@ -110,6 +110,8 @@ try
         {
             options.LoginPath = "/login";
             options.LogoutPath = "/auth/logout";
+            // Signed in but refused: an admin looking at a team they do not run, or a team admin at /teams. See TeamScopedAdminRole.
+            options.AccessDeniedPath = "/";
 
             options.ExpireTimeSpan = TimeSpan.FromDays(14);
             options.SlidingExpiration = true;
@@ -135,6 +137,7 @@ try
             };
         });
     builder.Services.AddAuthorization();
+    builder.Services.AddScoped<IClaimsTransformation, TeamScopedAdminRole>();
     builder.Services.AddCascadingAuthenticationState();
 
     // Must be registered after AddInteractiveServerComponents to beat the stock provider, which reads the principal once per circuit and

@@ -40,9 +40,10 @@ Two columns, but authorization has more states than that:
 
 - **Application admin** — `ApplicationAdmin` implies `Admin`, and adds `/teams` and the Teams entry
   in the drawer's Administration group. A change there needs both kinds of admin checked.
-- **An admin looking at a team they do not run** — every button renders (the role claim is `Admin`),
-  and every write is refused at the service. Signing in selects the account's own team to keep
-  this rare; it is reachable through `/team/set`.
+- **An admin looking at a team they do not run** — sees what a visitor sees, with sign-out kept:
+  `TeamScopedAdminRole` drops the `Admin` role per request while the team in scope is not theirs,
+  and an admin-only route sends them to `/`. The service still refuses the write on its own.
+  Reachable through `/team/set`.
 - **An account still on its seeded password** — it can sign in and is pinned to `/settings` until
   the password changes.
 

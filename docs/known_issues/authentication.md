@@ -53,11 +53,11 @@
   to force the give-up path and leaving it open for a clean rejoin; both reloaded, while
   `reconnect.spec.js` shows a *valid* cookie rejoining cleanly and staying live. So the stale window
   is the revalidation interval on a connected idle circuit, and nothing more.
-- **An admin's buttons that do nothing are a team admin looking at another team.** `AuthorizeView
-  Roles="@AppRoles.Admin"` checks the role claim, and an admin of MO15-2 carries it on every team, so
-  after switching through the drawer's team picker or a team link they see every edit, delete and
-  Trainings control — and every write comes back refused. That is the service guard holding, not a
-  broken session: `ICurrentUser.IsAdminAsync()` asks about the team in scope. Switching back in the
-  drawer, or signing in again (`Routing.SelectOwnTeam`), puts them on their own team. Why it is
-  accepted rather than hidden: [one-deployment-many-teams](../patterns/one-deployment-many-teams.md).
+- **The `Admin` role claim is not the whole answer to "is this an admin here".** It is minted at
+  sign-in and says nothing about which team, so while the render tree read it alone an admin of
+  MO17-1 who switched to MO15-2 was shown that team's edit controls, its Trainings, Preferences and
+  Users pages — with every write refused at the service. `TeamScopedAdminRole` now drops the claim
+  per request on any team but the account's own. Anything that needs the account's standing role
+  regardless of the team in view has to read `AppClaims.TeamId` and the user record, not
+  `IsInRole`. See [one-deployment-many-teams](../patterns/one-deployment-many-teams.md).
 

@@ -31,10 +31,14 @@
         {
             <SeasonPicker Compact="true" />
         }
-        <AuthorizeView Roles="@AppRoles.Admin">
+        @* Any session, not the Admin role: looking at another team drops the role (TeamScopedAdminRole), and the way out must stay. *@
+        <AuthorizeView>
             <Authorized>
                 <div class="d-flex align-center gap-2">
-                    <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Size="Size.Small" Style="color: var(--club-primary-bright);" />
+                    @if (context.User.IsAdmin())
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Size="Size.Small" Style="color: var(--club-primary-bright);" />
+                    }
                     <MudText Typo="Typo.body2" Class="admin-name" Style="color: var(--ink-muted);">@context.User.DisplayName()</MudText>
                     <form method="post" action="/auth/logout" data-enhance="false" style="margin: 0;">
                         <AntiforgeryToken />
