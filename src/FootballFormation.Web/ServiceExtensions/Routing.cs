@@ -300,7 +300,8 @@ public static class Routing
             calendar.TeamFullName,
             calendar.Games,
             game => MatchInfoTextBuilder.Build(game, calendar.TeamFullName, localizer),
-            game => origin + AppRoutes.Overview(game.Id),
+            // Through /team/set: a calendar app opens a browser with no ff.team cookie, which the chooser would ask, and could answer wrong.
+            game => origin + AppRoutes.SetTeam(game.TeamId, AppRoutes.Overview(game.Id)),
             time.GetUtcNow().UtcDateTime);
 
         return Results.File(Encoding.UTF8.GetBytes(ics), "text/calendar; charset=utf-8", fileName);

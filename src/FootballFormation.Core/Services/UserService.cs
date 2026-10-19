@@ -104,9 +104,8 @@ public class UserService(
             return Result.Success(users);
         });
 
-    /// The account /dev/login signs in as — the admin named <paramref name="username"/>, else the seeded "admin" if present, otherwise the
-    /// lowest-numbered admin, so adding a user never changes who it picks. Hands back the whole entity, because the principal it mints
-    /// carries the stamp.
+    /// The account /dev/login signs in as: the admin named, else the seeded "admin", else the lowest-numbered, so adding a user never
+    /// changes who it picks. The whole entity, because the principal it mints carries the stamp.
     public async Task<AppUser?> FindDevLoginAdminAsync(string? username = null, CancellationToken cancellationToken = default)
     {
         await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);

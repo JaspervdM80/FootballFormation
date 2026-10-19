@@ -71,7 +71,6 @@ public sealed record ClubTheme
         CornerRadius = "12px"
     };
 
-
     /// Every theme a club can be put on. Adding one is a code change by design — see the type comment.
     public static readonly IReadOnlyList<ClubTheme> All = [Gjs];
 

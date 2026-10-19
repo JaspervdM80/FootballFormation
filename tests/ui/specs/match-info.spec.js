@@ -92,6 +92,8 @@ test('a visitor reads the arrangements on the overview, and takes them to a cale
   expect(body).toMatch(/DTSTART;TZID=Europe\/Amsterdam:\d{8}T104500/);
   expect(body).toContain('SUMMARY:FC Agenda – GJS MO15-2');
   expect(body).toContain('LOCATION:Sportpark De Agenda\\, Gorinchem');
+  // Through the game's own team: a calendar app opens a browser that may never have chosen one. Unfolded first, as a reader would.
+  expect(body.replace(/\r\n /g, '')).toMatch(new RegExp(`\\r\\nURL:https?://[^\\r]+/team/set\\?team=\\d+&redirectUri=%2Fgames%2F${id}%2Foverview\\r\\n`));
 });
 
 test('the time fields settle on a 24-hour clock, whatever language the browser is in', async ({ page }) => {

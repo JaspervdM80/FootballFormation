@@ -4,15 +4,32 @@
 // just quietly shows the wrong team, or forgets which one you picked.
 import { test, expect } from '../fixtures.js';
 import {
-  SECOND_TEAM, addAdmin, clickFor, confirmDialog, dropAndRejoin, ensureSecondTeam, goto, settle, signInAs, teamRow,
+  addAdmin, clickFor, confirmDialog, dropAndRejoin, fillField, goto, openDialog, settle, signInAs, submitDialog,
 } from '../helpers.js';
 
 const COOKIE = 'ff.team';
 const A_YEAR = 365 * 24 * 60 * 60;
 
+const SECOND_TEAM = 'MO17-Uitest';
 const SEEDED_TEAM = 'GJS MO15-2';
 
+const teamRow = (page, name) => page.locator('.list-row', { hasText: name });
+
 const heading = (page, name) => page.getByRole('heading', { name, exact: false }).first();
+
+/** Adds the second team this file needs, unless a previous test in the file already did. */
+async function ensureSecondTeam(page) {
+  await goto(page, '/teams');
+  if (await teamRow(page, SECOND_TEAM).count() > 0) return;
+
+  await page.locator('.teams-head .action-add').click();
+  const dialog = await openDialog(page);
+  // The field is labelled "Team" — the dialog names the thing, not the property.
+  await fillField(dialog, 'Team', SECOND_TEAM);
+  await submitDialog(page);
+
+  await expect(teamRow(page, SECOND_TEAM)).toHaveCount(1);
+}
 
 /**
  * Switching team is a link to /team/set and a real page load, not a click to retry — pressing again

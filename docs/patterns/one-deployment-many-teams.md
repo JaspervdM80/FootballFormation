@@ -39,7 +39,9 @@ nothing gets it, which is the app exactly as it looked before there was a second
 - **A first visit is asked.** While there is more than one team, a page request with no `ff.team`
   cookie and no session is sent to `/team/choose`, which lists every team by club and hands the
   choice to `/team/set` with the page asked for as the way back. Nothing is guessed for them, and the
-  bar and the drawer name no team until they choose.
+  bar and the drawer name no team until they choose. A calendar event's link goes through `/team/set`
+  with its game's team, because a calendar app opens a browser that may never have chosen — and a
+  wrong answer there opens the match as not found.
 
 - **The team link**, `/team/{id}` (`AppRoutes.TeamLink`), is what a team hands its parents. It
   writes the cookie and opens the start page; an id that names no team answers 404, so a stale link

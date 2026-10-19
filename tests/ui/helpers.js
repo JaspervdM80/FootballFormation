@@ -532,24 +532,6 @@ export async function addAdmin(page, name) {
   return { username, password };
 }
 
-export const SECOND_TEAM = 'MO17-Uitest';
-
-export const teamRow = (page, name) => page.locator('.list-row', { hasText: name });
-
-/** Adds a second team to the seeded club through /teams, unless a test before this one already did. `page` is the application admin. */
-export async function ensureSecondTeam(page) {
-  await goto(page, '/teams');
-  if (await teamRow(page, SECOND_TEAM).count() > 0) return;
-
-  await page.locator('.teams-head .action-add').click();
-  const dialog = await openDialog(page);
-  // The field is labelled "Team" — the dialog names the thing, not the property.
-  await fillField(dialog, 'Team', SECOND_TEAM);
-  await submitDialog(page);
-
-  await expect(teamRow(page, SECOND_TEAM)).toHaveCount(1);
-}
-
 export const MODAL = '#components-reconnect-modal';
 
 /**
