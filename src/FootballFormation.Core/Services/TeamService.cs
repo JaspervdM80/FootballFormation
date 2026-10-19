@@ -6,6 +6,7 @@ public class TeamService(
     IDbContextFactory<AppDbContext> dbFactory,
     ICurrentUser currentUser,
     ICurrentTeam currentTeam,
+    TimeProvider time,
     ILogger<TeamService> logger)
 {
     public Task<Result<List<Club>>> GetClubsAsync(CancellationToken cancellationToken = default) =>
@@ -131,11 +132,22 @@ public class TeamService(
 
             var created = new Team { ClubId = team.ClubId, Name = team.Name.Trim() };
 
+            await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
             db.Teams.Add(created);
             await db.SaveChangesAsync(cancellationToken);
 
-            logger.LogInformation("Created team {TeamName} for club {ClubId} (ID: {TeamId})",
-                created.Name, created.ClubId, created.Id);
+            // Every page hangs off a current season, so a team opens on the one covering today; its match defaults seed on first read.
+            var season = Season.CreateFor(time.GetLocalNow().Date);
+            season.TeamId = created.Id;
+            season.IsCurrent = true;
+            db.Seasons.Add(season);
+            await db.SaveChangesAsync(cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+
+            logger.LogInformation("Created team {TeamName} for club {ClubId} (ID: {TeamId}) with season {SeasonName}",
+                created.Name, created.ClubId, created.Id, season.Name);
             return Result.Success(created);
         });
 
@@ -185,6 +197,21 @@ public class TeamService(
                 return Result.Failure("Team {0} still has {1} accounts", team.Name, admins);
             }
 
+            // Past the filter, because the team being deleted is rarely the one in scope. Empty seasons go with it, or the one a new team
+            // opens on would make every team undeletable; a season holding games, trainings or a squad is a year of data and refuses.
+            var inUse = await db.Games.IgnoreQueryFilters().AnyAsync(g => g.TeamId == id, cancellationToken)
+                || await db.Trainings.IgnoreQueryFilters().AnyAsync(t => t.TeamId == id, cancellationToken)
+                || await db.SeasonSquadMembers.IgnoreQueryFilters().AnyAsync(m => m.TeamId == id, cancellationToken);
+            if (inUse)
+            {
+                logger.LogWarning("Cannot delete team {TeamName}: it still has games, trainings or players", team.Name);
+                return Result.Failure("Team {0} still has games, trainings or players", team.Name);
+            }
+
+            db.MatchPreferences.RemoveRange(
+                await db.MatchPreferences.IgnoreQueryFilters().Where(p => p.TeamId == id).ToListAsync(cancellationToken));
+            db.Seasons.RemoveRange(
+                await db.Seasons.IgnoreQueryFilters().Where(s => s.TeamId == id).ToListAsync(cancellationToken));
             db.Teams.Remove(team);
             await db.SaveChangesAsync(cancellationToken);
 

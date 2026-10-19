@@ -86,13 +86,13 @@
                 @foreach (var team in _clubTeams)
                 {
                     <div class="list-row">
-                        <span class="list-row-name">
-                            @team.Name
+                        <div class="list-row-info">
+                            <span class="list-row-name team-name">@team.Name</span>
                             @if (team.Id == _currentTeamId)
                             {
-                                <span class="badge-teal">@L["Selected"]</span>
+                                <span class="badge-teal team-selected">@L["Selected"]</span>
                             }
-                        </span>
+                        </div>
                         <div class="list-row-actions">
                             @if (team.Id != _currentTeamId)
                             {

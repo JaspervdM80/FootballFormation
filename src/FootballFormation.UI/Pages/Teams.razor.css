@@ -39,3 +39,15 @@
     color: var(--ink-muted);
     padding: 12px 0;
 }
+
+/* Beside four 44px actions on a phone the name had a third of the row, and broke at its hyphen. */
+.team-name {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.team-selected {
+    align-self: flex-start;
+}

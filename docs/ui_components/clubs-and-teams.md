@@ -48,6 +48,13 @@ because it is a view choice and not authority — what an account may *change* c
 nothing falls back to — and it refuses a team accounts are still on, which the `Restrict` FK would
 otherwise report as a raw `DbUpdateException`.
 
+`CreateTeamAsync` opens a new team on a current season covering today (`Season.CreateFor`), in the
+same transaction, so its admin lands on a working app rather than on pages with no season to hang off;
+its match defaults are the model's own, seeded on first read like any season's. Because `Season → Team`
+is `Restrict` too, `DeleteTeamAsync` takes a team's seasons and preferences with it **only while they
+hold nothing** — a game, a training or a squad member anywhere in the team refuses the delete with a
+readable message instead.
+
 The selection is resolved, not stored: `_selectedClubId` is a component field, so it holds across the
 page's own `Reload()` after a write and is gone on a browser reload, which starts again from the club
 of the team the app is showing and then the first club. That is deliberate — a cookie or a route

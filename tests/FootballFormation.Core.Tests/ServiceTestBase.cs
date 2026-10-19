@@ -44,7 +44,7 @@ public abstract class ServiceTestBase : IDisposable
         Subs = new MatchSubstitutionService(DbFactory, Notifier, CurrentTeam, Time, CurrentUser, NullLogger<MatchSubstitutionService>.Instance);
 
         Users = new UserService(DbFactory, CurrentUser, CurrentTeam, NullLogger<UserService>.Instance);
-        TeamsAndClubs = new TeamService(DbFactory, CurrentUser, CurrentTeam, NullLogger<TeamService>.Instance);
+        TeamsAndClubs = new TeamService(DbFactory, CurrentUser, CurrentTeam, Time, NullLogger<TeamService>.Instance);
 
         Stats = new StatsService(Games, Squads, Trainings, CurrentTeam, Time, StatsCache, NullLogger<StatsService>.Instance);
     }
