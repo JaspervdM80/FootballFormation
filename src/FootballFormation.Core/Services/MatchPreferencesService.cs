@@ -58,6 +58,7 @@ public class MatchPreferencesService(
             stored.DefaultSplitType = prefs.DefaultSplitType;
             stored.DefaultFormation = prefs.DefaultFormation;
             stored.MatchDay = prefs.MatchDay;
+            stored.DefaultsConfirmed = true;
 
             await db.SaveChangesAsync(cancellationToken);
 

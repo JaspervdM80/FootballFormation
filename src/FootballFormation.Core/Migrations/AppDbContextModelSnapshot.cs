@@ -15,7 +15,7 @@ namespace FootballFormation.Core.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
 
             modelBuilder.Entity("FootballFormation.Core.Models.AppUser", b =>
                 {
@@ -471,6 +471,9 @@ namespace FootballFormation.Core.Migrations
                     b.Property<int>("DefaultSplitType")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("DefaultsConfirmed")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime?>("FirstTrainingDate")
                         .HasColumnType("TEXT");
 
@@ -663,6 +666,9 @@ namespace FootballFormation.Core.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("SetupChecklistHidden")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 

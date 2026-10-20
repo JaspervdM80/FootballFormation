@@ -28,6 +28,7 @@ public static class CoreServiceRegistration
         services.AddScoped<MatchPreferencesService>();
         services.AddScoped<UserService>();
         services.AddScoped<TeamService>();
+        services.AddScoped<TeamSetupService>();
         services.AddScoped<StatsService>();
         services.AddScoped<PushSubscriptionService>();
 

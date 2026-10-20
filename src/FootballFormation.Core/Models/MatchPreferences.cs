@@ -18,6 +18,9 @@ public class MatchPreferences
     public FormationType DefaultFormation { get; set; } = FormationType.F442;
     public DayOfWeek MatchDay { get; set; } = DayOfWeek.Saturday;
 
+    /// False on a row seeded from the hardcoded defaults until an admin saves the match defaults, since the row's existence proves nothing.
+    public bool DefaultsConfirmed { get; set; }
+
     /// Empty until an admin picks them, which is what makes the next-training date fall back to today rather than to a guessed weekday.
     public List<DayOfWeek> TrainingDays { get; set; } = [];
 
@@ -36,6 +39,7 @@ public class MatchPreferences
         DefaultSplitType = DefaultSplitType,
         DefaultFormation = DefaultFormation,
         MatchDay = MatchDay,
+        DefaultsConfirmed = DefaultsConfirmed,
         TrainingDays = [.. TrainingDays]
     };
 }

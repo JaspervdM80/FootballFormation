@@ -1,0 +1,164 @@
+.setup-checklist {
+    margin-bottom: 20px;
+    padding: 14px 12px 8px 16px;
+    border-radius: 12px;
+    background: var(--surface-card);
+    border: 1px solid color-mix(in srgb, var(--club-primary-bright) 35%, transparent);
+}
+
+.setup-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.setup-head-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.setup-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.setup-progress {
+    font-size: 0.82rem;
+    color: var(--ink-muted);
+}
+
+.setup-dismiss,
+.setup-hide,
+.setup-share-button {
+    font: inherit;
+    border: none;
+    cursor: pointer;
+}
+
+.setup-dismiss {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    margin: -8px -4px 0 0;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--ink-muted);
+    background: transparent;
+}
+
+.setup-steps {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+}
+
+.setup-step,
+.setup-share {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 56px;
+    padding: 8px 4px;
+}
+
+.setup-step {
+    color: var(--ink);
+    text-decoration: none;
+    border-radius: 8px;
+}
+
+.setup-steps li + li .setup-step,
+.setup-share {
+    border-top: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.setup-step-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.setup-step-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.setup-step-body {
+    font-size: 0.82rem;
+    line-height: 1.35;
+    color: var(--ink-muted);
+}
+
+.setup-step-done .setup-step-title {
+    font-weight: 500;
+    color: var(--ink-muted);
+}
+
+.setup-share-button {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 14px;
+    border-radius: 22px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--club-primary-bright);
+    background: color-mix(in srgb, var(--club-primary-bright) 10%, transparent);
+}
+
+.setup-hide {
+    display: block;
+    min-height: 44px;
+    margin: 4px 0 0 auto;
+    padding: 0 8px;
+    color: var(--ink-muted);
+    background: transparent;
+    text-decoration: underline;
+}
+
+.setup-step:focus-visible,
+.setup-dismiss:focus-visible,
+.setup-hide:focus-visible,
+.setup-share-button:focus-visible {
+    outline: 2px solid var(--club-primary-bright);
+    outline-offset: 2px;
+}
+
+@media (hover: hover) {
+    .setup-step:hover,
+    .setup-dismiss:hover {
+        background: color-mix(in srgb, var(--ink) 5%, transparent);
+    }
+
+    .setup-share-button:hover {
+        background: color-mix(in srgb, var(--club-primary-bright) 16%, transparent);
+    }
+}
+
+.setup-share {
+    flex-wrap: wrap;
+}
+
+.setup-share .setup-step-text {
+    min-width: 14rem;
+}
+
+.setup-checklist ::deep .setup-step-mark {
+    flex: none;
+    color: var(--ink-faint);
+}
+
+.setup-checklist ::deep .setup-step-done .setup-step-mark {
+    color: var(--color-success-bright);
+}
+
+.setup-checklist ::deep .setup-step-chevron {
+    flex: none;
+    color: var(--ink-faint);
+}

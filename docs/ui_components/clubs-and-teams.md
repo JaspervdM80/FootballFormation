@@ -113,5 +113,19 @@ page's copy button gives: the clipboard call has to run inside the click's own t
 endpoint answers 404 for a team that no longer exists, so a link sent before a team was deleted does
 not quietly open another one.
 
+## A new team's admin is shown what to set up
+
+A team is created with a name, a club and a current season, and nothing else. Until it is set up,
+its admin finds a "Get your team ready" card at the top of `/` (`SetupChecklist`, fed by
+`TeamSetupService`): the match settings, the squad, the training schedule and the first games, each
+a link to the page that does it, plus the team link to send the parents. The link is the same one
+this page's row copies, so a team admin, who cannot reach `/teams`, can share it too.
+
+Each step is ticked off from the data, never by hand, and **across every season**. That is why a new
+season does not bring the card back. The match settings need `MatchPreferences.DefaultsConfirmed`,
+because the row is created on first read. The card goes once all four steps are done, or for good
+when an admin dismisses it (`Team.SetupChecklistHidden`). The service runs under `RunAdminAsync`,
+so a visitor gets neither the card nor its answer.
+
 Why one deployment serves many teams at all is
 [one-deployment-many-teams](../patterns/one-deployment-many-teams.md).

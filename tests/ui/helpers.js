@@ -532,6 +532,32 @@ export async function addAdmin(page, name) {
   return { username, password };
 }
 
+/** A team's row on /teams. */
+export const teamRow = (page, name) => page.locator('.list-row', { hasText: name });
+
+/** Adds a team to the seeded club through the real dialog, unless one of that name is already listed. */
+export async function addTeam(page, name) {
+  await goto(page, '/teams');
+  if (await teamRow(page, name).count() > 0) return;
+
+  await page.locator('.teams-head .action-add').click();
+  const dialog = await openDialog(page);
+  // The field is labelled "Team" — the dialog names the thing, not the property.
+  await fillField(dialog, 'Team', name);
+  await submitDialog(page);
+
+  await expect(teamRow(page, name)).toHaveCount(1);
+}
+
+/**
+ * Switching team is a link to /team/set and a real page load, not a click to retry — pressing again
+ * while the first navigation is in flight is what clickFor would do.
+ */
+export async function showTeam(page, name) {
+  await teamRow(page, name).locator('a[href^="/team/set"]').click();
+  await page.waitForURL(url => !url.pathname.startsWith('/team/set'));
+}
+
 export const MODAL = '#components-reconnect-modal';
 
 /**
