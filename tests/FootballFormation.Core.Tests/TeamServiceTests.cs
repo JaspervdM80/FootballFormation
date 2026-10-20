@@ -182,6 +182,8 @@ public class TeamServiceTests : ServiceTestBase
         Assert.Null((await TeamsAndClubs.FindByLinkAsync("Ajax", "MO15-2")).Value);
     }
 
+    private const string SameLink = "{0} would have the same link as {1}";
+
     /// Otherwise the link endpoint opens whichever of the two came first, and the other team has no link of its own.
     [Fact]
     public async Task Two_clubs_whose_names_give_the_same_link_are_refused()
@@ -189,8 +191,8 @@ public class TeamServiceTests : ServiceTestBase
         await TeamsAndClubs.CreateClubAsync(new Club { Name = "S.V. Zwaluwen" });
         var other = (await TeamsAndClubs.CreateClubAsync(new Club { Name = "GJS" })).Value!;
 
-        Assert.True((await TeamsAndClubs.CreateClubAsync(new Club { Name = "s v zwaluwen" })).IsFailure);
-        Assert.True((await TeamsAndClubs.UpdateClubAsync(new Club { Id = other.Id, Name = "S V Zwaluwen" })).IsFailure);
+        Assert.Equal(SameLink, (await TeamsAndClubs.CreateClubAsync(new Club { Name = "s v zwaluwen" })).ErrorKey);
+        Assert.Equal(SameLink, (await TeamsAndClubs.UpdateClubAsync(new Club { Id = other.Id, Name = "S V Zwaluwen" })).ErrorKey);
         Assert.True((await TeamsAndClubs.UpdateClubAsync(new Club { Id = other.Id, Name = "GJS Meiden" })).IsSuccess);
         Assert.Equal(2, Read().Clubs.Count());
     }
@@ -203,8 +205,8 @@ public class TeamServiceTests : ServiceTestBase
         var team = (await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "MO15 2" })).Value!;
         var second = (await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "MO17-1" })).Value!;
 
-        Assert.True((await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "mo15.2" })).IsFailure);
-        Assert.True((await TeamsAndClubs.UpdateTeamAsync(new Team { Id = second.Id, ClubId = club.Id, Name = "MO15 (2)" })).IsFailure);
+        Assert.Equal(SameLink, (await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "mo15.2" })).ErrorKey);
+        Assert.Equal(SameLink, (await TeamsAndClubs.UpdateTeamAsync(new Team { Id = second.Id, ClubId = club.Id, Name = "MO15 (2)" })).ErrorKey);
         Assert.True((await TeamsAndClubs.UpdateTeamAsync(new Team { Id = team.Id, ClubId = club.Id, Name = "MO15_2" })).IsSuccess);
         Assert.True((await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = other.Id, Name = "MO15.2" })).IsSuccess);
     }

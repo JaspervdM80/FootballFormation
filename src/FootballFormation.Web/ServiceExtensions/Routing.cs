@@ -279,19 +279,19 @@ public static class Routing
         }).AllowAnonymous();
 
         // The id form every link handed out before the readable one, still in parents' chats.
-        app.MapGet("/team/{teamId:int}", async (int teamId, TeamService teams, HttpContext context) =>
+        app.MapGet("/team/{teamId:int}", async (int teamId, string? redirectUri, TeamService teams, HttpContext context) =>
         {
             var result = await teams.GetTeamsAsync(context.RequestAborted);
             if (result.IsFailure || result.Value!.All(t => t.Id != teamId)) return Results.NotFound();
 
-            return OpenOnTeam(context, teamId, redirectUri: null);
+            return OpenOnTeam(context, teamId, redirectUri);
         }).AllowAnonymous();
     }
 
     static IResult OpenOnTeam(HttpContext context, int teamId, string? redirectUri)
     {
         context.Response.Cookies.Append(TeamPreference.CookieName, TeamPreference.Format(teamId), TeamCookie());
-        return Results.Redirect(AppRoutes.IsLocal(redirectUri) ? redirectUri! : AppRoutes.Home);
+        return Results.LocalRedirect($"~{(AppRoutes.IsLocal(redirectUri) ? redirectUri : AppRoutes.Home)}");
     }
 
     /// Signing in puts you on the team you run, or an admin of any team but the lowest-numbered one would land on a team they cannot

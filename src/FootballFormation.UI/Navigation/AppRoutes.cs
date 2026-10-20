@@ -42,7 +42,7 @@ public static class AppRoutes
     public static string TeamCalendar(int teamId) => $"/calendar/team/{teamId}.ics";
 
     /// An endpoint that opens the app on this team; what /teams hands out for a team to share. A team read without its club falls back
-    /// to the id, which the endpoint still answers.
+    /// to the id form, which answers the same.
     public static string TeamLink(Team team) => team.Club is { } club ? $"/team/{club.Slug}/{team.Slug}" : $"/team/{team.Id}";
 
     public static string TeamLinkUrl(string baseUri, Team team) => baseUri.TrimEnd('/') + TeamLink(team);
@@ -53,9 +53,10 @@ public static class AppRoutes
 
     public static string SetSeason(int? seasonId, string returnUrl) => $"/season/set?season={SeasonPreference.Format(seasonId)}&redirectUri={Uri.EscapeDataString(returnUrl)}";
 
-    /// A path on this app. "//host" and "/\host" are refused: browsers read both as another site.
+    /// A path on this app. "//host", "/\host" and a control character are refused: browsers read the first two as another site, and
+    /// drop a tab or newline from "/	/host" until it is the first.
     public static bool IsLocal(string? url) =>
-        url is { Length: > 0 } && url[0] == '/' && !url.StartsWith("//") && !url.StartsWith("/\\");
+        url is { Length: > 0 } && url[0] == '/' && !url.StartsWith("//") && !url.StartsWith("/\\") && !url.Any(char.IsControl);
 
     public static string SetTeam(Team team, string returnUrl) => $"{TeamLink(team)}?redirectUri={Uri.EscapeDataString(returnUrl)}";
 }

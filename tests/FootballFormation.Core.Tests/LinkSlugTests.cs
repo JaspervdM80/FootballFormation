@@ -24,6 +24,15 @@ public class LinkSlugTests
     }
 
     [Fact]
+    public void A_club_and_a_team_each_name_their_part_of_the_link()
+    {
+        var team = new Team { Name = "MO15 Één", Club = new Club { Name = "GJS Meiden" } };
+
+        Assert.Equal("gjs_meiden", team.Club.Slug);
+        Assert.Equal("mo15_een", team.Slug);
+    }
+
+    [Fact]
     public void A_slug_is_its_own_slug_so_a_link_reads_back_to_its_name()
     {
         Assert.True(LinkSlug.SameLink("SV Zwaluwen", "SV_Zwaluwen"));

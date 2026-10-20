@@ -124,8 +124,10 @@ test('a team link opens the app on its team by club and team name, and a link to
   const renamed = await visitor.request.get('/team/gjs/mo99-gone', { maxRedirects: 0 });
   expect(renamed.status()).toBe(404);
 
-  const elsewhere = await visitor.request.get(`${new URL(link).pathname}?redirectUri=%2F%2Fexample.com`, { maxRedirects: 0 });
-  expect(elsewhere.headers()['location']).toBe('/');
+  for (const away of ['%2F%2Fexample.com', '%2F%09%2Fexample.com']) {
+    const elsewhere = await visitor.request.get(`${new URL(link).pathname}?redirectUri=${away}`, { maxRedirects: 0 });
+    expect(elsewhere.headers()['location']).toBe('/');
+  }
 
   // The id form is what every link sent before the readable one carries.
   await goto(visitor, '/team/1');

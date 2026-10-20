@@ -113,7 +113,8 @@ parents — `/team/gjs/mo15-2`, with each name through `LinkSlug.Of`: lowercase,
 is e), and every run of anything but a letter, a digit or a hyphen one underscore, so `SV 't Zand` is
 `sv_t_zand`. A link typed in capitals still opens the team. Because two names can give one slug, the club and
 team validation refuses a name whose link another club, or another team of the same club, already
-has. The old id form `/team/{id}` still answers, because those links are in parents' chats, and so
+has. Renaming a club or a team, or moving a team to another club, changes its link, and a link
+already shared then answers 404 — the id form does not change. The old id form `/team/{id}` still answers, because those links are in parents' chats, and so
 does `/team/set?team={id}`, which calendar events imported before this still carry. It
 is a plain `onclick` into `js/clipboard.js` rather than a Blazor handler, for the reason the result
 page's copy button gives: the clipboard call has to run inside the click's own task. The link
