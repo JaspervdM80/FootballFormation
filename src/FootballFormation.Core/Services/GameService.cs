@@ -72,6 +72,34 @@ public class GameService(
             return Result.Success(game);
         });
 
+    /// Null when no earlier game this season has a line-up that would fit — see <see cref="Game.PreviousFullLineup"/>.
+    public Task<Result<Game?>> GetPreviousFullLineupAsync(int gameId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "load the previous line-up", cancellationToken, async () =>
+        {
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            var game = await db.Games
+                .AsNoTracking()
+                .FirstOrDefaultAsync(g => g.Id == gameId, cancellationToken);
+
+            if (game is null)
+            {
+                logger.LogWarning("Game {GameId} not found", gameId);
+                return Result.Failure<Game?>("Game with ID {0} not found", gameId);
+            }
+
+            var seasonGames = await db.Games
+                .AsNoTracking()
+                .Where(g => g.SeasonId == game.SeasonId)
+                .WithNamedLineups()
+                .ToListAsync(cancellationToken);
+
+            var previous = game.PreviousFullLineup(seasonGames);
+
+            logger.LogDebug("Previous full line-up for game {GameId}: {PreviousGameId}", gameId, previous?.Id);
+            return Result.Success(previous);
+        });
+
     public Task<Result<Game>> CreateAsync(Game game, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAdminAsync(currentUser, logger, "create game", cancellationToken, async () =>
         {

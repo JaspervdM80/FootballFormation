@@ -1184,6 +1184,26 @@ a.action-btn {
     white-space: nowrap;
 }
 
+/* Quieter than an action button, louder than a ghost one: the soft club tint the badges use. In app.css because the class lands
+   on MudButton's root, which the page's scoped sheet cannot reach. */
+.copy-previous.mud-button-root {
+    background: color-mix(in srgb, var(--club-primary) 12%, transparent);
+    color: var(--club-primary-bright);
+    border: 1px solid color-mix(in srgb, var(--club-primary) 20%, transparent);
+}
+
+@media (hover: hover) {
+    .copy-previous.mud-button-root:hover {
+        background: color-mix(in srgb, var(--club-primary) 18%, transparent);
+    }
+}
+
+@media (pointer: coarse) {
+    .copy-previous.mud-button-root {
+        min-height: 44px;
+    }
+}
+
 @media (max-width: 599.98px) {
     /* The opponent name repeats in the score card below, so drop the heading on a phone and give
        the subtitle that prominence instead. */

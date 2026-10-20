@@ -20,7 +20,8 @@
     var activeIndex = Math.Clamp(ActivePeriodIndex, 0, orderedPeriods.Count - 1);
     var activePeriod = orderedPeriods[activeIndex];
     var periodFormation = activePeriod.FormationTypeOverride ?? GameData.FormationType;
-    var activePeriodPlayed = activePeriod.HasKickedOff;
+    var gameFinished = GameData.IsComplete;
+    var activePeriodLocked = gameFinished || activePeriod.HasKickedOff;
 }
 
 @if (HasUnsavedChanges)
@@ -46,6 +47,7 @@
     <div class="formation-picker mb-2">
         <span class="formation-picker-label">@L["Formation"]:</span>
         <MudSelect T="FormationType" Value="GameData.FormationType" ValueChanged="OnFormationChanged"
+                   Disabled="gameFinished"
                    Dense="true" Variant="Variant.Outlined" Class="formation-select">
             @foreach (var formation in FormationTypeExtensions.Alphabetical(GameData.FormationType.Format()))
             {
@@ -53,6 +55,13 @@
             }
         </MudSelect>
     </div>
+    @if (CanCopyPreviousLineup)
+    {
+        <MudButton Variant="Variant.Text" Size="Size.Small" Class="copy-previous mb-2"
+                   StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="CopyPreviousLineup">
+            @L["Copy line-up from the previous game"]
+        </MudButton>
+    }
     <MudTabs @bind-ActivePanelIndex="ActivePeriodIndex" Elevation="0" Rounded="true"
              ApplyEffectsToContainer="true" Class="mb-2 builder-desktop-tabs">
         @foreach (var period in orderedPeriods)
@@ -81,12 +90,20 @@
         </MudButton>
     </div>
     <MudSelect T="FormationType" Value="GameData.FormationType" ValueChanged="OnFormationChanged"
+               Disabled="gameFinished"
                Dense="true" Variant="Variant.Outlined" Label="@L["Formation"]" Class="formation-select mb-3">
         @foreach (var formation in FormationTypeExtensions.Alphabetical(GameData.FormationType.Format()))
         {
             <MudSelectItem Value="formation">@L[formation.DisplayName()]</MudSelectItem>
         }
     </MudSelect>
+    @if (CanCopyPreviousLineup)
+    {
+        <MudButton Variant="Variant.Text" Size="Size.Small" Class="copy-previous mb-3" FullWidth="true"
+                   StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="CopyPreviousLineup">
+            @L["Copy line-up from the previous game"]
+        </MudButton>
+    }
     <div class="period-segments mb-3" role="group"
          aria-label="@(GameData.SplitType == GameSplitType.Halves ? L["Halves"] : L["Quarters"])">
         @for (var i = 0; i < orderedPeriods.Count; i++)
@@ -104,7 +121,7 @@
     </div>
 </div>
 
-@if (activePeriodPlayed)
+@if (activePeriodLocked && !gameFinished)
 {
     <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2">
         @L["This half was played from the touchline, so its line-up is the record of who was on the pitch and is no longer edited here."]
@@ -114,7 +131,7 @@
 <div class="formation-layout mt-2">
     <div class="player-list-panel">
         <PlayerList Players="GetAvailablePlayers(activePeriod.Id)"
-                    ReadOnly="activePeriodPlayed"
+                    ReadOnly="activePeriodLocked"
                     SelectedPlayerId="Drag.SelectedPlayerId"
                     OnDragStart="OnPlayerDragStart"
                     OnPlayerTapped="OnListPlayerTapped" />
@@ -163,7 +180,7 @@
                Positions="PeriodLineups[activePeriod.Id]"
                Size="PitchSize.Compact"
                ConstrainHeight="true"
-               Draggable="@(!activePeriodPlayed)"
+               Draggable="@(!activePeriodLocked)"
                DraggedPlayerId="Drag.PlayerId"
                SelectedSlotIndex="Drag.SelectedSlotIndex"
                OnPlayerDropped="(slot) => OnPlayerDropped(activePeriod.Id, slot)"
@@ -179,7 +196,7 @@
     </div>
     <div class="subs-panel">
         <SubstituteBench Lineup="PeriodLineups[activePeriod.Id]"
-                         ReadOnly="activePeriodPlayed"
+                         ReadOnly="activePeriodLocked"
                          DraggedPlayerId="Drag.PlayerId"
                          SelectedPlayerId="Drag.SelectedPlayerId"
                          OnSubTapped="(playerId) => OnSubTapped(activePeriod.Id, playerId)"
@@ -191,7 +208,7 @@
     </div>
 </div>
 
-@if (!activePeriodPlayed && SelectedPlayer is { } selected)
+@if (!activePeriodLocked && SelectedPlayer is { } selected)
 {
     <div class="selection-bar">
         <span class="selection-text">@L["{0}: tap a position or the bench", selected.DisplayName]</span>
@@ -227,62 +244,65 @@ else if (HasUnsavedChanges)
     </div>
 }
 
-<div class="builder-desktop">
-    <div class="d-flex gap-2 mt-2 mb-4">
-        <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Save"
-                   OnClick="SaveAll" Size="Size.Small">
-            @L["Save All Lineups"]
-        </MudButton>
-
-        @if (!activePeriodPlayed)
-        {
-            <MudButton Variant="Variant.Outlined" Class="btn-ghost"
-                       StartIcon="@Icons.Material.Filled.AutoFixHigh"
-                       OnClick="() => SuggestLineup(activePeriod.Id)" Size="Size.Small">
-                @L["Suggest line-up"]
+@if (!gameFinished)
+{
+    <div class="builder-desktop">
+        <div class="d-flex gap-2 mt-2 mb-4">
+            <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Save"
+                       OnClick="SaveAll" Size="Size.Small">
+                @L["Save All Lineups"]
             </MudButton>
-        }
 
-        @if (CanCopyToNextPeriod)
-        {
-            <MudButton Variant="Variant.Outlined" Class="btn-ghost"
-                       StartIcon="@Icons.Material.Filled.ContentCopy"
-                       OnClick="CopyToNextPeriod" Size="Size.Small">
-                @L["Copy to next {0}", L[GameData.SplitType.PeriodLabel()]]
-            </MudButton>
-        }
+            @if (!activePeriodLocked)
+            {
+                <MudButton Variant="Variant.Outlined" Class="btn-ghost"
+                           StartIcon="@Icons.Material.Filled.AutoFixHigh"
+                           OnClick="() => SuggestLineup(activePeriod.Id)" Size="Size.Small">
+                    @L["Suggest line-up"]
+                </MudButton>
+            }
+
+            @if (CanCopyToNextPeriod)
+            {
+                <MudButton Variant="Variant.Outlined" Class="btn-ghost"
+                           StartIcon="@Icons.Material.Filled.ContentCopy"
+                           OnClick="CopyToNextPeriod" Size="Size.Small">
+                    @L["Copy to next {0}", L[GameData.SplitType.PeriodLabel()]]
+                </MudButton>
+            }
+        </div>
     </div>
-</div>
 
-@* Mobile: short labels, Copy pushed to the right *@
-<div class="builder-mobile">
-    <div class="d-flex gap-2 mt-2 mb-4">
-        <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Save"
-                   OnClick="SaveAll" Size="Size.Small">
-            @L["Save"]
-        </MudButton>
-
-        @if (!activePeriodPlayed)
-        {
-            <MudButton Variant="Variant.Outlined" Class="btn-ghost"
-                       StartIcon="@Icons.Material.Filled.AutoFixHigh"
-                       OnClick="() => SuggestLineup(activePeriod.Id)" Size="Size.Small">
-                @L["Suggest"]
+    @* Mobile: short labels, Copy pushed to the right *@
+    <div class="builder-mobile">
+        <div class="d-flex gap-2 mt-2 mb-4">
+            <MudButton Variant="Variant.Filled" Class="btn-gold" StartIcon="@Icons.Material.Filled.Save"
+                       OnClick="SaveAll" Size="Size.Small">
+                @L["Save"]
             </MudButton>
-        }
 
-        <MudSpacer />
+            @if (!activePeriodLocked)
+            {
+                <MudButton Variant="Variant.Outlined" Class="btn-ghost"
+                           StartIcon="@Icons.Material.Filled.AutoFixHigh"
+                           OnClick="() => SuggestLineup(activePeriod.Id)" Size="Size.Small">
+                    @L["Suggest"]
+                </MudButton>
+            }
 
-        @if (CanCopyToNextPeriod)
-        {
-            <MudButton Variant="Variant.Outlined" Class="btn-ghost"
-                       StartIcon="@Icons.Material.Filled.ContentCopy"
-                       OnClick="CopyToNextPeriod" Size="Size.Small">
-                @L["Copy"]
-            </MudButton>
-        }
+            <MudSpacer />
+
+            @if (CanCopyToNextPeriod)
+            {
+                <MudButton Variant="Variant.Outlined" Class="btn-ghost"
+                           StartIcon="@Icons.Material.Filled.ContentCopy"
+                           OnClick="CopyToNextPeriod" Size="Size.Small">
+                    @L["Copy"]
+                </MudButton>
+            }
+        </div>
     </div>
-</div>
+}
 
 @if (AllPlayers.Count > 0)
 {

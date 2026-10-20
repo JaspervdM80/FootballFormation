@@ -105,6 +105,58 @@ public class Game
     /// Silently false unless <see cref="Periods"/> were loaded with their PlayerPositions — GetAllWithDetailsAsync does, a plain load does not.
     public bool HasLineup => Periods.Any(p => p.PlayerPositions.Count > 0);
 
+    /// Every slot of every planned line-up taken. Silently false without the PlayerPositions loaded, like <see cref="HasLineup"/>.
+    public bool HasFullLineup => Periods.Count > 0
+        && Periods.All(p => FormationSlots.Assign(SlotsOf(p), p.PlayerPositions).All(entry => entry is not null));
+
+    public PlayerPosition[] SlotsOf(GamePeriod period) => FormationSlots.For(period.FormationTypeOverride ?? FormationType);
+
+    /// The nearest earlier fixture whose line-up would drop straight in: same split, same number on the pitch, every slot filled. Whether
+    /// it has been played does not matter.
+    public Game? PreviousFullLineup(IEnumerable<Game> seasonGames)
+    {
+        return seasonGames
+            .Where(g => g.Id != Id)
+            .Append(this)
+            .OldestFirst()
+            .TakeWhile(g => g.Id != Id)
+            .Reverse()
+            .FirstOrDefault(g => g.SplitType == SplitType
+                                 && g.FormationType.Format() == FormationType.Format()
+                                 && g.HasFullLineup);
+    }
+
+    /// Period for period, reshaped into this game's slots, leaving out anyone not in <paramref name="availablePlayerIds"/>. Fresh entries
+    /// with Id = 0, so a save inserts them rather than claiming the source's rows.
+    public Dictionary<int, List<GamePlayerPosition>> LineupsCopiedFrom(Game source, IReadOnlySet<int> availablePlayerIds)
+    {
+        var sourcePeriods = source.Periods.OrderBy(p => p.PeriodType).ToList();
+        var copies = new Dictionary<int, List<GamePlayerPosition>>();
+
+        foreach (var (target, index) in Periods.OrderBy(p => p.PeriodType).Select((p, i) => (p, i)))
+        {
+            if (index >= sourcePeriods.Count) break;
+
+            var sourcePeriod = sourcePeriods[index];
+            var lineup = sourcePeriod.PlayerPositions
+                .Where(pp => availablePlayerIds.Contains(pp.PlayerId))
+                .Select(pp => new GamePlayerPosition
+                {
+                    PlayerId = pp.PlayerId,
+                    Player = pp.Player,
+                    Position = pp.Position,
+                    SlotIndex = pp.SlotIndex,
+                    IsSubstitute = pp.IsSubstitute
+                })
+                .ToList();
+
+            FormationSlots.Reshape(lineup, source.SlotsOf(sourcePeriod), SlotsOf(target));
+            copies[target.Id] = lineup;
+        }
+
+        return copies;
+    }
+
     /// A match in progress never counts, however many goals are logged, or the season table would shift while the game is being played.
     public bool IsComplete => MatchState == MatchState.Finished
         || (MatchState == MatchState.NotStarted && ScoreHome.HasValue && ScoreAway.HasValue);

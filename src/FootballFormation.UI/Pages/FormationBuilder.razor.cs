@@ -20,6 +20,7 @@ public partial class FormationBuilder
     public int GameId { get; set; }
 
     private Game? GameData { get; set; }
+    private Game? PreviousLineup { get; set; }
     private List<Player>? AllPlayers { get; set; }
 
     /// From the game, not the season picker: the builder is scoped to one fixture and must not follow a global filter.
@@ -69,13 +70,19 @@ public partial class FormationBuilder
 
         CacheLineups();
 
+        if (CanCopyPreviousLineupAt(GameData))
+        {
+            var previousResult = await GameService.GetPreviousFullLineupAsync(GameId, Cancellation);
+            PreviousLineup = Snackbar.ReportFailure(L, previousResult) ? previousResult.Value : null;
+        }
+
         Logger.LogDebug("Loaded formation builder for game {GameId} vs {Opponent}",
             GameId, GameData.Opponent);
     }
 
     /// A played half is left out: the touchline owns it, and the save skips it.
     private bool HasUnsavedChanges =>
-        GameData is not null
+        GameData is not null && !GameData.IsComplete
         && GameData.Periods.Any(p => !p.HasKickedOff
             && PeriodLineups.TryGetValue(p.Id, out var lineup)
             && LineupSignature(lineup) != SavedLineups.GetValueOrDefault(p.Id));
@@ -122,10 +129,15 @@ public partial class FormationBuilder
     private bool IsInjured(int playerId) =>
         Squad.IsInjured(playerId) || (GameData?.InjuredPlayerIds.Contains(playerId) ?? false);
 
-    /// Every editing handler below stops here rather than piling up changes the save would drop — the touchline owns a half once it
-    /// has kicked off, and GameService.SavePeriodLineupAsync refuses one.
-    private bool HasBeenPlayed(int periodId) =>
-        GameData!.Periods.First(p => p.Id == periodId).HasKickedOff;
+    /// Every editing handler below stops here: the touchline owns a kicked-off half, and a finished match is a record.
+    private bool IsLocked(int periodId) =>
+        GameData!.IsComplete || GameData.Periods.First(p => p.Id == periodId).HasKickedOff;
+
+    private static bool CanCopyPreviousLineupAt(Game game) =>
+        !game.IsComplete && !game.Periods.Any(p => p.HasKickedOff);
+
+    private bool CanCopyPreviousLineup =>
+        PreviousLineup is not null && GameData is not null && CanCopyPreviousLineupAt(GameData);
 
     private List<Player> GetAvailablePlayers(int periodId)
     {
@@ -158,7 +170,7 @@ public partial class FormationBuilder
 
     private void OnPitchPlayerDragStart(int periodId, int slotIndex)
     {
-        if (HasBeenPlayed(periodId)) return;
+        if (IsLocked(periodId)) return;
 
         var existing = BuildSlotAssignments(periodId)[slotIndex];
         if (existing is null) return;
@@ -168,7 +180,7 @@ public partial class FormationBuilder
 
     private void OnPlayerDropped(int periodId, int slotIndex)
     {
-        if (Drag.PlayerId is null || AllPlayers is null || HasBeenPlayed(periodId)) return;
+        if (Drag.PlayerId is null || AllPlayers is null || IsLocked(periodId)) return;
 
         var slots = GetAllSlots(periodId);
         var position = slots[slotIndex];
@@ -220,7 +232,7 @@ public partial class FormationBuilder
 
     private void OnPlayerDroppedToSub(int periodId)
     {
-        if (Drag.PlayerId is null || AllPlayers is null || HasBeenPlayed(periodId)) return;
+        if (Drag.PlayerId is null || AllPlayers is null || IsLocked(periodId)) return;
 
         if (AllPlayers.FirstOrDefault(p => p.Id == Drag.PlayerId) is { } player)
         {
@@ -236,7 +248,7 @@ public partial class FormationBuilder
     /// Drop of a dragged starter onto a bench player: the two trade places.
     private void OnSwapFieldPlayerWithSub(int periodId, int subPlayerId)
     {
-        if (Drag.PlayerId is null || Drag.PlayerId == subPlayerId || HasBeenPlayed(periodId)) return;
+        if (Drag.PlayerId is null || Drag.PlayerId == subPlayerId || IsLocked(periodId)) return;
         if (Drag.FromSlotIndex is not { } slotIndex)
         {
             // A sub row covers most of the bench panel, and it stops the drop from reaching it — so a
@@ -273,7 +285,7 @@ public partial class FormationBuilder
     /// With nothing in hand a tap picks the chip up; with a player in hand it places them, exactly as a drop would.
     private void OnSlotTapped(int periodId, int slotIndex)
     {
-        if (HasBeenPlayed(periodId)) return;
+        if (IsLocked(periodId)) return;
 
         if (!Drag.IsTapSelection)
         {
@@ -295,7 +307,7 @@ public partial class FormationBuilder
 
     private void OnSubTapped(int periodId, int subPlayerId)
     {
-        if (HasBeenPlayed(periodId)) return;
+        if (IsLocked(periodId)) return;
 
         if (Drag.IsTapSelection && !Drag.FromSub)
         {
@@ -317,7 +329,7 @@ public partial class FormationBuilder
 
     private void BenchSelected(int periodId)
     {
-        if (HasBeenPlayed(periodId) || Drag.SelectedSlotIndex is not { } slotIndex) return;
+        if (IsLocked(periodId) || Drag.SelectedSlotIndex is not { } slotIndex) return;
 
         BuildSlotAssignments(periodId)[slotIndex]?.SendToBench();
         Drag.Clear();
@@ -325,7 +337,7 @@ public partial class FormationBuilder
 
     private void RemoveSelected(int periodId)
     {
-        if (HasBeenPlayed(periodId) || Drag.PlayerId is not { } playerId) return;
+        if (IsLocked(periodId) || Drag.PlayerId is not { } playerId) return;
 
         PeriodLineups[periodId].RemoveAll(p => p.PlayerId == playerId);
         Drag.Clear();
@@ -333,7 +345,7 @@ public partial class FormationBuilder
 
     private void RemoveSub(int periodId, GamePlayerPosition sub)
     {
-        if (HasBeenPlayed(periodId)) return;
+        if (IsLocked(periodId)) return;
 
         PeriodLineups[periodId].Remove(sub);
         if (Drag.SelectedPlayerId == sub.PlayerId) Drag.Clear();
@@ -386,7 +398,7 @@ public partial class FormationBuilder
 
     private bool CanCopyToNextPeriod =>
         GameData is not null && !IsLastPeriodSelected
-        && !HasBeenPlayed(GameData.Periods.OrderBy(p => p.PeriodType).ToList()[ActivePeriodIndex + 1].Id);
+        && !IsLocked(GameData.Periods.OrderBy(p => p.PeriodType).ToList()[ActivePeriodIndex + 1].Id);
 
     private void CopyToNextPeriod()
     {
@@ -415,9 +427,58 @@ public partial class FormationBuilder
         Snackbar.Add(L["Lineup copied to {0}", L[nextPeriod.PeriodType.DisplayName()].Value], Severity.Info);
     }
 
+    private async Task CopyPreviousLineup()
+    {
+        if (!CanCopyPreviousLineup || AllPlayers is null) return;
+
+        var source = PreviousLineup!;
+
+        var changesFormation = source.FormationType != GameData!.FormationType;
+
+        // A formation change saves on the spot, so the dialog has to say so even with nobody set up yet.
+        if ((changesFormation || PeriodLineups.Values.Any(lineup => lineup.Count > 0))
+            && !await DialogService.ConfirmAsync(
+                L["Copy the line-up from {0}?", source.Opponent],
+                changesFormation
+                    ? L["The formation changes to {0} straight away, and anyone already set up is replaced. The line-up itself is not saved until you save.",
+                        L[source.FormationType.DisplayName()].Value]
+                    : L["Everyone currently set up for this match is replaced. Nothing is saved until you save."],
+                "Replace"))
+        {
+            return;
+        }
+
+        if (changesFormation)
+        {
+            await OnFormationChanged(source.FormationType);
+            if (GameData.FormationType != source.FormationType) return;
+        }
+
+        var available = RosterPlayers.Select(p => p.Id).ToHashSet();
+        foreach (var (periodId, lineup) in GameData.LineupsCopiedFrom(source, available))
+            PeriodLineups[periodId] = lineup;
+
+        Drag.Clear();
+
+        var leftOut = source.Periods
+            .SelectMany(p => p.PlayerPositions)
+            .Where(pp => !available.Contains(pp.PlayerId))
+            .Select(pp => pp.Player?.DisplayName ?? "?")
+            .Distinct()
+            .ToList();
+
+        Logger.LogInformation("Copied the line-up of game {SourceGameId} into game {GameId}", source.Id, GameId);
+        Snackbar.Add(
+            leftOut.Count == 0
+                ? L["Line-up copied from {0} — check it before saving.", source.Opponent]
+                : L["Line-up copied from {0}, leaving out who is not available for this match: {1}. Check it before saving.",
+                    source.Opponent, string.Join(", ", leftOut)],
+            Severity.Success);
+    }
+
     private async Task SuggestLineup(int periodId)
     {
-        if (GameData is null || HasBeenPlayed(periodId)) return;
+        if (GameData is null || IsLocked(periodId)) return;
 
         if (PeriodLineups[periodId].Count > 0
             && !await DialogService.ConfirmAsync(

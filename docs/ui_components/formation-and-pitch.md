@@ -39,7 +39,7 @@
   which is the same reason `SavePeriodLineupAsync` refuses to replace such a half at all. The query
   loads `Player` alongside the line-up, because `GamePlayerPosition.SendToBench` reads her own
   position off it and lazy loading is off
-- Actions: Save All, Suggest Line-up, Copy to Next Period
+- Actions: Save All, Suggest Line-up, Copy to Next Period, Copy line-up from the previous game
 - **Suggest Line-up** fills the period on screen from `LineupSuggestionReport.Build(...)` and saves
   nothing — the coach reviews it and presses Save like any other edit, and replacing a period that
   already holds a line-up asks first. The report weighs two things against each other: how well a
@@ -61,11 +61,23 @@
 - **A period whose `StartedAtSeconds` is set is shown as a record, not a plan.** The pitch, the
   bench and the player list all render with their drag turned off, an inline notice says why, Copy
   to Next Period is withheld when the period it would copy *into* has kicked off, and every editing
-  handler stops on `HasBeenPlayed` — the page's guard against piling up changes the save would
+  handler stops on `IsLocked` — the page's guard against piling up changes the save would
   drop. Save All skips those periods, naming them in an information snackbar, and takes the list
   from a **fresh read** rather than from its own cached game: a builder left open since before
   kick-off still has every half down as a plan, and would otherwise be refused one period at a time
   by `GameService.SavePeriodLineupAsync`
+- **A finished match (`Game.IsComplete`) is a record as a whole.** Every period renders read-only,
+  the formation picker is disabled, and Save, Suggest, Copy and the per-half notice are all gone —
+  `IsLocked` answers true for every period, so the handlers stop too. This is the page only:
+  `SavePeriodLineupAsync` still accepts an unplayed period of a game with a typed-in score
+- **Copy line-up from the previous game** sits above the halves/quarters and copies every period of the
+  nearest earlier game this season with a full line-up (`Game.PreviousFullLineup`, read by
+  `GameService.GetPreviousFullLineupAsync`) — same split, same number on the pitch, every slot
+  filled, played or not. It takes that game's formation through `SaveFormationAsync` first — saved on the spot, which the
+  confirmation says whenever the formation differs — then
+  `Game.LineupsCopiedFrom` reshapes each period into this game's slots and leaves out anyone not in
+  `RosterPlayers`. Like Suggest it saves no line-up and asks before replacing one. It is offered only
+  before kick-off and is absent when the season has no such game
 - **Nothing is saved until Save, so leaving with changes pending asks first.** `SavedLineups` holds
   each period's line-up by value as last loaded or saved, and `HasUnsavedChanges` compares the
   page's copy against it (played halves left out). While it holds, a sticky `.unsaved-bar` offers

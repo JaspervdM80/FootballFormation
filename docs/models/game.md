@@ -65,6 +65,7 @@ would shift while it is still being played. More computed members support the re
 | `PeriodDurationSeconds` | How long one period lasts on an even split. **Seconds, not minutes** — a duration that splits into fractions of a minute (50 in quarters is 4 × 12.5) still splits exactly into seconds, so the periods add back up to the full match length. Every planned-minutes calculation reads this one |
 | `PeriodDurationMinutes` | The same length as a `decimal`, fractional when it has to be. Display only |
 | `HasLineup` | Does any period have someone on the pitch? Needs `PlayerPositions` loaded |
+| `HasFullLineup` | Is every slot of every period taken? Needs `PlayerPositions` loaded |
 | `HasActualTimings` | Was any half actually kicked off, i.e. are there real timings to prefer over the plan? |
 | `PlayedDurationSeconds` | The same sum in seconds, without the fallback — the exact seconds a game was live for |
 | `SecondsToMinutes(seconds)` | Rounds to the nearest minute (ties to even). The one conversion every played/available minutes figure goes through, on this type and in `PlayerStatsReport` — see [known_issues](../known_issues/domain.md) for why a figure summed across several games must stay in seconds until this is called once, at the end, rather than being applied per game and summed |
