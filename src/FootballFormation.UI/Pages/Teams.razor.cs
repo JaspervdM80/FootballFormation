@@ -19,7 +19,7 @@ public partial class Teams
     private string _renderedChrome = string.Empty;
 
     /// The team the app is showing, which the club picker does not change — that one scopes this page only. Switching the app onto a
-    /// team is the row's own link to /team/set.
+    /// team is the row's own team link.
     private int? _currentTeamId;
 
     private int _selectedClubId;
@@ -28,7 +28,7 @@ public partial class Teams
 
     private Club? SelectedClub => _clubs?.FirstOrDefault(c => c.Id == _selectedClubId);
 
-    private string TeamLinkUrl(int teamId) => AppRoutes.TeamLinkUrl(Navigation.BaseUri, teamId);
+    private string TeamLinkUrl(Team team) => AppRoutes.TeamLinkUrl(Navigation.BaseUri, team);
 
     private string TeamCount => _clubTeams.Count == 1
         ? L["{0} team", _clubTeams.Count]

@@ -176,7 +176,7 @@ The global season filter, backed by the scoped `SeasonState` (see
 
 ## Team picker (`Components/TeamPicker.razor`)
 The same `<details>` of links as the season picker, for the same static-layout reason, listing every
-team from `TeamState.Teams`. Each entry links to `/team/set`.
+team from `TeamState.Teams`. Each entry is its team's link (`AppRoutes.SetTeam`) back to the page you were on.
 
 - **Drawer only.** The drawer is on every width, so it is reachable everywhere, and the app bar has
   no room left on a phone. Someone following one team never needs it, so it is not worth a chip.

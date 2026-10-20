@@ -7,11 +7,11 @@ public partial class SetupChecklist
 
     [Parameter, EditorRequired] public TeamSetup Setup { get; set; } = null!;
 
-    [Parameter, EditorRequired] public int TeamId { get; set; }
+    [Parameter, EditorRequired] public Team Team { get; set; } = null!;
 
     [Parameter] public EventCallback OnHide { get; set; }
 
-    private string TeamLinkUrl => AppRoutes.TeamLinkUrl(Navigation.BaseUri, TeamId);
+    private string TeamLinkUrl => AppRoutes.TeamLinkUrl(Navigation.BaseUri, Team);
 
     private sealed record Step(bool Done, string Href, string Title, string Body);
 

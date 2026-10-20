@@ -10,6 +10,6 @@ public partial class TeamPicker
 
     protected override Task OnInitializedAsync() => Team.EnsureLoadedAsync();
 
-    private string SetUrl(int teamId) =>
-        AppRoutes.SetTeam(teamId, AppNav.AfterTeamChange(Navigation.ToBaseRelativePath(Navigation.Uri)));
+    private string SetUrl(Team team) =>
+        AppRoutes.SetTeam(team, AppNav.AfterTeamChange(Navigation.ToBaseRelativePath(Navigation.Uri)));
 }

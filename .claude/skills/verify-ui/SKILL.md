@@ -43,7 +43,7 @@ Two columns, but authorization has more states than that:
 - **An admin looking at a team they do not run** — sees what a visitor sees, with sign-out kept:
   `TeamScopedAdminRole` drops the `Admin` role per request while the team in scope is not theirs,
   and an admin-only route sends them to `/`. The service still refuses the write on its own.
-  Reachable through `/team/set`.
+  Reachable through that team's link, `/team/{club}/{team}`.
 - **An account still on its seeded password** — it can sign in and is pinned to `/settings` until
   the password changes.
 

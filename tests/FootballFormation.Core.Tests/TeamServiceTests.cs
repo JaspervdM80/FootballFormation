@@ -168,6 +168,50 @@ public class TeamServiceTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task A_team_link_names_its_team_by_club_and_team_whatever_the_case()
+    {
+        var gjs = (await TeamsAndClubs.CreateClubAsync(new Club { Name = "GJS Meiden" })).Value!;
+        var other = (await TeamsAndClubs.CreateClubAsync(new Club { Name = "SV Zwaluwen" })).Value!;
+        await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = gjs.Id, Name = "MO15-2" });
+        var theirs = (await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = other.Id, Name = "MO15-2" })).Value!;
+
+        var found = await TeamsAndClubs.FindByLinkAsync("sv_zwaluwen", "mo15-2");
+
+        Assert.Equal(theirs.Id, found.Value!.Id);
+        Assert.Null((await TeamsAndClubs.FindByLinkAsync("GJS_Meiden", "MO17-1")).Value);
+        Assert.Null((await TeamsAndClubs.FindByLinkAsync("Ajax", "MO15-2")).Value);
+    }
+
+    private const string SameLink = "{0} would have the same link as {1}";
+
+    /// Otherwise the link endpoint opens whichever of the two came first, and the other team has no link of its own.
+    [Fact]
+    public async Task Two_clubs_whose_names_give_the_same_link_are_refused()
+    {
+        await TeamsAndClubs.CreateClubAsync(new Club { Name = "S.V. Zwaluwen" });
+        var other = (await TeamsAndClubs.CreateClubAsync(new Club { Name = "GJS" })).Value!;
+
+        Assert.Equal(SameLink, (await TeamsAndClubs.CreateClubAsync(new Club { Name = "s v zwaluwen" })).ErrorKey);
+        Assert.Equal(SameLink, (await TeamsAndClubs.UpdateClubAsync(new Club { Id = other.Id, Name = "S V Zwaluwen" })).ErrorKey);
+        Assert.True((await TeamsAndClubs.UpdateClubAsync(new Club { Id = other.Id, Name = "GJS Meiden" })).IsSuccess);
+        Assert.Equal(2, Read().Clubs.Count());
+    }
+
+    [Fact]
+    public async Task Two_teams_of_one_club_whose_names_give_the_same_link_are_refused()
+    {
+        var club = (await TeamsAndClubs.CreateClubAsync(new Club { Name = "GJS" })).Value!;
+        var other = (await TeamsAndClubs.CreateClubAsync(new Club { Name = "SV Zwaluwen" })).Value!;
+        var team = (await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "MO15 2" })).Value!;
+        var second = (await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "MO17-1" })).Value!;
+
+        Assert.Equal(SameLink, (await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "mo15.2" })).ErrorKey);
+        Assert.Equal(SameLink, (await TeamsAndClubs.UpdateTeamAsync(new Team { Id = second.Id, ClubId = club.Id, Name = "MO15 (2)" })).ErrorKey);
+        Assert.True((await TeamsAndClubs.UpdateTeamAsync(new Team { Id = team.Id, ClubId = club.Id, Name = "MO15_2" })).IsSuccess);
+        Assert.True((await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = other.Id, Name = "MO15.2" })).IsSuccess);
+    }
+
+    [Fact]
     public async Task A_club_or_team_that_is_gone_is_reported_rather_than_thrown()
     {
         Assert.True((await TeamsAndClubs.UpdateClubAsync(new Club { Id = 404, Name = "GJS" })).IsFailure);

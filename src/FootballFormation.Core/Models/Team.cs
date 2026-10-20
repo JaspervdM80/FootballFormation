@@ -15,4 +15,6 @@ public class Team
     public bool SetupChecklistHidden { get; set; }
 
     public string FullName => Club is null ? Name : $"{Club.Name} {Name}";
+
+    public string Slug => LinkSlug.Of(Name);
 }

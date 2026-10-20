@@ -43,7 +43,7 @@
 
 @if (_setup is { Shows: true } setup && Team.Current is { } team)
 {
-    <SetupChecklist Setup="setup" TeamId="team.Id" OnHide="HideSetupAsync" />
+    <SetupChecklist Setup="setup" Team="team" OnHide="HideSetupAsync" />
 }
 
 <div class="home-dashboard mb-6">

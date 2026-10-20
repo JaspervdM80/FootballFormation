@@ -15,7 +15,7 @@
                 @foreach (var team in Team.Teams)
                 {
                     var selected = team.Id == Team.Current?.Id;
-                    <a href="@SetUrl(team.Id)" class="disclosure-menu-item team-menu-item" aria-current="@(selected ? "true" : null)">
+                    <a href="@SetUrl(team)" class="disclosure-menu-item team-menu-item" aria-current="@(selected ? "true" : null)">
                         <span>@team.FullName</span>
                         @if (selected)
                         {

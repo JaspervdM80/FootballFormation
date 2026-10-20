@@ -98,7 +98,7 @@
                             {
                                 @* A link and a real page load, like the season picker: the team is read off the request that creates a
                                    scope, so the chrome and the page would otherwise disagree until the next navigation. *@
-                                <a class="action-btn" href="@AppRoutes.SetTeam(team.Id, AppRoutes.Teams)"
+                                <a class="action-btn" href="@AppRoutes.SetTeam(team, AppRoutes.Teams)"
                                    data-enhance-nav="false" title="@L["Show this team"]" aria-label="@L["Show this team"]">
                                     <MudIcon Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" />
                                 </a>
@@ -108,7 +108,7 @@
                                     onclick="copyElementText('team-link-@(team.Id)', 'team-link-copied', 'team-link-failed')">
                                 <MudIcon Icon="@Icons.Material.Filled.Link" Size="Size.Small" />
                             </button>
-                            <span id="team-link-@(team.Id)" hidden>@TeamLinkUrl(team.Id)</span>
+                            <span id="team-link-@(team.Id)" hidden>@TeamLinkUrl(team)</span>
                             <button class="action-btn" title="@L["Edit Team"]" aria-label="@L["Edit Team"]"
                                     @onclick="() => OpenEditTeamDialog(team)">
                                 <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />

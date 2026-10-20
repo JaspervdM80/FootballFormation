@@ -16,4 +16,6 @@ public class Club
     public string ThemeName { get; set; } = DefaultTheme;
 
     public List<Team> Teams { get; set; } = [];
+
+    public string Slug => LinkSlug.Of(Name);
 }
