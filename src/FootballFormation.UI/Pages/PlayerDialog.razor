@@ -10,14 +10,14 @@
             <MudSelect T="PlayerPosition" @bind-Value="PreferredPosition" Label="@L["Preferred Position"]" Class="mb-3">
                 @foreach (var pos in Enum.GetValues<PlayerPosition>())
                 {
-                    <MudSelectItem Value="pos">@pos.ToString() - @pos.DisplayName()</MudSelectItem>
+                    <MudSelectItem Value="pos">@pos.ToString() - @L[pos.DisplayName()]</MudSelectItem>
                 }
             </MudSelect>
             <MudSelect T="PlayerPosition" Label="@L["Alternative Positions"]" MultiSelection="true"
                        @bind-SelectedValues="AlternativePositions" Class="mb-3">
                 @foreach (var pos in Enum.GetValues<PlayerPosition>().Where(p => p != PreferredPosition))
                 {
-                    <MudSelectItem Value="pos">@pos.ToString() - @pos.DisplayName()</MudSelectItem>
+                    <MudSelectItem Value="pos">@pos.ToString() - @L[pos.DisplayName()]</MudSelectItem>
                 }
             </MudSelect>
             @* Everything above is the person; these two are their place in a single season's squad,
