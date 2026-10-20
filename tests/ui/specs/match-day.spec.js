@@ -461,6 +461,27 @@ test('a half already played is no longer edited in the builder', async ({ page }
   await expect(page.locator('.pitch .pitch-player')).toHaveCount(1);
 });
 
+test('a finished match is a record in the builder, with nothing left to save or copy', async ({ page }) => {
+  const id = await matchWithId(page, 'FC Afgelopen');
+  const { placed } = await fillLineup(page, 2);
+
+  await goto(page, `/games/${id}/live`);
+  await startMatch(page);
+  await finishMatch(page);
+
+  await goto(page, `/games/${id}/formation`);
+
+  // The line-up is still drawn — the presence half, so the absences below cannot pass on an empty page.
+  await expect(page.locator('.pitch .pitch-player')).toHaveCount(placed);
+  await expect(page.locator('.pitch .pitch-player[draggable="true"]')).toHaveCount(0);
+  await expect(page.locator('.builder-desktop .formation-select input').first()).toBeDisabled();
+
+  await expect(page.getByRole('button', { name: /^Save( All Lineups)?$/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^Copy/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Suggest line-up' })).toHaveCount(0);
+  await expect(page.getByText('This half was played from the touchline', { exact: false })).toHaveCount(0);
+});
+
 // The banner listens for its team's changes rather than one game's, so it is the one listener a team filter could
 // silence. Whichever match it shows is the one scored in: earlier specs leave matches running, and the oldest wins.
 test('the start page banner follows its match as it is played, without a reload', async ({ page, visitor }) => {

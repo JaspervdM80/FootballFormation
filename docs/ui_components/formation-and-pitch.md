@@ -61,19 +61,20 @@
 - **A period whose `StartedAtSeconds` is set is shown as a record, not a plan.** The pitch, the
   bench and the player list all render with their drag turned off, an inline notice says why, Copy
   to Next Period is withheld when the period it would copy *into* has kicked off, and every editing
-  handler stops on `HasBeenPlayed` — the page's guard against piling up changes the save would
+  handler stops on `IsLocked` — the page's guard against piling up changes the save would
   drop. Save All skips those periods, naming them in an information snackbar, and takes the list
   from a **fresh read** rather than from its own cached game: a builder left open since before
   kick-off still has every half down as a plan, and would otherwise be refused one period at a time
   by `GameService.SavePeriodLineupAsync`
 - **A finished match (`Game.IsComplete`) is a record as a whole.** Every period renders read-only,
   the formation picker is disabled, and Save, Suggest, Copy and the per-half notice are all gone —
-  `HasBeenPlayed` answers true for every period, so the handlers stop too. This is the page only:
+  `IsLocked` answers true for every period, so the handlers stop too. This is the page only:
   `SavePeriodLineupAsync` still accepts an unplayed period of a game with a typed-in score
 - **Copy line-up from the previous game** sits above the halves/quarters and copies every period of the
   nearest earlier game this season with a full line-up (`Game.PreviousFullLineup`, read by
   `GameService.GetPreviousFullLineupAsync`) — same split, same number on the pitch, every slot
-  filled, played or not. It takes that game's formation through `SaveFormationAsync` first, then
+  filled, played or not. It takes that game's formation through `SaveFormationAsync` first — saved on the spot, which the
+  confirmation says whenever the formation differs — then
   `Game.LineupsCopiedFrom` reshapes each period into this game's slots and leaves out anyone not in
   `RosterPlayers`. Like Suggest it saves no line-up and asks before replacing one. It is offered only
   before kick-off and is absent when the season has no such game

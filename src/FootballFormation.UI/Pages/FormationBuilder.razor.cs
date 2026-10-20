@@ -129,9 +129,8 @@ public partial class FormationBuilder
     private bool IsInjured(int playerId) =>
         Squad.IsInjured(playerId) || (GameData?.InjuredPlayerIds.Contains(playerId) ?? false);
 
-    /// Every editing handler below stops here rather than piling up changes the save would drop — the touchline owns a half once it
-    /// has kicked off, and GameService.SavePeriodLineupAsync refuses one. A finished match is a record, so none of it is edited.
-    private bool HasBeenPlayed(int periodId) =>
+    /// Every editing handler below stops here: the touchline owns a kicked-off half, and a finished match is a record.
+    private bool IsLocked(int periodId) =>
         GameData!.IsComplete || GameData.Periods.First(p => p.Id == periodId).HasKickedOff;
 
     private static bool CanCopyPreviousLineupAt(Game game) =>
@@ -171,7 +170,7 @@ public partial class FormationBuilder
 
     private void OnPitchPlayerDragStart(int periodId, int slotIndex)
     {
-        if (HasBeenPlayed(periodId)) return;
+        if (IsLocked(periodId)) return;
 
         var existing = BuildSlotAssignments(periodId)[slotIndex];
         if (existing is null) return;
@@ -181,7 +180,7 @@ public partial class FormationBuilder
 
     private void OnPlayerDropped(int periodId, int slotIndex)
     {
-        if (Drag.PlayerId is null || AllPlayers is null || HasBeenPlayed(periodId)) return;
+        if (Drag.PlayerId is null || AllPlayers is null || IsLocked(periodId)) return;
 
         var slots = GetAllSlots(periodId);
         var position = slots[slotIndex];
@@ -233,7 +232,7 @@ public partial class FormationBuilder
 
     private void OnPlayerDroppedToSub(int periodId)
     {
-        if (Drag.PlayerId is null || AllPlayers is null || HasBeenPlayed(periodId)) return;
+        if (Drag.PlayerId is null || AllPlayers is null || IsLocked(periodId)) return;
 
         if (AllPlayers.FirstOrDefault(p => p.Id == Drag.PlayerId) is { } player)
         {
@@ -249,7 +248,7 @@ public partial class FormationBuilder
     /// Drop of a dragged starter onto a bench player: the two trade places.
     private void OnSwapFieldPlayerWithSub(int periodId, int subPlayerId)
     {
-        if (Drag.PlayerId is null || Drag.PlayerId == subPlayerId || HasBeenPlayed(periodId)) return;
+        if (Drag.PlayerId is null || Drag.PlayerId == subPlayerId || IsLocked(periodId)) return;
         if (Drag.FromSlotIndex is not { } slotIndex)
         {
             // A sub row covers most of the bench panel, and it stops the drop from reaching it — so a
@@ -286,7 +285,7 @@ public partial class FormationBuilder
     /// With nothing in hand a tap picks the chip up; with a player in hand it places them, exactly as a drop would.
     private void OnSlotTapped(int periodId, int slotIndex)
     {
-        if (HasBeenPlayed(periodId)) return;
+        if (IsLocked(periodId)) return;
 
         if (!Drag.IsTapSelection)
         {
@@ -308,7 +307,7 @@ public partial class FormationBuilder
 
     private void OnSubTapped(int periodId, int subPlayerId)
     {
-        if (HasBeenPlayed(periodId)) return;
+        if (IsLocked(periodId)) return;
 
         if (Drag.IsTapSelection && !Drag.FromSub)
         {
@@ -330,7 +329,7 @@ public partial class FormationBuilder
 
     private void BenchSelected(int periodId)
     {
-        if (HasBeenPlayed(periodId) || Drag.SelectedSlotIndex is not { } slotIndex) return;
+        if (IsLocked(periodId) || Drag.SelectedSlotIndex is not { } slotIndex) return;
 
         BuildSlotAssignments(periodId)[slotIndex]?.SendToBench();
         Drag.Clear();
@@ -338,7 +337,7 @@ public partial class FormationBuilder
 
     private void RemoveSelected(int periodId)
     {
-        if (HasBeenPlayed(periodId) || Drag.PlayerId is not { } playerId) return;
+        if (IsLocked(periodId) || Drag.PlayerId is not { } playerId) return;
 
         PeriodLineups[periodId].RemoveAll(p => p.PlayerId == playerId);
         Drag.Clear();
@@ -346,7 +345,7 @@ public partial class FormationBuilder
 
     private void RemoveSub(int periodId, GamePlayerPosition sub)
     {
-        if (HasBeenPlayed(periodId)) return;
+        if (IsLocked(periodId)) return;
 
         PeriodLineups[periodId].Remove(sub);
         if (Drag.SelectedPlayerId == sub.PlayerId) Drag.Clear();
@@ -399,7 +398,7 @@ public partial class FormationBuilder
 
     private bool CanCopyToNextPeriod =>
         GameData is not null && !IsLastPeriodSelected
-        && !HasBeenPlayed(GameData.Periods.OrderBy(p => p.PeriodType).ToList()[ActivePeriodIndex + 1].Id);
+        && !IsLocked(GameData.Periods.OrderBy(p => p.PeriodType).ToList()[ActivePeriodIndex + 1].Id);
 
     private void CopyToNextPeriod()
     {
@@ -434,16 +433,22 @@ public partial class FormationBuilder
 
         var source = PreviousLineup!;
 
-        if (PeriodLineups.Values.Any(lineup => lineup.Count > 0)
+        var changesFormation = source.FormationType != GameData!.FormationType;
+
+        // A formation change saves on the spot, so the dialog has to say so even with nobody set up yet.
+        if ((changesFormation || PeriodLineups.Values.Any(lineup => lineup.Count > 0))
             && !await DialogService.ConfirmAsync(
                 L["Copy the line-up from {0}?", source.Opponent],
-                L["Everyone currently set up for this match is replaced. Nothing is saved until you save."],
+                changesFormation
+                    ? L["The formation changes to {0} straight away, and anyone already set up is replaced. The line-up itself is not saved until you save.",
+                        L[source.FormationType.DisplayName()].Value]
+                    : L["Everyone currently set up for this match is replaced. Nothing is saved until you save."],
                 "Replace"))
         {
             return;
         }
 
-        if (source.FormationType != GameData!.FormationType)
+        if (changesFormation)
         {
             await OnFormationChanged(source.FormationType);
             if (GameData.FormationType != source.FormationType) return;
@@ -473,7 +478,7 @@ public partial class FormationBuilder
 
     private async Task SuggestLineup(int periodId)
     {
-        if (GameData is null || HasBeenPlayed(periodId)) return;
+        if (GameData is null || IsLocked(periodId)) return;
 
         if (PeriodLineups[periodId].Count > 0
             && !await DialogService.ConfirmAsync(

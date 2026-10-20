@@ -21,7 +21,7 @@
     var activePeriod = orderedPeriods[activeIndex];
     var periodFormation = activePeriod.FormationTypeOverride ?? GameData.FormationType;
     var gameFinished = GameData.IsComplete;
-    var activePeriodPlayed = gameFinished || activePeriod.HasKickedOff;
+    var activePeriodLocked = gameFinished || activePeriod.HasKickedOff;
 }
 
 @if (HasUnsavedChanges)
@@ -121,7 +121,7 @@
     </div>
 </div>
 
-@if (activePeriodPlayed && !gameFinished)
+@if (activePeriodLocked && !gameFinished)
 {
     <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2">
         @L["This half was played from the touchline, so its line-up is the record of who was on the pitch and is no longer edited here."]
@@ -131,7 +131,7 @@
 <div class="formation-layout mt-2">
     <div class="player-list-panel">
         <PlayerList Players="GetAvailablePlayers(activePeriod.Id)"
-                    ReadOnly="activePeriodPlayed"
+                    ReadOnly="activePeriodLocked"
                     SelectedPlayerId="Drag.SelectedPlayerId"
                     OnDragStart="OnPlayerDragStart"
                     OnPlayerTapped="OnListPlayerTapped" />
@@ -180,7 +180,7 @@
                Positions="PeriodLineups[activePeriod.Id]"
                Size="PitchSize.Compact"
                ConstrainHeight="true"
-               Draggable="@(!activePeriodPlayed)"
+               Draggable="@(!activePeriodLocked)"
                DraggedPlayerId="Drag.PlayerId"
                SelectedSlotIndex="Drag.SelectedSlotIndex"
                OnPlayerDropped="(slot) => OnPlayerDropped(activePeriod.Id, slot)"
@@ -196,7 +196,7 @@
     </div>
     <div class="subs-panel">
         <SubstituteBench Lineup="PeriodLineups[activePeriod.Id]"
-                         ReadOnly="activePeriodPlayed"
+                         ReadOnly="activePeriodLocked"
                          DraggedPlayerId="Drag.PlayerId"
                          SelectedPlayerId="Drag.SelectedPlayerId"
                          OnSubTapped="(playerId) => OnSubTapped(activePeriod.Id, playerId)"
@@ -208,7 +208,7 @@
     </div>
 </div>
 
-@if (!activePeriodPlayed && SelectedPlayer is { } selected)
+@if (!activePeriodLocked && SelectedPlayer is { } selected)
 {
     <div class="selection-bar">
         <span class="selection-text">@L["{0}: tap a position or the bench", selected.DisplayName]</span>
@@ -253,7 +253,7 @@ else if (HasUnsavedChanges)
                 @L["Save All Lineups"]
             </MudButton>
 
-            @if (!activePeriodPlayed)
+            @if (!activePeriodLocked)
             {
                 <MudButton Variant="Variant.Outlined" Class="btn-ghost"
                            StartIcon="@Icons.Material.Filled.AutoFixHigh"
@@ -281,7 +281,7 @@ else if (HasUnsavedChanges)
                 @L["Save"]
             </MudButton>
 
-            @if (!activePeriodPlayed)
+            @if (!activePeriodLocked)
             {
                 <MudButton Variant="Variant.Outlined" Class="btn-ghost"
                            StartIcon="@Icons.Material.Filled.AutoFixHigh"

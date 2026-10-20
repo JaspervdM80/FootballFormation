@@ -80,7 +80,6 @@ public class GameService(
 
             var game = await db.Games
                 .AsNoTracking()
-                .WithPeriods()
                 .FirstOrDefaultAsync(g => g.Id == gameId, cancellationToken);
 
             if (game is null)
