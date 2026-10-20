@@ -1,6 +1,7 @@
+/* minmax(0, …), not a bare 1fr: a track never narrows below its content, and the one-line opponent goal rows would size it to the whole club name. */
 .result-layout {
     display: grid;
-    grid-template-columns: 300px 1fr;
+    grid-template-columns: 300px minmax(0, 1fr);
     gap: 20px;
     max-width: 860px;
     align-items: start;
@@ -339,7 +340,7 @@
 
 @media (max-width: 700px) {
     .result-layout {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
