@@ -28,7 +28,7 @@ public partial class Teams
 
     private Club? SelectedClub => _clubs?.FirstOrDefault(c => c.Id == _selectedClubId);
 
-    private string TeamLinkUrl(int teamId) => Navigation.BaseUri.TrimEnd('/') + AppRoutes.TeamLink(teamId);
+    private string TeamLinkUrl(int teamId) => AppRoutes.TeamLinkUrl(Navigation.BaseUri, teamId);
 
     private string TeamCount => _clubTeams.Count == 1
         ? L["{0} team", _clubTeams.Count]

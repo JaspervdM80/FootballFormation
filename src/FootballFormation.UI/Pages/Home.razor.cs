@@ -10,6 +10,7 @@ public partial class Home
     [Inject] private LiveMatchService Live { get; set; } = null!;
     [Inject] private LiveMatchNotifier Notifier { get; set; } = null!;
     [Inject] private GameService GameService { get; set; } = null!;
+    [Inject] private TeamSetupService SetupService { get; set; } = null!;
     [Inject] private TimeProvider Time { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
@@ -25,6 +26,8 @@ public partial class Home
     private HomeDashboard _dashboard = HomeDashboard.Empty;
 
     private DutyRoster? _duties;
+
+    private TeamSetup? _setup;
 
     private bool IsLive => TodaysGame?.MatchState == MatchState.InProgress;
 
@@ -54,6 +57,12 @@ public partial class Home
         await Team.EnsureLoadedAsync();
         await LoadTodaysGameAsync();
 
+        if (_isAdmin)
+        {
+            var setup = await SetupService.GetAsync(Cancellation);
+            _setup = setup.IsSuccess ? setup.Value : null;
+        }
+
         // Any of this team's live-match changes, not just one game's: the banner has no game of its own until it loads one, and a match
         // starting is exactly the event it must not miss.
         Notifier.Changed += OnLiveChanged;
@@ -65,6 +74,16 @@ public partial class Home
         var loaded = Snackbar.ReportFailure(L, result);
         _dashboard = loaded ? HomeDashboardReport.Build(result.Value!, Now) : HomeDashboard.Empty;
         _duties = loaded ? DutyRosterReport.Build(result.Value!, Now) : null;
+    }
+
+    private async Task HideSetupAsync()
+    {
+        var shown = _setup;
+        _setup = null;
+
+        var result = await SetupService.HideAsync();
+        if (!Snackbar.ReportFailure(L, result))
+            _setup = shown;
     }
 
     private async Task LoadTodaysGameAsync()

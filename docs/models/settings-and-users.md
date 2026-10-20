@@ -9,6 +9,7 @@
 | DefaultSplitType | GameSplitType | Halves |
 | DefaultFormation | FormationType | F442 |
 | MatchDay | DayOfWeek | Saturday |
+| DefaultsConfirmed | bool | false — set by `SaveMatchDefaultsAsync` and carried by `CopyFor`. The row is created on first read, so its existence says nothing about whether anyone chose these values; this does, and it is what ticks off the home page's setup step |
 | TrainingDays | List\<DayOfWeek\> | empty — stored as comma-separated ints, like every other list column |
 | FirstTrainingDate | DateTime? | null — meaning the season's own start |
 | LastTrainingDate | DateTime? | null — meaning the season's own end |
@@ -172,6 +173,7 @@ code to, is [one-deployment-many-teams](../patterns/one-deployment-many-teams.md
 | Club.ThemeName | string(50) | Names a `ClubTheme` preset, not a set of colours — the styles are compiled in and not editable. `ClubTheme.Named` falls back to the default rather than throwing |
 | Team.ClubId | int | FK, **Restrict** |
 | Team.Name | string(50) | **Unique with ClubId** — two clubs may each have an MO15-2 |
+| Team.SetupChecklistHidden | bool | Set when an admin dismisses the home page's setup checklist. Never cleared. `AddTeamSetupChecklist` set it on every team that already had a game |
 
 `TeamService` refuses to delete a club that still has teams, and refuses to delete **the team
 `GetCurrentAsync` answers with** — which, there being no picker, is the lowest-numbered one. That is

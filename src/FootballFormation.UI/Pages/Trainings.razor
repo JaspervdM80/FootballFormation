@@ -89,8 +89,11 @@ else if (_trainings.Count == 0)
                 : L["No trainings yet. Add your first session!"])
         </MudText>
         <MudText Typo="Typo.caption" Class="mt-2 d-block" Style="color: var(--ink-faint);">
-            @L["Set the training days and the first and last training under Preferences, and the sessions fill themselves in."]
+            @L["Set the training days and the first and last training under Settings, and the sessions fill themselves in."]
         </MudText>
+        <MudButton Variant="Variant.Filled" Class="btn-gold mt-4" Href="@AppRoutes.Settings">
+            @L["Set the training schedule"]
+        </MudButton>
     </MudPaper>
 }
 else

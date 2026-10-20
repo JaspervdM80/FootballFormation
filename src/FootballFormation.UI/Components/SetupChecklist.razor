@@ -1,0 +1,48 @@
+<section class="setup-checklist" aria-labelledby="setup-checklist-title">
+    <div class="setup-head">
+        <div class="setup-head-text">
+            <h2 id="setup-checklist-title" class="setup-title">@L["Get your team ready"]</h2>
+            <div class="setup-progress">@L["{0} of {1} done", Setup.DoneCount, Setup.StepCount]</div>
+        </div>
+        <button type="button" class="setup-dismiss" title="@L["Dismiss"]" aria-label="@L["Dismiss"]" @onclick="OnHide">
+            <MudIcon Icon="@Icons.Material.Filled.Close" />
+        </button>
+    </div>
+
+    <ol class="setup-steps">
+        @foreach (var step in Steps)
+        {
+            <li>
+                <a class="setup-step @(step.Done ? "setup-step-done" : "")" href="@step.Href">
+                    <MudIcon Icon="@(step.Done ? Icons.Material.Filled.CheckCircle : Icons.Material.Outlined.Circle)" Class="setup-step-mark" />
+                    <span class="setup-step-text">
+                        <span class="setup-step-title">@step.Title</span>
+                        <span class="setup-step-body">@step.Body</span>
+                    </span>
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Class="setup-step-chevron" />
+                </a>
+            </li>
+        }
+    </ol>
+
+    <div class="setup-share">
+        <span class="setup-step-text">
+            <span class="setup-step-title">@L["Share with parents"]</span>
+            <span class="setup-step-body">@L["Send them this link so the app opens on your team."]</span>
+        </span>
+        @* A plain onclick into js/clipboard.js, for the same lost-gesture reason as the result page's copy button. *@
+        <button type="button" class="setup-share-button"
+                onclick="copyElementText('setup-team-link', 'setup-link-copied', 'setup-link-failed')">
+            <MudIcon Icon="@Icons.Material.Filled.Link" Size="Size.Small" />@L["Copy team link"]
+        </button>
+        <span id="setup-team-link" hidden>@TeamLinkUrl</span>
+    </div>
+    <div id="setup-link-copied" class="inline-notice inline-notice-success mt-2" role="status" hidden>
+        @L["Copied to clipboard"]
+    </div>
+    <div id="setup-link-failed" class="inline-notice inline-notice-warning mt-2" role="alert" hidden>
+        @L["Couldn't copy — try again"]
+    </div>
+
+    <button type="button" class="setup-hide" @onclick="OnHide">@L["Hide this list"]</button>
+</section>

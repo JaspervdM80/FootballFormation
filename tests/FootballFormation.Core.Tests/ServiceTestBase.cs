@@ -45,6 +45,7 @@ public abstract class ServiceTestBase : IDisposable
 
         Users = new UserService(DbFactory, CurrentUser, CurrentTeam, NullLogger<UserService>.Instance);
         TeamsAndClubs = new TeamService(DbFactory, CurrentUser, CurrentTeam, Time, NullLogger<TeamService>.Instance);
+        TeamSetup = new TeamSetupService(DbFactory, CurrentUser, NullLogger<TeamSetupService>.Instance);
 
         Stats = new StatsService(Games, Squads, Trainings, CurrentTeam, Time, StatsCache, NullLogger<StatsService>.Instance);
     }
@@ -88,6 +89,8 @@ public abstract class ServiceTestBase : IDisposable
 
     /// Named for both, because the page and the service cover the club above the team as well.
     protected TeamService TeamsAndClubs { get; }
+
+    protected TeamSetupService TeamSetup { get; }
 
     // StatsCache.Generation is how a test asks whether a write was noticed, without timing.
     protected StatsService Stats { get; }

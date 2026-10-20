@@ -41,6 +41,11 @@
 
 <PageHeader Class="home-header" Title="@Team.DisplayName" />
 
+@if (_setup is { Shows: true } setup && Team.Current is { } team)
+{
+    <SetupChecklist Setup="setup" TeamId="team.Id" OnHide="HideSetupAsync" />
+}
+
 <div class="home-dashboard mb-6">
     <section class="home-block">
         <div class="card-label">@L["Next match"]</div>
