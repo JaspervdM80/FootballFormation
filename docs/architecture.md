@@ -213,8 +213,8 @@ State/
   SeasonPreference.cs         — That choice in a cookie for 8h, so a deploy's dropped circuit
                                 does not reset it. Writes it; App.razor/Routes read it
   TeamState.cs                — Scoped: the club and team the app says it is, for the chrome
-  TeamPreference.cs           — The team in a cookie for a year. /team/set writes it on a choice and
-                                /team/{id} from a shared link; Program.cs stamps the resolved team
+  TeamPreference.cs           — The team in a cookie for a year. /team/{club}/{team} writes it, from
+                                a shared link or a choice; Program.cs stamps the resolved team
                                 on every page served
   RequestContext.cs           — The two cookies a scope was created with, so the static render and
                                 the circuit cannot disagree about them

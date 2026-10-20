@@ -21,7 +21,7 @@ async function freshTeam(page, name) {
 
 test('a new team shows its admin what to set up, and the link to send the parents', async ({ page, context, visitor }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE_URL });
-  await freshTeam(page, 'Setup');
+  const team = await freshTeam(page, 'Setup');
 
   await expect(checklist(page)).toContainText('0 of 4 done');
   await expect(checklist(page).locator('a.setup-step[href="/preferences"]')).toBeVisible();
@@ -30,7 +30,7 @@ test('a new team shows its admin what to set up, and the link to send the parent
   await expect(checklist(page).locator('a.setup-step[href="/games"]')).toBeVisible();
 
   const link = (await page.locator('#setup-team-link').textContent()).trim();
-  expect(link).toMatch(/^https?:\/\/[^/]+\/team\/\d+$/);
+  expect(new URL(link).pathname).toBe(`/team/gjs/${team.toLowerCase()}`);
   await clickFor(
     checklist(page).getByRole('button', { name: 'Copy team link' }),
     () => expect(page.locator('#setup-link-copied')).toBeVisible());

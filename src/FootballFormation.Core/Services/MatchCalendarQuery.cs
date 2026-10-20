@@ -1,6 +1,9 @@
 namespace FootballFormation.Core.Services;
 
-public sealed record MatchCalendar(string TeamFullName, IReadOnlyList<Game> Games);
+public sealed record MatchCalendar(Team Team, IReadOnlyList<Game> Games)
+{
+    public string TeamFullName => Team.FullName;
+}
 
 /// A calendar app polls without the team cookie, so the team comes from the URL or the game itself rather than ICurrentTeam, which would
 /// answer "the first team" for every subscriber. Stamped onto the context the way MatchAudienceQuery does it.
@@ -22,7 +25,7 @@ public sealed class MatchCalendarQuery(IRawDbContextFactory dbFactory)
 
         var games = await db.Games.AsNoTracking().ToListAsync(cancellationToken);
 
-        return new MatchCalendar(team.FullName, games.OldestFirst());
+        return new MatchCalendar(team, games.OldestFirst());
     }
 
     public async Task<MatchCalendar?> ForGameAsync(int gameId, CancellationToken cancellationToken = default)
@@ -41,6 +44,6 @@ public sealed class MatchCalendarQuery(IRawDbContextFactory dbFactory)
             .Include(t => t.Club)
             .FirstAsync(t => t.Id == game.TeamId, cancellationToken);
 
-        return new MatchCalendar(team.FullName, [game]);
+        return new MatchCalendar(team, [game]);
     }
 }

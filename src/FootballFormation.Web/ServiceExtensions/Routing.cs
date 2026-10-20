@@ -261,8 +261,8 @@ public static class Routing
             return Results.LocalRedirect($"~/{redirectUri.TrimStart('/')}");
         });
 
-        // Nothing is validated here: a team id that names no team falls back to the first one on the next read, and the cookie is a view
-        // choice rather than authority — what an account may change comes from its own claim. See CurrentTeam.
+        // What the app linked to before team links had names, and still in calendar events imported back then. Nothing is validated: a
+        // team id that names no team falls back to the first one on the next read, and the cookie is a view choice. See CurrentTeam.
         app.MapGet("/team/set", (int team, string redirectUri, HttpContext context) =>
         {
             if (team > 0) context.Response.Cookies.Append(TeamPreference.CookieName, TeamPreference.Format(team), TeamCookie());
@@ -270,15 +270,28 @@ public static class Routing
             return Results.LocalRedirect($"~/{redirectUri.TrimStart('/')}");
         });
 
-        // The link a team hands its parents. Unlike /team/set it checks the team exists: a stale link should say so, not open another team.
+        // The link a team hands its parents, and what every team switch goes through. Unlike /team/set it checks the team exists: a stale
+        // link should say so, not open another team.
+        app.MapGet("/team/{club}/{team}", async (string club, string team, string? redirectUri, TeamService teams, HttpContext context) =>
+        {
+            var result = await teams.FindByLinkAsync(club, team, context.RequestAborted);
+            return result is { IsSuccess: true, Value: { } found } ? OpenOnTeam(context, found.Id, redirectUri) : Results.NotFound();
+        }).AllowAnonymous();
+
+        // The id form every link handed out before the readable one, still in parents' chats.
         app.MapGet("/team/{teamId:int}", async (int teamId, TeamService teams, HttpContext context) =>
         {
             var result = await teams.GetTeamsAsync(context.RequestAborted);
             if (result.IsFailure || result.Value!.All(t => t.Id != teamId)) return Results.NotFound();
 
-            context.Response.Cookies.Append(TeamPreference.CookieName, TeamPreference.Format(teamId), TeamCookie());
-            return Results.Redirect(AppRoutes.Home);
+            return OpenOnTeam(context, teamId, redirectUri: null);
         }).AllowAnonymous();
+    }
+
+    static IResult OpenOnTeam(HttpContext context, int teamId, string? redirectUri)
+    {
+        context.Response.Cookies.Append(TeamPreference.CookieName, TeamPreference.Format(teamId), TeamCookie());
+        return Results.Redirect(AppRoutes.IsLocal(redirectUri) ? redirectUri! : AppRoutes.Home);
     }
 
     /// Signing in puts you on the team you run, or an admin of any team but the lowest-numbered one would land on a team they cannot
@@ -300,8 +313,8 @@ public static class Routing
             calendar.TeamFullName,
             calendar.Games,
             game => MatchInfoTextBuilder.Build(game, calendar.TeamFullName, localizer),
-            // Through /team/set: a calendar app opens a browser with no ff.team cookie, which the chooser would ask, and could answer wrong.
-            game => origin + AppRoutes.SetTeam(game.TeamId, AppRoutes.Overview(game.Id)),
+            // Through the team link: a calendar app opens a browser with no ff.team cookie, which the chooser would ask, and could answer wrong.
+            game => origin + AppRoutes.SetTeam(calendar.Team, AppRoutes.Overview(game.Id)),
             time.GetUtcNow().UtcDateTime);
 
         return Results.File(Encoding.UTF8.GetBytes(ics), "text/calendar; charset=utf-8", fileName);

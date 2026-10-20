@@ -670,6 +670,8 @@
   <data name="Team name must be at most {0} characters" xml:space="preserve"><value>Teamnaam mag maximaal {0} tekens lang zijn</value></data>
   <data name="A club named {0} already exists" xml:space="preserve"><value>Er bestaat al een club met de naam {0}</value></data>
   <data name="{0} already has a team named {1}" xml:space="preserve"><value>{0} heeft al een team met de naam {1}</value></data>
+  <data name="{0} would have the same link as {1}" xml:space="preserve"><value>{0} zou dezelfde link krijgen als {1}</value></data>
+  <data name="find the team" xml:space="preserve"><value>het team te vinden</value></data>
   <data name="Club {0} still has {1} teams" xml:space="preserve"><value>Club {0} heeft nog {1} teams</value></data>
   <data name="Are you sure you want to delete {0}? Its accounts are deleted with it." xml:space="preserve"><value>Weet je zeker dat je {0} wilt verwijderen? De accounts van het team worden ook verwijderd.</value></data>
   <data name="Team {0} still has games, trainings or players" xml:space="preserve"><value>Team {0} heeft nog wedstrijden, trainingen of spelers</value></data>

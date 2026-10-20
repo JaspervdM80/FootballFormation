@@ -39,6 +39,25 @@ public class TeamService(
             return Result.Success(teams);
         });
 
+    /// The team a link names by its club's and its own slug; null when none does. A typed link in capitals still finds it.
+    public Task<Result<Team?>> FindByLinkAsync(string clubSlug, string teamSlug, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "find the team", cancellationToken, async () =>
+        {
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            var teams = await db.Teams
+                .AsNoTracking()
+                .Include(t => t.Club)
+                .OrderBy(t => t.Id)
+                .ToListAsync(cancellationToken);
+
+            var team = teams.FirstOrDefault(t =>
+                LinkSlug.SameLink(t.Club!.Name, clubSlug) && LinkSlug.SameLink(t.Name, teamSlug));
+
+            logger.LogDebug("Team link {ClubSlug}/{TeamSlug} named team {TeamId}", clubSlug, teamSlug, team?.Id);
+            return Result.Success(team);
+        });
+
     /// The team the app is showing this visitor: what they last looked at, or the first team there is. Null before seeding.
     public Task<Result<Team?>> GetCurrentAsync(CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "load the current team", cancellationToken, async () =>
@@ -277,6 +296,13 @@ public class TeamService(
             return Result.Failure("A club named {0} already exists", name);
         }
 
+        var others = await db.Clubs.AsNoTracking().Where(c => c.Id != club.Id).Select(c => c.Name).ToListAsync(cancellationToken);
+        if (others.FirstOrDefault(other => LinkSlug.SameLink(other, name)) is { } sharing)
+        {
+            logger.LogWarning("Rejected club {ClubName}: its link would be the same as {OtherClub}'s", name, sharing);
+            return Result.Failure("{0} would have the same link as {1}", name, sharing);
+        }
+
         return Result.Success();
     }
 
@@ -302,6 +328,16 @@ public class TeamService(
         {
             logger.LogWarning("Rejected team {TeamName}: {ClubName} already has one", name, club.Name);
             return Result.Failure("{0} already has a team named {1}", club.Name, name);
+        }
+
+        var others = await db.Teams.AsNoTracking()
+            .Where(t => t.ClubId == team.ClubId && t.Id != team.Id)
+            .Select(t => t.Name)
+            .ToListAsync(cancellationToken);
+        if (others.FirstOrDefault(other => LinkSlug.SameLink(other, name)) is { } sharing)
+        {
+            logger.LogWarning("Rejected team {TeamName}: its link would be the same as {OtherTeam}'s in {ClubName}", name, sharing, club.Name);
+            return Result.Failure("{0} would have the same link as {1}", $"{club.Name} {name}", $"{club.Name} {sharing}");
         }
 
         return Result.Success();

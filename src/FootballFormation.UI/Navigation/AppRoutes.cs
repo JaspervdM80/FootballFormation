@@ -41,10 +41,11 @@ public static class AppRoutes
 
     public static string TeamCalendar(int teamId) => $"/calendar/team/{teamId}.ics";
 
-    /// An endpoint that opens the app on this team; what /teams hands out for a team to share.
-    public static string TeamLink(int teamId) => $"/team/{teamId}";
+    /// An endpoint that opens the app on this team; what /teams hands out for a team to share. A team read without its club falls back
+    /// to the id, which the endpoint still answers.
+    public static string TeamLink(Team team) => team.Club is { } club ? $"/team/{club.Slug}/{team.Slug}" : $"/team/{team.Id}";
 
-    public static string TeamLinkUrl(string baseUri, int teamId) => baseUri.TrimEnd('/') + TeamLink(teamId);
+    public static string TeamLinkUrl(string baseUri, Team team) => baseUri.TrimEnd('/') + TeamLink(team);
 
     /// Endpoints, not pages: the culture, the season and the team are all fixed for the lifetime of a render — the circuit's culture at
     /// startup, the other two off the request — so each writes a cookie and sends the visitor back where they were.
@@ -56,5 +57,5 @@ public static class AppRoutes
     public static bool IsLocal(string? url) =>
         url is { Length: > 0 } && url[0] == '/' && !url.StartsWith("//") && !url.StartsWith("/\\");
 
-    public static string SetTeam(int teamId, string returnUrl) => $"/team/set?team={TeamPreference.Format(teamId)}&redirectUri={Uri.EscapeDataString(returnUrl)}";
+    public static string SetTeam(Team team, string returnUrl) => $"{TeamLink(team)}?redirectUri={Uri.EscapeDataString(returnUrl)}";
 }

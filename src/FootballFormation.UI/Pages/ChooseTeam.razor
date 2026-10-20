@@ -18,7 +18,7 @@
             @foreach (var team in club.Teams)
             {
                 @* A real page load: the team is read off the request that creates a scope. See RequestContext. *@
-                <a class="list-row choose-team" href="@AppRoutes.SetTeam(team.Id, ReturnUrl)" data-enhance-nav="false">
+                <a class="list-row choose-team" href="@AppRoutes.SetTeam(team, ReturnUrl)" data-enhance-nav="false">
                     <span class="list-row-name">@team.FullName</span>
                     <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" />
                 </a>

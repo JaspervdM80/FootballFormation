@@ -550,12 +550,12 @@ export async function addTeam(page, name) {
 }
 
 /**
- * Switching team is a link to /team/set and a real page load, not a click to retry — pressing again
+ * Switching team is a team link and a real page load, not a click to retry — pressing again
  * while the first navigation is in flight is what clickFor would do.
  */
 export async function showTeam(page, name) {
-  await teamRow(page, name).locator('a[href^="/team/set"]').click();
-  await page.waitForURL(url => !url.pathname.startsWith('/team/set'));
+  await teamRow(page, name).locator('a[href^="/team/"]').click();
+  await page.waitForURL(url => !url.pathname.startsWith('/team/'));
 }
 
 export const MODAL = '#components-reconnect-modal';

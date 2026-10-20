@@ -139,7 +139,7 @@ circuit behind an interactive page's island.
   service cannot load in its constructor and the layout and page both need the data during their own
   `OnInitializedAsync`.
 - **Choosing a season or a team is a navigation, not an event** — a link to `/season/set` or
-  `/team/set` (`AppRoutes.SetTeam`), which stores the cookie and redirects back. There is no
+  the team link with a `redirectUri` (`AppRoutes.SetTeam`), which stores the cookie and redirects back. There is no
   `OnChanged` to subscribe to; `SeasonAwarePage` exists only to await the load before the page's
   first query.
 - Any link that changes per-request state needs `data-enhance-nav="false"`, or an island that is

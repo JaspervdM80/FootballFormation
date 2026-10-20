@@ -72,7 +72,7 @@ async function teamLink(page, name) {
   return (await teamRow(page, name).locator('[id^="team-link-"]').textContent()).trim();
 }
 
-/** A real page load through /team/set, so the choice is clicked once and waited for rather than retried. */
+/** A real page load through the team link, so the choice is clicked once and waited for rather than retried. */
 async function pickTeamInDrawer(page, name) {
   const picker = page.locator('.app-drawer .team-picker > summary');
   await clickFor(page.locator('label.nav-hamburger'), () => expect(picker).toBeInViewport());
@@ -106,10 +106,10 @@ test('switching team from a page about one player starts over at home', async ({
   await expect(appTitle(visitor)).toHaveText(`GJS ${SECOND_TEAM}`);
 });
 
-test('a team link opens the app on its team, and a link to no team is not found', async ({ page, visitor }) => {
+test('a team link opens the app on its team by club and team name, and a link to no team is not found', async ({ page, visitor }) => {
   await ensureSecondTeam(page);
   const link = await teamLink(page, SECOND_TEAM);
-  expect(link).toMatch(/^https?:\/\/[^/]+\/team\/\d+$/);
+  expect(new URL(link).pathname).toBe(`/team/gjs/${SECOND_TEAM.toLowerCase()}`);
 
   await goto(visitor, '/');
   await expect(appTitle(visitor)).toHaveText(SEEDED_TEAM);
@@ -121,6 +121,16 @@ test('a team link opens the app on its team, and a link to no team is not found'
   // A link sent before its team was deleted must say so, not open whichever team comes first.
   const gone = await visitor.request.get('/team/999999', { maxRedirects: 0 });
   expect(gone.status()).toBe(404);
+  const renamed = await visitor.request.get('/team/gjs/mo99-gone', { maxRedirects: 0 });
+  expect(renamed.status()).toBe(404);
+
+  const elsewhere = await visitor.request.get(`${new URL(link).pathname}?redirectUri=%2F%2Fexample.com`, { maxRedirects: 0 });
+  expect(elsewhere.headers()['location']).toBe('/');
+
+  // The id form is what every link sent before the readable one carries.
+  await goto(visitor, '/team/1');
+  expect(new URL(visitor.url()).pathname).toBe('/');
+  await expect(appTitle(visitor)).toHaveText(SEEDED_TEAM);
 });
 
 test('the team the app falls back to cannot be deleted, however many others there are', async ({ page }) => {
