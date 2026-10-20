@@ -290,7 +290,7 @@ public class TeamServiceTests : ServiceTestBase
     }
 
     [Fact]
-    public async Task A_team_with_accounts_on_it_is_refused_rather_than_left_to_the_foreign_key()
+    public async Task A_team_is_deleted_with_its_accounts_even_its_only_admin()
     {
         var club = (await TeamsAndClubs.CreateClubAsync(new Club { Name = "GJS" })).Value!;
         var first = (await TeamsAndClubs.CreateTeamAsync(new Team { ClubId = club.Id, Name = "MO15-2" })).Value!;
@@ -298,13 +298,14 @@ public class TeamServiceTests : ServiceTestBase
         CurrentTeam.Id = first.Id;
 
         await Users.CreateAsync("Coach", "coach", "correct-horse", UserRole.Admin, second.Id);
+        await Users.CreateAsync("Other", "other", "correct-horse", UserRole.Admin, first.Id);
 
-        // Letting the delete through would revoke an admin without passing the last-admin rule, and the FK would only ever have said
-        // so as a raw DbUpdateException.
         var deleted = await TeamsAndClubs.DeleteTeamAsync(second.Id);
 
-        Assert.True(deleted.IsFailure);
-        Assert.Equal(2, Read().Teams.Count());
+        Assert.True(deleted.IsSuccess);
+        Assert.Single(Read().Teams);
+        Assert.DoesNotContain(Read().Users, u => u.Username == "coach");
+        Assert.Contains(Read().Users, u => u.Username == "other");
     }
 
     [Fact]

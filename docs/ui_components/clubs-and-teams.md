@@ -56,8 +56,8 @@ the app looks exactly as it did before teams existed. A team link `/team/{id}` s
 parents arriving through one never see the question.
 
 `DeleteTeamAsync` still refuses the lowest-id team, because that is what every visitor who has chosen
-nothing falls back to — and it refuses a team accounts are still on, which the `Restrict` FK would
-otherwise report as a raw `DbUpdateException`.
+nothing falls back to. It deletes the team's accounts with it: the last-admin rule will not let a
+team's only admin go first, so refusing a team with accounts left both undeletable.
 
 `CreateTeamAsync` opens a new team on a current season covering today (`Season.FirstFor`), in the
 same transaction, so its admin lands on a working app rather than on pages with no season to hang off;
