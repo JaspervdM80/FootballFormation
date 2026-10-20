@@ -20,6 +20,7 @@ public partial class FormationBuilder
     public int GameId { get; set; }
 
     private Game? GameData { get; set; }
+    private Game? PreviousLineup { get; set; }
     private List<Player>? AllPlayers { get; set; }
 
     /// From the game, not the season picker: the builder is scoped to one fixture and must not follow a global filter.
@@ -69,13 +70,19 @@ public partial class FormationBuilder
 
         CacheLineups();
 
+        if (CanCopyPreviousLineupAt(GameData))
+        {
+            var previousResult = await GameService.GetPreviousFullLineupAsync(GameId, Cancellation);
+            PreviousLineup = Snackbar.ReportFailure(L, previousResult) ? previousResult.Value : null;
+        }
+
         Logger.LogDebug("Loaded formation builder for game {GameId} vs {Opponent}",
             GameId, GameData.Opponent);
     }
 
     /// A played half is left out: the touchline owns it, and the save skips it.
     private bool HasUnsavedChanges =>
-        GameData is not null
+        GameData is not null && !GameData.IsComplete
         && GameData.Periods.Any(p => !p.HasKickedOff
             && PeriodLineups.TryGetValue(p.Id, out var lineup)
             && LineupSignature(lineup) != SavedLineups.GetValueOrDefault(p.Id));
@@ -123,9 +130,15 @@ public partial class FormationBuilder
         Squad.IsInjured(playerId) || (GameData?.InjuredPlayerIds.Contains(playerId) ?? false);
 
     /// Every editing handler below stops here rather than piling up changes the save would drop — the touchline owns a half once it
-    /// has kicked off, and GameService.SavePeriodLineupAsync refuses one.
+    /// has kicked off, and GameService.SavePeriodLineupAsync refuses one. A finished match is a record, so none of it is edited.
     private bool HasBeenPlayed(int periodId) =>
-        GameData!.Periods.First(p => p.Id == periodId).HasKickedOff;
+        GameData!.IsComplete || GameData.Periods.First(p => p.Id == periodId).HasKickedOff;
+
+    private static bool CanCopyPreviousLineupAt(Game game) =>
+        !game.IsComplete && !game.Periods.Any(p => p.HasKickedOff);
+
+    private bool CanCopyPreviousLineup =>
+        PreviousLineup is not null && GameData is not null && CanCopyPreviousLineupAt(GameData);
 
     private List<Player> GetAvailablePlayers(int periodId)
     {
@@ -413,6 +426,49 @@ public partial class FormationBuilder
         Logger.LogInformation("Copied lineup from {SourcePeriod} to {NextPeriod} for game {GameId}",
             sourcePeriod.PeriodType, nextPeriod.PeriodType, GameId);
         Snackbar.Add(L["Lineup copied to {0}", L[nextPeriod.PeriodType.DisplayName()].Value], Severity.Info);
+    }
+
+    private async Task CopyPreviousLineup()
+    {
+        if (!CanCopyPreviousLineup || AllPlayers is null) return;
+
+        var source = PreviousLineup!;
+
+        if (PeriodLineups.Values.Any(lineup => lineup.Count > 0)
+            && !await DialogService.ConfirmAsync(
+                L["Copy the line-up from {0}?", source.Opponent],
+                L["Everyone currently set up for this match is replaced. Nothing is saved until you save."],
+                "Replace"))
+        {
+            return;
+        }
+
+        if (source.FormationType != GameData!.FormationType)
+        {
+            await OnFormationChanged(source.FormationType);
+            if (GameData.FormationType != source.FormationType) return;
+        }
+
+        var available = RosterPlayers.Select(p => p.Id).ToHashSet();
+        foreach (var (periodId, lineup) in GameData.LineupsCopiedFrom(source, available))
+            PeriodLineups[periodId] = lineup;
+
+        Drag.Clear();
+
+        var leftOut = source.Periods
+            .SelectMany(p => p.PlayerPositions)
+            .Where(pp => !available.Contains(pp.PlayerId))
+            .Select(pp => pp.Player?.DisplayName ?? "?")
+            .Distinct()
+            .ToList();
+
+        Logger.LogInformation("Copied the line-up of game {SourceGameId} into game {GameId}", source.Id, GameId);
+        Snackbar.Add(
+            leftOut.Count == 0
+                ? L["Line-up copied from {0} — check it before saving.", source.Opponent]
+                : L["Line-up copied from {0}, leaving out who is not available for this match: {1}. Check it before saving.",
+                    source.Opponent, string.Join(", ", leftOut)],
+            Severity.Success);
     }
 
     private async Task SuggestLineup(int periodId)

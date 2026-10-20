@@ -36,6 +36,7 @@ public class TeamDataScopingTests : ServiceTestBase
         Scope(a);
         Assert.True((await Games.GetByIdAsync(a.GameId)).IsSuccess);
         Assert.True((await Games.GetByIdAsync(b.GameId)).IsFailure);
+        Assert.True((await Games.GetPreviousFullLineupAsync(b.GameId)).IsFailure);
         Assert.True((await Live.GetLiveAsync(b.GameId)).IsFailure);
     }
 

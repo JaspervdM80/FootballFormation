@@ -892,4 +892,10 @@
   <data name="Hide this list" xml:space="preserve"><value>Verberg deze lijst</value></data>
   <data name="load the team setup" xml:space="preserve"><value>de teaminrichting te laden</value></data>
   <data name="hide the checklist" xml:space="preserve"><value>de lijst te verbergen</value></data>
+  <data name="load the previous line-up" xml:space="preserve"><value>de vorige opstelling te laden</value></data>
+  <data name="Copy line-up from the previous game" xml:space="preserve"><value>Opstelling overnemen van vorige wedstrijd</value></data>
+  <data name="Copy the line-up from {0}?" xml:space="preserve"><value>Opstelling van {0} overnemen?</value></data>
+  <data name="Everyone currently set up for this match is replaced. Nothing is saved until you save." xml:space="preserve"><value>Iedereen die nu voor deze wedstrijd staat opgesteld wordt vervangen. Er wordt niets opgeslagen tot je opslaat.</value></data>
+  <data name="Line-up copied from {0} — check it before saving." xml:space="preserve"><value>Opstelling van {0} overgenomen — controleer die voordat je opslaat.</value></data>
+  <data name="Line-up copied from {0}, leaving out who is not available for this match: {1}. Check it before saving." xml:space="preserve"><value>Opstelling van {0} overgenomen, zonder wie er deze wedstrijd niet bij is: {1}. Controleer die voordat je opslaat.</value></data>
 </root>
