@@ -104,7 +104,8 @@ Cascading throughout **except Season → Game and Season → Training, which are
 season must never take a year of games, lineups, goals or attendance with it. `SeasonService.DeleteAsync`
 refuses with a readable message rather than letting the caller hit a raw `DbUpdateException`. Every
 FK to `Club` or `Team` is `Restrict` too, so a team delete has no silent path through its data — bar
-`PushSubscription`, a browser's opt-in with no history, which goes with its team.
+`PushSubscription`, a browser's opt-in with no history, which goes with its team. A team's accounts go
+with it too, removed by `TeamService.DeleteTeamAsync`: the last-admin rule never lets its only admin go first.
 
 `SeasonSquadMember` cascades from both the season and the player, and `MatchPreferences` from its
 season — pure membership and pure configuration, with no history of their own, so they must not make

@@ -112,7 +112,7 @@ public partial class Teams
     {
         var confirmed = await DialogService.ConfirmDeleteAsync(
             L["Delete Team"],
-            L["Are you sure you want to delete {0}?", team.FullName]);
+            L["Are you sure you want to delete {0}? Its accounts are deleted with it.", team.FullName]);
         if (!confirmed) return;
 
         var result = await TeamService.DeleteTeamAsync(team.Id);

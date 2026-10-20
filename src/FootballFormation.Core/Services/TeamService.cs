@@ -187,14 +187,6 @@ public class TeamService(
                 return Result.Failure("{0} is the team the app is showing", team.Name);
             }
 
-            // The FK is Restrict, so refuse here rather than letting the caller hit a raw DbUpdateException.
-            var admins = await db.Users.CountAsync(u => u.TeamId == id, cancellationToken);
-            if (admins > 0)
-            {
-                logger.LogWarning("Cannot delete team {TeamName}: {Count} accounts still run it", team.Name, admins);
-                return Result.Failure("Team {0} still has {1} accounts", team.Name, admins);
-            }
-
             // Past the filter, because the team being deleted is rarely the one in scope. Empty seasons go with it, or the one a new team
             // opens on would make every team undeletable; a season holding games, trainings or a squad is a year of data and refuses.
             var inUse = await db.Games.IgnoreQueryFilters().AnyAsync(g => g.TeamId == id, cancellationToken)
@@ -210,10 +202,13 @@ public class TeamService(
                 await db.MatchPreferences.IgnoreQueryFilters().Where(p => p.TeamId == id).ToListAsync(cancellationToken));
             db.Seasons.RemoveRange(
                 await db.Seasons.IgnoreQueryFilters().Where(s => s.TeamId == id).ToListAsync(cancellationToken));
+            // Its accounts go with it: refusing instead deadlocks, because the last-admin rule will not let the team's only admin go first.
+            var accounts = await db.Users.Where(u => u.TeamId == id).ToListAsync(cancellationToken);
+            db.Users.RemoveRange(accounts);
             db.Teams.Remove(team);
             await db.SaveChangesAsync(cancellationToken);
 
-            logger.LogInformation("Deleted team {TeamName} (ID: {TeamId})", team.Name, id);
+            logger.LogInformation("Deleted team {TeamName} (ID: {TeamId}) and its {Count} accounts", team.Name, id, accounts.Count);
             return Result.Success();
         });
 

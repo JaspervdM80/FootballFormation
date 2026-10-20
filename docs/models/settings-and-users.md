@@ -88,7 +88,7 @@ reach back into last season's row.
 | Username | string(50) | The login. **Unique index** |
 | PasswordHash | string | PBKDF2, via `PasswordHasher<AppUser>` — never a plaintext column |
 | Role | UserRole | Stored as int. Written into the auth cookie as `Role.ToString()` |
-| TeamId | int? | The team an `Admin` runs, as the `team_id` claim. Null on an `ApplicationAdmin`, who runs every team. **FK is `Restrict`** — `TeamService` refuses to delete a team accounts are still on |
+| TeamId | int? | The team an `Admin` runs, as the `team_id` claim. Null on an `ApplicationAdmin`, who runs every team. **FK is `Restrict`** — `TeamService.DeleteTeamAsync` deletes the team's accounts with it |
 | SecurityStamp | string(64) | Guid "N". Changes whenever the account's authority does |
 | MustChangePassword | bool | Set on the account a fresh install seeds, whose password is public knowledge. While true the session can sign in and nothing else — every route sends it to `/settings`, and `ICurrentUser.IsAdminAsync()` answers false, so the services refuse it too. Cleared by `ChangePasswordAsync` |
 
@@ -146,7 +146,8 @@ admin as cover for team A and leave A with nobody running it, which is
 [#140](https://github.com/JaspervdM80/FootballFormation/issues/140). An `ApplicationAdmin`
 deliberately does **not** count towards a team's admins — they can change every team's data but run
 none, and counting them would make the rule vacuous, since the last one can never be removed. The
-cost is that a team's only admin has to be joined by a second before they can be moved or deleted.
+cost is that a team's only admin has to be joined by a second before they can be moved or deleted — or
+go with the team: deleting a team deletes its accounts, since refusing that too would leave neither deletable.
 
 The same pair of rules applies again to the last **ApplicationAdmin**, app-wide this time and for the
 reason one rung up: nobody else can hand the role back.
