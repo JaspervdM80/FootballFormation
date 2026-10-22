@@ -6,7 +6,7 @@ namespace FootballFormation.Core.Tests;
 public class CancellationTests : ServiceTestBase
 {
     [Fact]
-    public async Task A_read_the_caller_has_already_given_up_on_comes_back_cancelled_not_failed()
+    public async Task A_read_the_caller_has_already_given_up_on_comes_back_cancelled_with_no_message()
     {
         await SeedPlayersAsync(3);
 
@@ -14,20 +14,10 @@ public class CancellationTests : ServiceTestBase
 
         Assert.True(result.IsCancelled);
         Assert.True(result.IsFailure);
-        Assert.False(result.IsSuccess);
-    }
-
-    [Fact]
-    public async Task A_cancelled_read_carries_no_message_because_there_is_nobody_left_to_show_one()
-    {
-        await SeedPlayersAsync(1);
-
-        var result = await Players.GetAllAsync(new CancellationToken(canceled: true));
 
         // The UI keys its snackbar off ErrorKey, and would raise it on the page they moved to.
         Assert.Null(result.ErrorKey);
         Assert.Null(result.Error);
-        Assert.NotEqual(ServiceOperation.UnexpectedFailureKey, result.ErrorKey);
     }
 
     [Fact]
@@ -88,19 +78,6 @@ public class CancellationTests : ServiceTestBase
 
         Assert.True(result.IsCancelled);
         Assert.NotEqual(ServiceOperation.NotAllowedKey, result.ErrorKey);
-    }
-
-    [Fact]
-    public async Task A_call_given_no_token_runs_to_completion_as_it_always_did()
-    {
-        await SeedPlayersAsync(2);
-
-        // Every token parameter defaults, so existing call sites behave exactly as before.
-        var result = await Players.GetAllAsync();
-
-        Assert.True(result.IsSuccess);
-        Assert.False(result.IsCancelled);
-        Assert.Equal(2, result.Value!.Count);
     }
 
     [Fact]

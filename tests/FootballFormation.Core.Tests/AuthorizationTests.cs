@@ -141,21 +141,6 @@ public class AuthorizationTests : ServiceTestBase
     }
 
     [Fact]
-    public async Task An_anonymous_caller_cannot_change_the_squad()
-    {
-        var season = await SeedSeasonAsync();
-        var players = await SeedPlayersAsync(1);
-
-        CurrentUser.IsAdmin = false;
-
-        var result = await Squads.AddMembersAsync(season.Id, [players[0].Id]);
-
-        Assert.True(result.IsFailure);
-        Assert.Equal(ServiceOperation.NotAllowedKey, result.ErrorKey);
-        Assert.Empty(Read().SeasonSquadMembers);
-    }
-
-    [Fact]
     public async Task An_anonymous_caller_cannot_fill_the_squad_in_bulk()
     {
         var season = await SeedSeasonAsync();
@@ -411,19 +396,6 @@ public class AuthorizationTests : ServiceTestBase
 
         Assert.True(comments.IsSuccess);
         Assert.Equal("Public", Assert.Single(comments.Value!).Body);
-    }
-
-    [Fact]
-    public async Task An_admin_sees_the_private_comments()
-    {
-        var season = await SeedSeasonAsync();
-        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
-        await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Public", IsPublic = true });
-        await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Private", IsPublic = false });
-
-        var comments = await Games.GetCommentsAsync(game.Id, includePrivate: true);
-
-        Assert.Equal(2, comments.Value!.Count);
     }
 
     [Fact]

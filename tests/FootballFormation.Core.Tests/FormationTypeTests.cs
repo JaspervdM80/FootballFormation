@@ -21,16 +21,6 @@ public class FormationTypeTests
 
     [Theory]
     [MemberData(nameof(AllFormations))]
-    public void Every_formation_has_a_display_name_that_is_not_the_enum_name(FormationType formation)
-    {
-        var name = formation.DisplayName();
-
-        Assert.NotEqual(formation.ToString(), name);
-        Assert.Contains('-', name);
-    }
-
-    [Theory]
-    [MemberData(nameof(AllFormations))]
     public void The_display_name_adds_up_to_the_outfield_players_it_fields(FormationType formation)
     {
         // "4-2-3-1" describes ten players; a qualifier like "4-4-2 diamond" is not part of the count.

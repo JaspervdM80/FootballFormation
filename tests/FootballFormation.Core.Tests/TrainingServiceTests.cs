@@ -67,7 +67,7 @@ public class TrainingServiceTests : ServiceTestBase
     }
 
     [Fact]
-    public async Task The_list_comes_back_newest_first_with_two_sessions_in_a_day_in_entry_order()
+    public async Task The_list_comes_back_this_week_first_with_two_sessions_in_a_day_in_entry_order()
     {
         var season = await SeedSeasonAsync();
 

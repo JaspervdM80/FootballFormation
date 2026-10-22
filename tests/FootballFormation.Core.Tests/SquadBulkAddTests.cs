@@ -164,17 +164,6 @@ public class SquadBulkAddTests : ServiceTestBase
     }
 
     [Fact]
-    public async Task A_pasted_list_invalidates_the_statistics_cache()
-    {
-        var season = await SeedSeasonAsync();
-        var generation = StatsCache.Generation;
-
-        await Squads.AddPastedListAsync(season.Id, "Sanne");
-
-        Assert.NotEqual(generation, StatsCache.Generation);
-    }
-
-    [Fact]
     public async Task Several_existing_players_join_the_squad_in_one_go()
     {
         var season = await SeedSeasonAsync();

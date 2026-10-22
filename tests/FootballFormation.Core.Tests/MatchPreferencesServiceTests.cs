@@ -40,18 +40,6 @@ public class MatchPreferencesServiceTests : ServiceTestBase
     }
 
     [Fact]
-    public async Task Saved_match_settings_carry_into_the_next_season_as_confirmed()
-    {
-        var last = await SeedSeasonAsync(covering: Now.AddYears(-1), isCurrent: false);
-        var next = await SeedSeasonAsync();
-        await Preferences.SaveMatchDefaultsAsync((await Preferences.GetAsync(last.Id)).Value!);
-
-        var inherited = (await Preferences.GetAsync(next.Id)).Value!;
-
-        Assert.True(inherited.DefaultsConfirmed);
-    }
-
-    [Fact]
     public async Task A_new_season_inherits_the_previous_seasons_settings()
     {
         var last = await SeedSeasonAsync(covering: Saturday.AddYears(-1), isCurrent: false);
@@ -70,6 +58,7 @@ public class MatchPreferencesServiceTests : ServiceTestBase
         Assert.Equal(FormationType.F442, inherited.DefaultFormation);
         Assert.Equal(DayOfWeek.Sunday, inherited.MatchDay);
         Assert.Equal(next.Id, inherited.SeasonId);
+        Assert.True(inherited.DefaultsConfirmed);
     }
 
     [Fact]

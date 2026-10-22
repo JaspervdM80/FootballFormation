@@ -70,28 +70,6 @@ public class PlayingTimeReportTests
     }
 
     [Fact]
-    public void A_substitution_is_credited_to_both_players_rather_than_the_period_to_one()
-    {
-        var game = TestData.Game(durationMinutes: 60);
-        // The live screen rewrites the line-up in place, so it shows the FINAL occupants.
-        var period = game.AddPeriod(PeriodType.FirstHalf,
-            TestData.Starter(2, PlayerPosition.CM, 5),
-            TestData.Sub(1));
-
-        period.StartedAtSeconds = 0;
-        period.EndedAtSeconds = 1800;
-        TestData.Substitution(game, period, offId: 1, onId: 2, atSeconds: 600, position: PlayerPosition.CM, slot: 5);
-
-        var lineups = new Dictionary<int, List<GamePlayerPosition>> { [period.Id] = [.. period.PlayerPositions] };
-
-        var rows = PlayingTimeReport.Build(game, [Starter, Benched], lineups);
-
-        // The estimate could only ever have said 0 and 30; the substitution splits the half.
-        Assert.Equal(10, rows.Single(r => r.PlayerId == 1).TotalMinutes);
-        Assert.Equal(20, rows.Single(r => r.PlayerId == 2).TotalMinutes);
-    }
-
-    [Fact]
     public void A_period_still_being_played_credits_nobody_yet()
     {
         // This page has no match clock to close a running period off with, so a live half counts

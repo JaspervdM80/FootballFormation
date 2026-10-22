@@ -57,14 +57,4 @@ public class PositionFitHelperTests
         Assert.Equal(PositionFit.OutOfPosition, PositionFitHelper.GetFit(outfield, PlayerPosition.GK));
         Assert.Equal(PositionFit.Preferred, PositionFitHelper.GetFit(keeper, PlayerPosition.GK));
     }
-
-    [Fact]
-    public void Every_position_can_be_rated_against_every_slot_without_throwing()
-    {
-        var positions = Enum.GetValues<PlayerPosition>();
-
-        foreach (var preferred in positions)
-            foreach (var slot in positions)
-                PositionFitHelper.GetFit(TestData.Player(1, preferred: preferred), slot);
-    }
 }

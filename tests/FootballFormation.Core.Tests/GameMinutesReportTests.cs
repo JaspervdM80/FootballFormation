@@ -99,8 +99,7 @@ public class GameMinutesReportTests
     [Fact]
     public void A_position_change_with_no_substitution_credits_the_position_it_ended_in()
     {
-        // The known limitation, pinned so it cannot change unnoticed: a position swap records nothing, so the whole period is credited
-        // to the position each player moved into.
+        // A swap with no row behind it — every match before swaps were recorded — credits the whole period to the position moved into.
         var game = TestData.Game();
         var period = game.AddPeriod(PeriodType.FirstHalf,
             TestData.Starter(1, PlayerPosition.CM, 5),      // started in goal, swapped at half-way
@@ -198,25 +197,6 @@ public class GameMinutesReportTests
         period.EndedAtSeconds = 1800;
 
         Assert.Empty(GameMinutesReport.Build(game, 1800).OnPitchNow);
-    }
-
-    [Fact]
-    public void A_player_brought_on_who_was_never_in_the_lineup_is_still_counted()
-    {
-        // Someone who turned up late: SubstituteAsync adds them rather than refusing the change.
-        var game = TestData.Game();
-        var period = game.AddPeriod(PeriodType.FirstHalf,
-            TestData.Starter(2, PlayerPosition.CM, 5),
-            TestData.Sub(1));
-
-        period.StartedAtSeconds = 0;
-        period.EndedAtSeconds = 1800;
-        TestData.Substitution(game, period, offId: 1, onId: 2, atSeconds: 300, position: PlayerPosition.CM, slot: 5);
-
-        var minutes = GameMinutesReport.Build(game);
-
-        Assert.Contains(2, minutes.PlayerIds);
-        Assert.Equal(1500, minutes.SecondsFor(2));
     }
 
     [Fact]

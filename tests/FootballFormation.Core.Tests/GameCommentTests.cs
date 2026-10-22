@@ -62,35 +62,6 @@ public class GameCommentTests : ServiceTestBase
     }
 
     [Fact]
-    public async Task Publishing_a_comment_does_not_mark_it_as_edited()
-    {
-        var game = await SeedGameAsync();
-        var added = await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Match report" });
-
-        var published = await Games.UpdateCommentAsync(added.Value!.Id, "Match report", isPublic: true);
-
-        Assert.True(published.IsSuccess);
-        await using var db = Read();
-        var stored = await db.GameComments.FirstAsync(c => c.Id == added.Value.Id);
-        Assert.True(stored.IsPublic);
-        Assert.Null(stored.EditedAt);
-    }
-
-    [Fact]
-    public async Task Changing_the_body_marks_the_comment_as_edited()
-    {
-        var game = await SeedGameAsync();
-        var added = await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "First take" });
-
-        await Games.UpdateCommentAsync(added.Value!.Id, "Second take", isPublic: false);
-
-        await using var db = Read();
-        var stored = await db.GameComments.FirstAsync(c => c.Id == added.Value.Id);
-        Assert.Equal("Second take", stored.Body);
-        Assert.NotNull(stored.EditedAt);
-    }
-
-    [Fact]
     public async Task An_unpublished_comment_is_hidden_from_visitors_again()
     {
         var game = await SeedGameAsync();

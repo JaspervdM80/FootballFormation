@@ -53,16 +53,8 @@ public class HealthReportTests
         Assert.False(status.IsHealthy);
         Assert.Equal("unable to open database file", status.Detail);
         Assert.Equal(Sha, status.Version);
-    }
 
-    [Fact]
-    public void An_unreachable_database_does_not_claim_a_migration_count()
-    {
-        // Zero here means "not known", and it must not be mistaken for a real reading — a report
-        // of "0 applied, 0 pending" alongside healthy would describe a fresh install.
-        var status = HealthReport.Unreachable(Sha, "unable to open database file");
-
+        // Zero means "not known" here, never a reading: "0 applied, 0 pending" would describe a fresh install.
         Assert.Equal(0, status.AppliedMigrations);
-        Assert.False(status.IsHealthy);
     }
 }

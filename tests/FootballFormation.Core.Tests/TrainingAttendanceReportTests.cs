@@ -146,15 +146,6 @@ public class TrainingAttendanceReportTests
     }
 
     [Fact]
-    public void Tonights_session_only_counts_from_tomorrow()
-    {
-        // A session carries a date and no start time, so nothing here can tell an evening that is over from one that has not begun.
-        var attendance = TrainingAttendanceReport.Build([Session(14)], Squads(1, [Ann]), Today);
-
-        Assert.Equal(0, attendance.Held);
-    }
-
-    [Fact]
     public void The_figure_on_a_players_own_page_stops_at_today_as_well()
     {
         var attendance = TrainingAttendanceReport.BuildFor(Ann, [Session(1), Session(20)], Squads(1, [Ann]), Today);

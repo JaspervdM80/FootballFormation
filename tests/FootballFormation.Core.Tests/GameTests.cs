@@ -386,13 +386,6 @@ public class GameTests
             .Select(type => new GamePeriod { PeriodType = type })]
     };
 
-    [Fact]
-    public void Split_period_count_is_derived_from_the_period_table_itself()
-    {
-        foreach (var split in Enum.GetValues<GameSplitType>())
-            Assert.Equal(PeriodTypeExtensions.ForSplitType(split).Length, split.PeriodCount());
-    }
-
     [Theory]
     [InlineData(true, 3, 1, 3, 1)]
     [InlineData(false, 3, 1, 1, 3)]

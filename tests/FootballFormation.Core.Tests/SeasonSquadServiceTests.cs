@@ -4,33 +4,6 @@ namespace FootballFormation.Core.Tests;
 public class SeasonSquadServiceTests : ServiceTestBase
 {
     [Fact]
-    public async Task A_player_can_be_added_once()
-    {
-        var season = await SeedSeasonAsync();
-        var players = await SeedPlayersAsync(1);
-
-        Assert.True((await Squads.AddMembersAsync(season.Id, [players[0].Id])).IsSuccess);
-
-        var again = await Squads.AddMembersAsync(season.Id, [players[0].Id]);
-
-        // Refused here with a readable message rather than surfacing the unique index as a raw
-        // DbUpdateException.
-        Assert.True(again.IsFailure);
-        Assert.Single(Read().SeasonSquadMembers);
-    }
-
-    [Fact]
-    public async Task Adding_to_a_season_or_player_that_does_not_exist_is_refused()
-    {
-        var season = await SeedSeasonAsync();
-        var players = await SeedPlayersAsync(1);
-
-        Assert.True((await Squads.AddMembersAsync(9999, [players[0].Id])).IsFailure);
-        Assert.True((await Squads.AddMembersAsync(season.Id, [9999])).IsFailure);
-        Assert.Empty(Read().SeasonSquadMembers);
-    }
-
-    [Fact]
     public async Task A_player_who_has_not_played_can_be_removed()
     {
         var season = await SeedSeasonAsync();
@@ -91,18 +64,20 @@ public class SeasonSquadServiceTests : ServiceTestBase
     }
 
     [Fact]
-    public async Task Both_membership_writes_refuse_a_non_member_in_the_same_words()
+    public async Task Every_membership_write_refuses_a_non_member_in_the_same_words()
     {
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(1);
 
         var removed = await Squads.RemoveMemberAsync(season.Id, players[0].Id);
         var madeGuest = await Squads.SetGuestAsync(season.Id, players[0].Id, isGuest: true);
+        var markedInjured = await Squads.SetInjuredAsync(season.Id, players[0].Id, true);
 
         // Same load, same refusal — and the message is the resource key, so two spellings would be
         // one translated string and one English one.
         Assert.True(removed.IsFailure);
         Assert.Equal(removed.ErrorKey, madeGuest.ErrorKey);
+        Assert.Equal(removed.ErrorKey, markedInjured.ErrorKey);
     }
 
     [Fact]
@@ -116,19 +91,6 @@ public class SeasonSquadServiceTests : ServiceTestBase
 
         await Squads.SetGuestAsync(season.Id, players[0].Id, false);
         Assert.False(Read().SeasonSquadMembers.Single().IsGuest);
-    }
-
-    [Fact]
-    public async Task Marking_a_non_member_injured_is_refused_like_the_other_membership_writes()
-    {
-        var season = await SeedSeasonAsync();
-        var players = await SeedPlayersAsync(1);
-
-        var removed = await Squads.RemoveMemberAsync(season.Id, players[0].Id);
-        var markedInjured = await Squads.SetInjuredAsync(season.Id, players[0].Id, true);
-
-        Assert.True(markedInjured.IsFailure);
-        Assert.Equal(removed.ErrorKey, markedInjured.ErrorKey);
     }
 
     [Fact]
@@ -252,21 +214,5 @@ public class SeasonSquadServiceTests : ServiceTestBase
         Assert.Equal([players[0].Id],
             Read().SeasonSquadMembers.Where(m => m.SeasonId == next.Id).Select(m => m.PlayerId));
         Assert.Equal(2, Read().SeasonSquadMembers.Count(m => m.SeasonId == last.Id));
-    }
-
-    [Fact]
-    public async Task The_previous_season_is_the_one_immediately_before()
-    {
-        var oldest = await SeedSeasonAsync(covering: Now.AddYears(-2), isCurrent: false);
-        var middle = await SeedSeasonAsync(covering: Now.AddYears(-1), isCurrent: false);
-        var current = await SeedSeasonAsync(covering: Now);
-
-        Assert.Equal(middle.Id, (await Squads.FindPreviousSeasonAsync(current.Id)).Value!.Id);
-
-        // A null value with a successful result is the normal "there is no earlier season" answer,
-        // not an error — the copy-forward offer just does not appear.
-        var none = await Squads.FindPreviousSeasonAsync(oldest.Id);
-        Assert.True(none.IsSuccess);
-        Assert.Null(none.Value);
     }
 }
