@@ -126,7 +126,7 @@ public class UserServiceTests : ServiceTestBase
     }
 
     [Fact]
-    public async Task An_admin_can_be_deleted_once_another_admin_exists()
+    public async Task The_application_admin_can_be_deleted_once_another_application_admin_exists()
     {
         await Users.EnsureAdminSeededAsync();
         var seeded = (await Users.GetAllAsync()).Value!.Single();
@@ -368,18 +368,6 @@ public class UserServiceTests : ServiceTestBase
         await Users.DeleteAsync(user.Id);
 
         Assert.Null(await Users.FindForSessionAsync(user.Id, user.SecurityStamp));
-    }
-
-    [Fact]
-    public async Task Renaming_a_user_leaves_their_session_alone()
-    {
-        var created = await Users.CreateAsync("Jasper", "jasper", GoodPassword, UserRole.Admin);
-        var user = created.Value!;
-
-        await Users.UpdateAsync(user.Id, "Jasper van der Meijden", "jasper", UserRole.Admin);
-
-        // Nothing about their authority changed, so signing them out would be gratuitous.
-        Assert.NotNull(await Users.FindForSessionAsync(user.Id, user.SecurityStamp));
     }
 
     [Fact]

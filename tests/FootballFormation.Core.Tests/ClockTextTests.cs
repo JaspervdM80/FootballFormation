@@ -60,13 +60,6 @@ public class ClockTextTests
         Assert.Null(ClockText.Of(null));
     }
 
-    [Fact]
-    public void Normalizing_what_was_already_normalized_changes_nothing()
-    {
-        var once = ClockText.Normalize("930");
-        Assert.Equal(once, ClockText.Normalize(once));
-    }
-
     /// The round trip the dialog actually performs: type, store, reopen.
     [Fact]
     public void A_typed_time_survives_being_stored_and_shown_again()

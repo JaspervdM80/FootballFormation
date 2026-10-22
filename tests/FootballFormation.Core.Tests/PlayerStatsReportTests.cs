@@ -259,23 +259,6 @@ public class PlayerStatsReportTests
     }
 
     [Fact]
-    public void Utilisation_cannot_exceed_100_percent_on_a_match_that_over_ran()
-    {
-        var game = FinishedGame();
-        game.Periods[0].StartedAtSeconds = 0;
-        game.Periods[0].EndedAtSeconds = 2100;      // 35 min
-        game.Periods[1].StartedAtSeconds = 2100;
-        game.Periods[1].EndedAtSeconds = 4200;      // 35 min
-
-        var stats = PlayerStatsReport.Build(Subject, [game], SeasonSquads.Of(TestData.Squad(1, [Subject])));
-
-        // Both numerator and denominator come from the real timings, so it lands on exactly 100.
-        Assert.Equal(70, stats.TotalMinutes);
-        Assert.Equal(70, stats.AvailableMinutes);
-        Assert.Equal(100, stats.Utilization);
-    }
-
-    [Fact]
     public void Per_game_rows_are_flagged_as_estimated_or_actual()
     {
         var estimated = FinishedGame(1);

@@ -226,8 +226,6 @@ public class TeamServiceTests : ServiceTestBase
         await SeedTeamAsync();
         var team = (await TeamsAndClubs.GetTeamsAsync()).Value!.Single();
 
-        // Every season, game and player hangs off the deployment rather than off a team, so removing this row would leave all of it
-        // with nothing selecting it.
         var deleted = await TeamsAndClubs.DeleteTeamAsync(team.Id);
 
         Assert.True(deleted.IsFailure);

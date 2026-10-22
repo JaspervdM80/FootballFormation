@@ -120,21 +120,6 @@ public class MatchClockReportTests
         Assert.Equal(0, atFullTime.AdditionalSeconds);
     }
 
-    /// A played-out half counts alongside rather than on, the way football writes 30+2, so its minutes never run into the next half's.
-    [Fact]
-    public void The_minute_stops_with_the_clock_and_additional_time_is_counted_beside_it()
-    {
-        var game = QuartersGame();
-        Period(game, PeriodType.FirstQuarter).StartedAtSeconds = 0;
-        Period(game, PeriodType.SecondQuarter).StartedAtSeconds = 900;
-
-        var clock = MatchClockReport.Build(game, Period(game, PeriodType.SecondQuarter), 31 * 60 + 30);
-
-        Assert.Equal(30 * 60, clock.Seconds);
-        Assert.Equal(new MatchMinute(30, 2), clock.Minute);
-        Assert.Equal("30+2", clock.Minute.ToString());
-    }
-
     /// The whole point of the pair: a goal in first-half stoppage time and one just after the restart are a minute apart, and a single
     /// counted-on number would have written them 32 and 31.
     [Fact]

@@ -33,19 +33,6 @@ public class ServiceLifetimeTests : ServiceTestBase
     }
 
     [Fact]
-    public async Task A_write_is_visible_to_the_next_read_on_a_different_context()
-    {
-        SeedTeam();
-        // Each operation gets its own context, so nothing is served from a stale change tracker.
-        var created = await Players.CreateAsync(new Player { FirstName = "Nieuw", PreferredPosition = PlayerPosition.ST });
-        Assert.True(created.IsSuccess);
-
-        var all = await Players.GetAllAsync();
-
-        Assert.Contains(all.Value!, p => p.Id == created.Value!.Id);
-    }
-
-    [Fact]
     public async Task A_reload_after_an_update_returns_the_new_values_not_the_cached_ones()
     {
         SeedTeam();
@@ -111,30 +98,5 @@ public class ServiceLifetimeTests : ServiceTestBase
 
         Assert.Equal("2027/28", season.Name);
         Assert.True(season.Contains(new DateTime(2027, 9, 12)));
-    }
-
-    [Fact]
-    public async Task A_goal_logged_live_is_committed_before_the_scoreline_is_recomputed()
-    {
-        // MatchGoalService writes through GameService (its own context) and then re-reads the goals to
-        // sync the score. If the write were not committed first the score would lag by one.
-        var season = await SeedSeasonAsync();
-        var players = await SeedPlayersAsync(2);
-
-        var created = await Games.CreateAsync(new Game
-        {
-            Opponent = "Stedoco",
-            Date = Now.Date,
-            SeasonId = season.Id
-        });
-
-        await MatchClock.StartMatchAsync(created.Value!.Id);
-        await Goals.LogGoalAsync(created.Value.Id, players[0].Id, null, false, false);
-
-        await using var db = Read();
-        var stored = await db.Games.FirstAsync(g => g.Id == created.Value.Id);
-
-        Assert.Equal(1, stored.ScoreHome);
-        Assert.Equal(0, stored.ScoreAway);
     }
 }

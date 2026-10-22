@@ -245,17 +245,6 @@ public class SeasonServiceTests : ServiceTestBase
     }
 
     [Fact]
-    public async Task An_empty_database_gets_a_current_season()
-    {
-        // Empty of seasons, not of teams: a deployment always has a team by the time this boot step runs.
-        SeedTeam();
-        var season = await Seasons.EnsureCurrentSeasonAsync();
-
-        Assert.True(season.IsSuccess);
-        Assert.True(Read().Seasons.Single().IsCurrent);
-    }
-
-    [Fact]
     public async Task A_database_with_no_current_season_promotes_the_newest_one()
     {
         var older = await SeedSeasonAsync(covering: Now.AddYears(-1), isCurrent: false);

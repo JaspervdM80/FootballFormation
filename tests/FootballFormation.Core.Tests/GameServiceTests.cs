@@ -373,7 +373,9 @@ public class GameServiceTests : ServiceTestBase
 
         await Games.UpdateCommentAsync(comment.Id, "Second", isPublic: true);
 
-        Assert.Equal(editedAt, Read().GameComments.Single().EditedAt);
+        var saved = Read().GameComments.Single();
+        Assert.Equal("Second", saved.Body);
+        Assert.Equal(editedAt, saved.EditedAt);
     }
 
     [Fact]

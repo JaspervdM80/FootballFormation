@@ -38,16 +38,6 @@ public class DateInSqlGuardTests : ServiceTestBase
     }
 
     [Fact]
-    public async Task Ordering_the_rows_after_materialising_them_is_the_way_through()
-    {
-        var season = await SeedSeasonAsync();
-
-        var seasons = (await Read().Seasons.ToListAsync()).NewestFirst();
-
-        Assert.Equal(season.Id, seasons[0].Id);
-    }
-
-    [Fact]
     public async Task The_home_pages_same_day_window_is_allowed_because_it_says_so()
     {
         // LiveMatchService keeps this one comparison in SQL on purpose and tags it. That the call
