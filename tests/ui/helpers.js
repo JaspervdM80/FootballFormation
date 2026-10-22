@@ -120,6 +120,14 @@ export async function openAddPlayerItem(page, item) {
   return openDialog(page);
 }
 
+/** Pastes `text` into the "Paste a list" dialog and returns the dialog, its preview drawn. */
+export async function pasteList(page, text) {
+  const panel = await openAddPlayerItem(page, 'Paste a list');
+  await panel.locator('textarea').first().fill(text);
+  await expect(panel.locator('.paste-line').first()).toBeVisible();
+  return panel;
+}
+
 /** Adds a brand new player to the current season's squad, through the real dialog. */
 export async function addPlayer(page, { firstName, surname = 'Testspeler', shirt }) {
   await goto(page, '/players');

@@ -15,6 +15,7 @@ public partial class SquadBoard
 
     private SeasonSquad? _squad;
     private Season? _previousSeason;
+    private List<Player> _earlierPlayers = [];
     private bool _loaded;
 
     private bool Interactive => AssignedRenderMode is not null;
@@ -27,6 +28,7 @@ public partial class SquadBoard
         _loaded = false;
         _squad = null;
         _previousSeason = null;
+        _earlierPlayers = [];
 
         // "All seasons" has no squad to edit — a squad belongs to exactly one season.
         if (SeasonId is not { } seasonId)
@@ -40,6 +42,13 @@ public partial class SquadBoard
 
         var previousResult = await SquadService.FindPreviousSeasonAsync(seasonId, Cancellation);
         if (previousResult.IsSuccess) _previousSeason = previousResult.Value;
+
+        // Only the admin's board offers "Existing player", and only while there is someone to offer.
+        if (Interactive)
+        {
+            var earlierResult = await SquadService.GetFormerMembersAsync(seasonId, Cancellation);
+            if (_notice.ReportFailure(L, earlierResult)) _earlierPlayers = earlierResult.Value!;
+        }
 
         _loaded = true;
     }
@@ -75,21 +84,11 @@ public partial class SquadBoard
         await LoadAsync();
     }
 
-    /// Adds someone already on file — a player from an earlier season, or a guest being promoted into this season's squad.
     private async Task AddExistingPlayer()
     {
         if (SeasonId is not { } seasonId) return;
 
-        var candidatesResult = await SquadService.GetNonMembersAsync(seasonId, Cancellation);
-        if (!Snackbar.ReportFailure(L, candidatesResult)) return;
-
-        var candidates = candidatesResult.Value!;
-        if (candidates.Count == 0)
-        {
-            Snackbar.Add(L["Everyone on file is already in this squad."], Severity.Info);
-            return;
-        }
-
+        var candidates = _earlierPlayers;
         var picked = await ShowSquadMemberDialogAsync(candidates);
         if (picked is not { } choice) return;
 
@@ -104,13 +103,10 @@ public partial class SquadBoard
     {
         if (SeasonId is not { } seasonId || _squad is null) return;
 
-        var earlierResult = await SquadService.GetFormerMembersAsync(seasonId, Cancellation);
-        if (!Snackbar.ReportFailure(L, earlierResult)) return;
-
         var text = await DialogService.PromptAsync<SquadPasteDialog, string>(L["Paste a list"], p =>
         {
             p.Add(x => x.SquadPlayers, _squad.Players);
-            p.Add(x => x.EarlierPlayers, earlierResult.Value!);
+            p.Add(x => x.EarlierPlayers, _earlierPlayers);
         });
         if (text is null) return;
 

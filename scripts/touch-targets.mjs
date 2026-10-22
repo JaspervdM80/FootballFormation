@@ -516,7 +516,7 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
 
     // The pasted squad list, the one sheet a new team's admin fills the squad from on a phone. Measured
     // with a preview drawn, so its rows are on screen, then left by navigating: the drawer wants a clean page.
-    const pasteItem = page.locator('.mud-popover-open').getByText(rx('lijst plakken', 'paste a list'));
+    const pasteItem = page.locator('.mud-popover-open').getByText(rx('lijst toevoegen', 'paste a list'));
     await clickFor(page.getByRole('button', { name: rx('speler toevoegen', 'add player') }),
       () => pasteItem.isVisible());
     await clickFor(pasteItem, () => dialog.isVisible());

@@ -31,9 +31,8 @@ and only takes them out of the places that decide **future** seasons:
 
 | Filters on `IsArchived` | Does not |
 |---|---|
-| `SeasonSquadService.GetNonMembersAsync` — the "add existing player" picker | `PlayerService.GetAllAsync`, the id → name lookup every page resolves against |
+| `SeasonSquadService.GetFormerMembersAsync` — the "add existing player" picker and the pasted list's matching | `PlayerService.GetAllAsync`, the id → name lookup every page resolves against |
 | `SeasonSquadService.CopyFromAsync` — copying a squad into a new season | `GetSquadAsync` / `GetSquadsAsync`, and so every report built from them |
-| `SeasonSquadService.GetFormerMembersAsync` / `AddPastedListAsync` — a pasted name never matches an archived player | |
 |  | `Game.IsInRoster`, which must judge a past game the way it was played |
 
 Restoring is the same call with `archived: false`. An archived player still shows in the squads of

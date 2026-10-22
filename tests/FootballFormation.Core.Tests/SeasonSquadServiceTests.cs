@@ -218,28 +218,19 @@ public class SeasonSquadServiceTests : ServiceTestBase
     }
 
     [Fact]
-    public async Task Non_members_are_the_players_not_yet_in_the_squad()
-    {
-        var season = await SeedSeasonAsync();
-        var players = await SeedPlayersAsync(3);
-        await Squads.AddMemberAsync(season.Id, players[1].Id);
-
-        var outside = await Squads.GetNonMembersAsync(season.Id);
-
-        Assert.Equal([players[0].Id, players[2].Id], outside.Value!.Select(p => p.Id));
-    }
-
-    [Fact]
     public async Task An_archived_player_is_not_offered_for_a_squad()
     {
+        var last = await SeedSeasonAsync(covering: Now.AddYears(-1), isCurrent: false);
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(2);
+        await Squads.AddMemberAsync(last.Id, players[0].Id);
+        await Squads.AddMemberAsync(last.Id, players[1].Id);
         await Players.SetArchivedAsync(players[0].Id, true);
 
-        var outside = await Squads.GetNonMembersAsync(season.Id);
+        var offered = await Squads.GetFormerMembersAsync(season.Id);
 
         // Offering someone who has left is what would make archiving them pointless.
-        Assert.Equal([players[1].Id], outside.Value!.Select(p => p.Id));
+        Assert.Equal([players[1].Id], offered.Value!.Select(p => p.Id));
     }
 
     [Fact]

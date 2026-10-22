@@ -41,20 +41,8 @@ public class SeasonSquadService(
             return Result.Success(new SeasonSquads(members));
         });
 
-    /// Archived players are left out — offering them in the "add existing player" picker is what would make archiving pointless.
-    public Task<Result<List<Player>>> GetNonMembersAsync(
-        int seasonId, CancellationToken cancellationToken = default) =>
-        ServiceOperation.RunAsync(logger, "load players outside the squad", cancellationToken, async () =>
-        {
-            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
-
-            var players = await NonMembers(db, seasonId).AsNoTracking().ToListAsync(cancellationToken);
-
-            logger.LogDebug("Retrieved {Count} players outside season {SeasonId}", players.Count, seasonId);
-            return Result.Success(players);
-        });
-
-    /// Players are the club's, but a pasted name is matched only against those who were in one of this team's squads.
+    /// Who the "existing player" picker offers and a pasted name is matched against: players are the club's, but only those who were in
+    /// one of this team's squads count. Archived players are left out, or archiving them would be pointless.
     public Task<Result<List<Player>>> GetFormerMembersAsync(
         int seasonId, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "load the team's earlier players", cancellationToken, async () =>
@@ -369,19 +357,17 @@ public class SeasonSquadService(
             return Result.Success<Season?>(previous);
         });
 
-    private static IQueryable<Player> NonMembers(AppDbContext db, int seasonId) =>
+    // The membership filter is the team's, so this is who has played for this team before; ordered so the preview and the write
+    // resolve a name two of them share to the same one.
+    private static IQueryable<Player> FormerMembers(AppDbContext db, int seasonId) =>
         db.Players
             .Where(p => !p.IsArchived)
+            .Where(p => db.SeasonSquadMembers.Any(m => m.PlayerId == p.Id))
             .Where(p => !db.SeasonSquadMembers.Any(m => m.SeasonId == seasonId && m.PlayerId == p.Id))
             .OrderBy(p => p.ShirtNumber ?? int.MaxValue)
             .ThenBy(p => p.FirstName)
             .ThenBy(p => p.Surname)
             .ThenBy(p => p.Id);
-
-    // The membership filter is the team's, so this is who has played for this team before; ordered so the preview and the write
-    // resolve a name two of them share to the same one.
-    private static IQueryable<Player> FormerMembers(AppDbContext db, int seasonId) =>
-        NonMembers(db, seasonId).Where(p => db.SeasonSquadMembers.Any(m => m.PlayerId == p.Id));
 
     /// Tracked, and with the player loaded — the log lines and failure messages name a person rather than an id.
     private static Task<SeasonSquadMember?> FindMemberAsync(
