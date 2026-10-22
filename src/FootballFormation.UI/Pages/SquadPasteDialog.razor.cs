@@ -17,6 +17,7 @@ public partial class SquadPasteDialog
 
     private string? _text;
     private IReadOnlyList<PastedSquadEntry> _plan = [];
+    private int _new, _earlier, _skipped, _invalid;
 
     private string? Text
     {
@@ -24,49 +25,45 @@ public partial class SquadPasteDialog
         set
         {
             _text = value;
-            _plan = PastedSquadList.Plan(PastedSquadList.Parse(value), SquadPlayers, EarlierPlayers);
+            _plan = PastedSquadList.Plan(value, SquadPlayers, EarlierPlayers);
+            _invalid = _plan.Count(e => !e.IsValid);
+            _new = _plan.Count(e => e.IsValid && e.Action == PastedLineAction.Create);
+            _earlier = _plan.Count(e => e.IsValid && e.Action == PastedLineAction.AddExisting);
+            _skipped = _plan.Count(e => e.IsValid && e.Action == PastedLineAction.AlreadyInSquad);
         }
     }
 
-    private int Count(PastedLineAction action) => _plan.Count(e => e.Action == action);
+    private int ToAdd => _new + _earlier;
 
-    private int ToAdd => Count(PastedLineAction.Create) + Count(PastedLineAction.AddExisting);
-
-    private bool CanAdd => ToAdd > 0 && Count(PastedLineAction.Invalid) == 0;
+    private bool CanAdd => ToAdd > 0 && _invalid == 0;
 
     private string Summary =>
-        Count(PastedLineAction.Invalid) is > 0 and var invalid
-            ? invalid == 1
-                ? L["1 line needs fixing before anyone can be added."]
-                : L["{0} lines need fixing before anyone can be added.", invalid]
-            : ToAdd == 0
-                ? L["Everyone on the list is already in the squad."]
-                : L["{0} new, {1} from an earlier season, {2} already in the squad.",
-                    Count(PastedLineAction.Create), Count(PastedLineAction.AddExisting), Count(PastedLineAction.AlreadyInSquad)];
+        _invalid == 1 ? L["1 line needs fixing before anyone can be added."]
+        : _invalid > 1 ? L["{0} lines need fixing before anyone can be added.", _invalid]
+        : ToAdd == 0 ? L["Everyone on the list is already in the squad."]
+        : L["{0} new, {1} from an earlier season, {2} already in the squad.", _new, _earlier, _skipped];
 
-    private static int? ShirtShown(PastedSquadEntry entry) =>
-        entry.Existing is null ? entry.Line.ShirtNumber : entry.Existing.ShirtNumber;
-
-    private static string StatusClass(PastedSquadEntry entry) => entry.Action switch
-    {
-        PastedLineAction.Create => "paste-create",
-        PastedLineAction.AddExisting => "paste-existing",
-        PastedLineAction.AlreadyInSquad => "paste-skipped",
-        _ => "paste-invalid"
-    };
-
-    private string StatusText(PastedSquadEntry entry) => entry.Action switch
-    {
-        PastedLineAction.Create => L["New player"],
-        PastedLineAction.AddExisting => L["From an earlier season"],
-        PastedLineAction.AlreadyInSquad => L["Already in the squad, skipped"],
-        _ => entry.Line.Problem switch
+    private static string StatusClass(PastedSquadEntry entry) =>
+        !entry.IsValid ? "paste-invalid"
+        : entry.Action switch
         {
-            PastedLineProblem.MissingName => L["No name"],
-            PastedLineProblem.ShirtNumberOutOfRange =>
-                L["Shirt number must be {0} to {1}", PastedSquadList.MinShirtNumber, PastedSquadList.MaxShirtNumber],
-            PastedLineProblem.DuplicateShirtNumber => L["Shirt number listed twice"],
-            _ => L["Name listed twice"]
+            PastedLineAction.Create => "paste-create",
+            PastedLineAction.AddExisting => "paste-existing",
+            _ => "paste-skipped"
+        };
+
+    private string StatusText(PastedSquadEntry entry) => entry.Problem switch
+    {
+        PastedLineProblem.MissingName => L["No name"],
+        PastedLineProblem.ShirtNumberOutOfRange =>
+            L["Shirt number must be {0} to {1}", PastedSquadList.MinShirtNumber, PastedSquadList.MaxShirtNumber],
+        PastedLineProblem.DuplicateShirtNumber => L["Shirt number listed twice"],
+        PastedLineProblem.DuplicateName => L["Name listed twice"],
+        _ => entry.Action switch
+        {
+            PastedLineAction.Create => L["New player"],
+            PastedLineAction.AddExisting => L["From an earlier season"],
+            _ => L["Already in the squad, skipped"]
         }
     };
 

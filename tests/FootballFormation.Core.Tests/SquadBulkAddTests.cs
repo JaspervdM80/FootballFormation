@@ -27,7 +27,7 @@ public class SquadBulkAddTests : ServiceTestBase
         var lastSeason = await SeedSeasonAsync(covering: Now.AddYears(-1), isCurrent: false);
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(1);
-        await Squads.AddMemberAsync(lastSeason.Id, players[0].Id);
+        await Squads.AddMembersAsync(lastSeason.Id, [players[0].Id]);
 
         var result = await Squads.AddPastedListAsync(season.Id, "p1\nLotte");
 
@@ -43,7 +43,7 @@ public class SquadBulkAddTests : ServiceTestBase
         var lastSeason = await SeedSeasonAsync(covering: Now.AddYears(-1), isCurrent: false);
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(1);
-        await Squads.AddMemberAsync(lastSeason.Id, players[0].Id);
+        await Squads.AddMembersAsync(lastSeason.Id, [players[0].Id]);
 
         await Squads.AddPastedListAsync(season.Id, "42 P1");
 
@@ -55,7 +55,7 @@ public class SquadBulkAddTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(1);
-        await Squads.AddMemberAsync(season.Id, players[0].Id, isGuest: true);
+        await Squads.AddMembersAsync(season.Id, [players[0].Id], isGuest: true);
 
         var result = await Squads.AddPastedListAsync(season.Id, "P1\nLotte");
 
@@ -72,7 +72,7 @@ public class SquadBulkAddTests : ServiceTestBase
         var lastSeason = await SeedSeasonAsync(covering: Now.AddYears(-1), isCurrent: false);
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(1);
-        await Squads.AddMemberAsync(lastSeason.Id, players[0].Id);
+        await Squads.AddMembersAsync(lastSeason.Id, [players[0].Id]);
         await Players.SetArchivedAsync(players[0].Id, true);
 
         var result = await Squads.AddPastedListAsync(season.Id, "P1");
@@ -99,7 +99,7 @@ public class SquadBulkAddTests : ServiceTestBase
         SeedTeam("GJS", "MO17-1");
         var theirSeason = await SeedSeasonAsync();
         var theirs = await SeedPlayersAsync(1);
-        await Squads.AddMemberAsync(theirSeason.Id, theirs[0].Id);
+        await Squads.AddMembersAsync(theirSeason.Id, [theirs[0].Id]);
         SeedTeam();
         var season = await SeedSeasonAsync();
 
@@ -131,9 +131,9 @@ public class SquadBulkAddTests : ServiceTestBase
         var lastSeason = await SeedSeasonAsync(covering: Now.AddYears(-1), isCurrent: false);
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(3);
-        await Squads.AddMemberAsync(lastSeason.Id, players[0].Id);
-        await Squads.AddMemberAsync(lastSeason.Id, players[1].Id);
-        await Squads.AddMemberAsync(season.Id, players[1].Id);
+        await Squads.AddMembersAsync(lastSeason.Id, [players[0].Id]);
+        await Squads.AddMembersAsync(lastSeason.Id, [players[1].Id]);
+        await Squads.AddMembersAsync(season.Id, [players[1].Id]);
 
         var earlier = await Squads.GetFormerMembersAsync(season.Id);
 
@@ -193,7 +193,7 @@ public class SquadBulkAddTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(2);
-        await Squads.AddMemberAsync(season.Id, players[1].Id);
+        await Squads.AddMembersAsync(season.Id, [players[1].Id]);
 
         var result = await Squads.AddMembersAsync(season.Id, [players[0].Id, players[1].Id]);
 

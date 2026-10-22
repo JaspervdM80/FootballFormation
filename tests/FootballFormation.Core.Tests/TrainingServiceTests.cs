@@ -119,7 +119,7 @@ public class TrainingServiceTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(2);
-        await Squads.AddMemberAsync(season.Id, players[0].Id);
+        await Squads.AddMembersAsync(season.Id, [players[0].Id]);
         var training = (await Trainings.CreateAsync(new Training
         {
             SeasonId = season.Id,
@@ -259,8 +259,8 @@ public class TrainingServiceTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(2);
-        await Squads.AddMemberAsync(season.Id, players[0].Id, isInjured: true);
-        await Squads.AddMemberAsync(season.Id, players[1].Id);
+        await Squads.AddMembersAsync(season.Id, [players[0].Id], isInjured: true);
+        await Squads.AddMembersAsync(season.Id, [players[1].Id]);
 
         var held = await SeedScheduledAsync(season.Id, Now.AddDays(7));
         var toCome = await SeedScheduledAsync(season.Id, Now.AddDays(21));
@@ -283,7 +283,7 @@ public class TrainingServiceTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(1);
-        await Squads.AddMemberAsync(season.Id, players[0].Id);
+        await Squads.AddMembersAsync(season.Id, [players[0].Id]);
 
         var before = await SeedScheduledAsync(season.Id, Now.AddDays(1));
         var after = await SeedScheduledAsync(season.Id, Now.AddDays(10));
@@ -306,7 +306,7 @@ public class TrainingServiceTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(1);
-        await Squads.AddMemberAsync(season.Id, players[0].Id, isInjured: true);
+        await Squads.AddMembersAsync(season.Id, [players[0].Id], isInjured: true);
         await SeedScheduledAsync(season.Id, Now.AddDays(7));
 
         Time.Advance(TimeSpan.FromDays(14));
@@ -323,7 +323,7 @@ public class TrainingServiceTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(1);
-        await Squads.AddMemberAsync(season.Id, players[0].Id, isInjured: true);
+        await Squads.AddMembersAsync(season.Id, [players[0].Id], isInjured: true);
 
         var cancelled = await SeedScheduledAsync(season.Id, Now.AddDays(7));
         cancelled.DidNotTakePlace = true;
@@ -340,8 +340,8 @@ public class TrainingServiceTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(2);
-        await Squads.AddMemberAsync(season.Id, players[0].Id, isInjured: true);
-        await Squads.AddMemberAsync(season.Id, players[1].Id);
+        await Squads.AddMembersAsync(season.Id, [players[0].Id], isInjured: true);
+        await Squads.AddMembersAsync(season.Id, [players[1].Id]);
 
         // Flagged injured, but she turned up and trained, so the coach wrote the evening up with nobody injured — on the evening
         // itself, which is when a register is actually filled in.
@@ -358,8 +358,8 @@ public class TrainingServiceTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(2);
-        await Squads.AddMemberAsync(season.Id, players[0].Id, isInjured: true);
-        await Squads.AddMemberAsync(season.Id, players[1].Id);
+        await Squads.AddMembersAsync(season.Id, [players[0].Id], isInjured: true);
+        await Squads.AddMembersAsync(season.Id, [players[1].Id]);
 
         // Named by hand rather than taken from the flags: the girl who is injured is not the one the squad has flagged.
         await Trainings.CreateAsync(new Training

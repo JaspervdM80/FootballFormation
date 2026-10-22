@@ -55,11 +55,6 @@ public class SeasonSquadService(
             return Result.Success(players);
         });
 
-    public async Task<Result> AddMemberAsync(
-        int seasonId, int playerId, bool isGuest = false, bool isInjured = false,
-        CancellationToken cancellationToken = default) =>
-        await AddMembersAsync(seasonId, [playerId], isGuest, isInjured, cancellationToken);
-
     /// All or nothing: one save, so a refusal for any one player leaves the squad as it was.
     public Task<Result<int>> AddMembersAsync(
         int seasonId, IReadOnlyCollection<int> playerIds, bool isGuest = false, bool isInjured = false,
@@ -102,11 +97,7 @@ public class SeasonSquadService(
             }
 
             var injuredSince = isInjured ? time.GetLocalNow().Date : (DateTime?)null;
-            db.SeasonSquadMembers.AddRange(players.Select(p => new SeasonSquadMember
-            {
-                SeasonId = seasonId, TeamId = season.TeamId, PlayerId = p.Id, IsGuest = isGuest, IsInjured = isInjured,
-                InjuredSince = injuredSince
-            }));
+            db.SeasonSquadMembers.AddRange(players.Select(p => MemberOf(season, p, isGuest, injuredSince)));
             await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Added {Count} players to the {SeasonName} squad (guest: {IsGuest}, injured: {IsInjured})",
@@ -128,48 +119,33 @@ public class SeasonSquadService(
                 return Result.Failure<PastedSquadOutcome>("Season not found");
             }
 
-            var lines = PastedSquadList.Parse(text);
-            if (lines.Count == 0)
-            {
-                logger.LogWarning("Cannot add a pasted list to the {SeasonName} squad: it is empty", season.Name);
-                return Result.Failure<PastedSquadOutcome>("The list has no players in it");
-            }
-
             var squadPlayers = await db.SeasonSquadMembers
                 .Where(m => m.SeasonId == seasonId)
                 .Select(m => m.Player!)
                 .ToListAsync(cancellationToken);
             var earlierPlayers = await FormerMembers(db, seasonId).ToListAsync(cancellationToken);
 
-            var plan = PastedSquadList.Plan(lines, squadPlayers, earlierPlayers);
-            if (plan.FirstOrDefault(e => e.Action == PastedLineAction.Invalid) is { } invalid)
+            var plan = PastedSquadList.Plan(text, squadPlayers, earlierPlayers);
+            if (plan.Count == 0)
             {
-                logger.LogWarning("Cannot add a pasted list to the {SeasonName} squad: line {Line} is {Problem}",
-                    season.Name, invalid.Line.LineNumber, invalid.Line.Problem);
-                return Result.Failure<PastedSquadOutcome>("Line {0} of the list cannot be added", invalid.Line.LineNumber);
+                logger.LogWarning("Cannot add a pasted list to the {SeasonName} squad: it is empty", season.Name);
+                return Result.Failure<PastedSquadOutcome>("The list has no players in it");
             }
 
-            var created = plan
-                .Where(e => e.Action == PastedLineAction.Create)
-                .Select(e => new Player
-                {
-                    ClubId = db.CurrentClubId!.Value,
-                    FirstName = e.Line.FirstName,
-                    Surname = e.Line.Surname,
-                    ShirtNumber = e.Line.ShirtNumber
-                })
-                .ToList();
-            var reused = plan.Where(e => e.Action == PastedLineAction.AddExisting).Select(e => e.Existing!).ToList();
-            var skipped = plan.Where(e => e.Action == PastedLineAction.AlreadyInSquad).Select(e => e.Existing!).ToList();
+            if (plan.FirstOrDefault(e => !e.IsValid) is { } invalid)
+            {
+                logger.LogWarning("Cannot add a pasted list to the {SeasonName} squad: line {Line} is {Problem}",
+                    season.Name, invalid.LineNumber, invalid.Problem);
+                return Result.Failure<PastedSquadOutcome>("Line {0} of the list cannot be added", invalid.LineNumber);
+            }
 
-            db.SeasonSquadMembers.AddRange(created.Select(p => new SeasonSquadMember
-            {
-                SeasonId = seasonId, TeamId = season.TeamId, Player = p
-            }));
-            db.SeasonSquadMembers.AddRange(reused.Select(p => new SeasonSquadMember
-            {
-                SeasonId = seasonId, TeamId = season.TeamId, PlayerId = p.Id
-            }));
+            List<Player> Players(PastedLineAction action) => [.. plan.Where(e => e.Action == action).Select(e => e.Player)];
+            var created = Players(PastedLineAction.Create);
+            var reused = Players(PastedLineAction.AddExisting);
+            var skipped = Players(PastedLineAction.AlreadyInSquad);
+
+            foreach (var player in created) player.ClubId = db.CurrentClubId!.Value;
+            db.SeasonSquadMembers.AddRange(created.Concat(reused).Select(p => MemberOf(season, p)));
             await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation(
@@ -356,6 +332,14 @@ public class SeasonSquadService(
 
             return Result.Success<Season?>(previous);
         });
+
+    // Through the navigation rather than the id, so a player created in the same save gets her id from it.
+    private static SeasonSquadMember MemberOf(Season season, Player player, bool isGuest = false, DateTime? injuredSince = null) =>
+        new()
+        {
+            SeasonId = season.Id, TeamId = season.TeamId, Player = player, IsGuest = isGuest,
+            IsInjured = injuredSince is not null, InjuredSince = injuredSince
+        };
 
     // The membership filter is the team's, so this is who has played for this team before; ordered so the preview and the write
     // resolve a name two of them share to the same one.

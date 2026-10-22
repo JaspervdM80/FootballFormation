@@ -15,20 +15,15 @@ public enum PastedLineAction
 {
     Create,
     AddExisting,
-    AlreadyInSquad,
-    Invalid
+    AlreadyInSquad
 }
 
-public sealed record PastedPlayerLine(
-    int LineNumber, string Text, string FirstName, string? Surname, int? ShirtNumber, PastedLineProblem Problem)
+/// <paramref name="Player"/> is who the line becomes: a new, unsaved player for Create, otherwise the one already on file.
+public sealed record PastedSquadEntry(
+    int LineNumber, string Text, Player Player, PastedLineAction Action, PastedLineProblem Problem)
 {
-    public string DisplayName => Surname is not null ? $"{FirstName} {Surname}" : FirstName;
-
     public bool IsValid => Problem == PastedLineProblem.None;
 }
-
-/// <paramref name="Existing"/> is the player the line resolved to, for AddExisting and AlreadyInSquad.
-public sealed record PastedSquadEntry(PastedPlayerLine Line, PastedLineAction Action, Player? Existing);
 
 public sealed record PastedSquadOutcome(
     IReadOnlyList<Player> Created, IReadOnlyList<Player> AddedFromEarlierSeason, IReadOnlyList<Player> AlreadyInSquad)
@@ -48,104 +43,73 @@ public static partial class PastedSquadList
     [GeneratedRegex(@"\s+")]
     private static partial Regex Whitespace();
 
-    /// Blank lines are dropped; every other line comes back, flagged when it cannot be added, so the preview can show it. A shirt number
-    /// listed twice is the plan's to flag, since it depends on who is already on file.
-    public static IReadOnlyList<PastedPlayerLine> Parse(string? text)
-    {
-        var lines = new List<PastedPlayerLine>();
-        var rawLines = (text ?? "").Split('\n');
-
-        for (var i = 0; i < rawLines.Length; i++)
-        {
-            var line = Collapse(rawLines[i]);
-            if (line.Length == 0) continue;
-            lines.Add(ParseLine(i + 1, line));
-        }
-
-        return FlagDuplicateNames(lines);
-    }
-
-    /// The same plan drives the preview and the write, so what the dialog promised is what gets saved. A name matches on the whole
-    /// display name, ignoring case and spacing; <paramref name="earlierPlayers"/> should already leave out the archived and the squad.
+    /// The same plan drives the preview and the write, so what the dialog promised is what gets saved. Blank lines are dropped; every
+    /// other line comes back, flagged when it cannot be added. A name matches on the whole display name, ignoring case and spacing;
+    /// <paramref name="earlierPlayers"/> should already leave out the archived and the squad.
     public static IReadOnlyList<PastedSquadEntry> Plan(
-        IReadOnlyList<PastedPlayerLine> lines, IEnumerable<Player> squadPlayers, IEnumerable<Player> earlierPlayers)
+        string? text, IEnumerable<Player> squadPlayers, IEnumerable<Player> earlierPlayers)
     {
         var inSquad = ByName(squadPlayers);
         var earlier = ByName(earlierPlayers);
 
-        var entries = lines.Select(line =>
-                !line.IsValid ? new PastedSquadEntry(line, PastedLineAction.Invalid, null)
-                : inSquad.TryGetValue(NameKey(line.DisplayName), out var member)
-                    ? new PastedSquadEntry(line, PastedLineAction.AlreadyInSquad, member)
-                : earlier.TryGetValue(NameKey(line.DisplayName), out var existing)
-                    ? new PastedSquadEntry(line, PastedLineAction.AddExisting, existing)
-                    : new PastedSquadEntry(line, PastedLineAction.Create, null))
+        var entries = (text ?? "").Split('\n')
+            .Select((raw, i) => (LineNumber: i + 1, Text: Collapse(raw)))
+            .Where(l => l.Text.Length > 0)
+            .Select(l => Resolve(l.LineNumber, l.Text, inSquad, earlier))
             .ToList();
 
-        // Only a created player takes the pasted number — someone already on file keeps her own — so only those can clash. Every line
-        // sharing one is flagged, since nothing says which of the two is the mistake.
-        var sharedNumbers = entries
-            .Where(e => e.Action == PastedLineAction.Create && e.Line.ShirtNumber is not null)
-            .GroupBy(e => e.Line.ShirtNumber)
-            .Where(g => g.Count() > 1)
-            .Select(g => g.Key)
-            .ToHashSet();
+        // Every line sharing a name or a new player's number is flagged, not just the later ones: nothing says which is the mistake.
+        // Only a created player takes the pasted number — someone already on file keeps her own — so only those can clash.
+        var valid = entries.Where(e => e.IsValid).ToList();
+        var sharedNames = Shared(valid.Select(e => NameKey(e.Player.DisplayName)));
+        var sharedNumbers = Shared(valid
+            .Where(e => e.Action == PastedLineAction.Create && e.Player.ShirtNumber is not null)
+            .Select(e => e.Player.ShirtNumber!.Value));
 
         return
         [
             .. entries.Select(e =>
-                e.Action == PastedLineAction.Create && sharedNumbers.Contains(e.Line.ShirtNumber)
-                    ? new PastedSquadEntry(e.Line with { Problem = PastedLineProblem.DuplicateShirtNumber }, PastedLineAction.Invalid, null)
+                !e.IsValid ? e
+                : sharedNames.Contains(NameKey(e.Player.DisplayName)) ? e with { Problem = PastedLineProblem.DuplicateName }
+                : e.Action == PastedLineAction.Create && e.Player.ShirtNumber is { } n && sharedNumbers.Contains(n)
+                    ? e with { Problem = PastedLineProblem.DuplicateShirtNumber }
                     : e)
         ];
     }
 
-    private static PastedPlayerLine ParseLine(int lineNumber, string line)
+    private static PastedSquadEntry Resolve(
+        int lineNumber, string text, Dictionary<string, Player> inSquad, Dictionary<string, Player> earlier)
     {
         int? shirtNumber = null;
-        var name = line;
+        var name = text;
         var problem = PastedLineProblem.None;
 
-        var numbered = NumberedLine().Match(line);
+        var numbered = NumberedLine().Match(text);
         if (numbered.Success)
         {
             name = numbered.Groups["name"].Value.Trim();
             if (int.TryParse(numbered.Groups["number"].Value, out var number)
                 && number is >= MinShirtNumber and <= MaxShirtNumber)
-            {
                 shirtNumber = number;
-            }
             else
-            {
                 problem = PastedLineProblem.ShirtNumberOutOfRange;
-            }
         }
 
         var words = name.Split(' ', 2);
-        var firstName = words[0];
-        var surname = words.Length > 1 ? words[1] : null;
-        if (firstName.Length == 0) problem = PastedLineProblem.MissingName;
+        if (words[0].Length == 0) problem = PastedLineProblem.MissingName;
 
-        return new PastedPlayerLine(lineNumber, line, firstName, surname, shirtNumber, problem);
+        var created = new Player { FirstName = words[0], Surname = words.Length > 1 ? words[1] : null, ShirtNumber = shirtNumber };
+        var key = NameKey(created.DisplayName);
+
+        return inSquad.TryGetValue(key, out var member)
+            ? new PastedSquadEntry(lineNumber, text, member, PastedLineAction.AlreadyInSquad, problem)
+            : earlier.TryGetValue(key, out var existing)
+                ? new PastedSquadEntry(lineNumber, text, existing, PastedLineAction.AddExisting, problem)
+                : new PastedSquadEntry(lineNumber, text, created, PastedLineAction.Create, problem);
     }
 
-    // Every line sharing a name is flagged, not just the later ones: nothing says which of the two is the mistake.
-    private static List<PastedPlayerLine> FlagDuplicateNames(List<PastedPlayerLine> lines)
-    {
-        var sharedNames = lines
-            .Where(l => l.IsValid)
-            .GroupBy(l => NameKey(l.DisplayName))
-            .Where(g => g.Count() > 1)
-            .Select(g => g.Key)
-            .ToHashSet();
-
-        return
-        [
-            .. lines.Select(l => l.IsValid && sharedNames.Contains(NameKey(l.DisplayName))
-                ? l with { Problem = PastedLineProblem.DuplicateName }
-                : l)
-        ];
-    }
+    private static HashSet<T> Shared<T>(IEnumerable<T> keys) =>
+        keys.GroupBy(k => k).Where(g => g.Count() > 1).Select(g => g.Key).ToHashSet();
 
     private static Dictionary<string, Player> ByName(IEnumerable<Player> players)
     {

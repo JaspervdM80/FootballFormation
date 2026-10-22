@@ -148,7 +148,7 @@ public class AuthorizationTests : ServiceTestBase
 
         CurrentUser.IsAdmin = false;
 
-        var result = await Squads.AddMemberAsync(season.Id, players[0].Id);
+        var result = await Squads.AddMembersAsync(season.Id, [players[0].Id]);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ServiceOperation.NotAllowedKey, result.ErrorKey);

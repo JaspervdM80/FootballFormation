@@ -19,11 +19,18 @@
                 {
                     <li class="paste-line @StatusClass(entry)">
                         <span class="paste-name">
-                            @if (ShirtShown(entry) is { } shirt)
+                            @if (!entry.IsValid)
                             {
-                                <span class="paste-shirt">#@shirt</span>
+                                @entry.Text
                             }
-                            @(entry.Line.FirstName.Length > 0 ? entry.Line.DisplayName : entry.Line.Text)
+                            else
+                            {
+                                @if (entry.Player.ShirtNumber is { } shirt)
+                                {
+                                    <span class="paste-shirt">#@shirt</span>
+                                }
+                                @entry.Player.DisplayName
+                            }
                         </span>
                         <span class="paste-status">@StatusText(entry)</span>
                     </li>

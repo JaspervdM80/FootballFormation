@@ -79,7 +79,7 @@ public partial class SquadBoard
         var created = await PlayerService.CreateAsync(edited.Player);
         if (!Snackbar.ReportFailure(L, created)) return;
 
-        var added = await SquadService.AddMemberAsync(seasonId, created.Value!.Id, edited.IsGuest, edited.IsInjured);
+        var added = await SquadService.AddMembersAsync(seasonId, [created.Value!.Id], edited.IsGuest, edited.IsInjured);
         Snackbar.Report(L, added, L["{0} added to the squad", edited.Player.DisplayName]);
         await LoadAsync();
     }

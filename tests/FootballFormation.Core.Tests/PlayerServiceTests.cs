@@ -20,7 +20,7 @@ public class PlayerServiceTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(1);
-        await Squads.AddMemberAsync(season.Id, players[0].Id);
+        await Squads.AddMembersAsync(season.Id, [players[0].Id]);
 
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
         var period = Read().GamePeriods.First(p => p.GameId == game.Id);
@@ -68,7 +68,7 @@ public class PlayerServiceTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(1);
-        await Squads.AddMemberAsync(season.Id, players[0].Id);
+        await Squads.AddMembersAsync(season.Id, [players[0].Id]);
 
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
         var period = Read().GamePeriods.First(p => p.GameId == game.Id);

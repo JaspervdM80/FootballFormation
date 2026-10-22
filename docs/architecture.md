@@ -95,7 +95,7 @@ Services/
   PlayerService.cs        — CRUD + SetArchived; delete refuses for anyone who has played, so a
                             person is retired rather than taken out of past seasons
   SeasonService.cs        — CRUD + SetCurrent/FindForDate/GetOrCreateForDate/EnsureCurrentSeason/CloseSeasonGaps
-  SeasonSquadService.cs   — Squad membership: get/add/add-several/add-a-pasted-list/former-members/remove/set-guest/copy-forward, with guards
+  SeasonSquadService.cs   — Squad membership: get/add-several/add-a-pasted-list/former-members/remove/set-guest/copy-forward, with guards
   GameService.cs          — CRUD + SavePeriodLineupAsync, optional seasonId filter, returns Result<T>
   TrainingService.cs      — CRUD over training sessions. The one service whose *reads* are
                             RunAdminAsync too: who missed a training is the only thing in this app
