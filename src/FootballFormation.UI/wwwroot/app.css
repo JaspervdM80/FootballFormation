@@ -149,7 +149,7 @@ html, body {
 /* --- Long form dialogs on a phone (.dialog-sheet) ---
    Opt in with `Class="dialog-sheet"` on the MudDialog — MudBlazor 9.7's DialogOptions has no
    CssClass, but MudDialog's own Class lands straight on .mud-dialog, which is what these rules
-   need. GameDialog (the new/edit match form on /games) is the one user. Everything is inside the
+   need. Every long form opts in; GameDialog, the new/edit match form, is the longest. Everything is inside the
    media query on purpose: above 600px a .dialog-sheet is an ordinary centred MudBlazor dialog and
    nothing below applies.
 

@@ -1,10 +1,9 @@
 namespace FootballFormation.UI.Pages;
 
-/// <summary>What the caller picked: which person, whether they join as a guest, and whether they
-/// join injured.</summary>
-public record SquadMemberChoice(int PlayerId, bool IsGuest, bool IsInjured);
+/// <summary>What the caller picked: who joins, and whether they all join as guests or injured.</summary>
+public record SquadMemberChoice(IReadOnlyList<int> PlayerIds, bool IsGuest, bool IsInjured);
 
-/// <summary>Adds someone already on file to a season's squad. Like every dialog here it never
+/// <summary>Adds people already on file to a season's squad. Like every dialog here it never
 /// calls a service — the page persists the choice.</summary>
 public partial class SquadMemberDialog
 {
@@ -14,20 +13,21 @@ public partial class SquadMemberDialog
     [Parameter, EditorRequired]
     public List<Player> Candidates { get; set; } = [];
 
-    private MudForm Form { get; set; } = null!;
-    private int PlayerId { get; set; }
+    private readonly HashSet<int> _picked = [];
     private bool IsGuest { get; set; }
     private bool IsInjured { get; set; }
 
-    protected override void OnParametersSet() =>
-        PlayerId = PlayerId == 0 ? Candidates.FirstOrDefault()?.Id ?? 0 : PlayerId;
-
-    private async Task Submit()
+    private void Toggle(int playerId)
     {
-        await Form.ValidateAsync();
-        if (!Form.IsValid || PlayerId == 0) return;
+        if (!_picked.Remove(playerId)) _picked.Add(playerId);
+    }
 
-        MudDialog.Close(DialogResult.Ok(new SquadMemberChoice(PlayerId, IsGuest, IsInjured)));
+    private void Submit()
+    {
+        if (_picked.Count == 0) return;
+
+        var ids = Candidates.Where(p => _picked.Contains(p.Id)).Select(p => p.Id).ToList();
+        MudDialog.Close(DialogResult.Ok(new SquadMemberChoice(ids, IsGuest, IsInjured)));
     }
 
     private void Cancel() => MudDialog.Cancel();

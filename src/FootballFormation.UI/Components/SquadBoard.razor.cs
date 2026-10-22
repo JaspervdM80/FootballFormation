@@ -93,9 +93,40 @@ public partial class SquadBoard
         var picked = await ShowSquadMemberDialogAsync(candidates);
         if (picked is not { } choice) return;
 
-        var result = await SquadService.AddMemberAsync(seasonId, choice.PlayerId, choice.IsGuest, choice.IsInjured);
-        Snackbar.Report(L, result, L["{0} added to the squad",
-            candidates.First(p => p.Id == choice.PlayerId).DisplayName]);
+        var result = await SquadService.AddMembersAsync(seasonId, choice.PlayerIds, choice.IsGuest, choice.IsInjured);
+        Snackbar.Report(L, result, choice.PlayerIds is [var only]
+            ? L["{0} added to the squad", candidates.First(p => p.Id == only).DisplayName]
+            : L["{0} players added to the squad", choice.PlayerIds.Count]);
+        await LoadAsync();
+    }
+
+    private async Task PasteList()
+    {
+        if (SeasonId is not { } seasonId || _squad is null) return;
+
+        var earlierResult = await SquadService.GetFormerMembersAsync(seasonId, Cancellation);
+        if (!Snackbar.ReportFailure(L, earlierResult)) return;
+
+        var text = await DialogService.PromptAsync<SquadPasteDialog, string>(L["Paste a list"], p =>
+        {
+            p.Add(x => x.SquadPlayers, _squad.Players);
+            p.Add(x => x.EarlierPlayers, earlierResult.Value!);
+        });
+        if (text is null) return;
+
+        var result = await SquadService.AddPastedListAsync(seasonId, text);
+        if (Snackbar.ReportFailure(L, result))
+        {
+            var outcome = result.Value!;
+            var added = outcome.Added == 1
+                ? L["{0} added to the squad", outcome.Created.Concat(outcome.AddedFromEarlierSeason).Single().DisplayName]
+                : L["{0} players added to the squad", outcome.Added];
+            Snackbar.Add(outcome.AlreadyInSquad.Count == 0
+                ? added
+                : L["{0}. Already in the squad: {1}.", added, outcome.AlreadyInSquad.Count],
+                Severity.Success);
+        }
+
         await LoadAsync();
     }
 

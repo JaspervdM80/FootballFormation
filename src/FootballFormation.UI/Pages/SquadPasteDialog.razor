@@ -1,0 +1,40 @@
+﻿@inject IStringLocalizer<Strings> L
+
+<MudDialog Class="dialog-sheet">
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-2" Style="color: var(--ink-muted);">
+            @L["One player per line, with the shirt number first if they have one. Positions can be filled in afterwards."]
+        </MudText>
+        <MudTextField T="string" @bind-Value="Text" Label="@L["Players"]" Variant="Variant.Outlined"
+                      Lines="7" Sizing="InputSizing.Auto" MaxLines="14" Immediate="true" DebounceInterval="250"
+                      Placeholder="@Example" />
+
+        @if (_plan.Count > 0)
+        {
+            <MudText Typo="Typo.caption" Class="d-block mt-3" Style="color: var(--ink-muted);">
+                @Summary
+            </MudText>
+            <ul class="paste-preview">
+                @foreach (var entry in _plan)
+                {
+                    <li class="paste-line @StatusClass(entry)">
+                        <span class="paste-name">
+                            @if (ShirtShown(entry) is { } shirt)
+                            {
+                                <span class="paste-shirt">#@shirt</span>
+                            }
+                            @(entry.Line.FirstName.Length > 0 ? entry.Line.DisplayName : entry.Line.Text)
+                        </span>
+                        <span class="paste-status">@StatusText(entry)</span>
+                    </li>
+                }
+            </ul>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="!CanAdd" OnClick="Submit">
+            @(ToAdd == 1 ? L["Add 1 player"] : L["Add {0} players", ToAdd])
+        </MudButton>
+    </DialogActions>
+</MudDialog>

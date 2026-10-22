@@ -1,7 +1,8 @@
 // Managing a season's squad through the dialogs a coach actually uses.
 import { test, expect } from '../fixtures.js';
 import {
-  addPlayer, clickFor, confirmDialog, fillField, goto, openDialog, playerMenuItem, playerRow, submitDialog,
+  addPlayer, clickFor, confirmDialog, fillField, goto, openAddPlayerItem, openDialog, playerMenuItem, playerRow,
+  submitDialog,
 } from '../helpers.js';
 
 const squadRows = (page) => page.locator('.mud-table-body .mud-table-row');
@@ -83,4 +84,66 @@ test('on a desktop, removing stays an icon on the row rather than a second entry
   const edit = page.locator('.mud-popover-open').getByText('Edit Player', { exact: true });
   await clickFor(row.locator('.mud-menu button').first(), () => expect(edit).toBeVisible());
   await expect(page.locator('.mud-popover-open').getByText('Remove from squad', { exact: true })).toBeHidden();
+});
+
+/** Pastes `text` into the "Paste a list" dialog and returns the dialog, its preview drawn. */
+async function pasteList(page, text) {
+  const panel = await openAddPlayerItem(page, 'Paste a list');
+  await panel.locator('textarea').first().fill(text);
+  await expect(panel.locator('.paste-line').first()).toBeVisible();
+  return panel;
+}
+
+/** Reloads afterwards: the snackbars it leaves stack over the "Add Player" button for seconds. */
+async function removeFromSquad(page, ...names) {
+  for (const name of names) {
+    await playerRow(page, name).getByLabel('Remove from squad').click();
+    await openDialog(page);
+    await confirmDialog(page, 'Delete');
+    await expect(page.locator('.mud-table-row', { hasText: name })).toHaveCount(0);
+  }
+  await goto(page, '/players');
+}
+
+test('a pasted list is previewed, held back while a line is wrong, and then fills the squad', async ({ page }) => {
+  await goto(page, '/players');
+  const before = await squadRows(page).count();
+
+  const panel = await pasteList(page, '61 Plak Nieuw\n61 Plak Dubbel\nFixture Striker');
+  const add = panel.getByRole('button', { name: /^Add \d+ player/ });
+  await expect(panel.locator('.paste-invalid')).toHaveCount(2);
+  await expect(panel.locator('.paste-invalid').first()).toContainText('Shirt number listed twice');
+  await expect(add).toBeDisabled();
+
+  await panel.locator('textarea').first().fill('61 Plak Nieuw\n62 Plak Dubbel\nFixture Striker');
+  await expect(panel.locator('.paste-invalid')).toHaveCount(0);
+  await expect(panel.locator('.paste-line', { hasText: 'Plak Nieuw' })).toContainText('New player');
+  await expect(panel.locator('.paste-line', { hasText: 'Fixture Striker' })).toContainText('Already in the squad');
+  await expect(add).toHaveText('Add 2 players');
+  await expect(add).toBeEnabled();
+  await submitDialog(page, 'Add 2 players');
+
+  await expect(squadRows(page)).toHaveCount(before + 2);
+  await expect(playerRow(page, 'Plak Nieuw')).toContainText('61');
+  await expect(playerRow(page, 'Plak Dubbel')).toContainText('62');
+  await expect(page.locator('.mud-table-row', { hasText: 'Fixture Striker' })).toHaveCount(1);
+});
+
+test('several existing players join the squad from one pick', async ({ page }) => {
+  await goto(page, '/players');
+  await pasteList(page, '63 Kies Een\n64 Kies Twee');
+  await submitDialog(page, 'Add 2 players');
+  await removeFromSquad(page, 'Kies Een', 'Kies Twee');
+
+  const panel = await openAddPlayerItem(page, 'Existing player');
+  for (const name of ['Kies Een', 'Kies Twee']) {
+    const pick = panel.locator('.squad-pick', { hasText: name });
+    // A plain click: a toggle is not idempotent, so clickFor's retry would untick it again.
+    await pick.click();
+    await expect(pick).toHaveAttribute('aria-pressed', 'true');
+  }
+  await submitDialog(page, 'Add 2 players');
+
+  await expect(playerRow(page, 'Kies Een')).toBeVisible();
+  await expect(playerRow(page, 'Kies Twee')).toBeVisible();
 });

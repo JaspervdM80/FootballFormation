@@ -60,8 +60,8 @@ in three phone-sized touch contexts — **320×568**, **360×640** and **844×39
 [known_issues](../known_issues/index.md) argues from — and walks every screen a thumb reaches: the games
 list, the new-match dialog at the top and scrolled to the bottom, the picker's day, month and year
 views, the trainings list and its dialog, the start page with its notification opt-in, `/settings`,
-the app bar, `/players`, the drawer, the formation builder and its pitch, and the live screen of a
-match under way — its controls, its line-up, and the goal and substitution dialogs. Twenty screens
+the app bar, `/players` and its paste-a-list sheet, the drawer, the formation builder and its pitch, and the live screen of a
+match under way — its controls, its line-up, and the goal and substitution dialogs. Twenty-one screens
 per size, a count `auditTouchTargets` asserts, screenshotted into `artifacts/visual/touch/` with
 every measurement written to `report.md` beside them.
 

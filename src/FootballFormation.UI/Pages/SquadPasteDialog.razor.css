@@ -1,0 +1,51 @@
+.paste-preview {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+}
+
+.paste-line {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.paste-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.paste-shirt {
+    margin-right: 6px;
+    font-weight: 700;
+    color: var(--club-primary-bright);
+}
+
+.paste-status {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-align: right;
+}
+
+.paste-create .paste-status {
+    color: var(--color-success-bright);
+}
+
+.paste-existing .paste-status {
+    color: var(--color-away-bright);
+}
+
+.paste-skipped .paste-name,
+.paste-skipped .paste-status {
+    color: var(--ink-subtle);
+}
+
+.paste-invalid .paste-status {
+    color: var(--color-danger-bright);
+}

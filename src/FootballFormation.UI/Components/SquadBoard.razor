@@ -50,6 +50,7 @@
                              StartIcon="@Icons.Material.Filled.PersonAdd" Dense="true">
                         <MudMenuItem OnClick="AddNewPlayer">@L["New player"]</MudMenuItem>
                         <MudMenuItem OnClick="AddExistingPlayer">@L["Existing player"]</MudMenuItem>
+                        <MudMenuItem OnClick="PasteList">@L["Paste a list"]</MudMenuItem>
                     </MudMenu>
                 </div>
             }
@@ -97,7 +98,7 @@
             @* No copy button here: the header carries the only one, so an empty squad doesn't
                show two identical actions. *@
             <MudText Typo="Typo.caption" Class="d-block mt-1" Style="color: var(--ink-subtle);">
-                @L["Copy last season's squad, or add players one by one."]
+                @L["Copy last season's squad, or add the players yourself."]
             </MudText>
         }
     </MudPaper>

@@ -1,0 +1,36 @@
+.squad-pick-list {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Flush rows rather than spaced ones: a gap under 8px between two targets is a dead gutter a thumb lands in. */
+.squad-pick {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    width: 100%;
+    padding: 0 8px;
+    border: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+    background: none;
+    color: var(--ink-muted);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.squad-pick.picked {
+    color: var(--club-primary-bright);
+}
+
+.squad-pick-name {
+    font-weight: 600;
+    color: var(--ink);
+}
+
+@media (hover: hover) {
+    .squad-pick:hover {
+        background: color-mix(in srgb, var(--ink) 5%, transparent);
+    }
+}

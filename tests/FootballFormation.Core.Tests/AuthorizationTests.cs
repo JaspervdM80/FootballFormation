@@ -156,6 +156,23 @@ public class AuthorizationTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task An_anonymous_caller_cannot_fill_the_squad_in_bulk()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(1);
+
+        CurrentUser.IsAdmin = false;
+
+        var pasted = await Squads.AddPastedListAsync(season.Id, "7 Sanne de Vries");
+        var picked = await Squads.AddMembersAsync(season.Id, [players[0].Id]);
+
+        Assert.Equal(ServiceOperation.NotAllowedKey, pasted.ErrorKey);
+        Assert.Equal(ServiceOperation.NotAllowedKey, picked.ErrorKey);
+        Assert.Single(Read().Players);
+        Assert.Empty(Read().SeasonSquadMembers);
+    }
+
+    [Fact]
     public async Task An_anonymous_caller_cannot_archive_a_player()
     {
         var players = await SeedPlayersAsync(1);

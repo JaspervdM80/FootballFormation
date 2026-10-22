@@ -71,7 +71,8 @@ rules below have to win over it.
 ## Dialogs on a phone (`.dialog-sheet`)
 
 Every dialog goes through `DialogPrompts` with `UiFeedback.LockedDialog` (no backdrop-click close). A
-**long form** additionally carries `Class="dialog-sheet"` — `GameDialog` and `TrainingDialog`.
+**long form** additionally carries `Class="dialog-sheet"` — `grep -rn dialog-sheet src --include=*.razor`
+lists them.
 
 Below 600px it becomes a full-screen sheet: full width, `overflow: hidden` on the dialog so
 `.mud-dialog-content` is the **one** scroller (a tap during momentum scrolling cannot resolve against
