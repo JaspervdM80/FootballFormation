@@ -475,10 +475,8 @@
   <data name="Copy squad from {0}" xml:space="preserve"><value>Selectie kopiëren uit {0}</value></data>
   <data name="{0} players copied from {1}" xml:space="preserve"><value>{0} spelers gekopieerd uit {1}</value></data>
   <data name="No squad for {0} yet." xml:space="preserve"><value>Nog geen selectie voor {0}.</value></data>
-  <data name="Copy last season's squad, or add players one by one." xml:space="preserve"><value>Kopieer de selectie van vorig seizoen, of voeg spelers los toe.</value></data>
   <data name="Select a season to manage its squad." xml:space="preserve"><value>Kies een seizoen om de selectie te beheren.</value></data>
   <data name="Show {0}" xml:space="preserve"><value>Toon {0}</value></data>
-  <data name="Everyone on file is already in this squad." xml:space="preserve"><value>Iedereen staat al in deze selectie.</value></data>
   <data name="Delete player permanently" xml:space="preserve"><value>Speler definitief verwijderen</value></data>
   <data name="Archive player" xml:space="preserve"><value>Speler archiveren</value></data>
   <data name="Restore player" xml:space="preserve"><value>Speler terughalen</value></data>
@@ -486,7 +484,6 @@
   <data name="Archive {0}? They keep every appearance, goal and season they played, and stop being offered for seasons to come." xml:space="preserve"><value>{0} archiveren? Alle wedstrijden, doelpunten en seizoenen blijven bewaard, en de speler wordt niet meer aangeboden voor volgende seizoenen.</value></data>
   <data name="{0} archived" xml:space="preserve"><value>{0} is gearchiveerd</value></data>
   <data name="{0} is back in the squad lists" xml:space="preserve"><value>{0} staat weer in de selectielijsten</value></data>
-  <data name="Please select a player" xml:space="preserve"><value>Kies een speler</value></data>
   <data name="More" xml:space="preserve"><value>Meer</value></data>
   <data name="This date starts a new season — its squad is empty until you fill it in on the squad page." xml:space="preserve"><value>Deze datum start een nieuw seizoen — de selectie is leeg tot je die op de selectiepagina invult.</value></data>
 
@@ -770,7 +767,6 @@
   <!-- Service actions — substituted into "Failed to {0}" -->
   <data name="add the comment" xml:space="preserve"><value>opmerking toevoegen</value></data>
   <data name="add the goal" xml:space="preserve"><value>doelpunt toevoegen</value></data>
-  <data name="add the player to the squad" xml:space="preserve"><value>speler aan de selectie toevoegen</value></data>
   <data name="archive the player" xml:space="preserve"><value>speler archiveren</value></data>
   <data name="calculate next match date" xml:space="preserve"><value>volgende wedstrijddatum berekenen</value></data>
   <data name="calculate the next training date" xml:space="preserve"><value>volgende trainingsdatum berekenen</value></data>
@@ -805,7 +801,6 @@
   <data name="load live match" xml:space="preserve"><value>live wedstrijd laden</value></data>
   <data name="load player" xml:space="preserve"><value>speler laden</value></data>
   <data name="load players" xml:space="preserve"><value>spelers laden</value></data>
-  <data name="load players outside the squad" xml:space="preserve"><value>spelers buiten de selectie laden</value></data>
   <data name="load preferences" xml:space="preserve"><value>voorkeuren laden</value></data>
   <data name="load seasons" xml:space="preserve"><value>seizoenen laden</value></data>
   <data name="load the player statistics" xml:space="preserve"><value>spelerstatistieken laden</value></data>
@@ -882,7 +877,6 @@
   <data name="Check the match settings" xml:space="preserve"><value>Controleer de wedstrijdinstellingen</value></data>
   <data name="Game length, halves or quarters, formation and match day." xml:space="preserve"><value>Speelduur, helften of kwarten, opstelling en wedstrijddag.</value></data>
   <data name="Add the squad" xml:space="preserve"><value>Voeg de selectie toe</value></data>
-  <data name="Add your players, or pick them from the club." xml:space="preserve"><value>Voeg je spelers toe, of kies ze uit de club.</value></data>
   <data name="Set the training schedule" xml:space="preserve"><value>Stel het trainingsschema in</value></data>
   <data name="Pick the training days and the first and last training, and the evenings fill themselves in." xml:space="preserve"><value>Kies de trainingsdagen en de eerste en laatste training, dan worden de avonden vanzelf ingevuld.</value></data>
   <data name="Add the first games" xml:space="preserve"><value>Voeg de eerste wedstrijden toe</value></data>
@@ -899,4 +893,29 @@
   <data name="Line-up copied from {0} — check it before saving." xml:space="preserve"><value>Opstelling van {0} overgenomen — controleer die voordat je opslaat.</value></data>
   <data name="Line-up copied from {0}, leaving out who is not available for this match: {1}. Check it before saving." xml:space="preserve"><value>Opstelling van {0} overgenomen, zonder wie er deze wedstrijd niet bij is: {1}. Controleer die voordat je opslaat.</value></data>
   <data name="The formation changes to {0} straight away, and anyone already set up is replaced. The line-up itself is not saved until you save." xml:space="preserve"><value>De formatie verandert meteen naar {0}, en wie al is opgesteld wordt vervangen. De opstelling zelf wordt pas opgeslagen als je opslaat.</value></data>
+  <data name="Paste a list" xml:space="preserve"><value>Lijst toevoegen</value></data>
+  <data name="One player per line, with the shirt number first if they have one. Positions can be filled in afterwards." xml:space="preserve"><value>Eén speler per regel, met het rugnummer vooraan als ze er een hebben. De posities vul je daarna in.</value></data>
+  <data name="1 line needs fixing before anyone can be added." xml:space="preserve"><value>1 regel moet nog verbeterd worden voordat er iemand toegevoegd kan worden.</value></data>
+  <data name="{0} lines need fixing before anyone can be added." xml:space="preserve"><value>{0} regels moeten nog verbeterd worden voordat er iemand toegevoegd kan worden.</value></data>
+  <data name="Everyone on the list is already in the squad." xml:space="preserve"><value>Iedereen op de lijst zit al in de selectie.</value></data>
+  <data name="{0} new, {1} from an earlier season, {2} already in the squad." xml:space="preserve"><value>{0} nieuw, {1} uit een eerder seizoen, {2} al in de selectie.</value></data>
+  <data name="From an earlier season" xml:space="preserve"><value>Uit een eerder seizoen</value></data>
+  <data name="Already in the squad, skipped" xml:space="preserve"><value>Al in de selectie, overgeslagen</value></data>
+  <data name="No name" xml:space="preserve"><value>Geen naam</value></data>
+  <data name="Shirt number must be {0} to {1}" xml:space="preserve"><value>Rugnummer moet {0} tot en met {1} zijn</value></data>
+  <data name="Shirt number listed twice" xml:space="preserve"><value>Rugnummer staat er twee keer in</value></data>
+  <data name="Name listed twice" xml:space="preserve"><value>Naam staat er twee keer in</value></data>
+  <data name="Add 1 player" xml:space="preserve"><value>1 speler toevoegen</value></data>
+  <data name="Add {0} players" xml:space="preserve"><value>{0} spelers toevoegen</value></data>
+  <data name="Tap everyone joining this squad." xml:space="preserve"><value>Tik iedereen aan die bij deze selectie komt.</value></data>
+  <data name="{0} players added to the squad" xml:space="preserve"><value>{0} spelers aan de selectie toegevoegd</value></data>
+  <data name="{0}. Already in the squad: {1}." xml:space="preserve"><value>{0}. Al in de selectie: {1}.</value></data>
+  <data name="Copy last season's squad, or add the players yourself." xml:space="preserve"><value>Kopieer de selectie van vorig seizoen, of voeg de spelers zelf toe.</value></data>
+  <data name="Paste the list of names, or pick your players from the club." xml:space="preserve"><value>Plak de lijst met namen, of kies je spelers uit de club.</value></data>
+  <data name="add the players to the squad" xml:space="preserve"><value>spelers aan de selectie toevoegen</value></data>
+  <data name="load the team's earlier players" xml:space="preserve"><value>eerdere spelers van het team laden</value></data>
+  <data name="add the pasted list to the squad" xml:space="preserve"><value>geplakte lijst aan de selectie toevoegen</value></data>
+  <data name="Pick at least one player" xml:space="preserve"><value>Kies minstens één speler</value></data>
+  <data name="The list has no players in it" xml:space="preserve"><value>Er staan geen spelers in de lijst</value></data>
+  <data name="Line {0} of the list cannot be added" xml:space="preserve"><value>Regel {0} van de lijst kan niet worden toegevoegd</value></data>
 </root>

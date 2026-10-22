@@ -9,9 +9,9 @@ public class SeasonSquadServiceTests : ServiceTestBase
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(1);
 
-        Assert.True((await Squads.AddMemberAsync(season.Id, players[0].Id)).IsSuccess);
+        Assert.True((await Squads.AddMembersAsync(season.Id, [players[0].Id])).IsSuccess);
 
-        var again = await Squads.AddMemberAsync(season.Id, players[0].Id);
+        var again = await Squads.AddMembersAsync(season.Id, [players[0].Id]);
 
         // Refused here with a readable message rather than surfacing the unique index as a raw
         // DbUpdateException.
@@ -25,8 +25,8 @@ public class SeasonSquadServiceTests : ServiceTestBase
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(1);
 
-        Assert.True((await Squads.AddMemberAsync(9999, players[0].Id)).IsFailure);
-        Assert.True((await Squads.AddMemberAsync(season.Id, 9999)).IsFailure);
+        Assert.True((await Squads.AddMembersAsync(9999, [players[0].Id])).IsFailure);
+        Assert.True((await Squads.AddMembersAsync(season.Id, [9999])).IsFailure);
         Assert.Empty(Read().SeasonSquadMembers);
     }
 
@@ -35,7 +35,7 @@ public class SeasonSquadServiceTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(1);
-        await Squads.AddMemberAsync(season.Id, players[0].Id);
+        await Squads.AddMembersAsync(season.Id, [players[0].Id]);
 
         Assert.True((await Squads.RemoveMemberAsync(season.Id, players[0].Id)).IsSuccess);
         Assert.Empty(Read().SeasonSquadMembers);
@@ -46,7 +46,7 @@ public class SeasonSquadServiceTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(1);
-        await Squads.AddMemberAsync(season.Id, players[0].Id);
+        await Squads.AddMembersAsync(season.Id, [players[0].Id]);
 
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
         var period = Read().GamePeriods.First(p => p.GameId == game.Id);
@@ -63,7 +63,7 @@ public class SeasonSquadServiceTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(1);
-        await Squads.AddMemberAsync(season.Id, players[0].Id);
+        await Squads.AddMembersAsync(season.Id, [players[0].Id]);
 
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
         await Games.AddGoalAsync(new GameGoal { GameId = game.Id, ScorerId = players[0].Id, Minute = 5 });
@@ -78,8 +78,8 @@ public class SeasonSquadServiceTests : ServiceTestBase
         var thisSeason = await SeedSeasonAsync(covering: Now);
         var players = await SeedPlayersAsync(1);
 
-        await Squads.AddMemberAsync(lastSeason.Id, players[0].Id);
-        await Squads.AddMemberAsync(thisSeason.Id, players[0].Id);
+        await Squads.AddMembersAsync(lastSeason.Id, [players[0].Id]);
+        await Squads.AddMembersAsync(thisSeason.Id, [players[0].Id]);
 
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: lastSeason.Id))).Value!;
         var period = Read().GamePeriods.First(p => p.GameId == game.Id);
@@ -110,7 +110,7 @@ public class SeasonSquadServiceTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(1);
-        await Squads.AddMemberAsync(season.Id, players[0].Id, isGuest: true);
+        await Squads.AddMembersAsync(season.Id, [players[0].Id], isGuest: true);
 
         Assert.True(Read().SeasonSquadMembers.Single().IsGuest);
 
@@ -136,7 +136,7 @@ public class SeasonSquadServiceTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(1);
-        await Squads.AddMemberAsync(season.Id, players[0].Id, isInjured: true);
+        await Squads.AddMembersAsync(season.Id, [players[0].Id], isInjured: true);
 
         Assert.True(Read().SeasonSquadMembers.Single().IsInjured);
 
@@ -149,8 +149,8 @@ public class SeasonSquadServiceTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(2);
-        await Squads.AddMemberAsync(season.Id, players[0].Id, isInjured: true);
-        await Squads.AddMemberAsync(season.Id, players[1].Id);
+        await Squads.AddMembersAsync(season.Id, [players[0].Id], isInjured: true);
+        await Squads.AddMembersAsync(season.Id, [players[1].Id]);
 
         Assert.Equal(Now.Date, Read().SeasonSquadMembers.Single(m => m.PlayerId == players[0].Id).InjuredSince);
         Assert.Null(Read().SeasonSquadMembers.Single(m => m.PlayerId == players[1].Id).InjuredSince);
@@ -175,7 +175,7 @@ public class SeasonSquadServiceTests : ServiceTestBase
         var last = await SeedSeasonAsync(covering: Now.AddYears(-1), isCurrent: false);
         var next = await SeedSeasonAsync(covering: Now);
         var players = await SeedPlayersAsync(1);
-        await Squads.AddMemberAsync(last.Id, players[0].Id, isInjured: true);
+        await Squads.AddMembersAsync(last.Id, [players[0].Id], isInjured: true);
 
         await Squads.CopyFromAsync(last.Id, next.Id);
 
@@ -191,10 +191,10 @@ public class SeasonSquadServiceTests : ServiceTestBase
         var next = await SeedSeasonAsync(covering: Now);
         var players = await SeedPlayersAsync(3);
 
-        await Squads.AddMemberAsync(last.Id, players[0].Id);
-        await Squads.AddMemberAsync(last.Id, players[1].Id, isGuest: true);
-        await Squads.AddMemberAsync(last.Id, players[2].Id);
-        await Squads.AddMemberAsync(next.Id, players[0].Id);
+        await Squads.AddMembersAsync(last.Id, [players[0].Id]);
+        await Squads.AddMembersAsync(last.Id, [players[1].Id], isGuest: true);
+        await Squads.AddMembersAsync(last.Id, [players[2].Id]);
+        await Squads.AddMembersAsync(next.Id, [players[0].Id]);
 
         var copied = await Squads.CopyFromAsync(last.Id, next.Id);
 
@@ -218,28 +218,19 @@ public class SeasonSquadServiceTests : ServiceTestBase
     }
 
     [Fact]
-    public async Task Non_members_are_the_players_not_yet_in_the_squad()
-    {
-        var season = await SeedSeasonAsync();
-        var players = await SeedPlayersAsync(3);
-        await Squads.AddMemberAsync(season.Id, players[1].Id);
-
-        var outside = await Squads.GetNonMembersAsync(season.Id);
-
-        Assert.Equal([players[0].Id, players[2].Id], outside.Value!.Select(p => p.Id));
-    }
-
-    [Fact]
     public async Task An_archived_player_is_not_offered_for_a_squad()
     {
+        var last = await SeedSeasonAsync(covering: Now.AddYears(-1), isCurrent: false);
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(2);
+        await Squads.AddMembersAsync(last.Id, [players[0].Id]);
+        await Squads.AddMembersAsync(last.Id, [players[1].Id]);
         await Players.SetArchivedAsync(players[0].Id, true);
 
-        var outside = await Squads.GetNonMembersAsync(season.Id);
+        var offered = await Squads.GetFormerMembersAsync(season.Id);
 
         // Offering someone who has left is what would make archiving them pointless.
-        Assert.Equal([players[1].Id], outside.Value!.Select(p => p.Id));
+        Assert.Equal([players[1].Id], offered.Value!.Select(p => p.Id));
     }
 
     [Fact]
@@ -248,8 +239,8 @@ public class SeasonSquadServiceTests : ServiceTestBase
         var last = await SeedSeasonAsync(covering: Now.AddYears(-1), isCurrent: false);
         var next = await SeedSeasonAsync(covering: Now);
         var players = await SeedPlayersAsync(2);
-        await Squads.AddMemberAsync(last.Id, players[0].Id);
-        await Squads.AddMemberAsync(last.Id, players[1].Id);
+        await Squads.AddMembersAsync(last.Id, [players[0].Id]);
+        await Squads.AddMembersAsync(last.Id, [players[1].Id]);
 
         await Players.SetArchivedAsync(players[1].Id, true);
 

@@ -20,7 +20,7 @@ public partial class SetupChecklist
         new(Setup.HasMatchSettings, AppRoutes.Preferences, L["Check the match settings"],
             L["Game length, halves or quarters, formation and match day."]),
         new(Setup.HasSquad, AppRoutes.Players, L["Add the squad"],
-            L["Add your players, or pick them from the club."]),
+            L["Paste the list of names, or pick your players from the club."]),
         new(Setup.HasTrainings, AppRoutes.Settings, L["Set the training schedule"],
             L["Pick the training days and the first and last training, and the evenings fill themselves in."]),
         new(Setup.HasGames, AppRoutes.Games, L["Add the first games"],

@@ -41,71 +41,117 @@ public class SeasonSquadService(
             return Result.Success(new SeasonSquads(members));
         });
 
-    /// Archived players are left out — offering them in the "add existing player" picker is what would make archiving pointless.
-    public Task<Result<List<Player>>> GetNonMembersAsync(
+    /// Who the "existing player" picker offers and a pasted name is matched against: players are the club's, but only those who were in
+    /// one of this team's squads count. Archived players are left out, or archiving them would be pointless.
+    public Task<Result<List<Player>>> GetFormerMembersAsync(
         int seasonId, CancellationToken cancellationToken = default) =>
-        ServiceOperation.RunAsync(logger, "load players outside the squad", cancellationToken, async () =>
+        ServiceOperation.RunAsync(logger, "load the team's earlier players", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var players = await db.Players
-                .AsNoTracking()
-                .Where(p => !p.IsArchived)
-                .Where(p => !db.SeasonSquadMembers.Any(m => m.SeasonId == seasonId && m.PlayerId == p.Id))
-                .OrderBy(p => p.ShirtNumber ?? int.MaxValue)
-                .ThenBy(p => p.FirstName)
-                .ThenBy(p => p.Surname)
-                .ToListAsync(cancellationToken);
+            var players = await FormerMembers(db, seasonId).AsNoTracking().ToListAsync(cancellationToken);
 
-            logger.LogDebug("Retrieved {Count} players outside season {SeasonId}", players.Count, seasonId);
+            logger.LogDebug("Retrieved {Count} earlier players outside season {SeasonId}", players.Count, seasonId);
             return Result.Success(players);
         });
 
-    public Task<Result<SeasonSquadMember>> AddMemberAsync(
-        int seasonId, int playerId, bool isGuest = false, bool isInjured = false,
+    /// All or nothing: one save, so a refusal for any one player leaves the squad as it was.
+    public Task<Result<int>> AddMembersAsync(
+        int seasonId, IReadOnlyCollection<int> playerIds, bool isGuest = false, bool isInjured = false,
         CancellationToken cancellationToken = default) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "add the player to the squad", cancellationToken, async () =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "add the players to the squad", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            // FirstOrDefault, not Find, on both: Find bypasses the query filter, so it would reach another team's season or another
-            // club's player by id.
             var season = await db.Seasons.FirstOrDefaultAsync(s => s.Id == seasonId, cancellationToken);
             if (season is null)
             {
-                logger.LogWarning("Cannot add player {PlayerId}: season {SeasonId} not found", playerId, seasonId);
-                return Result.Failure<SeasonSquadMember>("Season not found");
+                logger.LogWarning("Cannot add players: season {SeasonId} not found", seasonId);
+                return Result.Failure<int>("Season not found");
             }
 
-            var player = await db.Players.FirstOrDefaultAsync(p => p.Id == playerId, cancellationToken);
-            if (player is null)
+            var ids = playerIds.Distinct().ToList();
+            if (ids.Count == 0)
             {
-                logger.LogWarning("Cannot add player {PlayerId} to season {SeasonName}: player not found",
-                    playerId, season.Name);
-                return Result.Failure<SeasonSquadMember>("Player not found");
+                logger.LogWarning("Cannot add players to the {SeasonName} squad: none picked", season.Name);
+                return Result.Failure<int>("Pick at least one player");
             }
 
-            // The unique index is the net; refuse here so the caller gets something readable instead of a raw DbUpdateException.
-            var exists = await db.SeasonSquadMembers
-                .AnyAsync(m => m.SeasonId == seasonId && m.PlayerId == playerId, cancellationToken);
-            if (exists)
+            var players = await db.Players.Where(p => ids.Contains(p.Id)).ToListAsync(cancellationToken);
+            if (players.Count != ids.Count)
             {
-                logger.LogWarning("Player {PlayerName} is already in the {SeasonName} squad",
-                    player.DisplayName, season.Name);
-                return Result.Failure<SeasonSquadMember>("{0} is already in the {1} squad", player.DisplayName, season.Name);
+                logger.LogWarning("Cannot add players to the {SeasonName} squad: {Missing} not found",
+                    season.Name, ids.Count - players.Count);
+                return Result.Failure<int>("Player not found");
             }
 
-            var member = new SeasonSquadMember
+            var already = await db.SeasonSquadMembers
+                .Where(m => m.SeasonId == seasonId && ids.Contains(m.PlayerId))
+                .Select(m => m.PlayerId)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (already != 0)
             {
-                SeasonId = seasonId, TeamId = season.TeamId, PlayerId = playerId, IsGuest = isGuest, IsInjured = isInjured,
-                InjuredSince = isInjured ? time.GetLocalNow().Date : null
-            };
-            db.SeasonSquadMembers.Add(member);
+                var name = players.First(p => p.Id == already).DisplayName;
+                logger.LogWarning("Player {PlayerName} is already in the {SeasonName} squad", name, season.Name);
+                return Result.Failure<int>("{0} is already in the {1} squad", name, season.Name);
+            }
+
+            var injuredSince = isInjured ? time.GetLocalNow().Date : (DateTime?)null;
+            db.SeasonSquadMembers.AddRange(players.Select(p => MemberOf(season, p, isGuest, injuredSince)));
             await db.SaveChangesAsync(cancellationToken);
 
-            logger.LogInformation("Added {PlayerName} to the {SeasonName} squad (guest: {IsGuest}, injured: {IsInjured})",
-                player.DisplayName, season.Name, isGuest, isInjured);
-            return Result.Success(member);
+            logger.LogInformation("Added {Count} players to the {SeasonName} squad (guest: {IsGuest}, injured: {IsInjured})",
+                players.Count, season.Name, isGuest, isInjured);
+            return Result.Success(players.Count);
+        });
+
+    /// Re-plans at save time and refuses a list with any flagged line — the service, not the dialog, is the guard.
+    public Task<Result<PastedSquadOutcome>> AddPastedListAsync(
+        int seasonId, string text, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "add the pasted list to the squad", cancellationToken, async () =>
+        {
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            var season = await db.Seasons.FirstOrDefaultAsync(s => s.Id == seasonId, cancellationToken);
+            if (season is null)
+            {
+                logger.LogWarning("Cannot add a pasted list: season {SeasonId} not found", seasonId);
+                return Result.Failure<PastedSquadOutcome>("Season not found");
+            }
+
+            var squadPlayers = await db.SeasonSquadMembers
+                .Where(m => m.SeasonId == seasonId)
+                .Select(m => m.Player!)
+                .ToListAsync(cancellationToken);
+            var earlierPlayers = await FormerMembers(db, seasonId).ToListAsync(cancellationToken);
+
+            var plan = PastedSquadList.Plan(text, squadPlayers, earlierPlayers);
+            if (plan.Count == 0)
+            {
+                logger.LogWarning("Cannot add a pasted list to the {SeasonName} squad: it is empty", season.Name);
+                return Result.Failure<PastedSquadOutcome>("The list has no players in it");
+            }
+
+            if (plan.FirstOrDefault(e => !e.IsValid) is { } invalid)
+            {
+                logger.LogWarning("Cannot add a pasted list to the {SeasonName} squad: line {Line} is {Problem}",
+                    season.Name, invalid.LineNumber, invalid.Problem);
+                return Result.Failure<PastedSquadOutcome>("Line {0} of the list cannot be added", invalid.LineNumber);
+            }
+
+            List<Player> Players(PastedLineAction action) => [.. plan.Where(e => e.Action == action).Select(e => e.Player)];
+            var created = Players(PastedLineAction.Create);
+            var reused = Players(PastedLineAction.AddExisting);
+            var skipped = Players(PastedLineAction.AlreadyInSquad);
+
+            foreach (var player in created) player.ClubId = db.CurrentClubId!.Value;
+            db.SeasonSquadMembers.AddRange(created.Concat(reused).Select(p => MemberOf(season, p)));
+            await db.SaveChangesAsync(cancellationToken);
+
+            logger.LogInformation(
+                "Added a pasted list to the {SeasonName} squad: {Created} created, {Reused} from an earlier season, {Skipped} already in it",
+                season.Name, created.Count, reused.Count, skipped.Count);
+            return Result.Success(new PastedSquadOutcome(created, reused, skipped));
         });
 
     /// Refuses once the player has minutes or goals in this season, because removing them would silently rewrite that season's stats.
@@ -286,6 +332,26 @@ public class SeasonSquadService(
 
             return Result.Success<Season?>(previous);
         });
+
+    // Through the navigation rather than the id, so a player created in the same save gets her id from it.
+    private static SeasonSquadMember MemberOf(Season season, Player player, bool isGuest = false, DateTime? injuredSince = null) =>
+        new()
+        {
+            SeasonId = season.Id, TeamId = season.TeamId, Player = player, IsGuest = isGuest,
+            IsInjured = injuredSince is not null, InjuredSince = injuredSince
+        };
+
+    // The membership filter is the team's, so this is who has played for this team before; ordered so the preview and the write
+    // resolve a name two of them share to the same one.
+    private static IQueryable<Player> FormerMembers(AppDbContext db, int seasonId) =>
+        db.Players
+            .Where(p => !p.IsArchived)
+            .Where(p => db.SeasonSquadMembers.Any(m => m.PlayerId == p.Id))
+            .Where(p => !db.SeasonSquadMembers.Any(m => m.SeasonId == seasonId && m.PlayerId == p.Id))
+            .OrderBy(p => p.ShirtNumber ?? int.MaxValue)
+            .ThenBy(p => p.FirstName)
+            .ThenBy(p => p.Surname)
+            .ThenBy(p => p.Id);
 
     /// Tracked, and with the player loaded — the log lines and failure messages name a person rather than an id.
     private static Task<SeasonSquadMember?> FindMemberAsync(

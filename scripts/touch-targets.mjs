@@ -514,6 +514,20 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     });
     await audit('squad', '.app-main', ['player-name-cell']);
 
+    // The pasted squad list, the one sheet a new team's admin fills the squad from on a phone. Measured
+    // with a preview drawn, so its rows are on screen, then left by navigating: the drawer wants a clean page.
+    const pasteItem = page.locator('.mud-popover-open').getByText(rx('lijst toevoegen', 'paste a list'));
+    await clickFor(page.getByRole('button', { name: rx('speler toevoegen', 'add player') }),
+      () => pasteItem.isVisible());
+    await clickFor(pasteItem, () => dialog.isVisible());
+    await waitForStableBox(dialog);
+    await dialog.locator('textarea').first().fill('7 Sanne de Vries\nLotte\n12 Femke Jansen');
+    await waitUntil(page, async () => await dialog.locator('.paste-line').count() === 3, {
+      what: "the pasted list's preview",
+    });
+    await audit('paste a list dialog', '.mud-dialog');
+    await goto(page, `${base}/players`);
+
     // The drawer last on this page, and closed by navigating away rather than by the hamburger: once
     // it is open it covers the label that opened it, and the checkbox holding it open is page state
     // a navigation discards anyway.
@@ -574,9 +588,9 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     await cancel();
 
     // Asserted, not logged: a scene that stopped running would otherwise say so only in a number
-    // nobody reads. The drawer is on every viewport now, so every viewport audits the same twenty.
-    if (scenes !== 20)
-      throw new Error(`${viewport.name}: audited ${scenes} screens, expected 20`);
+    // nobody reads. The drawer is on every viewport now, so every viewport audits the same twenty-one.
+    if (scenes !== 21)
+      throw new Error(`${viewport.name}: audited ${scenes} screens, expected 21`);
     console.log(`${viewport.name.padEnd(8)} audited ${scenes} screens`);
     await context.close();
   }

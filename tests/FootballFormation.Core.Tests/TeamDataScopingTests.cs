@@ -151,7 +151,7 @@ public class TeamDataScopingTests : ServiceTestBase
         var season = await SeedSeasonAsync();
 
         var player = (await Players.CreateAsync(new Player { FirstName = playerName })).Value!;
-        await Squads.AddMemberAsync(season.Id, player.Id);
+        await Squads.AddMembersAsync(season.Id, [player.Id]);
 
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id, date: Now.Date))).Value!;
         var training = (await Trainings.CreateAsync(new Training { SeasonId = season.Id, Date = Now.Date.AddDays(-1) })).Value!;

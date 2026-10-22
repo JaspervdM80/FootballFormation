@@ -9,7 +9,7 @@ public class StatsServiceTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync();
         var player = (await SeedPlayersAsync(1))[0];
-        await Squads.AddMemberAsync(season.Id, player.Id);
+        await Squads.AddMembersAsync(season.Id, [player.Id]);
 
         var created = await Games.CreateAsync(new Game
         {
@@ -200,7 +200,7 @@ public class StatsServiceTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync();
         var players = await SeedPlayersAsync(2);
-        foreach (var player in players) await Squads.AddMemberAsync(season.Id, player.Id);
+        foreach (var player in players) await Squads.AddMembersAsync(season.Id, [player.Id]);
 
         await Trainings.CreateAsync(new Training { SeasonId = season.Id, Date = Now.Date.AddDays(-6) });
         await Trainings.CreateAsync(new Training

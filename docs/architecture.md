@@ -95,7 +95,7 @@ Services/
   PlayerService.cs        — CRUD + SetArchived; delete refuses for anyone who has played, so a
                             person is retired rather than taken out of past seasons
   SeasonService.cs        — CRUD + SetCurrent/FindForDate/GetOrCreateForDate/EnsureCurrentSeason/CloseSeasonGaps
-  SeasonSquadService.cs   — Squad membership: get/add/remove/set-guest/copy-forward, with guards
+  SeasonSquadService.cs   — Squad membership: get/add-several/add-a-pasted-list/former-members/remove/set-guest/copy-forward, with guards
   GameService.cs          — CRUD + SavePeriodLineupAsync, optional seasonId filter, returns Result<T>
   TrainingService.cs      — CRUD over training sessions. The one service whose *reads* are
                             RunAdminAsync too: who missed a training is the only thing in this app
@@ -141,7 +141,8 @@ Result.cs                — Result and Result<T>: success/failure with a transl
 Pages/
   Players.razor               — /players — No circuit of its own: SquadBoard, interactive for an admin only
   PlayerDialog.razor(.cs)     — Dialog: first name, surname, shirt #, positions (no guest switch — that's per season)
-  SquadMemberDialog.razor(.cs)— Dialog: add someone already on file to this season's squad
+  SquadMemberDialog.razor(.cs)— Dialog: add people already on file to this season's squad, several at once
+  SquadPasteDialog.razor(.cs)(.css) — Dialog: paste a list of names, previewed before anything is saved
   Games.razor                 — /games — No circuit of its own: GameBoard, interactive for an admin only
   Duties.razor(.cs)(.css)     — /games/duties — Public: the season's dressing-room, flag and kit-wash
                                 duties, one row per game, opened on the next match

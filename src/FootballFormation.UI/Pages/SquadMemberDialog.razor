@@ -1,26 +1,32 @@
 ﻿@inject IStringLocalizer<Strings> L
 
-<MudDialog>
+<MudDialog Class="dialog-sheet">
     <DialogContent>
-        <MudForm @ref="Form">
-            <MudSelect T="int" @bind-Value="PlayerId" Label="@L["Players"]" Class="mb-3"
-                       Required="true" RequiredError="@L["Please select a player"]">
-                @foreach (var player in Candidates)
-                {
-                    <MudSelectItem T="int" Value="player.Id">
-                        <PlayerLabel Player="player" />
-                    </MudSelectItem>
-                }
-            </MudSelect>
-            <MudSwitch @bind-Value="IsGuest" Color="Color.Warning" Class="mb-1">@L["Guest player"]</MudSwitch>
-            <MudText Typo="Typo.caption" Style="color: var(--ink-muted);">
-                @L["Guests are left out of every game unless you add them to it explicitly."]
-            </MudText>
-            <MudSwitch @bind-Value="IsInjured" Color="Color.Error" Class="mt-2">@L["Injured"]</MudSwitch>
-        </MudForm>
+        <MudText Typo="Typo.body2" Class="mb-2" Style="color: var(--ink-muted);">
+            @L["Tap everyone joining this squad."]
+        </MudText>
+        <div class="squad-pick-list" role="group" aria-label="@L["Players"]">
+            @foreach (var player in Candidates)
+            {
+                var picked = _picked.Contains(player.Id);
+                <button type="button" class="squad-pick @(picked ? "picked" : "")" aria-pressed="@(picked ? "true" : "false")"
+                        @onclick="() => Toggle(player.Id)">
+                    <MudIcon Icon="@(picked ? Icons.Material.Filled.CheckBox : Icons.Material.Filled.CheckBoxOutlineBlank)"
+                             Size="Size.Small" />
+                    <span class="squad-pick-name"><PlayerLabel Player="player" /></span>
+                </button>
+            }
+        </div>
+        <MudSwitch @bind-Value="IsGuest" Color="Color.Warning" Class="mt-3 mb-1">@L["Guest player"]</MudSwitch>
+        <MudText Typo="Typo.caption" Style="color: var(--ink-muted);">
+            @L["Guests are left out of every game unless you add them to it explicitly."]
+        </MudText>
+        <MudSwitch @bind-Value="IsInjured" Color="Color.Error" Class="mt-2">@L["Injured"]</MudSwitch>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit">@L["Add to squad"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="_picked.Count == 0" OnClick="Submit">
+            @(_picked.Count == 1 ? L["Add 1 player"] : L["Add {0} players", _picked.Count])
+        </MudButton>
     </DialogActions>
 </MudDialog>

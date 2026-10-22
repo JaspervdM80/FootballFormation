@@ -65,9 +65,39 @@ Season-scoped: it follows the season picker and shows that season's squad, not e
   **`ARCHIVED`** (`.badge-archived` — the quietest badge on the row; it states an absence rather
   than warning about one). That badge is also the only place the restore action lives, so switching
   the season picker to a season they played is how you find them again.
-- "Add Player" is a `MudMenu` with two items: **New player** (creates the person *and* adds them to
-  this squad in one action) and **Existing player** (`SquadMemberDialog`, picking from
-  `GetNonMembersAsync` — someone from an earlier season, or a guest being promoted).
+- "Add Player" is a `MudMenu`: **New player** (creates the person *and* adds them to this squad in
+  one action), **Existing player** and **Paste a list** ("Lijst toevoegen" in Dutch).
+- **Players are per team here, although `Player` rows belong to the club.** "Existing player" and the
+  paste's matching both draw from `GetFormerMembersAsync`: active players with a membership in one of
+  *this team's* seasons and none in this one. Another team's players at the same club are never
+  offered or matched. The board loads that list once per load, on the admin's island only, and
+  **hides "Existing player" when it is empty** — a new team, or one whose earlier players are all in
+  this squad, has nobody to pick, and a menu item that only says so is a dead end.
+- **Existing player** (`SquadMemberDialog`) offers someone from an earlier season, or a guest being
+  promoted, and takes **several at once**: each candidate is a full-width
+  toggle row (`.squad-pick`, `aria-pressed`, 44px, flush so there is no dead gutter between two), and
+  the guest and injured switches apply to everyone picked. `SeasonSquadService.AddMembersAsync`
+  writes them in one save and refuses the whole pick if any one is refused.
+- **Paste a list** (`SquadPasteDialog`, a `.dialog-sheet`) is how a new team's squad gets filled: one
+  player per line, an optional leading shirt number (`7`, `#7`, `7.` or a tab from a spreadsheet),
+  the first word the first name and the rest the surname. Positions stay at the model's default, to
+  be filled in afterwards. A preview under the field says what each line will do — **new player**,
+  **from an earlier season** (someone who was in one of *this team's* earlier squads, added rather
+  than created a second time), **already in the squad** (skipped, untouched) — or why it cannot be
+  added: no name, a shirt number outside 1–99, or a number or name
+  listed twice in the paste (every line sharing it is flagged, since nothing says which one is the
+  mistake). The add button stays disabled while any line is flagged.
+  - Parsing and matching are pure functions in `Core/Models/PastedSquadList.cs`, shared by the
+    preview and the write. A name matches on the whole display name, ignoring case and spacing, so
+    "Lotte" does not claim an earlier player called Lotte Bakker; archived players are never matched.
+  - A namesake on another team of the same club, or a player on file who never joined one of this
+    team's squads, is created new.
+  - The dialog hands back the **text**, not the plan, and `SeasonSquadService.AddPastedListAsync`
+    re-parses and re-plans it against the team's players as they are at save time, refuses the list if any line
+    is flagged, and saves the new players and every membership in **one** `SaveChanges` — one
+    transaction, and the statistics cache is invalidated like any other write.
+  - A reused player keeps their own shirt number, and the preview shows that one; the pasted number
+    only numbers someone created, so only created players are checked for a number listed twice.
 - **Copy squad from {previous season}** shows only while the squad is **empty** and a previous
   season exists — copying into a populated squad would silently merge two rosters. It lives in the
   header next to "Add Player" (not in the empty-state card, which would duplicate it), preserves

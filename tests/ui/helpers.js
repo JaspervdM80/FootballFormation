@@ -112,15 +112,26 @@ export async function confirmDialog(page, action) {
 
 // --- the app's own flows -----------------------------------------------------------------------
 
+/** Opens one of the squad page's "Add Player" menu items and returns the dialog it opens. */
+export async function openAddPlayerItem(page, item) {
+  const entry = page.locator('.mud-popover-open').getByText(item, { exact: true });
+  await clickFor(page.getByRole('button', { name: 'Add Player' }), () => expect(entry).toBeVisible());
+  await entry.click();
+  return openDialog(page);
+}
+
+/** Pastes `text` into the "Paste a list" dialog and returns the dialog, its preview drawn. */
+export async function pasteList(page, text) {
+  const panel = await openAddPlayerItem(page, 'Paste a list');
+  await panel.locator('textarea').first().fill(text);
+  await expect(panel.locator('.paste-line').first()).toBeVisible();
+  return panel;
+}
+
 /** Adds a brand new player to the current season's squad, through the real dialog. */
 export async function addPlayer(page, { firstName, surname = 'Testspeler', shirt }) {
   await goto(page, '/players');
-  const addPlayer = page.getByRole('button', { name: 'Add Player' });
-  const newPlayer = page.locator('.mud-popover-open').getByText('New player', { exact: true });
-  await clickFor(addPlayer, () => expect(newPlayer).toBeVisible());
-  await newPlayer.click();
-
-  const panel = await openDialog(page);
+  const panel = await openAddPlayerItem(page, 'New player');
   await fillField(panel, 'First Name', firstName);
   await fillField(panel, 'Surname', surname);
   if (shirt !== undefined) await fillField(panel, 'Shirt Number', shirt);

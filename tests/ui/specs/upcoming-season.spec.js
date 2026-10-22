@@ -16,6 +16,7 @@ import {
 
 const RETIRED = 'Gestopte Speler';
 const CARRIED = 'Fixture Striker';
+const CARRIED_TOO = 'Fixture Midfielder';
 
 const squadRows = (page) => page.locator('.players-table .mud-table-body .mud-table-row');
 const copyButton = (page) =>
@@ -44,11 +45,10 @@ async function offeredPlayers(page) {
   await existing.click();
 
   const panel = await openDialog(page);
-  const field = panel.locator('.mud-input-control', { has: page.getByText('Players', { exact: false }) }).first();
-  await clickFor(field, () => expect(page.locator('.mud-popover-open .mud-list-item').first()).toBeVisible());
+  await expect(panel.locator('.squad-pick').first()).toBeVisible();
 
-  const offered = await page.locator('.mud-popover-open .mud-list-item').allInnerTexts();
-  return { offered, panel, field };
+  const offered = await panel.locator('.squad-pick').allInnerTexts();
+  return { offered, panel };
 }
 
 test('the season ahead starts empty, offers last season forward, and leaves the archived behind', async ({ page }) => {
@@ -67,14 +67,13 @@ test('the season ahead starts empty, offers last season forward, and leaves the 
   await expect(squadRows(page)).toHaveCount(0);
   await expect(copyButton(page)).toBeVisible();
 
-  const { offered, panel, field } = await offeredPlayers(page);
+  const { offered, panel } = await offeredPlayers(page);
   expect(offered.some(name => name.includes('Fixture')), 'the picker offered nobody at all')
     .toBe(true);
   // PlayerService.GetAllAsync still returns the archived — only this picker and the copy filter them
   // out, so a regression here reads as a retired player quietly rejoining next season.
   expect(offered.some(name => name.includes(RETIRED)),
     'an archived player was offered to next season').toBe(false);
-  await field.click();
   await panel.getByRole('button', { name: 'Cancel' }).click();
   await expect(page.locator('.mud-dialog')).toHaveCount(0);
 
@@ -91,30 +90,38 @@ test('the season ahead starts empty, offers last season forward, and leaves the 
   await expect(copyButton(page)).toHaveCount(0);
 });
 
-test('a member can be taken out of next season and added back as a guest', async ({ page }) => {
+test('two members can be taken out of next season and added back together as guests', async ({ page }) => {
   await chooseSeasonNamed(page, '/players', nextSeasonName());
-  await expect(playerRow(page, CARRIED)).toBeVisible();
+  for (const name of [CARRIED, CARRIED_TOO]) {
+    await expect(playerRow(page, name)).toBeVisible();
+    await playerRow(page, name).getByLabel('Remove from squad').click();
+    await openDialog(page);
+    // ConfirmDeleteAsync, so the button says Delete however gently the title puts it.
+    await confirmDialog(page, 'Delete');
+    await expect(page.locator('.mud-table-row', { hasText: name })).toHaveCount(0);
+  }
+  // The snackbars the removals leave stack over the "Add Player" button for seconds; a reload clears them.
+  await goto(page, '/players');
 
-  await playerRow(page, CARRIED).getByLabel('Remove from squad').click();
-  await openDialog(page);
-  // ConfirmDeleteAsync, so the button says Delete however gently the title puts it.
-  await confirmDialog(page, 'Delete');
-  await expect(page.locator('.mud-table-row', { hasText: CARRIED })).toHaveCount(0);
+  // Out of the squad but in this season's past — which is exactly what makes them candidates again.
+  const { offered, panel } = await offeredPlayers(page);
+  expect(offered.some(name => name.includes(CARRIED))).toBe(true);
+  expect(offered.some(name => name.includes(CARRIED_TOO))).toBe(true);
 
-  // Out of the squad but not off the books — which is exactly what makes her a candidate again.
-  const { offered, panel, field } = await offeredPlayers(page);
-  expect(offered.some(name => name.includes('Striker'))).toBe(true);
-
-  await page.locator('.mud-popover-open .mud-list-item', { hasText: 'Striker' }).first().click();
-  // The field rather than a count of open popovers: the "Add Player" menu that opened this dialog
-  // leaves its own popover behind, so zero is never the answer.
-  await expect(field).toContainText('Striker');
+  for (const name of [CARRIED, CARRIED_TOO]) {
+    const pick = panel.locator('.squad-pick', { hasText: name }).first();
+    // A plain click: a toggle is not idempotent, so clickFor's retry would untick it again.
+    await pick.click();
+    await expect(pick).toHaveAttribute('aria-pressed', 'true');
+  }
   await panel.locator('label.mud-switch', { hasText: 'Guest player' }).click();
-  await submitDialog(page, 'Add to squad');
+  await submitDialog(page, 'Add 2 players');
 
-  const row = playerRow(page, CARRIED);
-  await expect(row).toBeVisible();
-  await expect(row.locator('.badge-guest')).toHaveText('GUEST');
+  for (const name of [CARRIED, CARRIED_TOO]) {
+    const row = playerRow(page, name);
+    await expect(row).toBeVisible();
+    await expect(row.locator('.badge-guest')).toHaveText('GUEST');
+  }
 });
 
 test('a season window that would leave a hole is refused, and the season keeps the one it had', async ({ page }) => {

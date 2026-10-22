@@ -61,6 +61,9 @@ history, so it must never block deleting a person or an (already game-free) seas
 
 New seasons start with an **empty** squad; they are populated by `SeasonSquadService.CopyFromAsync`
 ("copy squad from {previous season}" on `/players`), which preserves guest flags and is idempotent.
+A new team's first season has nothing to copy, so `AddPastedListAsync` takes a pasted list of names
+and adds them in one transaction, reusing a player of the same name from one of this team's
+earlier seasons rather than creating her twice (see [the squad page](../ui_components/squad-and-stats.md#squad-page-players)).
 Injury status is deliberately **not** carried forward — every copied row starts fit, since an injury
 is expected to have healed by the time next season's squad is set up, unlike guest status, which is
 a standing arrangement. `RemoveMemberAsync` refuses once the player has minutes or goals that season.

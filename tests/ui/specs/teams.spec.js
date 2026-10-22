@@ -4,13 +4,15 @@
 // just quietly shows the wrong team, or forgets which one you picked.
 import { test, expect } from '../fixtures.js';
 import {
-  addAdmin, addTeam, clickFor, confirmDialog, dropAndRejoin, goto, settle, showTeam, signInAs, teamRow,
+  addAdmin, addTeam, clickFor, confirmDialog, dropAndRejoin, goto, openDialog, playerRow, settle, showTeam, signInAs,
+  submitDialog, teamRow,
 } from '../helpers.js';
 
 const COOKIE = 'ff.team';
 const A_YEAR = 365 * 24 * 60 * 60;
 
 const SECOND_TEAM = 'MO17-Uitest';
+const PASTE_TEAM = 'MO11-Plaktest';
 const SEEDED_TEAM = 'GJS MO15-2';
 
 const heading = (page, name) => page.getByRole('heading', { name, exact: false }).first();
@@ -208,4 +210,24 @@ test('a circuit rejoining after another tab switched team still answers for its 
   await dropAndRejoin(theirPage);
 
   await clickFor(add.first(), () => expect(theirPage.locator('.mud-dialog')).toBeVisible());
+});
+
+test("a new team fills its squad by pasting, and another team's player of the same name is not borrowed", async ({ page }) => {
+  await addTeam(page, PASTE_TEAM);
+  await showTeam(page, PASTE_TEAM);
+  await goto(page, '/players');
+
+  // Nobody has played for this team yet, so there is no one to offer — the club's other teams do not count.
+  const menu = page.locator('.mud-popover-open');
+  await clickFor(page.getByRole('button', { name: 'Add Player' }),
+    () => expect(menu.getByText('Paste a list', { exact: true })).toBeVisible());
+  await expect(menu.getByText('Existing player', { exact: true })).toHaveCount(0);
+  await menu.getByText('Paste a list', { exact: true }).click();
+
+  const panel = await openDialog(page);
+  await panel.locator('textarea').first().fill('Fixture Striker');
+  await expect(panel.locator('.paste-line', { hasText: 'Fixture Striker' })).toContainText('New player');
+  await submitDialog(page, 'Add 1 player');
+
+  await expect(playerRow(page, 'Fixture Striker')).toBeVisible();
 });
