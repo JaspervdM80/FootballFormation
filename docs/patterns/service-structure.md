@@ -61,9 +61,12 @@ split is still by use case — "what the statistics pages need" — and it compu
 delegates, which is what keeps it from being the facade the section above warns about.
 
 **One entry serves all three pages.** `SeasonStatsReport.Build` produces its per-player figures by
-calling `PlayerStatsReport.Build` unchanged, so a player's entry in `SeasonStats.Players` is the
-identical object `/players/{id}/stats` would have built for itself — `StatsServiceTests` asserts
-`Assert.Same`, not merely equal figures. `/stats/positions` filters the same list to the regulars
+calling `PlayerStatsReport.Build`, so a player's entry in `SeasonStats.Players` is the identical
+object `/players/{id}/stats` would have built for itself — `StatsServiceTests` asserts
+`Assert.Same`, not merely equal figures. The one difference is cost: `PlayerStatsReport.MinutesOf`
+works out each game's minutes once and the whole squad shares them, rather than every player
+replaying every game's substitutions, so a build costs one `GameMinutesReport` per finished game, not one per
+player per game. `/stats/positions` filters the same list to the regulars
 rather than reporting on them separately. A squad of twenty costs one cache entry, not twenty-one.
 
 **Nothing is ever invalidated; the key changes.** A write bumps a generation, which is
