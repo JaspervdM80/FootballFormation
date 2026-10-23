@@ -51,7 +51,7 @@ asking `IsApplicationAdminAsync()`, because an ordinary admin passes the `RunAdm
 
 The exceptions, each deliberate:
 
-- **Reads with something to hide are guarded at the service.** `GameService.GetCommentsAsync`
+- **Reads with something to hide are guarded at the service.** `GameCommentService.GetCommentsAsync`
   re-confirms its `includePrivate` flag against `ICurrentUser` — a boolean argument is not believed.
   `TrainingService.GetAllAsync` runs under `RunAdminAsync`: the training register is not public, and
   `StatsService`'s attendance reads lean on it as their guard, which is why they are not cached.
@@ -122,7 +122,7 @@ circuits (`LiveMatchNotifier`, `StatsCache`) is a singleton and must not take a 
 
 The live match is the worked example: one large service became several, cut along what happens at the
 touchline (the clock, the goals, the substitutions), never into a data-access layer. Pure helpers over
-an entity move **onto the entity**; shared setup gets **named once** (`LiveMatchQueries`,
+an entity move **onto the entity**; shared setup gets **named once** (`LiveMatchQueries`, `GameNotFound`,
 `ScopeQueries`); anything
 every method had to remember becomes **part of the operation shape** (`LiveMatchOperation.RunAdminAsync`
 makes the notify call itself). A page injecting all of them is expected. A *facade* over them is the

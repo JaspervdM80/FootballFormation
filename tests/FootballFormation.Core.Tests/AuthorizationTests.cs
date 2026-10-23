@@ -179,7 +179,7 @@ public class AuthorizationTests : ServiceTestBase
 
         CurrentUser.IsAdmin = false;
 
-        var result = await Games.SaveFormationAsync(game.Id, FormationType.F433);
+        var result = await Lineups.SaveFormationAsync(game.Id, FormationType.F433);
 
         Assert.True(result.IsFailure);
         Assert.Equal(ServiceOperation.NotAllowedKey, result.ErrorKey);
@@ -196,7 +196,7 @@ public class AuthorizationTests : ServiceTestBase
 
         CurrentUser.IsAdmin = false;
 
-        var result = await Games.SaveLineupsAsync(game.Id, new Dictionary<int, List<GamePlayerPosition>>
+        var result = await Lineups.SaveLineupsAsync(game.Id, new Dictionary<int, List<GamePlayerPosition>>
         {
             [period.Id] = [TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0)]
         });
@@ -393,7 +393,7 @@ public class AuthorizationTests : ServiceTestBase
 
         CurrentUser.IsAdmin = false;
 
-        var result = await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Intruder" });
+        var result = await Comments.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Intruder" });
 
         Assert.True(result.IsFailure);
         Assert.Equal(ServiceOperation.NotAllowedKey, result.ErrorKey);
@@ -405,14 +405,14 @@ public class AuthorizationTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync();
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
-        await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Public", IsPublic = true });
-        await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Private", IsPublic = false });
+        await Comments.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Public", IsPublic = true });
+        await Comments.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Private", IsPublic = false });
 
         CurrentUser.IsAdmin = false;
 
         // Passing includePrivate: true is not the same as being allowed to: the result page prerenders, so a private body reaching the
         // query at all would ship in the markup even if the page hid the row.
-        var comments = await Games.GetCommentsAsync(game.Id, includePrivate: true);
+        var comments = await Comments.GetCommentsAsync(game.Id, includePrivate: true);
 
         Assert.True(comments.IsSuccess);
         Assert.Equal("Public", Assert.Single(comments.Value!).Body);

@@ -35,7 +35,8 @@ Security/
   ICurrentUser.cs        — Who is asking, as far as a Core service is concerned. The seam that lets
                            every write path refuse a non-admin (ServiceOperation.RunAdminAsync)
   ICurrentTeam.cs        — Which team is being asked about, which is the other half of that question
-  CurrentTeam.cs         — Answers it: the ff.team cookie while it names a team, else the first team
+  CurrentTeam.cs         — Answers it: the ff.team cookie while it names a team, else the first team —
+                           two targeted queries, never the whole teams table
   TeamAuthority.cs       — The rule itself, as one testable function
 Data/
   AppDbContext.cs         — EF Core context; DbSets only, mapping lives in Configurations/
@@ -51,9 +52,11 @@ Data/
   GameQueries.cs          — The include chains a Game is loaded with, named once as IQueryable
                            extensions and composed at the call site. Not a repository: tracking,
                            filtering and tagging stay the caller's
-  ScopeQueries.cs         — The team gates read through the query filter: GameInScopeAsync for a
-                           write reaching a game's child by its own id, TeamIdOfSeasonAsync for
-                           a row stamped with the team of the season it hangs off
+  ScopeQueries.cs         — The team gates read through the query filter: FindInScopeAsync<T> for a
+                           write reaching a game's child (an IGameChild) by its own id,
+                           GameInScopeAsync for one adding a child to a game, TeamIdOfSeasonAsync
+                           for a row stamped with the team of the season it hangs off
+  PlayerQueries.cs        — InSquadOrder: shirt, then name, the order every list of players reads in
   QueryTags.cs            — TagWith markers. Holds ComparesDatesInSql, the only way past the test
                            suite's DateInSqlInterceptor
 Reporting/
@@ -98,9 +101,15 @@ Services/
                             person is retired rather than taken out of past seasons
   SeasonService.cs        — CRUD + SetCurrent/FindForDate/GetOrCreateForDate/EnsureCurrentSeason/CloseSeasonGaps
   SeasonSquadService.cs   — Squad membership: get/add-several/add-a-pasted-list/former-members/remove/set-guest/copy-forward, with guards
-  GameService.cs          — CRUD + SavePeriodLineupAsync/SaveLineupsAsync, optional seasonId filter,
-                            returns Result<T>. UpdateAsync copies the dialog's fields onto the stored
-                            row (Game.TakeFixtureDetailsFrom) rather than attaching the caller's
+  GameService.cs          — The game itself: CRUD, the score and goal storage, optional seasonId
+                            filter. UpdateAsync copies the dialog's fields onto the stored row
+                            (Game.TakeFixtureDetailsFrom), and rebuilds the periods when the split
+                            changes before kick-off (Game.PeriodsFor)
+  LineupService.cs        — What the formation builder plans: SaveFormationAsync, SaveLineupsAsync
+                            (every unplayed period in one transaction) and GetPreviousFullLineupAsync
+  GameCommentService.cs   — An admin's notes on a game. GetCommentsAsync confirms includePrivate
+                            against ICurrentUser rather than believing it
+  GameNotFound.cs         — The one "Game not found" every service answers with, id-free on purpose
   TrainingService.cs      — CRUD over training sessions. The one service whose *reads* are
                             RunAdminAsync too: who missed a training is the only thing in this app
                             that is not a public read. See docs/models/training.md
@@ -124,7 +133,7 @@ Services/
   LiveMatchOperation.cs   — The write shape those three share: RunAdminAsync plus, on success, one
                             LiveMatchNotifier call naming the game that changed and its team
   LiveMatchQueries.cs     — The tracked load they all start from (the game with its planned
-                            line-ups, via GameQueries) and the one "game not found" message
+                            line-ups, via GameQueries)
   LiveMatchNotifier.cs    — Singleton: fans live match changes out to every open circuit
   MatchPreferencesService.cs — Per-season prefs: GetAsync(seasonId), SaveMatchDefaultsAsync and
                             SaveTrainingScheduleAsync (one row, two pages — each writes its own

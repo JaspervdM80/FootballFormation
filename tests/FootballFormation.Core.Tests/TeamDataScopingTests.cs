@@ -19,6 +19,7 @@ public class TeamDataScopingTests : ServiceTestBase
         Assert.Equal([a.TrainingId], (await Trainings.GetAllAsync()).Value!.Select(t => t.Id));
         Assert.Single((await Squads.GetSquadAsync(a.SeasonId)).Value!.Members);
         Assert.Empty((await Squads.GetSquadAsync(b.SeasonId)).Value!.Members);
+        Assert.Empty((await Squads.GetMatchPeopleAsync(b.SeasonId)).Value!.Squad.Members);
 
         Scope(b);
         Assert.Equal([b.SeasonId], (await Seasons.GetAllAsync()).Value!.Select(s => s.Id));
@@ -36,7 +37,7 @@ public class TeamDataScopingTests : ServiceTestBase
         Scope(a);
         Assert.True((await Games.GetByIdAsync(a.GameId)).IsSuccess);
         Assert.True((await Games.GetByIdAsync(b.GameId)).IsFailure);
-        Assert.True((await Games.GetPreviousFullLineupAsync(b.GameId)).IsFailure);
+        Assert.True((await Lineups.GetPreviousFullLineupAsync(b.GameId)).IsFailure);
         Assert.True((await Live.GetLiveAsync(b.GameId)).IsFailure);
     }
 
@@ -109,15 +110,36 @@ public class TeamDataScopingTests : ServiceTestBase
         Scope(a);
         Assert.True((await Games.DeleteAsync(b.GameId)).IsFailure);
         Assert.True((await Games.UpdateAsync(new Game { Id = b.GameId, Opponent = "Hijacked", Date = Now.Date })).IsFailure);
-        Assert.True((await Games.AddCommentAsync(new GameComment { GameId = b.GameId, Body = "Hijacked" })).IsFailure);
+        Assert.True((await Comments.AddCommentAsync(new GameComment { GameId = b.GameId, Body = "Hijacked" })).IsFailure);
         Assert.True((await Games.AddGoalAsync(new GameGoal { GameId = b.GameId, IsOpponentGoal = true })).IsFailure);
-        Assert.True((await Games.SaveLineupsAsync(b.GameId, new Dictionary<int, List<GamePlayerPosition>>())).IsFailure);
+        Assert.True((await Lineups.SaveLineupsAsync(b.GameId, new Dictionary<int, List<GamePlayerPosition>>())).IsFailure);
 
         Scope(b);
         var game = (await Games.GetByIdAsync(b.GameId)).Value!;
         Assert.NotEqual("Hijacked", game.Opponent);
-        Assert.Empty((await Games.GetCommentsAsync(b.GameId, includePrivate: true)).Value!);
+        Assert.Empty((await Comments.GetCommentsAsync(b.GameId, includePrivate: true)).Value!);
         Assert.Empty(game.Goals);
+    }
+
+    [Fact]
+    public async Task Another_teams_goal_or_comment_reached_by_its_own_id_is_not_found()
+    {
+        var (a, b) = await ArrangeTwoTeamsAsync();
+
+        Scope(b);
+        var goal = (await Games.AddGoalAsync(new GameGoal { GameId = b.GameId, IsOpponentGoal = true, Minute = 10 })).Value!;
+        var comment = (await Comments.AddCommentAsync(new GameComment { GameId = b.GameId, Body = "Theirs", IsPublic = true })).Value!;
+
+        // A goal or a comment carries no team, so only the gate on its game stands between these ids and another team's rows.
+        Scope(a);
+        Assert.Equal("Goal not found", (await Games.RemoveGoalAsync(goal.Id)).ErrorKey);
+        Assert.Equal("Goal not found", (await Goals.EditGoalAsync(goal.Id, null, null, false, 20)).ErrorKey);
+        Assert.Equal("Comment not found", (await Comments.UpdateCommentAsync(comment.Id, "Hijacked", false)).ErrorKey);
+        Assert.Equal("Comment not found", (await Comments.RemoveCommentAsync(comment.Id)).ErrorKey);
+
+        Scope(b);
+        Assert.Equal(10, Read().GameGoals.Single().Minute);
+        Assert.Equal("Theirs", Read().GameComments.Single().Body);
     }
 
     [Fact]

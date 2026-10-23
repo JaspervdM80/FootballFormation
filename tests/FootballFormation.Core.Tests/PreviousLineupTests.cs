@@ -95,12 +95,12 @@ public class PreviousLineupTests : ServiceTestBase
         var slots = FormationSlots.For(FormationType.F442);
         foreach (var period in Read().GamePeriods.Where(p => p.GameId == earlier.Id).ToList())
         {
-            await Games.SavePeriodLineupAsync(period.Id,
+            await SaveLineupAsync(period.Id,
                 [.. slots.Select((position, slot) => TestData.Starter(players[slot].Id, position, slot))]);
         }
 
-        var forTarget = await Games.GetPreviousFullLineupAsync(target.Id);
-        var forEarlier = await Games.GetPreviousFullLineupAsync(earlier.Id);
+        var forTarget = await Lineups.GetPreviousFullLineupAsync(target.Id);
+        var forEarlier = await Lineups.GetPreviousFullLineupAsync(earlier.Id);
 
         Assert.Equal(earlier.Id, forTarget.Value?.Id);
         Assert.NotNull(forTarget.Value!.Periods[0].PlayerPositions[0].Player);
@@ -111,7 +111,7 @@ public class PreviousLineupTests : ServiceTestBase
     [Fact]
     public async Task Asking_for_a_game_that_does_not_exist_fails()
     {
-        var result = await Games.GetPreviousFullLineupAsync(999);
+        var result = await Lineups.GetPreviousFullLineupAsync(999);
 
         Assert.True(result.IsFailure);
     }

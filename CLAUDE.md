@@ -108,7 +108,7 @@ These fail silently or expensively, so they are here rather than only in a skill
 7. **The team scope is applied for you — don't step around it.** Services take
    `IDbContextFactory<AppDbContext>`, which stamps the team in scope, and `AppDbContext`'s query
    filters do the rest. A new season-scoped entity needs a `TeamId` and a filter; child rows (goals,
-   injuries, comments) carry none, so a write reaching one by its own id gates on `GameInScopeAsync`.
+   injuries, comments) carry none, so a write reaching one by its own id goes through `FindInScopeAsync`.
    Get either wrong and another team's rows come back looking completely normal.
 
 ## Workflow

@@ -43,9 +43,10 @@ query that never mentions the team still returns only the team in scope; an unst
 returns *nothing*, never another team's rows.
 
 - **Child rows carry no filter.** Goals, substitutions, injuries, swaps, comments and periods are
-  reached through a filtered `Game`. A write that loads one by its own id — `FindAsync(goalId)` or a
-  `Where` alike — gates on `db.GameInScopeAsync(child.GameId, ct)` first (`Data/ScopeQueries.cs`),
-  which turns another team's id into "not found".
+  reached through a filtered `Game`. A write that loads one by its own id does it through
+  `db.FindInScopeAsync<T>(id, ct)` (`Data/ScopeQueries.cs`), which answers null for another team's
+  row exactly as for a missing one; a write *adding* one gates on `db.GameInScopeAsync(gameId, ct)`.
+  Each child type implements `IGameChild`, which is what the helper needs.
 - **`FindAsync` on a filtered root is filtered** when it goes to the database; it skips the filter
   only for an entity that context already tracks. Prefer `FirstOrDefaultAsync(x => x.Id == id, ct)`
   anyway, so the query reads the way it behaves.
@@ -106,13 +107,17 @@ caller's decision.
 - **Attaching a caller's entity as `Modified` writes every column**, including the ones the caller
   never meant to touch and holds a stale copy of. `GameService.UpdateAsync` did that with a game
   loaded before kick-off and reset the live match; it now loads the row and copies the edited fields
-  across. Do the same for any entity something else also writes.
+  across. `PlayerService.UpdateAsync` had the same shape and would un-archive a player from a stale
+  dialog. Do the same for any entity something else also writes.
 - **Re-saving `GamePlayerPosition` needs fresh entities with `Id = 0`.** Re-adding tracked entities
   with existing IDs makes EF attempt an INSERT with the old PK and hit the UNIQUE constraint.
-  `SavePeriodLineupAsync` deletes then inserts fresh, both inside one `BeginTransactionAsync` — a
-  failed insert must not leave the period with no lineup at all.
+  `LineupService.SaveLineupsAsync` deletes then inserts fresh, all inside one `BeginTransactionAsync`
+  — a failed insert must not leave a period with no lineup at all.
 - **List value converters need a `ValueComparer`.** Without one EF never detects a change to
   `List<PlayerPosition>` or `List<int>`.
+- **The statistics cache moves when a transaction commits, not at each save inside it.** A rebuild
+  between the two would read the old rows and cache them under the new key. `StatsCacheInvalidator`
+  is a transaction interceptor as well for that reason; a rollback leaves the cache alone.
 - **A write that skips `SaveChanges` skips the statistics cache.** `StatsCacheInvalidator` is a
   `SaveChanges` interceptor; `ExecuteUpdate`, `ExecuteDelete` and raw SQL go behind its back, and the
   expiry is sliding, so a page people keep reading keeps serving the old figures. Only the push

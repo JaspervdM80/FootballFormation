@@ -68,7 +68,7 @@ public class Game
 
     public List<GamePositionSwap> PositionSwaps { get; set; } = [];
 
-    /// Never eager-load these: GameService.GetCommentsAsync is the one place the public/private split is applied.
+    /// Never eager-load these: GameCommentService.GetCommentsAsync is the one place the public/private split is applied.
     public List<GameComment> Comments { get; set; } = [];
 
     public MatchState MatchState { get; set; } = MatchState.NotStarted;
@@ -148,6 +148,23 @@ public class Game
         UnavailablePlayerIds = [.. edited.UnavailablePlayerIds];
         GuestPlayerIds = [.. edited.GuestPlayerIds];
     }
+
+    // Each period of a new split starts from the line-up planned for the opening of its half: a quarter copies its half's, a half takes
+    // the quarter it opens with. Fresh rows, so the old periods can be deleted without taking a line-up with them.
+    public List<GamePeriod> PeriodsFor(GameSplitType split) =>
+    [
+        .. PeriodTypeExtensions.ForSplitType(split).Select(type =>
+        {
+            var source = Periods.Where(p => p.PeriodType.Half() == type.Half()).OrderBy(p => p.PeriodType).FirstOrDefault();
+            return new GamePeriod
+            {
+                GameId = Id,
+                PeriodType = type,
+                FormationTypeOverride = source?.FormationTypeOverride,
+                PlayerPositions = source is null ? [] : LineupEditor.Copy(source.PlayerPositions)
+            };
+        })
+    ];
 
     /// Period for period, reshaped into this game's slots, leaving out anyone not in <paramref name="availablePlayerIds"/>. Fresh entries
     /// with Id = 0, so a save inserts them rather than claiming the source's rows.

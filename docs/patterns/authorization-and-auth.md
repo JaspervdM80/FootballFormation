@@ -40,7 +40,7 @@ visitor on the same page does not. (The mid-match "off injured" event on `/games
 separate, deliberately public part of the match narrative and is not covered by this.)
 
 **One read is not open, and it is the exception worth knowing.**
-`GameService.GetCommentsAsync(gameId, includePrivate)` takes a flag saying whether to include
+`GameCommentService.GetCommentsAsync(gameId, includePrivate)` takes a flag saying whether to include
 admin-only comments — and then confirms it against `ICurrentUser` rather than believing it, so a
 caller passing `true` without the role gets the public ones. A read with something to hide should
 not be the one place a boolean argument is trusted. `AuthorizationTests` pins both halves —
@@ -118,7 +118,8 @@ them all; and `MatchAudienceQuery` and `MatchCalendarQuery`, which stamp the tea
 
 **The one gap the filter leaves is the children of a game**, which carry no filter of their own: a
 `db.GameGoals.FindAsync(id)` returns another team's goal. A write reaching a game's child by the
-child's own id (a goal, a comment, an injury) gates on `AppDbContext.GameInScopeAsync` first. A
+child's own id (a goal, a comment, an injury) loads it through `FindInScopeAsync`, which asks
+`GameInScopeAsync` about its game and answers null for another team's. A
 `FindAsync` on a filtered root such as `Games` is filtered when it queries the database and skips
 the filter only for an entity the context already tracks; the scoped services use
 `FirstOrDefaultAsync(x => x.Id == id)` on the filtered set anyway.

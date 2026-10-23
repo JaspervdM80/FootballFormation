@@ -20,6 +20,8 @@ public static class CoreServiceRegistration
         services.AddScoped<SeasonService>();
         services.AddScoped<SeasonSquadService>();
         services.AddScoped<GameService>();
+        services.AddScoped<LineupService>();
+        services.AddScoped<GameCommentService>();
         services.AddScoped<TrainingService>();
         services.AddScoped<LiveMatchService>();
         services.AddScoped<MatchClockService>();

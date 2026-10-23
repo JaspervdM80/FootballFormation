@@ -35,6 +35,8 @@ public abstract class ServiceTestBase : IDisposable
         Seasons = new SeasonService(DbFactory, factory, Time, CurrentUser, NullLogger<SeasonService>.Instance);
         Squads = new SeasonSquadService(DbFactory, CurrentUser, Time, NullLogger<SeasonSquadService>.Instance);
         Games = new GameService(DbFactory, Seasons, CurrentUser, Time, NullLogger<GameService>.Instance);
+        Lineups = new LineupService(DbFactory, CurrentUser, NullLogger<LineupService>.Instance);
+        Comments = new GameCommentService(DbFactory, CurrentUser, Time, NullLogger<GameCommentService>.Instance);
         Trainings = new TrainingService(DbFactory, Seasons, Time, CurrentUser, NullLogger<TrainingService>.Instance);
         Preferences = new MatchPreferencesService(DbFactory, Time, CurrentUser, NullLogger<MatchPreferencesService>.Instance);
         Live = new LiveMatchService(DbFactory, Time, NullLogger<LiveMatchService>.Instance);
@@ -71,6 +73,8 @@ public abstract class ServiceTestBase : IDisposable
     protected SeasonService Seasons { get; }
     protected SeasonSquadService Squads { get; }
     protected GameService Games { get; }
+    protected LineupService Lineups { get; }
+    protected GameCommentService Comments { get; }
     protected TrainingService Trainings { get; }
     protected MatchPreferencesService Preferences { get; }
 
@@ -98,6 +102,13 @@ public abstract class ServiceTestBase : IDisposable
     protected StatsCache StatsCache { get; }
 
     protected AppDbContext Read() => DbFactory.CreateDbContext();
+
+    // One period's line-up, the way the builder's Save All writes it — so a half already played is left alone rather than refused.
+    protected async Task<Result<List<PeriodType>>> SaveLineupAsync(int periodId, List<GamePlayerPosition> lineup)
+    {
+        var gameId = Read().GamePeriods.Where(p => p.Id == periodId).Select(p => p.GameId).Single();
+        return await Lineups.SaveLineupsAsync(gameId, new Dictionary<int, List<GamePlayerPosition>> { [periodId] = lineup });
+    }
 
     protected async Task<Season> SeedSeasonAsync(DateTime? covering = null, bool isCurrent = true)
     {

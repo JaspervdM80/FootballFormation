@@ -24,7 +24,7 @@ public class PlayerServiceTests : ServiceTestBase
 
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
         var period = Read().GamePeriods.First(p => p.GameId == game.Id);
-        await Games.SavePeriodLineupAsync(period.Id, [TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0)]);
+        await SaveLineupAsync(period.Id, [TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0)]);
 
         var result = await Players.DeleteAsync(players[0].Id);
 
@@ -58,7 +58,7 @@ public class PlayerServiceTests : ServiceTestBase
 
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: lastSeason.Id))).Value!;
         var period = Read().GamePeriods.First(p => p.GameId == game.Id);
-        await Games.SavePeriodLineupAsync(period.Id, [TestData.Starter(players[0].Id, PlayerPosition.CM, slot: 0)]);
+        await SaveLineupAsync(period.Id, [TestData.Starter(players[0].Id, PlayerPosition.CM, slot: 0)]);
 
         Assert.True((await Players.DeleteAsync(players[0].Id)).IsFailure);
     }
@@ -72,7 +72,7 @@ public class PlayerServiceTests : ServiceTestBase
 
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
         var period = Read().GamePeriods.First(p => p.GameId == game.Id);
-        await Games.SavePeriodLineupAsync(period.Id, [TestData.Starter(players[0].Id, PlayerPosition.ST, slot: 0)]);
+        await SaveLineupAsync(period.Id, [TestData.Starter(players[0].Id, PlayerPosition.ST, slot: 0)]);
         await Games.AddGoalAsync(new GameGoal { GameId = game.Id, ScorerId = players[0].Id, Minute = 12 });
 
         Assert.True((await Players.SetArchivedAsync(players[0].Id, true)).IsSuccess);
@@ -93,6 +93,32 @@ public class PlayerServiceTests : ServiceTestBase
         Assert.True((await Players.SetArchivedAsync(players[0].Id, false)).IsSuccess);
 
         Assert.False(Read().Players.Single().IsArchived);
+    }
+
+    [Fact]
+    public async Task Editing_a_player_from_a_dialog_opened_before_she_was_archived_leaves_her_archived()
+    {
+        var players = await SeedPlayersAsync(1);
+        var stale = (await Players.GetByIdAsync(players[0].Id)).Value!;
+
+        await Players.SetArchivedAsync(players[0].Id, true);
+
+        stale.ShirtNumber = 14;
+        Assert.True((await Players.UpdateAsync(stale)).IsSuccess);
+
+        var stored = Read().Players.Single();
+        Assert.Equal(14, stored.ShirtNumber);
+        Assert.True(stored.IsArchived);
+    }
+
+    [Fact]
+    public async Task Reading_someone_who_is_not_on_file_says_so_without_an_id()
+    {
+        EnsureScopedTeam();
+
+        var result = await Players.GetByIdAsync(9999);
+
+        Assert.Equal("Player not found", result.ErrorKey);
     }
 
     [Fact]

@@ -8,6 +8,7 @@ namespace FootballFormation.UI.Pages;
 public partial class FormationOverview
 {
     [Inject] private GameService GameService { get; set; } = null!;
+    [Inject] private GameCommentService CommentService { get; set; } = null!;
     [Inject] private TeamState Team { get; set; } = null!;
     [Inject] private NavigationTrail Trail { get; set; } = null!;
     [Inject] private ILogger<FormationOverview> Logger { get; set; } = null!;
@@ -71,7 +72,7 @@ public partial class FormationOverview
         if (IsAnonymous) return;
 
         // Always false: the summary is for sharing, so it is never built from private notes, whoever is looking at this page.
-        var commentsResult = await GameService.GetCommentsAsync(GameId, includePrivate: false, Cancellation);
+        var commentsResult = await CommentService.GetCommentsAsync(GameId, includePrivate: false, Cancellation);
         if (commentsResult.IsCancelled) return;
 
         var comments = commentsResult.IsSuccess ? commentsResult.Value! : [];

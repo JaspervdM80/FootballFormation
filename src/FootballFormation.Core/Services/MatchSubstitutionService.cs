@@ -25,7 +25,7 @@ public class MatchSubstitutionService(
                 return Result.Failure<GameSubstitution>("A player cannot be substituted for themselves");
 
             var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
-            if (game is null) return LiveMatchQueries.GameNotFound<GameSubstitution>(gameId);
+            if (game is null) return GameNotFound.For<GameSubstitution>(logger, gameId);
 
             var half = game.LiveHalf();
             if (half is null)
@@ -79,7 +79,7 @@ public class MatchSubstitutionService(
                 return Result.Failure<int>("A player cannot be substituted for themselves");
 
             var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
-            if (game is null) return LiveMatchQueries.GameNotFound<int>(gameId);
+            if (game is null) return GameNotFound.For<int>(logger, gameId);
 
             if (game.LiveHalf() is not null)
                 return Result.Failure<int>("End the current half first");
@@ -117,7 +117,7 @@ public class MatchSubstitutionService(
                 return Result.Failure<int>("A player cannot swap positions with themselves");
 
             var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
-            if (game is null) return LiveMatchQueries.GameNotFound<int>(gameId);
+            if (game is null) return GameNotFound.For<int>(logger, gameId);
 
             var half = game.LiveHalf();
             if (half is null)
@@ -159,7 +159,7 @@ public class MatchSubstitutionService(
                 return Result.Failure<GamePositionSwap>("A player cannot swap positions with themselves");
 
             var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
-            if (game is null) return LiveMatchQueries.GameNotFound<GamePositionSwap>(gameId);
+            if (game is null) return GameNotFound.For<GamePositionSwap>(logger, gameId);
 
             if (game.PlayedHalf(half) is not { StartedAtSeconds: { } start } period)
                 return Result.Failure<GamePositionSwap>("That half was never played");
@@ -207,8 +207,8 @@ public class MatchSubstitutionService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var swap = await db.GamePositionSwaps.FindAsync([swapId], cancellationToken);
-            if (swap is null || !await db.GameInScopeAsync(swap.GameId, cancellationToken))
+            var swap = await db.FindInScopeAsync<GamePositionSwap>(swapId, cancellationToken);
+            if (swap is null)
                 return Result.Failure<int>("Position swap not found");
 
             var game = await db.LoadWithPeriodsAsync(swap.GameId, cancellationToken);
@@ -314,7 +314,7 @@ public class MatchSubstitutionService(
                 return Result.Failure<GameInjury>("A player cannot be substituted for themselves");
 
             var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
-            if (game is null) return LiveMatchQueries.GameNotFound<GameInjury>(gameId);
+            if (game is null) return GameNotFound.For<GameInjury>(logger, gameId);
 
             var half = game.LiveHalf();
             if (half is null)
@@ -382,8 +382,8 @@ public class MatchSubstitutionService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var injury = await db.GameInjuries.FindAsync([injuryId], cancellationToken);
-            if (injury is null || !await db.GameInScopeAsync(injury.GameId, cancellationToken))
+            var injury = await db.FindInScopeAsync<GameInjury>(injuryId, cancellationToken);
+            if (injury is null)
                 return Result.Failure<int>("Injury not found");
 
             // The pairing Game.WasReplaced spells out: same half, same player, same second.
@@ -399,7 +399,7 @@ public class MatchSubstitutionService(
                     .Where(pp => pp.GamePeriodId == injury.GamePeriodId)
                     .ToListAsync(cancellationToken);
 
-                // Belt and braces: nothing takes the freed slot now that SavePeriodLineupAsync refuses a half already played.
+                // Belt and braces: SaveLineupsAsync leaves a played half alone, so nothing should take the freed slot.
                 if (positions.Any(pp => !pp.IsSubstitute && pp.SlotIndex == injury.SlotIndex))
                     return Result.Failure<int>("Somebody else is in that place now");
 
@@ -426,8 +426,8 @@ public class MatchSubstitutionService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var sub = await db.GameSubstitutions.FindAsync([subId], cancellationToken);
-            if (sub is null || !await db.GameInScopeAsync(sub.GameId, cancellationToken))
+            var sub = await db.FindInScopeAsync<GameSubstitution>(subId, cancellationToken);
+            if (sub is null)
                 return Result.Failure<int>("Substitution not found");
 
             var half = await db.GamePeriods
@@ -469,7 +469,7 @@ public class MatchSubstitutionService(
                 return Result.Failure<GameSubstitution>("A player cannot be substituted for themselves");
 
             var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
-            if (game is null) return LiveMatchQueries.GameNotFound<GameSubstitution>(gameId);
+            if (game is null) return GameNotFound.For<GameSubstitution>(logger, gameId);
 
             if (game.PlayedHalf(half) is not { StartedAtSeconds: { } start } period)
                 return Result.Failure<GameSubstitution>("That half was never played");
@@ -552,12 +552,12 @@ public class MatchSubstitutionService(
             if (playerOffId == playerOnId)
                 return Result.Failure<int>("A player cannot be substituted for themselves");
 
-            var sub = await db.GameSubstitutions.FindAsync([subId], cancellationToken);
-            if (sub is null || !await db.GameInScopeAsync(sub.GameId, cancellationToken))
+            var sub = await db.FindInScopeAsync<GameSubstitution>(subId, cancellationToken);
+            if (sub is null)
                 return Result.Failure<int>("Substitution not found");
 
             var game = await db.LoadWithPeriodsAsync(sub.GameId, cancellationToken);
-            if (game is null) return LiveMatchQueries.GameNotFound<int>(sub.GameId);
+            if (game is null) return GameNotFound.For<int>(logger, sub.GameId);
 
             await db.Entry(game).Collection(g => g.Injuries).LoadAsync(cancellationToken);
             var injury = game.InjuryFor(sub);

@@ -36,8 +36,8 @@ Three things fall out of a split like this, and they are the parts worth copying
   the plan it offers as a reference from the same ones. A helper that *mutates*, like `BankClock`,
   stays with the service that owns the writing.
 - **What every piece still shares gets named once.** `LiveMatchQueries` holds the tracked load they
-  all start from (the game with its planned line-ups, shaped by `GameQueries.WithPeriods`) and the single
-  "game not found" message.
+  all start from (the game with its planned line-ups, shaped by `GameQueries.WithPeriods`), and
+  `GameNotFound` the single "game not found" message every service answers with.
 - **Anything every method had to remember becomes part of the operation shape.** Each write used to
   end with `notifier.Notify(gameId)`; three services each remembering that is worse than one, so
   `LiveMatchOperation.RunAdminAsync` wraps `ServiceOperation.RunAdminAsync` and makes the call
@@ -47,6 +47,11 @@ Three things fall out of a split like this, and they are the parts worth copying
 
 A page injecting all four is fine and expected. A *facade* over them would be the signal that the
 split was cut along the wrong line.
+
+`GameService` went the same way once it held five jobs. The formation builder's planning — the
+shape, the line-ups, the earlier line-up it starts from — is `LineupService`, and the admins' notes
+are `GameCommentService`; the game itself, its score and the storage of its goals stay. Goal storage
+stays deliberately: `MatchGoalService` delegates to it rather than keeping a second copy.
 
 ## The cached statistics, and where invalidation hangs from
 `StatsService` is the one service that composes two others (`GameService` and `SeasonSquadService`),
@@ -76,6 +81,12 @@ EF model rather than listed. Anything else bumps them all: a player, who is the 
 in every team's figures; a row naming another team; a context with no team stamped, as the boot steps
 use. The mistake that rule allows is dropping too much, never serving a stale figure — and it is
 what keeps one team's live match from rebuilding every other team's statistics on each goal.
+
+**Inside a transaction the bump waits for the commit.** A save inside `BeginTransactionAsync` is not
+visible to another connection until the commit, so a key moved at the save would let a rebuild in
+between read the old rows and cache them under the new key, where nothing would ever move them. The
+invalidator is a transaction interceptor too: it holds what each save would have dropped, merges
+them, and drops it on commit — or forgets it on a rollback.
 
 **The bump hangs off `SaveChanges`, not off `ServiceOperation.RunAdminAsync`.** The service shape is
 the other single choke point and the more obvious candidate — `LiveMatchOperation.RunAdminAsync`

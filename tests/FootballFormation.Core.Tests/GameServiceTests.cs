@@ -12,7 +12,7 @@ public class GameServiceTests : ServiceTestBase
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
 
         var period = Read().GamePeriods.First(p => p.GameId == game.Id);
-        await Games.SavePeriodLineupAsync(period.Id, [
+        await SaveLineupAsync(period.Id, [
             TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0)
         ]);
         await Games.AddGoalAsync(new GameGoal
@@ -53,7 +53,7 @@ public class GameServiceTests : ServiceTestBase
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
 
         var period = Read().GamePeriods.First(p => p.GameId == game.Id);
-        await Games.SavePeriodLineupAsync(period.Id, [
+        await SaveLineupAsync(period.Id, [
             TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0),
             TestData.Starter(players[1].Id, PlayerPosition.CM, slot: 1)
         ]);
@@ -108,7 +108,7 @@ public class GameServiceTests : ServiceTestBase
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
         var stale = (await Games.GetAllAsync(season.Id)).Value!.Single();
 
-        await Games.SaveFormationAsync(game.Id, FormationType.F352);
+        await Lineups.SaveFormationAsync(game.Id, FormationType.F352);
 
         stale.Opponent = "Renamed FC";
         Assert.True((await Games.UpdateAsync(stale)).IsSuccess);
@@ -116,6 +116,67 @@ public class GameServiceTests : ServiceTestBase
         var stored = Read().Games.Single();
         Assert.Equal("Renamed FC", stored.Opponent);
         Assert.Equal(FormationType.F352, stored.FormationType);
+    }
+
+    [Fact]
+    public async Task Splitting_a_game_into_quarters_gives_each_quarter_the_line_up_planned_for_its_half()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(2);
+        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
+        var halves = Read().GamePeriods.Where(p => p.GameId == game.Id).OrderBy(p => p.PeriodType).ToList();
+        await Lineups.SaveLineupsAsync(game.Id, new Dictionary<int, List<GamePlayerPosition>>
+        {
+            [halves[0].Id] = [TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0)],
+            [halves[1].Id] = [TestData.Starter(players[1].Id, PlayerPosition.GK, slot: 0)]
+        });
+
+        game.SplitType = GameSplitType.Quarters;
+        Assert.True((await Games.UpdateAsync(game)).IsSuccess);
+
+        var quarters = Read().GamePeriods.Include(p => p.PlayerPositions).Where(p => p.GameId == game.Id).OrderBy(p => p.PeriodType).ToList();
+        Assert.Equal(
+            [PeriodType.FirstQuarter, PeriodType.SecondQuarter, PeriodType.ThirdQuarter, PeriodType.FourthQuarter],
+            quarters.Select(p => p.PeriodType));
+        Assert.Equal(
+            [players[0].Id, players[0].Id, players[1].Id, players[1].Id],
+            quarters.Select(p => p.PlayerPositions.Single().PlayerId));
+    }
+
+    [Fact]
+    public async Task Going_back_to_halves_keeps_the_line_up_each_half_opens_with()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(4);
+        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id, split: GameSplitType.Quarters))).Value!;
+        var quarters = Read().GamePeriods.Where(p => p.GameId == game.Id).OrderBy(p => p.PeriodType).ToList();
+        await Lineups.SaveLineupsAsync(game.Id, quarters.Select((q, i) => (q.Id, i)).ToDictionary(
+            entry => entry.Id,
+            entry => new List<GamePlayerPosition> { TestData.Starter(players[entry.i].Id, PlayerPosition.GK, slot: 0) }));
+
+        game.SplitType = GameSplitType.Halves;
+        Assert.True((await Games.UpdateAsync(game)).IsSuccess);
+
+        var halves = Read().GamePeriods.Include(p => p.PlayerPositions).Where(p => p.GameId == game.Id).OrderBy(p => p.PeriodType).ToList();
+        Assert.Equal([PeriodType.FirstHalf, PeriodType.SecondHalf], halves.Select(p => p.PeriodType));
+        Assert.Equal([players[0].Id, players[2].Id], halves.Select(p => p.PlayerPositions.Single().PlayerId));
+    }
+
+    [Fact]
+    public async Task A_match_that_has_kicked_off_keeps_its_split()
+    {
+        var season = await SeedSeasonAsync();
+        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
+        var before = Read().GamePeriods.Where(p => p.GameId == game.Id).Select(p => p.Id).ToList();
+        await MatchClock.StartMatchAsync(game.Id);
+
+        // The live events point at the periods by id, and a new split would delete them along with everything recorded against them.
+        game.SplitType = GameSplitType.Quarters;
+        var result = await Games.UpdateAsync(game);
+
+        Assert.Equal("A match that has kicked off keeps the split it was played in", result.ErrorKey);
+        Assert.Equal(before, Read().GamePeriods.Where(p => p.GameId == game.Id).Select(p => p.Id).ToList());
+        Assert.Equal(GameSplitType.Halves, Read().Games.Single().SplitType);
     }
 
     [Fact]
@@ -138,10 +199,10 @@ public class GameServiceTests : ServiceTestBase
         var players = await SeedPlayersAsync(3);
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
         var periods = Read().GamePeriods.Where(p => p.GameId == game.Id).OrderBy(p => p.PeriodType).ToList();
-        await Games.SavePeriodLineupAsync(periods[0].Id, [TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0)]);
+        await SaveLineupAsync(periods[0].Id, [TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0)]);
         await MatchClock.StartMatchAsync(game.Id);
 
-        var result = await Games.SaveLineupsAsync(game.Id, new Dictionary<int, List<GamePlayerPosition>>
+        var result = await Lineups.SaveLineupsAsync(game.Id, new Dictionary<int, List<GamePlayerPosition>>
         {
             [periods[0].Id] = [TestData.Starter(players[1].Id, PlayerPosition.GK, slot: 0)],
             [periods[1].Id] = [TestData.Starter(players[2].Id, PlayerPosition.GK, slot: 0)]
@@ -160,10 +221,10 @@ public class GameServiceTests : ServiceTestBase
         var players = await SeedPlayersAsync(3);
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
         var periods = Read().GamePeriods.Where(p => p.GameId == game.Id).OrderBy(p => p.PeriodType).ToList();
-        await Games.SavePeriodLineupAsync(periods[0].Id, [TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0)]);
+        await SaveLineupAsync(periods[0].Id, [TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0)]);
 
         // One player twice in a period breaks the unique (period, player) index, after the first period's old rows were deleted.
-        var result = await Games.SaveLineupsAsync(game.Id, new Dictionary<int, List<GamePlayerPosition>>
+        var result = await Lineups.SaveLineupsAsync(game.Id, new Dictionary<int, List<GamePlayerPosition>>
         {
             [periods[0].Id] = [TestData.Starter(players[1].Id, PlayerPosition.GK, slot: 0)],
             [periods[1].Id] = [TestData.Starter(players[2].Id, PlayerPosition.GK, slot: 0), TestData.Sub(players[2].Id)]
@@ -184,7 +245,7 @@ public class GameServiceTests : ServiceTestBase
         var mine = Read().GamePeriods.First(p => p.GameId == game.Id).Id;
         var theirs = Read().GamePeriods.First(p => p.GameId == other.Id).Id;
 
-        var result = await Games.SaveLineupsAsync(game.Id, new Dictionary<int, List<GamePlayerPosition>>
+        var result = await Lineups.SaveLineupsAsync(game.Id, new Dictionary<int, List<GamePlayerPosition>>
         {
             [mine] = [TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0)],
             [theirs] = [TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0)]
@@ -249,13 +310,13 @@ public class GameServiceTests : ServiceTestBase
         var players = await SeedPlayersAsync(3);
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
         var period = Read().GamePeriods.First(p => p.GameId == game.Id);
-        await Games.SavePeriodLineupAsync(period.Id, [
+        await SaveLineupAsync(period.Id, [
             TestData.Starter(players[0].Id, PlayerPosition.LM, slot: 5),
             TestData.Starter(players[1].Id, PlayerPosition.RM, slot: 8),
             TestData.Sub(players[2].Id)
         ]);
 
-        var result = await Games.SaveFormationAsync(game.Id, FormationType.F433);
+        var result = await Lineups.SaveFormationAsync(game.Id, FormationType.F433);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(FormationType.F433, Read().Games.Single().FormationType);
@@ -275,18 +336,18 @@ public class GameServiceTests : ServiceTestBase
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
 
         var period = Db.GamePeriods.First(p => p.GameId == game.Id);
-        await Games.SavePeriodLineupAsync(period.Id, [
+        await SaveLineupAsync(period.Id, [
             TestData.Starter(players[0].Id, PlayerPosition.LM, slot: 5),
             TestData.Sub(players[1].Id)
         ]);
 
-        // Kicked off only once the line-up is in: SavePeriodLineupAsync refuses a half already played.
+        // Kicked off only once the line-up is in: SaveLineupsAsync leaves a half already played alone.
         period.StartedAtSeconds = 0;
         await Db.SaveChangesAsync();
 
         var before = Read().GamePlayerPositions.OrderBy(pp => pp.Id).Select(pp => new { pp.Id, pp.PlayerId }).ToList();
 
-        await Games.SaveFormationAsync(game.Id, FormationType.F433);
+        await Lineups.SaveFormationAsync(game.Id, FormationType.F433);
 
         // Rewritten in place rather than replaced: a half run live is the record of who was on the pitch, and re-inserting it would
         // throw away the rows the touchline wrote and hand out new ids.
@@ -301,13 +362,13 @@ public class GameServiceTests : ServiceTestBase
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
 
         var period = Db.GamePeriods.First(p => p.GameId == game.Id);
-        await Games.SavePeriodLineupAsync(period.Id, [
+        await SaveLineupAsync(period.Id, [
             TestData.Starter(players[0].Id, PlayerPosition.CM, slot: 6),
             TestData.Starter(players[1].Id, PlayerPosition.ST, slot: 10)
         ]);
 
         // 3-3-2 stops at slot 8, so the second striker's slot is gone.
-        await Games.SaveFormationAsync(game.Id, FormationType.F332);
+        await Lineups.SaveFormationAsync(game.Id, FormationType.F332);
 
         var lineup = Read().GamePlayerPositions.OrderBy(pp => pp.Id).ToList();
         Assert.Equal((PlayerPosition.RM, 6, false), (lineup[0].Position, lineup[0].SlotIndex, lineup[0].IsSubstitute));
@@ -324,7 +385,7 @@ public class GameServiceTests : ServiceTestBase
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
 
         var period = Db.GamePeriods.First(p => p.GameId == game.Id);
-        await Games.SavePeriodLineupAsync(period.Id, [
+        await SaveLineupAsync(period.Id, [
             TestData.Starter(players[0].Id, PlayerPosition.CM, slot: 6),
             TestData.Starter(players[1].Id, PlayerPosition.ST, slot: 10)
         ]);
@@ -332,7 +393,7 @@ public class GameServiceTests : ServiceTestBase
         period.StartedAtSeconds = 0;
         await Db.SaveChangesAsync();
 
-        await Games.SaveFormationAsync(game.Id, FormationType.F332);
+        await Lineups.SaveFormationAsync(game.Id, FormationType.F332);
 
         // Benching her would take the minutes she played off a match that is over, so the half is pinned to the eleven it was played in.
         Assert.Equal(FormationType.F442, Read().GamePeriods.Single(p => p.Id == period.Id).FormationTypeOverride);
@@ -353,9 +414,9 @@ public class GameServiceTests : ServiceTestBase
 
         // Slot 5 is the first central midfielder in 5-3-2 and a left midfielder in the game's own 4-4-2 — the override is the shape she
         // was standing in, so it is the one she has to be moved out of.
-        await Games.SavePeriodLineupAsync(period.Id, [TestData.Starter(players[0].Id, PlayerPosition.CM, slot: 5)]);
+        await SaveLineupAsync(period.Id, [TestData.Starter(players[0].Id, PlayerPosition.CM, slot: 5)]);
 
-        await Games.SaveFormationAsync(game.Id, FormationType.F433);
+        await Lineups.SaveFormationAsync(game.Id, FormationType.F433);
 
         // The builder offers one shape for the whole game, and an override outranks it — so it would read as the change not taking.
         Assert.All(Read().GamePeriods.Where(p => p.GameId == game.Id), p => Assert.Null(p.FormationTypeOverride));
@@ -365,38 +426,19 @@ public class GameServiceTests : ServiceTestBase
     [Fact]
     public async Task Changing_the_formation_of_a_game_that_is_gone_fails()
     {
-        var result = await Games.SaveFormationAsync(404, FormationType.F433);
+        var result = await Lineups.SaveFormationAsync(404, FormationType.F433);
 
         Assert.True(result.IsFailure);
         Assert.Equal("Game not found", result.ErrorKey);
     }
 
     [Fact]
-    public async Task Saving_a_lineup_over_a_half_already_played_is_refused()
+    public async Task Saving_the_lineups_of_a_game_that_is_gone_fails()
     {
-        var season = await SeedSeasonAsync();
-        var players = await SeedPlayersAsync(2);
-        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
-
-        var period = Db.GamePeriods.First(p => p.GameId == game.Id);
-        await Games.SavePeriodLineupAsync(period.Id, [TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0)]);
-        period.StartedAtSeconds = 0;
-        await Db.SaveChangesAsync();
-
-        // A builder tab left open across the match still holds the pre-kick-off plan, and Save All would write it over what was played.
-        var result = await Games.SavePeriodLineupAsync(period.Id, [TestData.Starter(players[1].Id, PlayerPosition.ST, slot: 0)]);
+        var result = await Lineups.SaveLineupsAsync(404, new Dictionary<int, List<GamePlayerPosition>>());
 
         Assert.True(result.IsFailure);
-        Assert.Equal(players[0].Id, Read().GamePlayerPositions.Single(pp => pp.GamePeriodId == period.Id).PlayerId);
-    }
-
-    [Fact]
-    public async Task Saving_a_lineup_for_a_period_that_is_gone_fails()
-    {
-        var result = await Games.SavePeriodLineupAsync(404, []);
-
-        Assert.True(result.IsFailure);
-        Assert.Equal("Period not found", result.ErrorKey);
+        Assert.Equal("Game not found", result.ErrorKey);
     }
 
     [Fact]
@@ -407,11 +449,11 @@ public class GameServiceTests : ServiceTestBase
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
         var period = Read().GamePeriods.First(p => p.GameId == game.Id);
 
-        await Games.SavePeriodLineupAsync(period.Id, [
+        await SaveLineupAsync(period.Id, [
             TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0),
             TestData.Starter(players[1].Id, PlayerPosition.CM, slot: 1)
         ]);
-        await Games.SavePeriodLineupAsync(period.Id, [
+        await SaveLineupAsync(period.Id, [
             TestData.Starter(players[2].Id, PlayerPosition.ST, slot: 0)
         ]);
 
@@ -428,34 +470,12 @@ public class GameServiceTests : ServiceTestBase
         var period = Read().GamePeriods.First(p => p.GameId == game.Id);
 
         // On the pitch and on the bench at once — reported as a failure rather than a raw DbUpdateException.
-        var result = await Games.SavePeriodLineupAsync(period.Id, [
+        var result = await SaveLineupAsync(period.Id, [
             TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0),
             TestData.Sub(players[0].Id)
         ]);
 
         Assert.True(result.IsFailure);
-    }
-
-    [Fact]
-    public async Task A_failed_lineup_save_leaves_the_previous_lineup_standing()
-    {
-        var season = await SeedSeasonAsync();
-        var players = await SeedPlayersAsync(2);
-        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
-        var period = Read().GamePeriods.First(p => p.GameId == game.Id);
-
-        await Games.SavePeriodLineupAsync(period.Id, [
-            TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0),
-            TestData.Starter(players[1].Id, PlayerPosition.CM, slot: 1)
-        ]);
-
-        // Delete-then-insert: without a transaction the delete commits before the insert fails, and the period comes out empty.
-        await Games.SavePeriodLineupAsync(period.Id, [
-            TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0),
-            TestData.Starter(players[0].Id, PlayerPosition.CM, slot: 1)
-        ]);
-
-        Assert.Equal(2, Read().GamePlayerPositions.Count(pp => pp.GamePeriodId == period.Id));
     }
 
     [Fact]
@@ -470,7 +490,7 @@ public class GameServiceTests : ServiceTestBase
         Time.SetUtcNow(kickOff);
 
         await Games.AddGoalAsync(new GameGoal { GameId = game.Id, ScorerId = players[0].Id, Minute = 12 });
-        await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Well played" });
+        await Comments.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Well played" });
 
         Assert.Equal(kickOff, Read().GameGoals.Single().RecordedAt);
         Assert.Equal(kickOff, Read().GameComments.Single().CreatedAt);
@@ -481,12 +501,12 @@ public class GameServiceTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync();
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
-        var comment = (await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "First" })).Value!;
+        var comment = (await Comments.AddCommentAsync(new GameComment { GameId = game.Id, Body = "First" })).Value!;
 
         var editedAt = new DateTime(2031, 5, 4, 18, 0, 0, DateTimeKind.Utc);
         Time.SetUtcNow(editedAt);
 
-        await Games.UpdateCommentAsync(comment.Id, "Second", isPublic: true);
+        await Comments.UpdateCommentAsync(comment.Id, "Second", isPublic: true);
 
         var saved = Read().GameComments.Single();
         Assert.Equal("Second", saved.Body);
@@ -498,10 +518,10 @@ public class GameServiceTests : ServiceTestBase
     {
         var season = await SeedSeasonAsync();
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
-        var comment = (await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Same" })).Value!;
+        var comment = (await Comments.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Same" })).Value!;
 
         Time.SetUtcNow(Now.AddHours(3));
-        await Games.UpdateCommentAsync(comment.Id, "Same", isPublic: true);
+        await Comments.UpdateCommentAsync(comment.Id, "Same", isPublic: true);
 
         // The text is unchanged, so an "edited" marker would be a lie.
         var saved = Read().GameComments.Single();

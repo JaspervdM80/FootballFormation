@@ -116,7 +116,7 @@ the entry.** Read the file before reviewing; the ones that come back most often:
 - `.count()` in a Playwright test — the one locator call that does not wait, and it fails open.
 - A relative database path, or starting a published app from the wrong working directory.
 - A team-scope hole: a new season-scoped entity with no `TeamId` or no `HasQueryFilter`, a write
-  reaching a goal, injury, swap or comment by its own id without `GameInScopeAsync`, an
+  reaching a goal, injury, swap or comment by its own id without `FindInScopeAsync`, an
   `IgnoreQueryFilters()` that is not a deliberate cross-team read, or a service taking
   `IRawDbContextFactory`. `TeamDataScopingTests` is where the two-team assertion belongs.
 - A write that skips `SaveChanges` (`ExecuteUpdate`, `ExecuteDelete`, raw SQL) against data a

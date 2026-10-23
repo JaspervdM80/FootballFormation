@@ -8,6 +8,14 @@ internal static class ScopeQueries
         this AppDbContext db, int gameId, CancellationToken cancellationToken) =>
         db.Games.AnyAsync(g => g.Id == gameId, cancellationToken);
 
+    /// A game's child by its own id, or null when there is none or its game is another team's — the two read the same on purpose.
+    internal static async Task<T?> FindInScopeAsync<T>(
+        this AppDbContext db, int id, CancellationToken cancellationToken) where T : class, IGameChild
+    {
+        var row = await db.Set<T>().FindAsync([id], cancellationToken);
+        return row is not null && await db.GameInScopeAsync(row.GameId, cancellationToken) ? row : null;
+    }
+
     /// The team a row hanging off this season is stamped with. Null when the season is gone or another team's.
     internal static Task<int?> TeamIdOfSeasonAsync(
         this AppDbContext db, int seasonId, CancellationToken cancellationToken) =>

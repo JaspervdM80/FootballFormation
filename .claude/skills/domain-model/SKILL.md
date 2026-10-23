@@ -65,7 +65,7 @@ A new entity hanging off a season gets the same treatment in the same change: a 
 `HasQueryFilter` in `AppDbContext.OnModelCreating`, a `Restrict` FK to `Team`, and a migration that
 backfills the column from the season (`ScopeSeasonDataToTeams` is the worked example). A child of a
 `Game` (a goal, an injury) gets none of that — it is reached through the filtered game, and a write
-by its own id gates on `GameInScopeAsync` (see the `ef-core-and-queries` skill).
+by its own id goes through `FindInScopeAsync` (see the `ef-core-and-queries` skill).
 
 ## Enums
 

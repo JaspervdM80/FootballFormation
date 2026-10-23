@@ -23,7 +23,7 @@ public class MatchClockService(
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
-            if (game is null) return NotFound(gameId);
+            if (game is null) return GameNotFound.For<Game>(logger, gameId);
 
             if (game.MatchState != MatchState.NotStarted)
                 return Result.Failure<Game>("This match has already been started");
@@ -52,7 +52,7 @@ public class MatchClockService(
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
-            if (game is null) return NotFound(gameId);
+            if (game is null) return GameNotFound.For<Game>(logger, gameId);
 
             var current = game.LiveHalf();
             if (current is null) return Result.Failure<Game>("No half is being played");
@@ -100,7 +100,7 @@ public class MatchClockService(
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
-            if (game is null) return NotFound(gameId);
+            if (game is null) return GameNotFound.For<Game>(logger, gameId);
 
             if (game.MatchState != MatchState.InProgress)
                 return Result.Failure<Game>("This match is not in progress");
@@ -167,7 +167,7 @@ public class MatchClockService(
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
-            if (game is null) return NotFound(gameId);
+            if (game is null) return GameNotFound.For<Game>(logger, gameId);
 
             if (game.MatchState == MatchState.NotStarted)
                 return Result.Failure<Game>("This match has not been started");
@@ -204,7 +204,7 @@ public class MatchClockService(
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
-            if (game is null) return NotFound(gameId);
+            if (game is null) return GameNotFound.For<Game>(logger, gameId);
 
             // A running clock is still the source of truth for the half it is timing, and moving an end under it would be overwritten by
             // the next whistle anyway.
@@ -294,11 +294,5 @@ public class MatchClockService(
     {
         game.ClockAccumulatedSeconds = game.ElapsedSecondsAt(UtcNow);
         game.ClockRunningSince = null;
-    }
-
-    private Result<Game> NotFound(int gameId)
-    {
-        logger.LogWarning("Live match {GameId} not found", gameId);
-        return LiveMatchQueries.GameNotFound<Game>(gameId);
     }
 }

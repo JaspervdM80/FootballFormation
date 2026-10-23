@@ -95,6 +95,11 @@ fields onto the stored row. The list behind the dialog can be loaded before kick
 the whole row back would reset the clock, the live half, the score and the recorded absences of a
 match being played. The formation is not among them: `SaveFormationAsync` is its only writer.
 
+**The periods are the split's.** Changing halves to quarters, or back, replaces them through
+`Game.PeriodsFor`: each new period starts from the line-up planned for the opening of its half, so a
+quarter copies its half's and a half takes the quarter it opens with. A match that has kicked off is
+refused — its goals, substitutions and injuries point at the periods by id, and cascade with them.
+
 `Game.IsInRoster(player, squad)` / `Game.SelectRoster(players, squad)` centralize the rule: squad
 players are in unless marked unavailable or recorded injured, guests are out unless explicitly
 added. Use these rather than filtering on the id lists directly.
@@ -202,7 +207,7 @@ both minute and `RecordedAt` keep an arbitrary (but stable) order.
 The lineup stays the source of truth for *who stands where*; this records **when** the swap
 happened, which the line-up alone cannot express. `MatchSubstitutionService.SubstituteAsync` writes
 both in one `SaveChangesAsync`, so they cannot diverge — and it updates the lineup **in place**
-rather than going through `GameService.SavePeriodLineupAsync`, which is delete-and-reinsert.
+rather than going through `LineupService.SaveLineupsAsync`, which is delete-and-reinsert.
 
 Both player legs are `Restrict`, not `Cascade`: two cascading paths from `Players` to the same row
 is the shape SQLite rejects, and neither leg is nullable, so deleting a player who was substituted
@@ -283,7 +288,7 @@ Replaced the old `Game.Notes` string, which was written in the game dialog and d
 The `AddMatchTypeAndComments` migration carried every non-empty `Notes` value over as one
 admin-only comment dated to the match.
 
-**Visibility is enforced in the query, not in the markup.** `GameService.GetCommentsAsync(gameId,
+**Visibility is enforced in the query, not in the markup.** `GameCommentService.GetCommentsAsync(gameId,
 includePrivate)` is the only read path, and it is deliberately *not* an `.Include` on
 `GetByIdAsync`: `/games/{id}/result` prerenders server-side, so a private body filtered out only in
 the razor would still ship in a visitor's HTML. The page passes `includePrivate: IsAdmin`, read from

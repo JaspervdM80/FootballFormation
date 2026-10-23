@@ -26,7 +26,7 @@ public class GameCommentTests : ServiceTestBase
     {
         var game = await SeedGameAsync();
 
-        var added = await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Keep this in-house" });
+        var added = await Comments.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Keep this in-house" });
 
         Assert.True(added.IsSuccess);
         Assert.False(added.Value!.IsPublic);
@@ -37,11 +37,11 @@ public class GameCommentTests : ServiceTestBase
     public async Task A_visitor_is_given_only_the_published_comments()
     {
         var game = await SeedGameAsync();
-        await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Private note" });
-        await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Match report", IsPublic = true });
+        await Comments.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Private note" });
+        await Comments.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Match report", IsPublic = true });
 
-        var asVisitor = await Games.GetCommentsAsync(game.Id, includePrivate: false);
-        var asAdmin = await Games.GetCommentsAsync(game.Id, includePrivate: true);
+        var asVisitor = await Comments.GetCommentsAsync(game.Id, includePrivate: false);
+        var asAdmin = await Comments.GetCommentsAsync(game.Id, includePrivate: true);
 
         // The body, not just the count: the page prerenders server-side, so a private body reaching
         // the caller at all is the leak — whether or not the markup goes on to render it.
@@ -54,9 +54,9 @@ public class GameCommentTests : ServiceTestBase
     {
         var game = await SeedGameAsync();
         var other = await SeedGameAsync();
-        await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "About this game" });
+        await Comments.AddCommentAsync(new GameComment { GameId = game.Id, Body = "About this game" });
 
-        var forOther = await Games.GetCommentsAsync(other.Id, includePrivate: true);
+        var forOther = await Comments.GetCommentsAsync(other.Id, includePrivate: true);
 
         Assert.Empty(forOther.Value!);
     }
@@ -65,12 +65,12 @@ public class GameCommentTests : ServiceTestBase
     public async Task An_unpublished_comment_is_hidden_from_visitors_again()
     {
         var game = await SeedGameAsync();
-        var added = await Games.AddCommentAsync(
+        var added = await Comments.AddCommentAsync(
             new GameComment { GameId = game.Id, Body = "Published too soon", IsPublic = true });
 
-        await Games.UpdateCommentAsync(added.Value!.Id, added.Value.Body, isPublic: false);
+        await Comments.UpdateCommentAsync(added.Value!.Id, added.Value.Body, isPublic: false);
 
-        var asVisitor = await Games.GetCommentsAsync(game.Id, includePrivate: false);
+        var asVisitor = await Comments.GetCommentsAsync(game.Id, includePrivate: false);
         Assert.Empty(asVisitor.Value!);
     }
 
@@ -78,26 +78,26 @@ public class GameCommentTests : ServiceTestBase
     public async Task A_removed_comment_is_gone()
     {
         var game = await SeedGameAsync();
-        var added = await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Never mind" });
+        var added = await Comments.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Never mind" });
 
-        var removed = await Games.RemoveCommentAsync(added.Value!.Id);
+        var removed = await Comments.RemoveCommentAsync(added.Value!.Id);
 
         Assert.True(removed.IsSuccess);
-        Assert.Empty((await Games.GetCommentsAsync(game.Id, includePrivate: true)).Value!);
+        Assert.Empty((await Comments.GetCommentsAsync(game.Id, includePrivate: true)).Value!);
     }
 
     [Fact]
     public async Task Updating_or_removing_a_comment_that_is_not_there_fails_rather_than_throwing()
     {
-        Assert.True((await Games.UpdateCommentAsync(999, "ghost", isPublic: true)).IsFailure);
-        Assert.True((await Games.RemoveCommentAsync(999)).IsFailure);
+        Assert.True((await Comments.UpdateCommentAsync(999, "ghost", isPublic: true)).IsFailure);
+        Assert.True((await Comments.RemoveCommentAsync(999)).IsFailure);
     }
 
     [Fact]
     public async Task Deleting_a_game_takes_its_comments_with_it()
     {
         var game = await SeedGameAsync();
-        await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Goes with the game" });
+        await Comments.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Goes with the game" });
 
         await Games.DeleteAsync(game.Id);
 
@@ -114,7 +114,7 @@ public class GameCommentTests : ServiceTestBase
         // A second admin, so deleting the first is not blocked by the last-admin rule.
         await Users.CreateAsync("Someone Else", "other", "correct-horse", UserRole.Admin);
 
-        var added = await Games.AddCommentAsync(new GameComment
+        var added = await Comments.AddCommentAsync(new GameComment
         {
             GameId = game.Id,
             Body = "Written by someone who later left",
@@ -124,7 +124,7 @@ public class GameCommentTests : ServiceTestBase
 
         await Users.DeleteAsync(author.Value.Id);
 
-        var comments = await Games.GetCommentsAsync(game.Id, includePrivate: true);
+        var comments = await Comments.GetCommentsAsync(game.Id, includePrivate: true);
         var survivor = Assert.Single(comments.Value!);
         Assert.Equal("Written by someone who later left", survivor.Body);
         Assert.Null(survivor.AuthorId);

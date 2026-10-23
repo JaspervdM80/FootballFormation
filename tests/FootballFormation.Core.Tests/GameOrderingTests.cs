@@ -79,10 +79,10 @@ public class GameOrderingTests : ServiceTestBase
         var season = await SeedSeasonAsync();
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
 
-        await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Written first" });
-        await Games.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Written second" });
+        await Comments.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Written first" });
+        await Comments.AddCommentAsync(new GameComment { GameId = game.Id, Body = "Written second" });
 
-        var comments = (await Games.GetCommentsAsync(game.Id, includePrivate: true)).Value!;
+        var comments = (await Comments.GetCommentsAsync(game.Id, includePrivate: true)).Value!;
 
         Assert.Equal(
             new[] { "Written second", "Written first" },

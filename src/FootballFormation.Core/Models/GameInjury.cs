@@ -2,7 +2,7 @@ namespace FootballFormation.Core.Models;
 
 /// Distinct from <see cref="SeasonSquadMember.IsInjured"/>, which has no date on it: only a moment on the clock can stop a game's
 /// availability where the injury did. When nobody came on for her this is the only row saying she left, hence the slot and position.
-public class GameInjury
+public class GameInjury : IGameChild
 {
     public int Id { get; set; }
     public int GameId { get; set; }

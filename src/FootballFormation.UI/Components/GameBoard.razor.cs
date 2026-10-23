@@ -8,6 +8,7 @@ namespace FootballFormation.UI.Components;
 public partial class GameBoard
 {
     [Inject] private GameService GameService { get; set; } = null!;
+    [Inject] private LineupService LineupService { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
     [Inject] private TeamState Team { get; set; } = null!;
@@ -94,7 +95,7 @@ public partial class GameBoard
         // Before the update rather than after: SaveFormationAsync reshapes the line-ups out of the shape the game still has on file, and
         // the update would already have replaced it with the new one.
         if (updated.FormationType != formationBefore
-            && !Snackbar.ReportFailure(L, await GameService.SaveFormationAsync(updated.Id, updated.FormationType)))
+            && !Snackbar.ReportFailure(L, await LineupService.SaveFormationAsync(updated.Id, updated.FormationType)))
         {
             // The dialog wrote its edits into the row the list is still rendering, so without this the card goes on showing what was
             // typed while the database holds none of it.
