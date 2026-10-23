@@ -2,7 +2,7 @@ namespace FootballFormation.Core.Models;
 
 /// Two players on the pitch trading places from <see cref="AtSeconds"/> until a later change moves either. Nobody's minutes change, but
 /// without the second the split by position cannot say who stood where before it.
-public class GamePositionSwap
+public class GamePositionSwap : IGameChild
 {
     public int Id { get; set; }
     public int GameId { get; set; }

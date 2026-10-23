@@ -4,8 +4,8 @@
   `Game`, `Training`, `MatchPreferences`, `SeasonSquadMember`, `PushSubscription` and `Player`, but a
   goal, substitution, injury, swap or comment carries no filter of its own. So
   `db.GameGoals.FindAsync(goalId)` returns another team's goal and a write against it leaks across
-  the scope. A write reaching a game's **child** by the child's own id gates on
-  `AppDbContext.GameInScopeAsync(gameId)` first. (`FindAsync` on a filtered *root* is filtered when it
+  the scope. A write reaching a game's **child** by the child's own id loads it through
+  `FindInScopeAsync<T>(id)`, which gates on `GameInScopeAsync(gameId)`. (`FindAsync` on a filtered *root* is filtered when it
   queries, and skips the filter only for an entity the context already tracks;
   `FirstOrDefaultAsync(x => x.Id == id, ct)` still reads more honestly.)
   `TeamDataScopingTests` pins the read side, seeding two teams and asserting every public read is

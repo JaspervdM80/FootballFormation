@@ -20,6 +20,16 @@ public class Player
 
     // Guest status is deliberately not here — it belongs to a season's squad, not to the person. See SeasonSquadMember.IsGuest.
 
+    // What the player dialog edits: a dialog opened before she was archived must not bring her back by saving.
+    public void TakeDetailsFrom(Player edited)
+    {
+        FirstName = edited.FirstName;
+        Surname = edited.Surname;
+        ShirtNumber = edited.ShirtNumber;
+        PreferredPosition = edited.PreferredPosition;
+        AlternativePositions = [.. edited.AlternativePositions];
+    }
+
     public string DisplayName => Surname is not null ? $"{FirstName} {Surname}" : FirstName;
     public string ShortName => Surname is not null ? $"{FirstName[0]}. {Surname}" : FirstName;
 }

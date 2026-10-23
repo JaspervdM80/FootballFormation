@@ -11,7 +11,7 @@
   read-only overview
 - The formation is chosen on this page and belongs to the whole game: a labelled `Formation:`
   dropdown beside the tab strip on a desktop, and its own field above the period buttons on a phone.
-  Picking one calls `GameService.SaveFormationAsync`, which in **one** transaction sets the game's
+  Picking one calls `LineupService.SaveFormationAsync`, which in **one** transaction sets the game's
   shape, clears every `GamePeriod.FormationTypeOverride` and moves each period's line-up into the
   new shape through `FormationSlots.Reshape` — everyone keeps her slot and her stored `Position`
   follows that slot, which the pitch would not show but the playing-time table and the position
@@ -36,7 +36,7 @@
   `StartedAtSeconds` when the new shape has fewer slots, and pins it to the shape it *was* played in
   through `FormationTypeOverride`. Benching a starter there would take the minutes she actually
   played off a finished match — `GameMinutesReport` reads `!IsSubstitute` for the kick-off line-up —
-  which is the same reason `SavePeriodLineupAsync` refuses to replace such a half at all. The query
+  which is the same reason `SaveLineupsAsync` leaves such a half alone. The query
   loads `Player` alongside the line-up, because `GamePlayerPosition.SendToBench` reads her own
   position off it and lazy loading is off
 - Actions: Save All, Suggest Line-up, Copy to Next Period, Copy line-up from the previous game
@@ -66,17 +66,17 @@
   bench and the player list all render with their drag turned off, an inline notice says why, Copy
   to Next Period is withheld when the period it would copy *into* has kicked off, and every editing
   handler stops on `IsLocked` — the page's guard against piling up changes the save would
-  drop. Save All is one `GameService.SaveLineupsAsync` call, which skips those periods on the
+  drop. Save All is one `LineupService.SaveLineupsAsync` call, which skips those periods on the
   strength of what is **on file** rather than the page's cached game — a builder left open since
   before kick-off still has every half down as a plan — and names them in an information snackbar.
   The rest save in one transaction, so a failure leaves the plan exactly as it was
 - **A finished match (`Game.IsComplete`) is a record as a whole.** Every period renders read-only,
   the formation picker is disabled, and Save, Suggest, Copy and the per-half notice are all gone —
   `IsLocked` answers true for every period, so the handlers stop too. This is the page only:
-  `SavePeriodLineupAsync` still accepts an unplayed period of a game with a typed-in score
+  `SaveLineupsAsync` still accepts an unplayed period of a game with a typed-in score
 - **Copy line-up from the previous game** sits above the halves/quarters and copies every period of the
   nearest earlier game this season with a full line-up (`Game.PreviousFullLineup`, read by
-  `GameService.GetPreviousFullLineupAsync`) — same split, same number on the pitch, every slot
+  `LineupService.GetPreviousFullLineupAsync`) — same split, same number on the pitch, every slot
   filled, played or not. It takes that game's formation through `SaveFormationAsync` first — saved on the spot, which the
   confirmation says whenever the formation differs — then
   `Game.LineupsCopiedFrom` reshapes each period into this game's slots and leaves out anyone not in

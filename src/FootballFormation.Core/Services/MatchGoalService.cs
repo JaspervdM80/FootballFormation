@@ -26,7 +26,7 @@ public class MatchGoalService(
 
             // Line-ups included: the half being played is half of what places the goal.
             var game = await db.LoadWithPeriodsAsync(gameId, cancellationToken);
-            if (game is null) return LiveMatchQueries.GameNotFound<GameGoal>(gameId);
+            if (game is null) return GameNotFound.For<GameGoal>(logger, gameId);
 
             if (scorerId is null && !isOpponentGoal)
                 return Result.Failure<GameGoal>("A goal for us needs a scorer");
@@ -57,8 +57,8 @@ public class MatchGoalService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var goal = await db.GameGoals.FirstOrDefaultAsync(g => g.Id == goalId, cancellationToken);
-            if (goal is null || !await db.GameInScopeAsync(goal.GameId, cancellationToken))
+            var goal = await db.FindInScopeAsync<GameGoal>(goalId, cancellationToken);
+            if (goal is null)
             {
                 logger.LogWarning("Cannot correct goal {GoalId}: not found", goalId);
                 return Result.Failure<int>("Goal not found");
@@ -71,7 +71,7 @@ public class MatchGoalService(
                 return Result.Failure<int>("An opponent goal cannot be an own goal");
 
             var game = await db.LoadWithPeriodsAsync(goal.GameId, cancellationToken);
-            if (game is null) return LiveMatchQueries.GameNotFound<int>(goal.GameId);
+            if (game is null) return GameNotFound.For<int>(logger, goal.GameId);
 
             (goal.AtSeconds, goal.Minute) = Placement(game, goal, minute);
             goal.ScorerId = scorerId;

@@ -61,7 +61,7 @@ public class LiveMatchServiceTests : LiveMatchTestBase
         var result = await Live.GetLiveAsync(999);
 
         Assert.True(result.IsFailure);
-        Assert.Contains("999", result.Error);
+        Assert.Equal("Game not found", result.ErrorKey);
     }
 
     /// Reads stay open: the live screen is the one URL a parent at the touchline is given, and nobody signs in to watch.

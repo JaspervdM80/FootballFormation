@@ -725,11 +725,10 @@
   <data name="Comment not found" xml:space="preserve"><value>Opmerking niet gevonden</value></data>
   <data name="End the current half first" xml:space="preserve"><value>Beëindig eerst de huidige helft</value></data>
   <data name="Both halves have been played — finish the match instead" xml:space="preserve"><value>Beide helften zijn gespeeld — beëindig de wedstrijd</value></data>
+  <data name="A match that has kicked off keeps the split it was played in" xml:space="preserve"><value>Een wedstrijd die al is afgetrapt houdt de indeling waarin hij gespeeld is</value></data>
   <data name="Game not found" xml:space="preserve"><value>Wedstrijd niet gevonden</value></data>
-  <data name="Game with ID {0} not found" xml:space="preserve"><value>Wedstrijd met ID {0} niet gevonden</value></data>
   <data name="Goal not found" xml:space="preserve"><value>Doelpunt niet gevonden</value></data>
   <data name="Period not found" xml:space="preserve"><value>Speelperiode niet gevonden</value></data>
-  <data name="This half has already been played, so its line-up is no longer the builder's to change" xml:space="preserve"><value>Deze helft is al gespeeld, dus de opstelling ervan wordt niet meer vanuit de opstellingsbouwer gewijzigd</value></data>
   <data name="This half was played from the touchline, so its line-up is the record of who was on the pitch and is no longer edited here." xml:space="preserve"><value>Deze helft is vanaf de lijn gespeeld, dus de opstelling is de vastlegging van wie er op het veld stond en wordt hier niet meer gewijzigd.</value></data>
   <data name="Left as the touchline recorded it: {0}" xml:space="preserve"><value>Gelaten zoals vanaf de lijn vastgelegd: {0}</value></data>
   <data name="Injury not found" xml:space="preserve"><value>Blessure niet gevonden</value></data>
@@ -739,7 +738,6 @@
   <data name="Only the most recent substitution of a half can be undone" xml:space="preserve"><value>Alleen de laatste wissel van een helft kan ongedaan gemaakt worden</value></data>
   <data name="Player is not in this squad" xml:space="preserve"><value>Speler zit niet in deze selectie</value></data>
   <data name="Player not found" xml:space="preserve"><value>Speler niet gevonden</value></data>
-  <data name="Player with ID {0} not found" xml:space="preserve"><value>Speler met ID {0} niet gevonden</value></data>
   <data name="Somebody else is in that place now" xml:space="preserve"><value>Er staat nu iemand anders op die plek</value></data>
   <data name="Season not found" xml:space="preserve"><value>Seizoen niet gevonden</value></data>
   <data name="Season {0} has no squad to copy" xml:space="preserve"><value>Seizoen {0} heeft geen selectie om te kopiëren</value></data>

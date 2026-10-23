@@ -21,15 +21,13 @@ public sealed class CurrentTeam(IRawDbContextFactory dbFactory, int? storedTeamI
     {
         await using var db = dbFactory.CreateDbContext();
 
-        var teams = await db.Teams
-            .AsNoTracking()
-            .OrderBy(t => t.Id)
-            .Select(t => new { t.Id, t.ClubId })
-            .ToListAsync();
+        var teams = db.Teams.AsNoTracking().Select(t => new { t.Id, t.ClubId });
 
-        var team = storedTeamId is { } stored
-            ? teams.FirstOrDefault(t => t.Id == stored) ?? teams.FirstOrDefault()
-            : teams.FirstOrDefault();
+        var remembered = storedTeamId is { } stored
+            ? await teams.FirstOrDefaultAsync(t => t.Id == stored)
+            : null;
+
+        var team = remembered ?? await teams.OrderBy(t => t.Id).FirstOrDefaultAsync();
 
         return team is null ? new Resolved(null, null) : new Resolved(team.Id, team.ClubId);
     }

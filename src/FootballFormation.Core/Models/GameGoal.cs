@@ -1,6 +1,6 @@
 namespace FootballFormation.Core.Models;
 
-public class GameGoal
+public class GameGoal : IGameChild
 {
     public int Id { get; set; }
     public int GameId { get; set; }

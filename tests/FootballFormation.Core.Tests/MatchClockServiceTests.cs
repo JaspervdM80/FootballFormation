@@ -57,7 +57,7 @@ public class MatchClockServiceTests : LiveMatchTestBase
         var result = await MatchClock.StartMatchAsync(999);
 
         Assert.True(result.IsFailure);
-        Assert.Contains("999", result.Error);
+        Assert.Equal("Game not found", result.ErrorKey);
     }
 
     [Fact]

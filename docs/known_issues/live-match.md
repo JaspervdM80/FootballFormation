@@ -81,8 +81,8 @@
   entity as `Modified` is the trap — `TrainingService.UpdateAsync` still does it, safely only
   because a training has no state that anything but its dialog writes.
 - **The formation builder could overwrite the line-up a half was played with, from a tab nobody
-  had touched since before kick-off.** `SavePeriodLineupAsync` is delete-then-insert from whatever
-  the caller hands it, and the builder's `PeriodLineups` is filled once in `OnInitializedAsync` and
+  had touched since before kick-off.** The line-up save (then `SavePeriodLineupAsync`, now
+  `LineupService.SaveLineupsAsync`) is delete-then-insert from whatever the caller hands it, and the builder's `PeriodLineups` is filled once in `OnInitializedAsync` and
   never resubscribed — the page does not listen to `LiveMatchNotifier`. So a coach who opened
   `/games/{id}/formation` before the match, ran it from `/games/{id}/live` in another tab, and then
   went back and pressed Save All wrote the pre-kick-off plan over the first half: both substitutions

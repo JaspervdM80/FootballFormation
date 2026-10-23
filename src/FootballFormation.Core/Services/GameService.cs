@@ -63,41 +63,9 @@ public class GameService(
                 .WithInjuries()
                 .FirstOrDefaultAsync(g => g.Id == id, cancellationToken);
 
-            if (game is null)
-            {
-                logger.LogWarning("Game {GameId} not found", id);
-                return Result.Failure<Game>("Game with ID {0} not found", id);
-            }
+            if (game is null) return GameNotFound.For<Game>(logger, id);
 
             return Result.Success(game);
-        });
-
-    /// Null when no earlier game this season has a line-up that would fit — see <see cref="Game.PreviousFullLineup"/>.
-    public Task<Result<Game?>> GetPreviousFullLineupAsync(int gameId, CancellationToken cancellationToken = default) =>
-        ServiceOperation.RunAsync(logger, "load the previous line-up", cancellationToken, async () =>
-        {
-            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
-
-            var game = await db.Games
-                .AsNoTracking()
-                .FirstOrDefaultAsync(g => g.Id == gameId, cancellationToken);
-
-            if (game is null)
-            {
-                logger.LogWarning("Game {GameId} not found", gameId);
-                return Result.Failure<Game?>("Game with ID {0} not found", gameId);
-            }
-
-            var seasonGames = await db.Games
-                .AsNoTracking()
-                .Where(g => g.SeasonId == game.SeasonId)
-                .WithNamedLineups()
-                .ToListAsync(cancellationToken);
-
-            var previous = game.PreviousFullLineup(seasonGames);
-
-            logger.LogDebug("Previous full line-up for game {GameId}: {PreviousGameId}", gameId, previous?.Id);
-            return Result.Success(previous);
         });
 
     public Task<Result<Game>> CreateAsync(Game game, CancellationToken cancellationToken = default) =>
@@ -128,8 +96,22 @@ public class GameService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var stored = await db.Games.FirstOrDefaultAsync(g => g.Id == game.Id, cancellationToken);
-            if (stored is null) return GameNotInScope(game.Id);
+            var stored = await db.Games.WithPeriodLineups().FirstOrDefaultAsync(g => g.Id == game.Id, cancellationToken);
+            if (stored is null) return GameNotFound.For(logger, game.Id);
+
+            // The periods are the split's, so a new split needs new periods. A match under way has recorded events against its own.
+            if (game.SplitType != stored.SplitType)
+            {
+                if (stored.MatchState != MatchState.NotStarted || stored.Periods.Any(p => p.HasKickedOff))
+                {
+                    logger.LogWarning("Cannot change the split of game {GameId}: it has kicked off", game.Id);
+                    return Result.Failure("A match that has kicked off keeps the split it was played in");
+                }
+
+                var periods = stored.PeriodsFor(game.SplitType);
+                db.GamePeriods.RemoveRange(stored.Periods.ToList());
+                db.GamePeriods.AddRange(periods);
+            }
 
             if (game.SeasonId != stored.SeasonId)
             {
@@ -153,11 +135,7 @@ public class GameService(
 
             // FirstOrDefault, not Find: Find bypasses the query filter, so it would fetch another team's game by id.
             var game = await db.Games.FirstOrDefaultAsync(g => g.Id == id, cancellationToken);
-            if (game is null)
-            {
-                logger.LogWarning("Cannot delete game {GameId}: not found", id);
-                return Result.Failure("Game not found");
-            }
+            if (game is null) return GameNotFound.For(logger, id);
 
             db.Games.Remove(game);
             await db.SaveChangesAsync(cancellationToken);
@@ -173,11 +151,7 @@ public class GameService(
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var game = await db.Games.FirstOrDefaultAsync(g => g.Id == gameId, cancellationToken);
-            if (game is null)
-            {
-                logger.LogWarning("Cannot save score for game {GameId}: not found", gameId);
-                return Result.Failure("Game not found");
-            }
+            if (game is null) return GameNotFound.For(logger, gameId);
 
             game.ScoreHome = scoreHome;
             game.ScoreAway = scoreAway;
@@ -202,7 +176,7 @@ public class GameService(
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             if (!await db.GameInScopeAsync(goal.GameId, cancellationToken))
-                return GameNotInScope<GameGoal>(goal.GameId);
+                return GameNotFound.For<GameGoal>(logger, goal.GameId);
 
             goal.RecordedAt = UtcNow;
 
@@ -233,8 +207,8 @@ public class GameService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var goal = await db.GameGoals.FindAsync([goalId], cancellationToken);
-            if (goal is null || !await db.GameInScopeAsync(goal.GameId, cancellationToken))
+            var goal = await db.FindInScopeAsync<GameGoal>(goalId, cancellationToken);
+            if (goal is null)
             {
                 logger.LogWarning("Cannot remove goal {GoalId}: not found", goalId);
                 return Result.Failure("Goal not found");
@@ -267,255 +241,5 @@ public class GameService(
             .ToListAsync(cancellationToken));
 
         await db.SaveChangesAsync(cancellationToken);
-    }
-
-    /// <paramref name="includePrivate"/> is a request, not a permission — it is confirmed against <see cref="ICurrentUser"/> below.
-    /// The filter belongs in the query because the result page prerenders, so markup that merely hides the row would still ship the text.
-    public Task<Result<List<GameComment>>> GetCommentsAsync(
-        int gameId, bool includePrivate, CancellationToken cancellationToken = default) =>
-        ServiceOperation.RunAsync(logger, "load comments", cancellationToken, async () =>
-        {
-            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
-
-            // Comments carry no filter of their own; gate the read on the game being the scope's so another team's feed is never read by id.
-            if (!await db.GameInScopeAsync(gameId, cancellationToken))
-                return Result.Success(new List<GameComment>());
-
-            includePrivate = includePrivate && await currentUser.IsAdminAsync();
-
-            // The tie-break runs the other way to a fixture list's: two comments written in the same instant are a feed, newest on top.
-            var comments = (await db.GameComments
-                .Where(c => c.GameId == gameId && (includePrivate || c.IsPublic))
-                .Include(c => c.Author)
-                .ToListAsync(cancellationToken))
-                .OrderByDescending(c => c.CreatedAt)
-                .ThenByDescending(c => c.Id)
-                .ToList();
-
-            logger.LogDebug("Retrieved {Count} comments for game {GameId} (private included: {IncludePrivate})",
-                comments.Count, gameId, includePrivate);
-            return Result.Success(comments);
-        });
-
-    public Task<Result<GameComment>> AddCommentAsync(
-        GameComment comment, CancellationToken cancellationToken = default) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "add the comment", cancellationToken, async () =>
-        {
-            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
-
-            if (!await db.GameInScopeAsync(comment.GameId, cancellationToken))
-                return GameNotInScope<GameComment>(comment.GameId);
-
-            comment.CreatedAt = UtcNow;
-
-            db.GameComments.Add(comment);
-            await db.SaveChangesAsync(cancellationToken);
-
-            // The list shows the author's name, and Add returns the row without it.
-            if (comment.AuthorId is not null)
-                await db.Entry(comment).Reference(c => c.Author).LoadAsync(cancellationToken);
-
-            logger.LogInformation("Added {Visibility} comment to game {GameId} by user {AuthorId} (ID: {CommentId})",
-                comment.IsPublic ? "public" : "private", comment.GameId, comment.AuthorId, comment.Id);
-            return Result.Success(comment);
-        });
-
-    public Task<Result> UpdateCommentAsync(
-        int commentId, string body, bool isPublic, CancellationToken cancellationToken = default) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "update comment", cancellationToken, async () =>
-        {
-            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
-
-            var comment = await db.GameComments.FindAsync([commentId], cancellationToken);
-            if (comment is null || !await db.GameInScopeAsync(comment.GameId, cancellationToken))
-            {
-                logger.LogWarning("Cannot update comment {CommentId}: not found", commentId);
-                return Result.Failure("Comment not found");
-            }
-
-            // Publishing on its own is not an edit — the text is unchanged, so the "edited" marker would be a lie.
-            if (comment.Body != body) comment.EditedAt = UtcNow;
-
-            comment.Body = body;
-            comment.IsPublic = isPublic;
-            await db.SaveChangesAsync(cancellationToken);
-
-            logger.LogInformation("Updated comment {CommentId} on game {GameId} to {Visibility}",
-                commentId, comment.GameId, isPublic ? "public" : "private");
-            return Result.Success();
-        });
-
-    public Task<Result> RemoveCommentAsync(int commentId, CancellationToken cancellationToken = default) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "remove comment", cancellationToken, async () =>
-        {
-            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
-
-            var comment = await db.GameComments.FindAsync([commentId], cancellationToken);
-            if (comment is null || !await db.GameInScopeAsync(comment.GameId, cancellationToken))
-            {
-                logger.LogWarning("Cannot remove comment {CommentId}: not found", commentId);
-                return Result.Failure("Comment not found");
-            }
-
-            db.GameComments.Remove(comment);
-            await db.SaveChangesAsync(cancellationToken);
-
-            logger.LogInformation("Removed comment {CommentId} from game {GameId}", commentId, comment.GameId);
-            return Result.Success();
-        });
-
-    /// Everyone keeps the slot she was standing in, and her recorded position follows that slot into the new shape — the pitch reads the
-    /// slot, but the playing-time table and the position statistics read what is stored on the entry. The line-ups are edited in place
-    /// rather than taken from the caller, so a half already played keeps what the touchline recorded.
-    public Task<Result> SaveFormationAsync(
-        int gameId, FormationType formation, CancellationToken cancellationToken = default) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "change the formation", cancellationToken, async () =>
-        {
-            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
-
-            var game = await db.Games
-                .Include(g => g.Periods)
-                .ThenInclude(p => p.PlayerPositions)
-                // Reshaping reads a benched player's own position off her, and lazy loading is off.
-                .ThenInclude(pp => pp.Player)
-                .FirstOrDefaultAsync(g => g.Id == gameId, cancellationToken);
-
-            if (game is null)
-            {
-                logger.LogWarning("Cannot change formation for game {GameId}: not found", gameId);
-                return Result.Failure("Game not found");
-            }
-
-            var slots = FormationSlots.For(formation);
-
-            foreach (var period in game.Periods)
-            {
-                var from = FormationSlots.For(period.FormationTypeOverride ?? game.FormationType);
-
-                // A smaller shape benches the starters it has no slot for, which on a half already played would take minutes off a
-                // match that is over. That half keeps the shape it was played in, the way SavePeriodLineupAsync refuses to replace it.
-                if (period.HasKickedOff && slots.Length < from.Length)
-                {
-                    period.FormationTypeOverride ??= game.FormationType;
-                    continue;
-                }
-
-                FormationSlots.Reshape(period.PlayerPositions, from, slots);
-
-                // The shape belongs to the whole game, so an override left on a period would quietly outrank the one just picked.
-                period.FormationTypeOverride = null;
-            }
-
-            // Last: every line above reads it as the shape being left.
-            game.FormationType = formation;
-
-            await db.SaveChangesAsync(cancellationToken);
-
-            logger.LogInformation("Changed formation to {Formation} for game {GameId}", formation, gameId);
-            return Result.Success();
-        });
-
-    /// The builder plans and the touchline records, so a half already played is not the builder's to replace: its page cache can be an
-    /// hour stale, and the delete-then-insert below would drop the rows a substitution rewrote and hand out new ids.
-    public Task<Result> SavePeriodLineupAsync(
-        int periodId, List<GamePlayerPosition> positions, CancellationToken cancellationToken = default) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "save lineup", cancellationToken, async () =>
-        {
-            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
-
-            var period = await db.GamePeriods.FindAsync([periodId], cancellationToken);
-            if (period is null || !await db.GameInScopeAsync(period.GameId, cancellationToken))
-            {
-                logger.LogWarning("Cannot save lineup for period {PeriodId}: not found", periodId);
-                return Result.Failure("Period not found");
-            }
-
-            if (period.HasKickedOff)
-            {
-                logger.LogWarning("Cannot save lineup for period {PeriodId}: it has already been played", periodId);
-                return Result.Failure("This half has already been played, so its line-up is no longer the builder's to change");
-            }
-
-            await ReplaceLineupsAsync(db, new Dictionary<int, List<GamePlayerPosition>> { [periodId] = positions }, cancellationToken);
-
-            logger.LogInformation("Saved lineup for period {PeriodId}: {Count} positions",
-                periodId, positions.Count);
-            return Result.Success();
-        });
-
-    // One transaction, so a save failing part-way leaves the plan as it was. A half already played is skipped, for the reason
-    // SavePeriodLineupAsync refuses one, and handed back so the page can name it.
-    public Task<Result<List<PeriodType>>> SaveLineupsAsync(
-        int gameId, IReadOnlyDictionary<int, List<GamePlayerPosition>> lineups, CancellationToken cancellationToken = default) =>
-        ServiceOperation.RunAdminAsync(currentUser, logger, "save lineup", cancellationToken, async () =>
-        {
-            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
-
-            var game = await db.Games.WithPeriods().FirstOrDefaultAsync(g => g.Id == gameId, cancellationToken);
-            if (game is null) return GameNotInScope<List<PeriodType>>(gameId);
-
-            var periods = game.Periods.ToDictionary(p => p.Id);
-            var strays = lineups.Keys.Where(id => !periods.ContainsKey(id)).ToList();
-            if (strays.Count > 0)
-            {
-                logger.LogWarning("Cannot save lineups for game {GameId}: periods {PeriodIds} are not its own", gameId, strays);
-                return Result.Failure<List<PeriodType>>("Period not found");
-            }
-
-            var played = lineups.Keys.Select(id => periods[id]).Where(p => p.HasKickedOff).ToList();
-            var toSave = lineups.Where(entry => !periods[entry.Key].HasKickedOff).ToDictionary();
-
-            await ReplaceLineupsAsync(db, toSave, cancellationToken);
-
-            logger.LogInformation("Saved lineups for game {GameId}: {Saved} periods, {Played} already played and left alone",
-                gameId, toSave.Count, played.Count);
-            return Result.Success(played.Select(p => p.PeriodType).Order().ToList());
-        });
-
-    // Delete-then-insert needs every period or none, or a failed insert leaves a period with no line-up at all.
-    private static async Task ReplaceLineupsAsync(
-        AppDbContext db, IReadOnlyDictionary<int, List<GamePlayerPosition>> lineups, CancellationToken cancellationToken)
-    {
-        await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
-
-        var periodIds = lineups.Keys.ToList();
-        var existing = await db.GamePlayerPositions
-            .Where(pp => periodIds.Contains(pp.GamePeriodId))
-            .ToListAsync(cancellationToken);
-
-        db.GamePlayerPositions.RemoveRange(existing);
-        await db.SaveChangesAsync(cancellationToken);
-
-        // Fresh entities with Id = 0 — reusing tracked IDs trips the UNIQUE constraint.
-        foreach (var (periodId, positions) in lineups)
-        {
-            foreach (var pos in positions)
-            {
-                db.GamePlayerPositions.Add(new GamePlayerPosition
-                {
-                    GamePeriodId = periodId,
-                    PlayerId = pos.PlayerId,
-                    Position = pos.Position,
-                    SlotIndex = pos.IsSubstitute ? null : pos.SlotIndex,
-                    IsSubstitute = pos.IsSubstitute
-                });
-            }
-        }
-
-        await db.SaveChangesAsync(cancellationToken);
-        await tx.CommitAsync(cancellationToken);
-    }
-
-    // "Game not found", not "not in your team": a write against another team's id should read exactly as one against an id that never was.
-    private Result GameNotInScope(int gameId)
-    {
-        logger.LogWarning("Game {GameId} is not in the team in scope", gameId);
-        return Result.Failure("Game not found");
-    }
-
-    private Result<T> GameNotInScope<T>(int gameId)
-    {
-        logger.LogWarning("Game {GameId} is not in the team in scope", gameId);
-        return Result.Failure<T>("Game not found");
     }
 }

@@ -14,9 +14,7 @@ public class PlayerService(
 
             var players = await db.Players
                 .AsNoTracking()
-                .OrderBy(p => p.ShirtNumber ?? int.MaxValue)
-                .ThenBy(p => p.FirstName)
-                .ThenBy(p => p.Surname)
+                .InSquadOrder()
                 .ToListAsync(cancellationToken);
 
             logger.LogDebug("Retrieved {Count} players", players.Count);
@@ -33,7 +31,7 @@ public class PlayerService(
             if (player is null)
             {
                 logger.LogWarning("Player {PlayerId} not found", id);
-                return Result.Failure<Player>("Player with ID {0} not found", id);
+                return Result.Failure<Player>("Player not found");
             }
 
             return Result.Success(player);
@@ -59,16 +57,14 @@ public class PlayerService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            // A detached Update goes by key and never consults the query filter, so confirm the player is the club's before re-stamping.
-            if (!await db.Players.AnyAsync(p => p.Id == player.Id, cancellationToken))
+            var stored = await db.Players.FirstOrDefaultAsync(p => p.Id == player.Id, cancellationToken);
+            if (stored is null)
             {
                 logger.LogWarning("Cannot update player {PlayerId}: not in scope", player.Id);
                 return Result.Failure("Player not found");
             }
 
-            player.ClubId = db.CurrentClubId!.Value;
-
-            db.Players.Update(player);
+            stored.TakeDetailsFrom(player);
             await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Updated player {PlayerName} (ID: {PlayerId})", player.DisplayName, player.Id);

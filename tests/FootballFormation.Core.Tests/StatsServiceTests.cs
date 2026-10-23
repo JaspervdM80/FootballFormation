@@ -185,6 +185,77 @@ public class StatsServiceTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task A_write_inside_a_transaction_drops_the_figures_when_it_commits_and_not_before()
+    {
+        await ArrangeSeasonAsync();
+        var key = Probe();
+
+        // A rebuild between the save and the commit reads the rows as they were, so a key moved at the save would cache stale figures.
+        await using var db = Read();
+        await using var tx = await db.Database.BeginTransactionAsync();
+        db.Seasons.Add(PastSeason());
+        await db.SaveChangesAsync();
+
+        Assert.Equal(key, Probe());
+
+        await tx.CommitAsync();
+
+        Assert.NotEqual(key, Probe());
+    }
+
+    [Fact]
+    public async Task A_transaction_rolled_back_leaves_the_figures_cached()
+    {
+        await ArrangeSeasonAsync();
+        var key = Probe();
+
+        await using (var db = Read())
+        {
+            await using var tx = await db.Database.BeginTransactionAsync();
+            db.Seasons.Add(PastSeason());
+            await db.SaveChangesAsync();
+            await tx.RollbackAsync();
+        }
+
+        Assert.Equal(key, Probe());
+    }
+
+    [Fact]
+    public async Task A_synchronous_transaction_is_judged_by_its_commit_just_as_an_awaited_one_is()
+    {
+        await ArrangeSeasonAsync();
+        var key = Probe();
+
+        using (var db = Read())
+        {
+            using var tx = db.Database.BeginTransaction();
+            db.Seasons.Add(PastSeason());
+            db.SaveChanges();
+            tx.Rollback();
+        }
+
+        Assert.Equal(key, Probe());
+
+        using (var db = Read())
+        {
+            using var tx = db.Database.BeginTransaction();
+            db.Seasons.Add(PastSeason());
+            db.SaveChanges();
+            Assert.Equal(key, Probe());
+            tx.Commit();
+        }
+
+        Assert.NotEqual(key, Probe());
+    }
+
+    private Season PastSeason()
+    {
+        var season = Season.CreateFor(Now.AddYears(-3));
+        season.TeamId = CurrentTeam.Id!.Value;
+        return season;
+    }
+
+    [Fact]
     public async Task A_write_on_an_unstamped_context_drops_every_teams_figures()
     {
         await ArrangeSeasonAsync();
@@ -192,9 +263,7 @@ public class StatsServiceTests : ServiceTestBase
 
         // The boot steps write through the raw factory, which names no team for the invalidator to narrow to.
         await using var raw = RawDbFactory.CreateDbContext();
-        var season = Season.CreateFor(Now.AddYears(-3));
-        season.TeamId = CurrentTeam.Id!.Value;
-        raw.Seasons.Add(season);
+        raw.Seasons.Add(PastSeason());
         await raw.SaveChangesAsync();
 
         Assert.NotEqual(key, Probe());

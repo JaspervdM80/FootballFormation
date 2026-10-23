@@ -4,6 +4,24 @@ namespace FootballFormation.Core.Tests;
 public class SeasonSquadServiceTests : ServiceTestBase
 {
     [Fact]
+    public async Task A_match_page_gets_the_seasons_squad_and_everyone_else_on_file_by_shirt_with_the_unnumbered_last()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(3);
+        await Squads.AddMembersAsync(season.Id, [players[2].Id]);
+
+        // Seeded in shirt order, so only a player without a number can tell the order from the order of insertion.
+        var unnumbered = await Db.Players.SingleAsync(p => p.Id == players[0].Id);
+        unnumbered.ShirtNumber = null;
+        await Db.SaveChangesAsync();
+
+        var people = (await Squads.GetMatchPeopleAsync(season.Id)).Value!;
+
+        Assert.Equal([players[2].Id], people.Squad.Members.Select(m => m.PlayerId));
+        Assert.Equal([players[1].Id, players[2].Id, players[0].Id], people.Everyone.Select(p => p.Id));
+    }
+
+    [Fact]
     public async Task A_player_who_has_not_played_can_be_removed()
     {
         var season = await SeedSeasonAsync();
@@ -23,7 +41,7 @@ public class SeasonSquadServiceTests : ServiceTestBase
 
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
         var period = Read().GamePeriods.First(p => p.GameId == game.Id);
-        await Games.SavePeriodLineupAsync(period.Id, [TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0)]);
+        await SaveLineupAsync(period.Id, [TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0)]);
 
         var result = await Squads.RemoveMemberAsync(season.Id, players[0].Id);
 
@@ -56,7 +74,7 @@ public class SeasonSquadServiceTests : ServiceTestBase
 
         var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: lastSeason.Id))).Value!;
         var period = Read().GamePeriods.First(p => p.GameId == game.Id);
-        await Games.SavePeriodLineupAsync(period.Id, [TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0)]);
+        await SaveLineupAsync(period.Id, [TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0)]);
 
         // The refusal is per season: last season's minutes are not this season's statistics.
         Assert.True((await Squads.RemoveMemberAsync(thisSeason.Id, players[0].Id)).IsSuccess);

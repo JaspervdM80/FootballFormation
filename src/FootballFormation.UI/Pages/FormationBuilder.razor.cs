@@ -7,7 +7,7 @@ namespace FootballFormation.UI.Pages;
 public partial class FormationBuilder
 {
     [Inject] private GameService GameService { get; set; } = null!;
-    [Inject] private PlayerService PlayerService { get; set; } = null!;
+    [Inject] private LineupService LineupService { get; set; } = null!;
     [Inject] private SeasonSquadService SquadService { get; set; } = null!;
     [Inject] private StatsService StatsService { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
@@ -61,18 +61,14 @@ public partial class FormationBuilder
 
         GameData = gameResult.Value!;
 
-        var squadResult = await SquadService.GetSquadAsync(GameData.SeasonId, Cancellation);
-        Squad = Snackbar.ReportFailure(L, squadResult) ? squadResult.Value! : SeasonSquad.Empty;
-
-        // The full pool: a player lined up but since dropped from the squad must stay visible in the playing-time table.
-        var playersResult = await PlayerService.GetAllAsync(Cancellation);
-        AllPlayers = Snackbar.ReportFailure(L, playersResult) ? playersResult.Value! : [];
+        var people = await SquadService.GetMatchPeopleAsync(GameData.SeasonId, Cancellation);
+        (Squad, AllPlayers) = Snackbar.ReportFailure(L, people) ? people.Value! : MatchPeople.None;
 
         CacheLineups();
 
         if (CanCopyPreviousLineupAt(GameData))
         {
-            var previousResult = await GameService.GetPreviousFullLineupAsync(GameId, Cancellation);
+            var previousResult = await LineupService.GetPreviousFullLineupAsync(GameId, Cancellation);
             PreviousLineup = Snackbar.ReportFailure(L, previousResult) ? previousResult.Value : null;
         }
 
@@ -286,7 +282,7 @@ public partial class FormationBuilder
     {
         if (GameData is null || formation == GameData.FormationType) return;
 
-        var result = await GameService.SaveFormationAsync(GameId, formation);
+        var result = await LineupService.SaveFormationAsync(GameId, formation);
         if (!Snackbar.ReportFailure(L, result)) return;
 
         // The service reshaped every unplayed half the same way, so a page with nothing pending still has nothing pending.
@@ -450,7 +446,7 @@ public partial class FormationBuilder
     private async Task SaveAll()
     {
         // The service decides what has been played, not this page's copy: it may have been open since before kick-off.
-        var result = await GameService.SaveLineupsAsync(GameId, PeriodLineups);
+        var result = await LineupService.SaveLineupsAsync(GameId, PeriodLineups);
         if (result.IsFailure)
         {
             if (!result.IsCancelled) Snackbar.Add(L["Save failed: {0}", UiFeedback.Translate(L, result)], Severity.Error);

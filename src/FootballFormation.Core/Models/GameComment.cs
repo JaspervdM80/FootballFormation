@@ -1,8 +1,8 @@
 namespace FootballFormation.Core.Models;
 
 /// Private by default, so a coach can keep working notes on the same match the public sees a report on. Visibility is enforced in
-/// GameService.GetCommentsAsync, not the markup: the result page prerenders, so a body filtered out only in the UI still ships.
-public class GameComment
+/// GameCommentService.GetCommentsAsync, not the markup: the result page prerenders, so a body filtered out only in the UI still ships.
+public class GameComment : IGameChild
 {
     public int Id { get; set; }
     public int GameId { get; set; }

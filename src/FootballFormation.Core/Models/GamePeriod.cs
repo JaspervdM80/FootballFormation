@@ -2,7 +2,7 @@ namespace FootballFormation.Core.Models;
 
 /// The match is only ever two halves, so the row opening one carries its timings and everything the live screen records — a row planned
 /// for the middle of a half stays a plan and is never kicked off.
-public class GamePeriod
+public class GamePeriod : IGameChild
 {
     public int Id { get; set; }
     public int GameId { get; set; }
@@ -13,7 +13,7 @@ public class GamePeriod
     /// Null for a line-up never run live — a mid-half plan, or a game never played from the touchline.
     public int? StartedAtSeconds { get; set; }
 
-    /// Past this point the touchline owns the line-up: GameService.SavePeriodLineupAsync refuses to replace it.
+    /// Past this point the touchline owns the line-up: LineupService.SaveLineupsAsync leaves it alone.
     public bool HasKickedOff => StartedAtSeconds is not null;
 
     /// Null while the half is still running.

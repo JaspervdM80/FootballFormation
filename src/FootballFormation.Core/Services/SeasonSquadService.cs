@@ -1,5 +1,11 @@
 namespace FootballFormation.Core.Services;
 
+// Everyone on file as well as the squad: a player who appeared in a match stays nameable on it, whatever her membership is now.
+public sealed record MatchPeople(SeasonSquad Squad, List<Player> Everyone)
+{
+    public static MatchPeople None => new(SeasonSquad.Empty, []);
+}
+
 /// Separate from <see cref="SeasonService"/>, which owns the season lifecycle, and takes no service dependency of its own — so
 /// GameService → SeasonService stays the only service-to-service edge.
 public class SeasonSquadService(
@@ -14,14 +20,28 @@ public class SeasonSquadService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var members = await db.SeasonSquadMembers
-                .AsNoTracking()
-                .Where(m => m.SeasonId == seasonId)
-                .Include(m => m.Player)
-                .ToListAsync(cancellationToken);
+            var members = await db.SquadOf(seasonId).ToListAsync(cancellationToken);
 
             logger.LogDebug("Retrieved {Count} squad members for season {SeasonId}", members.Count, seasonId);
             return Result.Success(new SeasonSquad(seasonId, members));
+        });
+
+    /// What every match page reads alongside its game, in one context rather than two services' worth.
+    public Task<Result<MatchPeople>> GetMatchPeopleAsync(int seasonId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "load the squad", cancellationToken, async () =>
+        {
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
+
+            var members = await db.SquadOf(seasonId).ToListAsync(cancellationToken);
+
+            var everyone = await db.Players
+                .AsNoTracking()
+                .InSquadOrder()
+                .ToListAsync(cancellationToken);
+
+            logger.LogDebug("Retrieved {Count} squad members of {Everyone} players for season {SeasonId}",
+                members.Count, everyone.Count, seasonId);
+            return Result.Success(new MatchPeople(new SeasonSquad(seasonId, members), everyone));
         });
 
     /// A null <paramref name="seasonId"/> loads every season, which is what "All seasons" needs to walk games across them.

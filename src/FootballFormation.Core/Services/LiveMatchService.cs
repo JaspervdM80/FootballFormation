@@ -23,11 +23,7 @@ public class LiveMatchService(
                 .WithInjuries()
                 .FirstOrDefaultAsync(g => g.Id == gameId, cancellationToken);
 
-            if (game is null)
-            {
-                logger.LogWarning("Live match {GameId} not found", gameId);
-                return LiveMatchQueries.GameNotFound<Game>(gameId);
-            }
+            if (game is null) return GameNotFound.For<Game>(logger, gameId);
 
             return Result.Success(game);
         });

@@ -7,10 +7,10 @@ namespace FootballFormation.UI.Pages;
 public partial class MatchResult
 {
     [Inject] private GameService GameService { get; set; } = null!;
+    [Inject] private GameCommentService CommentService { get; set; } = null!;
     [Inject] private MatchGoalService GoalService { get; set; } = null!;
     [Inject] private MatchClockService ClockService { get; set; } = null!;
     [Inject] private MatchSubstitutionService SubService { get; set; } = null!;
-    [Inject] private PlayerService PlayerService { get; set; } = null!;
     [Inject] private SeasonSquadService SquadService { get; set; } = null!;
     [Inject] private NavigationTrail Trail { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
@@ -152,12 +152,8 @@ public partial class MatchResult
         ScoreHome = GameData.ScoreHome;
         ScoreAway = GameData.ScoreAway;
 
-        var squadResult = await SquadService.GetSquadAsync(GameData.SeasonId, Cancellation);
-        Squad = squadResult.IsSuccess ? squadResult.Value! : SeasonSquad.Empty;
-
-        // The full pool, so anyone who actually appeared stays selectable as a scorer regardless of current membership.
-        var playersResult = await PlayerService.GetAllAsync(Cancellation);
-        AllPlayers = playersResult.IsSuccess ? playersResult.Value! : [];
+        var people = await SquadService.GetMatchPeopleAsync(GameData.SeasonId, Cancellation);
+        (Squad, AllPlayers) = Snackbar.ReportFailure(L, people) ? people.Value! : MatchPeople.None;
         RefreshMinutes();
 
         await ReloadComments();
@@ -433,7 +429,7 @@ public partial class MatchResult
             AuthorId = CurrentUserId
         };
 
-        var result = await GameService.AddCommentAsync(comment);
+        var result = await CommentService.AddCommentAsync(comment);
         if (!Snackbar.Report(L, result, L["Comment added"])) return;
 
         NewCommentBody = null;
@@ -454,7 +450,7 @@ public partial class MatchResult
             return;
         }
 
-        var result = await GameService.UpdateCommentAsync(comment.Id, comment.Body, makePublic);
+        var result = await CommentService.UpdateCommentAsync(comment.Id, comment.Body, makePublic);
         if (!Snackbar.Report(L, result, makePublic ? L["Comment published"] : L["Comment is now admin only"])) return;
 
         await ReloadComments();
@@ -469,7 +465,7 @@ public partial class MatchResult
             return;
         }
 
-        var result = await GameService.RemoveCommentAsync(comment.Id);
+        var result = await CommentService.RemoveCommentAsync(comment.Id);
         if (!Snackbar.Report(L, result, L["Comment removed"], Severity.Warning)) return;
 
         await ReloadComments();
@@ -477,7 +473,7 @@ public partial class MatchResult
 
     private async Task ReloadComments()
     {
-        var result = await GameService.GetCommentsAsync(GameId, includePrivate: IsAdmin, Cancellation);
+        var result = await CommentService.GetCommentsAsync(GameId, includePrivate: IsAdmin, Cancellation);
         Comments = result.IsSuccess ? result.Value! : [];
         RefreshSummaryText();
     }

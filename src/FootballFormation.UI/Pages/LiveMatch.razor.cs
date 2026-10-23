@@ -13,7 +13,6 @@ public partial class LiveMatch
     [Inject] private MatchClockService ClockService { get; set; } = null!;
     [Inject] private MatchGoalService GoalService { get; set; } = null!;
     [Inject] private MatchSubstitutionService SubService { get; set; } = null!;
-    [Inject] private PlayerService PlayerService { get; set; } = null!;
     [Inject] private SeasonSquadService SquadService { get; set; } = null!;
     [Inject] private StatsService Stats { get; set; } = null!;
     [Inject] private LiveMatchNotifier Notifier { get; set; } = null!;
@@ -233,12 +232,8 @@ public partial class LiveMatch
         await Team.EnsureLoadedAsync();
         if (!await ReloadAsync()) return;
 
-        // Every player, not the squad: anyone who appeared stays nameable regardless of current membership.
-        var playersResult = await PlayerService.GetAllAsync(Cancellation);
-        AllPlayers = playersResult.IsSuccess ? playersResult.Value! : [];
-
-        var squadResult = await SquadService.GetSquadAsync(GameData!.SeasonId, Cancellation);
-        Squad = squadResult.IsSuccess ? squadResult.Value! : SeasonSquad.Empty;
+        var people = await SquadService.GetMatchPeopleAsync(GameData!.SeasonId, Cancellation);
+        (Squad, AllPlayers) = Snackbar.ReportFailure(L, people) ? people.Value! : MatchPeople.None;
 
         if (_isAdmin && (await Stats.GetSeasonAsync(GameData.SeasonId, Cancellation)) is { IsSuccess: true } stats)
             _seasonGoals = stats.Value!.Stats.Players.DistinctBy(p => p.Player.Id).ToDictionary(p => p.Player.Id, p => p.Goals);

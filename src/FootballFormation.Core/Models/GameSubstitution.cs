@@ -1,7 +1,7 @@
 namespace FootballFormation.Core.Models;
 
 /// The line-up stays the source of truth for who stands where; this records when the swap happened, which it alone cannot express.
-public class GameSubstitution
+public class GameSubstitution : IGameChild
 {
     public int Id { get; set; }
     public int GameId { get; set; }
