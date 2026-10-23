@@ -70,6 +70,16 @@
   drawn on the wrong side of the half-time rule. `MatchClockReport.ElapsedOf` is the conversion,
   and it is the only thing that should produce an ordering key for a goal. It cost a review round
   on the change that introduced it.
+- **Editing a game's details during the match reset the match.** `GameService.UpdateAsync` attached
+  the `Game` the game dialog had edited and marked it `Modified`, which writes *every* column — and
+  the instance came from the `/games` list, loaded whenever that tab was last opened. So someone
+  filling in the flag duty at half time, from a list loaded before kick-off, wrote back
+  `MatchState.NotStarted`, an empty clock, no live half, the old score and the old absences. Nothing
+  failed and nothing looked wrong until the live screen showed a match that had never started. The
+  fix is that an edit writes only the fields the dialog edits (`Game.TakeFixtureDetailsFrom`) onto
+  the stored row; the clock, the score and the absences have their own writers. Attaching a caller's
+  entity as `Modified` is the trap — `TrainingService.UpdateAsync` still does it, safely only
+  because a training has no state that anything but its dialog writes.
 - **The formation builder could overwrite the line-up a half was played with, from a tab nobody
   had touched since before kick-off.** `SavePeriodLineupAsync` is delete-then-insert from whatever
   the caller hands it, and the builder's `PeriodLineups` is filled once in `OnInitializedAsync` and

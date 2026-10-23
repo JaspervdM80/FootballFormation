@@ -27,9 +27,9 @@
   (`FormationTypeExtensions.Format()`) rather than holding one of their own — picking a format only
   swaps the shape for that format's `DefaultFormation()`. So the builder offers the shapes of the
   game's own format and nothing else, and a nine-a-side match is built on a nine-slot pitch.
-  Changing the format on an existing match goes through `SaveFormationAsync` **before**
-  `UpdateAsync` (`Games.OpenEditDialog`), because the update would otherwise have already stored the
-  new shape and left the reshape moving the line-up from it to itself. `FormationSlots.Reshape`
+  Changing the format on an existing match goes through `SaveFormationAsync` (`Games.OpenEditDialog`),
+  the shape's only writer: `UpdateAsync` leaves `FormationType` alone, so a dialog opened before
+  someone changed the shape in the builder cannot put the old one back. `FormationSlots.Reshape`
   benches anyone standing in a slot the smaller shape does not field — left a starter she would be
   off the pitch but still on the playing-time clock
 - **A half already played is never shrunk.** `SaveFormationAsync` skips a period with
@@ -40,6 +40,10 @@
   loads `Player` alongside the line-up, because `GamePlayerPosition.SendToBench` reads her own
   position off it and lazy loading is off
 - Actions: Save All, Suggest Line-up, Copy to Next Period, Copy line-up from the previous game
+- **The drags and taps are `LineupEditor`'s** (Core/Models), and the three player panels are
+  `Game.SplitForSelection`'s. The page holds the drag state and calls them, so the rules — a sub
+  dropped on a taken slot benches its occupant, a player from the list replaces it outright — are
+  pinned by `LineupEditorTests` rather than only by the browser
 - **Suggest Line-up** fills the period on screen from `LineupSuggestionReport.Build(...)` and saves
   nothing — the coach reviews it and presses Save like any other edit, and replacing a period that
   already holds a line-up asks first. The report weighs two things against each other: how well a
@@ -62,10 +66,10 @@
   bench and the player list all render with their drag turned off, an inline notice says why, Copy
   to Next Period is withheld when the period it would copy *into* has kicked off, and every editing
   handler stops on `IsLocked` — the page's guard against piling up changes the save would
-  drop. Save All skips those periods, naming them in an information snackbar, and takes the list
-  from a **fresh read** rather than from its own cached game: a builder left open since before
-  kick-off still has every half down as a plan, and would otherwise be refused one period at a time
-  by `GameService.SavePeriodLineupAsync`
+  drop. Save All is one `GameService.SaveLineupsAsync` call, which skips those periods on the
+  strength of what is **on file** rather than the page's cached game — a builder left open since
+  before kick-off still has every half down as a plan — and names them in an information snackbar.
+  The rest save in one transaction, so a failure leaves the plan exactly as it was
 - **A finished match (`Game.IsComplete`) is a record as a whole.** Every period renders read-only,
   the formation picker is disabled, and Save, Suggest, Copy and the per-half notice are all gone —
   `IsLocked` answers true for every period, so the handlers stop too. This is the page only:

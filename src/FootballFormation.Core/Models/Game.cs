@@ -126,6 +126,29 @@ public class Game
                                  && g.HasFullLineup);
     }
 
+    // What the game dialog edits, and nothing else: a dialog opened before kick-off must not write its stale clock, score or absences back.
+    // The formation is SaveFormationAsync's and the season is checked against the team, so neither is copied here.
+    public void TakeFixtureDetailsFrom(Game edited)
+    {
+        Opponent = edited.Opponent;
+        Date = edited.Date;
+        SplitType = edited.SplitType;
+        MatchType = edited.MatchType;
+        GameDurationMinutes = edited.GameDurationMinutes;
+        IsHomeGame = edited.IsHomeGame;
+        MeetTime = edited.MeetTime;
+        WarmUpTime = edited.WarmUpTime;
+        DressingRoom = edited.DressingRoom;
+        FieldName = edited.FieldName;
+        SportsPark = edited.SportsPark;
+        City = edited.City;
+        DressingRoomDuty = edited.DressingRoomDuty;
+        FlagDuty = edited.FlagDuty;
+        WashDuty = edited.WashDuty;
+        UnavailablePlayerIds = [.. edited.UnavailablePlayerIds];
+        GuestPlayerIds = [.. edited.GuestPlayerIds];
+    }
+
     /// Period for period, reshaped into this game's slots, leaving out anyone not in <paramref name="availablePlayerIds"/>. Fresh entries
     /// with Id = 0, so a save inserts them rather than claiming the source's rows.
     public Dictionary<int, List<GamePlayerPosition>> LineupsCopiedFrom(Game source, IReadOnlySet<int> availablePlayerIds)
@@ -222,6 +245,16 @@ public class Game
     public List<Player> SelectRoster(IEnumerable<Player> allPlayers, SeasonSquad squad) =>
         [.. allPlayers.Where(p => IsInRoster(p, squad))];
 
+    // The second half keeps a player since recovered visible: without it she would be in none of the builder's panels and vanish from a
+    // line-up someone came back to fix.
+    public bool IsOutInjured(int playerId, SeasonSquad squad) => squad.IsInjured(playerId) || InjuredPlayerIds.Contains(playerId);
+
+    // Injury outranks being unavailable, so nobody appears in two panels, and the injured are never offered for the pitch.
+    public SelectionPanels SplitForSelection(IReadOnlyCollection<Player> allPlayers, SeasonSquad squad) => new(
+        [.. SelectRoster(allPlayers, squad).Where(p => !IsOutInjured(p.Id, squad))],
+        [.. allPlayers.Where(p => squad.IsFullMember(p.Id) && UnavailablePlayerIds.Contains(p.Id) && !IsOutInjured(p.Id, squad))],
+        [.. allPlayers.Where(p => IsOutInjured(p.Id, squad))]);
+
     public bool IsClockRunning => ClockRunningSince is not null;
 
     /// Never null while the game has periods: the one on the pitch, else the last played, else the one it opens with.
@@ -296,6 +329,11 @@ public class Game
 }
 
 /// In memory, never in SQL — see QueryTags.ComparesDatesInSql. The tie-break is spelled out so same-day fixtures keep entry order.
+public sealed record SelectionPanels(List<Player> Selectable, List<Player> Unavailable, List<Player> Injured)
+{
+    public static SelectionPanels Empty => new([], [], []);
+}
+
 public static class GameOrdering
 {
     public static List<Game> NewestFirst(this IEnumerable<Game> games) =>

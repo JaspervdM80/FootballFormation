@@ -111,12 +111,33 @@ public class TeamDataScopingTests : ServiceTestBase
         Assert.True((await Games.UpdateAsync(new Game { Id = b.GameId, Opponent = "Hijacked", Date = Now.Date })).IsFailure);
         Assert.True((await Games.AddCommentAsync(new GameComment { GameId = b.GameId, Body = "Hijacked" })).IsFailure);
         Assert.True((await Games.AddGoalAsync(new GameGoal { GameId = b.GameId, IsOpponentGoal = true })).IsFailure);
+        Assert.True((await Games.SaveLineupsAsync(b.GameId, new Dictionary<int, List<GamePlayerPosition>>())).IsFailure);
 
         Scope(b);
         var game = (await Games.GetByIdAsync(b.GameId)).Value!;
         Assert.NotEqual("Hijacked", game.Opponent);
         Assert.Empty((await Games.GetCommentsAsync(b.GameId, includePrivate: true)).Value!);
         Assert.Empty(game.Goals);
+    }
+
+    [Fact]
+    public async Task A_game_or_training_cannot_be_moved_into_another_teams_season()
+    {
+        var (a, b) = await ArrangeTwoTeamsAsync();
+
+        Scope(a);
+        var game = (await Games.GetByIdAsync(a.GameId)).Value!;
+        game.SeasonId = b.SeasonId;
+        Assert.True((await Games.UpdateAsync(game)).IsFailure);
+
+        var training = (await Trainings.GetAllAsync()).Value!.Single();
+        training.SeasonId = b.SeasonId;
+        Assert.True((await Trainings.UpdateAsync(training)).IsFailure);
+
+        // Left where they were, rather than stamped with one team and filed under the other, where neither team's pages would find them.
+        await using var db = Read();
+        Assert.Equal(a.SeasonId, (await db.Games.SingleAsync(g => g.Id == a.GameId)).SeasonId);
+        Assert.Equal(a.SeasonId, (await db.Trainings.SingleAsync(t => t.Id == a.TrainingId)).SeasonId);
     }
 
     [Fact]

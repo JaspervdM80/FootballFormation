@@ -23,7 +23,7 @@ public class StatsService(
         {
             // Before the load, never after — see StatsCache.KeyFor. Keyed by team as well as season, or the "all seasons" view (a null
             // id) and a player who moved teams would collide across teams on one key. See docs/patterns/authorization-and-auth.md.
-            var key = cache.KeyFor($"t{await currentTeam.GetIdAsync()}:season:{seasonId}");
+            var key = cache.KeyFor(await currentTeam.GetIdAsync(), $"season:{seasonId}");
 
             if (cache.TryGet<SeasonStatsView>(key, out var hit)) return Result.Success(hit);
 
@@ -55,7 +55,7 @@ public class StatsService(
             if (existing is not null) return Result.Success(existing);
 
             // In no squad of this season, but the page is reachable for anyone on file. Keyed by team too — see GetSeasonAsync.
-            var key = cache.KeyFor($"t{await currentTeam.GetIdAsync()}:player:{player.Id}:{seasonId}");
+            var key = cache.KeyFor(await currentTeam.GetIdAsync(), $"player:{player.Id}:{seasonId}");
 
             if (cache.TryGet<PlayerStats>(key, out var hit)) return Result.Success(hit);
 

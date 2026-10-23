@@ -260,6 +260,40 @@ public class GameTests
     }
 
     [Fact]
+    public void The_builder_offers_the_fit_lists_the_unavailable_and_lists_the_injured_and_nobody_twice()
+    {
+        var fit = TestData.Player(1);
+        var away = TestData.Player(2);
+        var hurt = TestData.Player(3);
+        var awayAndHurt = TestData.Player(4);
+        var guest = TestData.Player(5);
+        var squad = TestData.Squad(1, [fit, away, hurt, awayAndHurt, guest], guestIds: [5], injuredIds: [3, 4]);
+        var game = TestData.Game();
+        game.UnavailablePlayerIds.AddRange([away.Id, awayAndHurt.Id, guest.Id]);
+
+        var panels = game.SplitForSelection([fit, away, hurt, awayAndHurt, guest], squad);
+
+        Assert.Equal([fit], panels.Selectable);
+        Assert.Equal([away], panels.Unavailable);
+        Assert.Equal([hurt, awayAndHurt], panels.Injured);
+    }
+
+    [Fact]
+    public void A_player_recorded_injured_for_this_match_stays_listed_after_she_has_recovered()
+    {
+        // Otherwise she is in none of the three panels, and simply vanishes from a line-up someone came back to fix.
+        var recovered = TestData.Player(1);
+        var squad = TestData.Squad(1, [recovered]);
+        var game = TestData.Game();
+        game.InjuredPlayerIds.Add(recovered.Id);
+
+        var panels = game.SplitForSelection([recovered], squad);
+
+        Assert.Empty(panels.Selectable);
+        Assert.Equal([recovered], panels.Injured);
+    }
+
+    [Fact]
     public void IsInRoster_is_blind_to_the_squads_injury_flag_the_way_it_is_blind_to_archiving()
     {
         // The squad flag is live and undated, so letting it reach in here would zero out AvailableMinutes for every game already played.
