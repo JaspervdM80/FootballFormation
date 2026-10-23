@@ -44,6 +44,9 @@ public class StatsServiceTests : ServiceTestBase
         return (season, player, stored);
     }
 
+    // The key a report for the team in scope would be stored under now — it moves exactly when that team's figures are dropped.
+    private StatsCacheKey Probe() => StatsCache.KeyFor(CurrentTeam.Id, "probe");
+
     [Fact]
     public async Task A_second_read_is_served_from_the_cache_rather_than_rebuilt()
     {
@@ -72,8 +75,7 @@ public class StatsServiceTests : ServiceTestBase
         var before = await Stats.GetSeasonAsync(season.Id);
         Assert.Equal(1, before.Value!.Stats.GoalsFor);
 
-        game.ScoreHome = 4;
-        Assert.True((await Games.UpdateAsync(game)).IsSuccess);
+        Assert.True((await Games.SaveScoreAsync(game.Id, 4, 0)).IsSuccess);
 
         var after = await Stats.GetSeasonAsync(season.Id);
 
@@ -87,14 +89,14 @@ public class StatsServiceTests : ServiceTestBase
         var (season, _, _) = await ArrangeSeasonAsync();
         await Stats.GetSeasonAsync(season.Id);
 
-        var generation = StatsCache.Generation;
+        var key = Probe();
 
         // Nothing to do with anyone's minutes, and still counts: the alternative is a list of
         // which writes matter, and being wrong about it is a stale figure nobody can explain.
         SeedTeam();
         Assert.True((await Users.CreateAsync("Nieuw", "nieuw", "x!Password1", UserRole.Admin)).IsSuccess);
 
-        Assert.NotEqual(generation, StatsCache.Generation);
+        Assert.NotEqual(key, Probe());
     }
 
     [Fact]
@@ -103,26 +105,99 @@ public class StatsServiceTests : ServiceTestBase
         var (season, _, _) = await ArrangeSeasonAsync();
         await Stats.GetSeasonAsync(season.Id);
 
-        var generation = StatsCache.Generation;
+        var key = Probe();
 
         // Nothing writes synchronously today; the day something does is not the day to find out.
         var db = Read();
         db.Players.Add(new Player { FirstName = "Synchroon", ClubId = CurrentTeam.ClubId!.Value, PreferredPosition = PlayerPosition.CB });
         db.SaveChanges();
 
-        Assert.NotEqual(generation, StatsCache.Generation);
+        Assert.NotEqual(key, Probe());
     }
 
     [Fact]
     public async Task A_save_that_changes_nothing_leaves_the_cache_alone()
     {
         await ArrangeSeasonAsync();
-        var generation = StatsCache.Generation;
+        var key = Probe();
 
         // Zero rows: bumping would drop the reports for a write that never happened.
         await Read().SaveChangesAsync();
 
-        Assert.Equal(generation, StatsCache.Generation);
+        Assert.Equal(key, Probe());
+    }
+
+    [Fact]
+    public async Task A_goal_logged_for_one_team_leaves_another_teams_figures_cached()
+    {
+        var (season, _, _) = await ArrangeSeasonAsync();
+        var mine = (CurrentTeam.Id, CurrentTeam.ClubId);
+
+        SeedTeam("GJS", "MO17-1");
+        var (_, _, theirGame) = await ArrangeSeasonAsync();
+        var theirs = (CurrentTeam.Id, CurrentTeam.ClubId);
+
+        (CurrentTeam.Id, CurrentTeam.ClubId) = mine;
+        var before = await Stats.GetSeasonAsync(season.Id);
+
+        // A game and a goal on it, so both a team's own row and a child reached through it are judged as that team's write.
+        (CurrentTeam.Id, CurrentTeam.ClubId) = theirs;
+        Assert.True((await Games.AddGoalAsync(
+            new GameGoal { GameId = theirGame.Id, IsOpponentGoal = true }, recountScoreline: true)).IsSuccess);
+
+        (CurrentTeam.Id, CurrentTeam.ClubId) = mine;
+        var after = await Stats.GetSeasonAsync(season.Id);
+
+        Assert.Same(before.Value, after.Value);
+    }
+
+    [Fact]
+    public async Task A_change_to_a_player_drops_every_teams_figures()
+    {
+        var (_, player, _) = await ArrangeSeasonAsync();
+        var mine = CurrentTeam.Id;
+        SeedTeam("GJS", "MO17-1");
+        var key = StatsCache.KeyFor(mine, "probe");
+
+        // The club's players appear in every team's figures, so a rename made from one team is news to all of them.
+        player.FirstName = "Hernoemd";
+        Assert.True((await Players.UpdateAsync(player)).IsSuccess);
+
+        Assert.NotEqual(key, StatsCache.KeyFor(mine, "probe"));
+    }
+
+    [Fact]
+    public async Task A_write_that_cannot_be_pinned_to_the_team_in_scope_drops_every_teams_figures()
+    {
+        await ArrangeSeasonAsync();
+        var mine = CurrentTeam.Id!.Value;
+        var otherTeam = SeedTeam("GJS", "MO17-1").Id;
+        var key = StatsCache.KeyFor(otherTeam, "probe");
+
+        // A row naming a team the context is not stamped with, which no service writes but nothing else stops.
+        CurrentTeam.Id = mine;
+        var season = Season.CreateFor(Now.AddYears(-3));
+        season.TeamId = otherTeam;
+        Db.Seasons.Add(season);
+        await Db.SaveChangesAsync();
+
+        Assert.NotEqual(key, StatsCache.KeyFor(otherTeam, "probe"));
+    }
+
+    [Fact]
+    public async Task A_write_on_an_unstamped_context_drops_every_teams_figures()
+    {
+        await ArrangeSeasonAsync();
+        var key = Probe();
+
+        // The boot steps write through the raw factory, which names no team for the invalidator to narrow to.
+        await using var raw = RawDbFactory.CreateDbContext();
+        var season = Season.CreateFor(Now.AddYears(-3));
+        season.TeamId = CurrentTeam.Id!.Value;
+        raw.Seasons.Add(season);
+        await raw.SaveChangesAsync();
+
+        Assert.NotEqual(key, Probe());
     }
 
     [Fact]
@@ -181,14 +256,14 @@ public class StatsServiceTests : ServiceTestBase
     {
         var (season, _, game) = await ArrangeSeasonAsync();
 
-        // The race the generation-in-the-key exists for. A cache that dropped entries instead
-        // would serve this stale value until the next write.
-        var key = StatsCache.KeyFor($"season:{season.Id}");
+        // The race the generation-in-the-key exists for: a rebuild that took its key before the write stores after it. A cache that
+        // dropped entries instead would serve this stale report until the next write.
+        var stale = (await Stats.GetSeasonAsync(season.Id)).Value!;
+        var key = StatsCache.KeyFor(CurrentTeam.Id, $"season:{season.Id}");
 
-        game.ScoreHome = 7;
-        Assert.True((await Games.UpdateAsync(game)).IsSuccess);
+        Assert.True((await Games.SaveScoreAsync(game.Id, 7, 0)).IsSuccess);
 
-        StatsCache.Set(key, "the report that was already being built");
+        StatsCache.Set(key, stale);
 
         var after = await Stats.GetSeasonAsync(season.Id);
 

@@ -60,11 +60,13 @@ public class TrainingService(
                 return Result.Failure("Training not found");
             }
 
-            training.TeamId = db.CurrentTeamId!.Value;
+            var placement = await seasons.PlaceAsync(db, training.SeasonId, training.Date, cancellationToken);
+            if (placement.IsFailure) return placement;
+            (training.SeasonId, training.TeamId) = placement.Value;
 
             Normalise(training);
 
-            // Setting State rather than DbSet.Update, for the reason spelled out in GameService.UpdateAsync.
+            // Setting State rather than DbSet.Update, which walks the whole graph it is handed and marks every row in it Modified.
             db.Entry(training).State = EntityState.Modified;
             await db.SaveChangesAsync(cancellationToken);
 

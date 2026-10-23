@@ -92,7 +92,7 @@ public abstract class ServiceTestBase : IDisposable
 
     protected TeamSetupService TeamSetup { get; }
 
-    // StatsCache.Generation is how a test asks whether a write was noticed, without timing.
+    // StatsCache.KeyFor is how a test asks whether a write was noticed, without timing: the key moves when a team's figures are dropped.
     protected StatsService Stats { get; }
 
     protected StatsCache StatsCache { get; }

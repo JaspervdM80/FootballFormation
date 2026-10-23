@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace FootballFormation.Core.Services;
@@ -9,13 +10,16 @@ public sealed class StatsCache(IMemoryCache cache)
 
     private long _generation;
 
-    public long Generation => Interlocked.Read(ref _generation);
+    private readonly ConcurrentDictionary<int, long> _teamGenerations = new();
 
     public void Invalidate() => Interlocked.Increment(ref _generation);
 
+    public void Invalidate(int teamId) => _teamGenerations.AddOrUpdate(teamId, 1, (_, generation) => generation + 1);
+
     // Take before loading and reuse for Set, so a write landing mid-rebuild orphans the result
     // instead of overwriting the live entry. See docs/patterns/service-structure.md.
-    public StatsCacheKey KeyFor(string name) => new($"{name}@{Generation}");
+    public StatsCacheKey KeyFor(int? teamId, string name) =>
+        new($"t{teamId}:{name}@{Interlocked.Read(ref _generation)}.{(teamId is { } id ? _teamGenerations.GetValueOrDefault(id) : 0)}");
 
     public bool TryGet<T>(StatsCacheKey key, out T value)
     {

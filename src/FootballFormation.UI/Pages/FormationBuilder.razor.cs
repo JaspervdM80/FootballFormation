@@ -101,33 +101,14 @@ public partial class FormationBuilder
 
     /// Injury is filtered here rather than in <see cref="Game.IsInRoster"/>, which also judges games already played — where a status set
     /// after the fact must not rewrite what happened.
-    private List<Player> RosterPlayers =>
-        AllPlayers is null || GameData is null
-            ? []
-            : GameData.SelectRoster(AllPlayers, Squad).Where(p => !IsInjured(p.Id)).ToList();
+    private SelectionPanels Panels =>
+        AllPlayers is null || GameData is null ? SelectionPanels.Empty : GameData.SplitForSelection(AllPlayers, Squad);
 
-    /// Excludes anyone <see cref="InjuredPlayers"/> lists, even when they are also marked unavailable, so nobody appears in both panels.
-    private List<Player> UnavailablePlayers
-    {
-        get
-        {
-            if (AllPlayers is null || GameData is null) return [];
+    private List<Player> RosterPlayers => Panels.Selectable;
 
-            var unavailable = GameData.UnavailablePlayerIds.ToHashSet();
-            return AllPlayers
-                .Where(p => Squad.IsFullMember(p.Id) && unavailable.Contains(p.Id) && !IsInjured(p.Id))
-                .ToList();
-        }
-    }
+    private List<Player> UnavailablePlayers => Panels.Unavailable;
 
-    /// Generally injured, as opposed to unavailable for this one fixture. Excluded from <see cref="RosterPlayers"/>, so never a drag target.
-    private List<Player> InjuredPlayers =>
-        AllPlayers is null ? [] : AllPlayers.Where(p => IsInjured(p.Id)).ToList();
-
-    /// Flagged in the squad now, or recorded as having missed this match. Without the second half, a player since recovered would be in
-    /// none of the three panels and simply vanish from a line-up someone came back to fix.
-    private bool IsInjured(int playerId) =>
-        Squad.IsInjured(playerId) || (GameData?.InjuredPlayerIds.Contains(playerId) ?? false);
+    private List<Player> InjuredPlayers => Panels.Injured;
 
     /// Every editing handler below stops here: the touchline owns a kicked-off half, and a finished match is a record.
     private bool IsLocked(int periodId) =>
@@ -158,6 +139,8 @@ public partial class FormationBuilder
     private GamePlayerPosition?[] BuildSlotAssignments(int periodId) =>
         FormationSlots.Assign(GetAllSlots(periodId), PeriodLineups.GetValueOrDefault(periodId, []));
 
+    private LineupEditor EditorFor(int periodId) => new(PeriodLineups[periodId], GetAllSlots(periodId));
+
     private (int Filled, int Slots) PeriodFill(int periodId)
     {
         var assignments = BuildSlotAssignments(periodId);
@@ -182,49 +165,10 @@ public partial class FormationBuilder
     {
         if (Drag.PlayerId is null || AllPlayers is null || IsLocked(periodId)) return;
 
-        var slots = GetAllSlots(periodId);
-        var position = slots[slotIndex];
-        var lineup = PeriodLineups[periodId];
-
         if (Drag.FromSlotIndex is { } sourceSlotIndex)
-        {
-
-            var assignments = BuildSlotAssignments(periodId);
-            var source = assignments[sourceSlotIndex];
-            var target = assignments[slotIndex];
-
-            if (source is not null)
-            {
-                source.Position = position;
-                source.SlotIndex = slotIndex;
-                if (target is not null)
-                {
-                    target.Position = slots[sourceSlotIndex];
-                    target.SlotIndex = sourceSlotIndex;
-                }
-            }
-        }
+            EditorFor(periodId).MoveOnPitch(sourceSlotIndex, slotIndex);
         else if (AllPlayers.FirstOrDefault(p => p.Id == Drag.PlayerId) is { } player)
-        {
-            var wasFromSub = Drag.FromSub;
-            lineup.RemoveAll(p => p.PlayerId == player.Id);
-
-            // A drop from the bench sends the current occupant back to it; a drop from the list replaces them outright.
-            var existingAtSlot = BuildSlotAssignments(periodId)[slotIndex];
-            if (existingAtSlot is not null)
-            {
-                if (wasFromSub)
-                {
-                    existingAtSlot.SendToBench();
-                }
-                else
-                {
-                    lineup.Remove(existingAtSlot);
-                }
-            }
-
-            lineup.Add(CreateEntry(player, position, slotIndex));
-        }
+            EditorFor(periodId).PutOnPitch(player, slotIndex, fromBench: Drag.FromSub);
 
         Drag.Clear();
         StateHasChanged();
@@ -235,11 +179,7 @@ public partial class FormationBuilder
         if (Drag.PlayerId is null || AllPlayers is null || IsLocked(periodId)) return;
 
         if (AllPlayers.FirstOrDefault(p => p.Id == Drag.PlayerId) is { } player)
-        {
-            var lineup = PeriodLineups[periodId];
-            lineup.RemoveAll(p => p.PlayerId == player.Id);
-            lineup.Add(CreateEntry(player, player.PreferredPosition, slotIndex: null, isSubstitute: true));
-        }
+            EditorFor(periodId).PutOnBench(player);
 
         Drag.Clear();
         StateHasChanged();
@@ -257,18 +197,7 @@ public partial class FormationBuilder
             return;
         }
 
-        var lineup = PeriodLineups[periodId];
-        var position = GetAllSlots(periodId)[slotIndex];
-
-        var fieldEntry = lineup.FirstOrDefault(p => p.PlayerId == Drag.PlayerId && !p.IsSubstitute);
-        var subEntry = lineup.FirstOrDefault(p => p.PlayerId == subPlayerId && p.IsSubstitute);
-        if (fieldEntry is null || subEntry is null) return;
-
-        fieldEntry.SendToBench();
-
-        subEntry.IsSubstitute = false;
-        subEntry.Position = position;
-        subEntry.SlotIndex = slotIndex;
+        if (!EditorFor(periodId).SwapWithSub(Drag.PlayerId.Value, slotIndex, subPlayerId)) return;
 
         Drag.Clear();
         StateHasChanged();
@@ -331,7 +260,7 @@ public partial class FormationBuilder
     {
         if (IsLocked(periodId) || Drag.SelectedSlotIndex is not { } slotIndex) return;
 
-        BuildSlotAssignments(periodId)[slotIndex]?.SendToBench();
+        EditorFor(periodId).BenchAt(slotIndex);
         Drag.Clear();
     }
 
@@ -339,7 +268,7 @@ public partial class FormationBuilder
     {
         if (IsLocked(periodId) || Drag.PlayerId is not { } playerId) return;
 
-        PeriodLineups[periodId].RemoveAll(p => p.PlayerId == playerId);
+        EditorFor(periodId).Remove(playerId);
         Drag.Clear();
     }
 
@@ -350,17 +279,6 @@ public partial class FormationBuilder
         PeriodLineups[periodId].Remove(sub);
         if (Drag.SelectedPlayerId == sub.PlayerId) Drag.Clear();
     }
-
-    private static GamePlayerPosition CreateEntry(
-        Player player, PlayerPosition position, int? slotIndex, bool isSubstitute = false) =>
-        new()
-        {
-            PlayerId = player.Id,
-            Player = player,
-            Position = position,
-            SlotIndex = slotIndex,
-            IsSubstitute = isSubstitute
-        };
 
     /// The shape belongs to the game, so it saves on the spot. The service reshapes the line-ups it holds; the same is done here to the
     /// copy on the page, so a drag not yet saved survives the switch instead of being reloaded away.
@@ -408,17 +326,7 @@ public partial class FormationBuilder
         var sourcePeriod = orderedPeriods[ActivePeriodIndex];
         var nextPeriod = orderedPeriods[ActivePeriodIndex + 1];
 
-        // Fresh entries with Id = 0 — the copy must not claim the source rows' identities.
-        PeriodLineups[nextPeriod.Id] = PeriodLineups[sourcePeriod.Id]
-            .Select(pp => new GamePlayerPosition
-            {
-                PlayerId = pp.PlayerId,
-                Player = pp.Player,
-                Position = pp.Position,
-                SlotIndex = pp.SlotIndex,
-                IsSubstitute = pp.IsSubstitute
-            })
-            .ToList();
+        PeriodLineups[nextPeriod.Id] = LineupEditor.Copy(PeriodLineups[sourcePeriod.Id]);
 
         ActivePeriodIndex++;
 
@@ -497,8 +405,8 @@ public partial class FormationBuilder
         Drag.Clear();
         PeriodLineups[periodId] =
         [
-            .. suggestion.Starters.Select(s => CreateEntry(s.Player, s.Position, s.SlotIndex)),
-            .. suggestion.Substitutes.Select(p => CreateEntry(p, p.PreferredPosition, slotIndex: null, isSubstitute: true))
+            .. suggestion.Starters.Select(s => LineupEditor.Starter(s.Player, s.Position, s.SlotIndex)),
+            .. suggestion.Substitutes.Select(LineupEditor.Substitute)
         ];
 
         Logger.LogInformation("Suggested a lineup for period {PeriodId} of game {GameId}", periodId, GameId);
@@ -541,33 +449,19 @@ public partial class FormationBuilder
 
     private async Task SaveAll()
     {
-        // Re-read rather than believed from the cached game: this page may have been open since before kick-off, in which case its own
-        // copy still has every half down as a plan and the save would be refused one period at a time.
-        var currentResult = await GameService.GetByIdAsync(GameId, Cancellation);
-        if (!Snackbar.ReportFailure(L, currentResult)) return;
-
-        var played = currentResult.Value!.Periods.Where(p => p.HasKickedOff).OrderBy(p => p.PeriodType).ToList();
-        var playedIds = played.Select(p => p.Id).ToHashSet();
-
-        var failures = new List<string>();
-
-        foreach (var (periodId, lineup) in PeriodLineups.Where(entry => !playedIds.Contains(entry.Key)))
+        // The service decides what has been played, not this page's copy: it may have been open since before kick-off.
+        var result = await GameService.SaveLineupsAsync(GameId, PeriodLineups);
+        if (result.IsFailure)
         {
-            var result = await GameService.SavePeriodLineupAsync(periodId, lineup);
-            if (result.IsFailure) failures.Add(UiFeedback.Translate(L, result));
-        }
-
-        if (failures.Count > 0)
-        {
-            Snackbar.Add(L["Save failed: {0}", string.Join("; ", failures)], Severity.Error);
+            if (!result.IsCancelled) Snackbar.Add(L["Save failed: {0}", UiFeedback.Translate(L, result)], Severity.Error);
             return;
         }
 
-        if (played.Count > 0)
+        if (result.Value is { Count: > 0 } played)
         {
             Snackbar.Add(
                 L["Left as the touchline recorded it: {0}",
-                    string.Join(", ", played.Select(p => L[p.PeriodType.DisplayName()].Value))],
+                    string.Join(", ", played.Select(p => L[p.DisplayName()].Value))],
                 Severity.Info);
         }
 

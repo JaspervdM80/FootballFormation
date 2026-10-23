@@ -27,6 +27,7 @@
   fails *silently* when one copy changes.
 - **Value converters**: `List<PlayerPosition>` → comma-separated ints; `List<int>` → comma-separated values. Both need `ValueComparer` for change tracking.
 - **SavePeriodLineupAsync**: Deletes all existing positions, then inserts fresh entities with `Id = 0` to avoid UNIQUE constraint errors (never reuse tracked entity IDs). Both halves run inside one `BeginTransactionAsync` — delete-then-insert needs all of it or none, or a failed insert leaves the period with no lineup at all rather than the one it had. It **refuses a period that `HasKickedOff`** before any of that: the delete would throw away the rows the touchline wrote and hand out new ids, and the only caller is a page whose cache can be an hour stale. See [known_issues](../known_issues/live-match.md).
+- **SaveLineupsAsync** is the builder's Save All: every period it is handed, in that same one transaction, so a failure part-way leaves the whole plan as it was rather than half new. A period that `HasKickedOff` is skipped rather than refused, and its `PeriodType` handed back for the page to name.
 - **Auto-migration**: `db.Database.MigrateAsync()` in Program.cs startup
 - **Never order or compare a date in the query.** SQLite keeps every `DateTime` in a TEXT column,
   so `ORDER BY Date` sorts the text a date was written as. Materialise first, then use

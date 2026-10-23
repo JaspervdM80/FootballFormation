@@ -61,12 +61,21 @@ identical object `/players/{id}/stats` would have built for itself — `StatsSer
 `Assert.Same`, not merely equal figures. `/stats/positions` filters the same list to the regulars
 rather than reporting on them separately. A squad of twenty costs one cache entry, not twenty-one.
 
-**Nothing is ever invalidated; the key changes.** A write bumps `StatsCache.Generation`, which is
+**Nothing is ever invalidated; the key changes.** A write bumps a generation, which is
 part of every key, so earlier entries are not stale but unreachable, and expire on their own after
 fifteen idle minutes. There is no key registry, no tag index and no eviction pass — and a report
 built while a write lands is orphaned rather than served, because `KeyFor` captures the generation
 *before* the load and `Set` stores under that captured key. Cancelling a shared eviction token
 instead would let that in-flight rebuild write its stale result back under the live key.
+
+**A write drops its own team's figures, and only provably so.** Every key carries two generations:
+one per team and one for every team. `StatsCacheInvalidator` looks at what a save is about to write
+and bumps the team's alone when every changed row belongs to the team the context is stamped with —
+a type filtered on its own `TeamId`, or one hanging from such a type by a required key, read off the
+EF model rather than listed. Anything else bumps them all: a player, who is the club's and appears
+in every team's figures; a row naming another team; a context with no team stamped, as the boot steps
+use. The mistake that rule allows is dropping too much, never serving a stale figure — and it is
+what keeps one team's live match from rebuilding every other team's statistics on each goal.
 
 **The bump hangs off `SaveChanges`, not off `ServiceOperation.RunAdminAsync`.** The service shape is
 the other single choke point and the more obvious candidate — `LiveMatchOperation.RunAdminAsync`
@@ -78,10 +87,10 @@ never reaches `SaveChanges` — `ExecuteUpdate`, `ExecuteDelete` or raw SQL. Out
 only the push subscriptions use one (`ExecuteDelete`), and no statistic reads them; one against
 anything a report reads would go behind the interceptor's back.
 
-**Cache the report, never `GetAllWithDetailsAsync`.** `GameBoard` and `FormationBuilder` hand a
-loaded `Game` straight back to `GameService.UpdateAsync`, which attaches it with
-`db.Entry(game).State = EntityState.Modified` — so caching at the service level would put a shared
-mutable graph into a `DbContext` and let a rename corrupt what another reader sees. The statistics
+**Cache the report, never `GetAllWithDetailsAsync`.** The pages edit the `Game` graphs they load in
+place — the game dialog writes into the instance on `GameBoard`, the builder into its line-ups — so
+caching at the service level would hand every reader one shared mutable graph and let one page's
+unsaved edit show up on another's. The statistics
 pages never write, so caching their output is safe.
 
 **The report is auth- and culture-independent, which is why one copy serves everyone.**

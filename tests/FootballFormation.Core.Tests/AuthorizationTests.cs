@@ -187,6 +187,26 @@ public class AuthorizationTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task An_anonymous_caller_cannot_save_a_games_lineups()
+    {
+        var season = await SeedSeasonAsync();
+        var players = await SeedPlayersAsync(1);
+        var game = (await Games.CreateAsync(TestData.Game(id: 0, seasonId: season.Id))).Value!;
+        var period = Read().GamePeriods.First(p => p.GameId == game.Id);
+
+        CurrentUser.IsAdmin = false;
+
+        var result = await Games.SaveLineupsAsync(game.Id, new Dictionary<int, List<GamePlayerPosition>>
+        {
+            [period.Id] = [TestData.Starter(players[0].Id, PlayerPosition.GK, slot: 0)]
+        });
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(ServiceOperation.NotAllowedKey, result.ErrorKey);
+        Assert.Empty(Read().GamePlayerPositions);
+    }
+
+    [Fact]
     public async Task An_anonymous_caller_cannot_drive_a_live_match()
     {
         var season = await SeedSeasonAsync();

@@ -103,6 +103,10 @@ caller's decision.
 
 - **`DbSet.Update` on an entity loaded with its graph** walks the whole graph and marks every row
   `Modified` — renaming an opponent would rewrite the lineup history.
+- **Attaching a caller's entity as `Modified` writes every column**, including the ones the caller
+  never meant to touch and holds a stale copy of. `GameService.UpdateAsync` did that with a game
+  loaded before kick-off and reset the live match; it now loads the row and copies the edited fields
+  across. Do the same for any entity something else also writes.
 - **Re-saving `GamePlayerPosition` needs fresh entities with `Id = 0`.** Re-adding tracked entities
   with existing IDs makes EF attempt an INSERT with the old PK and hit the UNIQUE constraint.
   `SavePeriodLineupAsync` deletes then inserts fresh, both inside one `BeginTransactionAsync` — a

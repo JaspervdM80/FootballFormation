@@ -128,15 +128,17 @@ public class GameService(
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            // A detached write goes by key and never consults the query filter, so confirm the game is the scope's first.
-            if (!await db.GameInScopeAsync(game.Id, cancellationToken))
-                return GameNotInScope(game.Id);
+            var stored = await db.Games.FirstOrDefaultAsync(g => g.Id == game.Id, cancellationToken);
+            if (stored is null) return GameNotInScope(game.Id);
 
-            game.TeamId = db.CurrentTeamId!.Value;
+            if (game.SeasonId != stored.SeasonId)
+            {
+                var placement = await seasons.PlaceAsync(db, game.SeasonId, game.Date, cancellationToken);
+                if (placement.IsFailure) return placement;
+                stored.SeasonId = placement.Value.SeasonId;
+            }
 
-            // Never DbSet.Update here: it walks the whole loaded graph and marks every row Modified, so renaming an opponent would
-            // rewrite the match's entire lineup history. Setting State attaches the root alone.
-            db.Entry(game).State = EntityState.Modified;
+            stored.TakeFixtureDetailsFrom(game);
             await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Updated game vs {Opponent} in season {SeasonId} (ID: {GameId})",
@@ -434,17 +436,59 @@ public class GameService(
                 return Result.Failure("This half has already been played, so its line-up is no longer the builder's to change");
             }
 
-            // Delete-then-insert needs both halves or neither, or a failed insert leaves the period with no line-up at all.
-            await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
+            await ReplaceLineupsAsync(db, new Dictionary<int, List<GamePlayerPosition>> { [periodId] = positions }, cancellationToken);
 
-            var existing = await db.GamePlayerPositions
-                .Where(pp => pp.GamePeriodId == periodId)
-                .ToListAsync(cancellationToken);
+            logger.LogInformation("Saved lineup for period {PeriodId}: {Count} positions",
+                periodId, positions.Count);
+            return Result.Success();
+        });
 
-            db.GamePlayerPositions.RemoveRange(existing);
-            await db.SaveChangesAsync(cancellationToken);
+    // One transaction, so a save failing part-way leaves the plan as it was. A half already played is skipped, for the reason
+    // SavePeriodLineupAsync refuses one, and handed back so the page can name it.
+    public Task<Result<List<PeriodType>>> SaveLineupsAsync(
+        int gameId, IReadOnlyDictionary<int, List<GamePlayerPosition>> lineups, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAdminAsync(currentUser, logger, "save lineup", cancellationToken, async () =>
+        {
+            await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            // Fresh entities with Id = 0 — reusing tracked IDs trips the UNIQUE constraint.
+            var game = await db.Games.WithPeriods().FirstOrDefaultAsync(g => g.Id == gameId, cancellationToken);
+            if (game is null) return GameNotInScope<List<PeriodType>>(gameId);
+
+            var periods = game.Periods.ToDictionary(p => p.Id);
+            var strays = lineups.Keys.Where(id => !periods.ContainsKey(id)).ToList();
+            if (strays.Count > 0)
+            {
+                logger.LogWarning("Cannot save lineups for game {GameId}: periods {PeriodIds} are not its own", gameId, strays);
+                return Result.Failure<List<PeriodType>>("Period not found");
+            }
+
+            var played = lineups.Keys.Select(id => periods[id]).Where(p => p.HasKickedOff).ToList();
+            var toSave = lineups.Where(entry => !periods[entry.Key].HasKickedOff).ToDictionary();
+
+            await ReplaceLineupsAsync(db, toSave, cancellationToken);
+
+            logger.LogInformation("Saved lineups for game {GameId}: {Saved} periods, {Played} already played and left alone",
+                gameId, toSave.Count, played.Count);
+            return Result.Success(played.Select(p => p.PeriodType).Order().ToList());
+        });
+
+    // Delete-then-insert needs every period or none, or a failed insert leaves a period with no line-up at all.
+    private static async Task ReplaceLineupsAsync(
+        AppDbContext db, IReadOnlyDictionary<int, List<GamePlayerPosition>> lineups, CancellationToken cancellationToken)
+    {
+        await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        var periodIds = lineups.Keys.ToList();
+        var existing = await db.GamePlayerPositions
+            .Where(pp => periodIds.Contains(pp.GamePeriodId))
+            .ToListAsync(cancellationToken);
+
+        db.GamePlayerPositions.RemoveRange(existing);
+        await db.SaveChangesAsync(cancellationToken);
+
+        // Fresh entities with Id = 0 — reusing tracked IDs trips the UNIQUE constraint.
+        foreach (var (periodId, positions) in lineups)
+        {
             foreach (var pos in positions)
             {
                 db.GamePlayerPositions.Add(new GamePlayerPosition
@@ -456,14 +500,11 @@ public class GameService(
                     IsSubstitute = pos.IsSubstitute
                 });
             }
+        }
 
-            await db.SaveChangesAsync(cancellationToken);
-            await tx.CommitAsync(cancellationToken);
-
-            logger.LogInformation("Saved lineup for period {PeriodId}: {Count} positions",
-                periodId, positions.Count);
-            return Result.Success();
-        });
+        await db.SaveChangesAsync(cancellationToken);
+        await tx.CommitAsync(cancellationToken);
+    }
 
     // "Game not found", not "not in your team": a write against another team's id should read exactly as one against an id that never was.
     private Result GameNotInScope(int gameId)

@@ -86,7 +86,14 @@ would shift while it is still being played. More computed members support the re
 A game's season is resolved in `GameService.CreateAsync`: `SeasonId == 0` means "auto by date"
 (the game dialog's default) and is looked up via `SeasonService.GetOrCreateForDateAsync`, creating
 the season if the date falls beyond those defined. An explicit id passes through untouched, and
-changing a game's date later never silently moves it between seasons.
+changing a game's date later never silently moves it between seasons. `UpdateAsync` puts a changed
+season through the same `SeasonService.PlaceAsync`, so a season of another team is refused rather
+than leaving a game stamped with one team and filed under the other.
+
+**An edit writes only what the game dialog edits** — `Game.TakeFixtureDetailsFrom` copies those
+fields onto the stored row. The list behind the dialog can be loaded before kick-off, and writing
+the whole row back would reset the clock, the live half, the score and the recorded absences of a
+match being played. The formation is not among them: `SaveFormationAsync` is its only writer.
 
 `Game.IsInRoster(player, squad)` / `Game.SelectRoster(players, squad)` centralize the rule: squad
 players are in unless marked unavailable or recorded injured, guests are out unless explicitly
@@ -95,8 +102,9 @@ added. Use these rather than filtering on the id lists directly.
 **Deliberately blind to `SeasonSquad.IsInjured`**, the same way it is blind to `Player.IsArchived`
 (see above): this judges a game the way it was played, and `PlayerStatsReport.AvailableMinutes` reads
 it for games already complete, so a status set after the fact must never rewrite one. A caller
-building a *future* line-up — `FormationBuilder.RosterPlayers`, `GameDialog.SquadPlayers`,
-`LiveMatch.SubCandidates` — filters injured players out itself, on top of this.
+building a *future* line-up filters injured players out on top of this: `Game.SplitForSelection`
+does it for the formation builder's three panels (selectable, unavailable, injured — nobody in
+two), and `GameDialog.SquadPlayers` and `LiveMatch.SubCandidates` do it themselves.
 
 Injury reaches the rule through the game's own `InjuredPlayerIds` instead, which is history rather
 than a status. `StandingInjuries.RecordAsync` copies the flag into it **once, on the transition to

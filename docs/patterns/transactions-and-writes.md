@@ -3,8 +3,8 @@
 ## When two rows have to agree, one context writes both
 One `SaveChangesAsync` is a transaction, so almost every mutating method here is atomic without
 saying anything: it opens a context, changes what it changes, and saves once. The two that need more
-say so with an explicit `BeginTransactionAsync` — `GameService.SavePeriodLineupAsync`, where
-delete-then-insert is two saves, and the goal writes below, where the second save has to read what
+say so with an explicit `BeginTransactionAsync` — `GameService.SavePeriodLineupAsync` and
+`SaveLineupsAsync`, where delete-then-insert is two saves, and the goal writes below, where the second save has to read what
 the first one wrote.
 
 **What no transaction can cover is two `AppDbContext` instances.** Each operation opens its own from

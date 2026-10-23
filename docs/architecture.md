@@ -26,6 +26,8 @@ Models/
   AppUser.cs             — An account that can sign in: name, login, hash, role, security stamp
   UserRole.cs            — UserRole enum (Admin, ApplicationAdmin); the member name is the role claim value
   FormationSlots.cs      — Formation slots and lineup→slot assignment, shared by every pitch
+  LineupEditor.cs        — The builder's drag and tap edits to one period's line-up, in place, over
+                           FormationSlots.Assign — so the page keeps only the drag state
 Security/
   AppRoles.cs            — AppRoles.Admin/ApplicationAdmin (role claim constants) and AppClaims (uid,
                            display_name, security_stamp, team_id, must_change_password) — the claim
@@ -96,7 +98,9 @@ Services/
                             person is retired rather than taken out of past seasons
   SeasonService.cs        — CRUD + SetCurrent/FindForDate/GetOrCreateForDate/EnsureCurrentSeason/CloseSeasonGaps
   SeasonSquadService.cs   — Squad membership: get/add-several/add-a-pasted-list/former-members/remove/set-guest/copy-forward, with guards
-  GameService.cs          — CRUD + SavePeriodLineupAsync, optional seasonId filter, returns Result<T>
+  GameService.cs          — CRUD + SavePeriodLineupAsync/SaveLineupsAsync, optional seasonId filter,
+                            returns Result<T>. UpdateAsync copies the dialog's fields onto the stored
+                            row (Game.TakeFixtureDetailsFrom) rather than attaching the caller's
   TrainingService.cs      — CRUD over training sessions. The one service whose *reads* are
                             RunAdminAsync too: who missed a training is the only thing in this app
                             that is not a public read. See docs/models/training.md
