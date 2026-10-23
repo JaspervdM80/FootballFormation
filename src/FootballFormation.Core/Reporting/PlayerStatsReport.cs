@@ -77,6 +77,17 @@ public static class PlayerStatsReport
     /// <paramref name="squads"/> is plural because guest status is per season: each game resolves its own, so "All seasons" stays correct.
     public static PlayerStats Build(Player player, IEnumerable<Game> games, SeasonSquads squads)
     {
+        var list = games.ToList();
+        return Build(player, list, squads, MinutesOf(list));
+    }
+
+    // Shared by a whole squad: the walk behind a game's minutes is the costly part, and it comes out the same for every player.
+    internal static IReadOnlyDictionary<Game, GameMinutes> MinutesOf(IEnumerable<Game> games) =>
+        games.Where(g => g.IsComplete).Distinct().ToDictionary(g => g, g => GameMinutesReport.Build(g));
+
+    internal static PlayerStats Build(
+        Player player, IEnumerable<Game> games, SeasonSquads squads, IReadOnlyDictionary<Game, GameMinutes> minutesByGame)
+    {
         var gameStats = new List<PlayerGameStat>();
 
         // Seconds, not minutes, for every accumulator below: rounding each game separately can disagree with rounding the total once, so
@@ -110,7 +121,7 @@ public static class PlayerStatsReport
                 }
             }
 
-            var gameMinutes = GameMinutesReport.Build(game);
+            var gameMinutes = minutesByGame[game];
             var seconds = 0;
 
             foreach (var (position, span) in gameMinutes.PositionsFor(player.Id))

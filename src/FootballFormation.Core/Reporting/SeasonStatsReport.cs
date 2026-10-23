@@ -53,8 +53,10 @@ public static class SeasonStatsReport
             .Select(ResultOf)
             .ToList();
 
+        var minutes = PlayerStatsReport.MinutesOf(games);
+
         var playerStats = players
-            .Select(p => PlayerStatsReport.Build(p, games, squads))
+            .Select(p => PlayerStatsReport.Build(p, games, squads, minutes))
             .ToList();
 
         return new SeasonStats
