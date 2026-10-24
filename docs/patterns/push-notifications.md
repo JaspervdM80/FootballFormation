@@ -34,9 +34,9 @@ Widening the event rather than subscribing at three call sites keeps the guarant
 `LiveMatchOperation` exists for — the notification is part of the write shape, not a line each
 service has to remember.
 
-## The subscribe endpoint is the one anonymous write
+## The subscribe endpoint is an anonymous write
 
-Every other mutation goes through `ServiceOperation.RunAdminAsync`. Nobody signs in to follow a
+Every mutation but this and the password-link reset goes through `ServiceOperation.RunAdminAsync`. Nobody signs in to follow a
 match, so `PushSubscriptionService` uses the plain wrapper and the rate limiter stands in for the
 guard — `"push"` in `Program.cs`, looser than `"login"` because one device legitimately
 re-subscribes whenever the browser rotates its endpoint.

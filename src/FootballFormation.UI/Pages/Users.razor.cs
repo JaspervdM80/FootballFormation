@@ -6,6 +6,8 @@ namespace FootballFormation.UI.Pages;
 public partial class Users
 {
     [Inject] private UserService UserService { get; set; } = null!;
+    [Inject] private PasswordLinkService PasswordLinks { get; set; } = null!;
+    [Inject] private NavigationManager Navigation { get; set; } = null!;
     [Inject] private TeamService TeamService { get; set; } = null!;
     [Inject] private TeamState Team { get; set; } = null!;
     [Inject] private IDialogService DialogService { get; set; } = null!;
@@ -61,11 +63,20 @@ public partial class Users
         var edited = await ShowUserDialogAsync(L["Add User"]);
         if (edited is null) return;
 
+        var withoutPassword = string.IsNullOrEmpty(edited.Password);
         var result = await UserService.CreateAsync(
-            edited.DisplayName, edited.Username, edited.Password, edited.Role, edited.TeamId);
+            edited.DisplayName, edited.Username, withoutPassword ? null : edited.Password, edited.Role, edited.TeamId, edited.Email);
 
         Snackbar.Report(L, result, L["User {0} created", edited.DisplayName]);
         await LoadUsers();
+
+        // Nobody can sign in to it yet, so the link that lets them is the next thing the admin needs. Rendered first: this handler
+        // stays open until the link dialog closes, and the new row would wait with it.
+        if (result.IsSuccess && withoutPassword)
+        {
+            StateHasChanged();
+            await ShowSignInLink(result.Value!.Id, result.Value.DisplayName);
+        }
     }
 
     private async Task OpenEditDialog(UserSummary user)
@@ -74,7 +85,7 @@ public partial class Users
         if (edited is null) return;
 
         var result = await UserService.UpdateAsync(
-            user.Id, edited.DisplayName, edited.Username, edited.Role, edited.TeamId);
+            user.Id, edited.DisplayName, edited.Username, edited.Role, edited.TeamId, edited.Email);
 
         Snackbar.Report(L, result, L["User {0} updated", edited.DisplayName]);
         await LoadUsers();
@@ -89,6 +100,21 @@ public partial class Users
         var result = await UserService.SetPasswordAsync(user.Id, edited.Password);
         Snackbar.Report(L, result, L["Password reset for {0}", user.DisplayName]);
         await LoadUsers();
+    }
+
+    /// The link is shown rather than copied straight away: the clipboard only accepts a copy from the click itself, and this one went
+    /// through the circuit to make the link.
+    private async Task ShowSignInLink(int userId, string displayName)
+    {
+        var result = await PasswordLinks.CreateLinkAsync(userId);
+        if (!Snackbar.ReportFailure(L, result)) return;
+
+        var dialog = await DialogService.ShowAsync<SignInLinkDialog>(L["Sign-in link"], new DialogParameters<SignInLinkDialog>
+        {
+            { x => x.DisplayName, displayName },
+            { x => x.Url, AppRoutes.PasswordLinkUrl(Navigation.BaseUri, result.Value!) }
+        }, UiFeedback.LockedDialog);
+        await dialog.Result;
     }
 
     private async Task DeleteUser(UserSummary user)

@@ -254,7 +254,8 @@ full, and `CLAUDE.md` carries the ones that fail silently.
   teams; a change to the `ApplicationAdmin` role, either way, goes through `UserService.MayChangeAsync`.
   `<AuthorizeView>` alone is enforcement in the render tree only. A write whose
   subject is another team than the one in scope asks `IsAdminOfAsync(teamId)` (`UserService`).
-  `PushSubscriptionService` is the one anonymous write, and it is not a precedent.
+  The anonymous writes are `PushSubscriptionService` and `PasswordLinkService`'s reset request and
+  reset, each because its caller cannot sign in; neither is a precedent for a third.
 - **Anonymous surface**: call out explicitly anything that changes what a signed-out visitor can
   see — the pull request template asks for it. A read with something to hide is guarded at the
   service, not trusted to the caller: `GetCommentsAsync` re-confirms its `includePrivate` flag, and

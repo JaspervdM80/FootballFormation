@@ -1,0 +1,19 @@
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="auth-card-header">
+            <span style="font-size: 2rem;">&#9917;</span>
+            <h2>@Title</h2>
+            <p>@Subtitle</p>
+        </div>
+
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired] public string Subtitle { get; set; } = string.Empty;
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

@@ -62,6 +62,7 @@
                          AriaLabel="@L["More"]"
                          Style="color: var(--ink-subtle);">
                     <MudMenuItem OnClick="() => ResetPassword(context)">@L["Reset Password"]</MudMenuItem>
+                    <MudMenuItem OnClick="() => ShowSignInLink(context.Id, context.DisplayName)">@L["Create sign-in link"]</MudMenuItem>
                     @* Deleting yourself is not offered. The service refuses to remove the last
                        admin either way, but signing yourself out should not be one misclick. *@
                     @if (context.Id != _currentUserId)

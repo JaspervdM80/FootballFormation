@@ -1,3 +1,4 @@
+using FootballFormation.Core.Security;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -45,7 +46,9 @@ public abstract class ServiceTestBase : IDisposable
         Goals = new MatchGoalService(DbFactory, Games, Notifier, CurrentTeam, Time, CurrentUser, NullLogger<MatchGoalService>.Instance);
         Subs = new MatchSubstitutionService(DbFactory, Notifier, CurrentTeam, Time, CurrentUser, NullLogger<MatchSubstitutionService>.Instance);
 
-        Users = new UserService(DbFactory, CurrentUser, CurrentTeam, NullLogger<UserService>.Instance);
+        EmailProtector = new EmailProtector(new FakeDataProtectionProvider(), NullLogger<EmailProtector>.Instance);
+        Users = new UserService(DbFactory, CurrentUser, CurrentTeam, EmailProtector, NullLogger<UserService>.Instance);
+        PasswordLinks = new PasswordLinkService(DbFactory, CurrentUser, EmailProtector, Time, NullLogger<PasswordLinkService>.Instance);
         TeamsAndClubs = new TeamService(DbFactory, CurrentUser, CurrentTeam, Time, NullLogger<TeamService>.Instance);
         TeamSetup = new TeamSetupService(DbFactory, CurrentUser, NullLogger<TeamSetupService>.Instance);
 
@@ -90,6 +93,8 @@ public abstract class ServiceTestBase : IDisposable
     protected MatchGoalService Goals { get; }
     protected MatchSubstitutionService Subs { get; }
     protected UserService Users { get; }
+    protected EmailProtector EmailProtector { get; }
+    protected PasswordLinkService PasswordLinks { get; }
 
     /// Named for both, because the page and the service cover the club above the team as well.
     protected TeamService TeamsAndClubs { get; }

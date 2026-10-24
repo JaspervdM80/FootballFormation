@@ -2,8 +2,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace FootballFormation.Core.Services;
 
-/// What any host needs from Core. The host still supplies the DbContext factories, ICurrentUser and ICurrentTeam, since those read its
-/// own request and storage.
+/// What any host needs from Core. The host still supplies the DbContext factories, ICurrentUser, ICurrentTeam and data protection, since
+/// those read its own request and storage.
 public static class CoreServiceRegistration
 {
     public static IServiceCollection AddFootballFormationCore(this IServiceCollection services)
@@ -28,7 +28,9 @@ public static class CoreServiceRegistration
         services.AddScoped<MatchGoalService>();
         services.AddScoped<MatchSubstitutionService>();
         services.AddScoped<MatchPreferencesService>();
+        services.AddSingleton<EmailProtector>();
         services.AddScoped<UserService>();
+        services.AddScoped<PasswordLinkService>();
         services.AddScoped<TeamService>();
         services.AddScoped<TeamSetupService>();
         services.AddScoped<StatsService>();

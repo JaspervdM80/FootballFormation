@@ -520,7 +520,7 @@ export async function signInAs(page, username) {
 }
 
 /** Creates an admin of the team `page` is showing, through the real dialog, and returns what it can sign in with. */
-export async function addAdmin(page, name) {
+export async function addAdmin(page, name, { email } = {}) {
   // Named per attempt, not per test: Playwright's CI retry re-runs this against the database the
   // failed attempt left behind, and a username is unique — a fixed one would fail the retry on
   // "already exists" rather than on whatever went wrong. See docs/known_issues/authentication.md.
@@ -535,6 +535,7 @@ export async function addAdmin(page, name) {
   const dialog = await openDialog(page);
   await fillField(dialog, 'Name', `${name} admin`);
   await fillField(dialog, 'Username', username);
+  if (email) await fillField(dialog, 'Email', email);
   await dialog.getByLabel('Password', { exact: false }).first().fill(password);
   await dialog.getByLabel('Confirm password', { exact: false }).first().fill(password);
   await submitDialog(page);

@@ -23,7 +23,8 @@ Models/
   TrainingSchedule.cs    — The dates a season's training period implies, as a pure function
   GameComment.cs         — An admin's note on a game: body, public/private, author, edited marker
   MatchType.cs           — MatchType enum (Competition / Cup / Practice) + DisplayName()
-  AppUser.cs             — An account that can sign in: name, login, hash, role, security stamp
+  AppUser.cs             — An account that can sign in: name, login, hash, encrypted email, role, security stamp
+  PasswordLink.cs        — A single-use link to choose an account's password; only its token's hash is stored
   UserRole.cs            — UserRole enum (Admin, ApplicationAdmin); the member name is the role claim value
   FormationSlots.cs      — Formation slots and lineup→slot assignment, shared by every pitch
   LineupEditor.cs        — The builder's drag and tap edits to one period's line-up, in place, over
@@ -38,6 +39,7 @@ Security/
   CurrentTeam.cs         — Answers it: the ff.team cookie while it names a team, else the first team —
                            two targeted queries, never the whole teams table
   TeamAuthority.cs       — The rule itself, as one testable function
+  EmailProtector.cs      — Encrypts an account's email with the host's data-protection key ring
 Data/
   AppDbContext.cs         — EF Core context; DbSets only, mapping lives in Configurations/
   Configurations/         — One IEntityTypeConfiguration per entity, applied by assembly scan
@@ -145,6 +147,8 @@ Services/
                             ValidateCredentialsAsync/FindForSessionAsync/ChangePasswordAsync, which
                             return raw values rather than Result so a failed login says nothing
                             about why. Refuses to leave a team without an admin.
+  PasswordLinkService.cs  — Password links: an admin's copied invite or reset, and the reset mailed
+                            on request. The request and the reset are anonymous writes
 Result.cs                — Result and Result<T>: success/failure with a translatable error key, plus
                            IsCancelled — a failure carrying no message, for a caller who went away
 ```
@@ -291,7 +295,7 @@ season, and a report may walk games spanning several of them.
 `@rendermode InteractiveServer` is declared **per page**, never on `<Routes>` or `<HeadOutlet>`.
 It is on the start page, the trainings list, the three interactive game screens (formation, live,
 result), preferences, settings, users and teams. Everything else is plain server HTML: `/stats`,
-`/stats/positions`, `/players/{id}/stats`, `/games/{id}/overview`, `/games/duties`, `/login`, `/Error`
+`/stats/positions`, `/players/{id}/stats`, `/games/{id}/overview`, `/games/duties`, `/login`, `/forgot-password`, `/reset-password`, `/Error`
 and `/not-found`.
 
 **`/games` and `/players` are split by who is looking.** Each page declares no render mode and renders
@@ -318,7 +322,10 @@ Program.cs                — Entry point: Serilog, EF Core, service registratio
 Components/
   App.razor               — Root component: no render mode, PWA meta tags, the Blazor.start schedule
   Routes.razor            — Router discovering pages from both Web and UI assemblies
+  AuthCard.razor          — The card the three sign-in pages share
   Pages/Login.razor       — The sign-in form (posts to /auth/login)
+  Pages/ForgotPassword.razor — Asks for an address and posts to /auth/forgot-password
+  Pages/ResetPassword.razor  — Spends a password link (posts to /auth/reset-password)
   Pages/Error.razor       — Unhandled-error page, localized
   Pages/NotFound.razor    — /not-found, localized
 Security/
@@ -327,6 +334,13 @@ Security/
                             account is gone; the circuit-side half of OnValidatePrincipal. Also
                             scopes the Admin role to the circuit's own team on a rejoin
   TeamScopedAdminRole.cs  — Drops the Admin role while the team in scope is not the account's own
+Email/
+  EmailConfiguration.cs   — Sender, provider key and the public URL links point at; absent is normal
+  EmailOutbox.cs          — Queues mail and sends it after the response, so timing reveals nothing
+  ResendEmailSender.cs    — The IEmailSender in production: Resend's HTTP API
+  PickupDirectoryEmailSender.cs — Development only: writes each mail to Email:PickupDirectory as JSON,
+                            which is how the browser tests read a reset link back
+  PasswordResetMessage.cs — The forgotten-password mail, in the requester's language
 KeepAlive/
   KeepAliveTracker.cs     — Thread-safe timestamp of the last real request
   KeepAlivePingService.cs — Pings the public /health endpoint for 30 minutes after the last visitor,

@@ -1,6 +1,6 @@
 ---
 name: push-and-pwa
-description: Match notifications and the installable app — LiveMatchEvent kinds, the one anonymous write, the sender that runs outside every scope, culture per subscription, no minutes in a payload, the hand-rolled Web Push crypto, and the service worker's cache rules. Use for Core/Push, Web/Push, PushSubscriptionService, MatchAudienceQuery, service-worker.js, push.js or pwa.js.
+description: Match notifications and the installable app — LiveMatchEvent kinds, the anonymous subscribe write, the sender that runs outside every scope, culture per subscription, no minutes in a payload, the hand-rolled Web Push crypto, and the service worker's cache rules. Use for Core/Push, Web/Push, PushSubscriptionService, MatchAudienceQuery, service-worker.js, push.js or pwa.js.
 ---
 
 # Push notifications and the PWA
@@ -21,7 +21,7 @@ call site that says nothing can never send a notification by accident. A new eve
 is a new member passed explicitly through `LiveMatchOperation` — never a second subscriber at a call
 site, which is the line each service would have to remember.
 
-## The one anonymous write
+## The anonymous subscribe write
 
 `PushSubscriptionService` uses `RunAsync`, not `RunAdminAsync`: nobody signs in to follow a match.
 The `"push"` rate limiter stands in for the guard, and the service validates every field itself —

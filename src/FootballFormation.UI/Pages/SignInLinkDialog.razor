@@ -1,0 +1,41 @@
+@inject IStringLocalizer<Strings> L
+
+<MudDialog Class="dialog-touchline sign-in-link-dialog">
+    <DialogContent>
+        <div class="sign-in-link-body">
+            <p class="sign-in-link-intro">
+                @L["Send this link to {0}. It works once, for {1} days, and lets them choose their own password.", DisplayName, (int)PasswordLinkService.CopiedLinkLifetime.TotalDays]
+            </p>
+            <div id="sign-in-link" class="sign-in-link">@Url</div>
+            @* A plain onclick into js/clipboard.js: the clipboard refuses a copy once the click has gone through the circuit. *@
+            <button type="button" class="overview-btn btn-gold sign-in-link-copy"
+                    onclick="copyElementText('sign-in-link', 'sign-in-link-copied', 'sign-in-link-failed')">
+                <MudIcon Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small" />
+                @L["Copy link"]
+            </button>
+            <div id="sign-in-link-copied" class="inline-notice inline-notice-success" role="status" hidden>
+                @L["Copied to clipboard"]
+            </div>
+            <div id="sign-in-link-failed" class="inline-notice inline-notice-warning" role="alert" hidden>
+                @L["Couldn't copy — try again"]
+            </div>
+            <p class="sign-in-link-note">
+                @L["A new link replaces this one, and setting a password another way retires it."]
+            </p>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" Color="Color.Primary" OnClick="Close">@L["Close"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter, EditorRequired] public string DisplayName { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired] public string Url { get; set; } = string.Empty;
+
+    private void Close() => MudDialog.Cancel();
+}

@@ -55,9 +55,11 @@ The exceptions, each deliberate:
   re-confirms its `includePrivate` flag against `ICurrentUser` — a boolean argument is not believed.
   `TrainingService.GetAllAsync` runs under `RunAdminAsync`: the training register is not public, and
   `StatsService`'s attendance reads lean on it as their guard, which is why they are not cached.
-- **`PushSubscriptionService` is the one anonymous write.** Nobody signs in to follow a match, so it
-  uses `RunAsync`, validates every field itself and sits behind the `"push"` rate limiter. It is not
-  a precedent for a second one.
+- **There are two anonymous writes, each because its caller cannot sign in.**
+  `PushSubscriptionService` — nobody signs in to follow a match — uses `RunAsync`, validates every
+  field itself and sits behind the `"push"` rate limiter. `PasswordLinkService.RequestResetAsync` and
+  `ResetPasswordAsync` — someone who forgot their password — sit behind `"password"`; the request
+  answers the same whether or not an account matched. Neither is a precedent for a third.
 - **`SeasonService`'s boot-time repair steps** (`EnsureEveryTeamHasCurrentSeasonAsync`,
   `CloseSeasonGapsForEveryTeamAsync`) use `RunAsync`: `Program.cs` runs them before anyone has signed
   in, on the raw context factory, and no request can reach them.

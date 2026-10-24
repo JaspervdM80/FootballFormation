@@ -22,6 +22,11 @@ public static class AppRoutes
     public const string StyleGuide = "/styleguide";
     public const string Login = "/login";
     public const string ChooseTeam = "/team/choose";
+    public const string ForgotPassword = "/forgot-password";
+    public const string ResetPassword = "/reset-password";
+
+    public static string PasswordLinkUrl(string baseUri, string token) =>
+        $"{baseUri.TrimEnd('/')}{ResetPassword}?token={Uri.EscapeDataString(token)}";
 
     public static string ChooseTeamThen(string returnUrl) => $"{ChooseTeam}?redirectUri={Uri.EscapeDataString(returnUrl)}";
 

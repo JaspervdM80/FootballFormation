@@ -209,7 +209,7 @@ html, body {
    aimed at it opened the dropdown above instead. 44px is the platform minimum touch target, and the
    width keeps the two buttons far enough apart that a thumb cannot take Opslaan while aiming for
    Annuleren. Found by scripts/touch-targets.mjs, which measures this at 844x390. .dialog-touchline
-   takes this floor without the sheet, for the short dialogs the live screen opens. */
+   takes this floor without the sheet, for short dialogs. */
 @media (max-width: 599.98px), (max-height: 559.98px) {
     .mud-dialog.dialog-sheet .mud-dialog-actions .mud-button-root,
     .mud-dialog.dialog-touchline .mud-dialog-actions .mud-button-root {
@@ -2520,8 +2520,8 @@ a.action-btn {
     display: none;
 }
 
-/* Plain <button>s and <a>s with no MudButton layout to inherit — on /games/{id}/overview and in
-   CalendarSubscribe, which /games shows too. .btn-gold only paints. Not .overview-capture: that name belongs to the captured block. */
+/* Plain <button>s and <a>s with no MudButton layout to inherit. .btn-gold only paints. Not .overview-capture: that name belongs to the
+   captured block. */
 .overview-btn {
     display: inline-flex;
     align-items: center;
@@ -2552,4 +2552,102 @@ a.action-btn {
     .notify-button {
         width: 100%;
     }
+}
+
+/* Inset like the content above it rather than MudBlazor's 8px, so Close lines up with the Copy button. */
+.mud-dialog.sign-in-link-dialog .mud-dialog-actions {
+    padding: 0 24px 20px;
+}
+
+/* --- Sign-in card ---
+   /login, /forgot-password and /reset-password: static pages in the host project, which a scoped file there would not reach. */
+.auth-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100dvh - 120px);
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 380px;
+    background: var(--gradient-card);
+    border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+    border-radius: 16px;
+    padding: 40px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+.auth-card-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.auth-card-header h2 {
+    color: var(--ink);
+    font-weight: 700;
+    margin: 8px 0 4px;
+}
+
+.auth-card-header p {
+    color: var(--ink-muted);
+    font-size: 0.875rem;
+}
+
+.auth-field {
+    margin-bottom: 16px;
+}
+
+.auth-field:last-of-type {
+    margin-bottom: 24px;
+}
+
+.auth-field label {
+    display: block;
+    color: var(--ink-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+}
+
+.auth-field input {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--surface-page);
+    border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
+    border-radius: 8px;
+    color: var(--ink);
+    font-size: 1rem;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.auth-submit {
+    width: 100%;
+    padding: 12px;
+    background: var(--gradient-primary);
+    border: none;
+    border-radius: 8px;
+    color: var(--club-on-primary);
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+.auth-links {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.auth-links a {
+    color: var(--ink-muted);
+    font-size: 0.8rem;
+    text-decoration: none;
+    /* The links are small text, but a thumb still needs the full floor to land on one. */
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
 }

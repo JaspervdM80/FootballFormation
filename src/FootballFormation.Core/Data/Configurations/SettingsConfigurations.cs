@@ -42,16 +42,37 @@ internal sealed class AppUserConfiguration : IEntityTypeConfiguration<AppUser>
         entity.Property(u => u.PasswordHash).IsRequired();
         entity.Property(u => u.Role).IsRequired();
         entity.Property(u => u.SecurityStamp).IsRequired().HasMaxLength(64);
+        entity.Property(u => u.ProtectedEmail).HasMaxLength(1024);
 
         // Two accounts sharing a login would make the credential check ambiguous — it takes the
         // first match. UserService checks for a duplicate before writing; this is the net under it.
         entity.HasIndex(u => u.Username).IsUnique();
 
-        // Restrict, as Club -> Team: deleting a team must not take the accounts that run it, which would revoke an admin without
-        // passing the last-admin rule. TeamService refuses with a readable message instead.
+        // Restrict, as Club -> Team: deleting a team must not take the accounts that run it behind the last-admin rule's back.
+        // TeamService.DeleteTeamAsync removes them itself.
         entity.HasOne<Team>()
             .WithMany()
             .HasForeignKey(u => u.TeamId)
             .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class PasswordLinkConfiguration : IEntityTypeConfiguration<PasswordLink>
+{
+    public void Configure(EntityTypeBuilder<PasswordLink> entity)
+    {
+        entity.ToTable("PasswordLinks");
+
+        entity.HasKey(l => l.Id);
+        entity.Property(l => l.TokenHash).IsRequired().HasMaxLength(64);
+        entity.Property(l => l.SecurityStamp).IsRequired().HasMaxLength(64);
+
+        entity.HasIndex(l => l.TokenHash).IsUnique();
+
+        // Cascade: a link to an account that no longer exists opens nothing and has no history worth keeping.
+        entity.HasOne<AppUser>()
+            .WithMany()
+            .HasForeignKey(l => l.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

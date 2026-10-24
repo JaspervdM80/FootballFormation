@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.DataProtection;
 using FootballFormation.UI.Navigation;
 using FootballFormation.UI.Security;
 using FootballFormation.Web.Components;
+using FootballFormation.Web.Email;
 using FootballFormation.Web.KeepAlive;
 using FootballFormation.Web.Push;
 using FootballFormation.Web.Security;
@@ -98,6 +99,16 @@ try
         .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
     builder.Services.AddHostedService<MatchNotificationSender>();
 
+    var email = EmailConfiguration.Read(builder.Configuration, builder.Environment.IsDevelopment());
+    builder.Services.AddSingleton(email);
+    builder.Services.AddHttpClient(ResendEmailSender.HttpClientName, client => client.Timeout = TimeSpan.FromSeconds(15));
+    if (email.PickupDirectory is not null)
+        builder.Services.AddSingleton<IEmailSender, PickupDirectoryEmailSender>();
+    else
+        builder.Services.AddSingleton<IEmailSender, ResendEmailSender>();
+    builder.Services.AddSingleton<EmailOutbox>();
+    builder.Services.AddHostedService(sp => sp.GetRequiredService<EmailOutbox>());
+
     builder.Services.AddScoped<SeasonState>();
     builder.Services.AddScoped<TeamState>();
     builder.Services.AddScoped<NavigationTrail>();
@@ -185,9 +196,14 @@ try
             context.HttpContext.Response.Headers.RetryAfter = "60";
 
             // The /push endpoints answer a script, not a browser navigation — a redirect to the sign-in form would be nonsense there.
-            if (HttpMethods.IsPost(context.HttpContext.Request.Method)
-                && !context.HttpContext.Request.Path.StartsWithSegments("/push"))
-                context.HttpContext.Response.Redirect("/login?error=throttled");
+            var request = context.HttpContext.Request;
+            if (HttpMethods.IsPost(request.Method) && !request.Path.StartsWithSegments("/push"))
+                context.HttpContext.Response.Redirect(request.Path.Value switch
+                {
+                    "/auth/forgot-password" => $"{AppRoutes.ForgotPassword}?error=throttled",
+                    "/auth/reset-password" => $"{AppRoutes.ResetPassword}?error=throttled",
+                    _ => $"{AppRoutes.Login}?error=throttled"
+                });
 
             return ValueTask.CompletedTask;
         };
@@ -212,6 +228,17 @@ try
                 factory: _ => new FixedWindowRateLimiterOptions
                 {
                     PermitLimit = 20,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0
+                }));
+
+        // Requesting a reset mail and spending a link are anonymous writes, so this stands where the admin guard would.
+        options.AddPolicy("password", httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: ClientIp.Of(httpContext),
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 5,
                     Window = TimeSpan.FromMinutes(1),
                     QueueLimit = 0
                 }));

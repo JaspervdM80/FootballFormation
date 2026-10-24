@@ -12,6 +12,10 @@ public class AppUser
 
     public string PasswordHash { get; set; } = string.Empty;
 
+    /// Where a forgotten password's link is mailed, encrypted by <see cref="Security.EmailProtector"/> so a copy of the database is not a
+    /// list of the coaches' addresses. Null when none was given.
+    public string? ProtectedEmail { get; set; }
+
     public UserRole Role { get; set; } = UserRole.Admin;
 
     /// Which team the <see cref="UserRole.Admin"/> role runs. Null on an application admin, who runs all of them — see

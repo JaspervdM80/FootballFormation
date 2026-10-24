@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Identity;
 
 namespace FootballFormation.Core.Services;
@@ -9,11 +10,12 @@ public class UserService(
     IDbContextFactory<AppDbContext> dbFactory,
     ICurrentUser currentUser,
     ICurrentTeam currentTeam,
+    EmailProtector emailProtector,
     ILogger<UserService> logger)
 {
     public const int MinPasswordLength = 8;
 
-    private static readonly PasswordHasher<AppUser> Hasher = new();
+    internal static readonly PasswordHasher<AppUser> Hasher = new();
     private static readonly AppUser DummyUser = new();
     private static readonly string DummyHash = Hasher.HashPassword(DummyUser, "dummy-password-for-timing");
 
@@ -93,12 +95,16 @@ public class UserService(
 
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
-            var users = await db.Users
+            var accounts = await db.Users
                 .AsNoTracking()
                 .Where(u => everyTeam || (u.TeamId != null && u.TeamId == teamId))
                 .OrderBy(u => u.DisplayName)
-                .Select(u => new UserSummary(u.Id, u.DisplayName, u.Username, u.Role, u.TeamId))
                 .ToListAsync(cancellationToken);
+
+            var users = accounts
+                .Select(u => new UserSummary(
+                    u.Id, u.DisplayName, u.Username, u.Role, u.TeamId, emailProtector.Unprotect(u.ProtectedEmail)))
+                .ToList();
 
             logger.LogDebug("Retrieved {Count} users", users.Count);
             return Result.Success(users);
@@ -121,9 +127,9 @@ public class UserService(
     }
 
     /// A null <paramref name="teamId"/> means the team in scope — the one /users is looking at, and the only one an ordinary admin
-    /// could name anyway.
+    /// could name anyway. An empty <paramref name="password"/> leaves the account unusable until someone opens a password link for it.
     public Task<Result<AppUser>> CreateAsync(
-        string displayName, string username, string password, UserRole role, int? teamId = null,
+        string displayName, string username, string? password, UserRole role, int? teamId = null, string? email = null,
         CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAdminAsync(currentUser, logger, "create the user", cancellationToken, async () =>
         {
@@ -138,7 +144,7 @@ public class UserService(
             var manage = await MayManageAsync(teamId);
             if (manage.IsFailure) return manage.To<AppUser>();
 
-            if (password.Length < MinPasswordLength)
+            if (!string.IsNullOrEmpty(password) && password.Length < MinPasswordLength)
                 return Result.Failure<AppUser>(PasswordTooShortKey, MinPasswordLength);
 
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
@@ -150,15 +156,19 @@ public class UserService(
             if (await db.Users.AnyAsync(u => u.Username == username, cancellationToken))
                 return Result.Failure<AppUser>(DuplicateLoginKey, username);
 
+            var address = await ValidateEmailAsync(db, email, excludingId: null, cancellationToken);
+            if (address.IsFailure) return address.To<AppUser>();
+
             var user = new AppUser
             {
                 DisplayName = displayName.Trim(),
                 Username = username,
                 Role = role,
                 TeamId = teamId,
+                ProtectedEmail = emailProtector.Protect(email),
                 SecurityStamp = NewStamp()
             };
-            user.PasswordHash = Hasher.HashPassword(user, password);
+            user.PasswordHash = Hasher.HashPassword(user, string.IsNullOrEmpty(password) ? UnguessablePassword() : password);
 
             db.Users.Add(user);
             await db.SaveChangesAsync(cancellationToken);
@@ -169,9 +179,9 @@ public class UserService(
         });
 
     /// No password here on purpose: changing one has to invalidate sessions, so it is its own action (<see cref="SetPasswordAsync"/>).
-    /// A null <paramref name="teamId"/> leaves the account on the team it is already on.
+    /// A null <paramref name="teamId"/> leaves the account on the team it is already on; a null <paramref name="email"/> clears it.
     public Task<Result> UpdateAsync(
-        int id, string displayName, string username, UserRole role, int? teamId = null,
+        int id, string displayName, string username, UserRole role, int? teamId = null, string? email = null,
         CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAdminAsync(currentUser, logger, "update the user", cancellationToken, async () =>
         {
@@ -202,6 +212,9 @@ public class UserService(
             if (await db.Users.AnyAsync(u => u.Username == username && u.Id != id, cancellationToken))
                 return Result.Failure(DuplicateLoginKey, username);
 
+            var address = await ValidateEmailAsync(db, email, excludingId: id, cancellationToken);
+            if (address.IsFailure) return address;
+
             // Promoting the account out of the role and handing it to another team leave this one as unrun as deleting it would.
             if (user.Role == UserRole.Admin && (role != UserRole.Admin || teamId != user.TeamId)
                 && await IsLastAdminOfTeamAsync(db, id, user.TeamId, cancellationToken))
@@ -213,6 +226,10 @@ public class UserService(
 
             user.DisplayName = displayName.Trim();
             user.Username = username;
+
+            // Each Protect is a fresh ciphertext, so an unchanged address is left alone rather than rewritten on every save.
+            if (emailProtector.Unprotect(user.ProtectedEmail) != EmailProtector.Normalise(email))
+                user.ProtectedEmail = emailProtector.Protect(email);
 
             // Only when the authority actually changed: a rename should not sign the user out. The team is part of that authority now,
             // so a move between teams rolls the stamp as surely as a role change does.
@@ -392,6 +409,18 @@ public class UserService(
             : Result.Failure(NotApplicationAdminKey);
     }
 
+    /// Unique across every account, so a forgotten-password request names exactly one.
+    private async Task<Result> ValidateEmailAsync(
+        AppDbContext db, string? email, int? excludingId, CancellationToken cancellationToken)
+    {
+        if (EmailProtector.Normalise(email) is not { } normalised) return Result.Success();
+
+        if (!EmailProtector.IsValid(normalised)) return Result.Failure(InvalidEmailKey);
+
+        var owner = await emailProtector.FindOwnerAsync(db.Users.AsNoTracking(), normalised, cancellationToken);
+        return owner is null || owner.Id == excludingId ? Result.Success() : Result.Failure(DuplicateEmailKey);
+    }
+
     private static Result ValidateFields(string displayName, string username)
     {
         if (string.IsNullOrWhiteSpace(displayName)) return Result.Failure("Name is required");
@@ -403,7 +432,10 @@ public class UserService(
 
     private static Result NotFound(int id) => Result.Failure("User with ID {0} not found", id);
 
-    private static string NewStamp() => Guid.NewGuid().ToString("N");
+    internal static string NewStamp() => Guid.NewGuid().ToString("N");
+
+    /// A real hash of something nobody chose, so the account cannot sign in and the credential check needs no special case.
+    private static string UnguessablePassword() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
 
     private const string DuplicateLoginKey = "A user with username {0} already exists";
     private const string LastTeamAdminKey = "{0} would be left without an administrator";
@@ -412,6 +444,8 @@ public class UserService(
     private const string NotThisTeamKey = "You can only manage accounts for your own team";
     private const string TeamRequiredKey = "An administrator needs a team";
     private const string PasswordTooShortKey = "Password must be at least {0} characters";
+    private const string InvalidEmailKey = "That is not a valid email address";
+    private const string DuplicateEmailKey = "Another account already uses that email address";
 
     public enum PasswordChangeResult
     {
