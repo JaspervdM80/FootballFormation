@@ -106,7 +106,7 @@ Serilog writes to the console and to a `logs` folder beside the database (`APP_D
 already in use: `LogDebug` for a read, `LogInformation` for a mutation including the entity id,
 `LogWarning` for an expected miss. `LogError` belongs to `ServiceOperation` — do not raise one
 yourself. Always structured placeholders (`{PlayerId}`), never interpolation, or the properties stop
-being queryable in the log files.
+being queryable in the log files. Debug reaches the sinks only under `ASPNETCORE_ENVIRONMENT=Development`.
 
 ## No interfaces for services
 

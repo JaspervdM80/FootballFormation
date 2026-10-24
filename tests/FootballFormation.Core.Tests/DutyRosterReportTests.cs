@@ -85,4 +85,17 @@ public class DutyRosterReportTests
         Assert.False(roster.HasAnyDuty);
         Assert.Single(roster.Rows);
     }
+
+    [Fact]
+    public void The_roster_a_failed_load_shows_reads_as_a_season_with_no_games()
+    {
+        // The duties page tells "no games yet" from "no duties entered" by the rows, so the stand-in must have none.
+        var empty = DutyRoster.Empty;
+        var built = DutyRosterReport.Build([], Today);
+
+        Assert.Empty(empty.Rows);
+        Assert.Equal(
+            (built.ShowsDressingRoom, built.ShowsFlags, built.ShowsWash),
+            (empty.ShowsDressingRoom, empty.ShowsFlags, empty.ShowsWash));
+    }
 }

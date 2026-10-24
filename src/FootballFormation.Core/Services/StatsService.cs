@@ -1,9 +1,12 @@
+using System.Globalization;
 using FootballFormation.Core.Reporting;
 
 namespace FootballFormation.Core.Services;
 
 // Paired because guest status is per season, so the figures are only correct against these squads.
 public sealed record SeasonStatsView(SeasonStats Stats, SeasonSquads Squads);
+
+public sealed record FixtureBoards(HomeDashboard Dashboard, DutyRoster Duties);
 
 // One entry covers all three statistics pages: SeasonStatsReport builds its per-player figures by
 // calling PlayerStatsReport unchanged. See docs/patterns/service-structure.md.
@@ -41,6 +44,26 @@ public class StatsService(
 
             logger.LogDebug("Built statistics for season {SeasonId} over {Count} games",
                 seasonId, allGames.Count);
+            return Result.Success(view);
+        });
+
+    // Keyed by the day and the culture as well — see docs/patterns/service-structure.md.
+    public Task<Result<FixtureBoards>> GetFixtureBoardsAsync(int? seasonId, CancellationToken cancellationToken = default) =>
+        ServiceOperation.RunAsync(logger, "load games", cancellationToken, async () =>
+        {
+            var today = time.GetLocalNow().Date;
+            var key = cache.KeyFor(await currentTeam.GetIdAsync(), $"fixtures:{seasonId}:{today:yyyy-MM-dd}:{CultureInfo.CurrentCulture.Name}");
+
+            if (cache.TryGet<FixtureBoards>(key, out var hit)) return Result.Success(hit);
+
+            var gamesResult = await games.GetAllAsync(seasonId, cancellationToken);
+            if (gamesResult.IsFailure) return gamesResult.To<FixtureBoards>();
+
+            var view = new FixtureBoards(
+                HomeDashboardReport.Build(gamesResult.Value!, today),
+                DutyRosterReport.Build(gamesResult.Value!, today));
+
+            cache.Set(key, view);
             return Result.Success(view);
         });
 
