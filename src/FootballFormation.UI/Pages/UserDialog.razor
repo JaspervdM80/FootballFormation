@@ -9,6 +9,10 @@
                               RequiredError="@L["Name is required"]" MaxLength="100" Class="mb-3" />
                 <MudTextField @bind-Value="Username" Label="@L["Username"]" Required="true"
                               RequiredError="@L["Username is required"]" MaxLength="50" Class="mb-3" />
+                <MudTextField @bind-Value="Email" Label="@L["Email"]" InputType="InputType.Email"
+                              MaxLength="@EmailProtector.MaxLength"
+                              Validation="@(new Func<string, string?>(ValidateEmail))"
+                              HelperText="@L["Optional. Lets them reset a forgotten password themselves."]" Class="mb-3" />
                 @* Locked rather than absent when the signed-in admin may not change this account's role: an empty select would
                    read as a page that failed to load, and offering a role UserService will refuse is a dead end. *@
                 <MudSelect @bind-Value="Role" Label="@L["Role"]" Class="mb-3" Disabled="@RoleLocked"
@@ -37,7 +41,9 @@
                 <MudTextField @bind-Value="Password" Label="@L["Password"]"
                               InputType="InputType.Password"
                               Validation="@(new Func<string, string?>(ValidatePassword))"
-                              HelperText="@L["At least {0} characters", UserService.MinPasswordLength]"
+                              HelperText="@(PasswordOnly
+                                  ? L["At least {0} characters", UserService.MinPasswordLength].Value
+                                  : L["At least {0} characters, or leave empty and send them a sign-in link instead", UserService.MinPasswordLength].Value)"
                               Class="mb-3" />
                 <MudTextField @bind-Value="ConfirmPassword" Label="@L["Confirm password"]"
                               InputType="InputType.Password"
@@ -48,7 +54,7 @@
                 @* Editing an existing account. Changing the password from here would silently sign
                    them out mid-session, so it is its own action on the row menu instead. *@
                 <MudText Typo="Typo.caption" Style="color: var(--ink-muted);">
-                    @L["Use Reset Password to give this account a new password."]
+                    @L["Use Reset Password or a sign-in link to give this account a new password."]
                 </MudText>
             }
         </MudForm>

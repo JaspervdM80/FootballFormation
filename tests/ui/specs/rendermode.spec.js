@@ -50,6 +50,17 @@ test('the team chooser opens no circuit', async ({ page }) => {
   expect(sockets, 'the team chooser opened a circuit').toEqual([]);
 });
 
+// Reached from a mail on a phone that may never have opened the app: a form and nothing else.
+for (const [path, heading] of [['/forgot-password', 'Forgot your password?'], ['/reset-password?token=none', 'Choose a password']]) {
+  test(`${path} opens no circuit`, async ({ page }) => {
+    const sockets = watchSockets(page);
+
+    await openSettled(page, path);
+    await expect(page.getByRole('heading', { name: heading, exact: false }).first()).toBeVisible();
+    expect(sockets, `${path} opened a circuit`).toEqual([]);
+  });
+}
+
 // The fixture list and the squad are what a parent opens most; only an admin gets their island.
 for (const [path, heading, content] of [['/games', 'Games', '.game-row'], ['/players', 'Squad', '.player-name-cell']]) {
   test(`${path} opens no circuit for a visitor`, async ({ page }) => {

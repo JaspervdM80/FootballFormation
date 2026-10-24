@@ -601,7 +601,6 @@
   <data name="ApplicationAdmin" xml:space="preserve"><value>Applicatiebeheerder</value></data>
   <data name="Confirm password" xml:space="preserve"><value>Wachtwoord bevestigen</value></data>
   <data name="At least {0} characters" xml:space="preserve"><value>Minimaal {0} tekens</value></data>
-  <data name="Use Reset Password to give this account a new password." xml:space="preserve"><value>Gebruik Wachtwoord opnieuw instellen om dit account een nieuw wachtwoord te geven.</value></data>
   <data name="User {0} created" xml:space="preserve"><value>Gebruiker {0} aangemaakt</value></data>
   <data name="User {0} updated" xml:space="preserve"><value>Gebruiker {0} bijgewerkt</value></data>
   <data name="User {0} deleted" xml:space="preserve"><value>Gebruiker {0} verwijderd</value></data>
@@ -916,4 +915,39 @@
   <data name="Pick at least one player" xml:space="preserve"><value>Kies minstens één speler</value></data>
   <data name="The list has no players in it" xml:space="preserve"><value>Er staan geen spelers in de lijst</value></data>
   <data name="Line {0} of the list cannot be added" xml:space="preserve"><value>Regel {0} van de lijst kan niet worden toegevoegd</value></data>
+  <!-- Password links: the sign-in link on /users, the forgotten-password mail and the pages it leads to. -->
+  <data name="Email" xml:space="preserve"><value>E-mail</value></data>
+  <data name="Optional. Lets them reset a forgotten password themselves." xml:space="preserve"><value>Optioneel. Hiermee kan diegene een vergeten wachtwoord zelf herstellen.</value></data>
+  <data name="At least {0} characters, or leave empty and send them a sign-in link instead" xml:space="preserve"><value>Minstens {0} tekens, of laat leeg en stuur in plaats daarvan een inloglink</value></data>
+  <data name="Use Reset Password or a sign-in link to give this account a new password." xml:space="preserve"><value>Gebruik Wachtwoord opnieuw instellen of een inloglink om dit account een nieuw wachtwoord te geven.</value></data>
+  <data name="That is not a valid email address" xml:space="preserve"><value>Dat is geen geldig e-mailadres</value></data>
+  <data name="Another account already uses that email address" xml:space="preserve"><value>Een ander account gebruikt dat e-mailadres al</value></data>
+  <data name="Create sign-in link" xml:space="preserve"><value>Inloglink maken</value></data>
+  <data name="Sign-in link" xml:space="preserve"><value>Inloglink</value></data>
+  <data name="Send this link to {0}. It works once, for {1} days, and lets them choose their own password." xml:space="preserve"><value>Stuur deze link naar {0}. Hij werkt één keer, {1} dagen lang, en daarmee kiest diegene een eigen wachtwoord.</value></data>
+  <data name="Copy link" xml:space="preserve"><value>Link kopiëren</value></data>
+  <data name="A new link replaces this one, and setting a password another way retires it." xml:space="preserve"><value>Een nieuwe link vervangt deze, en een wachtwoord dat op een andere manier wordt ingesteld maakt hem ongeldig.</value></data>
+  <data name="create the sign-in link" xml:space="preserve"><value>de inloglink maken</value></data>
+  <data name="request a password reset" xml:space="preserve"><value>een nieuw wachtwoord aanvragen</value></data>
+  <data name="check the sign-in link" xml:space="preserve"><value>de inloglink controleren</value></data>
+  <data name="This link has expired or has already been used" xml:space="preserve"><value>Deze link is verlopen of al gebruikt</value></data>
+  <data name="Your password is set. Sign in with it now." xml:space="preserve"><value>Je wachtwoord is ingesteld. Log er nu mee in.</value></data>
+  <data name="Forgot your password?" xml:space="preserve"><value>Wachtwoord vergeten?</value></data>
+  <data name="Enter the email address of your account and we&#x27;ll mail you a link to choose a new one." xml:space="preserve"><value>Vul het e-mailadres van je account in, dan mailen we je een link om een nieuw wachtwoord te kiezen.</value></data>
+  <data name="Mail is not set up here. Ask an administrator for a sign-in link." xml:space="preserve"><value>Mail is hier niet ingesteld. Vraag een beheerder om een inloglink.</value></data>
+  <data name="Too many attempts. Wait a minute and try again." xml:space="preserve"><value>Te veel pogingen. Wacht een minuut en probeer het opnieuw.</value></data>
+  <data name="If an account uses that address, a link is on its way. Check your inbox in a minute." xml:space="preserve"><value>Als een account dat adres gebruikt, is er een link onderweg. Kijk over een minuutje in je inbox.</value></data>
+  <data name="Too many attempts. Wait a minute and open the link again." xml:space="preserve"><value>Te veel pogingen. Wacht een minuut en open de link opnieuw.</value></data>
+  <data name="Send link" xml:space="preserve"><value>Link versturen</value></data>
+  <data name="Back to sign in" xml:space="preserve"><value>Terug naar inloggen</value></data>
+  <data name="Choose a password" xml:space="preserve"><value>Kies een wachtwoord</value></data>
+  <data name="Pick the password you will sign in with from now on." xml:space="preserve"><value>Kies het wachtwoord waarmee je voortaan inlogt.</value></data>
+  <data name="Save password" xml:space="preserve"><value>Wachtwoord opslaan</value></data>
+  <data name="Send me a new link" xml:space="preserve"><value>Stuur me een nieuwe link</value></data>
+  <data name="Something went wrong. Try again." xml:space="preserve"><value>Er ging iets mis. Probeer het opnieuw.</value></data>
+  <data name="Hello {0}," xml:space="preserve"><value>Hallo {0},</value></data>
+  <data name="Someone asked for a new password for the account {0}." xml:space="preserve"><value>Iemand heeft een nieuw wachtwoord aangevraagd voor het account {0}.</value></data>
+  <data name="Choose a new password" xml:space="preserve"><value>Kies een nieuw wachtwoord</value></data>
+  <data name="The link works once and expires in {0} minutes." xml:space="preserve"><value>De link werkt één keer en verloopt over {0} minuten.</value></data>
+  <data name="Didn&#x27;t ask for this? Then ignore this email; your password stays as it is." xml:space="preserve"><value>Niet aangevraagd? Negeer deze e-mail dan; je wachtwoord blijft zoals het is.</value></data>
 </root>

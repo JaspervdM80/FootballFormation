@@ -1,64 +1,64 @@
 ﻿@page "/login"
+@using FootballFormation.Web.Email
 @using Microsoft.AspNetCore.WebUtilities
 @using Microsoft.Extensions.Localization
 @inject NavigationManager Navigation
+@inject EmailConfiguration Email
 @inject IStringLocalizer<FootballFormation.UI.Strings> L
 @attribute [AllowAnonymous]
 
 <PageTitle>@L["Login"]</PageTitle>
 
-<div style="display: flex; justify-content: center; align-items: center; min-height: calc(100dvh - 120px);">
-    <div style="width: 100%; max-width: 380px; background: var(--gradient-card); border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent); border-radius: 16px; padding: 40px; box-shadow: 0 8px 32px rgba(0,0,0,0.08);">
-        <div style="text-align: center; margin-bottom: 32px;">
-            <span style="font-size: 2rem;">&#9917;</span>
-            <h2 style="color: var(--ink); font-weight: 700; margin: 8px 0 4px;">@L["Admin Login"]</h2>
-            <p style="color: var(--ink-muted); font-size: 0.875rem;">@L["Sign in to manage formations"]</p>
+<AuthCard Title="@L["Admin Login"]" Subtitle="@L["Sign in to manage formations"]">
+    @if (_throttled)
+    {
+        <div class="inline-notice inline-notice-error" style="text-align: center;" role="alert">
+            @L["Too many sign-in attempts. Wait a minute and try again."]
+        </div>
+    }
+    else if (_showError)
+    {
+        <div class="inline-notice inline-notice-error" style="text-align: center;" role="alert">
+            @L["Invalid username or password"]
+        </div>
+    }
+    else if (_reset)
+    {
+        <div class="inline-notice inline-notice-success" style="text-align: center;" role="status">
+            @L["Your password is set. Sign in with it now."]
+        </div>
+    }
+
+    <form method="post" action="/auth/login" data-enhance="false">
+        <AntiforgeryToken />
+        <input type="hidden" name="returnUrl" value="@_returnUrl" />
+
+        <div class="auth-field">
+            <label for="login-username">@L["Username"]</label>
+            <input id="login-username" type="text" name="username" required autocomplete="username" autofocus />
         </div>
 
-        @if (_throttled)
-        {
-            <div class="inline-notice inline-notice-error" style="text-align: center;" role="alert">
-                @L["Too many sign-in attempts. Wait a minute and try again."]
-            </div>
-        }
-        else if (_showError)
-        {
-            <div class="inline-notice inline-notice-error" style="text-align: center;" role="alert">
-                @L["Invalid username or password"]
-            </div>
-        }
-
-        <form method="post" action="/auth/login" data-enhance="false">
-            <AntiforgeryToken />
-            <input type="hidden" name="returnUrl" value="@_returnUrl" />
-
-            <div style="margin-bottom: 16px;">
-                <label style="display: block; color: var(--ink-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">@L["Username"]</label>
-                <input type="text" name="username" required autocomplete="username" autofocus
-                       style="width: 100%; padding: 10px 14px; background: var(--surface-page); border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent); border-radius: 8px; color: var(--ink); font-size: 1rem; outline: none; box-sizing: border-box;" />
-            </div>
-
-            <div style="margin-bottom: 24px;">
-                <label style="display: block; color: var(--ink-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">@L["Password"]</label>
-                <input type="password" name="password" required autocomplete="current-password"
-                       style="width: 100%; padding: 10px 14px; background: var(--surface-page); border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent); border-radius: 8px; color: var(--ink); font-size: 1rem; outline: none; box-sizing: border-box;" />
-            </div>
-
-            <button type="submit"
-                    style="width: 100%; padding: 12px; background: var(--gradient-primary); border: none; border-radius: 8px; color: var(--club-on-primary); font-weight: 700; font-size: 0.95rem; cursor: pointer;">
-                @L["Sign In"]
-            </button>
-        </form>
-
-        <div style="text-align: center; margin-top: 20px;">
-            <a href="@AppRoutes.Home" style="color: var(--ink-muted); font-size: 0.8rem; text-decoration: none;">@L["Continue as viewer"]</a>
+        <div class="auth-field">
+            <label for="login-password">@L["Password"]</label>
+            <input id="login-password" type="password" name="password" required autocomplete="current-password" />
         </div>
+
+        <button type="submit" class="auth-submit">@L["Sign In"]</button>
+    </form>
+
+    <div class="auth-links">
+        @if (Email.IsConfigured)
+        {
+            <a href="@AppRoutes.ForgotPassword">@L["Forgot your password?"]</a>
+        }
+        <a href="@AppRoutes.Home">@L["Continue as viewer"]</a>
     </div>
-</div>
+</AuthCard>
 
 @code {
     private bool _showError;
     private bool _throttled;
+    private bool _reset;
     private string _returnUrl = "";
 
     protected override void OnInitialized()
@@ -67,6 +67,7 @@
         var query = QueryHelpers.ParseQuery(uri.Query);
         _showError = query.ContainsKey("error");
         _throttled = query.TryGetValue("error", out var error) && error == "throttled";
+        _reset = query.ContainsKey("reset");
         if (query.TryGetValue("returnUrl", out var returnUrl))
             _returnUrl = returnUrl.ToString();
     }

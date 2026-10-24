@@ -9,6 +9,7 @@ using FootballFormation.UI;
 using FootballFormation.UI.Helpers;
 using FootballFormation.UI.Navigation;
 using FootballFormation.UI.State;
+using FootballFormation.Web.Email;
 using FootballFormation.Web.Push;
 using Microsoft.Extensions.Localization;
 
@@ -65,16 +66,8 @@ public static class Routing
             var ip = ClientIp.Of(context);
 
             // A cross-site form cannot carry the token the sign-in page rendered, so this is what stops one logging a victim in as
-            // the attacker. The endpoint reads the form itself, so nothing validates it unless we ask.
-            try
-            {
-                await antiforgery.ValidateRequestAsync(context);
-            }
-            catch (AntiforgeryValidationException)
-            {
-                logger.LogWarning("Rejected a login POST with no valid antiforgery token from {Ip}", ip);
-                return Results.Redirect("/login?error=true");
-            }
+            // the attacker.
+            if (!await IsValidFormAsync(context, antiforgery)) return Results.Redirect("/login?error=true");
 
             var form = await context.Request.ReadFormAsync();
             var username = form["username"].ToString();
@@ -105,18 +98,53 @@ public static class Routing
         {
             // Defence in depth: SameSite=Lax already keeps the auth cookie off a cross-site POST, so a forged one signs out nobody — the
             // token keeps this consistent with /auth/login and covers a same-site forgery Lax would not.
-            try
-            {
-                await antiforgery.ValidateRequestAsync(context);
-            }
-            catch (AntiforgeryValidationException)
-            {
-                return Results.Redirect("/");
-            }
+            if (!await IsValidFormAsync(context, antiforgery)) return Results.Redirect("/");
 
             await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return Results.Redirect("/");
         });
+
+        // One answer whatever happened, so the form cannot be used to learn which addresses have an account. See PasswordLinkService.
+        app.MapPost("/auth/forgot-password", async (
+            HttpContext context,
+            PasswordLinkService links,
+            EmailConfiguration email,
+            EmailOutbox outbox,
+            IAntiforgery antiforgery,
+            IStringLocalizer<Strings> localizer) =>
+        {
+            var sent = Results.Redirect($"{AppRoutes.ForgotPassword}?sent=true");
+
+            if (!await IsValidFormAsync(context, antiforgery) || !email.IsConfigured) return sent;
+
+            var form = await context.Request.ReadFormAsync();
+            var result = await links.RequestResetAsync(form["email"].ToString(), context.RequestAborted);
+
+            if (result is { IsSuccess: true, Value: { } mail })
+            {
+                var link = AppRoutes.PasswordLinkUrl(email.PublicUrl!.ToString(), mail.Token);
+                outbox.Enqueue(PasswordResetMessage.Build(mail, link, localizer));
+            }
+
+            return sent;
+        }).AllowAnonymous().RequireRateLimiting("password");
+
+        app.MapPost("/auth/reset-password", async (HttpContext context, PasswordLinkService links, IAntiforgery antiforgery) =>
+        {
+            if (!await IsValidFormAsync(context, antiforgery)) return Results.Redirect(AppRoutes.ResetPassword);
+
+            var form = await context.Request.ReadFormAsync();
+            var token = form["token"].ToString();
+            var password = form["password"].ToString();
+
+            string Retry(string error) => $"{AppRoutes.ResetPassword}?token={Uri.EscapeDataString(token)}&error={error}";
+
+            if (password != form["confirm"].ToString()) return Results.Redirect(Retry("mismatch"));
+            if (password.Length < UserService.MinPasswordLength) return Results.Redirect(Retry("short"));
+
+            var result = await links.ResetPasswordAsync(token, password);
+            return Results.Redirect(result.IsSuccess ? $"{AppRoutes.Login}?reset=true" : Retry("expired"));
+        }).AllowAnonymous().RequireRateLimiting("password");
 
         // An unauthenticated route to full admin rights, held back by two independent guards: not mapped outside Development, and
         // refuses non-loopback callers. Do NOT relax either. See docs/testing/ui-testing.md.
@@ -288,6 +316,21 @@ public static class Routing
         }).AllowAnonymous();
     }
 
+    /// Read by hand because these endpoints read the form themselves; nothing validates the token unless asked.
+    static async Task<bool> IsValidFormAsync(HttpContext context, IAntiforgery antiforgery)
+    {
+        try
+        {
+            await antiforgery.ValidateRequestAsync(context);
+            return true;
+        }
+        catch (AntiforgeryValidationException)
+        {
+            Log.Warning("Rejected a {Path} POST with no valid antiforgery token from {Ip}", context.Request.Path, ClientIp.Of(context));
+            return false;
+        }
+    }
+
     static IResult OpenOnTeam(HttpContext context, int teamId, string? redirectUri)
     {
         context.Response.Cookies.Append(TeamPreference.CookieName, TeamPreference.Format(teamId), TeamCookie());
@@ -325,6 +368,8 @@ public static class Routing
     public static bool SkipsTeamChoice(PathString path) =>
         path.StartsWithSegments(AppRoutes.ChooseTeam)
         || path.StartsWithSegments(AppRoutes.Login)
+        || path.StartsWithSegments(AppRoutes.ForgotPassword)
+        || path.StartsWithSegments(AppRoutes.ResetPassword)
         || path.StartsWithSegments("/not-found")
         || path.StartsWithSegments("/Error");
 

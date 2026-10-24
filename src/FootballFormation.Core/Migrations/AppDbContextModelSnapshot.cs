@@ -35,6 +35,10 @@ namespace FootballFormation.Core.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ProtectedEmail")
+                        .HasMaxLength(1024)
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("Role")
                         .HasColumnType("INTEGER");
 
@@ -506,6 +510,41 @@ namespace FootballFormation.Core.Migrations
                     b.ToTable("MatchPreferences");
                 });
 
+            modelBuilder.Entity("FootballFormation.Core.Models.PasswordLink", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ExpiresUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SecurityStamp")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PasswordLinks", (string)null);
+                });
+
             modelBuilder.Entity("FootballFormation.Core.Models.Player", b =>
                 {
                     b.Property<int>("Id")
@@ -924,6 +963,15 @@ namespace FootballFormation.Core.Migrations
                         .IsRequired();
 
                     b.Navigation("Season");
+                });
+
+            modelBuilder.Entity("FootballFormation.Core.Models.PasswordLink", b =>
+                {
+                    b.HasOne("FootballFormation.Core.Models.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("FootballFormation.Core.Models.Player", b =>

@@ -23,6 +23,24 @@ for, which otherwise defaults to the content root path and would change with the
 `WORKDIR`. Both halves have to hold or a deploy signs everyone out with nothing in the log to say
 why.
 
+**The key ring now also guards every account's email address**, which `EmailProtector` encrypts with
+it. Losing `/data/keys` signs everyone out, as before, and now also leaves every stored address
+unreadable — the accounts read as having none until an admin types them in again. The volume
+snapshots below cover it with the database.
+
+**Mail needs three Fly secrets**, and without all three nothing is mailed and `/login` offers no
+"Forgot your password?":
+
+```bash
+fly secrets set -a gjs-meiden   Email__From="GJS Meiden <noreply@gjs-meiden.nl>"   Email__ResendApiKey="re_..."   Email__PublicUrl="https://gjs-meiden.nl"
+```
+
+The `From` domain has to be verified in Resend first, or Resend refuses every send — logged as
+`Resend refused a mail with status 403` and nothing more. `Email__PublicUrl` is where a mailed link
+points; it is configured rather than read off the request for the reason in
+[known_issues](known_issues/authentication.md). Moving to another provider is one new `IEmailSender`
+in `Web/Email/`.
+
 `ASPNETCORE_FORWARDEDHEADERS_ENABLED=true` (set in the Dockerfile) makes the app trust Fly's
 `X-Forwarded-Proto` — without it `UseHttpsRedirection` loops, because Fly terminates TLS at the edge
 and forwards plain HTTP to 8080.

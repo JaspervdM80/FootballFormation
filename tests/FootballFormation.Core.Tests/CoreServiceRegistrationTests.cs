@@ -1,4 +1,5 @@
 using FootballFormation.Core.Security;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -19,6 +20,7 @@ public class CoreServiceRegistrationTests : ServiceTestBase
             .AddScoped(_ => DbFactory)
             .AddScoped<ICurrentUser>(_ => CurrentUser)
             .AddScoped<ICurrentTeam>(_ => CurrentTeam)
+            .AddSingleton<IDataProtectionProvider>(new FakeDataProtectionProvider())
             .AddFootballFormationCore();
 
         using var provider = services.BuildServiceProvider(new ServiceProviderOptions

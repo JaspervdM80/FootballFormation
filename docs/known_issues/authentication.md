@@ -16,13 +16,15 @@
   then a reload puts it right because that navigation is same-site. Coming back on its own is what
   makes it hard to report and easy to dismiss. `Lax` is the setting; it still withholds the cookie
   on the cross-site POST that CSRF actually needs, so an *authenticated* action cannot be forged.
-- **`/auth/login` is the one POST `Lax` does not cover, because it mints a cookie rather than
-  needing one.** A forged cross-site POST to it would log a victim in as the attacker, so the
+- **The anonymous POSTs are the ones `Lax` does not cover, because they need no cookie.**
+  `/auth/login` mints one: a forged cross-site POST to it would log a victim in as the attacker, so the
   endpoint validates an antiforgery token (`IAntiforgery.ValidateRequestAsync`) — the sign-in form
   renders `<AntiforgeryToken />`, and a request without a valid one is redirected to
   `/login?error=true`. It reads the form itself, so nothing validated it until asked; `/dev/login`
   is a GET and needs none. `/auth/logout` carries the token too, but there it is defence in depth —
   `Lax` already keeps the auth cookie off a cross-site POST, so a forged logout signs out nobody.
+  `/auth/forgot-password` and `/auth/reset-password` are anonymous the same way and check the token the
+  same way, through `Routing.IsValidFormAsync`.
 - **The login rate limiter and audit log key on `Fly-Client-IP`, not `RemoteIpAddress`.** fly-proxy
   sets that header to the real client and overwrites any the client sent, so it holds where a
   hand-rolled `X-Forwarded-For` does not — the 5-per-minute login throttle partitions on an address
@@ -64,4 +66,13 @@
   `/settings` with no form to leave by. And a circuit rejoining after another tab switched team was
   handed the reconnecting request's principal, so its own team's controls vanished mid-match; the
   circuit's provider now re-scopes it. See [one-deployment-many-teams](../patterns/one-deployment-many-teams.md).
-
+- **A reset link built from the request's `Host` header can be pointed at someone else's site.**
+  Asking for a reset of another person's account is anonymous, and the requester chooses the header,
+  so the genuine mail would carry a link to an address of their choosing — and the token with it. The
+  link comes from `Email:PublicUrl` instead, and with that unset no mail goes out at all. See
+  [authorization-and-auth](../patterns/authorization-and-auth.md).
+- **On a `dev-db.sh` copy every account reads as having no email.** The addresses are encrypted with
+  the data-protection key ring on the live volume, which the copy does not bring; `EmailProtector`
+  answers null for a row it cannot open rather than throwing. Saving such an account on `/users`
+  with the field left empty keeps the stored ciphertext; typing an address replaces it, in the local
+  file only.

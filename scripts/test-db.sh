@@ -51,7 +51,9 @@ UPDATE Games SET
 UPDATE GameComments SET Body = 'Opmerking ' || Id;
 UPDATE Trainings SET Notes = NULL;
 
--- Real password hashes stay on production; the boot seeds admin/admin into an empty table.
+-- Real password hashes, addresses and links stay on production; the boot seeds admin/admin into an empty table. Links first: the
+-- sqlite3 shell leaves foreign keys off, so the cascade would not take them.
+DELETE FROM PasswordLinks;
 DELETE FROM Users;
 DELETE FROM PushSubscriptions;
 
@@ -63,8 +65,8 @@ sqlite3 -bail "$RAW" "VACUUM INTO '$(cygpath -m "$OUT" 2> /dev/null || printf '%
 check() { sqlite3 "$OUT" "$1"; }
 [ "$(check 'PRAGMA integrity_check')" = "ok" ] || { echo "The anonymised copy failed its integrity check." >&2; exit 1; }
 [ "$(check 'SELECT COUNT(*) FROM Players WHERE Surname IS NOT NULL')" = "0" ] || { echo "Surnames survived." >&2; exit 1; }
-[ "$(check 'SELECT COUNT(*) FROM Users') $(check 'SELECT COUNT(*) FROM PushSubscriptions')" = "0 0" ] \
-  || { echo "Accounts or push subscriptions survived." >&2; exit 1; }
+[ "$(check 'SELECT COUNT(*) FROM Users') $(check 'SELECT COUNT(*) FROM PasswordLinks') $(check 'SELECT COUNT(*) FROM PushSubscriptions')" = "0 0 0" ] \
+  || { echo "Accounts, password links or push subscriptions survived." >&2; exit 1; }
 echo "Anonymised $(check 'SELECT COUNT(*) FROM Players') players."
 
 if command -v cygpath > /dev/null 2>&1; then

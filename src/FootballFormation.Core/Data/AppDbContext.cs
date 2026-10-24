@@ -18,6 +18,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Training> Trainings => Set<Training>();
     public DbSet<MatchPreferences> MatchPreferences => Set<MatchPreferences>();
     public DbSet<AppUser> Users => Set<AppUser>();
+    public DbSet<PasswordLink> PasswordLinks => Set<PasswordLink>();
     public DbSet<Club> Clubs => Set<Club>();
     public DbSet<Team> Teams => Set<Team>();
     public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();

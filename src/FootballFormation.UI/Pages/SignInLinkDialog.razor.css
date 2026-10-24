@@ -1,0 +1,48 @@
+/* One gap between every block, so nothing needs a margin of its own; a hidden notice takes no space. */
+.sign-in-link-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-bottom: 8px;
+}
+
+.sign-in-link-intro,
+.sign-in-link-note {
+    margin: 0;
+}
+
+.sign-in-link-intro {
+    color: var(--ink);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.sign-in-link-note {
+    color: var(--ink-muted);
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+
+.sign-in-link {
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: var(--surface-page);
+    border: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
+    font-family: monospace;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+    user-select: all;
+}
+
+/* The one thing the dialog is for, so it takes the full width rather than sitting like a stray chip. */
+.sign-in-link-copy {
+    justify-content: center;
+    width: 100%;
+    border: none;
+    font-weight: 600;
+}
+
+.sign-in-link-body .inline-notice {
+    margin: 0;
+}

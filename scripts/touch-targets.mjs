@@ -340,7 +340,7 @@ const rx = (nl, en) => new RegExp(`${nl}|${en}`, 'i');
  * followed: a row of a different shape, and the app's only switch. The last four are the chrome
  * every navigation goes through, the squad's own row geometry, and the two screens where the target
  * is a pitch chip sized by a clamp() rather than a button sized by a token. Then the live screen's
- * goal and substitution dialogs, where the tap on a player is itself the action.
+ * goal and substitution dialogs, where the tap on a player is itself the action, and the sign-in link dialog.
  */
 export async function auditTouchTargets({ browser, base, out, liveGame, onError = () => {} }) {
   // Named rather than defaulted: a missing path would quietly drop the two scenes that need it, and
@@ -587,10 +587,21 @@ export async function auditTouchTargets({ browser, base, out, liveGame, onError 
     await audit('live substitution dialog', '.mud-dialog', ['player-pick']);
     await cancel();
 
+    // The link an admin hands a coach instead of a password. Its Copy button is a plain <button> sized by .overview-btn, not MudBlazor.
+    // Dismissed as a person would first: the install banner sits over the foot of a landscape phone, where this row's menu opens.
+    await page.evaluate(() => localStorage.setItem('pwa-install-dismissed', 'true'));
+    await goto(page, `${base}/users`);
+    const createLink = page.locator('.mud-popover-open').getByText(rx('inloglink maken', 'create sign-in link'));
+    await clickFor(page.locator('.users-table .mud-menu button').first(), () => createLink.isVisible());
+    await createLink.click();
+    await waitUntil(page, () => dialog.isVisible(), { what: 'the sign-in link dialog' });
+    await waitForStableBox(dialog);
+    await audit('sign-in link dialog', '.mud-dialog', ['overview-btn']);
+
     // Asserted, not logged: a scene that stopped running would otherwise say so only in a number
-    // nobody reads. The drawer is on every viewport now, so every viewport audits the same twenty-one.
-    if (scenes !== 21)
-      throw new Error(`${viewport.name}: audited ${scenes} screens, expected 21`);
+    // nobody reads. The drawer is on every viewport now, so every viewport audits the same twenty-two.
+    if (scenes !== 22)
+      throw new Error(`${viewport.name}: audited ${scenes} screens, expected 22`);
     console.log(`${viewport.name.padEnd(8)} audited ${scenes} screens`);
     await context.close();
   }

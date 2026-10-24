@@ -15,9 +15,9 @@ public class WriteGuardTests
 
     private static readonly Dictionary<string, string> UnguardedByDesign = new()
     {
-        ["PushSubscriptionService.SubscribeAsync"] = "the one anonymous write: nobody signs in to follow a match",
-        ["PushSubscriptionService.UnsubscribeAsync"] = "the one anonymous write: nobody signs in to follow a match",
-        ["PushSubscriptionService.RenewAsync"] = "the one anonymous write: nobody signs in to follow a match",
+        ["PushSubscriptionService.SubscribeAsync"] = "an anonymous write: nobody signs in to follow a match",
+        ["PushSubscriptionService.UnsubscribeAsync"] = "an anonymous write: nobody signs in to follow a match",
+        ["PushSubscriptionService.RenewAsync"] = "an anonymous write: nobody signs in to follow a match",
         ["MatchAudienceQuery.DropAsync"] = "the push sender pruning endpoints a push service called gone; there is no request or user",
         ["MatchPreferencesService.GetAsync"] = "creates the season's default row on first read; the unique index absorbs two at once",
         ["SeasonService.CloseGapsInAsync"] = "a boot repair, run before anyone can sign in",
@@ -27,6 +27,8 @@ public class WriteGuardTests
         ["UserService.EnsureAdminSeededAsync"] = "a boot step, run before anyone can sign in",
         ["UserService.VerifyAsync"] = "sign-in rehashing an outdated password, before there is anyone to authorize",
         ["UserService.ChangePasswordAsync"] = "an account changing its own password against the current one; on the seeded one it is not an admin yet",
+        ["PasswordLinkService.RequestResetAsync"] = "someone who forgot their password cannot sign in to ask; rate-limited, and one mail per account per window",
+        ["PasswordLinkService.ResetPasswordAsync"] = "the link is the credential: only its holder can spend it, once; rate-limited",
     };
 
     [Fact]

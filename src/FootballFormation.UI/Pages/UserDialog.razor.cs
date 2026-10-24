@@ -1,3 +1,5 @@
+using FootballFormation.Core.Security;
+
 namespace FootballFormation.UI.Pages;
 
 /// Three shapes of one form, because they share every field and all hand the page back the same value to save.
@@ -25,6 +27,7 @@ public partial class UserDialog
 
     private string DisplayName { get; set; } = string.Empty;
     private string Username { get; set; } = string.Empty;
+    private string Email { get; set; } = string.Empty;
     private UserRole Role { get; set; } = UserRole.Admin;
     private int? TeamId { get; set; }
     private string Password { get; set; } = string.Empty;
@@ -33,7 +36,7 @@ public partial class UserDialog
     /// An application admin runs every team, so there is nothing to pick.
     private bool ShowTeam => Role != UserRole.ApplicationAdmin;
 
-    /// A new account needs a password; an existing one gets it from Reset Password instead.
+    /// A new account may be given one here; an existing one gets it from Reset Password or a sign-in link instead.
     private bool ShowPasswordFields => PasswordOnly || User is null;
 
     /// Editing an application admin without being one: UserService refuses either direction, so the field says so instead of offering it.
@@ -53,14 +56,21 @@ public partial class UserDialog
 
         DisplayName = User.DisplayName;
         Username = User.Username;
+        Email = User.Email ?? string.Empty;
         Role = User.Role;
         TeamId = User.TeamId ?? DefaultTeamId;
     }
 
+    private string? ValidateEmail(string email) =>
+        EmailProtector.Normalise(email) is not { } normalised || EmailProtector.IsValid(normalised)
+            ? null
+            : L["That is not a valid email address"].Value;
+
+    /// Optional on a new account, which can be handed a sign-in link instead; required when resetting, which is the whole point.
     private string? ValidatePassword(string password)
     {
         if (string.IsNullOrEmpty(password))
-            return L["Password is required"].Value;
+            return PasswordOnly ? L["Password is required"].Value : null;
 
         return password.Length < UserService.MinPasswordLength
             ? L["Password must be at least {0} characters", UserService.MinPasswordLength].Value
@@ -80,6 +90,7 @@ public partial class UserDialog
         {
             DisplayName = DisplayName,
             Username = Username,
+            Email = string.IsNullOrWhiteSpace(Email) ? null : Email,
             Role = Role,
             TeamId = ShowTeam ? TeamId : null,
             Password = Password
@@ -93,6 +104,7 @@ public partial class UserDialog
     {
         public string DisplayName { get; init; } = string.Empty;
         public string Username { get; init; } = string.Empty;
+        public string? Email { get; init; }
         public UserRole Role { get; init; }
         public int? TeamId { get; init; }
         public string Password { get; init; } = string.Empty;

@@ -154,6 +154,44 @@ account through `MayChangeAsync`, which asks `IsApplicationAdminAsync()`:
 `UserServiceTests` pins each of those separately; `AuthorizationTests` pins the service-boundary
 refusals on `TeamService`.
 
+## A password link is a credential in a URL, so most of it is about limiting one
+An admin no longer has to choose a coach's password and send it over WhatsApp. `/users` makes a
+**sign-in link** instead — on its own row menu, and straight after adding an account with the
+password left empty — and someone who has an email on their account can ask for one from
+`/forgot-password`. Both are `PasswordLinkService`, and both end on `/reset-password`, where the
+holder chooses the password. The table and its four ways of retiring a link are in
+[settings-and-users](../models/settings-and-users.md).
+
+**Making one is taking the account over, so it asks what a password reset asks.** `CreateLinkAsync`
+is `RunAdminAsync` plus `IsAdminOfAsync(user.TeamId)`, the question `SetPasswordAsync` asks — which
+refuses an ordinary admin a link for an application admin, whose team is null.
+
+**The request and the reset are the second anonymous write**, after the push subscription, because
+the person asking cannot sign in. What stands in for the guard:
+
+- the `"password"` rate limit, five a minute per `ClientIp.Of`, on both `POST` endpoints, and the
+  antiforgery token both pages render — the same pair `/auth/login` has;
+- **one answer whatever happened.** `/auth/forgot-password` redirects to the same notice whether the
+  address has an account, has none, was malformed, or was held back, and the service logs which;
+- **the provider is not waited on**: the endpoint only queues the mail on `EmailOutbox`, which sends it
+  after the response, so a slow send never says an account matched. The request does still pay for
+  issuing the link — one write — when one does, which is at most one slower answer per account per
+  `MailInterval`, and that one mails the address's real owner;
+- one mail per account per `MailInterval`, so the form cannot flood someone's inbox from many
+  addresses;
+- the link lives an hour when mailed, seven days when an admin copies it for a chat.
+
+**A mailed link's host comes from configuration, never the request.** `Email:PublicUrl` is where it
+points. The `Host` header is the requester's to choose, so building the link from it would let anyone
+ask for a reset of someone else's account and have the genuine mail carry a link to their own site —
+the victim clicks it and hands over the token. The copied link on `/users` uses the circuit's base
+URI, which is the admin's own browser and needs no such care. Without `Email:*` configured nothing is
+mailed and `/login` offers no "Forgot your password?" at all.
+
+`/reset-password` carries `Referrer-Policy: no-referrer` as a meta tag, because the token is in its
+address, and spending a link rolls the stamp: every session the account had open is signed out, the
+same as any other password change.
+
 ## The sign-in cookie has three settings that are easy to get wrong
 All three live in `Program.cs`, and each failed in a way that reads as "it logged me out again"
 rather than as a bug with a cause. The rules, with the evidence and the symptoms in

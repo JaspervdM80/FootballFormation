@@ -16,7 +16,7 @@ Today's split: `/`, `/games/{id}/formation`, `/games/{id}/live`,
 `/games/{id}/result`, `/trainings`, `/preferences`, `/settings`, `/users` and `/teams` are
 interactive. `/settings` is the one of the administration pages open to everyone: its admin sections
 are behind an `AuthorizeView`, not an `[Authorize]` route. `/stats`, `/stats/positions`,
-`/players/{id}/stats`, `/games/{id}/overview`, `/games/duties`, `/styleguide`, `/team/choose`, `/login`, `/Error` and
+`/players/{id}/stats`, `/games/{id}/overview`, `/games/duties`, `/styleguide`, `/team/choose`, `/login`, `/forgot-password`, `/reset-password`, `/Error` and
 `/not-found` are not, and `rendermode.spec.js` and `duties.spec.js` assert they open no WebSocket.
 That is the whole point: a page with no circuit cannot show "Reconnecting…", cannot force a reload,
 and survives a phone suspending the app. An `[Authorize]` attribute works on a static page too —

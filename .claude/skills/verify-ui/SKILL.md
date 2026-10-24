@@ -93,6 +93,7 @@ document.querySelector('form[action="/auth/logout"] button').click()
 | `/styleguide` | **no** — `[Authorize(Roles = Admin)]` | no circuit; draws every design token |
 | `/team/choose` | yes | no circuit; where a first visit lands while more than one team exists. The app bar names no team here |
 | `/login`, `/not-found`, `/Error` | yes | no circuit; all localized; easy to forget when sweeping for English text |
+| `/forgot-password`, `/reset-password` | yes | no circuit; the forgotten-password link shows only when mail is configured, and `/reset-password` needs a link from `/users` to show its form |
 
 Check the pages your change can reach, not all of them — but if you touched `app.css`,
 `theme.css` or `MainLayout`, that *is* all of them.

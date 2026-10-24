@@ -86,7 +86,8 @@ reach back into last season's row.
 | Id | int | PK |
 | DisplayName | string(100) | The person, shown in the app bar and the user list |
 | Username | string(50) | The login. **Unique index** |
-| PasswordHash | string | PBKDF2, via `PasswordHasher<AppUser>` — never a plaintext column |
+| PasswordHash | string | PBKDF2, via `PasswordHasher<AppUser>` — never a plaintext column. An account created without a password gets the hash of 32 random bytes nobody chose, so it cannot sign in until a password link is spent |
+| ProtectedEmail | string(1024)? | The address a forgotten-password link is mailed to, encrypted by `EmailProtector` with the data-protection key ring in `/data/keys`. Optional. Unique across accounts, checked by decrypting — see below |
 | Role | UserRole | Stored as int. Written into the auth cookie as `Role.ToString()` |
 | TeamId | int? | The team an `Admin` runs, as the `team_id` claim. Null on an `ApplicationAdmin`, who runs every team. **FK is `Restrict`** — `TeamService.DeleteTeamAsync` deletes the team's accounts with it |
 | SecurityStamp | string(64) | Guid "N". Changes whenever the account's authority does |
@@ -97,7 +98,7 @@ is `SetNull`, so deleting a user leaves their comments in place, unattributed.
 
 `UserService.GetAllAsync` is `RunAdminAsync`, not a public read — see
 [authorization-and-auth](../patterns/authorization-and-auth.md) — and reads a `UserSummary`
-projection (id, name, username, role, team), never the entity — the `/users` page and its dialog have no use for `PasswordHash` or `SecurityStamp`, and a
+projection (id, name, username, role, team, decrypted email), never the entity — the `/users` page and its dialog have no use for `PasswordHash` or `SecurityStamp`, and a
 read that returned them would put credential material one careless log line from disclosure.
 `/dev/login` is the exception that still needs the whole entity, for the stamp its cookie carries,
 so it has its own `FindDevLoginAdminAsync` rather than widening the list read. `?user=` names the
@@ -161,6 +162,34 @@ admin existed and the last-of-their-kind rule therefore did not fire.
 the two halves separately, because fixing one does not fix the other. `EnsureAdminSeededAsync` runs on every startup, does nothing once any account exists so a
 changed password survives, and seeds its account as an `ApplicationAdmin` — otherwise a fresh install
 would have nobody who could reach `/teams`.
+
+**The email is encrypted, not hashed, because it has to be mailed to.** `EmailProtector` normalises
+it (trimmed, lower-case) and protects it with a purpose of its own on the same key ring the auth
+cookie uses. Each ciphertext differs even for the same address, so SQL cannot look one up:
+`FindOwnerAsync` decrypts every stored address and compares in memory, which is cheap at a few dozen
+accounts and needs no second key. The same lookup keeps addresses unique, so a reset request names
+exactly one account. A key ring that cannot open a row — a live database copied by `dev-db.sh` —
+reads it as no email rather than failing; see [known_issues](../known_issues/authentication.md).
+
+## PasswordLink (table `PasswordLinks`)
+A single-use link that lets someone choose an account's password: an invite or reset an admin copies
+from `/users` (valid seven days), or a reset mailed on request (one hour).
+
+| Property | Type | Notes |
+|---|---|---|
+| Id | int | PK |
+| UserId | int | FK to `Users`, **`Cascade`** — a link to a deleted account opens nothing |
+| TokenHash | string(64) | SHA-256 of the token, hex. **Unique index.** The token itself exists only in the URL handed out |
+| SecurityStamp | string(64) | The account's stamp when issued |
+| CreatedUtc | DateTime | Paces the mailed resets: one per account per five minutes |
+| ExpiresUtc | DateTime | Compared in memory, never in SQL |
+
+**A link is retired four ways**: spending it (every link of the account goes), issuing another (only
+the latest works), expiry, and **any change that rolls the account's stamp** — a password set another
+way, a role or team change. The last needs no delete: `IsUsableAt` compares the stamp the link was
+issued under with the account's current one. Spending a link rolls the stamp too, so it signs the
+account out everywhere and clears `MustChangePassword`. The flow and its guards are in
+[authorization-and-auth](../patterns/authorization-and-auth.md).
 
 ## Club and Team (tables `Clubs`, `Teams`)
 The first thing in this app that sits **above** a season: every season belongs to a team, and every

@@ -12,6 +12,7 @@ export const BASE_URL = `http://127.0.0.1:${PORT}`;
 // run.mjs makes this per-run and throws it away afterwards. The fallback only matters when someone
 // runs `npx playwright test` directly, and it is still not a real database.
 const DATA_DIR = process.env.UI_TEST_DATA_DIR ?? join(tmpdir(), 'ff-ui-tests-adhoc');
+export const MAIL_DIR = join(DATA_DIR, 'mail');
 
 export const ADMIN_STATE = join(import.meta.dirname, '.auth/admin.json');
 export const VISITOR_STATE = join(import.meta.dirname, '.auth/visitor.json');
@@ -108,6 +109,10 @@ export default defineConfig({
       // test can wait for. Two seconds, not milliseconds: it is a database read per signed-in
       // circuit, and every test here runs signed in.
       Auth__RevalidationIntervalSeconds: '2',
+      // Mail is written to the data directory instead of sent, so password-link.spec.js can read a reset link back.
+      Email__From: 'FootballFormation tests <noreply@example.com>',
+      Email__PublicUrl: BASE_URL,
+      Email__PickupDirectory: MAIL_DIR,
     },
     // A cold `dotnet build` on a first run is most of this. A published app skips that entirely and
     // is up in a couple of seconds, so the long timeout only ever applies to the local shape.
