@@ -6,7 +6,7 @@ namespace FootballFormation.Core.Services;
 // Paired because guest status is per season, so the figures are only correct against these squads.
 public sealed record SeasonStatsView(SeasonStats Stats, SeasonSquads Squads);
 
-public sealed record HomeView(HomeDashboard Dashboard, DutyRoster Duties);
+public sealed record FixtureBoards(HomeDashboard Dashboard, DutyRoster Duties);
 
 // One entry covers all three statistics pages: SeasonStatsReport builds its per-player figures by
 // calling PlayerStatsReport unchanged. See docs/patterns/service-structure.md.
@@ -47,19 +47,19 @@ public class StatsService(
             return Result.Success(view);
         });
 
-    // Serves /games/duties too. Keyed by the day, which both reports turn on, and by culture, which orders the scorers.
-    public Task<Result<HomeView>> GetHomeAsync(int? seasonId, CancellationToken cancellationToken = default) =>
+    // Keyed by the day and the culture as well — see docs/patterns/service-structure.md.
+    public Task<Result<FixtureBoards>> GetFixtureBoardsAsync(int? seasonId, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAsync(logger, "load games", cancellationToken, async () =>
         {
             var today = time.GetLocalNow().Date;
-            var key = cache.KeyFor(await currentTeam.GetIdAsync(), $"home:{seasonId}:{today:yyyy-MM-dd}:{CultureInfo.CurrentCulture.Name}");
+            var key = cache.KeyFor(await currentTeam.GetIdAsync(), $"fixtures:{seasonId}:{today:yyyy-MM-dd}:{CultureInfo.CurrentCulture.Name}");
 
-            if (cache.TryGet<HomeView>(key, out var hit)) return Result.Success(hit);
+            if (cache.TryGet<FixtureBoards>(key, out var hit)) return Result.Success(hit);
 
             var gamesResult = await games.GetAllAsync(seasonId, cancellationToken);
-            if (gamesResult.IsFailure) return gamesResult.To<HomeView>();
+            if (gamesResult.IsFailure) return gamesResult.To<FixtureBoards>();
 
-            var view = new HomeView(
+            var view = new FixtureBoards(
                 HomeDashboardReport.Build(gamesResult.Value!, today),
                 DutyRosterReport.Build(gamesResult.Value!, today));
 

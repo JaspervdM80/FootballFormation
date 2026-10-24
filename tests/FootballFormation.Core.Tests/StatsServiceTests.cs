@@ -346,14 +346,14 @@ public class StatsServiceTests : ServiceTestBase
     {
         var (season, _, game) = await ArrangeSeasonAsync();
 
-        var first = await Stats.GetHomeAsync(season.Id);
+        var first = await Stats.GetFixtureBoardsAsync(season.Id);
         Assert.Equal(1, first.Value!.Dashboard.Record.GoalsFor);
 
         // Behind the invalidator's back, as in the season read above, so only a rebuild could see it.
         await Read().Database.ExecuteSqlRawAsync(
             "UPDATE Games SET ScoreHome = 99 WHERE Id = {0}", game.Id);
 
-        var second = await Stats.GetHomeAsync(season.Id);
+        var second = await Stats.GetFixtureBoardsAsync(season.Id);
 
         Assert.Equal(1, second.Value!.Dashboard.Record.GoalsFor);
         Assert.Same(first.Value, second.Value);
@@ -363,11 +363,11 @@ public class StatsServiceTests : ServiceTestBase
     public async Task A_write_between_two_start_page_reads_is_visible_in_the_second()
     {
         var (season, _, game) = await ArrangeSeasonAsync();
-        await Stats.GetHomeAsync(season.Id);
+        await Stats.GetFixtureBoardsAsync(season.Id);
 
         Assert.True((await Games.SaveScoreAsync(game.Id, 4, 0)).IsSuccess);
 
-        var after = await Stats.GetHomeAsync(season.Id);
+        var after = await Stats.GetFixtureBoardsAsync(season.Id);
 
         Assert.Equal(4, after.Value!.Dashboard.Record.GoalsFor);
     }
@@ -382,10 +382,10 @@ public class StatsServiceTests : ServiceTestBase
         try
         {
             CultureInfo.CurrentCulture = new CultureInfo("nl");
-            var dutch = await Stats.GetHomeAsync(season.Id);
+            var dutch = await Stats.GetFixtureBoardsAsync(season.Id);
 
             CultureInfo.CurrentCulture = new CultureInfo("en");
-            var english = await Stats.GetHomeAsync(season.Id);
+            var english = await Stats.GetFixtureBoardsAsync(season.Id);
 
             Assert.NotSame(dutch.Value, english.Value);
         }
@@ -408,13 +408,13 @@ public class StatsServiceTests : ServiceTestBase
             GameDurationMinutes = 60
         })).Value!;
 
-        var today = await Stats.GetHomeAsync(season.Id);
+        var today = await Stats.GetFixtureBoardsAsync(season.Id);
         Assert.Equal(tomorrow.Id, today.Value!.Dashboard.NextGame?.Id);
 
         // A fixture on the day itself belongs to the match-day banner, so the card has to let go of it once the date turns.
         Time.Advance(TimeSpan.FromDays(1));
 
-        var matchDay = await Stats.GetHomeAsync(season.Id);
+        var matchDay = await Stats.GetFixtureBoardsAsync(season.Id);
 
         Assert.Null(matchDay.Value!.Dashboard.NextGame);
     }

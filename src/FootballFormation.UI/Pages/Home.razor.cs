@@ -70,7 +70,7 @@ public partial class Home
 
     protected override async Task LoadAsync()
     {
-        var result = await Stats.GetHomeAsync(SeasonId, Cancellation);
+        var result = await Stats.GetFixtureBoardsAsync(SeasonId, Cancellation);
         var loaded = Snackbar.ReportFailure(L, result);
         _dashboard = loaded ? result.Value!.Dashboard : HomeDashboard.Empty;
         _duties = loaded ? result.Value!.Duties : null;

@@ -13,7 +13,7 @@ public partial class Duties
 
     protected override async Task LoadAsync()
     {
-        var result = await Stats.GetHomeAsync(SeasonId, Cancellation);
+        var result = await Stats.GetFixtureBoardsAsync(SeasonId, Cancellation);
         _roster = _notice.ReportFailure(L, result) ? result.Value!.Duties : DutyRoster.Empty;
     }
 

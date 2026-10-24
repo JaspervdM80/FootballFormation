@@ -71,8 +71,8 @@ replaying every game's substitutions, so a build costs one `GameMinutesReport` p
 player per game. `/stats/positions` filters the same list to the regulars
 rather than reporting on them separately. A squad of twenty costs one cache entry, not twenty-one.
 
-**The start page and the duty roster share one entry.** `GetHomeAsync` caches the dashboard and the
-duty roster that `/` and `/games/duties` render. The roster's rows point at the season's games, so the
+**The start page and the duty roster share one entry.** `GetFixtureBoardsAsync` caches the dashboard and
+the duty roster that `/` and `/games/duties` render. The roster's rows point at the season's games, so the
 entry does hold them — safe for the reason the statistics are, since neither page writes. It is keyed
 by the day as well as the season, because both reports turn on today's date and a stored entry has to
 move at midnight without a write to move it, and by culture, because the last result's scorers are
