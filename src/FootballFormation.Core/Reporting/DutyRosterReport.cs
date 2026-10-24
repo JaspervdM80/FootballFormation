@@ -13,6 +13,8 @@ public record DutyRow(Game Game, DutyTiming Timing);
 public record DutyRoster(List<DutyRow> Rows, bool ShowsDressingRoom, bool ShowsFlags, bool ShowsWash)
 {
     public bool HasAnyDuty => ShowsDressingRoom || ShowsFlags || ShowsWash;
+
+    public static DutyRoster Empty { get; } = new([], false, false, false);
 }
 
 public static class DutyRosterReport

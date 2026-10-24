@@ -9,7 +9,7 @@ public partial class Home
 {
     [Inject] private LiveMatchService Live { get; set; } = null!;
     [Inject] private LiveMatchNotifier Notifier { get; set; } = null!;
-    [Inject] private GameService GameService { get; set; } = null!;
+    [Inject] private StatsService Stats { get; set; } = null!;
     [Inject] private TeamSetupService SetupService { get; set; } = null!;
     [Inject] private TimeProvider Time { get; set; } = null!;
     [Inject] private ISnackbar Snackbar { get; set; } = null!;
@@ -70,10 +70,10 @@ public partial class Home
 
     protected override async Task LoadAsync()
     {
-        var result = await GameService.GetAllAsync(SeasonId, Cancellation);
+        var result = await Stats.GetHomeAsync(SeasonId, Cancellation);
         var loaded = Snackbar.ReportFailure(L, result);
-        _dashboard = loaded ? HomeDashboardReport.Build(result.Value!, Now) : HomeDashboard.Empty;
-        _duties = loaded ? DutyRosterReport.Build(result.Value!, Now) : null;
+        _dashboard = loaded ? result.Value!.Dashboard : HomeDashboard.Empty;
+        _duties = loaded ? result.Value!.Duties : null;
     }
 
     private async Task HideSetupAsync()

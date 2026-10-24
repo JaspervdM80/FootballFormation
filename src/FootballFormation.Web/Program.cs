@@ -14,8 +14,11 @@ using MudBlazor.Services;
 var dbPath = DatabasePathHelper.GetDatabasePath();
 var appDataFolder = Path.GetDirectoryName(dbPath)!;
 
+// A switch rather than a fixed level: the logger has to exist before the builder that knows the environment, to report a failed boot.
+var minimumLevel = new Serilog.Core.LoggingLevelSwitch(Serilog.Events.LogEventLevel.Information);
+
 Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Debug()
+    .MinimumLevel.ControlledBy(minimumLevel)
     .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
     .MinimumLevel.Override("Microsoft.EntityFrameworkCore", Serilog.Events.LogEventLevel.Warning)
     .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
@@ -32,6 +35,10 @@ try
     Log.Information("Starting Football Formation application");
 
     var builder = WebApplication.CreateBuilder(args);
+
+    // Debug in production would write a line to the volume on every read.
+    if (builder.Environment.IsDevelopment())
+        minimumLevel.MinimumLevel = Serilog.Events.LogEventLevel.Debug;
 
     builder.Host.UseSerilog();
 

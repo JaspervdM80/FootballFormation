@@ -4,8 +4,7 @@ namespace FootballFormation.UI.Pages;
 
 public partial class Duties
 {
-    [Inject] private GameService GameService { get; set; } = null!;
-    [Inject] private TimeProvider Time { get; set; } = null!;
+    [Inject] private StatsService Stats { get; set; } = null!;
     [Inject] private IStringLocalizer<Strings> L { get; set; } = null!;
 
     private readonly PageNotice _notice = new();
@@ -14,10 +13,8 @@ public partial class Duties
 
     protected override async Task LoadAsync()
     {
-        var result = await GameService.GetAllAsync(SeasonId, Cancellation);
-        var games = _notice.ReportFailure(L, result) ? result.Value! : [];
-
-        _roster = DutyRosterReport.Build(games, Time.GetLocalNow().Date);
+        var result = await Stats.GetHomeAsync(SeasonId, Cancellation);
+        _roster = _notice.ReportFailure(L, result) ? result.Value!.Duties : DutyRoster.Empty;
     }
 
     private static string Duty(string? name) => string.IsNullOrWhiteSpace(name) ? "—" : name;

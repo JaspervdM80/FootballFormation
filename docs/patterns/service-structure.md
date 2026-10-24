@@ -5,6 +5,8 @@
 - **Sink**: Console + rolling file at `%LOCALAPPDATA%\FootballFormation\logs\`
 - **Injection**: `ILogger<T>` via primary constructor (services) or `[Inject]` (Blazor pages)
 - **Levels**: Debug (reads), Information (mutations), Warning (not found), Error (exceptions with stacktrace)
+- **Minimum**: Debug only when `ASPNETCORE_ENVIRONMENT` is `Development`, Information everywhere else — the container's
+  file sink is on the volume, and a Debug line per read is a disk write per page view
 - **Noise suppression**: Microsoft.* and EF Core set to Warning minimum
 
 ## No interfaces for services
@@ -68,6 +70,14 @@ works out each game's minutes once and the whole squad shares them, rather than 
 replaying every game's substitutions, so a build costs one `GameMinutesReport` per finished game, not one per
 player per game. `/stats/positions` filters the same list to the regulars
 rather than reporting on them separately. A squad of twenty costs one cache entry, not twenty-one.
+
+**The start page and the duty roster share one entry.** `GetHomeAsync` caches the dashboard and the
+duty roster that `/` and `/games/duties` render. The roster's rows point at the season's games, so the
+entry does hold them — safe for the reason the statistics are, since neither page writes. It is keyed
+by the day as well as the season, because both reports turn on today's date and a stored entry has to
+move at midnight without a write to move it, and by culture, because the last result's scorers are
+sorted under it. It is there because `/` is the page everyone opens, and as an interactive page it
+loads twice per visit — once for the prerender and again when the circuit connects.
 
 **Nothing is ever invalidated; the key changes.** A write bumps a generation, which is
 part of every key, so earlier entries are not stale but unreachable, and expire on their own after

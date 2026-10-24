@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace FootballFormation.Core.Tests;
 
 // Two rules that pull against each other: the report is reused between reads, and it does not
@@ -337,6 +339,84 @@ public class StatsServiceTests : ServiceTestBase
         var after = await Stats.GetSeasonAsync(season.Id);
 
         Assert.Equal(7, after.Value!.Stats.GoalsFor);
+    }
+
+    [Fact]
+    public async Task A_second_start_page_read_is_served_from_the_cache_rather_than_rebuilt()
+    {
+        var (season, _, game) = await ArrangeSeasonAsync();
+
+        var first = await Stats.GetHomeAsync(season.Id);
+        Assert.Equal(1, first.Value!.Dashboard.Record.GoalsFor);
+
+        // Behind the invalidator's back, as in the season read above, so only a rebuild could see it.
+        await Read().Database.ExecuteSqlRawAsync(
+            "UPDATE Games SET ScoreHome = 99 WHERE Id = {0}", game.Id);
+
+        var second = await Stats.GetHomeAsync(season.Id);
+
+        Assert.Equal(1, second.Value!.Dashboard.Record.GoalsFor);
+        Assert.Same(first.Value, second.Value);
+    }
+
+    [Fact]
+    public async Task A_write_between_two_start_page_reads_is_visible_in_the_second()
+    {
+        var (season, _, game) = await ArrangeSeasonAsync();
+        await Stats.GetHomeAsync(season.Id);
+
+        Assert.True((await Games.SaveScoreAsync(game.Id, 4, 0)).IsSuccess);
+
+        var after = await Stats.GetHomeAsync(season.Id);
+
+        Assert.Equal(4, after.Value!.Dashboard.Record.GoalsFor);
+    }
+
+    [Fact]
+    public async Task A_start_page_built_under_one_culture_is_never_served_under_another()
+    {
+        var (season, _, _) = await ArrangeSeasonAsync();
+        var culture = CultureInfo.CurrentCulture;
+
+        // The last result's scorers are sorted by name under the visitor's culture, so whoever came first must not decide it for all.
+        try
+        {
+            CultureInfo.CurrentCulture = new CultureInfo("nl");
+            var dutch = await Stats.GetHomeAsync(season.Id);
+
+            CultureInfo.CurrentCulture = new CultureInfo("en");
+            var english = await Stats.GetHomeAsync(season.Id);
+
+            Assert.NotSame(dutch.Value, english.Value);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = culture;
+        }
+    }
+
+    [Fact]
+    public async Task The_start_page_moves_on_at_midnight_with_no_write_to_move_it()
+    {
+        var season = await SeedSeasonAsync();
+        var tomorrow = (await Games.CreateAsync(new Game
+        {
+            Opponent = "Morgen",
+            Date = Now.Date.AddDays(1),
+            SeasonId = season.Id,
+            SplitType = GameSplitType.Halves,
+            GameDurationMinutes = 60
+        })).Value!;
+
+        var today = await Stats.GetHomeAsync(season.Id);
+        Assert.Equal(tomorrow.Id, today.Value!.Dashboard.NextGame?.Id);
+
+        // A fixture on the day itself belongs to the match-day banner, so the card has to let go of it once the date turns.
+        Time.Advance(TimeSpan.FromDays(1));
+
+        var matchDay = await Stats.GetHomeAsync(season.Id);
+
+        Assert.Null(matchDay.Value!.Dashboard.NextGame);
     }
 
     [Fact]
