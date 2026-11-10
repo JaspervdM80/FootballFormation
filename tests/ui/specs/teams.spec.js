@@ -7,6 +7,7 @@ import {
   addAdmin, addTeam, clickFor, confirmDialog, dropAndRejoin, goto, openDialog, playerRow, settle, showTeam, signInAs,
   submitDialog, teamRow,
 } from '../helpers.js';
+import { HOME_TEAM_URL } from '../playwright.config.js';
 
 const COOKIE = 'ff.team';
 const A_YEAR = 365 * 24 * 60 * 60;
@@ -165,6 +166,23 @@ test('a first visit while there are two teams is asked which one, then sent on t
 
   await expect(appTitle(visitor)).toHaveText(`GJS ${SECOND_TEAM}`);
   await expect(visitor.locator('label.nav-hamburger')).toHaveCount(1);
+});
+
+// The home team is the seeded one, which is also the fallback, so this pins the question skipped rather than which team answers it.
+test('a first visit on a domain with a home team is not asked which team', async ({ page, visitor }) => {
+  await ensureSecondTeam(page);
+  await visitor.context().clearCookies({ name: COOKIE });
+
+  // The same server under its usual name still asks, so what follows is the home team and not the question gone missing.
+  await goto(visitor, '/games');
+  expect(new URL(visitor.url()).pathname).toBe('/team/choose');
+
+  await goto(visitor, `${HOME_TEAM_URL}/games`);
+  expect(new URL(visitor.url()).pathname).toBe('/games');
+  await expect(appTitle(visitor)).toHaveText(SEEDED_TEAM);
+
+  const home = (await visitor.context().cookies(HOME_TEAM_URL)).find(c => c.name === COOKIE);
+  expect(home?.value, 'the home team is not written down, so the next visit resolves it all over again').toBe('1');
 });
 
 test('an admin of one team is shown another as a visitor is, and keeps their own password', async ({ page, visitor: theirPage }) => {

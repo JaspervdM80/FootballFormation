@@ -185,14 +185,14 @@ names, so a green check and a web session compile the same code.
 
 ## Deployment
 
-The app deploys to Fly.io (Amsterdam) behind **https://gjs-meiden.nl** — a single
-container with a persistent volume for the SQLite database, scaled to zero when idle.
+The app deploys to Fly.io (Amsterdam) behind **https://voetbal-team.nl** and
+**https://gjs-meiden.nl**, which opens on GJS's own team — a single container with a persistent volume for the SQLite database, scaled to zero when idle.
 See [docs/deployment.md](docs/deployment.md) for setup, DNS records, and the
 redeploy command (`fly deploy`).
 
 ## Install on iPhone / Android (PWA)
 
-The app is an installable Progressive Web App. Open **https://gjs-meiden.nl** on the phone
+The app is an installable Progressive Web App. Open **https://voetbal-team.nl** (or **https://gjs-meiden.nl**) on the phone
 (HTTPS is required for installation and the service worker; only `localhost` is exempt), then:
 
 - **iPhone (Safari)**: Share → *Add to Home Screen*

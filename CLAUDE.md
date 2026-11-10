@@ -6,7 +6,7 @@ Guidance for AI assistants working in this repository.
 
 A Blazor Server app for planning youth football formations, managing per-season squads, running a
 match live from the touchline, and reporting on minutes and results. It runs as a single Fly.io
-container on **https://gjs-meiden.nl** with SQLite on one persistent volume, and it **auto-migrates
+container on **https://voetbal-team.nl** and **https://gjs-meiden.nl** with SQLite on one persistent volume, and it **auto-migrates
 on boot** — that fact drives most of the caution elsewhere.
 
 One deployment serves every team of every club on it: a season and everything under it belongs to a

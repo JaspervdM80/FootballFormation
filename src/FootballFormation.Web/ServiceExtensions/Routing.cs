@@ -373,6 +373,11 @@ public static class Routing
         || path.StartsWithSegments("/not-found")
         || path.StartsWithSegments("/Error");
 
+    public static string? TeamCookieOrHome(HttpRequest request, HomeTeams homeTeams) =>
+        (TeamPreference.Parse(request.Cookies[TeamPreference.CookieName]) ?? homeTeams.For(request.Host.Host)) is { } teamId
+            ? TeamPreference.Format(teamId)
+            : null;
+
     /// Secure is left off so this works over the plain http:// of a local `dotnet run` — a team id is not a credential.
     public static CookieOptions TeamCookie() => new()
     {
