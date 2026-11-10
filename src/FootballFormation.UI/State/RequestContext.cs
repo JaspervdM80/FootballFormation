@@ -1,7 +1,8 @@
 ﻿namespace FootballFormation.UI.State;
 
 /// A plain record rather than an <c>IHttpContextAccessor</c> injection: this RCL takes no ASP.NET Core hosting dependency, which is what
-/// leaves the door open to a MAUI Blazor Hybrid host. Both are cookies, so a circuit's scope — created by /_blazor — has them too.
+/// leaves the door open to a MAUI Blazor Hybrid host. Both come off the request — TeamCookie is ff.team, or the domain's home
+/// team without one — so a circuit's scope, created by /_blazor, has them too.
 public sealed record RequestContext(string? SeasonCookie, string? TeamCookie)
 {
     /// A scope with no request behind it, which therefore knows nothing.

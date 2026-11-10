@@ -54,7 +54,9 @@ component endpoint — never an asset, an endpoint or a calendar feed — and ne
 fallback team there would answer the question before the visitor had, and for the same reason
 `MainLayout` leaves the team's name, the nav and the whole drawer off that page. With one team nothing asks, and
 the app looks exactly as it did before teams existed. A team link sets the cookie, so
-parents arriving through one never see the question.
+parents arriving through one never see the question, and neither does a visitor on a domain
+`HomeTeams` gives a team: `Routing.TeamCookieOrHome` hands that team to the scope as though the
+cookie had named it.
 
 `DeleteTeamAsync` still refuses the lowest-id team, because that is what every visitor who has chosen
 nothing falls back to. It deletes the team's accounts with it: the last-admin rule will not let a

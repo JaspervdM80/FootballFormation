@@ -9,6 +9,9 @@ const PORT = Number(process.env.UI_TEST_PORT ?? 5299);
 // the app someone had open to look at something would be a poor trade.
 export const BASE_URL = `http://127.0.0.1:${PORT}`;
 
+// The same server by another name, which HomeTeams__localhost below opens on the seeded team, as gjs-meiden.nl does in production.
+export const HOME_TEAM_URL = `http://localhost:${PORT}`;
+
 // run.mjs makes this per-run and throws it away afterwards. The fallback only matters when someone
 // runs `npx playwright test` directly, and it is still not a real database.
 const DATA_DIR = process.env.UI_TEST_DATA_DIR ?? join(tmpdir(), 'ff-ui-tests-adhoc');
@@ -113,6 +116,7 @@ export default defineConfig({
       Email__From: 'FootballFormation tests <noreply@example.com>',
       Email__PublicUrl: BASE_URL,
       Email__PickupDirectory: MAIL_DIR,
+      HomeTeams__localhost: '1',
     },
     // A cold `dotnet build` on a first run is most of this. A published app skips that entirely and
     // is up in a couple of seconds, so the long timeout only ever applies to the local shape.

@@ -126,7 +126,7 @@ circuit behind an interactive page's island.
 
 - Both come from `RequestContext` — `SeasonState` directly (`ff.season`), `TeamState` through
   `TeamService` and `ICurrentTeam` (`ff.team`) — which the host fills in from the **cookies** on the
-  request that created the scope. That works in either scope, because a circuit is created
+  request that created the scope, or for `ff.team` without one, the domain's `HomeTeams` entry. That works in either scope, because a circuit is created
   *during* the `/_blazor` request, which carries the same ones. **Never reach for the `Referer`
   header**: enhanced navigation pushes the destination into history before it fetches, so the
   referrer names the page being loaded.

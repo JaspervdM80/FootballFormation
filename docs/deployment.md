@@ -1,11 +1,22 @@
-# Deployment — Fly.io + gjs-meiden.nl
+# Deployment — Fly.io, voetbal-team.nl and gjs-meiden.nl
 
-The app is deployed to [Fly.io](https://fly.io) (region `ams`) as a Docker container with the custom
-domain **gjs-meiden.nl**. Blazor Server needs WebSockets and SQLite needs a persistent disk; Fly
+The app is deployed to [Fly.io](https://fly.io) (region `ams`) as a Docker container behind two custom
+domains on the one app: **voetbal-team.nl** for every team, and **gjs-meiden.nl**, which opens on
+GJS's own. Blazor Server needs WebSockets and SQLite needs a persistent disk; Fly
 provides both plus free TLS at the lowest price point.
 
 One-time account, volume, IP, certificate and DNS setup is done and not repeated here — `fly apps
 create` / `fly volumes create` / `fly certs add`, and A/AAAA/CNAME records at the registrar.
+Another domain is one `fly certs add <domain> -a gjs-meiden` per name (the bare domain and `www`),
+then at the registrar an A and an AAAA record on `@` to the addresses `fly ips list` shows and a
+CNAME from `www` to `gjs-meiden.fly.dev`, with the registrar's own default records removed first.
+The app answers any host, so serving one needs no code change.
+
+**A domain can open on one team.** `HomeTeams` in `appsettings.json` maps a host to a team id, and a
+visitor there with no `ff.team` cookie gets that team instead of `/team/choose` — a view choice like
+the cookie, never authority. A host with no entry asks as before, so `www` needs an entry of its own.
+An entry naming a deleted team quietly opens on the first team instead: remove it before deleting
+the team.
 
 ## Moving parts
 
@@ -32,11 +43,11 @@ snapshots below cover it with the database.
 "Forgot your password?":
 
 ```bash
-fly secrets set -a gjs-meiden   Email__From="GJS Meiden <noreply@gjs-meiden.nl>"   Email__ResendApiKey="re_..."   Email__PublicUrl="https://gjs-meiden.nl"
+fly secrets set -a gjs-meiden   Email__From="Voetbal Team <noreply@voetbal-team.nl>"   Email__ResendApiKey="re_..."   Email__PublicUrl="https://voetbal-team.nl"
 ```
 
-The `From` domain has to be verified in Resend first, or Resend refuses every send — logged as
-`Resend refused a mail with status 403` and nothing more. `Email__PublicUrl` is where a mailed link
+The `From` domain has to be verified in Resend first (its DKIM, SPF and MX records go in at the
+registrar), or Resend refuses every send — logged as `Resend refused a mail with status 403` and nothing more. `Email__PublicUrl` is where a mailed link
 points; it is configured rather than read off the request for the reason in
 [known_issues](known_issues/authentication.md). Moving to another provider is one new `IEmailSender`
 in `Web/Email/`.

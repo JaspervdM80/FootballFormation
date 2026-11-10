@@ -113,6 +113,9 @@ try
     builder.Services.AddScoped<TeamState>();
     builder.Services.AddScoped<NavigationTrail>();
 
+    builder.Services.AddSingleton(new HomeTeams(
+        builder.Configuration.GetSection("HomeTeams").GetChildren().Select(entry => KeyValuePair.Create(entry.Key, entry.Value))));
+
     // A static render and a circuit are separate scopes, but the circuit is created during the /_blazor request, which carries the same
     // cookies — so both answer the same way without asking the browser.
     builder.Services.AddHttpContextAccessor();
@@ -120,7 +123,7 @@ try
         sp.GetRequiredService<IHttpContextAccessor>().HttpContext is { } http
             ? new RequestContext(
                 http.Request.Cookies[SeasonPreference.CookieName],
-                http.Request.Cookies[TeamPreference.CookieName])
+                Routing.TeamCookieOrHome(http.Request, sp.GetRequiredService<HomeTeams>()))
             : RequestContext.None);
 
     builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -346,13 +349,14 @@ try
     app.UseRateLimiter();
     app.UseAntiforgery();
 
-    // A first visit with more than one team to choose from asks which, rather than opening on whichever comes first in the database. Pages
-    // only: an endpoint, an asset or a calendar feed is never a visit. Signing in selects the account's own team, so a session never asks.
+    // A first visit with more than one team to choose from asks which, rather than opening on whichever comes first in the database —
+    // unless its domain has a home team. Pages only: an endpoint, an asset or a calendar feed is never a visit. Signing in selects the
+    // account's own team, so a session never asks.
     app.Use(async (context, next) =>
     {
         if (HttpMethods.IsGet(context.Request.Method)
             && context.User.Identity?.IsAuthenticated != true
-            && TeamPreference.Parse(context.Request.Cookies[TeamPreference.CookieName]) is null
+            && Routing.TeamCookieOrHome(context.Request, context.RequestServices.GetRequiredService<HomeTeams>()) is null
             && context.GetEndpoint()?.Metadata.GetMetadata<Microsoft.AspNetCore.Components.Endpoints.ComponentTypeMetadata>() is not null
             && !Routing.SkipsTeamChoice(context.Request.Path))
         {

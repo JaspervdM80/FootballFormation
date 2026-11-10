@@ -1,7 +1,8 @@
 namespace FootballFormation.Core.Security;
 
 /// The remembered team while it still names one, and otherwise the first team in the database — so a visitor who has never chosen sees
-/// the same app as before there was anything to choose. The host reads <paramref name="storedTeamId"/> off the ff.team cookie.
+/// the same app as before there was anything to choose. The host reads <paramref name="storedTeamId"/> off the ff.team cookie, or
+/// takes the domain's home team when there is none.
 public sealed class CurrentTeam(IRawDbContextFactory dbFactory, int? storedTeamId) : ICurrentTeam
 {
     private Task<Resolved>? _resolving;

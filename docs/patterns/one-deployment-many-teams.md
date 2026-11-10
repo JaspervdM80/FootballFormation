@@ -2,7 +2,7 @@
 
 [#108](https://github.com/JaspervdM80/FootballFormation/issues/108) put a fork in the road: one
 deployment per team (Option A), or one deployment serving many (Option B). **This app took Option
-B.** Other teams use the one at gjs-meiden.nl; nobody is expected to run a copy of their own.
+B.** Other teams use the one at voetbal-team.nl; nobody is expected to run a copy of their own.
 
 ## Why B, given what A would have cost
 
@@ -42,6 +42,10 @@ nothing gets it, which is the app exactly as it looked before there was a second
   bar and the drawer name no team until they choose. A calendar event's link goes through the team link
   with its game's team, because a calendar app opens a browser that may never have chosen — and a
   wrong answer there opens the match as not found.
+- **A domain with a home team is not asked.** `HomeTeams` maps a host to a team, and a visit there
+  with no cookie is treated as though it had chosen that team, so gjs-meiden.nl opens on GJS's own
+  while voetbal-team.nl asks. It stands in for the cookie and nothing more: the picker and the team
+  link still move the visitor elsewhere. See [deployment](../deployment.md).
 
 - **The team link**, `/team/{club}/{team}` (`AppRoutes.TeamLink`, readable names through
   `LinkSlug`; the older `/team/{id}` still works), is what a team hands its parents. It
@@ -57,7 +61,8 @@ the team link already solves.
 
 ## Deliberately not in scope
 
-Anything that assumes a paying tenant: billing, sign-up, a domain per team. Adding a club or a team
+Anything that assumes a paying tenant: billing, sign-up, a domain that belongs to a team — a home
+team only picks where a first visit opens. Adding a club or a team
 is an application admin's job on `/teams`. If the app ever goes that way, it is a product decision
 first.
 
