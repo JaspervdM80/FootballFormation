@@ -19,7 +19,7 @@ public class PasswordLinkServiceTests : ServiceTestBase
     {
         var coach = await SeedCoachAsync();
 
-        var token = (await PasswordLinks.CreateLinkAsync(coach.Id)).Value!;
+        var token = (await PasswordLinks.CreateLinkAsync(coach.Id)).Value!.Token;
 
         var stored = Read().PasswordLinks.Single();
         Assert.Equal(coach.Id, stored.UserId);
@@ -28,10 +28,23 @@ public class PasswordLinkServiceTests : ServiceTestBase
     }
 
     [Fact]
+    public async Task A_link_names_the_account_and_its_own_address_so_it_can_be_mailed_there()
+    {
+        var coach = await SeedCoachAsync("Coach@Example.com");
+        var silent = (await Users.CreateAsync("Silent", "silent", GoodPassword, UserRole.Admin, _team.Id, email: null)).Value!;
+
+        var mailable = (await PasswordLinks.CreateLinkAsync(coach.Id)).Value!;
+        var unmailable = (await PasswordLinks.CreateLinkAsync(silent.Id)).Value!;
+
+        Assert.Equal(("Coach", "coach", "coach@example.com"), (mailable.DisplayName, mailable.Username, mailable.Email));
+        Assert.Null(unmailable.Email);
+    }
+
+    [Fact]
     public async Task A_link_sets_the_password_once_and_signs_out_every_session()
     {
         var coach = await SeedCoachAsync();
-        var token = (await PasswordLinks.CreateLinkAsync(coach.Id)).Value!;
+        var token = (await PasswordLinks.CreateLinkAsync(coach.Id)).Value!.Token;
 
         Assert.True((await PasswordLinks.ResetPasswordAsync(token, NewPassword)).IsSuccess);
 
@@ -51,7 +64,7 @@ public class PasswordLinkServiceTests : ServiceTestBase
         await Users.EnsureAdminSeededAsync();
         var seeded = Read().Users.Single(u => u.Username == "admin");
 
-        var token = (await PasswordLinks.CreateLinkAsync(seeded.Id)).Value!;
+        var token = (await PasswordLinks.CreateLinkAsync(seeded.Id)).Value!.Token;
         await PasswordLinks.ResetPasswordAsync(token, NewPassword);
 
         Assert.False(Read().Users.Single(u => u.Id == seeded.Id).MustChangePassword);
@@ -61,7 +74,7 @@ public class PasswordLinkServiceTests : ServiceTestBase
     public async Task A_link_stops_working_when_it_expires()
     {
         var coach = await SeedCoachAsync();
-        var token = (await PasswordLinks.CreateLinkAsync(coach.Id)).Value!;
+        var token = (await PasswordLinks.CreateLinkAsync(coach.Id)).Value!.Token;
 
         Time.Advance(PasswordLinkService.CopiedLinkLifetime);
 
@@ -73,7 +86,7 @@ public class PasswordLinkServiceTests : ServiceTestBase
     public async Task A_password_changed_another_way_retires_the_link()
     {
         var coach = await SeedCoachAsync();
-        var token = (await PasswordLinks.CreateLinkAsync(coach.Id)).Value!;
+        var token = (await PasswordLinks.CreateLinkAsync(coach.Id)).Value!.Token;
 
         await Users.SetPasswordAsync(coach.Id, "set-by-an-admin");
 
@@ -84,8 +97,8 @@ public class PasswordLinkServiceTests : ServiceTestBase
     public async Task Only_the_latest_link_for_an_account_works()
     {
         var coach = await SeedCoachAsync();
-        var first = (await PasswordLinks.CreateLinkAsync(coach.Id)).Value!;
-        var second = (await PasswordLinks.CreateLinkAsync(coach.Id)).Value!;
+        var first = (await PasswordLinks.CreateLinkAsync(coach.Id)).Value!.Token;
+        var second = (await PasswordLinks.CreateLinkAsync(coach.Id)).Value!.Token;
 
         Assert.False((await PasswordLinks.IsUsableAsync(first)).Value);
         Assert.True((await PasswordLinks.IsUsableAsync(second)).Value);
@@ -103,7 +116,7 @@ public class PasswordLinkServiceTests : ServiceTestBase
     public async Task A_short_password_is_refused_and_the_link_survives_it()
     {
         var coach = await SeedCoachAsync();
-        var token = (await PasswordLinks.CreateLinkAsync(coach.Id)).Value!;
+        var token = (await PasswordLinks.CreateLinkAsync(coach.Id)).Value!.Token;
 
         var result = await PasswordLinks.ResetPasswordAsync(token, "short");
 

@@ -43,6 +43,25 @@
     font-weight: 600;
 }
 
+/* An address has no break opportunities of its own, so a long one pushed the icon out of the button and the notice past the dialog. */
+.sign-in-link-mail {
+    justify-content: center;
+    width: 100%;
+    padding-block: 8px;
+    text-align: center;
+}
+
+.sign-in-link-mail span,
+.sign-in-link-body .inline-notice {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.sign-in-link-mail:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
 .sign-in-link-body .inline-notice {
     margin: 0;
 }

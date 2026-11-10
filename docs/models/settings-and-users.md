@@ -87,7 +87,7 @@ reach back into last season's row.
 | DisplayName | string(100) | The person, shown in the app bar and the user list |
 | Username | string(50) | The login. **Unique index** |
 | PasswordHash | string | PBKDF2, via `PasswordHasher<AppUser>` — never a plaintext column. An account created without a password gets the hash of 32 random bytes nobody chose, so it cannot sign in until a password link is spent |
-| ProtectedEmail | string(1024)? | The address a forgotten-password link is mailed to, encrypted by `EmailProtector` with the data-protection key ring in `/data/keys`. Optional. Unique across accounts, checked by decrypting — see below |
+| ProtectedEmail | string(1024)? | The address a forgotten-password link, or an admin's sign-in link, is mailed to, encrypted by `EmailProtector` with the data-protection key ring in `/data/keys`. Optional. Unique across accounts, checked by decrypting — see below |
 | Role | UserRole | Stored as int. Written into the auth cookie as `Role.ToString()` |
 | TeamId | int? | The team an `Admin` runs, as the `team_id` claim. Null on an `ApplicationAdmin`, who runs every team. **FK is `Restrict`** — `TeamService.DeleteTeamAsync` deletes the team's accounts with it |
 | SecurityStamp | string(64) | Guid "N". Changes whenever the account's authority does |
@@ -173,7 +173,7 @@ reads it as no email rather than failing; see [known_issues](../known_issues/aut
 
 ## PasswordLink (table `PasswordLinks`)
 A single-use link that lets someone choose an account's password: an invite or reset an admin copies
-from `/users` (valid seven days), or a reset mailed on request (one hour).
+or mails from `/users` (valid seven days), or a reset mailed on request (one hour).
 
 | Property | Type | Notes |
 |---|---|---|

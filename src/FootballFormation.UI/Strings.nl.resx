@@ -950,4 +950,10 @@
   <data name="Choose a new password" xml:space="preserve"><value>Kies een nieuw wachtwoord</value></data>
   <data name="The link works once and expires in {0} minutes." xml:space="preserve"><value>De link werkt één keer en verloopt over {0} minuten.</value></data>
   <data name="Didn&#x27;t ask for this? Then ignore this email; your password stays as it is." xml:space="preserve"><value>Niet aangevraagd? Negeer deze e-mail dan; je wachtwoord blijft zoals het is.</value></data>
+  <data name="Give this account an email address to send the link by mail." xml:space="preserve"><value>Geef dit account een e-mailadres om de link te mailen.</value></data>
+  <data name="Email the link to {0}" xml:space="preserve"><value>Link mailen naar {0}</value></data>
+  <data name="The link is on its way to {0}" xml:space="preserve"><value>De link is onderweg naar {0}</value></data>
+  <data name="Choose a password for your account {0} with the link below." xml:space="preserve"><value>Kies met de link hieronder een wachtwoord voor je account {0}.</value></data>
+  <data name="Choose your password" xml:space="preserve"><value>Kies je wachtwoord</value></data>
+  <data name="The link works once and expires in {0} days." xml:space="preserve"><value>De link werkt één keer en verloopt over {0} dagen.</value></data>
 </root>

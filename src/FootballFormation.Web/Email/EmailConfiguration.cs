@@ -8,7 +8,7 @@ public sealed class EmailConfiguration(string? from, string? resendApiKey, Uri? 
 
     public string? ResendApiKey { get; } = resendApiKey;
 
-    /// Where a mailed link points. Configured rather than read off the request, whose Host header the requester chooses — taking it
+    /// Where every password link points, copied or mailed. Configured rather than read off the request, whose Host header the requester chooses — taking it
     /// from there would let anyone have a genuine reset mail carry a link to their own site.
     public Uri? PublicUrl { get; } = publicUrl;
 

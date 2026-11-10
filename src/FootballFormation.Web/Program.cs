@@ -1,5 +1,6 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.DataProtection;
+using FootballFormation.UI.Mail;
 using FootballFormation.UI.Navigation;
 using FootballFormation.UI.Security;
 using FootballFormation.Web.Components;
@@ -108,6 +109,7 @@ try
         builder.Services.AddSingleton<IEmailSender, ResendEmailSender>();
     builder.Services.AddSingleton<EmailOutbox>();
     builder.Services.AddHostedService(sp => sp.GetRequiredService<EmailOutbox>());
+    builder.Services.AddScoped<IPasswordLinkMailer, PasswordLinkMailer>();
 
     builder.Services.AddScoped<SeasonState>();
     builder.Services.AddScoped<TeamState>();

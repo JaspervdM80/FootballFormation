@@ -159,7 +159,10 @@ An admin no longer has to choose a coach's password and send it over WhatsApp. `
 **sign-in link** instead — on its own row menu, and straight after adding an account with the
 password left empty — and someone who has an email on their account can ask for one from
 `/forgot-password`. Both are `PasswordLinkService`, and both end on `/reset-password`, where the
-holder chooses the password. The table and its four ways of retiring a link are in
+holder chooses the password. With mail configured, the link dialog also offers to mail the admin's
+link to the account's own address — never a typed one — through `IPasswordLinkMailer`, which the UI
+library declares and the host implements, because only `Web` can reach `EmailOutbox`. That mail is the
+same seven-day link the dialog shows; it is not a second one. The table and its four ways of retiring a link are in
 [settings-and-users](../models/settings-and-users.md).
 
 **Making one is taking the account over, so it asks what a password reset asks.** `CreateLinkAsync`
@@ -184,8 +187,10 @@ the person asking cannot sign in. What stands in for the guard:
 **A mailed link's host comes from configuration, never the request.** `Email:PublicUrl` is where it
 points. The `Host` header is the requester's to choose, so building the link from it would let anyone
 ask for a reset of someone else's account and have the genuine mail carry a link to their own site —
-the victim clicks it and hands over the token. The copied link on `/users` uses the circuit's base
-URI, which is the admin's own browser and needs no such care. Without `Email:*` configured nothing is
+the victim clicks it and hands over the token. The copied link on `/users` points there too, so a
+link handed out on gjs-meiden.nl opens on voetbal-team.nl like a mailed one; it falls back to the
+circuit's base URI only where `Email:PublicUrl` is unset, which is safe there because that URI is the
+admin's own browser. Without `Email:*` configured nothing is
 mailed and `/login` offers no "Forgot your password?" at all.
 
 `/reset-password` carries `Referrer-Policy: no-referrer` as a meta tag, because the token is in its

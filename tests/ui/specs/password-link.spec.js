@@ -2,7 +2,7 @@
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { test, expect } from '../fixtures.js';
-import { BASE_URL, MAIL_DIR } from '../playwright.config.js';
+import { BASE_URL, HOME_TEAM_URL, MAIL_DIR } from '../playwright.config.js';
 import { goto, clickFor, openDialog, fillField, settle, userRow, addAdmin } from '../helpers.js';
 
 const PASSWORD = 'linked-coach-1';
@@ -49,6 +49,8 @@ test('an account added without a password is let in by its copied link, once', a
   const link = page.locator('#sign-in-link');
   await expect(link).toBeVisible();
   await expect(userRow(page, username)).toBeAttached();
+  // Without an address there is nowhere to send it.
+  await expect(page.getByText('Give this account an email address to send the link by mail.')).toBeVisible();
 
   await clickFor(
     page.getByRole('button', { name: 'Copy link' }),
@@ -62,6 +64,37 @@ test('an account added without a password is let in by its copied link, once', a
   await goto(visitor, copied);
   await expect(visitor.getByText('This link has expired or has already been used')).toBeVisible();
   await expect(visitor.locator('input[name="password"]')).toHaveCount(0);
+});
+
+test('an account added without a password can be mailed its link instead', async ({ page, visitor }) => {
+  const stamp = Date.now();
+  const username = `invited-${stamp}`;
+  const address = `invited-${stamp}@example.com`;
+
+  // On the app's other name, so the link has to come off Email:PublicUrl rather than the page the admin is on. Its cookies are its own.
+  await goto(page, `${HOME_TEAM_URL}/dev/login`);
+  await goto(page, `${HOME_TEAM_URL}/culture/set?culture=en&redirectUri=${encodeURIComponent('/users')}`);
+  await clickFor(
+    page.getByRole('button', { name: 'Add User' }),
+    () => expect(page.locator('.mud-dialog')).toBeVisible());
+  const dialog = await openDialog(page);
+  await fillField(dialog, 'Name', 'Invited coach');
+  await fillField(dialog, 'Username', username);
+  await fillField(dialog, 'Email', address);
+  await dialog.getByRole('button', { name: 'Save' }).click();
+
+  const shown = page.locator('#sign-in-link');
+  await expect(shown).toBeVisible();
+  const send = page.getByRole('button', { name: `Email the link to ${address}` });
+  await send.click();
+  await expect(page.getByText(`The link is on its way to ${address}`)).toBeVisible();
+  await expect(send).toBeDisabled();
+
+  await expect.poll(() => mailsTo(address).length, { message: 'the invite to reach the pickup directory' }).toBe(1);
+  const mailed = mailsTo(address)[0].Text.match(/https?:\/\/\S+/)[0];
+  expect(mailed).toBe((await shown.textContent()).trim());
+  expect(mailed.startsWith(`${BASE_URL}/reset-password?token=`)).toBe(true);
+  await choosePassword(visitor, mailed);
 });
 
 test('a forgotten password is answered the same for any address, and only an account\'s own gets a link', async ({ page, visitor }) => {

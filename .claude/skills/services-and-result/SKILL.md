@@ -114,7 +114,8 @@ being queryable in the log files. Debug reaches the sinks only under `ASPNETCORE
 
 Services are injected as concrete types. Do not add `IPlayerService` unless a second implementation
 exists. `ICurrentUser` and `ICurrentTeam` are the deliberate exceptions — the seams the write guard
-and the team scope need, supplied by the host from its own request.
+and the team scope need, supplied by the host from its own request. `IPasswordLinkMailer`, in the UI
+library, is the same kind of seam: only the host can reach the mail outbox.
 
 A new service is registered in `CoreServiceRegistration.AddFootballFormationCore`, not `Program.cs`;
 `CoreServiceRegistrationTests` resolves every one with the host's lifetimes. Anything shared across
