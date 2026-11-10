@@ -21,24 +21,24 @@ public class PasswordLinkService(
     /// One mail per account per window, however often the form is sent, so the form cannot be used to flood someone's inbox.
     public static readonly TimeSpan MailInterval = TimeSpan.FromMinutes(5);
 
-    /// Returns the token itself, which is never stored: the caller turns it into a link, and this is the only time it exists.
-    public Task<Result<string>> CreateLinkAsync(int userId, CancellationToken cancellationToken = default) =>
+    /// Carries the token itself, which is never stored: the caller turns it into a link, and this is the only time it exists.
+    public Task<Result<IssuedPasswordLink>> CreateLinkAsync(int userId, CancellationToken cancellationToken = default) =>
         ServiceOperation.RunAdminAsync(currentUser, logger, "create the sign-in link", cancellationToken, async () =>
         {
             await using var db = await dbFactory.CreateDbContextAsync(cancellationToken);
 
             var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
-            if (user is null) return Result.Failure<string>("User with ID {0} not found", userId);
+            if (user is null) return Result.Failure<IssuedPasswordLink>("User with ID {0} not found", userId);
 
             // Choosing an account's password is taking it over, so this asks what SetPasswordAsync asks.
             if (!await currentUser.IsAdminOfAsync(user.TeamId))
-                return Result.Failure<string>("You can only manage accounts for your own team");
+                return Result.Failure<IssuedPasswordLink>("You can only manage accounts for your own team");
 
             var token = await IssueAsync(db, user, CopiedLinkLifetime, cancellationToken);
             await db.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Created a sign-in link for user {Username} ({UserId})", user.Username, user.Id);
-            return Result.Success(token);
+            return Result.Success(new IssuedPasswordLink(token, user.DisplayName, user.Username, emailProtector.Unprotect(user.ProtectedEmail)));
         });
 
     /// Null when no mail should go out — no account uses the address, or one was sent within <see cref="MailInterval"/> — and the caller
@@ -146,3 +146,6 @@ public class PasswordLinkService(
 }
 
 public sealed record PasswordResetMail(string Email, string DisplayName, string Username, string Token);
+
+/// Email is the account's own address, null when it has none — the only one an admin can mail the link to.
+public sealed record IssuedPasswordLink(string Token, string DisplayName, string Username, string? Email);

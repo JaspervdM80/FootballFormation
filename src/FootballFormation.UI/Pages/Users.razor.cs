@@ -1,3 +1,4 @@
+using FootballFormation.UI.Mail;
 using FootballFormation.UI.State;
 using Microsoft.AspNetCore.Components.Authorization;
 
@@ -7,6 +8,7 @@ public partial class Users
 {
     [Inject] private UserService UserService { get; set; } = null!;
     [Inject] private PasswordLinkService PasswordLinks { get; set; } = null!;
+    [Inject] private IPasswordLinkMailer Mailer { get; set; } = null!;
     [Inject] private NavigationManager Navigation { get; set; } = null!;
     [Inject] private TeamService TeamService { get; set; } = null!;
     [Inject] private TeamState Team { get; set; } = null!;
@@ -75,7 +77,7 @@ public partial class Users
         if (result.IsSuccess && withoutPassword)
         {
             StateHasChanged();
-            await ShowSignInLink(result.Value!.Id, result.Value.DisplayName);
+            await ShowSignInLink(result.Value!.Id);
         }
     }
 
@@ -104,15 +106,15 @@ public partial class Users
 
     /// The link is shown rather than copied straight away: the clipboard only accepts a copy from the click itself, and this one went
     /// through the circuit to make the link.
-    private async Task ShowSignInLink(int userId, string displayName)
+    private async Task ShowSignInLink(int userId)
     {
         var result = await PasswordLinks.CreateLinkAsync(userId);
         if (!Snackbar.ReportFailure(L, result)) return;
 
         var dialog = await DialogService.ShowAsync<SignInLinkDialog>(L["Sign-in link"], new DialogParameters<SignInLinkDialog>
         {
-            { x => x.DisplayName, displayName },
-            { x => x.Url, AppRoutes.PasswordLinkUrl(Navigation.BaseUri, result.Value!) }
+            { x => x.Link, result.Value! },
+            { x => x.Url, Mailer.LinkFor(result.Value!.Token, Navigation.BaseUri) }
         }, UiFeedback.LockedDialog);
         await dialog.Result;
     }

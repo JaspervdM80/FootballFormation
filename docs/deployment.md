@@ -47,8 +47,8 @@ fly secrets set -a gjs-meiden   Email__From="Voetbal Team <noreply@voetbal-team.
 ```
 
 The `From` domain has to be verified in Resend first (its DKIM, SPF and MX records go in at the
-registrar), or Resend refuses every send — logged as `Resend refused a mail with status 403` and nothing more. `Email__PublicUrl` is where a mailed link
-points; it is configured rather than read off the request for the reason in
+registrar), or Resend refuses every send — logged as `Resend refused a mail with status 403` and nothing more. `Email__PublicUrl` is where every password link
+points, mailed or copied on `/users`; it is configured rather than read off the request for the reason in
 [known_issues](known_issues/authentication.md). Moving to another provider is one new `IEmailSender`
 in `Web/Email/`.
 

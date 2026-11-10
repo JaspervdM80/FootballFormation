@@ -147,7 +147,7 @@ Services/
                             ValidateCredentialsAsync/FindForSessionAsync/ChangePasswordAsync, which
                             return raw values rather than Result so a failed login says nothing
                             about why. Refuses to leave a team without an admin.
-  PasswordLinkService.cs  — Password links: an admin's copied invite or reset, and the reset mailed
+  PasswordLinkService.cs  — Password links: an admin's invite or reset, copied or mailed, and the reset mailed
                             on request. The request and the reset are anonymous writes
 Result.cs                — Result and Result<T>: success/failure with a translatable error key, plus
                            IsCancelled — a failure carrying no message, for a caller who went away
@@ -236,6 +236,8 @@ State/
                                 on every page served
   RequestContext.cs           — The two cookies a scope was created with, so the static render and
                                 the circuit cannot disagree about them
+Mail/
+  IPasswordLinkMailer.cs      — Where /users gets its link's address and mails it; Web implements it
 Helpers/
   PitchPositionHelper.cs      — Maps PlayerPosition → (left%, top%) coordinates
   UiFeedback.cs               — Snackbar.Report()/ReportFailure() over Result (translates the error,
@@ -340,7 +342,10 @@ Email/
   ResendEmailSender.cs    — The IEmailSender in production: Resend's HTTP API
   PickupDirectoryEmailSender.cs — Development only: writes each mail to Email:PickupDirectory as JSON,
                             which is how the browser tests read a reset link back
+  LinkMail.cs             — The layout every password-link mail shares, encoded in one place
   PasswordResetMessage.cs — The forgotten-password mail, in the requester's language
+  PasswordInviteMessage.cs — An admin's sign-in link, mailed from /users in the admin's language
+  PasswordLinkMailer.cs   — IPasswordLinkMailer: every link on Email:PublicUrl, mail through the outbox
 KeepAlive/
   KeepAliveTracker.cs     — Thread-safe timestamp of the last real request
   KeepAlivePingService.cs — Pings the public /health endpoint for 30 minutes after the last visitor,
