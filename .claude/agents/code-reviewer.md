@@ -92,8 +92,9 @@ explicit choices; a review that fights them is wrong, not principled.
 - **Interface segregation** — applies to component parameter surfaces as much as to types. A
   component taking eight parameters where two callers use disjoint halves is two components.
 - **Dependency inversion** — **do not ask for interfaces.** This codebase injects concrete
-  services on purpose; `ICurrentUser` and `ICurrentTeam` are the deliberate exceptions — the host
-  supplies them from its own request, and the tests fake them. "Extract `IPlayerService` for
+  services on purpose. The deliberate exceptions are seams only the host can fill — `ICurrentUser`
+  and `ICurrentTeam` from its own request, `IPasswordLinkMailer` from its mail outbox; the tests
+  fake the first two. "Extract `IPlayerService` for
   testability" is a wrong finding here. What *does*
   apply: depend on the injected `TimeProvider` rather than `DateTime.UtcNow`/`Today`, take
   `IDbContextFactory` rather than a shared `AppDbContext`, and pass a value object

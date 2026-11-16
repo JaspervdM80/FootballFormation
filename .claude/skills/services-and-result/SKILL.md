@@ -42,7 +42,8 @@ in the render tree only and stops holding the moment a service is reached anothe
 open — squad, fixtures and statistics are public.
 
 **Admin means admin of the team in scope.** `ICurrentUser.IsAdminAsync()` asks about `ICurrentTeam`
-(the `ff.team` cookie — a view choice anyone can make, never authority), and
+(the `ff.team` cookie, or the domain's `HomeTeams` entry without one — a view choice anyone can make,
+never authority), and
 `TeamAuthority.GrantsAdminOf` is the whole rule. Where a write's subject is another team than the one
 in scope, ask about that team: `IsAdminOfAsync(teamId)`, which `UserService` uses for an account on
 another team. **`RunApplicationAdminAsync`** is the rung above, for `TeamService`'s writes; the
