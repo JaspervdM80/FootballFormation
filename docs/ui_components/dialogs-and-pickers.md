@@ -1,7 +1,9 @@
 # Dialogs and Date Pickers on a Phone
 
 ## Dialogs on a phone (`.dialog-sheet`)
-Every dialog goes through `DialogPrompts` with `UiFeedback.LockedDialog` (no backdrop-click close).
+A dialog that takes input opens with `UiFeedback.LockedDialog` (no backdrop-click close) —
+`DialogPrompts.PromptAsync` passes it. `DialogPrompts.ConfirmAsync`/`ConfirmDeleteAsync` pass no
+options, so a confirm closes on a backdrop click and answers no.
 A **long form** additionally carries `Class="dialog-sheet"` on its `MudDialog` —
 `grep -rn dialog-sheet src --include=*.razor` lists them. `GameDialog`, the new/edit match form, is
 the app's longest and is filled in at a touchline on a phone in portrait. A `MudDivider` marks off its last block — the match-day arrangements, which

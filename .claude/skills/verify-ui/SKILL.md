@@ -54,7 +54,7 @@ exactly this trap (`IsAdmin()`, never `Identity.IsAuthenticated`).
 
 `GET /dev/login` signs in with no credentials — as the account named `admin`, else the first admin,
 or as the admin named in `?user=` — and selects that account's team. It is mapped only when the environment is Development *and* the
-caller is loopback (`Web/ServiceExtensions/Routing.cs`, right after `/auth/logout`).
+caller is loopback (`Web/ServiceExtensions/Routing.cs`, after the `/auth/*` endpoints).
 
 ```
 http://localhost:5228/dev/login     → admin

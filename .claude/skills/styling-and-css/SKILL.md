@@ -69,7 +69,8 @@ a change to either needs re-copying there — `.design-sync/NOTES.md` says how.
   statically on every page. `MudThemeProvider` is the exception and stays in the layout.
 - `MudForm.Validate()` is obsolete — use `ValidateAsync()`.
 - Multi-select binding takes `IReadOnlyCollection<T>`, not `IEnumerable<T>`.
-- `ShowMessageBox` is gone — use the custom `ConfirmDialog`. Dialogs must not close on backdrop click.
+- `ShowMessageBox` is gone — use the custom `ConfirmDialog`. A dialog that takes input must not close on
+  backdrop click (`UiFeedback.LockedDialog`; see the `responsive-and-touch` skill).
 - `Position` was renamed to `PlayerPosition` because `MudBlazor.Position` exists.
 
 ## Two traps when measuring geometry from the DOM

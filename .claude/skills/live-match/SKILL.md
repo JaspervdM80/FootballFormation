@@ -46,10 +46,10 @@ A per-circuit 1-second `System.Timers.Timer` re-renders `Game.ElapsedSecondsAt(T
 the anchor the server stored, repainting only while the clock runs. The clock is an anchor plus a
 banked total, so a refresh or a second device picks it up exactly where it is.
 
-**`GetLiveAsync` is `AsNoTrackingWithIdentityResolution`, and it has to be.** A spectator's circuit
-keeps one scoped context for its life, so a tracked `Game` keeps returning the score, clock and state
-from its first load while newly inserted goals appear alongside them — a live screen stuck at the old
-scoreline.
+**Every reload is a fresh read.** `GetLiveAsync` opens its own context per call, like every service
+(see the `ef-core-and-queries` skill), so a notifier-driven reload sees the current score, clock and
+state. It reads `AsNoTrackingWithIdentityResolution` so the `Player` rows shared by the line-ups,
+goals and substitutions come back as one instance each.
 
 `LiveMatchNotifier` is a **singleton**, in-process only. The page filters on its own `GameId`, reloads,
 `InvokeAsync(StateHasChanged)`, and **unsubscribes in `Dispose`** — a handler never removed keeps a
@@ -125,7 +125,8 @@ minute** (`AddPositionSwapAsync`, from the line-up per minute): it moves nobody 
 is walked again and the line-up and later substitutions' slots rewritten. A substitution whose player
 a later swap moved cannot be undone, edited or added before it — *"Undo the later position swap first"*.
 
-Two substitutions in the same second settle by **id**, not just the clock.
+Two changes in the same second settle by `RecordedAt`, then **id** — ids are per table, so across
+kinds only `RecordedAt` orders them (`HalfLineupWalk`).
 
 **Half-time changes are substitutions too, recorded when the next half kicks off.** At the break the
 pitch shows the *upcoming* half and is tappable; a tap only edits that line-up
