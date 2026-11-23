@@ -35,7 +35,7 @@ Keep it to **one line** wherever possible. Two lines max. Never a paragraph, nev
 ## XML docs
 
 **No documentation file is generated.** `GenerateDocumentationFile` is set nowhere, nothing is
-packable, nothing is published — a `///` block is read by whoever opens the file and by nobody else.
+packed, nothing is published — a `///` block is read by whoever opens the file and by nobody else.
 So it buys nothing a `//` does not, and the rule against docstrings with sections applies to it in
 full. Where a signature genuinely hides something — what null means, the failure mode, who owns the
 lifetime — one line above the member says it.

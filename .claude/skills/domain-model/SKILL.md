@@ -23,7 +23,7 @@ Class Library meant to be reusable.
 
 `Game.IsInRoster(player, squad)` takes a `SeasonSquad` rather than reading `Game.Season.SquadMembers`,
 because `Game.Season` is nullable: a query that forgot the `.Include` would silently answer "everyone
-is a guest" and empty the roster, with no compile-time signal, on any of `GameService`'s four read
+is a guest" and empty the roster, with no compile-time signal, on any of `GameService`'s read
 paths. `SeasonSquad.Empty` is an honest degraded value; a null nav is not.
 
 The plural `SeasonSquads` exists one level up: reports walk games across seasons, so each game

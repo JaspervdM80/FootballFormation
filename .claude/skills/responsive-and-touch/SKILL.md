@@ -70,7 +70,10 @@ rules below have to win over it.
 
 ## Dialogs on a phone (`.dialog-sheet`)
 
-Every dialog goes through `DialogPrompts` with `UiFeedback.LockedDialog` (no backdrop-click close). A
+A dialog that takes input opens with `UiFeedback.LockedDialog` (no backdrop-click close):
+`DialogPrompts.PromptAsync` passes it, and a page calling `ShowAsync` itself passes it by hand.
+`DialogPrompts.ConfirmAsync` and `ConfirmDeleteAsync` pass no options, so a confirm *does* close on a
+backdrop click, which answers no. A
 **long form** additionally carries `Class="dialog-sheet"` — `grep -rn dialog-sheet src --include=*.razor`
 lists them.
 
